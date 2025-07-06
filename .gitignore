@@ -132,4 +132,7 @@ Documentation/html/
 *.tmp
 *.temp
 Assembly-CSharp.csproj
-Assembly-CSharp-Editor.csproj 
+Assembly-CSharp-Editor.csproj
+
+# Ignore problematic submodules
+Packages/co.parabox.csg/ 
