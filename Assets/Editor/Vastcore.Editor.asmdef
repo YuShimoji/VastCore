@@ -1,0 +1,20 @@
+{
+    "name": "Vastcore.Editor",
+    "rootNamespace": "Vastcore.Editor",
+    "references": [
+        "Parabox.CSG",
+        "Unity.ProBuilder",
+        "Unity.ProBuilder.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+} 
