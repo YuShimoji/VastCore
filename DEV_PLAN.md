@@ -8,7 +8,7 @@
 
 ---
 
-## 2. 6段階開発計画（2024年12月更新）
+## 2. 6段階開発計画（2025年1月更新）
 
 ### Phase 1: 基本関係性システム ✅ **完了**
 - 構造物間の9種類の関係性（OnTop, Inside, OnSide, Around等）
@@ -23,12 +23,12 @@
 - 8つの記念碑タイプ実装
 - 実装完了日: 2024-12-XX
 
-### Phase 3: Deformシステム統合 ⏳ **次回実装予定**
-- Unity Asset StoreのDeformパッケージ統合
-- 20種類以上のDeformer対応（Bend, Twist, Noise, Spherify等）
-- 高度な変形マスクシステム
-- アニメーション変形対応
-- 予定工数: 7-10レスポンス
+### Phase 3: Deformシステム統合 ⏳ **Cursor Web準備中**
+**開発方針**: Unity Asset Store パッケージ導入前にCursor webで設計・準備作業を実施
+- **技術調査**: Deformパッケージ（20種類以上のDeformer）の統合方式調査
+- **システム設計**: 変形マスクシステム・アニメーション変形の設計
+- **コード準備**: 統合用ベースクラス・インターフェースの実装
+- **予定工数**: 3-5レスポンス（設計） + Unity実装テスト
 
 ### Phase 4: パーティクル的配置システム ✅ **完了**
 - 8種類の配置パターン（Linear, Circular, Spiral, Grid, Random, Fractal, Voronoi, Organic）
@@ -37,146 +37,240 @@
 - 回転・スケール制御とプリセット対応
 - 実装完了日: 2024-12-XX
 
-### Phase 5: 高度合成システム ⏳ **次回実装予定**
-- モデル合成とブレンド機能
-- LOD生成とメッシュ最適化
-- ライティング焼き込みシステム
-- 体積ブレンドと距離フィールド合成
-- 予定工数: 6-8レスポンス
+### Phase 5: 高度合成システム ⏳ **Cursor Web実装予定**
+**開発方針**: Unity エディタなしでの設計・実装が可能
+- **モデル合成**: 複数メッシュの統合・ブレンド機能
+- **LOD生成**: 距離に応じた詳細度制御システム
+- **メッシュ最適化**: パフォーマンス向上のための最適化
+- **ライティング焼き込み**: 静的ライティングの事前計算
+- **体積ブレンド**: 距離フィールド合成の高度化
+- **予定工数**: 5-8レスポンス
 
-### Phase 6: ランダム制御システム ⏳ **未実装**
-- 制御されたランダム性（ControlledRandom, BlendShapeRandom）
-- ランダムシード管理
-- パラメータ制約システム
-- ランダムプリセット管理
-- 予定工数: 5-7レスポンス
-
----
-
-## 3. 開発ツール概要
-
-### 3.1. Structure Generator (`StructureGeneratorWindow.cs`)
-
-構造物を生成・加工するためのメインツール。5つのタブで構成。
-
-#### **Basicタブ: 基本形状の生成**
-シンプルな形状とプリミティブ生成機能。
-
-| 機能 | パラメータ | 説明 |
-| :--- | :--- | :--- |
-| **Basic Structure Types** | Cube, Cylinder, Sphere, Pyramid, Torus, Arch, Wall | 7つの基本形状から選択 |
-| **Parameters** | Scale (1-100), Count (1-10), Material | スケール、生成数、マテリアル設定 |
-| **Quick Generation** | ワンクリック生成ボタン | 各形状の即座生成 |
-
-#### **Advancedタブ: 高度な構造物生成**
-Phase 2で実装された高度な形状制御システム。
-
-| 機能 | パラメータ | 説明 |
-| :--- | :--- | :--- |
-| **Monument Types** | 8種類の記念碑タイプ | GeometricMonolith, TwistedTower等 |
-| **Shape Control System** | ツイスト、テーパー、ベンド | 高度な形状変形制御 |
-| **Boolean Parameters** | 面選択、体積閾値、減衰制御 | Boolean演算の詳細制御 |
-| **Advanced Processing** | 表面処理、エッジ処理、風化効果 | 高度な表面加工 |
-
-#### **Operationsタブ: CSG演算** ✅ **修正完了**
-pb_CSGライブラリを使用したBoolean演算機能。
-
-| 機能 | パラメータ | 説明 |
-| :--- | :--- | :--- |
-| **Boolean Operations** | Union, Subtract, Intersect | 2つのメッシュの合成 |
-| **Advanced Boolean** | 面選択、オフセット制御 | 高度なBoolean制御 |
-| **Array Duplication** | Linear, Circular配置 | オブジェクトの配列複製 |
-| **Status** | ✅ **安定化完了** | NullReferenceException修正済み |
-
-#### **Relationshipsタブ: 構造物関係性管理**
-Phase 1で実装された関係性システム。
-
-| 機能 | パラメータ | 説明 |
-| :--- | :--- | :--- |
-| **Relationship Types** | 9種類の関係性 | OnTop, Inside, Around等 |
-| **Automatic Placement** | 距離・角度制御 | 自動位置計算 |
-| **Preview System** | リアルタイムプレビュー | Scene viewでのギズモ表示 |
-
-#### **Distributionタブ: パーティクル様配置システム**
-Phase 4で実装された高度な配置制御システム。
-
-| 機能 | パラメータ | 説明 |
-| :--- | :--- | :--- |
-| **Distribution Patterns** | 8種類の配置パターン | Linear, Circular, Spiral, Grid等 |
-| **Advanced Controls** | 衝突回避、ハイトマップ対応 | 高度な配置制御 |
-| **Rotation & Scale** | ランダム回転・スケール | 自然な配置バリエーション |
-| **Prefab Support** | プリセット対応 | Prefab配置と記念碑生成 |
-
-### 3.2. Heightmap Terrain Generator (`HeightmapTerrainGeneratorWindow.cs`)
-
-ハイトマップ画像からUnityのTerrainを生成・加工するためのツール。詳細は別途記載。
+### Phase 6: ランダム制御システム ⏳ **Cursor Web実装予定**
+**開発方針**: 既存RandomControlTabの拡張として実装可能
+- **制御されたランダム性**: ControlledRandom, BlendShapeRandomの強化
+- **ランダムシード管理**: 再現可能なランダム生成システム
+- **パラメータ制約**: 高度な制約システムの実装
+- **ランダムプリセット**: プリセット管理の拡張
+- **予定工数**: 4-6レスポンス
 
 ---
 
-## 4. 技術的成果
+## 3. Cursor Web 開発計画
 
-### 4.1. ProBuilder API互換性
-- ProBuilder 4.x以降のAPI完全対応
-- 破壊的変更への対応完了
-- CSGシステムの復旧（pb_CSGライブラリ使用）
+### 3.1. 短期目標（1-3回の作業セッション）
 
-### 4.2. Boolean操作システム修正完了 ✅
-- **NullReferenceException完全修正**
-- ProBuilderMeshの複雑な初期化処理を削除
-- 標準的なMeshFilter/MeshRendererのみ使用
-- 包括的なエラーハンドリング実装
-- 段階的フォールバック機能
+#### **Phase 3 技術調査・設計**
+- **Deformパッケージ調査**: Unity Asset Storeでの仕様・API調査
+- **統合方式設計**: 既存Structure Generatorとの統合方法策定
+- **インターフェース設計**: DeformerタブUI・パラメータ制御の設計
 
-### 4.3. システム統合
-- 5つのタブシステムによる機能分離
-- Undoシステム完全対応
-- マテリアル管理システム
+#### **既存コード最適化**
+- **AdvancedPlayerController**: エネルギーシステムの効率化
+- **MeshGenerator**: 大規模地形生成の最適化
+- **Structure Generator**: メモリ使用量削減・処理速度向上
 
-### 4.4. エラーハンドリング
-- 包括的なtry-catch構造
-- ユーザーフレンドリーなエラーメッセージ
-- デバッグログシステム
+#### **開発文書整理**
+- **設計文書統合**: 分散した仕様書の統合・更新
+- **API仕様書作成**: 主要クラス・メソッドの詳細仕様
+- **テスト仕様書**: 機能テスト項目の体系化
 
----
+### 3.2. 中期目標（4-10回の作業セッション）
 
-## 5. 現在の開発フェーズと次のステップ
-
-**現在フェーズ:** Phase 4完了、Boolean操作修正完了、Phase 5準備段階
-
-### 📊 システム状況
-```
-Structure Generator Window
-├── Basic Tab          ✅ 動作中
-├── Advanced Tab       ✅ 動作中  
-├── Operations Tab     ✅ 修正完了
-├── Relationships Tab  ✅ 動作中
-└── Distribution Tab   ✅ 動作中
+#### **Phase 5 高度合成システム実装**
+```csharp
+// 実装予定クラス構造
+public class AdvancedCompositionSystem
+{
+    // モデル合成
+    public CompositionResult ComposeModels(List<GameObject> sources);
+    
+    // LOD生成
+    public LODGroup GenerateLOD(GameObject source, int lodLevels);
+    
+    // メッシュ最適化
+    public Mesh OptimizeMesh(Mesh source, OptimizationLevel level);
+    
+    // ライティング焼き込み
+    public Texture2D BakeLighting(GameObject target, BakeSettings settings);
+}
 ```
 
-**直近のステップ:**
-1. **Phase 5: 高度合成システムの実装**
-   - モデル合成とブレンド機能
-   - LOD生成とメッシュ最適化
-   - ライティング焼き込みシステム
-   - 体積ブレンドと距離フィールド合成
+#### **新機能企画・設計**
+- **次世代プレイヤー機能**: 壁走り、重力操作、時間制御等
+- **環境インタラクション**: 破壊可能オブジェクト、物理パズル等
+- **プロシージャル音響**: 空間に応じた音響効果自動生成
 
-2. **システム統合テスト**
-   - 全タブ間の連携テスト
-   - 大規模構造物生成テスト
-   - パフォーマンス測定
+#### **テストシステム拡充**
+- **自動テスト拡張**: 全機能の自動テスト対応
+- **パフォーマンステスト**: 負荷テスト・最適化指標
+- **回帰テスト**: 既存機能の安定性確保
 
-**中期目標:**
-- Phase 6: ランダム制御システム
-- Phase 3: Deformシステム統合（パッケージ導入後）
-- 全システムの統合と最適化
+### 3.3. 長期目標（10回以上の作業セッション）
+
+#### **Phase 6 ランダム制御システム完成**
+- **高度ランダム制御**: シード管理・再現性確保
+- **プリセットシステム**: 豊富なランダム化プリセット
+- **リアルタイム制御**: パラメータのライブ調整
+
+#### **システム統合・最適化**
+- **全フェーズ統合**: Phase 1-6の完全統合
+- **パフォーマンス最適化**: 大規模シーンでの動作保証
+- **UI/UX改善**: 使いやすさの向上
+
+#### **拡張機能開発**
+- **VR/AR対応**: 新プラットフォーム対応
+- **マルチプレイヤー**: 協調的構造物生成
+- **AI統合**: 機械学習による自動生成
 
 ---
 
-## 6. ドキュメント
+## 4. 開発ツール概要
 
-- `ADVANCED_STRUCTURE_DESIGN_DOCUMENT.md`: 6段階開発計画の詳細設計
+### 4.1. Structure Generator (`StructureGeneratorWindow.cs`)
+
+構造物を生成・加工するためのメインツール。7つのタブで構成。
+
+#### **🏗️ 生成タブ (Generation)**
+| タブ | 機能 | 状況 | Cursor Web対応 |
+|------|------|------|----------------|
+| **Basic** | 基本形状生成 | ✅ 完了 | ✅ 可能 |
+| **Advanced** | 高度構造物生成 | ✅ 完了 | ✅ 可能 |
+| **Distribution** | 配置・分布生成 | ✅ 完了 | ✅ 可能 |
+
+#### **✏️ 編集タブ (Editing)**
+| タブ | 機能 | 状況 | Cursor Web対応 |
+|------|------|------|----------------|
+| **Operations** | CSG演算・編集操作 | ✅ 完了 | ✅ 可能 |
+| **Composition** | 形状合成・編集 | ✅ 完了 | ✅ 可能 |
+| **Random** | ランダム編集 | ✅ 完了 | ✅ 可能 |
+
+#### **⚙️ 設定タブ (Settings)**
+| タブ | 機能 | 状況 | Cursor Web対応 |
+|------|------|------|----------------|
+| **Relationships** | 関係性管理・設定 | ✅ 完了 | ✅ 可能 |
+
+### 4.2. プレイヤーシステム
+
+#### **高度移動システム** (完成済み)
+- **AdvancedPlayerController**: グライド、ドリームフライト、グラインド
+- **TranslocationSphere**: ワープ移動・軌道予測
+- **統合テストシーン**: 動作確認用シーン
+
+#### **地形生成システム** (完成済み)
+- **MeshGenerator**: 3種類地形・5種類ノイズ
+- **SimpleTestManager**: 自動テスト・パラメータ制御
+
+---
+
+## 5. Cursor Web 作業フロー
+
+### 5.1. 開発可能な作業
+
+#### **✅ Cursor Webで実施可能**
+- C#スクリプトの編集・新規作成
+- システム設計・アーキテクチャ検討
+- API調査・技術仕様書作成
+- コードレビュー・リファクタリング
+- 開発計画策定・ドキュメント整備
+- バグ修正・パフォーマンス最適化
+
+#### **❌ Unity エディタが必要**
+- スクリプトのアタッチ・Inspector設定
+- 実際の動作テスト・デバッグ
+- Scene編集・Prefab作成
+- エディタ拡張UIの動作確認
+- Unity Console でのエラー確認
+
+### 5.2. 作業フロー例
+
+#### **新機能開発**
+```
+Cursor Web: 設計 → 実装 → コードレビュー
+↓
+Unity: アタッチ → テスト → デバッグ → 完成
+```
+
+#### **既存機能改善**
+```
+Cursor Web: 問題分析 → 修正実装 → 最適化
+↓
+Unity: 動作確認 → パフォーマンステスト
+```
+
+---
+
+## 6. 開発優先度・スケジュール
+
+### 6.1. 最優先項目
+
+#### **短期（次回1-3セッション）**
+1. **Phase 3技術調査**: Deformシステム統合準備
+2. **コード最適化**: パフォーマンス・保守性向上
+3. **ドキュメント整理**: 設計文書統合・API仕様書
+
+#### **中期（4-10セッション）**
+1. **Phase 5実装**: 高度合成システム
+2. **新機能設計**: 次世代プレイヤー機能企画
+3. **テストシステム**: 自動テスト機能拡充
+
+#### **長期（10セッション以上）**
+1. **Phase 6完成**: ランダム制御システム
+2. **全システム統合**: 最適化・安定化
+3. **拡張機能**: VR/AR対応・AI統合
+
+### 6.2. 成功指標
+
+#### **短期成功指標**
+- [ ] Deformシステム統合設計完了
+- [ ] 既存コードの20%以上最適化
+- [ ] 統一API仕様書作成
+
+#### **中期成功指標**
+- [ ] Phase 5完全実装・テスト完了
+- [ ] 新機能プロトタイプ3つ以上
+- [ ] 自動テスト95%カバレッジ達成
+
+#### **長期成功指標**
+- [ ] 全Phase（1-6）完成・統合済み
+- [ ] 商用レベル品質達成
+- [ ] 拡張プラットフォーム対応
+
+---
+
+## 7. ドキュメント
+
+### 7.1. 開発管理文書
 - `DEV_LOG.md`: 開発作業の詳細ログ
-- `Documentation/StructureGenerator_JA.md`: 構造ジェネレータの使用方法
+- `FUNCTION_TEST_STATUS.md`: 機能テスト状況表
+- `CURSOR_WEB_DEVELOPMENT_GUIDE.md`: Cursor web開発ガイド
+
+### 7.2. 設計文書
+- `ADVANCED_STRUCTURE_DESIGN_DOCUMENT.md`: 6段階開発計画の詳細設計
+- `REFACTORING_HANDOVER_DOCUMENT.md`: リファクタリング記録
 - `CSG_INTEGRATION_LOG.md`: CSGシステム統合記録
-- `Documentation/HeightmapTerrainGenerator_JA.md`: 地形ジェネレータの詳細な仕様と使い方。
-- `Documentation/PlayerController_JA.md`: プレイヤーコントローラーの仕様。 
+
+### 7.3. Unity プロジェクト文書
+- `README.md`: プロジェクト概要・ゲームデザイン
+- `RANDOMCONTROL_UI_DESIGN.md`: UI設計仕様
+
+---
+
+## 8. 技術スタック・依存関係
+
+### 8.1. 主要技術
+- **Unity 2022.3 LTS**: ゲームエンジン
+- **ProBuilder**: 3D形状生成・編集
+- **pb_CSG**: Boolean演算ライブラリ
+- **Deform (予定)**: 高度メッシュ変形
+
+### 8.2. 開発環境
+- **Cursor Web**: C#開発・設計・ドキュメント
+- **Unity Editor**: 実装テスト・デバッグ
+- **Git**: バージョン管理（GitHub連携予定）
+
+---
+
+**最終更新**: 2025年1月  
+**開発体制**: Cursor Web + Unity エディタのハイブリッド開発  
+**次回作業**: Phase 3 技術調査・既存コード最適化 
