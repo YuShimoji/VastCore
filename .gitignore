@@ -135,4 +135,4 @@ Assembly-CSharp.csproj
 Assembly-CSharp-Editor.csproj
 
 # Ignore problematic submodules
-Packages/co.parabox.csg/ 
+Packages/co.parabox.csg/ Packages/co.parabox.csg/
