@@ -67,24 +67,24 @@ namespace Vastcore.Generation
                 {
                     terrainType = TerrainType.Circular,
                     resolution = 512,
-                    size = 1000f,
-                    maxHeight = 100f,
-                    noiseType = NoiseType.Perlin,
-                    noiseScale = 0.01f,
-                    octaves = 6,
-                    persistence = 0.5f,
-                    lacunarity = 2f,
+                    size = 2000f,           // より広大な地形
+                    maxHeight = 200f,       // より高い起伏
+                    noiseType = NoiseType.Fractal,  // より自然な地形
+                    noiseScale = 0.005f,    // より大きなスケール
+                    octaves = 8,            // より詳細な起伏
+                    persistence = 0.6f,     // より強調された特徴
+                    lacunarity = 2.5f,      // より複雑な形状
                     offset = Vector2.zero,
-                    radius = 500f,
-                    falloffStrength = 2f,
+                    radius = 1000f,         // より広い円形地形
+                    falloffStrength = 1.5f, // より緩やかな縁
                     falloffCurve = AnimationCurve.EaseInOut(0, 1, 1, 0),
                     enableSeamless = true,
-                    seamlessBorder = 0.1f,
-                    enableTerracing = false,
-                    terraceHeight = 10f,
-                    terraceCount = 5,
-                    enableErosion = false,
-                    erosionStrength = 0.5f
+                    seamlessBorder = 0.15f, // より広いシームレス領域
+                    enableTerracing = true, // テラス化を有効化
+                    terraceHeight = 20f,    // より大きなテラス
+                    terraceCount = 8,       // より多くのテラス
+                    enableErosion = true,   // 浸食を有効化
+                    erosionStrength = 0.3f  // 適度な浸食
                 };
             }
         }

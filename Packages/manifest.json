@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "com.beans.deform": "https://github.com/keenanwoodall/Deform.git",
+    "com.unity.burst": "1.8.13",
     "com.justinpbarnett.unity-mcp": "https://github.com/justinpbarnett/unity-mcp.git?path=/UnityMcpBridge",
     "com.unity.collab-proxy": "2.8.2",
     "com.unity.feature.mobile": "1.0.0",

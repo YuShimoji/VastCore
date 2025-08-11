@@ -10,6 +10,10 @@ namespace Vastcore.Player
         public float moveSpeed = 10f;
         public float gravity = -9.81f;
         public float jumpHeight = 8f;
+        [Header("Momentum System")]
+        public float momentumDamping = 0.8f; // 慣性の減衰率
+        public float accelerationRate = 10f; // 加速度
+        public float maxMomentumSpeed = 25f; // 最大慣性速度
         #endregion
 
         #region カメラ設定
@@ -65,6 +69,7 @@ namespace Vastcore.Player
         #region 内部変数
         private CharacterController characterController;
         private Vector3 velocity;
+        private Vector3 momentum = Vector3.zero; // 慣性ベクトル
         private float rotationX = 0;
 
         // 状態管理
@@ -75,7 +80,7 @@ namespace Vastcore.Player
         // タイマー
         private float warpCooldownTimer = 0f;
         private float wallKickCooldownTimer = 0f;
-        
+
         // 特殊ダッシュ
         private float currentDreamFlightSpeed = 0f;
         private float currentEnergy = 0f;
@@ -89,6 +94,18 @@ namespace Vastcore.Player
         [SerializeField] private bool showDebugInfo = true;
         [SerializeField] private float currentSpeed = 0f;
         [SerializeField] private string currentState = "Ground";
+
+        /// <summary>
+        /// プレイヤーの操作状態を定義します。
+        /// </summary>
+        public enum PlayerControlState
+        {
+            Disabled,    // 全ての操作を無効化
+            LookOnly,    // 視点操作のみ許可
+            FullControl  // 全ての操作を許可
+        }
+        
+        private PlayerControlState m_ControlState = PlayerControlState.Disabled;
         #endregion
 
         #region Unity生命周期
@@ -108,8 +125,34 @@ namespace Vastcore.Player
                 }
             }
 
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            // FPS化：プレイヤーのメッシュレンダラーを非表示
+            var meshRenderer = GetComponent<MeshRenderer>();
+            if (meshRenderer != null)
+            {
+                meshRenderer.enabled = false;
+            }
+
+            // 初期状態ではプレイヤーコントロールを有効化
+            EnablePlayerControl();
+        }
+        
+        public void EnablePlayerControl()
+        {
+            m_ControlState = PlayerControlState.FullControl;
+            Debug.Log("Player control enabled.");
+        }
+        
+        public void DisablePlayerControl()
+        {
+            m_ControlState = PlayerControlState.Disabled;
+            velocity = Vector3.zero; // 念のため速度をリセット
+            Debug.Log("Player control disabled.");
+        }
+
+        public void EnableLookOnly()
+        {
+            m_ControlState = PlayerControlState.LookOnly;
+            Debug.Log("Player look-only enabled.");
         }
 
         private void OnEnable()
@@ -125,13 +168,24 @@ namespace Vastcore.Player
         private void Update()
         {
             HandleCooldowns();
-            HandleMovement();
-            HandleLooking();
-            HandleGliding();
-            HandleDreamFlight();
-            HandleGrinding();
-            HandleWallKick();
-            HandleTranslocation();
+            switch (m_ControlState)
+            {
+                case PlayerControlState.FullControl:
+                    HandleMovement();
+                    HandleLooking();
+                    HandleGliding();
+                    HandleDreamFlight();
+                    HandleGrinding();
+                    HandleWallKick();
+                    HandleTranslocation();
+                    break;
+                case PlayerControlState.LookOnly:
+                    HandleLooking();
+                    break;
+                case PlayerControlState.Disabled:
+                    // 何もしない
+                    break;
+            }
             UpdateDebugInfo();
         }
         #endregion
@@ -154,33 +208,53 @@ namespace Vastcore.Player
 
         private void HandleMovement()
         {
-            Vector3 moveDirection = Vector3.zero;
-            float currentSpeed = moveSpeed;
+            Vector3 inputDirection = Vector3.zero;
+            Vector3 finalMoveDirection = Vector3.zero;
 
             // 特殊ダッシュ中の処理
             if (isDreamFlying)
             {
-                moveDirection = transform.forward;
-                currentSpeed = currentDreamFlightSpeed;
+                finalMoveDirection = transform.forward * currentDreamFlightSpeed;
+                momentum = Vector3.zero; // ドリームフライト中は慣性をリセット
             }
             // グラインド中の処理
             else if (isGrinding)
             {
-                moveDirection = grindDirection;
-                currentSpeed = grindSpeed;
+                finalMoveDirection = grindDirection * grindSpeed;
+                momentum = Vector3.zero; // グラインド中は慣性をリセット
             }
-            // 通常移動
+            // 通常移動（慣性システム適用）
             else
             {
                 float horizontal = Input.GetAxis("Horizontal");
                 float vertical = Input.GetAxis("Vertical");
-                moveDirection = transform.right * horizontal + transform.forward * vertical;
+                inputDirection = transform.right * horizontal + transform.forward * vertical;
+
+                // 入力がある場合：加速
+                if (inputDirection.magnitude > 0.1f)
+                {
+                    Vector3 targetMomentum = inputDirection.normalized * moveSpeed;
+                    momentum = Vector3.Lerp(momentum, targetMomentum, accelerationRate * Time.deltaTime);
+                }
+                // 入力がない場合：慣性による減速
+                else
+                {
+                    momentum = Vector3.Lerp(momentum, Vector3.zero, (1f - momentumDamping) * Time.deltaTime * 5f);
+                }
+
+                // 最大速度制限
+                if (momentum.magnitude > maxMomentumSpeed)
+                {
+                    momentum = momentum.normalized * maxMomentumSpeed;
+                }
+
+                finalMoveDirection = momentum;
             }
 
             // 移動実行
-            if (moveDirection != Vector3.zero)
+            if (finalMoveDirection.magnitude > 0.01f)
             {
-                characterController.Move(moveDirection * currentSpeed * Time.deltaTime);
+                characterController.Move(finalMoveDirection * Time.deltaTime);
             }
 
             // 重力処理
@@ -350,7 +424,7 @@ namespace Vastcore.Player
         }
 
         private void UpdateGrindDirection()
-        {
+            {
             if (currentGrindSurface != null)
             {
                 Vector3 toSurface = (currentGrindSurface.position - transform.position).normalized;
@@ -480,4 +554,4 @@ namespace Vastcore.Player
         }
         #endregion
     }
-} 
+}

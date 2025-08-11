@@ -300,11 +300,11 @@ namespace Vastcore.Player
                 
                 // 着弾エフェクト
                 CreateLandingEffect(collisionPoint);
-                
-                // プレイヤーに衝突位置を通知
-                OnSphereCollision?.Invoke(collisionPoint);
 
-                // 着弾したら自身を破棄する
+            // プレイヤーに衝突位置を通知
+            OnSphereCollision?.Invoke(collisionPoint);
+
+            // 着弾したら自身を破棄する
                 Destroy(gameObject, 0.5f); // 少し遅延してエフェクトを見せる
             }
         }

@@ -17,6 +17,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEditor.Compilation;
 using System.Collections;
+using Vastcore.Editor.StructureGenerator.Tabs;
 
 namespace Vastcore.Editor.Generation
 {
@@ -47,6 +48,7 @@ namespace Vastcore.Editor.Generation
             // _tabs.Add(new OperationsTab(this)); // 一時的にコメントアウト
             _tabs.Add(new RelationshipTab(this));
             _tabs.Add(new ParticleDistributionTab(this));
+            _tabs.Add(new DeformerTab(this)); // Deformタブを追加
             // _tabs.Add(new CompositionTab(this)); // 一時的にコメントアウト
             _tabs.Add(new RandomControlTab(this)); // Phase 1: 基本版を有効化
         

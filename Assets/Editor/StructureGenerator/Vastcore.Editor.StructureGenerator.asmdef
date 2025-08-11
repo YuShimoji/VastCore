@@ -1,0 +1,25 @@
+{
+    "name": "Vastcore.Editor.StructureGenerator",
+    "rootNamespace": "Vastcore.Editor.StructureGenerator",
+    "references": [
+        "Deform",
+        "Parabox.CSG",
+        "Unity.ProBuilder",
+        "Unity.ProBuilder.Editor",
+        "Unity.ProBuilder.Csg",
+        "Unity.ProBuilder.KdTree",
+        "Unity.ProBuilder.Poly2Tri",
+        "Unity.ProBuilder.Stl"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+} 
