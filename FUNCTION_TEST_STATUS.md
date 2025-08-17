@@ -1,5 +1,35 @@
 # Vastcore 機能テスト状況表
 
+## 🏞️ Terrain Generation System テスト結果 (2025-08-18更新)
+
+### 概要
+`TerrainGenerator` を用いた一括生成で、テクスチャ、ディテール、ツリー、最適化の各サブシステムが仕様通りに動作するかを検証。
+
+### テスト観点と結果
+| 機能 | 期待動作 | 実際の結果 | 状態 | 備考 |
+|------|----------|------------|------|------|
+| テクスチャブレンド | 標高/傾斜に応じてレイヤーが自然に遷移。`BlendFactors` で相対量調整可能。`Tiling` でレイヤーごとにタイルサイズ適用 | ✅ 正常動作 | 🟢 完了 | Cliff=斜面, Grass=平地, Snow=高所で優先。係数変更で寄与度が変化 |
+| ディテール配置 | `DetailResolution`/`PerPatch` が `TerrainData` に反映。中高度・低傾斜で密度増、`DetailDensity` で全体スケール | ✅ 正常動作 | 🟢 完了 | `GetInterpolatedHeight/Steepness` に基づく確率配置 |
+| ツリー配置 | グリッド+ジッターで一様サンプリング。標高(0.15..0.65)、傾斜(<30°) で配置制約 | ✅ 正常動作 | 🟢 完了 | 極端高低/急斜面に配置抑制。インスタンス上限で過密防止 |
+| エディタUI露出 | Texture/Detail/Tree 設定が foldout と SerializedProperty で全露出 | ✅ 正常動作 | 🟢 完了 | `TerrainGeneratorEditor` 確認 |
+
+### 手順
+1. シーン上の `TerrainGenerator` を選択。
+2. `Generation Mode` を `Noise` または `NoiseAndHeightMap` に設定。
+3. `Terrain Layers` を 3 レイヤー以上設定（例: Grass/Cliff/Snow）。必要に応じて `Texture Blend Factors` と `Texture Tiling` を調整。
+4. `Detail Prototypes` と `Tree Prototypes` を設定し、`Detail Resolution`/`Per Patch`/`Detail Density` を指定。
+5. `Generate Terrain` 実行。
+6. シーンビューで以下を確認：
+   - 斜面に Cliff、平地に Grass、高所に Snow が主に出る。
+   - ディテールは中高度・低傾斜に多く、解像度設定が反映されている。
+   - ツリーは急斜面/極端な高低を避け、自然に分布している。
+7. `Texture Blend Factors` を変更し、ブレンド比率の変化を視認。
+
+### 既知課題 / 次の改善
+- ブレンドしきい値/カーブのエディタ露出。
+- ディテール/ツリーのバイオーム連携とテクスチャ影響度の導入。
+- サンプリングのパフォーマンス最適化、プレビュー機能追加。
+
 ## 📊 Composition Tab 機能テスト結果
 
 | 機能名 | 期待動作 | 実際の結果 | 状態 | 備考 |
