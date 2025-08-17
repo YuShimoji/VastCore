@@ -10,9 +10,45 @@ namespace Vastcore.Editor
     private bool m_ShowHeightMapSettings = true;
     private bool m_ShowNoiseSettings = true;
     private bool m_ShowTerrainSettings = true;
+    private bool m_ShowTextureSettings = true;
+    private bool m_ShowDetailSettings = true;
+    private bool m_ShowTreeSettings = true;
+
+    // Serialized Properties (use backing field names)
+    private SerializedProperty sp_TerrainLayers;
+    private SerializedProperty sp_TextureBlendFactors;
+    private SerializedProperty sp_TextureTiling;
+    private SerializedProperty sp_DetailPrototypes;
+    private SerializedProperty sp_DetailResolution;
+    private SerializedProperty sp_DetailResolutionPerPatch;
+    private SerializedProperty sp_DetailDensity;
+    private SerializedProperty sp_DetailDistance;
+    private SerializedProperty sp_TreePrototypes;
+    private SerializedProperty sp_TreeDistance;
+    private SerializedProperty sp_TreeBillboardDistance;
+    private SerializedProperty sp_TreeCrossFadeLength;
+    private SerializedProperty sp_TreeMaximumFullLODCount;
+
+    private void OnEnable()
+    {
+        sp_TerrainLayers = serializedObject.FindProperty("m_TerrainLayers");
+        sp_TextureBlendFactors = serializedObject.FindProperty("m_TextureBlendFactors");
+        sp_TextureTiling = serializedObject.FindProperty("m_TextureTiling");
+        sp_DetailPrototypes = serializedObject.FindProperty("m_DetailPrototypes");
+        sp_DetailResolution = serializedObject.FindProperty("m_DetailResolution");
+        sp_DetailResolutionPerPatch = serializedObject.FindProperty("m_DetailResolutionPerPatch");
+        sp_DetailDensity = serializedObject.FindProperty("m_DetailDensity");
+        sp_DetailDistance = serializedObject.FindProperty("m_DetailDistance");
+        sp_TreePrototypes = serializedObject.FindProperty("m_TreePrototypes");
+        sp_TreeDistance = serializedObject.FindProperty("m_TreeDistance");
+        sp_TreeBillboardDistance = serializedObject.FindProperty("m_TreeBillboardDistance");
+        sp_TreeCrossFadeLength = serializedObject.FindProperty("m_TreeCrossFadeLength");
+        sp_TreeMaximumFullLODCount = serializedObject.FindProperty("m_TreeMaximumFullLODCount");
+    }
 
     public override void OnInspectorGUI()
     {
+        serializedObject.Update();
         var generator = (TerrainGenerator)target;
 
         // 生成モードの選択
@@ -77,6 +113,43 @@ namespace Vastcore.Editor
             }
         }
 
+        // テクスチャ設定
+        m_ShowTextureSettings = EditorGUILayout.Foldout(m_ShowTextureSettings, "Texture Settings", true);
+        if (m_ShowTextureSettings)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(sp_TerrainLayers, new GUIContent("Terrain Layers"), true);
+            EditorGUILayout.PropertyField(sp_TextureBlendFactors, new GUIContent("Texture Blend Factors"), true);
+            EditorGUILayout.PropertyField(sp_TextureTiling, new GUIContent("Texture Tiling"), true);
+            EditorGUI.indentLevel--;
+        }
+
+        // ディテール設定
+        m_ShowDetailSettings = EditorGUILayout.Foldout(m_ShowDetailSettings, "Detail Settings", true);
+        if (m_ShowDetailSettings)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(sp_DetailPrototypes, new GUIContent("Detail Prototypes"), true);
+            EditorGUILayout.PropertyField(sp_DetailResolution, new GUIContent("Detail Resolution"));
+            EditorGUILayout.PropertyField(sp_DetailResolutionPerPatch, new GUIContent("Detail Resolution Per Patch"));
+            EditorGUILayout.PropertyField(sp_DetailDensity, new GUIContent("Detail Density"));
+            EditorGUILayout.PropertyField(sp_DetailDistance, new GUIContent("Detail Distance"));
+            EditorGUI.indentLevel--;
+        }
+
+        // ツリー設定
+        m_ShowTreeSettings = EditorGUILayout.Foldout(m_ShowTreeSettings, "Tree Settings", true);
+        if (m_ShowTreeSettings)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(sp_TreePrototypes, new GUIContent("Tree Prototypes"), true);
+            EditorGUILayout.PropertyField(sp_TreeDistance, new GUIContent("Tree Distance"));
+            EditorGUILayout.PropertyField(sp_TreeBillboardDistance, new GUIContent("Tree Billboard Distance"));
+            EditorGUILayout.PropertyField(sp_TreeCrossFadeLength, new GUIContent("Tree Cross Fade Length"));
+            EditorGUILayout.PropertyField(sp_TreeMaximumFullLODCount, new GUIContent("Tree Maximum Full LOD Count"));
+            EditorGUI.indentLevel--;
+        }
+
         // 生成ボタン
         EditorGUILayout.Space(10);
         if (GUILayout.Button("Generate Terrain"))
@@ -89,6 +162,8 @@ namespace Vastcore.Editor
             {
                 EditorUtility.SetDirty(generator);
             }
+
+            serializedObject.ApplyModifiedProperties();
         }
     }
 }
