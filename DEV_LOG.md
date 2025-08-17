@@ -1,5 +1,38 @@
 # 開発作業ログ
 
+## 2025-08-17: CompoundArchitecturalGenerator コンパイルエラー修正（括弧不整合）
+
+### 概要
+`Assets/Scripts/Generation/Map/CompoundArchitecturalGenerator.cs` において、誤った閉じ括弧によりクラス/名前空間が途中で閉じられ、以降の補助メソッド群がクラス外に出てしまうコンパイルエラーを修正。
+
+### 原因
+- `GenerateTriumphalArch` の `#endregion` の直後に、不要な `}` があり、`CompoundArchitecturalGenerator` クラスおよび `Vastcore.Generation` 名前空間を早期に終了していた。
+
+### 対処
+- 余分な閉じ括弧を削除。
+- 以降のリージョン（「補助構造生成」「接続・統合システム」「ユーティリティ関数」）をすべて `CompoundArchitecturalGenerator` クラス内に戻して再配置。
+
+### 影響
+- C# コンパイルエラーの解消。
+- すべての複合建築生成メソッドとユーティリティが正しくクラススコープ内に収まり、参照可能に。
+
+### テスト手順（Unity エディタ）
+1. プロジェクトを開くと自動コンパイルが走ることを確認。
+2. スクリプトエラーが Console に出ていないことを確認（Clear → エラーなし）。
+3. 任意のエディタ拡張/呼び出しコードから `CompoundArchitecturalGenerator.GenerateCompoundArchitecturalStructure()` を下記パラメータ例で実行：
+   - `compoundType`: `MultipleBridge`, `AqueductSystem`, `CathedralComplex`, `FortressWall`, `Amphitheater`, `Basilica`, `Cloister`, `TriumphalArch`
+   - `overallSize`: 例 `new Vector3(400, 120, 60)`
+   - `structureCount`: タイプのデフォルト値
+4. 生成結果がヒエラルキー上に作成され、要素（接続要素・統一装飾・複合コライダー）が付与されていることを確認。
+
+### テスト結果
+- エディタ上でコンパイルエラー解消を確認。
+- 代表タイプの生成確認（橋面/水路/塔/座席/庭園/装飾/コライダー/タグ設定が生成される）。
+
+### 次アクション
+- 実運用シーンで各タイプの生成パラメータ（サイズ・マテリアル）をチューニング。
+- 生成物の物理・インタラクション挙動（`PrimitiveTerrainObject`）の最終確認。
+
 ## 2025-08-18: Terrain System 監査・実装強化（Texture/Detail/Tree）
 
 ### 概要

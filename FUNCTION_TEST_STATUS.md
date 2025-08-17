@@ -1,5 +1,34 @@
 # Vastcore 機能テスト状況表
 
+## 🏛️ Compound Architectural Generator テスト結果 (2025-08-17更新)
+
+### 概要
+`Assets/Scripts/Generation/Map/CompoundArchitecturalGenerator.cs` の括弧不整合によるコンパイルエラーを修正後、各複合建築タイプの生成が正常に行えるかスモークテストを実施。
+
+### テスト観点と結果
+| 機能 | 期待動作 | 実際の結果 | 状態 | 備考 |
+|------|----------|------------|------|------|
+| コンパイル | Unity 起動時に自動コンパイルが成功 | ✅ エラーなし | 🟢 完了 | Console にエラー無しを確認 |
+| 生成API呼び出し | `GenerateCompoundArchitecturalStructure()` が全タイプで GameObject を返す | ✅ 代表タイプで生成成功 | 🟢 完了 | MultipleBridge/Cathedral/Fortress 等 |
+| 接続要素生成 | タイプに応じた接続要素が追加 | ✅ 生成確認 | 🟢 完了 | 例: BridgeのConnectionBeam, CathedralのTransept |
+| 統一装飾 | `unifiedDecorations` 有効時に装飾テーマ適用 | ✅ 反映確認 | 🟢 完了 | `Decoration`/`Keystone` 名に材質適用 |
+| コライダー統合 | 親に `MeshCollider` を付与し子メッシュ結合 | ✅ 付与確認 | 🟢 完了 | `CombineAllMeshesForCollider` 正常 |
+| インタラクション設定 | `PrimitiveTerrainObject` 設定・タグ付与 | ✅ 設定確認 | 🟢 完了 | tag=`CompoundArchitecture` |
+
+### 手順（エディタ）
+1. プロジェクトを開き、自動コンパイルが完了するまで待機。
+2. Console を Clear → エラーが無いことを確認。
+3. 任意の呼び出しコード/Editor ツールから以下の例で生成実行：
+   - `CompoundArchitecturalParams.Default(...)` から作成
+   - `compoundType`: 全8種から順次（または代表3種）
+   - `overallSize`: 例 `new Vector3(400, 120, 60)`
+4. Hierarchy に生成オブジェクトが出現し、子要素・材質・コライダー・タグが設定されることを確認。
+
+### 既知課題 / 次の改善
+- 実運用シーンでのパラメータ最適化（サイズ/マテリアル/装飾度）。
+- パフォーマンス計測とメッシュ結合コストの検証。
+- 生成失敗時のログの詳細化。
+
 ## 🏞️ Terrain Generation System テスト結果 (2025-08-18更新)
 
 ### 概要
