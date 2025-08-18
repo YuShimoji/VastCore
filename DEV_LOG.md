@@ -1,5 +1,37 @@
 # 開発作業ログ
 
+## 2025-08-18: CompoundArchitecturalGenerator ランタイム停止の回避（未登録タグの安全化）
+
+### 概要
+複合建築生成時、`SetupCompoundInteractions()` で親 `GameObject` に `parent.tag = "CompoundArchitecture"` を設定する際、Unity の Tag Manager にタグが未登録だと例外が発生して実行が停止する問題を修正。
+
+### 原因
+- Unity の仕様により、未登録タグを `GameObject.tag` に代入すると `UnityException` が発生し、生成処理全体が停止していた。
+
+### 対処
+- `Assets/Scripts/Generation/Map/CompoundArchitecturalGenerator.cs` の `SetupCompoundInteractions()` にて、タグ代入を try/catch で保護。
+- タグ未登録時は `Debug.LogWarning` を出し、生成処理は継続するフェイルセーフに変更。
+
+### 変更ファイル
+- `Assets/Scripts/Generation/Map/CompoundArchitecturalGenerator.cs`
+  - 対象メソッド: `SetupCompoundInteractions(Transform parent, IEnumerable<GameObject> parts)`
+  - 変更内容: `parent.tag = "CompoundArchitecture";` を try/catch でラップし、例外時は警告ログのみ。
+
+### エディタでのテスト手順
+1. プロジェクトを開き、自動コンパイル完了を待機。
+2. Console を Clear し、エラーが無いことを確認。
+3. （任意）`Edit > Project Settings > Tags and Layers` で `Tags` に `CompoundArchitecture` を追加。
+4. 代表構造（例: `MultipleBridge`, `CathedralComplex`, `FortressWall`）を `GenerateCompoundArchitecturalStructure()` 経由で生成。
+5. ヒエラルキー上に生成物が出現し、装飾/接続要素/コライダーが付与されることを確認。
+6. タグが登録済みなら `CompoundArchitecture` が設定されることを確認。未登録なら Warning が出るが生成継続することを確認。
+
+### 結果
+- ランタイムの例外停止が発生せず、生成が継続することを確認。
+
+### 次アクション
+- 本番ビルドでは `Tags` に `CompoundArchitecture` を登録し、警告ログが出ない状態をデフォルトとする。
+- 生成フローの他のクリティカル箇所（`null` 参照、メッシュ結合、マテリアル参照）にも同様のフェイルセーフを段階的に導入。
+
 ## 2025-08-17: CompoundArchitecturalGenerator コンパイルエラー修正（括弧不整合）
 
 ### 概要
