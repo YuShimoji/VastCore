@@ -173,7 +173,40 @@ namespace Vastcore.Generation
                 heightmap = ApplyTerracing(heightmap, parameters);
             
             if (parameters.enableErosion)
-                heightmap = ApplySimpleErosion(heightmap, parameters);
+                heightmap = ApplyAdvancedErosion(heightmap, parameters);
+            
+            // メッシュを生成
+            return GenerateMeshFromHeightmap(heightmap, parameters);
+        }
+
+        /// <summary>
+        /// 長期的地形変化を含む高度地形生成
+        /// </summary>
+        public static Mesh GenerateEvolutionaryTerrain(TerrainGenerationParams parameters, int evolutionSteps = 5)
+        {
+            // 基本ハイトマップを生成
+            float[,] heightmap = GenerateHeightmap(parameters);
+            
+            // 地形タイプに応じた処理
+            switch (parameters.terrainType)
+            {
+                case TerrainType.Circular:
+                    heightmap = ApplyCircularFalloff(heightmap, parameters);
+                    break;
+                case TerrainType.Seamless:
+                    heightmap = ApplySeamlessEdges(heightmap, parameters);
+                    break;
+            }
+            
+            // テラス化（浸食前に適用）
+            if (parameters.enableTerracing)
+                heightmap = ApplyTerracing(heightmap, parameters);
+            
+            // 長期的地形変化を適用
+            if (parameters.enableErosion)
+            {
+                heightmap = AdvancedTerrainAlgorithms.ApplyLongTermTerrainEvolution(heightmap, evolutionSteps);
+            }
             
             // メッシュを生成
             return GenerateMeshFromHeightmap(heightmap, parameters);
@@ -182,7 +215,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// ノイズベースハイトマップ生成
         /// </summary>
-        private static float[,] GenerateHeightmap(TerrainGenerationParams parameters)
+        public static float[,] GenerateHeightmap(TerrainGenerationParams parameters)
         {
             int resolution = parameters.resolution;
             float[,] heightmap = new float[resolution, resolution];
@@ -315,48 +348,47 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// 簡易浸食処理
+        /// 高度な浸食処理（AdvancedTerrainAlgorithmsを使用）
         /// </summary>
-        private static float[,] ApplySimpleErosion(float[,] heightmap, TerrainGenerationParams parameters)
+        private static float[,] ApplyAdvancedErosion(float[,] heightmap, TerrainGenerationParams parameters)
         {
-            int resolution = parameters.resolution;
-            float[,] erodedMap = new float[resolution, resolution];
-            
-            for (int y = 0; y < resolution; y++)
+            // 浸食強度に基づいて適切なアルゴリズムを選択
+            if (parameters.erosionStrength > 0.5f)
             {
-                for (int x = 0; x < resolution; x++)
-                {
-                    float totalHeight = 0f;
-                    int sampleCount = 0;
-                    
-                    // 周囲の高さを平均化
-                    for (int dy = -1; dy <= 1; dy++)
-                    {
-                        for (int dx = -1; dx <= 1; dx++)
-                        {
-                            int sampleX = Mathf.Clamp(x + dx, 0, resolution - 1);
-                            int sampleY = Mathf.Clamp(y + dy, 0, resolution - 1);
-                            
-                            totalHeight += heightmap[sampleY, sampleX];
-                            sampleCount++;
-                        }
-                    }
-                    
-                    float averageHeight = totalHeight / sampleCount;
-                    float originalHeight = heightmap[y, x];
-                    
-                    // 浸食強度に応じてブレンド
-                    erodedMap[y, x] = Mathf.Lerp(originalHeight, averageHeight, parameters.erosionStrength);
-                }
+                // 強い浸食：水力浸食と熱浸食の組み合わせ
+                var hydraulicParams = AdvancedTerrainAlgorithms.HydraulicErosionParams.Default();
+                var thermalParams = AdvancedTerrainAlgorithms.ThermalErosionParams.Default();
+                var climate = AdvancedTerrainAlgorithms.ClimateConditions.Temperate();
+                
+                // パラメータを調整
+                hydraulicParams.erodeSpeed *= parameters.erosionStrength;
+                hydraulicParams.iterations = Mathf.RoundToInt(hydraulicParams.iterations * parameters.erosionStrength);
+                
+                return AdvancedTerrainAlgorithms.ApplyIntegratedErosion(heightmap, hydraulicParams, thermalParams, climate);
             }
-            
-            return erodedMap;
+            else if (parameters.erosionStrength > 0.2f)
+            {
+                // 中程度の浸食：水力浸食のみ
+                var hydraulicParams = AdvancedTerrainAlgorithms.HydraulicErosionParams.Default();
+                hydraulicParams.erodeSpeed *= parameters.erosionStrength;
+                hydraulicParams.iterations = Mathf.RoundToInt(hydraulicParams.iterations * parameters.erosionStrength);
+                
+                return AdvancedTerrainAlgorithms.ApplyHydraulicErosion(heightmap, hydraulicParams);
+            }
+            else
+            {
+                // 軽い浸食：熱浸食のみ（斜面安定化）
+                var thermalParams = AdvancedTerrainAlgorithms.ThermalErosionParams.Default();
+                thermalParams.thermalErosionRate *= parameters.erosionStrength;
+                
+                return AdvancedTerrainAlgorithms.ApplyThermalErosion(heightmap, thermalParams);
+            }
         }
 
         /// <summary>
         /// ハイトマップからメッシュを生成
         /// </summary>
-        private static Mesh GenerateMeshFromHeightmap(float[,] heightmap, TerrainGenerationParams parameters)
+        public static Mesh GenerateMeshFromHeightmap(float[,] heightmap, TerrainGenerationParams parameters)
         {
             int resolution = parameters.resolution;
             float size = parameters.size;

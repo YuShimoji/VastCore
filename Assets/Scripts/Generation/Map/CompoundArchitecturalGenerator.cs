@@ -1232,8 +1232,16 @@ namespace Vastcore.Generation
             compoundComponent.hasCollision = true;
             
             // 複合建築物専用のタグを設定
-            parent.tag = "CompoundArchitecture";
+            try
+            {
+                parent.tag = "CompoundArchitecture";
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"Tag 'CompoundArchitecture' is not defined. Skipping tag assignment. Details: {ex.Message}");
+            }
         }
+
         #endregion
 
         #region ユーティリティ関数

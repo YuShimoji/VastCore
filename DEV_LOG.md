@@ -1,5 +1,26 @@
 # 開発作業ログ
 
+## 2025-08-18: ドキュメントクリーンアップ開始（プレースホルダ/表現統一）
+
+### 概要
+プレースホルダ日付（例: `2024-XX-XX`, `2024-12-XX`）や強い断定的表現（例: 「【重大修正】…」）の整理を開始。履歴の重複・表現の不一致を解消し、テスト手順の所在を一元化する。
+
+### 対象
+- ルート `DEV_LOG.md`（履歴の正本）
+- `Documentation/Logs/DEV_LOG.md`（重複・トーン不一致の統合対象）
+- `FUNCTION_TEST_STATUS.md`（検証手順の一元化）
+
+### 参照
+- 計画書: `Documentation/Planning/DOCUMENTATION_CLEANUP_PLAN.md`
+
+### 検証方針（概要）
+- 自動: リポジトリ全体で `2024-XX-XX|2024-12-XX|重大修正|仕様外実装` などのパターンが残存しないこと（Library/Packages/ProjectSettings 除外）。
+- 目視: 本ログと `FUNCTION_TEST_STATUS.md` の表現/日付トーン統一、相互リンクの存在確認。
+
+### 次アクション
+- フェーズ2で `Documentation/Logs/DEV_LOG.md` の内容を本ファイルへ統合・要約。
+- 統合完了後、重複ファイルの削除を検討（Git履歴に保持）。
+
 ## 2025-08-18: CompoundArchitecturalGenerator ランタイム停止の回避（未登録タグの安全化）
 
 ### 概要

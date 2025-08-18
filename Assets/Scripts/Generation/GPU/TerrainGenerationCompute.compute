@@ -1,0 +1,103 @@
+#pragma kernel GenerateHeightmap
+#pragma kernel ApplyErosion
+#pragma kernel GenerateNoise
+
+// Heightmap generation
+RWTexture2D<float> HeightmapResult;
+RWTexture2D<float> ErosionResult;
+RWTexture2D<float> NoiseResult;
+
+// Parameters
+float4 NoiseParams; // x: scale, y: octaves, z: persistence, w: lacunarity
+float4 ErosionParams; // x: iterations, y: evaporation, z: deposition, w: capacity
+float4 TerrainParams; // x: width, y: height, z: amplitude, w: frequency
+float Time;
+int Seed;
+
+// Noise function
+float hash(float2 p) {
+    return frac(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
+}
+
+float noise(float2 p) {
+    float2 i = floor(p);
+    float2 f = frac(p);
+    
+    float a = hash(i);
+    float b = hash(i + float2(1.0, 0.0));
+    float c = hash(i + float2(0.0, 1.0));
+    float d = hash(i + float2(1.0, 1.0));
+    
+    float2 u = f * f * (3.0 - 2.0 * f);
+    
+    return lerp(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+}
+
+float fbm(float2 p, int octaves, float persistence, float lacunarity) {
+    float value = 0.0;
+    float amplitude = 1.0;
+    float frequency = 1.0;
+    
+    for (int i = 0; i < octaves; i++) {
+        value += amplitude * noise(p * frequency);
+        amplitude *= persistence;
+        frequency *= lacunarity;
+    }
+    
+    return value;
+}
+
+[numthreads(8,8,1)]
+void GenerateNoise(uint3 id : SV_DispatchThreadID) {
+    if (id.x >= (uint)TerrainParams.x || id.y >= (uint)TerrainParams.y) return;
+    
+    float2 pos = float2(id.x, id.y) / float2(TerrainParams.x, TerrainParams.y);
+    pos += float2(Seed * 0.1, Seed * 0.2);
+    
+    float noiseValue = fbm(pos * NoiseParams.x, (int)NoiseParams.y, NoiseParams.z, NoiseParams.w);
+    NoiseResult[id.xy] = noiseValue * TerrainParams.z;
+}
+
+[numthreads(8,8,1)]
+void GenerateHeightmap(uint3 id : SV_DispatchThreadID) {
+    if (id.x >= (uint)TerrainParams.x || id.y >= (uint)TerrainParams.y) return;
+    
+    float2 pos = float2(id.x, id.y) / float2(TerrainParams.x, TerrainParams.y);
+    
+    // Base terrain noise
+    float baseHeight = fbm(pos * TerrainParams.w, 4, 0.5, 2.0);
+    
+    // Add detail layers
+    float detailNoise = fbm(pos * TerrainParams.w * 4.0, 3, 0.3, 2.0) * 0.1;
+    float ridgeNoise = abs(fbm(pos * TerrainParams.w * 2.0, 2, 0.4, 2.0)) * 0.2;
+    
+    float finalHeight = (baseHeight + detailNoise + ridgeNoise) * TerrainParams.z;
+    
+    HeightmapResult[id.xy] = finalHeight;
+}
+
+[numthreads(8,8,1)]
+void ApplyErosion(uint3 id : SV_DispatchThreadID) {
+    if (id.x >= (uint)TerrainParams.x || id.y >= (uint)TerrainParams.y) return;
+    if (id.x == 0 || id.y == 0 || id.x >= (uint)TerrainParams.x - 1 || id.y >= (uint)TerrainParams.y - 1) return;
+    
+    float currentHeight = HeightmapResult[id.xy];
+    
+    // Calculate gradient
+    float heightL = HeightmapResult[int2(id.x - 1, id.y)];
+    float heightR = HeightmapResult[int2(id.x + 1, id.y)];
+    float heightD = HeightmapResult[int2(id.x, id.y - 1)];
+    float heightU = HeightmapResult[int2(id.x, id.y + 1)];
+    
+    float2 gradient = float2(heightR - heightL, heightU - heightD) * 0.5;
+    float slope = length(gradient);
+    
+    // Apply erosion based on slope
+    float erosionAmount = slope * ErosionParams.z * 0.01;
+    float newHeight = currentHeight - erosionAmount;
+    
+    // Prevent over-erosion
+    newHeight = max(newHeight, currentHeight * 0.9);
+    
+    ErosionResult[id.xy] = newHeight;
+}

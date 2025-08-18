@@ -47,3 +47,13 @@
 ## 次アクション
 - 本監査に基づくタスクリストの正式化（本ファイルを更新）
  - ディテール/ツリー生成ルールのバイオーム化と可視化プレビュー
+
+---
+
+## 検証ログ (2025-08-18)
+- [x] テクスチャブレンド: 標高/傾斜ベースの重み計算に `m_TextureBlendFactors` を適用し、`m_TextureTiling` で `TerrainLayer.tileSize` を反映することを確認
+- [x] ディテール配置: `TerrainData.SetDetailResolution()` により解像度適用、`DetailDensity` による全体スケール、標高・傾斜に基づく確率配置を確認
+- [x] ツリー配置: グリッド＋ジッターのサンプリング、標高(0.15..0.65)/傾斜(<30°) の制約で自然分布となることを確認（過密防止の上限制御含む）
+- [x] エディタUI: `TerrainGeneratorEditor` にて Texture/Detail/Tree 設定が foldout + SerializedProperty で露出していることを確認
+
+メモ: しきい値/カーブ露出、バイオーム連携、サンプリング最適化、プレビュー機能は今後の課題として残存。

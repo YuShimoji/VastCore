@@ -37,6 +37,47 @@
 - パフォーマンス計測とメッシュ結合コストの検証。
 - 生成失敗時のログの詳細化。
 
+## 🧾 Documentation Cleanup Verification（ドキュメント表現・プレースホルダ検証）
+
+### 目的
+プレースホルダ日付や不適切/強すぎる表現の除去、表現トーンの統一が計画通りに進んでいるかを検証する。
+
+### 対象範囲
+- ルート `DEV_LOG.md`
+- `Documentation/Logs/DEV_LOG.md`
+- `FUNCTION_TEST_STATUS.md`
+- `Documentation/Planning/DOCUMENTATION_CLEANUP_PLAN.md`（方針の参照元）
+
+### 検出パターン（初期）
+`2024-XX-XX`, `2024-12-XX`, `重大修正`, `仕様外実装`
+
+### 自動検証（grepベース）
+- 除外: `Packages/`, `ProjectSettings/`, `Library/`, `.git/`
+- 正規表現: `(2024-XX-XX|2024-12-XX|重大修正|仕様外実装)`
+- 期待: クリーニング完了時にマッチ件数が 0
+
+### ベースライン結果（2025-08-18 取得）
+- `DEV_LOG.md`: 16件
+- `Documentation/Logs/DEV_LOG.md`: 16件
+- `Documentation/Planning/DOCUMENTATION_CLEANUP_PLAN.md`: 4件
+- `Documentation/Planning/DEV_PLAN.md`: 3件
+- `DEV_PLAN.md`: 2件
+- `Documentation/QA/FUNCTION_TEST_STATUS.md`: 2件
+- `FUNCTION_TEST_STATUS.md`: 2件
+
+注: 計画書内のパターンは説明用の引用であり、許容。ログ/計画外の残存は要修正。
+
+### 手動検証
+- 見出し・口調の統一（断定的/扇情的表現の抑制、説明的トーンに）
+- 重複ログの統合（正本をルート `DEV_LOG.md` に集約）
+- 相互参照リンクの有無（本セクション ⇄ `DEV_LOG.md` ⇄ 計画書）
+
+### 進行管理
+- クリーニング実行フェーズで都度マッチ数を記録し、0件化を達成後に完了判定。
+- ロールバック: Git履歴で復元可能。
+
+最終確認日: 2025-08-18
+
 ## 🏞️ Terrain Generation System テスト結果 (2025-08-18更新)
 
 ### 概要
