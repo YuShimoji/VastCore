@@ -66,7 +66,11 @@ namespace Vastcore.Generation
             Vector3 recoveredPosition = originalPosition;
             if (enablePositionRecovery)
             {
-                recoveredPosition = yield return StartCoroutine(FindValidPosition(originalPosition, scale));
+                // コールバックで位置結果を受け取る
+                yield return StartCoroutine(FindValidPositionCoroutine(originalPosition, scale, pos =>
+                {
+                    recoveredPosition = pos;
+                }));
                 if (recoveredPosition == Vector3.zero)
                 {
                     VastcoreLogger.Instance.LogWarning("PrimitiveRecovery", "有効な配置位置が見つかりませんでした");
@@ -79,8 +83,12 @@ namespace Vastcore.Generation
             GameObject recoveredPrimitive = null;
             if (enableMeshRecovery)
             {
-                recoveredPrimitive = yield return StartCoroutine(CreateRecoveredPrimitive(
-                    recoveredPosition, primitiveType, scale));
+                // コールバックで生成結果を受け取る
+                yield return StartCoroutine(CreateRecoveredPrimitiveCoroutine(
+                    recoveredPosition, primitiveType, scale, go =>
+                    {
+                        recoveredPrimitive = go;
+                    }));
             }
             
             if (recoveredPrimitive != null)
@@ -105,7 +113,7 @@ namespace Vastcore.Generation
             }
         }
         
-        private IEnumerator FindValidPosition(Vector3 originalPosition, float scale)
+        private IEnumerator FindValidPositionCoroutine(Vector3 originalPosition, float scale, Action<Vector3> onComplete)
         {
             for (int attempt = 0; attempt < maxPositionAttempts; attempt++)
             {
@@ -127,14 +135,14 @@ namespace Vastcore.Generation
                 // 位置の有効性をチェック
                 if (IsValidPosition(testPosition, scale))
                 {
-                    yield return testPosition;
+                    onComplete?.Invoke(testPosition);
                     yield break;
                 }
                 
                 yield return null; // フレーム分散
             }
             
-            yield return Vector3.zero; // 有効な位置が見つからない
+            onComplete?.Invoke(Vector3.zero); // 有効な位置が見つからない
         }
         
         private bool IsValidPosition(Vector3 position, float scale)
@@ -177,7 +185,7 @@ namespace Vastcore.Generation
             }
         }
         
-        private IEnumerator CreateRecoveredPrimitive(Vector3 position, PrimitiveType primitiveType, float scale)
+        private IEnumerator CreateRecoveredPrimitiveCoroutine(Vector3 position, PrimitiveType primitiveType, float scale, Action<GameObject> onComplete)
         {
             try
             {
@@ -215,13 +223,13 @@ namespace Vastcore.Generation
                     yield return StartCoroutine(ValidateAndFixPrimitive(primitive));
                 }
                 
-                yield return primitive;
+                onComplete?.Invoke(primitive);
             }
             catch (Exception error)
             {
                 VastcoreLogger.Instance.LogError("PrimitiveRecovery", 
                     $"回復プリミティブ作成中にエラー: {error.Message}", error);
-                yield return null;
+                onComplete?.Invoke(null);
             }
         }
         

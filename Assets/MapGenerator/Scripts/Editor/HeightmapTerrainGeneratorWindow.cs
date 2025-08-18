@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using Vastcore.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -225,7 +226,10 @@ namespace Vastcore.Editor.Generation
             TerrainData terrainData = new TerrainData();
             terrainData.heightmapResolution = width;
             terrainData.size = new Vector3(terrainSize.x, terrainHeight, terrainSize.z);
-            terrainData.SetHeights(0, 0, combinedHeightmap);
+            using (LoadProfiler.Measure("TerrainData.SetHeights (EditorWindow)"))
+            {
+                terrainData.SetHeights(0, 0, combinedHeightmap);
+            }
             
             ApplySplatmap(terrainData);
 
@@ -363,8 +367,10 @@ namespace Vastcore.Editor.Generation
                     float normalizedX = (float)x / (alphaMapWidth - 1);
                     float normalizedY = (float)y / (alphaMapHeight - 1);
 
-                    float height = terrainData.GetHeight(Mathf.RoundToInt(normalizedY * terrainData.heightmapResolution), Mathf.RoundToInt(normalizedX * terrainData.heightmapResolution));
-                    float normalizedHeight = height / terrainData.size.y;
+                    float height01 = terrainData.GetHeight(
+                        Mathf.RoundToInt(normalizedY * terrainData.heightmapResolution),
+                        Mathf.RoundToInt(normalizedX * terrainData.heightmapResolution));
+                    float normalizedHeight = height01 / terrainData.size.y;
                     float slope = terrainData.GetSteepness(normalizedX, normalizedY);
 
                     float[] splatWeights = new float[terrainData.alphamapLayers];
@@ -380,7 +386,7 @@ namespace Vastcore.Editor.Generation
                     }
 
                     float sumOfWeights = splatWeights.Sum();
-                    if (sumOfWeights > 0)
+                    if (sumOfWeights > 0f)
                     {
                         for (int i = 0; i < terrainData.alphamapLayers; i++)
                         {
@@ -388,9 +394,18 @@ namespace Vastcore.Editor.Generation
                             alphaMap[y, x, i] = splatWeights[i];
                         }
                     }
+                    else if (terrainData.alphamapLayers > 0)
+                    {
+                        // デフォルトで第0レイヤーに割り当て
+                        alphaMap[y, x, 0] = 1f;
+                    }
                 }
             }
-            terrainData.SetAlphamaps(0, 0, alphaMap);
+
+            using (LoadProfiler.Measure("TerrainData.SetAlphamaps (EditorWindow)"))
+            {
+                terrainData.SetAlphamaps(0, 0, alphaMap);
+            }
         }
     }
-} 
+}

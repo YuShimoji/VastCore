@@ -40,13 +40,13 @@
 ## 検証ベースライン（2025-08-18）
 本日取得したプレースホルダ/不適切表現の出現状況。完了時は 0 件を目標。
 
-- `DEV_LOG.md`: 16件
+- `DEV_LOG.md`: 17件
 - `Documentation/Logs/DEV_LOG.md`: 16件
-- `Documentation/Planning/DOCUMENTATION_CLEANUP_PLAN.md`: 4件（説明用の引用であり許容）
+- `Documentation/Planning/DOCUMENTATION_CLEANUP_PLAN.md`: 5件（説明用の引用であり許容）
 - `Documentation/Planning/DEV_PLAN.md`: 3件
 - `DEV_PLAN.md`: 2件
 - `Documentation/QA/FUNCTION_TEST_STATUS.md`: 2件
-- `FUNCTION_TEST_STATUS.md`: 2件
+- `FUNCTION_TEST_STATUS.md`: 4件
 
 検索条件: 除外 `Packages/`, `ProjectSettings/`, `Library/`, `.git/`。正規表現 `(2024-XX-XX|2024-12-XX|重大修正|仕様外実装)`。
 

@@ -1,4 +1,5 @@
 using UnityEngine;
+using Vastcore.Diagnostics;
 using System.IO;
 using System.Collections;
 
@@ -102,7 +103,10 @@ namespace Vastcore.Generation
 
             // 高さマップの生成
             var heights = HeightMapGenerator.GenerateHeights(this);
-            terrainData.SetHeights(0, 0, heights);
+            using (LoadProfiler.Measure("TerrainData.SetHeights (TerrainGenerator)"))
+            {
+                terrainData.SetHeights(0, 0, heights);
+            }
 
             // テレインオブジェクトの作成
             GameObject terrainObject = Terrain.CreateTerrainGameObject(terrainData);

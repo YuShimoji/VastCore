@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.ProBuilder;
 using UnityEngine.ProBuilder.MeshOperations;
 using System.Collections.Generic;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -203,9 +204,8 @@ namespace Vastcore.Generation
             }
         }
         #endregion
-    }
-}        
-#region 構造力学計算
+
+        #region 構造力学計算
         /// <summary>
         /// 構造力学に基づくパラメータ最適化
         /// </summary>
@@ -1021,18 +1021,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static void CombineMeshesForCollider(GameObject parent, MeshCollider collider)
         {
-            var meshFilters = parent.GetComponentsInChildren<MeshFilter>();
-            var combines = new CombineInstance[meshFilters.Length];
-            
-            for (int i = 0; i < meshFilters.Length; i++)
-            {
-                combines[i].mesh = meshFilters[i].sharedMesh;
-                combines[i].transform = meshFilters[i].transform.localToWorldMatrix;
-            }
-            
-            var combinedMesh = new Mesh();
-            combinedMesh.CombineMeshes(combines);
-            collider.sharedMesh = combinedMesh;
+            MeshCombineHelper.CombineChildrenToCollider(parent, collider, "ArchitecturalGenerator");
         }
 
         /// <summary>

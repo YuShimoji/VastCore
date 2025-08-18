@@ -73,6 +73,35 @@
 - `Assets/Scripts/Generation/Map/HighQualityPrimitiveGenerator.cs`
 - `Assets/Scripts/Generation/PrimitiveErrorRecovery.cs`
 
+### 修正概要（PrimitiveErrorRecovery, 2025-08-18）
+`PrimitiveErrorRecovery.cs` において、コルーチンからの直接的な戻り値返却（`yield return result`）が無効であったため、無限リトライ/エラースパムの一因となっていた問題を修正。
+
+- 変更点:
+  - `FindValidPosition` → `FindValidPositionCoroutine(Action<Vector3?, bool> onComplete)` にリファクタ。
+  - `CreateRecoveredPrimitive` → `CreateRecoveredPrimitiveCoroutine(Action<GameObject, bool> onComplete)` にリファクタ。
+  - メインの `RecoverPrimitiveSpawn` は上記コールバックを待ち受けるフローに変更。
+- 期待効果:
+  - 無効な `yield return` に起因する例外の解消。
+  - リトライループの明確化（上限/分岐で停止）。
+  - ログの重複/スパム抑制と安定した復旧動作。
+
+### テスト手順（PrimitiveErrorRecovery 検証）
+1. 新規シーンで原点付近に障害物（Cube 3〜5個、高さ1m、間隔0.5〜1m）を配置し、衝突しやすい状況を作る。
+2. 16種のプリミティブを低い初期高さ/ランダム回転でスポーンさせ、故意に失敗を発生させる（自動/手動どちらでも可）。
+3. Console を Clear した状態で再生し、以下を確認：
+   - 例外が発生しない（特に `yield return` 関連の ArgumentException 等が 0 件）。
+   - `RecoverPrimitiveSpawn` が有限回で収束し、終了条件に到達する（上限超過時はフォールバック生成）。
+   - ログが秒間スパムにならず、試行回数・結果が要点のみ記録される。
+4. 復旧後のオブジェクト検証：
+   - `Mesh` が有効（`vertexCount > 0`、`normals.Length == vertexCount`、`triangles.Length % 3 == 0`）。
+   - `MeshCollider.sharedMesh != null`（またはフォールバック適用済み）。
+   - 地面との初期離隔が確保（> 0.1m）。
+
+### 追加のプロファイリング観点
+- リカバリ発動ケースの 1 試行あたりコスト（CPU ms / GC KB）。
+- 試行回数の上限到達率とフォールバック発動率。
+- ログ発行レート（1 秒間のログ件数）。
+
 ### テスト目的
 - 全16プリミティブの生成がエラーなく完了することの確認
 - High/Medium/Low 品質レベルでの生成品質と頂点・法線の整合性確認
@@ -115,6 +144,7 @@
 - Mesh バリデーション全項目が True
 - コライダー設定済み（フォールバック含む）
 - `ComprehensivePrimitiveTest` レポートで全16種が Pass（必要に応じて自動 Fix 後に Pass）
+ - `PrimitiveErrorRecovery` のリカバリは有限回で収束し、無限リトライ/秒間スパムログが発生しない
 
 ## 🧾 Documentation Cleanup Verification（ドキュメント表現・プレースホルダ検証）
 
@@ -425,7 +455,7 @@ public abstract class BaseStructureTab : IStructureTab
 
 ---
 
-**最終更新**: 2024-12-XX
+**最終更新**: 2025-08-18
 **テスト環境**: Unity 6.0.0.29f1, Vastcore Project 
 
 ## 📋 **全タブ統一化完了報告** (2024年実施)

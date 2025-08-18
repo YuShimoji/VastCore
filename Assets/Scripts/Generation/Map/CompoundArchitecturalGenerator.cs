@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.ProBuilder;
+using UnityEngine.ProBuilder.MeshOperations;
 using System.Collections.Generic;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -524,7 +526,8 @@ namespace Vastcore.Generation
                 // U字型の水路を作成
                 if (vertex.y > 0)
                 {
-                    vertex.y *= 0.5f; // 上部を低くする
+                    float battlementPattern = Mathf.Sin(vertex.x * 10f) > 0 ? 1f : 0.8f;
+                    vertex.y *= battlementPattern;
                 }
                 if (Mathf.Abs(vertex.z) < 0.3f && vertex.y < 0)
                 {
@@ -911,8 +914,9 @@ namespace Vastcore.Generation
                 column.GetComponent<MeshRenderer>().material = parameters.decorationMaterial;
             }
         }
-        #endregion     
-   #region 接続・統合システム
+        #endregion
+
+        #region 接続・統合システム
         /// <summary>
         /// 接続要素を追加
         /// </summary>
@@ -1202,21 +1206,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static void CombineAllMeshesForCollider(GameObject parent, MeshCollider collider)
         {
-            var meshFilters = parent.GetComponentsInChildren<MeshFilter>();
-            var combines = new CombineInstance[meshFilters.Length];
-            
-            for (int i = 0; i < meshFilters.Length; i++)
-            {
-                if (meshFilters[i].sharedMesh != null)
-                {
-                    combines[i].mesh = meshFilters[i].sharedMesh;
-                    combines[i].transform = meshFilters[i].transform.localToWorldMatrix;
-                }
-            }
-            
-            var combinedMesh = new Mesh();
-            combinedMesh.CombineMeshes(combines);
-            collider.sharedMesh = combinedMesh;
+            MeshCombineHelper.CombineChildrenToCollider(parent, collider, "CompoundArchitecturalGenerator");
         }
 
         /// <summary>
