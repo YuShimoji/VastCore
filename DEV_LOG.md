@@ -1,25 +1,145 @@
 # 開発作業ログ
 
-## 2025-08-18: ドキュメントクリーンアップ開始（プレースホルダ/表現統一）
+## 2025-08-18: CombineMeshes 計測ラップ導入とユーティリティ抽出（Architectural/Compound）
 
 ### 概要
-プレースホルダ日付（例: `2024-XX-XX`, `2024-12-XX`）や強い断定的表現（例: 「【重大修正】…」）の整理を開始。履歴の重複・表現の不一致を解消し、テスト手順の所在を一元化する。
+`Mesh.CombineMeshes` 呼び出しのCPU時間/GC Allocを正確に計測するため、計測ラップを共通化した `MeshCombineHelper` を新設し、`ArchitecturalGenerator.cs` / `CompoundArchitecturalGenerator.cs` のコライダー用メッシュ結合処理を委譲。重複ロジックを排除し、計測の一貫性を担保。
 
-### 対象
-- ルート `DEV_LOG.md`（履歴の正本）
-- `Documentation/Logs/DEV_LOG.md`（重複・トーン不一致の統合対象）
-- `FUNCTION_TEST_STATUS.md`（検証手順の一元化）
+### 変更ファイル
+- 追加: `Assets/Scripts/Utilities/MeshCombineHelper.cs`
+  - `using Vastcore.Diagnostics;` を使用し、`using (LoadProfiler.Measure($"Mesh.CombineMeshes ({label})"))` でスコープ計測
+  - 子階層 `MeshFilter` を収集し、有効メッシュのみを `CombineInstance[]` に詰め替えて結合
+- 修正: `Assets/Scripts/Generation/Map/ArchitecturalGenerator.cs`
+  - `CombineMeshesForCollider()` → `MeshCombineHelper.CombineChildrenToCollider(parent, collider, "ArchitecturalGenerator")` に委譲
+  - 直接の `LoadProfiler` 参照を削除（ユーティリティ側に集約）
+- 修正: `Assets/Scripts/Generation/Map/CompoundArchitecturalGenerator.cs`
+  - `CombineAllMeshesForCollider()` → `MeshCombineHelper.CombineChildrenToCollider(parent, collider, "CompoundArchitecturalGenerator")` に委譲
+  - `using Vastcore.Utilities;` を追加
 
-### 参照
-- 計画書: `Documentation/Planning/DOCUMENTATION_CLEANUP_PLAN.md`
+### 目的と効果
+- 計測ポイントの一元化により、`CombineMeshes` のCPU/GCを正確に比較可能
+- 無効メッシュの除外と配列縮小により不要な結合処理を回避
+- 単一責任化で将来的な段階的結合/フレーム分散/ジョブ化への拡張が容易
 
-### 検証方針（概要）
-- 自動: リポジトリ全体で `2024-XX-XX|2024-12-XX|重大修正|仕様外実装` などのパターンが残存しないこと（Library/Packages/ProjectSettings 除外）。
-- 目視: 本ログと `FUNCTION_TEST_STATUS.md` の表現/日付トーン統一、相互リンクの存在確認。
+### テスト手順（Unity エディタ／Profiler）
+1. Unityを起動し、自動コンパイル完了を待機（Consoleエラーがないこと）
+2. プロファイラを有効化（必要に応じて Deep Profile）
+3. 代表的な生成を実行：
+   - `ArchitecturalGenerator.GenerateArchitecturalStructure()`（任意の`ArchitecturalType`）
+   - `CompoundArchitecturalGenerator.GenerateCompoundArchitecturalStructure()`（`MultipleBridge`等）
+4. `Mesh.CombineMeshes (ArchitecturalGenerator)` / `Mesh.CombineMeshes (CompoundArchitecturalGenerator)` のスコープで CPU(ms)/GC(KB) を確認
+5. 生成物に `MeshCollider` が付与され、結合コライダーが設定されていることを確認
 
 ### 次アクション
-- フェーズ2で `Documentation/Logs/DEV_LOG.md` の内容を本ファイルへ統合・要約。
-- 統合完了後、重複ファイルの削除を検討（Git履歴に保持）。
+- 段階的結合・遅延コライダー適用（フレーム分散）のプロトタイピング
+- 計測結果を `FUNCTION_TEST_STATUS.md` のトリアージ表へ転記し、前後比較を可視化
+
+## 2025-08-18: 全16プリミティブ生成のエラーフリー化テスト計画とプロファイリング
+
+### 概要
+プロシージャルプリミティブ（全16種）の生成品質とエラーハンドリングの確実性を担保するため、包括的テスト（`ComprehensivePrimitiveTest`）とプロファイリング手順を整備。`FUNCTION_TEST_STATUS.md` にテスト観点・手順・記録テンプレートを追記し、計測/結果記録の運用を開始。
+
+### 対象コード
+- `Assets/Scripts/Generation/Map/PrimitiveTerrainGenerator.cs`
+- `Assets/Scripts/Generation/Map/HighQualityPrimitiveGenerator.cs`
+- `Assets/Scripts/Generation/Map/ComprehensivePrimitiveTest.cs`
+- `Assets/Scripts/Generation/PrimitiveErrorRecovery.cs`
+
+### テスト目的
+- 全16種が High/Medium/Low すべてで生成エラーなく完了
+- メッシュ整合性（頂点/法線/三角形）とコライダー設定の自動検証
+- 生成・配置・メッシュ失敗時の `PrimitiveErrorRecovery` による復旧動作確認
+- 自動テスト完走とレポート生成（必要時の自動 Fix → Pass）
+
+### 手順（エディタ）
+1. 新規シーンで 4x4 グリッドに全16種を配置し、品質 High/Medium/Low を順に生成。
+2. マテリアル、コライダー、インタラクションを付与した状態で検証を実行。
+3. メッシュ/コライダー/衝突初期状態（地面との離隔）を自動チェック。
+4. 失敗時は `PrimitiveErrorRecovery` の再試行/フォールバック生成を確認。
+5. `ComprehensivePrimitiveTest` を一括実行し、レポートを保存。
+
+### プロファイリング（Unity Profiler）
+- 代表プリミティブ（Cube/Sphere/Cylinder/Torus）× 品質別で計測。
+- 指標: 生成 CPU(ms) / GC(KB)、サブディビジョン/ディテール/デフォーム各段階コスト、コライダー設定直後の Peak Mem。
+- 失敗→リカバリ発動ケースの追加コストも記録。
+
+### 合否基準
+- 例外/エラー 0 件
+- Mesh バリデーション全項目 True、`MeshCollider.sharedMesh` 設定済み（フォールバック含む）
+- `ComprehensivePrimitiveTest` で全16種 Pass（必要に応じて自動 Fix 後に Pass）
+
+### 反映ドキュメント
+- `FUNCTION_TEST_STATUS.md`: 手順・記録テンプレート・合否基準を追記済み
+- 本ログ: テスト計画とプロファイリング観点を記録
+
+### 次アクション
+- 実測値の取得と `FUNCTION_TEST_STATUS.md` の表埋め
+- 生成コストのボトルネック特定（特に高品質 Sphere/Torus）
+- リカバリ経路の最適化（再試行回数・フォールバック品質）
+
+## 2025-08-18: セッション再開とドキュメント同期（大量データ読込エラー後）
+
+### 概要
+大量データ読込に起因するエラー発生後の作業再開。開発の連続性を担保するため、主要ドキュメント（`DEV_LOG.md`、`FUNCTION_TEST_STATUS.md`、`DEV_PLAN.md`、`TASK_PRIORITIZATION.md`、`README.md`）の状態を確認し、表現トーンとプレースホルダの残存状況を監査。
+
+### 実施事項
+- 重要ドキュメントの最新状況レビューと差分確認
+- 問題パターン（`2024-XX-XX` / `2024-12-XX` / `重大修正` / `仕様外実装`）のgrepベースライン取得
+- `FUNCTION_TEST_STATUS.md` 内のベースライン数値を最新実測に更新
+
+### 確認結果（抜粋）
+- `Documentation/Logs/DEV_LOG.md` と本ログの重複・トーン差は引き続き統合対象
+- ベースライン値は `FUNCTION_TEST_STATUS.md` に反映（後述ファイル参照）
+
+### 次アクション
+- `Documentation/Logs/DEV_LOG.md` を本ファイルへ統合・要約（フェーズ2）
+- 残存プレースホルダの順次除去と表現トーン統一の継続
+
+## 2025-08-18: 大量読み込みエラートリアージ進捗（根拠の明確化・計測計画）
+
+### 概要
+大量読み込みに起因する停止/フリーズのトリアージを前進。重負荷APIの実在箇所をコード検索で特定し、`Documentation/QA/ERROR_TRIAGE.md` に具体的ファイル/行を追記。計測観点と段階的緩和の検証計画を確定。
+
+### 主要発見（根拠となる該当箇所）
+- 構造物メッシュ結合（ピークメモリ/CPUスパイク要因）
+  - `Assets/Scripts/Generation/Map/ArchitecturalGenerator.cs`
+    - `CombineMeshesForCollider(parent, meshCollider);`（付近行: 1016）
+    - `combinedMesh.CombineMeshes(combines);` → `collider.sharedMesh = combinedMesh;`（付近行: 1034-1036）
+  - `Assets/Scripts/Generation/Map/CompoundArchitecturalGenerator.cs`
+    - `combinedMesh.CombineMeshes(combines);`（付近行: 1218-1219）
+- テレイン一括適用（高さ/アルファマップ適用のスパイク要因）
+  - `Assets/MapGenerator/Scripts/TerrainGenerator.cs`
+    - `terrainData.SetHeights(0, 0, heights);`（付近行: 105）
+  - `Assets/MapGenerator/Scripts/Editor/HeightmapTerrainGeneratorWindow.cs`
+    - `terrainData.SetHeights(0, 0, combinedHeightmap);`（付近行: 228-229）
+    - `terrainData.SetAlphamaps(0, 0, alphaMap);`（付近行: 393-394）
+  - `Assets/MapGenerator/Scripts/TextureGenerator.cs`
+    - `terrainData.SetAlphamaps(0, 0, splatmapData);`（付近行: 88-89）
+- 大量 `Instantiate` の代表箇所（同時生成数の上限検討対象）
+  - `Assets/Scripts/VastcoreGameManager.cs`（付近行: 208-226）
+  - `Assets/Scripts/Player/EnhancedTranslocationSystem.cs`（付近行: 131, 369-370）
+  - `Assets/Scripts/Generation/Map/PrimitiveTerrainObjectPool.cs`（付近行: 151）
+
+### ドキュメント更新
+- `Documentation/QA/ERROR_TRIAGE.md`: 影響コード/箇所の具体化、計測手順の詳細化、進行状況の更新。
+- `FUNCTION_TEST_STATUS.md`: トリアージ用計測セクション追記（この後更新）。
+
+### 計測・検証計画（要点）
+1. `SetHeights` / `SetAlphamaps` 実行フレームの CPU/GPU/GC Alloc を記録。
+2. `combinedMesh.CombineMeshes` 直後のメモリピークとフリーズ有無を記録。
+3. フレーム分散（コルーチン/ジョブ化/遅延コライダー生成）で比較計測。
+4. Addressables/非同期ロード版の比較実行。
+5. アセット最適化（Readable無効/圧縮/解像度見直し）で再計測。
+
+### テスト手順（本日の実施範囲）
+- リポジトリ検索で該当API呼び出し箇所を特定済み（grep）。
+- ドキュメント更新の差分確認済み（本ファイル/`ERROR_TRIAGE.md`）。
+- Unityランタイム計測は次回実施（Profiler手順整備完了）。
+
+### 次アクション
+1. テレイン適用処理のフレーム分散プロトタイピング（`SetHeights`/`SetAlphamaps` 分割適用の検討）。
+2. 構造物結合の段階処理化とコライダー後回し適用の試験実装。
+3. 計測結果を `FUNCTION_TEST_STATUS.md` に反映。
 
 ## 2025-08-18: CompoundArchitecturalGenerator ランタイム停止の回避（未登録タグの安全化）
 
