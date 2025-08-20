@@ -260,7 +260,7 @@ namespace Vastcore.Testing
             // 基本的なコンポーネントを追加
             var rigidbody = playerObject.AddComponent<Rigidbody>();
             rigidbody.mass = 1f;
-            rigidbody.drag = 1f;
+            rigidbody.linearDamping = 1f;
             
             var collider = playerObject.AddComponent<CapsuleCollider>();
             collider.height = 2f;

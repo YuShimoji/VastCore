@@ -1024,16 +1024,5 @@ namespace Vastcore.Generation
         public float roughness;
     }
     
-    /// <summary>
-    /// 気候データ
-    /// </summary>
-    public struct ClimateData
-    {
-        public float temperature;   // 温度（摂氏）
-        public float moisture;      // 湿度（mm/年）
-        public float windSpeed;     // 風速（m/s）
-        public Vector2 windDirection; // 風向き
-    }
-    
     #endregion
 }

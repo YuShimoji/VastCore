@@ -178,7 +178,7 @@ namespace Vastcore.Player
             // 物理的な速度をリセット
             if (playerRigidbody != null)
             {
-                playerRigidbody.velocity = Vector3.zero;
+                playerRigidbody.linearVelocity = Vector3.zero;
                 playerRigidbody.angularVelocity = Vector3.zero;
             }
             
@@ -243,7 +243,7 @@ namespace Vastcore.Player
             if (currentSphere == null) return trajectoryPositions;
             
             Vector3 startPosition = currentSphere.transform.position;
-            Vector3 startVelocity = currentSphere.GetComponent<Rigidbody>().velocity;
+            Vector3 startVelocity = currentSphere.GetComponent<Rigidbody>().linearVelocity;
             
             for (int i = 0; i < trajectoryPoints; i++)
             {

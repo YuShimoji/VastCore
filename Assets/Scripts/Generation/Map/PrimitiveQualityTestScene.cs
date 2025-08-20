@@ -507,19 +507,4 @@ namespace Vastcore.Generation
         }
         #endregion
     }
-    
-    /// <summary>
-    /// ビルボード効果（常にカメラの方を向く）
-    /// </summary>
-    public class Billboard : MonoBehaviour
-    {
-        void Update()
-        {
-            if (Camera.main != null)
-            {
-                transform.LookAt(Camera.main.transform);
-                transform.Rotate(0, 180, 0); // テキストが反転しないように調整
-            }
-        }
-    }
 }

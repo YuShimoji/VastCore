@@ -475,7 +475,7 @@ namespace Vastcore.Generation
                 var rigidbody = GetComponent<Rigidbody>();
                 if (rigidbody != null)
                 {
-                    rigidbody.velocity = Vector3.zero;
+                    rigidbody.linearVelocity = Vector3.zero;
                     rigidbody.angularVelocity = Vector3.zero;
                 }
             }
@@ -497,7 +497,7 @@ namespace Vastcore.Generation
                 var rigidbody = GetComponent<Rigidbody>();
                 if (rigidbody != null)
                 {
-                    rigidbody.velocity = Vector3.ClampMagnitude(rigidbody.velocity, 50f);
+                    rigidbody.linearVelocity = Vector3.ClampMagnitude(rigidbody.linearVelocity, 50f);
                 }
             }
         }

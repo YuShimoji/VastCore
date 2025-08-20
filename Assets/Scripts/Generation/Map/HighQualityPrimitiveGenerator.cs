@@ -104,6 +104,12 @@ namespace Vastcore.Generation
 
             try
             {
+                // FOR TESTING: Intentionally throw an exception for Cube type to test error recovery
+                if (primitiveType == PrimitiveTerrainGenerator.PrimitiveType.Cube)
+                {
+                    throw new System.Exception("Intentional exception for testing Cube generation failure.");
+                }
+
                 Debug.Log($"Generating high-quality primitive: {primitiveType} at {position}");
                 
                 // 基本パラメータを設定

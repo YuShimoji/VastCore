@@ -27,8 +27,8 @@ namespace Vastcore.Player
         [Header("物理コライダー設定")]
         [SerializeField] private bool enableDetailedColliders = true;
         [SerializeField] private bool enableInteractionColliders = true;
-        [SerializeField] private PhysicMaterial grindPhysicsMaterial;
-        [SerializeField] private PhysicMaterial climbPhysicsMaterial;
+        [SerializeField] private PhysicsMaterial grindPhysicsMaterial;
+        [SerializeField] private PhysicsMaterial climbPhysicsMaterial;
         
         [Header("デバッグ")]
         [SerializeField] private bool enableDebugLogs = false;
@@ -133,28 +133,28 @@ namespace Vastcore.Player
         /// <summary>
         /// グラインド用物理マテリアルを作成
         /// </summary>
-        private PhysicMaterial CreateGrindPhysicsMaterial()
+        private PhysicsMaterial CreateGrindPhysicsMaterial()
         {
-            var material = new PhysicMaterial("GrindMaterial");
+            var material = new PhysicsMaterial("GrindMaterial");
             material.dynamicFriction = 0.1f;  // 低摩擦でスムーズなグラインド
             material.staticFriction = 0.05f;
             material.bounciness = 0.2f;
-            material.frictionCombine = PhysicMaterialCombine.Minimum;
-            material.bounceCombine = PhysicMaterialCombine.Average;
+            material.frictionCombine = PhysicsMaterialCombine.Minimum;
+            material.bounceCombine = PhysicsMaterialCombine.Average;
             return material;
         }
         
         /// <summary>
         /// クライミング用物理マテリアルを作成
         /// </summary>
-        private PhysicMaterial CreateClimbPhysicsMaterial()
+        private PhysicsMaterial CreateClimbPhysicsMaterial()
         {
-            var material = new PhysicMaterial("ClimbMaterial");
+            var material = new PhysicsMaterial("ClimbMaterial");
             material.dynamicFriction = 0.8f;  // 高摩擦でクライミングしやすく
             material.staticFriction = 0.9f;
             material.bounciness = 0.0f;
-            material.frictionCombine = PhysicMaterialCombine.Maximum;
-            material.bounceCombine = PhysicMaterialCombine.Minimum;
+            material.frictionCombine = PhysicsMaterialCombine.Maximum;
+            material.bounceCombine = PhysicsMaterialCombine.Minimum;
             return material;
         }
         
