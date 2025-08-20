@@ -834,6 +834,7 @@ namespace Vastcore.Generation
                 }
             }
         }
+        #endregion
 
         #region 統合システム
         /// <summary>
@@ -1024,6 +1025,37 @@ namespace Vastcore.Generation
                 }
             }
         }
+        #endregion
+
+        private float[,] GenerateGaussianKernel(int size, float sigma)
+        {
+            float[,] kernel = new float[size, size];
+            float sum = 0f;
+            int halfSize = size / 2;
+
+            for (int x = 0; x < size; x++)
+            {
+                for (int y = 0; y < size; y++)
+                {
+                    int kernelX = x - halfSize;
+                    int kernelY = y - halfSize;
+                    float value = (1f / (2f * Mathf.PI * sigma * sigma)) * Mathf.Exp(-(kernelX * kernelX + kernelY * kernelY) / (2f * sigma * sigma));
+                    kernel[x, y] = value;
+                    sum += value;
+                }
+            }
+
+            // 正規化
+            for (int x = 0; x < size; x++)
+            {
+                for (int y = 0; y < size; y++)
+                {
+                    kernel[x, y] /= sum;
+                }
+            }
+
+            return kernel;
+        }
 
         /// <summary>
         /// 地形特徴データ構造
@@ -1048,5 +1080,5 @@ namespace Vastcore.Generation
             public int resolution;
             public float tileSize;
         }
-    }
-}
+    } // class NaturalTerrainFeatures
+} // namespace Vastcore.Generation
