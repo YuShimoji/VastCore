@@ -1,5 +1,24 @@
 # 開発作業ログ
 
+## 2025-08-20: PrimitiveErrorRecovery ドキュメント同期（コールバック署名修正）
+
+### 概要
+`PrimitiveErrorRecovery.cs` のコルーチン・コールバック化（実装済み）に合わせ、ドキュメント中のコールバック署名表記を正確なシグネチャに同期。
+
+### 変更点
+- `FUNCTION_TEST_STATUS.md` の記述を以下に修正：
+  - `FindValidPositionCoroutine(Action<Vector3> onComplete)`
+  - `CreateRecoveredPrimitiveCoroutine(Action<GameObject> onComplete)`
+  - `RecoverPrimitiveSpawn(...)` は上記の結果をコールバックで受け取る設計に統一
+
+### 関連ファイル
+- 修正: `FUNCTION_TEST_STATUS.md`
+- 実装参照: `Assets/Scripts/Generation/PrimitiveErrorRecovery.cs`
+
+### 次アクション（検証）
+1. Unity エディタでエラー再現環境を用意し、有限回での収束とログスパム抑制を確認。
+2. 全16種プリミティブの復旧動作（位置再試行・フォールバック生成・Mesh/Collider 検証）を実施。
+
 ## 2025-08-18: CombineMeshes 計測ラップ導入とユーティリティ抽出（Architectural/Compound）
 
 ### 概要

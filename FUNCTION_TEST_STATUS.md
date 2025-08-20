@@ -77,8 +77,8 @@
 `PrimitiveErrorRecovery.cs` において、コルーチンからの直接的な戻り値返却（`yield return result`）が無効であったため、無限リトライ/エラースパムの一因となっていた問題を修正。
 
 - 変更点:
-  - `FindValidPosition` → `FindValidPositionCoroutine(Action<Vector3?, bool> onComplete)` にリファクタ。
-  - `CreateRecoveredPrimitive` → `CreateRecoveredPrimitiveCoroutine(Action<GameObject, bool> onComplete)` にリファクタ。
+  - `FindValidPosition` → `FindValidPositionCoroutine(Action<Vector3> onComplete)` にリファクタ。
+  - `CreateRecoveredPrimitive` → `CreateRecoveredPrimitiveCoroutine(Action<GameObject> onComplete)` にリファクタ。
   - メインの `RecoverPrimitiveSpawn` は上記コールバックを待ち受けるフローに変更。
 - 期待効果:
   - 無効な `yield return` に起因する例外の解消。
