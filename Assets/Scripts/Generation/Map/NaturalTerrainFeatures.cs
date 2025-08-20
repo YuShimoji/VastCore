@@ -834,101 +834,6 @@ namespace Vastcore.Generation
                 }
             }
         }
-        #endregion
-
-        #region 統合システム
-        /// <summary>
-        /// 自然地形特徴の統合生成
-        /// </summary>
-        public void GenerateNaturalTerrainFeatures(float[,] heightmap, int resolution, float tileSize)
-        {
-            // 1. 断層線の生成（地質学的基盤）
-            GenerateFaultLines(heightmap, resolution, tileSize);
-
-            // 2. 山脈の生成
-            var mountainRanges = GenerateMountainRanges(heightmap, resolution, tileSize);
-
-            // 3. 谷の生成
-            GenerateValleys(heightmap, resolution, tileSize, mountainRanges);
-
-            // 4. 河川システムの生成
-            var riverSystems = GenerateRiverSystems(heightmap, resolution, tileSize);
-
-            // 5. 地形の連続性確保
-            EnsureTerrainContinuity(heightmap, resolution);
-        }
-
-        /// <summary>
-        /// 地形の連続性確保
-        /// </summary>
-        private void EnsureTerrainContinuity(float[,] heightmap, int resolution)
-        {
-            // ガウシアンフィルタによる平滑化
-            float[,] smoothedHeightmap = new float[resolution, resolution];
-            float sigma = 1.5f;
-            int kernelSize = 5;
-            float[,] kernel = GenerateGaussianKernel(kernelSize, sigma);
-
-            for (int x = kernelSize / 2; x < resolution - kernelSize / 2; x++)
-            {
-                for (int y = kernelSize / 2; y < resolution - kernelSize / 2; y++)
-                {
-                    float sum = 0f;
-                    for (int kx = 0; kx < kernelSize; kx++)
-                    {
-                        for (int ky = 0; ky < kernelSize; ky++)
-                        {
-                            int hx = x - kernelSize / 2 + kx;
-                            int hy = y - kernelSize / 2 + ky;
-                            sum += heightmap[hx, hy] * kernel[kx, ky];
-                        }
-                    }
-                    smoothedHeightmap[x, y] = sum;
-                }
-            }
-
-            // 元の地形と平滑化された地形をブレンド
-            float blendFactor = 0.3f;
-            for (int x = kernelSize / 2; x < resolution - kernelSize / 2; x++)
-            {
-                for (int y = kernelSize / 2; y < resolution - kernelSize / 2; y++)
-                {
-                    heightmap[x, y] = Mathf.Lerp(heightmap[x, y], smoothedHeightmap[x, y], blendFactor);
-                }
-            }
-        }
-
-        /// <summary>
-        /// ガウシアンカーネルの生成
-        /// </summary>
-        private float[,] GenerateGaussianKernel(int size, float sigma)
-        {
-            float[,] kernel = new float[size, size];
-            float sum = 0f;
-            int center = size / 2;
-
-            for (int x = 0; x < size; x++)
-            {
-                for (int y = 0; y < size; y++)
-                {
-                    float distance = Mathf.Sqrt((x - center) * (x - center) + (y - center) * (y - center));
-                    kernel[x, y] = Mathf.Exp(-(distance * distance) / (2 * sigma * sigma));
-                    sum += kernel[x, y];
-                }
-            }
-
-            // 正規化
-            for (int x = 0; x < size; x++)
-            {
-                for (int y = 0; y < size; y++)
-                {
-                    kernel[x, y] /= sum;
-                }
-            }
-
-            return kernel;
-        }
-        #endregion
 
         #region 統合システム
         /// <summary>
@@ -1143,6 +1048,5 @@ namespace Vastcore.Generation
             public int resolution;
             public float tileSize;
         }
-        #endregion
     }
 }
