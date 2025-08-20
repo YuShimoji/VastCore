@@ -1,7 +1,11 @@
 {
     "name": "Vastcore.Generation",
     "rootNamespace": "Vastcore.Generation",
-    "references": [],
+    "references": [
+        "Unity.ProBuilder",
+        "Unity.TextMeshPro",
+        "Vastcore.Editor.StructureGenerator"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
