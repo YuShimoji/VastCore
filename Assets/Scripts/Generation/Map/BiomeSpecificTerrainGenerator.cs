@@ -165,11 +165,7 @@ namespace Vastcore.Generation
             }
         }
         
-        #endregion
-    }
-}        
- 
-       /// <summary>
+        /// <summary>
         /// 岩石露出を生成
         /// </summary>
         private static void GenerateRockOutcrops(float[,] heightmap, Vector3 worldPosition, float density)
@@ -772,14 +768,17 @@ namespace Vastcore.Generation
                 {
                     float currentHeight = heightmap[x, y];
                     
-                    // 高度による浸食強度の変化
-                    float altitudeErosion = currentHeight > 200f ? erosionStrength * 1.5f : erosionStrength;
+                    // 高度による浸食強度
+                    float altitudeFactor = Mathf.InverseLerp(0, 500, currentHeight); // 0-500mの範囲で正規化
+                    float altitudeErosion = erosionStrength * (1f + altitudeFactor * 2f);
                     
+                    // 周辺の平均高度
                     float avgNeighbor = (
                         heightmap[x-1, y] + heightmap[x+1, y] +
                         heightmap[x, y-1] + heightmap[x, y+1]
                     ) / 4f;
                     
+                    // 高い部分ほど強く浸食
                     if (currentHeight > avgNeighbor)
                     {
                         float erosion = (currentHeight - avgNeighbor) * altitudeErosion * 0.08f;

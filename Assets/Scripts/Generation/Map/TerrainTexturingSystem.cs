@@ -131,10 +131,7 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        // 残りのメソッドは次のファイルで実装
-    }
-}       
- #region デフォルト設定作成
+        #region デフォルト設定作成
         /// <summary>
         /// デフォルト高度レイヤーを作成
         /// </summary>
@@ -711,11 +708,11 @@ namespace Vastcore.Generation
                 // テクスチャを削除
                 if (textureData.weightTexture != null)
                 {
-                    DestroyImmediate(textureData.weightTexture);
+                    Destroy(textureData.weightTexture);
                 }
                 if (textureData.blendTexture != null && textureData.blendTexture != textureData.weightTexture)
                 {
-                    DestroyImmediate(textureData.blendTexture);
+                    Destroy(textureData.blendTexture);
                 }
                 
                 tileTextureData.Remove(tile);

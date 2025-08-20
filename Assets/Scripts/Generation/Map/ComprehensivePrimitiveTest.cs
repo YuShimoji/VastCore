@@ -223,7 +223,7 @@ namespace Vastcore.Generation
         /// </summary>
         private bool TryFixPrimitiveIssues(PrimitiveTerrainGenerator.PrimitiveType primitiveType, PrimitiveQualityValidator.QualityReport report)
         {
-            bool fixed = false;
+            bool isFixed = false;
             
             foreach (var issue in report.issues)
             {
@@ -233,13 +233,13 @@ namespace Vastcore.Generation
                     if (issue.Contains("Insufficient"))
                     {
                         generationQuality.subdivisionLevel = Mathf.Min(generationQuality.subdivisionLevel + 1, 5);
-                        fixed = true;
+                        isFixed = true;
                         Debug.Log($"Increased subdivision level to {generationQuality.subdivisionLevel} for {primitiveType}");
                     }
                     else if (issue.Contains("Excessive"))
                     {
                         generationQuality.subdivisionLevel = Mathf.Max(generationQuality.subdivisionLevel - 1, 0);
-                        fixed = true;
+                        isFixed = true;
                         Debug.Log($"Decreased subdivision level to {generationQuality.subdivisionLevel} for {primitiveType}");
                     }
                 }
@@ -247,26 +247,26 @@ namespace Vastcore.Generation
                 if (issue.Contains("Missing mesh normals"))
                 {
                     generationQuality.enableSmoothNormals = true;
-                    fixed = true;
+                    isFixed = true;
                     Debug.Log($"Enabled smooth normals for {primitiveType}");
                 }
                 
                 if (issue.Contains("Missing required collider"))
                 {
                     generationQuality.enablePreciseColliders = true;
-                    fixed = true;
+                    isFixed = true;
                     Debug.Log($"Enabled precise colliders for {primitiveType}");
                 }
                 
                 if (issue.Contains("Poor symmetry"))
                 {
                     generationQuality.enableAdvancedDeformation = false;
-                    fixed = true;
+                    isFixed = true;
                     Debug.Log($"Disabled advanced deformation for better symmetry in {primitiveType}");
                 }
             }
             
-            return fixed;
+            return isFixed;
         }
 
         /// <summary>
@@ -633,7 +633,8 @@ namespace Vastcore.Generation
             var primitive = HighQualityPrimitiveGenerator.GenerateHighQualityPrimitive(
                 randomType,
                 transform.position + Vector3.forward * 100f,
-                PrimitiveTerrainGenerator.GetDefaultScale(randomType)
+                PrimitiveTerrainGenerator.GetDefaultScale(randomType),
+                generationQuality
             );
             
             if (primitive != null)

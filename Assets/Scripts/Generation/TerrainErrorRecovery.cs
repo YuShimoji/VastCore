@@ -59,7 +59,9 @@ namespace Vastcore.Generation
                 try
                 {
                     var fallbackParams = CreateFallbackParams(originalParams, qualityLevel);
-                    var recoveredTerrain = yield return StartCoroutine(GenerateRecoveryTerrain(fallbackParams, attempt));
+                    IEnumerator recoveryRoutine = GenerateRecoveryTerrain(fallbackParams, attempt);
+                    yield return recoveryRoutine;
+                    var recoveredTerrain = recoveryRoutine.Current as GameObject;
                     
                     if (recoveredTerrain != null)
                     {
@@ -127,7 +129,7 @@ namespace Vastcore.Generation
                         $"回復試行 {attemptNumber + 1} がタイムアウトしました");
                     if (recoveryTerrain != null)
                     {
-                        DestroyImmediate(recoveryTerrain);
+                        Destroy(recoveryTerrain);
                     }
                     yield return null;
                 }
@@ -138,7 +140,7 @@ namespace Vastcore.Generation
                     $"回復地形生成中にエラー: {error.Message}", error);
                 if (recoveryTerrain != null)
                 {
-                    DestroyImmediate(recoveryTerrain);
+                    Destroy(recoveryTerrain);
                 }
                 recoveryTerrain = null;
             }

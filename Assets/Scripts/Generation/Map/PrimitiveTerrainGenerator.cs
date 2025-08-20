@@ -87,8 +87,7 @@ namespace Vastcore.Generation
             }
         }
         #endregion
-    }
-} 
+
        #region メイン生成関数
         /// <summary>
         /// プリミティブ地形オブジェクトを生成
