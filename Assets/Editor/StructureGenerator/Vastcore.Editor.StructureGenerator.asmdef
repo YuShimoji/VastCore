@@ -9,7 +9,8 @@
         "Unity.ProBuilder.Csg",
         "Unity.ProBuilder.KdTree",
         "Unity.ProBuilder.Poly2Tri",
-        "Unity.ProBuilder.Stl"
+        "Unity.ProBuilder.Stl",
+        "Vastcore.Generation"
     ],
     "includePlatforms": [
         "Editor"
