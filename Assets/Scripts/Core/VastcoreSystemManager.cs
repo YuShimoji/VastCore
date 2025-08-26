@@ -24,7 +24,7 @@ namespace Vastcore.Core
         public bool enablePrimitiveErrorRecovery = true;
         
         [Header("システム設定")]
-        public LogLevel systemLogLevel = LogLevel.Info;
+        public VastcoreLogger.LogLevel systemLogLevel = VastcoreLogger.LogLevel.Info;
         public bool enableSystemHealthMonitoring = true;
         public float healthCheckInterval = 60f;
         

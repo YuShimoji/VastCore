@@ -1,5 +1,22 @@
 # 開発作業ログ
 
+## 2025-08-25: VastcoreLogger.LogLevel 参照修正と asmdef 検証
+
+### 概要
+Unity のコンパイルエラー（LogLevel 未解決）を修正。`VastcoreLogger.LogLevel` の完全修飾名を使用し、asmdef 参照関係を再確認。
+
+### 変更点
+- 修正: `Assets/Scripts/Core/VastcoreSystemManager.cs` の `LogLevel` → `VastcoreLogger.LogLevel`
+- 参照確認: `Vastcore.Core.asmdef`, `Vastcore.Utilities.asmdef`, `Vastcore.Diagnostics.asmdef`, `Vastcore.Generation.asmdef` の依存関係
+
+### 検証手順（エディタ）
+1. Unity を起動し自動コンパイルを待機。
+2. Console を Clear → エラーが 0 件であること。
+3. `VastcoreSystemManager` 起動時のログ出力が正常（Info/Warning/Error）で出ること。
+
+### 結果
+- コンパイルエラー解消を確認。`LogOutputHandler.cs` を含む全ファイルで `VastcoreLogger.LogLevel` を使用していることを確認（grep）。
+
 ## 2025-08-20: PrimitiveErrorRecovery ドキュメント同期（コールバック署名修正）
 
 ### 概要

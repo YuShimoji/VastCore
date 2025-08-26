@@ -1,5 +1,25 @@
 # Vastcore 機能テスト状況表
 
+## 🔧 Logger/Assembly Reference 検証 (2025-08-25更新)
+
+### 概要
+`VastcoreLogger.LogLevel` の未修飾参照に起因するコンパイルエラーの確認と修正。外部クラスからの参照は `VastcoreLogger.LogLevel` の完全修飾名で統一されていること、ならびに asmdef の参照関係が正しいことを検証。
+
+### テスト手順
+1. Unity エディタを起動し、自動コンパイル完了（Console にエラー 0 件）を確認。
+2. `VastcoreSystemManager` 実行経路でログが出力されることを確認（Info/Warning/Error）。
+3. Grep 検索で `Assets/**/*.cs` を対象に `LogLevel` を検索し、外部参照が `VastcoreLogger.LogLevel` で統一されていることを確認。
+4. asmdef 参照を確認：
+   - `Vastcore.Core.asmdef` → `Vastcore.Utilities`, `Vastcore.Diagnostics`
+   - `Vastcore.Utilities.asmdef` → `Vastcore.Diagnostics`
+   - `Vastcore.Generation.asmdef` → `Vastcore.Core`, `Vastcore.Utilities`
+
+### 結果
+- `Assets/Scripts/Core/VastcoreSystemManager.cs` は `VastcoreLogger.LogLevel` を使用。
+- `Assets/Scripts/Core/LogOutputHandler.cs` も同様。
+- `Assets/Scripts/Utilities/VastcoreLogger.cs` 内部はクラス内の `LogLevel` 参照で問題なし。
+- 外部での未修飾 `LogLevel` 参照は検出されず、コンパイル成功を確認。
+
 ## 🏛️ Compound Architectural Generator テスト結果 (2025-08-18更新)
 
 ### 概要
