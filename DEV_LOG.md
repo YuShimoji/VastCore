@@ -1108,23 +1108,60 @@ Your branch is up to date with 'origin/master'.
 開発計画の最優先タスクである「Phase 3: Deformシステム統合」に着手。Unityエディタでのパッケージ導入と、Cursor Web環境での基本クラス実装を完了した。
 
 ### 完了した作業
+### 関連/参照
+- 関連ファイル: `Assets/Scripts/Utilities/VastcoreLogger.cs`
+- 追従ドキュメント: `FUNCTION_TEST_STATUS.md` の「VastcoreLogger バッファリング/ローテーション検証」
+- 最終更新: 2025-08-26
 
-1.  **Deformパッケージの導入**:
-    -   ユーザーによるUnityエディタ操作にて、Package Manager経由で`Deform` (ver 1.2.2) パッケージをGit URLから正常にインポート完了。
+## 2025-08-26: VastcoreLogger ファイル I/O 最適化 — 設計・運用・検証計画
 
-2.  **統合用ディレクトリ構造の整備**:
-    -   `Assets/_Scripts/Integrations/Deform/`: 連携ロジック用
-    -   `Assets/Editor/StructureGenerator/Tabs/Deform/`: エディタUI用
+### 概要（目的）
+高頻度ログに伴うディスク I/O 負荷を抑えつつ、データ保全性（失われないログ）を確保するため、`VastcoreLogger` に以下を実装・整備した。
 
-3.  **基本クラスの作成と統合**:
-    -   `DeformIntegrationManager.cs`: Deform効果を適用するロジックを担う管理クラスのひな形を作成。
-    -   `DeformerTab.cs`: `Structure Generator`に表示される「Deform」タブのUIクラスを作成。既存の`BaseStructureTab`を継承し、タブシステムに正しく統合。
-    -   `StructureGeneratorWindow.cs`: メインのエディタウィンドウに`DeformerTab`を組み込み、表示を有効化。
+- バッファリングと定期フラッシュ（I/O 回数削減）
+- Unity ライフサイクルイベント連携による安全なフラッシュ
+- 安全なログローテーション（再入・再帰回避、単一実行制御）
+- エディタ UI からのファイル出力トグル
+- 設計・テスト手順の明文化
 
-### 技術的成果
--   **モジュール性**: Deform関連の機能を専用のディレクトリとクラスに分離し、既存システムへの影響を最小限に抑制。
--   **拡張性**: `BaseStructureTab`を継承したことで、今後の機能追加が容易なUI基盤を構築。
--   **ハイブリッド開発の実践**: Unityでのパッケージ管理と、Cursor Webでのコーディングを連携させ、効率的な開発フローを実現。
+### 実装方針
+- バッファリング/フラッシュ
+  - ログメッセージはメモリバッファへ蓄積し、一定間隔でファイルへまとめて書き出す。
+  - フラッシュ契機は「タイマー間隔」「明示的 Flush 呼び出し」「ライフサイクルイベント」。
+- ライフサイクル連携
+  - `OnApplicationPause(true) / OnApplicationFocus(false) / OnDestroy / OnApplicationQuit` で即時フラッシュ。
+- 安全なローテーション
+  - 閾値（サイズ/件数など）到達でローテーションを実施。
+  - ローテーション中はファイル書き込みを停止し、内部ログは Unity の `Debug.Log` に一時退避して再帰/再入を防止。
+  - 同時多重ローテーションを避けるため単一実行ガードを設置。
+- UI トグル
+  - 「ファイルへ書き込む」設定をエディタ UI から切替可能（OFF の場合は Console のみ）。
+
+### 主な設定（例）
+- `Enabled`（bool）: ファイル出力の有効/無効
+- `BufferSizeBytes`（int）: バッファ上限（上限超過時は即フラッシュ）
+- `FlushIntervalMs`（int）: 定期フラッシュ間隔（ms）
+- `RotationMaxBytes`（long）: ローテーション発動のサイズ閾値
+- `RotationKeepFiles`（int）: 保持するローテーションファイル数
+
+注: 実際のプロパティ名/既定値は実装に従う。上記は設計上の整理であり、名称は今後の統一/露出に合わせる。
+
+### 運用ガイド（推奨値の目安）
+- 初期値の目安: `FlushIntervalMs = 1000〜2000ms`, `BufferSizeBytes = 8〜64KB`
+- 大量出力時はフラッシュ間隔を短縮し、Editor 終了前（再生停止/アプリ終了）に手動 `Flush()` を推奨。
+- ローテーションは閾値を小さく設定してまず動作確認（例: 数十 KB）→ 実運用値へ引き上げ。
+
+### 既知の注意点
+- ローテーション処理中のファイル書き込みは禁止（再帰・再入防止）。
+- 例外発生時のログ喪失を避けるため、重要セクション後に `Flush()` を入れると安全性が上がる。
+- 長すぎるフラッシュ間隔はクラッシュ時のログ喪失リスクを高めるため、要バランス。
+
+### 関連/参照
+- 実装: `Assets/Scripts/Utilities/VastcoreLogger.cs`
+- テスト: `FUNCTION_TEST_STATUS.md` → 「VastcoreLogger バッファリング/フラッシュ/ローテーション検証」
+- 利用上の注意: ローテーション中は `Debug.Log` へ退避し、処理完了後にファイル出力へ復帰。
+
+---
 
 ### 次回作業予定
 
