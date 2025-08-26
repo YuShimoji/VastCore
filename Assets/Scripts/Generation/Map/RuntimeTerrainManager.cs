@@ -2,10 +2,10 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Vastcore.Generation;
-using Vastcore.Core;
+using VastCore.Generation;
+using VastCore.Core;
 
-namespace Vastcore.Generation
+namespace VastCore.Generation
 {
     /// <summary>
     /// 実行時地形管理システム
@@ -61,6 +61,8 @@ namespace Vastcore.Generation
         private Vector3 predictedPlayerPosition = Vector3.zero;
 
         private PerformanceStats performanceStats;
+        // 一度の更新サイクル内で重い全削除を多重実行しないためのフラグ
+        private bool didFullUnloadThisCycle = false;
         #endregion
 
         void Start()
@@ -101,6 +103,30 @@ namespace Vastcore.Generation
 
             Debug.Log("RuntimeTerrainManager initialized successfully");
             VastcoreLogger.Instance.LogInfo("RuntimeTerrain", "Init done");
+        }
+
+        private void OnDisable()
+        {
+            StopCoroutinesSafely();
+        }
+
+        private void OnDestroy()
+        {
+            StopCoroutinesSafely();
+        }
+
+        private void StopCoroutinesSafely()
+        {
+            if (dynamicGenerationCoroutine != null)
+            {
+                StopCoroutine(dynamicGenerationCoroutine);
+                dynamicGenerationCoroutine = null;
+            }
+            if (memoryManagementCoroutine != null)
+            {
+                StopCoroutine(memoryManagementCoroutine);
+                memoryManagementCoroutine = null;
+            }
         }
 
         /// <summary>
@@ -171,10 +197,14 @@ namespace Vastcore.Generation
                 UpdatePlayerTracking();
                 UpdateTileGeneration();
 
+                // 本サイクルでの重複全削除を防止
+                didFullUnloadThisCycle = false;
+
                 if (enableFrameTimeControl)
                 {
                     VastcoreLogger.Instance.LogDebug("RuntimeTerrain", "ProcessGenerationQueueWithFrameLimit start");
-                    yield return StartCoroutine(ProcessGenerationQueueWithFrameLimit());
+                    // StartCoroutine を重ねずにそのままイテレーターを返す
+                    yield return ProcessGenerationQueueWithFrameLimit();
                 }
                 else
                 {
@@ -195,6 +225,8 @@ namespace Vastcore.Generation
         {
             float frameStartTime = Time.realtimeSinceStartup;
             int processedCount = 0;
+            int safetyFrameYields = 0;
+            const int maxSafetyFrameYields = 300; // 約5秒(60FPS想定)の安全弁
 
             while (generationQueue.Count > 0 && processedCount < maxTilesPerUpdate)
             {
@@ -204,6 +236,17 @@ namespace Vastcore.Generation
                 {
                     VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"GenQueue frame limit hit elapsed={elapsedTime:F2}ms processed={processedCount}/{maxTilesPerUpdate} q={generationQueue.Count}");
                     yield return null; // 次のフレームに延期
+                    safetyFrameYields++;
+                    if (!enableDynamicGeneration || !gameObject.activeInHierarchy)
+                    {
+                        VastcoreLogger.Instance.LogWarning("RuntimeTerrain", "GenQueue canceled due to disabled manager or inactive object");
+                        yield break;
+                    }
+                    if (safetyFrameYields > maxSafetyFrameYields)
+                    {
+                        VastcoreLogger.Instance.LogError("RuntimeTerrain", $"GenQueue watchdog triggered. Breaking to avoid long-running step. processed={processedCount} remaining={generationQueue.Count}");
+                        break;
+                    }
                     frameStartTime = Time.realtimeSinceStartup;
                 }
 
@@ -304,11 +347,18 @@ namespace Vastcore.Generation
 
                 if (tile != null)
                 {
-                    // TileManager の辞書管理と整合させるため、強制全削除にフォールバック
-                    // 個別削除は TileManager 内部のキュー処理に委譲される
-                    tileManager.UnloadAllTiles();
-                    performanceStats.totalTilesDeleted++;
-                    VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"ProcessDel requested coord={tileCoord} -> UnloadAllTiles()");
+                    // 現状のフォールバック: 全削除。ただしサイクル内で一度だけ実行
+                    if (!didFullUnloadThisCycle)
+                    {
+                        tileManager.UnloadAllTiles();
+                        didFullUnloadThisCycle = true;
+                        performanceStats.totalTilesDeleted++;
+                        VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"ProcessDel requested coord={tileCoord} -> UnloadAllTiles() (first in cycle)");
+                    }
+                    else
+                    {
+                        VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"ProcessDel skipped full unload (already done this cycle) coord={tileCoord}");
+                    }
 
                     if (logTileOperations)
                     {

@@ -1,5 +1,37 @@
 # 開発作業ログ
 
+## 2025-08-26: RuntimeTerrainManager 安定化修正（Cascade/Step is still running 緩和）
+
+### 概要
+`RuntimeTerrainManager.cs` のコルーチン停止漏れ/長時間実行を抑止し、生成/削除サイクルの安定性を高める改修を実施。
+
+### 変更点
+- 実装: `Assets/Scripts/Generation/Map/RuntimeTerrainManager.cs`
+  - コルーチンの安全停止を追加: `OnDisable()` / `OnDestroy()` → `StopCoroutinesSafely()`
+  - フレーム制御処理のウォッチドッグを追加: `ProcessGenerationQueueWithFrameLimit()`
+    - フレーム越え時に `yield return null` で次フレームへ退避しつつ、一定回数でブレーク
+    - マネージャ無効化/非アクティブ化で早期 `yield break`
+  - ネスト `StartCoroutine` を排し、`yield return ProcessGenerationQueueWithFrameLimit()` に変更（ステップ継続のリスク低減）
+  - 全削除の多重実行を抑制: サイクル内デバウンス `didFullUnloadThisCycle` を導入
+    - `ProcessTileDeletion()` で同一サイクル内2回目以降の `UnloadAllTiles()` をスキップ
+  - 各サイクル開始時に `didFullUnloadThisCycle = false` をリセット
+
+### テスト手順（エディタ/PlayMode）
+1. シーンに `RuntimeTerrainManager` と `TileManager` を配置し、`playerTransform` を設定
+2. `enableDynamicGeneration = true`、`enableFrameTimeControl = true`（デフォルト）
+3. 数十秒プレイヤー移動。Console/ログを監視
+
+### 期待結果
+- 生成/削除ログが周期的に出続け、処理が途切れない
+- `ProcessGenerationQueueWithFrameLimit start` → フレーム越え時は次フレームに継続し、ハングしない
+- `UnloadAllTiles()` が1サイクル内に多重実行されない（ログで一度のみ）
+- 「Step is still running」系の停止が再現しない
+
+### 備考
+- 依然として問題が再現する場合は、URPシャドウカスケード設定/レンダリング設定も併せて点検すること
+
+---
+
 ## 2025-08-26: RuntimeTerrainManager コルーチン/キュー処理 復旧・強化
 
 ### 概要
