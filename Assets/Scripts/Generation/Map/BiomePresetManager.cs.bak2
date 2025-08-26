@@ -1,0 +1,411 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
+
+namespace Vastcore.Generation
+{
+    /// <summary>
+    /// 繝舌う繧ｪ繝ｼ繝繝励Μ繧ｻ繝・ヨ邂｡逅・す繧ｹ繝・Β
+    /// 繝励Μ繧ｻ繝・ヨ縺ｮ菫晏ｭ倥・隱ｭ縺ｿ霎ｼ縺ｿ繝ｻ邂｡逅・ｒ陦後≧
+    /// </summary>
+    public class BiomePresetManager : MonoBehaviour
+    {
+        // 繧ｷ繝ｳ繧ｰ繝ｫ繝医Φ繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ
+        private static BiomePresetManager _instance;
+        public static BiomePresetManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = FindObjectOfType<BiomePresetManager>();
+                    if (_instance == null)
+                    {
+                        GameObject obj = new GameObject("BiomePresetManager");
+                        _instance = obj.AddComponent<BiomePresetManager>();
+                        DontDestroyOnLoad(obj);
+                    }
+                }
+                return _instance;
+            }
+        }
+
+        [Header("菫晏ｭ倩ｨｭ螳・)]
+        [SerializeField] private string presetSavePath = "Assets/Data/BiomePresets";
+        [SerializeField] private string presetFileExtension = ".biome";
+        
+        // 蛻ｩ逕ｨ蜿ｯ閭ｽ縺ｪ繝励Μ繧ｻ繝・ヨ縺ｮ繧ｭ繝｣繝・す繝･
+        private List<BiomePreset> availablePresets = new List<BiomePreset>();
+        
+        private void Awake()
+        {
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+                Initialize();
+            }
+            else if (_instance != this)
+            {
+                Destroy(gameObject);
+            }
+        }
+        
+        private void Start()
+        {
+            if (_instance == this)
+            {
+                Initialize();
+            }
+        }
+        
+        /// <summary>
+        /// 繝励Μ繧ｻ繝・ヨ繝槭ロ繝ｼ繧ｸ繝｣繝ｼ繧貞・譛溷喧
+        /// </summary>
+        private void Initialize()
+        {
+            // 菫晏ｭ倥ョ繧｣繝ｬ繧ｯ繝医Μ縺ｮ遒ｺ隱・            EnsureDirectoryExists();
+            
+            // 蛻ｩ逕ｨ蜿ｯ閭ｽ縺ｪ繝励Μ繧ｻ繝・ヨ繧定ｪｭ縺ｿ霎ｼ縺ｿ
+            RefreshAvailablePresets();
+            
+            // 繝励Μ繧ｻ繝・ヨ縺悟ｭ伜惠縺励↑縺・ｴ蜷医・繝・ヵ繧ｩ繝ｫ繝医ｒ菴懈・
+            if (availablePresets.Count == 0)
+            {
+                CreateDefaultPresets();
+            }
+        }
+        
+        /// <summary>
+        /// 菫晏ｭ倥ョ繧｣繝ｬ繧ｯ繝医Μ縺悟ｭ伜惠縺吶ｋ縺薙→繧堤｢ｺ隱・        /// </summary>
+        private void EnsureDirectoryExists()
+        {
+            if (!Directory.Exists(presetSavePath))
+            {
+                Directory.CreateDirectory(presetSavePath);
+            }
+        }
+        
+        /// <summary>
+        /// 繝励Μ繧ｻ繝・ヨ繧剃ｿ晏ｭ・        /// </summary>
+        private void SavePreset(BiomePreset preset)
+        {
+            string fileName = SanitizeFileName(preset.presetName) + presetFileExtension;
+            string fullPath = Path.Combine(presetSavePath, fileName);
+            
+            // 譌｢縺ｫ蟄伜惠縺吶ｋ蝣ｴ蜷医・荳頑嶌縺・            if (File.Exists(fullPath))
+            {
+                File.Delete(fullPath);
+            }
+            
+            // 繝励Μ繧ｻ繝・ヨ繧剃ｿ晏ｭ・            using (FileStream stream = File.Create(fullPath))
+            {
+                BinaryFormatter formatter = new BinaryFormatter();
+                formatter.Serialize(stream, preset);
+            }
+            
+            // 繧ｭ繝｣繝・す繝･繧呈峩譁ｰ
+            RefreshAvailablePresets();
+        }
+        
+        /// <summary>
+        /// 繝励Μ繧ｻ繝・ヨ繧定ｪｭ縺ｿ霎ｼ縺ｿ
+        /// </summary>
+        public BiomePreset LoadPreset(string presetName)
+        {
+            if (string.IsNullOrEmpty(presetName)) return null;
+            
+            string fileName = SanitizeFileName(presetName) + presetFileExtension;
+            string fullPath = Path.Combine(presetSavePath, fileName);
+            
+            if (!File.Exists(fullPath))
+            {
+                Debug.LogError($"繝励Μ繧ｻ繝・ヨ縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ: {fullPath}");
+                return null;
+            }
+            
+            try
+            {
+                using (FileStream stream = File.OpenRead(fullPath))
+                {
+                    BinaryFormatter formatter = new BinaryFormatter();
+                    return (BiomePreset)formatter.Deserialize(stream);
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"繝励Μ繧ｻ繝・ヨ縺ｮ隱ｭ縺ｿ霎ｼ縺ｿ縺ｫ螟ｱ謨励＠縺ｾ縺励◆: {e.Message}");
+                return null;
+            }
+        }
+        
+        /// <summary>
+        /// 繝励Μ繧ｻ繝・ヨ繧貞炎髯､
+        /// </summary>
+        public bool DeletePreset(string presetName)
+        {
+            if (string.IsNullOrEmpty(presetName)) return false;
+            
+            string fileName = SanitizeFileName(presetName) + presetFileExtension;
+            string fullPath = Path.Combine(presetSavePath, fileName);
+            
+            if (File.Exists(fullPath))
+            {
+                try
+                {
+                    File.Delete(fullPath);
+                    RefreshAvailablePresets();
+                    return true;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"繝励Μ繧ｻ繝・ヨ縺ｮ蜑企勁縺ｫ螟ｱ謨励＠縺ｾ縺励◆: {e.Message}");
+                    return false;
+                }
+            }
+            
+            return false;
+        }
+        
+        /// <summary>
+        /// 蛻ｩ逕ｨ蜿ｯ閭ｽ縺ｪ繝励Μ繧ｻ繝・ヨ荳隕ｧ繧呈峩譁ｰ
+        /// </summary>
+        public void RefreshAvailablePresets()
+        {
+            availablePresets.Clear();
+            
+            if (!Directory.Exists(presetSavePath))
+            {
+                Directory.CreateDirectory(presetSavePath);
+                return;
+            }
+            
+            string[] presetFiles = Directory.GetFiles(presetSavePath, "*" + presetFileExtension);
+            
+            foreach (string filePath in presetFiles)
+            {
+                try
+                {
+                    using (FileStream stream = File.OpenRead(filePath))
+                    {
+                        BinaryFormatter formatter = new BinaryFormatter();
+                        var preset = (BiomePreset)formatter.Deserialize(stream);
+                        availablePresets.Add(preset);
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"繝励Μ繧ｻ繝・ヨ縺ｮ隱ｭ縺ｿ霎ｼ縺ｿ縺ｫ螟ｱ謨励＠縺ｾ縺励◆ ({filePath}): {e.Message}");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 蛻ｩ逕ｨ蜿ｯ閭ｽ縺ｪ繝励Μ繧ｻ繝・ヨ蜷堺ｸ隕ｧ繧貞叙蠕・        /// </summary>
+        public List<string> GetAvailablePresetNames()
+        {
+            return availablePresets.Where(p => p != null).Select(p => p.presetName).ToList();
+        }
+        
+        /// <summary>
+        /// 繝励Μ繧ｻ繝・ヨ縺悟ｭ伜惠縺吶ｋ縺九メ繧ｧ繝・け
+        /// </summary>
+        public bool PresetExists(string presetName)
+        {
+            if (string.IsNullOrEmpty(presetName)) return false;
+            
+            return availablePresets.Any(p => p != null && p.presetName == presetName);
+        }
+        
+        /// <summary>
+        /// 繝励Μ繧ｻ繝・ヨ繧貞慍蠖｢縺ｫ驕ｩ逕ｨ
+        /// </summary>
+        public void ApplyPresetToTerrain(string presetName, TerrainTile targetTile)
+        {
+            var preset = LoadPreset(presetName);
+            if (preset == null)
+            {
+                Debug.LogError($"ApplyPresetToTerrain: 繝励Μ繧ｻ繝・ヨ縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ: {presetName}");
+                return;
+            }
+            
+            ApplyPresetToTerrain(preset, targetTile);
+        }
+        
+        /// <summary>
+        /// 繝励Μ繧ｻ繝・ヨ繧貞慍蠖｢縺ｫ驕ｩ逕ｨ
+        /// </summary>
+        public void ApplyPresetToTerrain(BiomePreset preset, TerrainTile targetTile)
+        {
+            if (preset == null || targetTile == null)
+            {
+                Debug.LogError("ApplyPresetToTerrain: 繝励Μ繧ｻ繝・ヨ縺ｾ縺溘・繧ｿ繧､繝ｫ縺系ull縺ｧ縺・);
+                return;
+            }
+            
+            try
+            {
+                // 蝨ｰ蠖｢繝代Λ繝｡繝ｼ繧ｿ縺ｮ驕ｩ逕ｨ
+                // Note: 螳滄圀縺ｮ蝨ｰ蠖｢蜀咲函謌舌・ RuntimeTerrainManager 縺ｧ陦後≧
+                targetTile.appliedBiome = preset;
+                
+                // 迺ｰ蠅・ｨｭ螳壹・驕ｩ逕ｨ
+                ApplyEnvironmentSettings(preset.environmentSettings);
+                
+                // 譚占ｳｪ險ｭ螳壹・驕ｩ逕ｨ
+                ApplyMaterialSettings(preset.materialSettings, targetTile);
+                
+                Debug.Log($"BiomePreset applied to terrain: {preset.presetName}");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"ApplyPresetToTerrain failed: {e.Message}");
+            }
+        }
+        
+        #region 繝・ヵ繧ｩ繝ｫ繝医・繝ｪ繧ｻ繝・ヨ菴懈・
+        
+        /// <summary>
+        /// 繝・ヵ繧ｩ繝ｫ繝医・繝ｪ繧ｻ繝・ヨ繧剃ｽ懈・
+        /// </summary>
+        public void CreateDefaultPresets()
+        {
+            try
+            {
+                // 蝓ｺ譛ｬ逧・↑繝舌う繧ｪ繝ｼ繝繝励Μ繧ｻ繝・ヨ繧剃ｽ懈・
+                CreateDefaultPreset("Plains", "蠎・､ｧ縺ｪ蟷ｳ蜴溘ヰ繧､繧ｪ繝ｼ繝", 0.4f, 0.6f, 0.7f, 0.2f);
+                CreateDefaultPreset("Mountains", "髯ｺ縺励＞螻ｱ蟯ｳ繝舌う繧ｪ繝ｼ繝", 0.3f, 0.3f, 0.3f, 0.9f);
+                CreateDefaultPreset("Desert", "荵ｾ辯･縺励◆遐よｼ繝舌う繧ｪ繝ｼ繝", 0.1f, 0.8f, 0.2f, 0.6f);
+                CreateDefaultPreset("Forest", "邱題ｱ翫°縺ｪ譽ｮ譫励ヰ繧､繧ｪ繝ｼ繝", 0.8f, 0.5f, 0.9f, 0.3f);
+                CreateDefaultPreset("Tundra", "蟇貞・縺ｪ繝・Φ繝峨Λ繝舌う繧ｪ繝ｼ繝", 0.6f, 0.1f, 0.2f, 0.7f);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"CreateDefaultPresets failed: {e.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// 繝・ヵ繧ｩ繝ｫ繝医・繝ｪ繧ｻ繝・ヨ繧剃ｽ懈・
+        /// </summary>
+        private void CreateDefaultPreset(string name, string description, float moisture, float temperature, float fertility, float rockiness)
+        {
+            string fileName = SanitizeFileName(name) + presetFileExtension;
+            string fullPath = Path.Combine(presetSavePath, fileName);
+            
+            // 譌｢縺ｫ蟄伜惠縺吶ｋ蝣ｴ蜷医・繧ｹ繧ｭ繝・・
+            if (File.Exists(fullPath)) return;
+            
+            var preset = CreateInstance<BiomePreset>();
+            preset.presetName = name;
+            preset.description = description;
+            preset.moisture = moisture;
+            preset.temperature = temperature;
+            preset.fertility = fertility;
+            preset.rockiness = rockiness;
+            
+            // 蝨ｰ蠖｢繝代Λ繝｡繝ｼ繧ｿ縺ｮ隱ｿ謨ｴ
+            var terrainParams = MeshGenerator.TerrainGenerationParams.Default();
+            
+            // 繝舌う繧ｪ繝ｼ繝縺ｫ蠢懊§縺溷慍蠖｢隱ｿ謨ｴ
+            switch (name.ToLower())
+            {
+                case "mountains":
+                    terrainParams.maxHeight = 400f;
+                    terrainParams.noiseScale = 0.003f;
+                    terrainParams.octaves = 10;
+                    break;
+                case "desert":
+                    terrainParams.maxHeight = 100f;
+                    terrainParams.enableTerracing = false;
+                    terrainParams.enableErosion = true;
+                    terrainParams.erosionStrength = 0.5f;
+                    break;
+                case "plains":
+                    terrainParams.maxHeight = 50f;
+                    terrainParams.noiseScale = 0.01f;
+                    terrainParams.octaves = 4;
+                    break;
+            }
+            
+            preset.terrainParams = terrainParams;
+            preset.InitializeDefault();
+            
+            SavePreset(preset);
+        }
+        
+        #endregion
+        
+        #region 險ｭ螳夐←逕ｨ
+        
+        /// <summary>
+        /// 迺ｰ蠅・ｨｭ螳壹ｒ驕ｩ逕ｨ
+        /// </summary>
+        private void ApplyEnvironmentSettings(EnvironmentSettings settings)
+        {
+            // 辣ｧ譏手ｨｭ螳・            var sun = FindObjectOfType<Light>();
+            if (sun != null && sun.type == LightType.Directional)
+            {
+                sun.color = settings.sunColor;
+                sun.intensity = settings.sunIntensity;
+                sun.transform.rotation = Quaternion.Euler(settings.sunRotation, 30f, 0f);
+            }
+            
+            // 髴ｧ險ｭ螳・            RenderSettings.fog = settings.enableFog;
+            if (settings.enableFog)
+            {
+                RenderSettings.fogColor = settings.fogColor;
+                RenderSettings.fogStartDistance = settings.fogStartDistance;
+                RenderSettings.fogEndDistance = settings.fogEndDistance;
+            }
+            
+            // 繧｢繝ｳ繝薙お繝ｳ繝郁ｨｭ螳・            RenderSettings.ambientLight = settings.ambientColor;
+        }
+        
+        /// <summary>
+        /// 譚占ｳｪ險ｭ螳壹ｒ驕ｩ逕ｨ
+        /// </summary>
+        private void ApplyMaterialSettings(MaterialSettings settings, TerrainTile tile)
+        {
+            if (tile?.terrainObject == null) return;
+            
+            var renderer = tile.terrainObject.GetComponent<MeshRenderer>();
+            if (renderer != null && settings.terrainMaterial != null)
+            {
+                renderer.material = settings.terrainMaterial;
+                
+                // 濶ｲ隱ｿ縺ｮ驕ｩ逕ｨ
+                if (renderer.material.HasProperty("_Color"))
+                {
+                    renderer.material.color = settings.terrainTint;
+                }
+            }
+        }
+        
+        #endregion
+        
+        #region 繝ｦ繝ｼ繝・ぅ繝ｪ繝・ぅ
+        
+        /// <summary>
+        /// 繝輔ぃ繧､繝ｫ蜷阪→縺励※螳牙・縺ｪ譁・ｭ怜・縺ｫ螟画鋤
+        /// </summary>
+        private string SanitizeFileName(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName)) return "Unnamed";
+            
+            char[] invalidChars = Path.GetInvalidFileNameChars();
+            string sanitized = fileName;
+            
+            foreach (char c in invalidChars)
+            {
+                sanitized = sanitized.Replace(c, '_');
+            }
+            
+            return sanitized;
+        }
+        
+        #endregion
+    }
+}

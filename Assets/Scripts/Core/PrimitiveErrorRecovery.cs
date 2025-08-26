@@ -34,7 +34,7 @@ namespace Vastcore.Generation
             {
                 if (instance == null)
                 {
-                    instance = FindObjectOfType<PrimitiveErrorRecovery>();
+                    instance = FindFirstObjectByType<PrimitiveErrorRecovery>();
                     if (instance == null)
                     {
                         GameObject go = new GameObject("PrimitiveErrorRecovery");
@@ -187,50 +187,41 @@ namespace Vastcore.Generation
         
         private IEnumerator CreateRecoveredPrimitiveCoroutine(Vector3 position, PrimitiveType primitiveType, float scale, Action<GameObject> onComplete)
         {
+            GameObject primitive = null;
+            
+            // まず標準的な方法で生成を試行（yield を含まないセクション）
             try
             {
-                GameObject primitive = null;
-                
-                // まず標準的な方法で生成を試行
-                try
-                {
-                    primitive = GameObject.CreatePrimitive(primitiveType);
-                    primitive.transform.position = position;
-                    primitive.transform.localScale = Vector3.one * scale;
-                    primitive.name = $"Recovered_{primitiveType}_{Time.time}";
-                }
-                catch (Exception error)
-                {
-                    VastcoreLogger.Instance.LogWarning("PrimitiveRecovery", 
-                        $"標準プリミティブ生成失敗: {error.Message}");
-                    
-                    if (primitive != null)
-                    {
-                        DestroyImmediate(primitive);
-                        primitive = null;
-                    }
-                }
-                
-                // 標準生成が失敗した場合、フォールバック生成を試行
-                if (primitive == null && useFallbackPrimitives)
-                {
-                    primitive = CreateFallbackPrimitive(position, primitiveType, scale);
-                }
-                
-                // 生成されたプリミティブの検証と修正
-                if (primitive != null)
-                {
-                    yield return StartCoroutine(ValidateAndFixPrimitive(primitive));
-                }
-                
-                onComplete?.Invoke(primitive);
+                primitive = GameObject.CreatePrimitive(primitiveType);
+                primitive.transform.position = position;
+                primitive.transform.localScale = Vector3.one * scale;
+                primitive.name = $"Recovered_{primitiveType}_{Time.time}";
             }
             catch (Exception error)
             {
-                VastcoreLogger.Instance.LogError("PrimitiveRecovery", 
-                    $"回復プリミティブ作成中にエラー: {error.Message}", error);
-                onComplete?.Invoke(null);
+                VastcoreLogger.Instance.LogWarning("PrimitiveRecovery", 
+                    $"標準プリミティブ生成失敗: {error.Message}");
+                
+                if (primitive != null)
+                {
+                    DestroyImmediate(primitive);
+                    primitive = null;
+                }
             }
+            
+            // 標準生成が失敗した場合、フォールバック生成を試行（同期処理）
+            if (primitive == null && useFallbackPrimitives)
+            {
+                primitive = CreateFallbackPrimitive(position, primitiveType, scale);
+            }
+            
+            // 生成されたプリミティブの検証と修正（yield は try/catch 外）
+            if (primitive != null)
+            {
+                yield return StartCoroutine(ValidateAndFixPrimitive(primitive));
+            }
+            
+            onComplete?.Invoke(primitive);
         }
         
         private GameObject CreateFallbackPrimitive(Vector3 position, PrimitiveType originalType, float scale)
@@ -317,6 +308,7 @@ namespace Vastcore.Generation
         
         private IEnumerator ValidateAndFixPrimitive(GameObject primitive)
         {
+            // 検証および修正（同期処理のみを try/catch に）
             try
             {
                 // 必要なコンポーネントの確認と追加
@@ -349,14 +341,15 @@ namespace Vastcore.Generation
                 {
                     meshRenderer.material = CreateFallbackMaterial(PrimitiveType.Cube);
                 }
-                
-                yield return null;
             }
             catch (Exception error)
             {
                 VastcoreLogger.Instance.LogError("PrimitiveRecovery", 
                     $"プリミティブ検証中にエラー: {error.Message}");
             }
+            
+            // フレーム分散は try/catch の外で実施
+            yield return null;
         }
         
         private void SetupCollisionRecovery(GameObject primitive)

@@ -1,12 +1,7 @@
 {
-    "name": "Vastcore.Generation",
-    "rootNamespace": "Vastcore.Generation",
-    "references": [
-        "Unity.ProBuilder",
-        "Unity.TextMeshPro",
-        "Vastcore.Core",
-        "Vastcore.Utilities"
-    ],
+    "name": "Vastcore.Diagnostics",
+    "rootNamespace": "Vastcore.Diagnostics",
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

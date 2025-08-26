@@ -3,546 +3,129 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Vastcore.Generation
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
+namespace Vastcore.Generation.Map
 {
     /// <summary>
-    /// バイオームプリセット管理システム
-    /// プリセットの保存・読み込み・管理を行う
+    /// Manages biome presets for terrain generation.
+    /// Handles loading, saving, and applying presets.
     /// </summary>
     public class BiomePresetManager : MonoBehaviour
     {
-        [Header("プリセット管理設定")]
-        public string presetSavePath = "Assets/Data/BiomePresets/";
-        public string presetFileExtension = ".asset";
-        public bool autoLoadPresetsOnStart = true;
-        public bool createDefaultPresets = true;
+        #region Singleton
         
-        [Header("現在のプリセット")]
-        public BiomePreset currentPreset;
-        
-        [Header("利用可能なプリセット")]
-        public List<BiomePreset> availablePresets = new List<BiomePreset>();
-        
-        // イベント
-        public System.Action<BiomePreset> OnPresetLoaded;
-        public System.Action<BiomePreset> OnPresetSaved;
-        public System.Action<List<BiomePreset>> OnPresetsRefreshed;
-        
-        // プライベートフィールド
-        private Dictionary<string, BiomePreset> presetCache = new Dictionary<string, BiomePreset>();
-        private bool isInitialized = false;
-        
-        #region Unity Lifecycle
-        
-        private void Start()
+        private static BiomePresetManager _instance;
+        public static BiomePresetManager Instance
         {
-            Initialize();
-        }
-        
-        #endregion
-        
-        #region 初期化
-        
-        /// <summary>
-        /// プリセットマネージャーを初期化
-        /// </summary>
-        public void Initialize()
-        {
-            if (isInitialized) return;
-            
-            try
+            get
             {
-                // 保存ディレクトリの作成
-                EnsureDirectoryExists();
-                
-                // デフォルトプリセットの作成
-                if (createDefaultPresets)
+                if (_instance == null)
                 {
-                    CreateDefaultPresets();
-                }
-                
-                // プリセットの自動読み込み
-                if (autoLoadPresetsOnStart)
-                {
-                    RefreshAvailablePresets();
-                }
-                
-                isInitialized = true;
-                Debug.Log($"BiomePresetManager initialized. Found {availablePresets.Count} presets.");
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"BiomePresetManager initialization failed: {e.Message}");
-            }
-        }
-        
-        /// <summary>
-        /// 保存ディレクトリが存在することを確認
-        /// </summary>
-        private void EnsureDirectoryExists()
-        {
-            if (!Directory.Exists(presetSavePath))
-            {
-                Directory.CreateDirectory(presetSavePath);
-                Debug.Log($"Created BiomePreset directory: {presetSavePath}");
-            }
-        }
-        
-        #endregion
-        
-        #region プリセット保存・読み込み
-        
-        /// <summary>
-        /// プリセットを保存
-        /// </summary>
-        public bool SavePreset(BiomePreset preset)
-        {
-            if (preset == null)
-            {
-                Debug.LogError("SavePreset: プリセットがnullです");
-                return false;
-            }
-            
-            try
-            {
-                // プリセットの妥当性検証
-                if (!preset.ValidatePreset())
-                {
-                    Debug.LogError("SavePreset: プリセットの妥当性検証に失敗しました");
-                    return false;
-                }
-                
-                // ファイルパスの生成
-                string fileName = SanitizeFileName(preset.presetName) + presetFileExtension;
-                string fullPath = Path.Combine(presetSavePath, fileName);
-                
-                // ScriptableObjectとして保存
-#if UNITY_EDITOR
-                UnityEditor.AssetDatabase.CreateAsset(preset, fullPath);
-                UnityEditor.AssetDatabase.SaveAssets();
-                UnityEditor.AssetDatabase.Refresh();
-#endif
-                
-                // キャッシュに追加
-                presetCache[preset.presetName] = preset;
-                
-                // リストに追加（重複チェック）
-                if (!availablePresets.Contains(preset))
-                {
-                    availablePresets.Add(preset);
-                }
-                
-                // イベント発火
-                OnPresetSaved?.Invoke(preset);
-                
-                Debug.Log($"BiomePreset saved: {preset.presetName} at {fullPath}");
-                return true;
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"SavePreset failed: {e.Message}");
-                return false;
-            }
-        }
-        
-        /// <summary>
-        /// プリセットを読み込み
-        /// </summary>
-        public BiomePreset LoadPreset(string presetName)
-        {
-            if (string.IsNullOrEmpty(presetName))
-            {
-                Debug.LogError("LoadPreset: プリセット名が無効です");
-                return null;
-            }
-            
-            try
-            {
-                // キャッシュから検索
-                if (presetCache.ContainsKey(presetName))
-                {
-                    var cachedPreset = presetCache[presetName];
-                    if (cachedPreset != null)
+                    _instance = FindObjectOfType<BiomePresetManager>();
+                    if (_instance == null)
                     {
-                        currentPreset = cachedPreset;
-                        OnPresetLoaded?.Invoke(cachedPreset);
-                        return cachedPreset;
+                        GameObject obj = new GameObject("BiomePresetManager");
+                        _instance = obj.AddComponent<BiomePresetManager>();
                     }
                 }
-                
-                // ファイルから読み込み
-                string fileName = SanitizeFileName(presetName) + presetFileExtension;
-                string fullPath = Path.Combine(presetSavePath, fileName);
-                
-                if (!File.Exists(fullPath))
-                {
-                    Debug.LogWarning($"LoadPreset: ファイルが見つかりません: {fullPath}");
-                    return null;
-                }
-                
-#if UNITY_EDITOR
-                var preset = UnityEditor.AssetDatabase.LoadAssetAtPath<BiomePreset>(fullPath);
-#else
-                var preset = Resources.Load<BiomePreset>(Path.GetFileNameWithoutExtension(fileName));
-#endif
-                
-                if (preset != null)
-                {
-                    // キャッシュに追加
-                    presetCache[presetName] = preset;
-                    currentPreset = preset;
-                    
-                    // イベント発火
-                    OnPresetLoaded?.Invoke(preset);
-                    
-                    Debug.Log($"BiomePreset loaded: {presetName}");
-                    return preset;
-                }
-                else
-                {
-                    Debug.LogError($"LoadPreset: プリセットの読み込みに失敗しました: {presetName}");
-                    return null;
-                }
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"LoadPreset failed: {e.Message}");
-                return null;
+                return _instance;
             }
         }
-        
-        /// <summary>
-        /// プリセットを削除
-        /// </summary>
-        public bool DeletePreset(string presetName)
-        {
-            if (string.IsNullOrEmpty(presetName))
-            {
-                Debug.LogError("DeletePreset: プリセット名が無効です");
-                return false;
-            }
-            
-            try
-            {
-                string fileName = SanitizeFileName(presetName) + presetFileExtension;
-                string fullPath = Path.Combine(presetSavePath, fileName);
-                
-                if (File.Exists(fullPath))
-                {
-#if UNITY_EDITOR
-                    UnityEditor.AssetDatabase.DeleteAsset(fullPath);
-                    UnityEditor.AssetDatabase.Refresh();
-#else
-                    File.Delete(fullPath);
-#endif
-                }
-                
-                // キャッシュから削除
-                if (presetCache.ContainsKey(presetName))
-                {
-                    presetCache.Remove(presetName);
-                }
-                
-                // リストから削除
-                availablePresets.RemoveAll(p => p != null && p.presetName == presetName);
-                
-                Debug.Log($"BiomePreset deleted: {presetName}");
-                return true;
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"DeletePreset failed: {e.Message}");
-                return false;
-            }
-        }
-        
+
         #endregion
+
+        [Header("Settings")]
+        [SerializeField] private string presetSavePath = "Assets/Data/BiomePresets";
         
-        #region プリセット管理
-        
+        private List<BiomePreset> _availablePresets = new List<BiomePreset>();
+
+        private void Awake()
+        {
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+                RefreshAvailablePresets();
+            }
+            else if (_instance != this)
+            {
+                Destroy(gameObject);
+            }
+        }
+
         /// <summary>
-        /// 利用可能なプリセット一覧を更新
+        /// Reloads all available biome presets from the specified path.
         /// </summary>
         public void RefreshAvailablePresets()
         {
-            try
-            {
-                availablePresets.Clear();
-                presetCache.Clear();
-                
-                if (!Directory.Exists(presetSavePath))
-                {
-                    Debug.LogWarning($"RefreshAvailablePresets: ディレクトリが存在しません: {presetSavePath}");
-                    return;
-                }
-                
-                // ディレクトリ内のプリセットファイルを検索
-                string[] presetFiles = Directory.GetFiles(presetSavePath, "*" + presetFileExtension);
-                
-                foreach (string filePath in presetFiles)
-                {
+            _availablePresets.Clear();
 #if UNITY_EDITOR
-                    var preset = UnityEditor.AssetDatabase.LoadAssetAtPath<BiomePreset>(filePath);
-#else
-                    string fileName = Path.GetFileNameWithoutExtension(filePath);
-                    var preset = Resources.Load<BiomePreset>(fileName);
-#endif
-                    
-                    if (preset != null && preset.ValidatePreset())
-                    {
-                        availablePresets.Add(preset);
-                        presetCache[preset.presetName] = preset;
-                    }
-                }
-                
-                // 名前でソート
-                availablePresets = availablePresets.OrderBy(p => p.presetName).ToList();
-                
-                // イベント発火
-                OnPresetsRefreshed?.Invoke(availablePresets);
-                
-                Debug.Log($"RefreshAvailablePresets: {availablePresets.Count} presets loaded");
-            }
-            catch (System.Exception e)
+            if (!Directory.Exists(presetSavePath))
             {
-                Debug.LogError($"RefreshAvailablePresets failed: {e.Message}");
+                Directory.CreateDirectory(presetSavePath);
             }
+
+            string[] presetGuids = AssetDatabase.FindAssets("t:BiomePreset", new[] { presetSavePath });
+            foreach (string guid in presetGuids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                BiomePreset preset = AssetDatabase.LoadAssetAtPath<BiomePreset>(path);
+                if (preset != null)
+                {
+                    _availablePresets.Add(preset);
+                }
+            }
+#endif
         }
-        
+
         /// <summary>
-        /// 利用可能なプリセット名一覧を取得
+        /// Gets a list of names of all available presets.
         /// </summary>
         public List<string> GetAvailablePresetNames()
         {
-            return availablePresets.Where(p => p != null).Select(p => p.presetName).ToList();
+            return _availablePresets.Select(p => p.name).ToList();
         }
-        
+
         /// <summary>
-        /// プリセットが存在するかチェック
+        /// Gets a preset by its name.
         /// </summary>
-        public bool PresetExists(string presetName)
+        public BiomePreset GetPreset(string presetName)
         {
-            if (string.IsNullOrEmpty(presetName)) return false;
-            
-            return availablePresets.Any(p => p != null && p.presetName == presetName);
+            return _availablePresets.FirstOrDefault(p => p.name == presetName);
         }
-        
-        /// <summary>
-        /// プリセットを地形に適用
-        /// </summary>
-        public void ApplyPresetToTerrain(string presetName, TerrainTile targetTile)
-        {
-            var preset = LoadPreset(presetName);
-            if (preset == null)
-            {
-                Debug.LogError($"ApplyPresetToTerrain: プリセットが見つかりません: {presetName}");
-                return;
-            }
-            
-            ApplyPresetToTerrain(preset, targetTile);
-        }
-        
-        /// <summary>
-        /// プリセットを地形に適用
-        /// </summary>
-        public void ApplyPresetToTerrain(BiomePreset preset, TerrainTile targetTile)
-        {
-            if (preset == null || targetTile == null)
-            {
-                Debug.LogError("ApplyPresetToTerrain: プリセットまたはタイルがnullです");
-                return;
-            }
-            
-            try
-            {
-                // 地形パラメータの適用
-                // Note: 実際の地形再生成は RuntimeTerrainManager で行う
-                targetTile.appliedBiome = preset;
-                
-                // 環境設定の適用
-                ApplyEnvironmentSettings(preset.environmentSettings);
-                
-                // 材質設定の適用
-                ApplyMaterialSettings(preset.materialSettings, targetTile);
-                
-                Debug.Log($"BiomePreset applied to terrain: {preset.presetName}");
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"ApplyPresetToTerrain failed: {e.Message}");
-            }
-        }
-        
-        #endregion
-        
-        #region デフォルトプリセット作成
-        
-        /// <summary>
-        /// デフォルトプリセットを作成
-        /// </summary>
-        private void CreateDefaultPresets()
-        {
-            try
-            {
-                // 基本的なバイオームプリセットを作成
-                CreateDefaultPreset("Plains", "広大な平原バイオーム", 0.4f, 0.6f, 0.7f, 0.2f);
-                CreateDefaultPreset("Mountains", "険しい山岳バイオーム", 0.3f, 0.3f, 0.3f, 0.9f);
-                CreateDefaultPreset("Desert", "乾燥した砂漠バイオーム", 0.1f, 0.8f, 0.2f, 0.6f);
-                CreateDefaultPreset("Forest", "緑豊かな森林バイオーム", 0.8f, 0.5f, 0.9f, 0.3f);
-                CreateDefaultPreset("Tundra", "寒冷なツンドラバイオーム", 0.6f, 0.1f, 0.2f, 0.7f);
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"CreateDefaultPresets failed: {e.Message}");
-            }
-        }
-        
-        /// <summary>
-        /// デフォルトプリセットを作成
-        /// </summary>
-        private void CreateDefaultPreset(string name, string description, float moisture, float temperature, float fertility, float rockiness)
-        {
-            string fileName = SanitizeFileName(name) + presetFileExtension;
-            string fullPath = Path.Combine(presetSavePath, fileName);
-            
-            // 既に存在する場合はスキップ
-            if (File.Exists(fullPath)) return;
-            
-            var preset = CreateInstance<BiomePreset>();
-            preset.presetName = name;
-            preset.description = description;
-            preset.moisture = moisture;
-            preset.temperature = temperature;
-            preset.fertility = fertility;
-            preset.rockiness = rockiness;
-            
-            // 地形パラメータの調整
-            var terrainParams = MeshGenerator.TerrainGenerationParams.Default();
-            
-            // バイオームに応じた地形調整
-            switch (name.ToLower())
-            {
-                case "mountains":
-                    terrainParams.maxHeight = 400f;
-                    terrainParams.noiseScale = 0.003f;
-                    terrainParams.octaves = 10;
-                    break;
-                case "desert":
-                    terrainParams.maxHeight = 100f;
-                    terrainParams.enableTerracing = false;
-                    terrainParams.enableErosion = true;
-                    terrainParams.erosionStrength = 0.5f;
-                    break;
-                case "plains":
-                    terrainParams.maxHeight = 50f;
-                    terrainParams.noiseScale = 0.01f;
-                    terrainParams.octaves = 4;
-                    break;
-            }
-            
-            preset.terrainParams = terrainParams;
-            preset.InitializeDefault();
-            
-            SavePreset(preset);
-        }
-        
-        #endregion
-        
-        #region 設定適用
-        
-        /// <summary>
-        /// 環境設定を適用
-        /// </summary>
-        private void ApplyEnvironmentSettings(EnvironmentSettings settings)
-        {
-            // 照明設定
-            var sun = FindObjectOfType<Light>();
-            if (sun != null && sun.type == LightType.Directional)
-            {
-                sun.color = settings.sunColor;
-                sun.intensity = settings.sunIntensity;
-                sun.transform.rotation = Quaternion.Euler(settings.sunRotation, 30f, 0f);
-            }
-            
-            // 霧設定
-            RenderSettings.fog = settings.enableFog;
-            if (settings.enableFog)
-            {
-                RenderSettings.fogColor = settings.fogColor;
-                RenderSettings.fogStartDistance = settings.fogStartDistance;
-                RenderSettings.fogEndDistance = settings.fogEndDistance;
-            }
-            
-            // アンビエント設定
-            RenderSettings.ambientLight = settings.fogColor;
-        }
-        
-        /// <summary>
-        /// 材質設定を適用
-        /// </summary>
-        private void ApplyMaterialSettings(MaterialSettings settings, TerrainTile tile)
-        {
-            if (tile?.terrainObject == null) return;
-            
-            var renderer = tile.terrainObject.GetComponent<MeshRenderer>();
-            if (renderer != null && settings.terrainMaterial != null)
-            {
-                renderer.material = settings.terrainMaterial;
-                
-                // 色調の適用
-                if (renderer.material.HasProperty("_Color"))
-                {
-                    renderer.material.color = settings.terrainTint;
-                }
-            }
-        }
-        
-        #endregion
-        
-        #region ユーティリティ
-        
-        /// <summary>
-        /// ファイル名として安全な文字列に変換
-        /// </summary>
-        private string SanitizeFileName(string fileName)
-        {
-            if (string.IsNullOrEmpty(fileName)) return "Unnamed";
-            
-            char[] invalidChars = Path.GetInvalidFileNameChars();
-            string sanitized = fileName;
-            
-            foreach (char c in invalidChars)
-            {
-                sanitized = sanitized.Replace(c, '_');
-            }
-            
-            return sanitized;
-        }
-        
-        #endregion
-        
-        #region エディタ用メソッド
-        
+
 #if UNITY_EDITOR
         /// <summary>
-        /// エディタでプリセットを作成
+        /// Creates a new BiomePreset asset in the editor.
         /// </summary>
-        [UnityEditor.MenuItem("Vastcore/Create New Biome Preset")]
+        [MenuItem("Vastcore/Create New Biome Preset")]
         public static void CreateNewPresetInEditor()
         {
-            var preset = CreateInstance<BiomePreset>();
-            preset.InitializeDefault();
-            
-            string path = "Assets/Data/BiomePresets/NewBiomePreset.asset";
-            UnityEditor.AssetDatabase.CreateAsset(preset, path);
-            UnityEditor.AssetDatabase.SaveAssets();
-            UnityEditor.AssetDatabase.Refresh();
-            
-            UnityEditor.Selection.activeObject = preset;
-            UnityEditor.EditorGUIUtility.PingObject(preset);
+            var preset = ScriptableObject.CreateInstance<BiomePreset>();
+            // preset.InitializeDefault(); // Assuming BiomePreset has this method
+
+            if (!AssetDatabase.IsValidFolder("Assets/Data"))
+            {
+                AssetDatabase.CreateFolder("Assets", "Data");
+            }
+            if (!AssetDatabase.IsValidFolder("Assets/Data/BiomePresets"))
+            {
+                AssetDatabase.CreateFolder("Assets/Data", "BiomePresets");
+            }
+
+            string path = AssetDatabase.GenerateUniqueAssetPath("Assets/Data/BiomePresets/NewBiomePreset.asset");
+            AssetDatabase.CreateAsset(preset, path);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Selection.activeObject = preset;
+            EditorGUIUtility.PingObject(preset);
+
+            Debug.Log($"Created a new biome preset at: {path}");
         }
 #endif
-        
-        #endregion
     }
 }

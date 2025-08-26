@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
+using Vastcore.Core;
 
 namespace VastCore.Generation.Cache
 {
@@ -82,6 +83,7 @@ namespace VastCore.Generation.Cache
         /// </summary>
         public void RequestTerrainTile(Vector2Int coordinate, System.Action<TerrainTile> onComplete, float priority = 1f)
         {
+            VastcoreLogger.Instance.LogInfo("TerrainCache", $"RequestTerrainTile start coord={coordinate} priority={priority}");
             if (!enableIntegratedCaching)
             {
                 // キャッシュなしで直接生成
@@ -93,6 +95,7 @@ namespace VastCore.Generation.Cache
             if (cacheSystem.TryGetCachedTerrainData(coordinate, out var cachedData))
             {
                 // キャッシュヒット
+                VastcoreLogger.Instance.LogInfo("TerrainCache", $"Cache hit coord={coordinate}");
                 StartCoroutine(LoadFromCacheAsync(coordinate, cachedData, onComplete));
                 return;
             }
@@ -111,6 +114,7 @@ namespace VastCore.Generation.Cache
             {
                 activeLoadRequests[coordinate] = request;
                 loadQueue.Enqueue(request);
+                VastcoreLogger.Instance.LogInfo("TerrainCache", $"Cache miss -> enqueued coord={coordinate} queue={loadQueue.Count}");
             }
         }
         
@@ -120,6 +124,7 @@ namespace VastCore.Generation.Cache
             
             try
             {
+                VastcoreLogger.Instance.LogDebug("TerrainCache", $"LoadFromCacheAsync start coord={coordinate}");
                 // キャッシュデータからTerrainTileを構築
                 var terrainTile = new TerrainTile
                 {
@@ -137,6 +142,7 @@ namespace VastCore.Generation.Cache
                 // プリミティブオブジェクトの復元
                 terrainTile.structures = RestorePrimitiveObjects(cachedData.primitiveObjects, terrainTile.terrainObject.transform);
                 
+                VastcoreLogger.Instance.LogInfo("TerrainCache", $"LoadFromCacheAsync complete coord={coordinate}");
                 onComplete?.Invoke(terrainTile);
                 
                 Debug.Log($"Loaded terrain tile {coordinate} from cache");
@@ -144,6 +150,7 @@ namespace VastCore.Generation.Cache
             catch (System.Exception e)
             {
                 Debug.LogError($"Failed to load terrain tile {coordinate} from cache: {e.Message}");
+                VastcoreLogger.Instance.LogError("TerrainCache", $"LoadFromCacheAsync error coord={coordinate}: {e.Message}", e);
                 
                 // フォールバック: 新規生成
                 RequestDirectGeneration(coordinate, onComplete);
@@ -155,6 +162,7 @@ namespace VastCore.Generation.Cache
             if (gpuGenerator != null)
             {
                 // GPU生成
+                VastcoreLogger.Instance.LogInfo("TerrainCache", $"RequestDirectGeneration GPU path coord={coordinate}");
                 var gpuParams = new GPUTerrainGenerator.TerrainGenerationParams
                 {
                     scale = 1f,
@@ -175,12 +183,14 @@ namespace VastCore.Generation.Cache
             else
             {
                 // CPU フォールバック
+                VastcoreLogger.Instance.LogInfo("TerrainCache", $"RequestDirectGeneration CPU fallback coord={coordinate}");
                 StartCoroutine(GenerateTerrainCPU(coordinate, onComplete));
             }
         }
         
         private IEnumerator ProcessGeneratedTerrain(Vector2Int coordinate, float[,] heightmap, GPUTerrainGenerator.TerrainGenerationParams gpuParams, System.Action<TerrainTile> onComplete)
         {
+            VastcoreLogger.Instance.LogDebug("TerrainCache", $"ProcessGeneratedTerrain start coord={coordinate}");
             yield return null;
             
             // TerrainTileの構築
@@ -213,6 +223,7 @@ namespace VastCore.Generation.Cache
             var primitiveData = ConvertToPrimitiveData(terrainTile.structures);
             cacheSystem.CacheTerrainData(coordinate, heightmap, metadata, primitiveData);
             
+            VastcoreLogger.Instance.LogInfo("TerrainCache", $"ProcessGeneratedTerrain complete coord={coordinate} cached=true");
             onComplete?.Invoke(terrainTile);
             
             // アクティブリクエストから削除
@@ -238,6 +249,7 @@ namespace VastCore.Generation.Cache
                 if (y % 16 == 0) yield return null; // 負荷分散
             }
             
+            VastcoreLogger.Instance.LogInfo("TerrainCache", $"GenerateTerrainCPU complete coord={coordinate}");
             yield return StartCoroutine(ProcessGeneratedTerrain(coordinate, heightmap, default, onComplete));
         }
         
@@ -418,11 +430,13 @@ namespace VastCore.Generation.Cache
             if (loadQueue.Count == 0 || activeLoadRequests.Count >= maxSimultaneousLoads) return;
             
             var request = loadQueue.Dequeue();
+            VastcoreLogger.Instance.LogDebug("TerrainCache", $"ProcessLoadQueue dequeued coord={request.coordinate} active={activeLoadRequests.Count} remaining={loadQueue.Count}");
             StartCoroutine(ProcessLoadRequest(request));
         }
         
         private IEnumerator ProcessLoadRequest(TerrainLoadRequest request)
         {
+            VastcoreLogger.Instance.LogDebug("TerrainCache", $"ProcessLoadRequest start coord={request.coordinate}");
             yield return StartCoroutine(GenerateTerrainCPU(request.coordinate, request.onComplete));
         }
         

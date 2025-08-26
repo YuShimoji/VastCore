@@ -32,7 +32,7 @@ namespace Vastcore.Generation
             {
                 if (instance == null)
                 {
-                    instance = FindObjectOfType<TerrainErrorRecovery>();
+                    instance = FindFirstObjectByType<TerrainErrorRecovery>();
                     if (instance == null)
                     {
                         GameObject go = new GameObject("TerrainErrorRecovery");
@@ -56,25 +56,16 @@ namespace Vastcore.Generation
                 float qualityLevel = 1f - (attempt * 0.2f);
                 qualityLevel = Mathf.Max(qualityLevel, minQualityLevel);
                 
-                try
+                var fallbackParams = CreateFallbackParams(originalParams, qualityLevel);
+                GameObject recoveredTerrain = null;
+                yield return StartCoroutine(GenerateRecoveryTerrain(fallbackParams, attempt, terrain => { recoveredTerrain = terrain; }));
+                
+                if (recoveredTerrain != null)
                 {
-                    var fallbackParams = CreateFallbackParams(originalParams, qualityLevel);
-                    IEnumerator recoveryRoutine = GenerateRecoveryTerrain(fallbackParams, attempt);
-                    yield return recoveryRoutine;
-                    var recoveredTerrain = recoveryRoutine.Current as GameObject;
-                    
-                    if (recoveredTerrain != null)
-                    {
-                        VastcoreLogger.Instance.LogInfo("TerrainRecovery", 
-                            $"地形回復成功 (品質レベル: {qualityLevel:F2}, 試行: {attempt + 1})");
-                        onSuccess?.Invoke(recoveredTerrain);
-                        yield break;
-                    }
-                }
-                catch (Exception error)
-                {
-                    VastcoreLogger.Instance.LogWarning("TerrainRecovery", 
-                        $"回復試行 {attempt + 1} 失敗: {error.Message}");
+                    VastcoreLogger.Instance.LogInfo("TerrainRecovery", 
+                        $"地形回復成功 (品質レベル: {qualityLevel:F2}, 試行: {attempt + 1})");
+                    onSuccess?.Invoke(recoveredTerrain);
+                    yield break;
                 }
                 
                 yield return new WaitForSeconds(1f); // 次の試行まで待機
@@ -110,19 +101,19 @@ namespace Vastcore.Generation
             };
         }
         
-        private IEnumerator GenerateRecoveryTerrain(TerrainGenerationParams parameters, int attemptNumber)
+        private IEnumerator GenerateRecoveryTerrain(TerrainGenerationParams parameters, int attemptNumber, System.Action<GameObject> onComplete)
         {
             float startTime = Time.time;
             GameObject recoveryTerrain = null;
             
+            // 非同期で地形生成を試行（try/catch を含まないブロックで yield）
+            yield return StartCoroutine(GenerateTerrainAsync(parameters, (terrain) => {
+                recoveryTerrain = terrain;
+            }));
+
+            // タイムアウトチェック（yield を含まないため try/catch 可能）
             try
             {
-                // 非同期で地形生成を試行
-                yield return StartCoroutine(GenerateTerrainAsync(parameters, (terrain) => {
-                    recoveryTerrain = terrain;
-                }));
-                
-                // タイムアウトチェック
                 if (Time.time - startTime > recoveryTimeout)
                 {
                     VastcoreLogger.Instance.LogWarning("TerrainRecovery", 
@@ -131,7 +122,7 @@ namespace Vastcore.Generation
                     {
                         Destroy(recoveryTerrain);
                     }
-                    yield return null;
+                    recoveryTerrain = null;
                 }
             }
             catch (Exception error)
@@ -144,8 +135,8 @@ namespace Vastcore.Generation
                 }
                 recoveryTerrain = null;
             }
-            
-            yield return recoveryTerrain;
+
+            onComplete?.Invoke(recoveryTerrain);
         }
         
         private IEnumerator GenerateTerrainAsync(TerrainGenerationParams parameters, System.Action<GameObject> callback)

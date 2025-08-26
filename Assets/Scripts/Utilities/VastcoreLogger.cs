@@ -104,6 +104,14 @@ namespace Vastcore.Core
         private string logFilter = "";
         private LogLevel filterLevel = LogLevel.Debug;
         
+        [Header("ファイルバッファ設定")]
+        public bool useBufferedFileLogging = true;
+        public int fileBufferEntryThreshold = 50;
+        public float fileFlushInterval = 2f;
+        private float lastFileFlushTime = 0f;
+        private readonly List<string> fileWriteBuffer = new List<string>(256);
+        private bool isRotatingFile = false;
+        
         // パフォーマンス統計
         private Dictionary<string, PerformanceStats> performanceStats = new Dictionary<string, PerformanceStats>();
         
@@ -155,6 +163,15 @@ namespace Vastcore.Core
                 LogPerformanceStats();
                 lastPerformanceLog = Time.time;
             }
+            
+            // バッファの定期フラッシュ
+            if (enableFileLogging && useBufferedFileLogging && logWriter != null)
+            {
+                if (Time.time - lastFileFlushTime >= fileFlushInterval)
+                {
+                    FlushFileBuffer();
+                }
+            }
         }
         
         private void OnGUI()
@@ -167,6 +184,8 @@ namespace Vastcore.Core
         
         private void OnDestroy()
         {
+            // バッファリングされているログを失わないようにフラッシュしてからクローズ
+            FlushLogs();
             CloseLogFile();
         }
         
@@ -228,7 +247,7 @@ namespace Vastcore.Core
                 
                 logFileStream = new FileStream(logFilePath, FileMode.Create, FileAccess.Write, FileShare.Read);
                 logWriter = new StreamWriter(logFileStream, Encoding.UTF8);
-                logWriter.AutoFlush = true;
+                logWriter.AutoFlush = !useBufferedFileLogging;
                 
                 // ログファイルヘッダーの書き込み
                 logWriter.WriteLine($"=== Vastcore Log Started at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===");
@@ -415,12 +434,25 @@ namespace Vastcore.Core
         {
             try
             {
-                logWriter?.WriteLine(entry.ToDetailedString());
-                
-                // ファイルサイズチェック
-                if (logFileStream != null && logFileStream.Length > maxLogFileSize * 1024 * 1024)
+                if (useBufferedFileLogging)
                 {
-                    RotateLogFile();
+                    // バッファに蓄積
+                    fileWriteBuffer.Add(entry.ToDetailedString());
+
+                    // しきい値を超えたらフラッシュ
+                    if (fileWriteBuffer.Count >= fileBufferEntryThreshold)
+                    {
+                        FlushFileBuffer();
+                    }
+                }
+                else
+                {
+                    logWriter?.WriteLine(entry.ToDetailedString());
+                    // 非バッファ時は即時サイズチェック
+                    if (logFileStream != null && logFileStream.Length > maxLogFileSize * 1024 * 1024)
+                    {
+                        RotateLogFile();
+                    }
                 }
             }
             catch (Exception error)
@@ -440,10 +472,50 @@ namespace Vastcore.Core
             }
         }
         
+        private void FlushFileBuffer()
+        {
+            try
+            {
+                if (!useBufferedFileLogging) // 後方互換
+                {
+                    logWriter?.Flush();
+                    logFileStream?.Flush();
+                    lastFileFlushTime = Time.time;
+                    return;
+                }
+
+                if (logWriter == null || fileWriteBuffer.Count == 0) return;
+
+                for (int i = 0; i < fileWriteBuffer.Count; i++)
+                {
+                    logWriter.Write(fileWriteBuffer[i]);
+                }
+
+                fileWriteBuffer.Clear();
+                logWriter.Flush();
+                logFileStream.Flush();
+                lastFileFlushTime = Time.time;
+
+                // サイズチェック（ローテーション）
+                if (!isRotatingFile && logFileStream != null && logFileStream.Length > maxLogFileSize * 1024 * 1024)
+                {
+                    RotateLogFile();
+                }
+            }
+            catch (Exception error)
+            {
+                Debug.LogError($"ログフラッシュエラー: {error.Message}");
+            }
+        }
+        
         private void RotateLogFile()
         {
             try
             {
+                if (isRotatingFile) return;
+                isRotatingFile = true;
+
+                // バッファ分は新ファイルに書き出すため、ここではフラッシュしない
                 CloseLogFile();
                 
                 // 新しいログファイルを作成
@@ -454,13 +526,30 @@ namespace Vastcore.Core
                 logFilePath = newLogPath;
                 logFileStream = new FileStream(logFilePath, FileMode.Create, FileAccess.Write, FileShare.Read);
                 logWriter = new StreamWriter(logFileStream, Encoding.UTF8);
-                logWriter.AutoFlush = true;
+                logWriter.AutoFlush = !useBufferedFileLogging;
                 
-                LogInfo("Logger", "ログファイルをローテーションしました");
+                // ヘッダー再出力
+                logWriter.WriteLine($"=== Vastcore Log Rotated at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===");
+                logWriter.WriteLine($"Unity Version: {Application.unityVersion}");
+                logWriter.WriteLine($"Platform: {Application.platform}");
+                logWriter.WriteLine($"Device Model: {SystemInfo.deviceModel}");
+                logWriter.WriteLine($"Memory Size: {SystemInfo.systemMemorySize}MB");
+                logWriter.WriteLine("=== Log Entries ===");
+
+                // 溜まっているバッファがあれば新しいファイルへ書き出す
+                if (useBufferedFileLogging && fileWriteBuffer.Count > 0)
+                {
+                    FlushFileBuffer();
+                }
+
+                // 再帰的ログ呼び出しを避けるため Debug.Log を使用
+                Debug.Log("[VastcoreLogger] ログファイルをローテーションしました");
+                isRotatingFile = false;
             }
             catch (Exception error)
             {
                 Debug.LogError($"ログファイルローテーションエラー: {error.Message}");
+                isRotatingFile = false;
             }
         }
         
@@ -591,8 +680,13 @@ namespace Vastcore.Core
         {
             try
             {
-                logWriter?.Flush();
-                logFileStream?.Flush();
+                // まずバッファをフラッシュ
+                FlushFileBuffer();
+                if (!useBufferedFileLogging)
+                {
+                    logWriter?.Flush();
+                    logFileStream?.Flush();
+                }
             }
             catch (Exception error)
             {

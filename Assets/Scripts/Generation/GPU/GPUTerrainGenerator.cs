@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.Rendering;
+using Vastcore.Core;
 
 namespace VastCore.Generation.GPU
 {
@@ -119,9 +121,11 @@ namespace VastCore.Generation.GPU
         /// </summary>
         public void RequestTerrainGeneration(Vector2Int coordinate, TerrainGenerationParams parameters, System.Action<float[,]> onComplete)
         {
+            VastcoreLogger.Instance.LogInfo("GPUTerrain", $"Request start coord={coordinate} gpu={(useGPUGeneration ? 1:0)} async={(enableAsyncGeneration ? 1:0)}");
             if (!useGPUGeneration)
             {
                 // CPUフォールバック
+                VastcoreLogger.Instance.LogInfo("GPUTerrain", $"GPU disabled -> CPU fallback coord={coordinate}");
                 StartCoroutine(GenerateTerrainCPU(coordinate, parameters, onComplete));
                 return;
             }
@@ -135,6 +139,7 @@ namespace VastCore.Generation.GPU
             };
             
             generationQueue.Enqueue(request);
+            VastcoreLogger.Instance.LogDebug("GPUTerrain", $"Enqueued coord={coordinate} q={generationQueue.Count} act={activeGenerations.Count}");
             
             if (enableAsyncGeneration)
             {
@@ -144,20 +149,24 @@ namespace VastCore.Generation.GPU
         
         private IEnumerator ProcessGenerationQueue()
         {
+            VastcoreLogger.Instance.LogDebug("GPUTerrain", $"ProcessQueue start q={generationQueue.Count} act={activeGenerations.Count}");
             while (generationQueue.Count > 0 && activeGenerations.Count < maxConcurrentGenerations)
             {
                 var request = generationQueue.Dequeue();
                 activeGenerations.Add(request);
+                VastcoreLogger.Instance.LogDebug("GPUTerrain", $"Dequeued coord={request.coordinate} act={activeGenerations.Count} remain={generationQueue.Count}");
                 
                 StartCoroutine(GenerateTerrainGPU(request));
                 
                 yield return null; // フレーム分散
             }
+            VastcoreLogger.Instance.LogDebug("GPUTerrain", $"ProcessQueue end q={generationQueue.Count} act={activeGenerations.Count}");
         }
         
         private IEnumerator GenerateTerrainGPU(TerrainGenerationRequest request)
         {
             request.isProcessing = true;
+            VastcoreLogger.Instance.LogDebug("GPUTerrain", $"GenerateGPU start coord={request.coordinate}");
             
             // シード値の設定
             currentSeed = GetSeedFromCoordinate(request.coordinate);
@@ -168,18 +177,21 @@ namespace VastCore.Generation.GPU
             // ノイズ生成
             terrainComputeShader.SetTexture(generateNoiseKernel, "NoiseResult", noiseTexture);
             terrainComputeShader.Dispatch(generateNoiseKernel, textureResolution / 8, textureResolution / 8, 1);
+            VastcoreLogger.Instance.LogDebug("GPUTerrain", $"Noise dispatched coord={request.coordinate}");
             
             yield return null;
             
             // 基本地形生成
             terrainComputeShader.SetTexture(generateHeightmapKernel, "HeightmapResult", heightmapTexture);
             terrainComputeShader.Dispatch(generateHeightmapKernel, textureResolution / 8, textureResolution / 8, 1);
+            VastcoreLogger.Instance.LogDebug("GPUTerrain", $"Heightmap dispatched coord={request.coordinate}");
             
             yield return null;
             
             // 浸食処理（オプション）
             if (request.parameters.applyErosion)
             {
+                VastcoreLogger.Instance.LogDebug("GPUTerrain", $"Erosion begin iter={request.parameters.erosionIterations} coord={request.coordinate}");
                 for (int i = 0; i < request.parameters.erosionIterations; i++)
                 {
                     terrainComputeShader.SetTexture(applyErosionKernel, "HeightmapResult", heightmapTexture);
@@ -191,10 +203,12 @@ namespace VastCore.Generation.GPU
                     
                     if (i % 2 == 0) yield return null; // 負荷分散
                 }
+                VastcoreLogger.Instance.LogDebug("GPUTerrain", $"Erosion end coord={request.coordinate}");
             }
             
             // GPU→CPUデータ転送
             request.readbackRequest = AsyncGPUReadback.Request(heightmapTexture, 0, TextureFormat.RFloat);
+            VastcoreLogger.Instance.LogDebug("GPUTerrain", $"Readback requested coord={request.coordinate}");
             
             yield return new WaitUntil(() => request.readbackRequest.done);
             
@@ -203,16 +217,19 @@ namespace VastCore.Generation.GPU
                 var data = request.readbackRequest.GetData<float>();
                 var heightmap = ConvertToHeightmap(data, textureResolution);
                 request.onComplete?.Invoke(heightmap);
+                VastcoreLogger.Instance.LogInfo("GPUTerrain", $"Readback ok coord={request.coordinate}");
             }
             else
             {
                 Debug.LogError("GPU Readback failed for terrain generation");
                 // CPUフォールバックを実行
+                VastcoreLogger.Instance.LogError("GPUTerrain", $"Readback error -> CPU fallback coord={request.coordinate}");
                 StartCoroutine(GenerateTerrainCPU(request.coordinate, request.parameters, request.onComplete));
             }
             
             // アクティブリストから削除
             activeGenerations.Remove(request);
+            VastcoreLogger.Instance.LogDebug("GPUTerrain", $"GenerateGPU end coord={request.coordinate} act={activeGenerations.Count}");
         }
         
         private void SetComputeShaderParameters(TerrainGenerationParams parameters)
@@ -261,6 +278,7 @@ namespace VastCore.Generation.GPU
         private IEnumerator GenerateTerrainCPU(Vector2Int coordinate, TerrainGenerationParams parameters, System.Action<float[,]> onComplete)
         {
             // CPUフォールバック実装
+            VastcoreLogger.Instance.LogInfo("GPUTerrain", $"CPU start coord={coordinate}");
             var heightmap = new float[textureResolution, textureResolution];
             
             for (int y = 0; y < textureResolution; y++)
@@ -278,6 +296,7 @@ namespace VastCore.Generation.GPU
             }
             
             onComplete?.Invoke(heightmap);
+            VastcoreLogger.Instance.LogInfo("GPUTerrain", $"CPU done coord={coordinate}");
         }
         
         private float GenerateNoiseValue(float x, float y, TerrainGenerationParams parameters)
@@ -334,6 +353,7 @@ namespace VastCore.Generation.GPU
             // 非同期生成キューの処理
             if (enableAsyncGeneration && generationQueue.Count > 0 && activeGenerations.Count < maxConcurrentGenerations)
             {
+                VastcoreLogger.Instance.LogDebug("GPUTerrain", $"Update tick trigger q={generationQueue.Count} act={activeGenerations.Count}");
                 StartCoroutine(ProcessGenerationQueue());
             }
         }

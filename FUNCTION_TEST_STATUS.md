@@ -74,6 +74,92 @@
 
 ---
 
+## 🏞️ Runtime Terrain Dynamic Generation/Deletion 検証 (2025-08-26更新)
+
+### 目的
+プレイ中の地形タイル生成/削除がハングせず継続し、キューが適切に更新・処理されることを確認する。特に「Step is still running」ハングの再発防止と、削除トリガ（`TriggerTileCleanup`）の動作検証を行う。
+
+### 対象
+- `Assets/Scripts/Generation/Map/RuntimeTerrainManager.cs`
+- `Assets/Scripts/Generation/Map/TileManager.cs`
+
+### テスト環境
+- Unity 6.0.0.29f1
+- シーン: 任意（プレイヤーキャラクター/カメラが移動可能であること）
+
+### 推奨設定（例）
+- `RuntimeTerrainManager` の Inspector:
+  - `enableDynamicGeneration = true`
+  - `enableFrameTimeControl = true`（任意）
+  - `updateInterval = 0.2`（任意、0.1〜0.5 で調整）
+  - `forceUnloadRadius` と `keepAliveRadius` をデフォルトから大きめに（視認のため）
+  - `showDebugInfo = true`（Gizmos 表示のため）
+- `playerTransform`: プレイヤー（またはカメラ）を設定
+
+### 手順（PlayMode）
+1. シーンに `RuntimeTerrainManager` と `TileManager` を配置し、`playerTransform` を設定。
+2. Gizmos を ON にして再生開始。
+3. プレイヤーを一定速度で直線移動 → 旋回 → しばらく停止。
+4. Console/ログ出力を監視し、以下の周期的ログを確認：
+   - `ProcessGenerationQueueWithFrameLimit start` または `ProcessGenerationQueue start`
+   - `ProcessDeletionQueue start`
+5. プレイヤー近傍のタイル生成ログ（High/Immediate 優先度）が随時出ること。
+6. プレイヤーから遠ざかったタイルに対して削除要求（Immediate/Low）が出ること。
+7. シーンビューで Gizmos による半径/予測表示が変化し、移動方向に応じた生成が先行すること。
+
+### 期待結果
+- 生成・削除キューが増減し、一定周期で処理が進む（停滞しない）。
+- 「Step is still running」等のハング兆候が出ない。
+- 過度なフレームスパイクやログスパムが発生しない（設定に依存）。
+- 停止後もしばらくして不要タイルに削除要求が発行され、メモリ消費が安定化する。
+
+### 合否基準
+- 5〜10分のテスト走行で例外 0、ハング 0。
+- 生成/削除ログが周期的に出続け、長時間（>10s）出力が停止しない。
+- プレイヤーが移動した方向の外縁で生成が先行、後方で削除要求が発行。
+- メモリ監視（必要に応じて Profiler）で明確なリーク傾向がない。
+
+### トラブルシュート
+- キューが動かない: `enableDynamicGeneration`/`playerTransform` 設定を確認。`updateInterval` を短縮。
+- フレームスパイク: `enableFrameTimeControl` を有効化し、1 フレームあたり処理数を抑制。
+- 削除が遅い: `forceUnloadRadius`/`keepAliveRadius` を見直し、Immediate/Low の閾値を調整。
+- 可視化が出ない: `showDebugInfo`/Gizmos の表示状態を確認。
+
+### 記録テンプレート
+| 観点 | 値/所見 |
+|------|---------|
+| 実行時間 | 10 分 |
+| ハング/例外 | 0 |
+| 生成ログ頻度 | 例: 2〜5 回/秒 |
+| 削除ログ頻度 | 例: 0.5〜2 回/秒 |
+| フレームスパイク | 許容範囲内/要調整 |
+| メモリ | 安定/漸増（要調整） |
+
+### 実施記録（最新）
+| 項目 | 値 |
+|------|----|
+| 実施日 | 2025-08-26 |
+| シーン | 未記入 |
+| 設定 | updateInterval=0.2, enableFrameTimeControl=ON, showDebugInfo=ON |
+| 走行時間 | 未記入 |
+| 結果 | 未記入（合否基準に照らして記載） |
+| 所見 | 未記入 |
+
+### パラメータ調整クイックガイド
+- 即応性を上げたい: `updateInterval` を 0.1〜0.2 に短縮、`immediateLoadRadius` を +1。
+- スパイクを抑えたい: `enableFrameTimeControl`=ON、`maxTilesPerUpdate` を 4〜6、`maxFrameTimeMs` を 3〜5ms に。
+- メモリ安定化: `keepAliveRadius` を縮小、`forceUnloadRadius` を適正化（`keepAlive + 2〜3` 目安）。
+- ログ過多時: `logTileOperations` を OFF、`VastcoreLogger` のログレベルを Info へ。
+
+### ログ検証用フィルタ例（Unity Console）
+- 生成処理開始: "ProcessGenerationQueueWithFrameLimit start" または "ProcessGenerationQueue start"
+- 削除処理開始: "ProcessDeletionQueue start"
+- 生成要求: "RequestGen coord="
+- 削除要求: "RequestDel "
+- 緊急/予防: "EmergencyCleanup" / "PreventiveCleanup"
+
+最終更新: 2025-08-26
+
 ## 🔧 Logger/Assembly Reference 検証 (2025-08-25更新)
 
 ### 概要

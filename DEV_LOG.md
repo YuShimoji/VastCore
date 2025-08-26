@@ -1,5 +1,44 @@
 # 開発作業ログ
 
+## 2025-08-26: RuntimeTerrainManager コルーチン/キュー処理 復旧・強化
+
+### 概要
+Unity ランタイム地形生成で発生していた「Step is still running」ハングの診断/解消に向けて、`RuntimeTerrainManager` のメインコルーチンと削除トリガを復旧・強化。
+
+### 変更点
+- 実装: `Assets/Scripts/Generation/Map/RuntimeTerrainManager.cs`
+  - `DynamicGenerationCoroutine()` の各サイクルで `UpdatePlayerTracking()` / `UpdateTileGeneration()` を確実に呼び出すよう修正。
+  - `TriggerTileCleanup(Vector3 playerPosition)` を新規実装。
+    - `forceUnloadRadius` を超えるタイル: `TilePriority.Immediate` で削除要求。
+    - `keepAliveRadius` 超〜 `forceUnloadRadius` 以下: `TilePriority.Low` で削除要求。
+  - デバッグ: `OnDrawGizmos()` を追加し、`showDebugInfo` 有効時に `DrawDebugInfo()` を呼び出す。
+  - ログ: 既存の `VastcoreLogger` トレースでキュー処理/コルーチン進行を観測可能。
+
+### 背景/原因仮説
+- 生成/削除リクエストがランタイムで更新されず、キューが空/不変のまま待機し続けることで、処理が進まないフレームが継続していた可能性。
+- 各サイクルでのプレイヤー追跡・生成リクエスト更新の呼び出し欠落、ならびに削除トリガ未実装が主因と判断。
+
+### 検証手順（エディタ/PlayMode）
+1. シーンに `RuntimeTerrainManager` と `TileManager` を配置し、`playerTransform` を設定。
+2. `enableDynamicGeneration = true`、`enableFrameTimeControl` は任意。
+3. `showDebugInfo = true` にしてシーンビューの Gizmos を ON。
+4. 再生して数十秒間プレイヤーを移動。
+5. 期待挙動:
+   - Console/ファイルログに以下が周期的に出力されること。
+     - `ProcessGenerationQueueWithFrameLimit start` または `ProcessGenerationQueue start`
+     - `ProcessDeletionQueue start`
+   - プレイヤー周辺にタイル生成ログが出る（High/Immediate 優先度）。
+   - 力学的に離れたタイルに対して削除要求が出る（Immediate/Low）。
+   - Gizmo でプレイヤー予測/半径が可視化される。
+
+### 追加の観測/メトリクス
+- `TileManager.GetStats()` を活用して、フレーム当たり処理数/キュー長/アクティブ枚数の推移をサンプリング。
+- メモリ監視コルーチンの警告/緊急クリーンアップログが過度に発生しないことを確認。
+
+### 次アクション
+- ログを解析し、生成/削除のフローが途切れず進行しているか確認。
+- 必要に応じて `updateInterval` / フレーム時間制御の閾値を調整し、スパイク抑制とレスポンスのバランスを最適化。
+
 ## 2025-08-25: VastcoreLogger.LogLevel 参照修正と asmdef 検証
 
 ### 概要

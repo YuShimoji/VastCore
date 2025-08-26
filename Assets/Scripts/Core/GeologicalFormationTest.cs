@@ -219,9 +219,9 @@ namespace Vastcore.Generation.Map
             
             var testEnvironments = new[]
             {
-                new GeologicalFormationGenerator.GeologicalEnvironment { temperature = 30f, waterDepth = 100f }, // 高温多湿
-                new GeologicalFormationGenerator.GeologicalEnvironment { temperature = 5f, waterDepth = 0f },    // 寒冷乾燥
-                new GeologicalFormationGenerator.GeologicalEnvironment { temperature = 20f, waterDepth = 50f }   // 温帯
+                new GeologicalEnvironment { temperature = 30f, waterDepth = 100f }, // 高温多湿
+                new GeologicalEnvironment { temperature = 5f, waterDepth = 0f },    // 寒冷乾燥
+                new GeologicalEnvironment { temperature = 20f, waterDepth = 50f }   // 温帯
             };
             
             int weatheringTests = 0;
@@ -393,7 +393,7 @@ namespace Vastcore.Generation.Map
         /// <summary>
         /// 特定の岩石タイプのテスト
         /// </summary>
-        public void TestSpecificRockType(GeologicalFormationGenerator.RockFormationType rockType)
+        public void TestSpecificRockType(RockFormationType rockType)
         {
             VastcoreLogger.Instance.LogInfo("GeologicalTest", $"Testing specific rock type: {rockType}");
             
