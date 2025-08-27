@@ -1,5 +1,22 @@
 # 開発作業ログ
 
+## 2025-08-28: Git config 重複キー修正（Cascadeファイル読取エラー対策）
+
+### 概要
+`.git/config` の `branch "master"` セクションに `vscode-merge-base = origin/master` が重複しており、厳格な INI パーサで読み取りエラーとなる可能性があったため、一方を削除して1本化。
+
+### 変更点
+- 修正: `.git/config` における重複キーの削除（リポジトリ管理外ファイルのため履歴対象外）
+- 記録: 本ログに対処内容とテスト手順を追記
+
+### テスト手順
+1. Cascade のファイル閲覧で `c:/Users/thank/Storage/Game Projects/Vastcore/.git/config` を開けること
+2. `git config --list --show-origin` を実行し、エラーやパース失敗が出ないこと
+3. VS Code / Cascade 操作で当該エラーが再発しないこと
+
+### 結果
+- Readツールで `.git/config` の読取を確認。重複キーは削除済みで1本化。
+
 ## 2025-08-26: RuntimeTerrainManager 安定化修正（Cascade/Step is still running 緩和）
 
 ### 概要
