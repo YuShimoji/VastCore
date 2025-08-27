@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Vastcore.Generation;
 using Vastcore.Generation.Map;
+using Vastcore.Player;
 
 namespace Vastcore.Generation
 {
