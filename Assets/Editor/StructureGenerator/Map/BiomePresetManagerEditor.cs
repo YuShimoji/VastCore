@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEditor;
-using Vastcore.Generation.Map;
+using Vastcore.Terrain.Map;
 
 namespace Vastcore.Editor.StructureGenerator.Map
 {

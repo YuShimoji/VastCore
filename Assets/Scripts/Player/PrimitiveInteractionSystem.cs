@@ -1,6 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
-using Vastcore.Generation;
+using System.Linq;
+using Vastcore.Core;
+using Vastcore.Utils;
+using Vastcore.Terrain.Map;
 
 namespace Vastcore.Player
 {
