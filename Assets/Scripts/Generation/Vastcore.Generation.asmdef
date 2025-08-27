@@ -5,7 +5,8 @@
         "Unity.ProBuilder",
         "Unity.TextMeshPro",
         "Vastcore.Core",
-        "Vastcore.Utilities"
+        "Vastcore.Utilities",
+        "Vastcore.Diagnostics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
