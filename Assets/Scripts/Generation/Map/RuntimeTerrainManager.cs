@@ -2,10 +2,10 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using VastCore.Generation;
-using VastCore.Core;
+using Vastcore.Generation;
+using Vastcore.Core;
 
-namespace VastCore.Generation
+namespace Vastcore.Generation
 {
     /// <summary>
     /// 実行時地形管理システム

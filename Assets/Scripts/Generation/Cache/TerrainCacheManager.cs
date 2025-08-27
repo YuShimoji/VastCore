@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections;
 using Vastcore.Core;
 
-namespace VastCore.Generation.Cache
+namespace Vastcore.Generation.Cache
 {
     /// <summary>
     /// 地形キャッシュマネージャー

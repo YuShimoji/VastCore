@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace VastCore.Generation.GPU
+namespace Vastcore.Generation.GPU
 {
     /// <summary>
     /// GPU並列処理のパフォーマンス監視システム

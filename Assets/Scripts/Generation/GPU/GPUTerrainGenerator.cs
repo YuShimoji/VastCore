@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine.Rendering;
 using Vastcore.Core;
 
-namespace VastCore.Generation.GPU
+namespace Vastcore.Generation.GPU
 {
     /// <summary>
     /// GPU並列処理による高速地形生成システム

@@ -4,7 +4,7 @@ using System.Collections;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 
-namespace VastCore.Generation.Cache
+namespace Vastcore.Generation.Cache
 {
     /// <summary>
     /// インテリジェントキャッシュシステム

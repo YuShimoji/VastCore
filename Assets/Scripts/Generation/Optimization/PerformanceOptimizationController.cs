@@ -1,9 +1,9 @@
 using UnityEngine;
-using VastCore.Generation.GPU;
-using VastCore.Generation.Cache;
+using Vastcore.Generation.GPU;
+using Vastcore.Generation.Cache;
 using System.Collections;
 
-namespace VastCore.Generation.Optimization
+namespace Vastcore.Generation.Optimization
 {
     /// <summary>
     /// パフォーマンス最適化統合コントローラー
