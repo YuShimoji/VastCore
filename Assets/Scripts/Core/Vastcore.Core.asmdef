@@ -2,8 +2,7 @@
     "name": "Vastcore.Core",
     "rootNamespace": "Vastcore.Core",
     "references": [
-        "Vastcore.Utilities",
-        "Vastcore.Diagnostics"
+        "Vastcore.Utils"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

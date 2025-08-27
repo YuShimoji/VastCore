@@ -1,6 +1,6 @@
 {
-    "name": "Vastcore.Diagnostics",
-    "rootNamespace": "Vastcore.Diagnostics",
+    "name": "Vastcore.Utils",
+    "rootNamespace": "Vastcore.Utils",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
