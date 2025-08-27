@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using Vastcore.Core;
+using Vastcore.Generation.GPU;
 
 namespace Vastcore.Generation.Cache
 {
