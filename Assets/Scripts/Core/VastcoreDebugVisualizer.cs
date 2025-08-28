@@ -41,7 +41,7 @@ namespace Vastcore.Core
             {
                 if (instance == null)
                 {
-                    instance = FindObjectOfType<VastcoreDebugVisualizer>();
+                    var existingVisualizer = FindFirstObjectByType<VastcoreDebugVisualizer>();
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreDebugVisualizer");

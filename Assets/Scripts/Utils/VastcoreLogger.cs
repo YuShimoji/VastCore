@@ -81,7 +81,7 @@ namespace Vastcore.Core
             {
                 if (instance == null)
                 {
-                    instance = FindObjectOfType<VastcoreLogger>();
+                    var existingLogger = FindFirstObjectByType<VastcoreLogger>();
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreLogger");

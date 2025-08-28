@@ -31,7 +31,7 @@ namespace Vastcore.Core
             {
                 if (instance == null)
                 {
-                    instance = FindObjectOfType<VastcoreErrorHandler>();
+                    var existingHandler = FindFirstObjectByType<VastcoreErrorHandler>();
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreErrorHandler");
@@ -273,7 +273,7 @@ namespace Vastcore.Core
         private void CleanupUnusedObjects()
         {
             // 非アクティブなテレインタイルを削除
-            var terrainTiles = FindObjectsOfType<TerrainTile>();
+            var terrainTiles = FindObjectsByType<TerrainTile>(FindObjectsSortMode.None);
             foreach (var tile in terrainTiles)
             {
                 if (!tile.isActive && Time.time - tile.lastAccessTime > 60f)
@@ -283,7 +283,7 @@ namespace Vastcore.Core
             }
             
             // 使用されていないプリミティブオブジェクトを削除
-            var primitiveObjects = FindObjectsOfType<PrimitiveTerrainObject>();
+            var primitiveObjects = FindObjectsByType<PrimitiveTerrainObject>(FindObjectsSortMode.None);
             foreach (var primitive in primitiveObjects)
             {
                 if (Vector3.Distance(primitive.transform.position, Camera.main.transform.position) > 3000f)
