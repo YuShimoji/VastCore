@@ -132,7 +132,7 @@ namespace Vastcore.Generation.Map
         [SerializeField] private float seaLevel = 0f;
         [SerializeField] private float tectonicActivity = 0.5f;
         [SerializeField] private float volcanicActivity = 0.3f;
-        [SerializeField] private float erosionRate = 0.1f;
+        [SerializeField] private float erosionRate = 0.1f; // TODO: Implement erosion simulation
 
         private List<GeologicalLayer> formationLayers;
         private GeologicalEnvironment currentEnvironment;
