@@ -81,20 +81,12 @@ namespace Vastcore.Core
         /// </summary>
         private class DeformRequest
         {
-#if DEFORM_AVAILABLE
-            public Deformable target;
-#else
             public object target;
-#endif
             public DeformQualityLevel quality;
             public System.Action<bool> onComplete;
             public float priority;
             
-#if DEFORM_AVAILABLE
-            public DeformRequest(Deformable target, DeformQualityLevel quality, float priority = 1f, System.Action<bool> onComplete = null)
-#else
             public DeformRequest(object target, DeformQualityLevel quality, float priority = 1f, System.Action<bool> onComplete = null)
-#endif
             {
                 this.target = target;
                 this.quality = quality;
@@ -181,11 +173,7 @@ namespace Vastcore.Core
         /// <summary>
         /// Deformableを管理対象に登録
         /// </summary>
-#if DEFORM_AVAILABLE
-        public void RegisterDeformable(Deformable deformable, DeformQualityLevel qualityLevel = DeformQualityLevel.High)
-#else
         public void RegisterDeformable(object deformable, DeformQualityLevel qualityLevel = DeformQualityLevel.High)
-#endif
         {
             if (!enableDeformSystem || deformable == null) return;
             
@@ -198,21 +186,22 @@ namespace Vastcore.Core
                 ApplyQualitySettings(deformable, qualityLevel);
                 
 #if DEFORM_AVAILABLE
-                VastcoreLogger.Log($"Registered Deformable: {deformable.name} with quality {qualityLevel}", VastcoreLogger.LogLevel.Debug);
-#else
-                VastcoreLogger.Log($"Registered object with quality {qualityLevel}", VastcoreLogger.LogLevel.Debug);
+                if (deformable is Deformable deformableComponent)
+                {
+                    VastcoreLogger.Log($"Registered Deformable: {deformableComponent.name} with quality {qualityLevel}", VastcoreLogger.LogLevel.Debug);
+                }
+                else
 #endif
+                {
+                    VastcoreLogger.Log($"Registered object with quality {qualityLevel}", VastcoreLogger.LogLevel.Debug);
+                }
             }
         }
         
         /// <summary>
         /// Deformableの登録解除
         /// </summary>
-#if DEFORM_AVAILABLE
-        public void UnregisterDeformable(Deformable deformable)
-#else
         public void UnregisterDeformable(object deformable)
-#endif
         {
             if (deformable == null) return;
             
@@ -220,20 +209,21 @@ namespace Vastcore.Core
             qualityOverrides.Remove(deformable);
             
 #if DEFORM_AVAILABLE
-            VastcoreLogger.Log($"Unregistered Deformable: {deformable.name}", VastcoreLogger.LogLevel.Debug);
-#else
-            VastcoreLogger.Log("Unregistered object", VastcoreLogger.LogLevel.Debug);
+            if (deformable is Deformable deformableComponent)
+            {
+                VastcoreLogger.Log($"Unregistered Deformable: {deformableComponent.name}", VastcoreLogger.LogLevel.Debug);
+            }
+            else
 #endif
+            {
+                VastcoreLogger.Log("Unregistered object", VastcoreLogger.LogLevel.Debug);
+            }
         }
         
         /// <summary>
         /// Deform処理をキューに追加
         /// </summary>
-#if DEFORM_AVAILABLE
-        public void QueueDeformation(Deformable target, DeformQualityLevel quality = DeformQualityLevel.High, float priority = 1f, System.Action<bool> onComplete = null)
-#else
         public void QueueDeformation(object target, DeformQualityLevel quality = DeformQualityLevel.High, float priority = 1f, System.Action<bool> onComplete = null)
-#endif
         {
             if (!enableDeformSystem || target == null) return;
             
@@ -285,40 +275,59 @@ namespace Vastcore.Core
                 if (enablePerformanceMonitoring)
                 {
 #if DEFORM_AVAILABLE
-                    using (LoadProfiler.Measure($"Deform Processing: {request.target.name}"))
-#else
-                    using (LoadProfiler.Measure("Deform Processing (dummy)"))
+                    if (request.target is Deformable deformableTarget)
+                    {
+                        using (LoadProfiler.Measure($"Deform Processing: {deformableTarget.name}"))
+                        {
+                            // Deform処理の実行
+                            deformableTarget.Complete();
+                            deformableTarget.Schedule();
+                        }
+                    }
+                    else
 #endif
                     {
-#if DEFORM_AVAILABLE
-                        // Deform処理の実行
-                        request.target.Complete();
-                        request.target.Schedule();
-#endif
+                        using (LoadProfiler.Measure("Deform Processing (dummy)"))
+                        {
+                            // ダミー処理
+                        }
                     }
                 }
                 else
                 {
 #if DEFORM_AVAILABLE
-                    request.target.Complete();
-                    request.target.Schedule();
+                    if (request.target is Deformable deformableTarget)
+                    {
+                        deformableTarget.Complete();
+                        deformableTarget.Schedule();
+                    }
 #endif
                 }
                 
                 request.onComplete?.Invoke(true);
 #if DEFORM_AVAILABLE
-                VastcoreLogger.Log($"Processed deformation for: {request.target.name}", VastcoreLogger.LogLevel.Debug);
-#else
-                VastcoreLogger.Log("Processed deformation (dummy)", VastcoreLogger.LogLevel.Debug);
+                if (request.target is Deformable deformableTarget)
+                {
+                    VastcoreLogger.Log($"Processed deformation for: {deformableTarget.name}", VastcoreLogger.LogLevel.Debug);
+                }
+                else
 #endif
+                {
+                    VastcoreLogger.Log("Processed deformation (dummy)", VastcoreLogger.LogLevel.Debug);
+                }
             }
             catch (System.Exception ex)
             {
 #if DEFORM_AVAILABLE
-                VastcoreLogger.Log($"Deformation failed for {request.target.name}: {ex.Message}", VastcoreLogger.LogLevel.Error);
-#else
-                VastcoreLogger.Log($"Deformation failed: {ex.Message}", VastcoreLogger.LogLevel.Error);
+                if (request.target is Deformable deformableTarget)
+                {
+                    VastcoreLogger.Log($"Deformation failed for {deformableTarget.name}: {ex.Message}", VastcoreLogger.LogLevel.Error);
+                }
+                else
 #endif
+                {
+                    VastcoreLogger.Log($"Deformation failed: {ex.Message}", VastcoreLogger.LogLevel.Error);
+                }
                 request.onComplete?.Invoke(false);
             }
         }
@@ -326,27 +335,26 @@ namespace Vastcore.Core
         /// <summary>
         /// 品質設定の適用
         /// </summary>
-#if DEFORM_AVAILABLE
-        private void ApplyQualitySettings(Deformable deformable, DeformQualityLevel quality)
-#else
         private void ApplyQualitySettings(object deformable, DeformQualityLevel quality)
-#endif
         {
             if (deformable == null) return;
             
 #if DEFORM_AVAILABLE
-            switch (quality)
+            if (deformable is Deformable deformableComponent)
             {
-                case DeformQualityLevel.Low:
-                    deformable.UpdateMode = UpdateMode.Stop;
-                    break;
-                case DeformQualityLevel.Medium:
-                    deformable.UpdateMode = UpdateMode.Custom;
-                    break;
-                case DeformQualityLevel.High:
-                case DeformQualityLevel.Ultra:
-                    deformable.UpdateMode = UpdateMode.Auto;
-                    break;
+                switch (quality)
+                {
+                        case DeformQualityLevel.Low:
+                        deformableComponent.UpdateMode = UpdateMode.Stop;
+                        break;
+                    case DeformQualityLevel.Medium:
+                        deformableComponent.UpdateMode = UpdateMode.Custom;
+                        break;
+                    case DeformQualityLevel.High:
+                    case DeformQualityLevel.Ultra:
+                        deformableComponent.UpdateMode = UpdateMode.Auto;
+                        break;
+                }
             }
 #else
             // Deformパッケージが利用できない場合は何もしない
