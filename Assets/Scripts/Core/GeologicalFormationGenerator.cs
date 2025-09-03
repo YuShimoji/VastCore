@@ -134,6 +134,14 @@ namespace Vastcore.Generation.Map
         [SerializeField] private float tectonicActivity = 0.5f;
         [SerializeField] private float volcanicActivity = 0.3f;
         [SerializeField] private float erosionRate = 0.1f; // TODO: Implement erosion simulation
+        
+        // エロージョンシミュレーション用メソッド（将来実装予定）
+        private void ApplyErosion(GeologicalLayer layer)
+        {
+            // 現在は未実装だが、erosionRateを使用する予定
+            float erosionEffect = erosionRate * Time.deltaTime;
+            // TODO: 実際のエロージョン処理を実装
+        }
 
         private List<GeologicalLayer> formationLayers;
         private GeologicalEnvironment currentEnvironment;
