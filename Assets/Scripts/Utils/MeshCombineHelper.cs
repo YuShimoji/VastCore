@@ -1,7 +1,7 @@
 using UnityEngine;
-using Vastcore.Diagnostics;
+// using Vastcore.Diagnostics; // Now part of Vastcore.Utils
 
-namespace Vastcore.Utilities
+namespace Vastcore.Utils
 {
     public static class MeshCombineHelper
     {

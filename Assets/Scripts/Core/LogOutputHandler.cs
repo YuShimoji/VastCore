@@ -102,15 +102,15 @@ namespace Vastcore.Core
             
             switch (entry.level)
             {
-                case VastcoreLogger.LogLevel.Debug:
-                case VastcoreLogger.LogLevel.Info:
+                case Vastcore.Utils.VastcoreLogger.LogLevel.Debug:
+                case Vastcore.Utils.VastcoreLogger.LogLevel.Info:
                     Debug.Log(logMessage);
                     break;
-                case VastcoreLogger.LogLevel.Warning:
+                case Vastcore.Utils.VastcoreLogger.LogLevel.Warning:
                     Debug.LogWarning(logMessage);
                     break;
-                case VastcoreLogger.LogLevel.Error:
-                case VastcoreLogger.LogLevel.Critical:
+                case Vastcore.Utils.VastcoreLogger.LogLevel.Error:
+                case Vastcore.Utils.VastcoreLogger.LogLevel.Critical:
                     if (exception != null)
                     {
                         Debug.LogException(exception);
