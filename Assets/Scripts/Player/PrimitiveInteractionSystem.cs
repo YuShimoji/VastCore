@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Core;
 using Vastcore.Utils;
-using Vastcore.Terrain.Map;
+// using Vastcore.Terrain.Map; // Removed to break circular dependency
 
 namespace Vastcore.Player
 {
@@ -38,7 +38,7 @@ namespace Vastcore.Player
         [SerializeField] private bool showInteractionInfo = false;
         
         // プライベート変数
-        private Dictionary<PrimitiveTerrainObject, InteractionData> primitiveInteractions = new Dictionary<PrimitiveTerrainObject, InteractionData>();
+        private Dictionary<GameObject, InteractionData> primitiveInteractions = new Dictionary<GameObject, InteractionData>();
         private List<GrindEdge> detectedGrindEdges = new List<GrindEdge>();
         private List<ClimbSurface> detectedClimbSurfaces = new List<ClimbSurface>();
         
@@ -166,7 +166,7 @@ namespace Vastcore.Player
         /// </summary>
         private void ProcessExistingPrimitives()
         {
-            var existingPrimitives = FindObjectsOfType<PrimitiveTerrainObject>();
+            var existingPrimitives = FindObjectsByType<GameObject>(FindObjectsSortMode.None).Where(go => go.CompareTag("TerrainPrimitive"));
             foreach (var primitive in existingPrimitives)
             {
                 ProcessPrimitiveInteraction(primitive);
@@ -178,7 +178,7 @@ namespace Vastcore.Player
         /// <summary>
         /// プリミティブオブジェクトのインタラクションを処理
         /// </summary>
-        public void ProcessPrimitiveInteraction(PrimitiveTerrainObject primitive)
+        public void ProcessPrimitiveInteraction(GameObject primitive)
         {
             if (primitive == null) return;
             
@@ -226,7 +226,7 @@ namespace Vastcore.Player
         /// <summary>
         /// グラインド可能エッジを自動検出
         /// </summary>
-        private void DetectGrindableEdges(PrimitiveTerrainObject primitive, ref InteractionData interactionData)
+        private void DetectGrindableEdges(GameObject primitive, ref InteractionData interactionData)
         {
             var meshFilter = primitive.GetComponent<MeshFilter>();
             if (meshFilter == null || meshFilter.sharedMesh == null) return;
@@ -294,7 +294,7 @@ namespace Vastcore.Player
         /// <summary>
         /// グラインドエッジを作成
         /// </summary>
-        private GrindEdge CreateGrindEdge(EdgeInfo edgeInfo, PrimitiveTerrainObject primitive)
+        private GrindEdge CreateGrindEdge(EdgeInfo edgeInfo, GameObject primitive)
         {
             Vector3 direction = (edgeInfo.vertex2 - edgeInfo.vertex1).normalized;
             Vector3 center = (edgeInfo.vertex1 + edgeInfo.vertex2) * 0.5f;
@@ -329,7 +329,7 @@ namespace Vastcore.Player
         /// <summary>
         /// クライミング可能表面を検出
         /// </summary>
-        private void DetectClimbableSurfaces(PrimitiveTerrainObject primitive, ref InteractionData interactionData)
+        private void DetectClimbableSurfaces(GameObject primitive, ref InteractionData interactionData)
         {
             var meshFilter = primitive.GetComponent<MeshFilter>();
             if (meshFilter == null || meshFilter.sharedMesh == null) return;
@@ -391,7 +391,7 @@ namespace Vastcore.Player
         /// <summary>
         /// クライミング表面を作成
         /// </summary>
-        private ClimbSurface CreateClimbSurface(SurfaceGroup surfaceGroup, PrimitiveTerrainObject primitive)
+        private ClimbSurface CreateClimbSurface(SurfaceGroup surfaceGroup, GameObject primitive)
         {
             var bounds = CalculateBounds(surfaceGroup.vertices);
             Vector3 up = Vector3.Cross(surfaceGroup.normal, Vector3.right).normalized;
@@ -473,7 +473,7 @@ namespace Vastcore.Player
         /// <summary>
         /// 詳細コライダーを設定
         /// </summary>
-        private void SetupDetailedColliders(PrimitiveTerrainObject primitive, ref InteractionData interactionData)
+        private void SetupDetailedColliders(GameObject primitive, ref InteractionData interactionData)
         {
             var meshCollider = primitive.GetComponent<MeshCollider>();
             if (meshCollider != null)
@@ -614,7 +614,7 @@ namespace Vastcore.Player
         /// <summary>
         /// プリミティブのインタラクションデータを取得
         /// </summary>
-        public InteractionData? GetInteractionData(PrimitiveTerrainObject primitive)
+        public InteractionData? GetInteractionData(GameObject primitive)
         {
             if (primitiveInteractions.ContainsKey(primitive))
             {
@@ -626,7 +626,7 @@ namespace Vastcore.Player
         /// <summary>
         /// プリミティブのインタラクションを削除
         /// </summary>
-        public void RemovePrimitiveInteraction(PrimitiveTerrainObject primitive)
+        public void RemovePrimitiveInteraction(GameObject primitive)
         {
             if (primitiveInteractions.ContainsKey(primitive))
             {
