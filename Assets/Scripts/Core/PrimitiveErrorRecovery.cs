@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Vastcore.Core;
 
-namespace Vastcore.Generation
+namespace Vastcore.Core
 {
     /// <summary>
     /// プリミティブ地形オブジェクト専用のエラー回復システム
