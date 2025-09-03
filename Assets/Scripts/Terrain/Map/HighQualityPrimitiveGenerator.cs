@@ -3,6 +3,11 @@ using UnityEngine.ProBuilder;
 using UnityEngine.ProBuilder.MeshOperations;
 using System.Collections.Generic;
 using System.Linq;
+using Vastcore.Core;
+
+#if DEFORM_AVAILABLE
+using Deform;
+#endif
 
 namespace Vastcore.Generation
 {
@@ -28,6 +33,13 @@ namespace Vastcore.Generation
             public bool enableProceduralDetails;   // プロシージャル詳細
             public int complexityLevel;            // 複雑度レベル (1-5)
             
+            [Header("Deform統合")]
+            public bool enableDeformSystem;        // Deformシステム使用
+            public VastcoreDeformManager.DeformQualityLevel deformQuality; // Deform品質レベル
+            public bool enableGeologicalDeformation; // 地質学的変形
+            public bool enableOrganicDeformation;   // 有機的変形
+            public float deformIntensity;          // 変形強度 (0-1)
+            
             [Header("物理品質")]
             public bool enablePreciseColliders;    // 精密コライダー
             public bool enableLODColliders;        // LOD対応コライダー
@@ -43,6 +55,11 @@ namespace Vastcore.Generation
                 detailIntensity = 0.7f,
                 enableProceduralDetails = true,
                 complexityLevel = 4,
+                enableDeformSystem = true,
+                deformQuality = VastcoreDeformManager.DeformQualityLevel.High,
+                enableGeologicalDeformation = true,
+                enableOrganicDeformation = true,
+                deformIntensity = 0.8f,
                 enablePreciseColliders = true,
                 enableLODColliders = true,
                 colliderType = ColliderType.Mesh
@@ -58,6 +75,11 @@ namespace Vastcore.Generation
                 detailIntensity = 0.5f,
                 enableProceduralDetails = true,
                 complexityLevel = 3,
+                enableDeformSystem = true,
+                deformQuality = VastcoreDeformManager.DeformQualityLevel.Medium,
+                enableGeologicalDeformation = true,
+                enableOrganicDeformation = false,
+                deformIntensity = 0.6f,
                 enablePreciseColliders = true,
                 enableLODColliders = true,
                 colliderType = ColliderType.Mesh
@@ -73,6 +95,11 @@ namespace Vastcore.Generation
                 detailIntensity = 0.3f,
                 enableProceduralDetails = false,
                 complexityLevel = 2,
+                enableDeformSystem = false,
+                deformQuality = VastcoreDeformManager.DeformQualityLevel.Low,
+                enableGeologicalDeformation = false,
+                enableOrganicDeformation = false,
+                deformIntensity = 0.3f,
                 enablePreciseColliders = false,
                 enableLODColliders = false,
                 colliderType = ColliderType.Box
@@ -263,6 +290,9 @@ namespace Vastcore.Generation
                 ApplyAdvancedCubeDeformation(cube, quality);
             }
             
+            // Deform統合
+            ApplyDeformComponents(cube, quality, PrimitiveType.Cube);
+            
             return cube;
         }
 
@@ -281,6 +311,9 @@ namespace Vastcore.Generation
                 ApplyAdvancedSphereDeformation(sphere, quality);
             }
             
+            // Deform統合
+            ApplyDeformComponents(sphere, quality, PrimitiveType.Sphere);
+            
             return sphere;
         }
 
@@ -297,6 +330,9 @@ namespace Vastcore.Generation
             {
                 ApplyAdvancedCylinderDeformation(cylinder, quality);
             }
+            
+            // Deform統合
+            ApplyDeformComponents(cylinder, quality, PrimitiveType.Cylinder);
             
             return cylinder;
         }
@@ -334,6 +370,9 @@ namespace Vastcore.Generation
                 ApplyAdvancedPyramidDeformation(pyramid, quality);
             }
             
+            // Deform統合
+            ApplyDeformComponents(pyramid, quality, PrimitiveType.Pyramid);
+            
             return pyramid;
         }
 
@@ -353,6 +392,9 @@ namespace Vastcore.Generation
                 ApplyAdvancedTorusDeformation(torus, quality);
             }
             
+            // Deform統合
+            ApplyDeformComponents(torus, quality, PrimitiveType.Torus);
+            
             return torus;
         }
 
@@ -370,6 +412,9 @@ namespace Vastcore.Generation
                 ApplyAdvancedPrismDeformation(prism, quality);
             }
             
+            // Deform統合
+            ApplyDeformComponents(prism, quality, PrimitiveType.Prism);
+            
             return prism;
         }
 
@@ -386,6 +431,9 @@ namespace Vastcore.Generation
             {
                 ApplyAdvancedConeDeformation(cone, quality);
             }
+            
+            // Deform統合
+            ApplyDeformComponents(cone, quality, PrimitiveType.Cone);
             
             return cone;
         }
@@ -420,6 +468,9 @@ namespace Vastcore.Generation
                 ApplyAdvancedOctahedronDeformation(octahedron, quality);
             }
             
+            // Deform統合
+            ApplyDeformComponents(octahedron, quality, PrimitiveType.Octahedron);
+            
             return octahedron;
         }
 
@@ -434,6 +485,12 @@ namespace Vastcore.Generation
             if (crystal != null && quality.enableAdvancedDeformation)
             {
                 ApplyAdvancedCrystalDeformation(crystal, quality);
+            }
+            
+            // Deform統合
+            if (crystal != null)
+            {
+                ApplyDeformComponents(crystal, quality, PrimitiveType.Crystal);
             }
             
             return crystal;
@@ -475,6 +532,9 @@ namespace Vastcore.Generation
             {
                 ApplyAdvancedMonolithDeformation(monolith, quality);
             }
+            
+            // Deform統合
+            ApplyDeformComponents(monolith, quality, PrimitiveType.Monolith);
             
             return monolith;
         }
@@ -542,6 +602,9 @@ namespace Vastcore.Generation
                 ApplyAdvancedRingDeformation(ring, quality);
             }
             
+            // Deform統合
+            ApplyDeformComponents(ring, quality, PrimitiveType.Ring);
+            
             return ring;
         }
 
@@ -562,6 +625,9 @@ namespace Vastcore.Generation
                 ApplyAdvancedMesaDeformation(mesa, quality);
             }
             
+            // Deform統合
+            ApplyDeformComponents(mesa, quality, PrimitiveType.Mesa);
+            
             return mesa;
         }
 
@@ -581,6 +647,9 @@ namespace Vastcore.Generation
             {
                 ApplyAdvancedSpireDeformation(spire, quality);
             }
+            
+            // Deform統合
+            ApplyDeformComponents(spire, quality, PrimitiveType.Spire);
             
             return spire;
         }
@@ -616,6 +685,9 @@ namespace Vastcore.Generation
             {
                 ApplyAdvancedBoulderDeformation(boulder, quality);
             }
+            
+            // Deform統合
+            ApplyDeformComponents(boulder, quality, PrimitiveType.Boulder);
             
             return boulder;
         }
@@ -665,6 +737,9 @@ namespace Vastcore.Generation
             {
                 ApplyAdvancedFormationDeformation(formation, quality);
             }
+            
+            // Deform統合
+            ApplyDeformComponents(formation, quality, PrimitiveType.Formation);
             
             return formation;
         }
@@ -1265,6 +1340,145 @@ namespace Vastcore.Generation
             return allPassed;
         }
 
+        #region Deform統合機能
+        
+        /// <summary>
+        /// プリミティブにDeformコンポーネントを適用
+        /// </summary>
+        private static void ApplyDeformComponents(ProBuilderMesh primitive, QualitySettings quality, PrimitiveType primitiveType)
+        {
+            if (!quality.enableDeformSystem) return;
+            
+            var deformManager = VastcoreDeformManager.Instance;
+            if (deformManager == null) return;
+            
+#if DEFORM_AVAILABLE
+            // Deformableコンポーネントを追加
+            var deformable = primitive.gameObject.GetComponent<Deformable>();
+            if (deformable == null)
+            {
+                deformable = primitive.gameObject.AddComponent<Deformable>();
+            }
+            
+            // 品質レベルに応じたDeformerを追加
+            ApplyDeformersBasedOnQuality(primitive.gameObject, quality, primitiveType);
+            
+            // VastcoreDeformManagerに登録
+            deformManager.RegisterDeformable(deformable, quality.deformQuality);
+#else
+            // Deformパッケージが利用できない場合はダミー登録
+            deformManager.RegisterDeformable(primitive.gameObject, quality.deformQuality);
+#endif
+        }
+        
+        /// <summary>
+        /// 品質とプリミティブタイプに応じたDeformerを適用
+        /// </summary>
+        private static void ApplyDeformersBasedOnQuality(GameObject target, QualitySettings quality, PrimitiveType primitiveType)
+        {
+            // 地質学的変形
+            if (quality.enableGeologicalDeformation)
+            {
+                ApplyGeologicalDeformers(target, quality, primitiveType);
+            }
+            
+            // 有機的変形
+            if (quality.enableOrganicDeformation)
+            {
+                ApplyOrganicDeformers(target, quality, primitiveType);
+            }
+            
+            // プリミティブタイプ固有の変形
+            ApplyPrimitiveSpecificDeformers(target, quality, primitiveType);
+        }
+        
+        /// <summary>
+        /// 地質学的Deformerを適用
+        /// </summary>
+        private static void ApplyGeologicalDeformers(GameObject target, QualitySettings quality, PrimitiveType primitiveType)
+        {
+#if DEFORM_AVAILABLE
+            switch (primitiveType)
+            {
+                case PrimitiveType.Cube:
+                case PrimitiveType.Boulder:
+                case PrimitiveType.Mesa:
+                    // 侵食効果
+                    var noiseDeformer = target.AddComponent<NoiseDeformer>();
+                    noiseDeformer.Factor = quality.deformIntensity * 0.1f;
+                    break;
+                    
+                case PrimitiveType.Sphere:
+                case PrimitiveType.Crystal:
+                    // 結晶成長効果
+                    var scaleDeformer = target.AddComponent<ScaleDeformer>();
+                    scaleDeformer.Factor = Vector3.one * (1f + quality.deformIntensity * 0.2f);
+                    break;
+                    
+                case PrimitiveType.Cylinder:
+                case PrimitiveType.Spire:
+                    // 地殻変動効果
+                    var bendDeformer = target.AddComponent<BendDeformer>();
+                    bendDeformer.Factor = quality.deformIntensity * 0.3f;
+                    break;
+            }
+#endif
+        }
+        
+        /// <summary>
+        /// 有機的Deformerを適用
+        /// </summary>
+        private static void ApplyOrganicDeformers(GameObject target, QualitySettings quality, PrimitiveType primitiveType)
+        {
+#if DEFORM_AVAILABLE
+            // 風化効果
+            var rippleDeformer = target.AddComponent<RippleDeformer>();
+            rippleDeformer.Factor = quality.deformIntensity * 0.15f;
+            rippleDeformer.Frequency = 2f + quality.detailIntensity * 3f;
+            
+            // 自然成長効果
+            if (quality.deformQuality >= VastcoreDeformManager.DeformQualityLevel.High)
+            {
+                var inflateDeformer = target.AddComponent<InflateDeformer>();
+                inflateDeformer.Factor = quality.deformIntensity * 0.1f;
+            }
+#endif
+        }
+        
+        /// <summary>
+        /// プリミティブタイプ固有のDeformerを適用
+        /// </summary>
+        private static void ApplyPrimitiveSpecificDeformers(GameObject target, QualitySettings quality, PrimitiveType primitiveType)
+        {
+#if DEFORM_AVAILABLE
+            switch (primitiveType)
+            {
+                case PrimitiveType.Torus:
+                case PrimitiveType.Ring:
+                    // 捻り効果
+                    var twistDeformer = target.AddComponent<TwistDeformer>();
+                    twistDeformer.Factor = quality.deformIntensity * 45f; // 度単位
+                    break;
+                    
+                case PrimitiveType.Pyramid:
+                case PrimitiveType.Cone:
+                    // 先端変形効果
+                    var taperDeformer = target.AddComponent<TaperDeformer>();
+                    taperDeformer.Factor = Vector2.one * (1f - quality.deformIntensity * 0.3f);
+                    break;
+                    
+                case PrimitiveType.Monolith:
+                case PrimitiveType.Formation:
+                    // 磁場効果
+                    var magnetDeformer = target.AddComponent<MagnetDeformer>();
+                    magnetDeformer.Factor = quality.deformIntensity * 0.2f;
+                    break;
+            }
+#endif
+        }
+        
+        #endregion
+        
         /// <summary>
         /// プリミティブ生成統計を取得
         /// </summary>
