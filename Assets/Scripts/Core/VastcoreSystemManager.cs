@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 using Vastcore.Core;
-using Vastcore.Generation;
+using Vastcore.Utils;
 
 namespace Vastcore.Core
 {

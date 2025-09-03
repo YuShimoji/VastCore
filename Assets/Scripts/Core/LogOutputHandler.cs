@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using UnityEngine;
+using Vastcore.Utils;
 
 namespace Vastcore.Core
 {
