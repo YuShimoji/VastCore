@@ -1,6 +1,8 @@
 using UnityEngine;
 
-public class CameraController : MonoBehaviour
+namespace Vastcore.Camera.Controllers
+{
+    public class CameraController : MonoBehaviour
 {
     [Header("設定")]
     [Tooltip("マウス感度")]
@@ -54,4 +56,5 @@ public class CameraController : MonoBehaviour
         Vector3 targetPosition = playerBody.position - transform.forward * 5f + Vector3.up * 2f;
         transform.position = targetPosition;
     }
+}
 }

@@ -1,9 +1,9 @@
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine;
 using System.Collections;
-using Vastcore.Player; // AdvancedPlayerControllerの名前空間を追加
+using System.Collections.Generic;
 
-namespace Vastcore.Cinematic
+namespace Vastcore.Camera.Cinematic
 {
     /// <summary>
     /// レターボックス付きシネマティックカメラコントローラー

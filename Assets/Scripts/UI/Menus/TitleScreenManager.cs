@@ -3,7 +3,7 @@ using System.Collections;
 using TMPro;
 using Vastcore.Player;
 
-namespace Vastcore.UI
+namespace Vastcore.UI.Menus
 {
     /// <summary>
     /// 3Dタイトル「Vastcore」の表示とインタラクションを管理します。

@@ -1,16 +1,15 @@
 using UnityEngine;
-using UnityEngine.Rendering;
 using System.Collections;
 using System.Collections.Generic;
-using Vastcore.Generation;
+using Vastcore.Core;
+using Vastcore.Utils;
+using Vastcore.Terrain;
 using Vastcore.Player;
 using Vastcore.UI;
-using Vastcore.Cinematic;
+using Vastcore.Camera.Cinematic;
 
-namespace Vastcore.Game
+namespace Vastcore.Game.Managers
 {
-    /// <summary>
-    /// Vastcore ゲーム全体管理システム
     /// ゲームの起動シーケンス、各マネージャーの連携を統括する
     /// </summary>
     public class VastcoreGameManager : MonoBehaviour
