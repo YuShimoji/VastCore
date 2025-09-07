@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.ProBuilder;
 using UnityEngine.ProBuilder.MeshOperations;
 using System.Collections.Generic;
-using Vastcore.Utilities;
+using Vastcore.Utils;
 
 namespace Vastcore.Generation
 {
