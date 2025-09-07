@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using TMPro;
 using System.Collections;
 using NarrativeGen.Core;
 
