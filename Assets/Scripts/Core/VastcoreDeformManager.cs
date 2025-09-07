@@ -273,19 +273,26 @@ namespace Vastcore.Core
         /// <summary>
         /// Deformリクエストの処理
         /// </summary>
-        private void ProcessDeformRequest(object request)
+        private void ProcessDeformRequest(object requestObj)
         {
+            // 型チェックとキャスト
+            if (!(requestObj is DeformRequest request))
+            {
+                VastcoreLogger.Instance.LogError("VastcoreDeformManager", "Invalid request type");
+                return;
+            }
+
             if (request.target == null)
             {
                 request.onComplete?.Invoke(false);
                 return;
             }
-            
+
             try
             {
                 ApplyQualitySettings(request.target, request.quality);
                 deformationsThisFrame++;
-                
+
                 if (enablePerformanceMonitoring)
                 {
 #if DEFORM_AVAILABLE
@@ -317,7 +324,7 @@ namespace Vastcore.Core
                     }
 #endif
                 }
-                
+
                 request.onComplete?.Invoke(true);
 #if DEFORM_AVAILABLE
                 if (request.target is Deformable deformableTarget)
