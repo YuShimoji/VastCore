@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using Vastcore.Terrain.Map;
-using Vastcore.Generation;
+using Vastcore.Generation; // Correct namespace for PrimitiveTerrainObject
 
 namespace Vastcore.Player
 {
