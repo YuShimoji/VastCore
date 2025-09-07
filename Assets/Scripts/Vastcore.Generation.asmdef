@@ -1,13 +1,10 @@
 {
-    "name": "Vastcore.Terrain",
-    "rootNamespace": "Vastcore.Terrain",
+    "name": "Vastcore.Generation",
+    "rootNamespace": "Vastcore.Generation",
     "references": [
-        "Unity.ProBuilder",
-        "Unity.TextMeshPro",
         "Vastcore.Core",
         "Vastcore.Utils",
-        "Vastcore.Player",
-        "Vastcore.Generation"
+        "Vastcore.Terrain"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

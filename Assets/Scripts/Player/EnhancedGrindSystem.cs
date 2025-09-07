@@ -25,8 +25,6 @@ namespace Vastcore.Player
         
         [Header("表面検出")]
         [SerializeField] private LayerMask grindableLayer = -1;
-        [SerializeField] private float minGrindAngle = 10f;
-        [SerializeField] private float maxGrindAngle = 80f;
         
         [Header("エフェクト")]
         [SerializeField] private ParticleSystem grindEffect;

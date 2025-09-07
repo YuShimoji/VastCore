@@ -15,7 +15,6 @@ namespace Vastcore.Player
     {
         [Header("グラインド設定")]
         [SerializeField] private LayerMask grindableLayer = -1;
-        [SerializeField] private float grindEdgeDetectionRadius = 2f;
         [SerializeField] private float minGrindEdgeLength = 5f;
         [SerializeField] private float grindEdgeThickness = 0.5f;
         [SerializeField] private bool showGrindGizmos = false;
