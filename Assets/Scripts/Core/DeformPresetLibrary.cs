@@ -369,7 +369,7 @@ namespace Vastcore.Core
                 return;
             }
             
-            VastcoreLogger.Log($"Preset not found: {presetName}", VastcoreLogger.LogLevel.Warning);
+            VastcoreLogger.Instance.LogWarning("DeformPresetLibrary", $"Preset not found: {presetName}");
         }
         
         /// <summary>
@@ -396,7 +396,7 @@ namespace Vastcore.Core
                     break;
             }
 #else
-            VastcoreLogger.Log($"Applied geological preset (dummy): {preset.deformType}", VastcoreLogger.LogLevel.Debug);
+            VastcoreLogger.Instance.LogDebug("DeformPresetLibrary", $"Applied geological preset (dummy): {preset.deformType}");
 #endif
         }
         
@@ -419,7 +419,7 @@ namespace Vastcore.Core
                     break;
             }
 #else
-            VastcoreLogger.Log($"Applied architectural preset (dummy): {preset.deformType}", VastcoreLogger.LogLevel.Debug);
+            VastcoreLogger.Instance.LogDebug("DeformPresetLibrary", $"Applied architectural preset (dummy): {preset.deformType}");
 #endif
         }
         
@@ -443,7 +443,7 @@ namespace Vastcore.Core
                     break;
             }
 #else
-            VastcoreLogger.Log($"Applied organic preset (dummy): {preset.deformType}", VastcoreLogger.LogLevel.Debug);
+            VastcoreLogger.Instance.LogDebug("DeformPresetLibrary", $"Applied organic preset (dummy): {preset.deformType}");
 #endif
         }
     }

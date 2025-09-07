@@ -273,7 +273,7 @@ namespace Vastcore.Core
         /// <summary>
         /// Deformリクエストの処理
         /// </summary>
-        private void ProcessDeformRequest(DeformRequest request)
+        private void ProcessDeformRequest(object request)
         {
             if (request.target == null)
             {
