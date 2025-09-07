@@ -37,7 +37,7 @@ namespace Vastcore.Core
             {
                 if (instance == null)
                 {
-                    instance = FindObjectOfType<VastcoreDeformManager>();
+                    instance = FindFirstObjectByType<VastcoreDeformManager>();
                     if (instance == null)
                     {
                         var go = new GameObject("VastcoreDeformManager");
@@ -129,22 +129,20 @@ namespace Vastcore.Core
         /// </summary>
         private void InitializeSystem()
         {
-            VastcoreLogger.Log("VastcoreDeformManager initialized", VastcoreLogger.LogLevel.Info);
+            VastcoreLogger.Instance.LogInfo("VastcoreDeformManager", "VastcoreDeformManager initialized");
             
             // Deformパッケージの依存関係チェック
             if (!CheckDeformDependencies())
             {
-                VastcoreLogger.Log("Deform package dependencies not found. Disabling deform system.", VastcoreLogger.LogLevel.Warning);
+                VastcoreLogger.Instance.LogWarning("VastcoreDeformManager", "Deform package dependencies not found. Disabling deform system.");
                 enableDeformSystem = false;
                 return;
             }
             
-            // デフォルトDeformableManagerの設定
-            var defaultManager = DeformableManager.GetDefaultManager(true);
-            if (defaultManager != null)
-            {
-                VastcoreLogger.Log("Default DeformableManager configured", VastcoreLogger.LogLevel.Info);
-            }
+#if DEFORM_AVAILABLE
+                // Deformパッケージが利用できない場合のダミー処理
+                var defaultManager = new object(); // ダミーオブジェクト
+#endif
         }
         
         /// <summary>
@@ -155,17 +153,25 @@ namespace Vastcore.Core
 #if DEFORM_AVAILABLE
             try
             {
-                // Deform名前空間のクラスにアクセスしてみる
-                var testManager = DeformableManager.GetDefaultManager(false);
-                return true;
+                // Deformパッケージの基本クラスにアクセス
+                var testType = System.Type.GetType("Deform.Deformable, Assembly-CSharp");
+                if (testType != null)
+                {
+                    return true;
+                }
+                else
+                {
+                    VastcoreLogger.Instance.LogWarning("VastcoreDeformManager", "Deform.Deformable type not found");
+                    return false;
+                }
             }
             catch (System.Exception ex)
             {
-                VastcoreLogger.Log($"Deform dependency check failed: {ex.Message}", VastcoreLogger.LogLevel.Error);
+                VastcoreLogger.Instance.LogError("VastcoreDeformManager", $"Deform dependency check failed: {ex.Message}");
                 return false;
             }
 #else
-            VastcoreLogger.Log("Deform package not available. Deform system disabled.", VastcoreLogger.LogLevel.Warning);
+            VastcoreLogger.Instance.LogWarning("VastcoreDeformManager", "Deform package not available. Deform system disabled.");
             return false;
 #endif
         }
@@ -176,24 +182,32 @@ namespace Vastcore.Core
         public void RegisterDeformable(object deformable, DeformQualityLevel qualityLevel = DeformQualityLevel.High)
         {
             if (!enableDeformSystem || deformable == null) return;
-            
+
+            // 最大同時変形数のチェック
+            if (managedDeformables.Count >= maxConcurrentDeformations)
+            {
+                VastcoreLogger.Instance.LogWarning("VastcoreDeformManager", $"Maximum concurrent deformations reached: {maxConcurrentDeformations}");
+                return;
+            }
+
             if (!managedDeformables.Contains(deformable))
             {
                 managedDeformables.Add(deformable);
-                qualityOverrides[deformable] = qualityLevel;
-                
+                // デフォルト品質レベルを使用
+                qualityOverrides[deformable] = qualityLevel == DeformQualityLevel.High ? defaultQualityLevel : qualityLevel;
+
                 // 品質レベルに応じた設定を適用
-                ApplyQualitySettings(deformable, qualityLevel);
-                
+                ApplyQualitySettings(deformable, qualityOverrides[deformable]);
+
 #if DEFORM_AVAILABLE
                 if (deformable is Deformable deformableComponent)
                 {
-                    VastcoreLogger.Log($"Registered Deformable: {deformableComponent.name} with quality {qualityLevel}", VastcoreLogger.LogLevel.Debug);
+                    VastcoreLogger.Instance.LogDebug("VastcoreDeformManager", $"Registered Deformable: {deformableComponent.name} with quality {qualityOverrides[deformable]}");
                 }
                 else
 #endif
                 {
-                    VastcoreLogger.Log($"Registered object with quality {qualityLevel}", VastcoreLogger.LogLevel.Debug);
+                    VastcoreLogger.Instance.LogDebug("VastcoreDeformManager", $"Registered object with quality {qualityOverrides[deformable]}");
                 }
             }
         }
@@ -211,12 +225,12 @@ namespace Vastcore.Core
 #if DEFORM_AVAILABLE
             if (deformable is Deformable deformableComponent)
             {
-                VastcoreLogger.Log($"Unregistered Deformable: {deformableComponent.name}", VastcoreLogger.LogLevel.Debug);
+                VastcoreLogger.Instance.LogDebug("VastcoreDeformManager", $"Unregistered Deformable: {deformableComponent.name}");
             }
             else
 #endif
             {
-                VastcoreLogger.Log("Unregistered object", VastcoreLogger.LogLevel.Debug);
+                VastcoreLogger.Instance.LogDebug("VastcoreDeformManager", "Unregistered object");
             }
         }
         
@@ -308,12 +322,12 @@ namespace Vastcore.Core
 #if DEFORM_AVAILABLE
                 if (request.target is Deformable deformableTarget)
                 {
-                    VastcoreLogger.Log($"Processed deformation for: {deformableTarget.name}", VastcoreLogger.LogLevel.Debug);
+                    VastcoreLogger.Instance.LogDebug("VastcoreDeformManager", $"Processed deformation for: {deformableTarget.name}");
                 }
                 else
 #endif
                 {
-                    VastcoreLogger.Log("Processed deformation (dummy)", VastcoreLogger.LogLevel.Debug);
+                    VastcoreLogger.Instance.LogDebug("VastcoreDeformManager", "Processed deformation (dummy)");
                 }
             }
             catch (System.Exception ex)
@@ -321,12 +335,12 @@ namespace Vastcore.Core
 #if DEFORM_AVAILABLE
                 if (request.target is Deformable deformableTarget)
                 {
-                    VastcoreLogger.Log($"Deformation failed for {deformableTarget.name}: {ex.Message}", VastcoreLogger.LogLevel.Error);
+                    VastcoreLogger.Instance.LogError("VastcoreDeformManager", $"Deformation failed for {deformableTarget.name}: {ex.Message}");
                 }
                 else
 #endif
                 {
-                    VastcoreLogger.Log($"Deformation failed: {ex.Message}", VastcoreLogger.LogLevel.Error);
+                    VastcoreLogger.Instance.LogError("VastcoreDeformManager", $"Deformation failed: {ex.Message}");
                 }
                 request.onComplete?.Invoke(false);
             }
@@ -358,7 +372,7 @@ namespace Vastcore.Core
             }
 #else
             // Deformパッケージが利用できない場合は何もしない
-            VastcoreLogger.Log($"Quality settings applied (dummy): {quality}", VastcoreLogger.LogLevel.Debug);
+            VastcoreLogger.Instance.LogDebug("VastcoreDeformManager", $"Quality settings applied (dummy): {quality}");
 #endif
         }
         
