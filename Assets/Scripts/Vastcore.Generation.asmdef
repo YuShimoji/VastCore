@@ -3,8 +3,7 @@
     "rootNamespace": "Vastcore.Generation",
     "references": [
         "Vastcore.Core",
-        "Vastcore.Utils",
-        "Vastcore.Terrain"
+        "Vastcore.Utils"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
