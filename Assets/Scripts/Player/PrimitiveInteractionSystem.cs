@@ -22,7 +22,6 @@ namespace Vastcore.Player
         
         [Header("クライミング設定")]
         [SerializeField] private LayerMask climbableLayer = -1;
-        [SerializeField] private float climbSurfaceDetectionRadius = 1.5f;
         [SerializeField] private float minClimbSurfaceArea = 10f;
         [SerializeField] private float maxClimbSurfaceAngle = 85f;
         [SerializeField] private bool showClimbGizmos = false;

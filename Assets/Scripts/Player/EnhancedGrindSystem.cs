@@ -15,7 +15,6 @@ namespace Vastcore.Player
         [SerializeField] private float grindAcceleration = 2f;
         [SerializeField] private float maxGrindSpeed = 30f;
         [SerializeField] private float grindDetectionRadius = 2f;
-        [SerializeField] private float grindForce = 15f;
         [SerializeField] private float grindExitForce = 10f;
         
         [Header("グラインド物理")]
@@ -26,7 +25,6 @@ namespace Vastcore.Player
         
         [Header("表面検出")]
         [SerializeField] private LayerMask grindableLayer = -1;
-        [SerializeField] private float surfaceSnapDistance = 1f;
         [SerializeField] private float minGrindAngle = 10f;
         [SerializeField] private float maxGrindAngle = 80f;
         

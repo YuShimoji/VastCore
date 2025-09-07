@@ -31,7 +31,6 @@ namespace Vastcore.Player
         [SerializeField] private LayerMask climbableLayer = -1;
         [SerializeField] private float surfaceCheckDistance = 2f;
         [SerializeField] private int surfaceCheckRays = 8;
-        [SerializeField] private float minSurfaceArea = 5f;
         
         [Header("入力設定")]
         [SerializeField] private KeyCode climbKey = KeyCode.LeftShift;

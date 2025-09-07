@@ -16,7 +16,6 @@ namespace Vastcore.Player
         [SerializeField] private float sphereLaunchForce = 50f;
         [SerializeField] private float sphereLifetime = 8f;
         [SerializeField] private float warpCooldown = 2f;
-        [SerializeField] private float maxWarpDistance = 100f;
         
         [Header("軌道予測改良")]
         [SerializeField] private LineRenderer trajectoryLine;
@@ -26,7 +25,6 @@ namespace Vastcore.Player
         
         [Header("着地プレビュー")]
         [SerializeField] private GameObject landingPreview;
-        [SerializeField] private float previewUpdateRate = 0.1f;
         [SerializeField] private LayerMask landingSurfaceLayer = -1;
         
         [Header("プリミティブ統合")]
