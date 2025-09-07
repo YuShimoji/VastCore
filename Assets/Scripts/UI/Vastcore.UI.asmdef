@@ -1,10 +1,11 @@
 {
-    "name": "Vastcore.Player",
-    "rootNamespace": "Vastcore.Player",
+    "name": "Vastcore.UI",
+    "rootNamespace": "Vastcore.UI",
     "references": [
         "Vastcore.Core",
         "Vastcore.Utils",
-        "Vastcore.Generation"
+        "Vastcore.Player",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
