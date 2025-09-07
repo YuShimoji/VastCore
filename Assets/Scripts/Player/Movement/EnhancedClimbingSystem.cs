@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Terrain.Map;
 
 namespace Vastcore.Player
 {
@@ -346,7 +347,7 @@ namespace Vastcore.Player
             foreach (Collider col in climbableObjects)
             {
                 // プリミティブオブジェクトでない場合の処理
-                if (col.GetComponent<Vastcore.Generation.PrimitiveTerrainObject>() == null)
+                if (col.GetComponent<PrimitiveTerrainObject>() == null)
                 {
                     ProcessTraditionalClimbSurface(col);
                 }

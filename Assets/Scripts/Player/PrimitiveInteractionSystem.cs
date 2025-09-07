@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Core;
 using Vastcore.Utils;
-// using Vastcore.Terrain.Map; // Removed to break circular dependency
+using Vastcore.Terrain.Map; // Added to resolve PrimitiveTerrainObject reference
 
 namespace Vastcore.Player
 {
@@ -197,13 +197,14 @@ namespace Vastcore.Player
             };
             
             // グラインド可能エッジを検出
-            if (primitive.isGrindable)
+            var primitiveObject = primitive.GetComponent<PrimitiveTerrainObject>();
+            if (primitiveObject != null && primitiveObject.isGrindable)
             {
                 DetectGrindableEdges(primitive, ref interactionData);
             }
             
             // クライミング可能表面を検出
-            if (primitive.isClimbable)
+            if (primitiveObject != null && primitiveObject.isClimbable)
             {
                 DetectClimbableSurfaces(primitive, ref interactionData);
             }
@@ -277,7 +278,9 @@ namespace Vastcore.Player
             
             if (edges.ContainsKey(edgeKey))
             {
-                edges[edgeKey].triangleCount++;
+                var edgeInfo = edges[edgeKey];
+                edgeInfo.triangleCount++;
+                edges[edgeKey] = edgeInfo;
             }
             else
             {

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Terrain.Map;
 using Vastcore.Generation;
 
 namespace Vastcore.Player
@@ -63,7 +64,7 @@ namespace Vastcore.Player
         {
             playerCamera = Camera.main;
             if (playerCamera == null)
-                playerCamera = FindObjectOfType<Camera>();
+            playerCamera = FindFirstObjectByType<Camera>();
                 
             playerTransform = transform;
             playerRigidbody = GetComponent<Rigidbody>();
