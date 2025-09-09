@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Core;
 using Vastcore.Utils;
-using Vastcore.Terrain;
+using Vastcore.Generation;
 
 namespace Vastcore.Player
 {

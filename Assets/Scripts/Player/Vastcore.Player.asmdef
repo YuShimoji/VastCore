@@ -4,8 +4,7 @@
     "references": [
         "Vastcore.Core",
         "Vastcore.Utils",
-        "Vastcore.Generation",
-        "Vastcore.Terrain"
+        "Vastcore.Generation"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

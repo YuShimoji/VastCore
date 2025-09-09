@@ -3,7 +3,6 @@ using UnityEngine.TestTools;
 using NUnit.Framework;
 using System.Collections;
 using Vastcore.Player;
-using Vastcore.Terrain;
 using Vastcore.Generation;
 
 namespace Vastcore.Testing.RuntimeTests

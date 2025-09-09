@@ -6,7 +6,6 @@
         "Unity.TextMeshPro",
         "Vastcore.Core",
         "Vastcore.Utils",
-        "Vastcore.Player",
         "Vastcore.Generation"
     ],
     "includePlatforms": [],
