@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Core;
 using Vastcore.Utils;
-using Vastcore.Generation; // Correct namespace for PrimitiveTerrainObject
+using Vastcore.Terrain;
 
 namespace Vastcore.Player
 {
