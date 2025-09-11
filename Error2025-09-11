@@ -1,62 +1,72 @@
-Failed to find entry-points:
-Mono.Cecil.AssemblyResolutionException: Failed to resolve assembly: 'Vastcore.Testing, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null' ---> System.Exception: Failed to resolve assembly 'Vastcore.Testing, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null' in directories: C:\Program Files\6000.2.2f1\Editor\Data\MonoBleedingEdge\lib\mono\unityjit-win32
-C:\Program Files\6000.2.2f1\Editor\Data\MonoBleedingEdge\lib\mono\unityjit-win32\Facades
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.dt.app-ui@7b87c8225c06\Runtime\SourceGenerators\netstandard2.0
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.visualscripting@6279e2b7c485\Editor\VisualScripting.Core\Dependencies\DotNetZip
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.collab-proxy@c854d1f7d97f\Lib\Editor
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.visualscripting@6279e2b7c485\Editor\VisualScripting.Core\EditorAssetResources
-C:\Users\thank\Storage\Game Projects\Vastcore\Assets\Plugins\Poly2Tri
-C:\Program Files\6000.2.2f1\Editor\Data\PlaybackEngines\WindowsStandaloneSupport
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.ai.inference@4ac711cab9a3\Runtime\Core\SourceGenerator
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.nuget.newtonsoft-json@74deb55db2a0\Runtime
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.ai.inference@4ac711cab9a3\Editor\ONNX
-C:\Program Files\6000.2.2f1\Editor\Data\Managed
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.ai.assistant@91c166a13c3b\Plugins\Markdig\Dependencies
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.collections@d49facba0036\Unity.Collections.Tests\System.IO.Hashing
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.burst@f7a407abf4d5
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.burst@f7a407abf4d5\Unity.Burst.CodeGen
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.ext.nunit@031a54704bff\net40\unity-custom
-C:\Users\thank\Storage\Game Projects\Vastcore\Assets\Plugins\Clipper
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.ai.assistant@91c166a13c3b\Plugins\CodeAnalysis
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.nuget.mono-cecil@d78732e851eb
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.collections@d49facba0036\Unity.Collections.Tests\System.Runtime.CompilerServices.Unsafe
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.visualscripting@6279e2b7c485\Editor\VisualScripting.Core\Dependencies\YamlDotNet
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.ai.toolkit@48a271771d1a\Modules\Sdk\Editor
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.nuget.newtonsoft-json@74deb55db2a0\Runtime\AOT
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.collections@d49facba0036\Unity.Collections.LowLevel.ILSupport
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.ai.assistant@91c166a13c3b\Plugins\Markdig
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.visualscripting@6279e2b7c485\Runtime\VisualScripting.Flow\Dependencies\NCalc
-C:\Program Files\6000.2.2f1\Editor\Data\Managed\UnityEngine
-C:\Users\thank\Storage\Game Projects\Vastcore\Library\ScriptAssemblies ---> Mono.Cecil.AssemblyResolutionException: Failed to resolve assembly: 'Vastcore.Testing, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
-  at Mono.Cecil.BaseAssemblyResolver.Resolve (Mono.Cecil.AssemblyNameReference name, Mono.Cecil.ReaderParameters parameters) [0x00105] in <853812ae52c341daaef3c62ecdb86b32>:0 
-  at zzzUnity.Burst.CodeGen.AssemblyResolver.Resolve (Mono.Cecil.AssemblyNameReference name) [0x00007] in <e6b852d46e1e4bfb963d02704699e755>:0 
-   --- End of inner exception stack trace ---
-  at zzzUnity.Burst.CodeGen.AssemblyResolver.Resolve (Mono.Cecil.AssemblyNameReference name) [0x00054] in <e6b852d46e1e4bfb963d02704699e755>:0 
-  at Burst.Compiler.IL.AssemblyLoader.Resolve (Mono.Cecil.AssemblyNameReference name) [0x0007e] in <e6b852d46e1e4bfb963d02704699e755>:0 
-  at Burst.Compiler.IL.Server.EntryPointMethodFinder.FindEntryPoints (System.String[] rootAssemblyNames, Burst.Compiler.IL.Hashing.CacheRuntime.HashCacheAssemblyStore assemblyStore, Burst.Compiler.IL.AssemblyLoader assemblyLoader, Burst.Compiler.IL.NativeCompilerOptions options, Burst.Compiler.IL.Server.ProfileDelegate profileCallback, System.Boolean includeRootAssemblyReferences, System.Boolean splitTargets) [0x00055] in <e6b852d46e1e4bfb963d02704699e755>:0 
-  at Burst.Compiler.IL.Server.CompilerServer+<>c__DisplayClass18_1.<FindMethods>b__0 (Burst.Compiler.IL.Server.Caching.CacheManager cacheManager) [0x0005e] in <e6b852d46e1e4bfb963d02704699e755>:0 
-  at Burst.Compiler.IL.Server.CompilerServer+<>c__DisplayClass26_0`1[TResult].<RunTask>b__0 () [0x00145] in <e6b852d46e1e4bfb963d02704699e755>:0 
-  at Burst.Compiler.IL.Server.CompilerServer.RunTask[TResult] (Burst.Compiler.IL.Server.TargetKey target, System.String taskName, System.String[] assemblyFolders, System.Threading.CancellationToken cancellationToken, System.Func`2[T,TResult] function) [0x00131] in <e6b852d46e1e4bfb963d02704699e755>:0 
-  at Burst.Compiler.IL.Server.CompilerServer.FindMethods (Burst.Compiler.IL.Server.CompilerServerOptions options, Burst.Compiler.IL.Aot.AotCompilerOptions aotOptions, Burst.Compiler.IL.AssemblyDefinesDict assemblyDefines, Burst.Compiler.IL.Server.TargetKey target, Burst.Compiler.IL.Server.Caching.CacheManager cacheManager, Burst.Compiler.IL.CompilerStatistics stats, System.Threading.CancellationToken cancellationToken) [0x00299] in <e6b852d46e1e4bfb963d02704699e755>:0 
-  at Burst.Compiler.IL.Server.CompilerServer+<>c__DisplayClass26_0`1[TResult].<RunTask>b__0 () [0x00145] in <e6b852d46e1e4bfb963d02704699e755>:0 
-  at Burst.Compiler.IL.Server.CompilerServer.RunTask[TResult] (Burst.Compiler.IL.Server.TargetKey target, System.String taskName, System.String[] assemblyFolders, System.Threading.CancellationToken cancellationToken, System.Func`2[T,TResult] function) [0x00131] in <e6b852d46e1e4bfb963d02704699e755>:0 
-  at Burst.Compiler.IL.Server.CompilerServer.Compile (Burst.Compiler.IL.Server.CompilerServerOptions options, Burst.Compiler.IL.Server.CompilationMessageStreamer streamer, System.Threading.CancellationToken cancellationToken) [0x001ca] in <e6b852d46e1e4bfb963d02704699e755>:0 
-
-While compiling job:
-
-Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackSystem.cs(4,22): error CS0234: The type or namespace name 'Collections' does not exist in the namespace 'Vastcore.Utils' (are you missing an assembly reference?)
-
-Assets\Scripts\Terrain\Map\DynamicMaterialBlendingSystem.cs(2,7): warning CS0105: The using directive for 'UnityEngine' appeared previously in this namespace
-
-Assets\Scripts\Terrain\Map\TerrainTexturingIntegration.cs(5,22): error CS0234: The type or namespace name 'Generation' does not exist in the namespace 'Vastcore.Utils' (are you missing an assembly reference?)
-
-Assets\Scripts\UI\MenuManager.cs(4,7): warning CS0105: The using directive for 'TMPro' appeared previously in this namespace
-
-Assets\Scripts\UI\InGameDebugUI.cs(16,39): warning CS0414: The field 'InGameDebugUI.showDebugUI' is assigned but its value is never used
+Assets\Scripts\UI\InGameDebugUI.cs(33,39): warning CS0414: The field 'InGameDebugUI.showPerformanceParameters' is assigned but its value is never used
 
 Assets\Scripts\UI\RealtimeUpdateSystem.cs(31,23): warning CS0414: The field 'RealtimeUpdateSystem.lastPerformanceCheck' is assigned but its value is never used
 
-Assets\Scripts\UI\InGameDebugUI.cs(33,39): warning CS0414: The field 'InGameDebugUI.showPerformanceParameters' is assigned but its value is never used
-
 Assets\Scripts\UI\SliderBasedUISystem.cs(24,40): warning CS0414: The field 'SliderBasedUISystem.sliderSensitivity' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(70,30): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(76,28): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\Cache\IntelligentCacheSystem.cs(107,26): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\GPU\GPUPerformanceMonitor.cs(50,32): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\Cache\IntelligentCacheSystem.cs(344,40): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\Map\BiomePresetManager.cs(27,33): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\Map\BiomePresetManagerTest.cs(80,37): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\Map\ArchitecturalGeneratorTest.cs(323,40): warning CS0618: 'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'
+
+Assets\Scripts\Terrain\Map\BiomeTerrainModifierTest.cs(108,37): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\Map\BiomeTerrainModifierTest.cs(347,38): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\Map\SeamlessConnectionManagerTest.cs(192,19): warning CS0219: The variable 'valueA' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Map\SeamlessConnectionManagerTest.cs(193,19): warning CS0219: The variable 'valueB' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Map\BiomeTerrainModifier.cs(885,33): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackSystem.cs(110,33): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackSystem.cs(111,34): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackSystem.cs(112,35): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackTest.cs(94,38): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\Map\ClimateSystem.cs(458,19): warning CS0219: The variable 'tempRange' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Map\RuntimeGenerationManager.cs(16,40): warning CS0414: The field 'RuntimeGenerationManager.generationRadius' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(24,40): warning CS0414: The field 'TerrainCacheManager.frequencyWeight' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManager.cs(61,23): warning CS0414: The field 'RuntimeTerrainManager.lastUpdateTime' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(22,40): warning CS0414: The field 'TerrainCacheManager.recentAccessWeight' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Map\RunPrimitiveQualityTest.cs(14,39): warning CS0414: The field 'RunPrimitiveQualityTest.logDetailedResults' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Map\PrimitiveMemoryManager.cs(30,21): warning CS0414: The field 'PrimitiveMemoryManager.lastActiveObjectCount' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Map\PrimitiveTerrainManager.cs(24,39): warning CS0414: The field 'PrimitiveTerrainManager.alignToTerrainNormal' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Optimization\PerformanceOptimizationController.cs(18,40): warning CS0414: The field 'PerformanceOptimizationController.performanceThreshold' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(23,40): warning CS0414: The field 'TerrainCacheManager.distanceWeight' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Map\PrimitiveTerrainManager.cs(19,40): warning CS0414: The field 'PrimitiveTerrainManager.maxPrimitiveScale' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Map\RuntimeGenerationManager.cs(26,39): warning CS0414: The field 'RuntimeGenerationManager.enableQueuePrioritization' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Optimization\PerformanceOptimizationController.cs(30,40): warning CS0414: The field 'PerformanceOptimizationController.maxMemoryUsageRatio' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Map\PrimitiveTerrainManager.cs(18,40): warning CS0414: The field 'PrimitiveTerrainManager.minPrimitiveScale' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Cache\IntelligentCacheSystem.cs(28,40): warning CS0414: The field 'IntelligentCacheSystem.preloadRadius' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Map\AdvancedPrimitiveLODSystem.cs(40,39): warning CS0414: The field 'AdvancedPrimitiveLODSystem.enableMemoryOptimization' is assigned but its value is never used
 

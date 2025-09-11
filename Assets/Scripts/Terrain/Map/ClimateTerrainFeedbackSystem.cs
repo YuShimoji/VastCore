@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using Vastcore.Utils.Collections;
 
 namespace Vastcore.Generation
 {
@@ -108,9 +107,9 @@ namespace Vastcore.Generation
             try
             {
                 // システム参照を取得
-                climateSystem = FindObjectOfType<ClimateSystem>();
-                terrainManager = FindObjectOfType<RuntimeTerrainManager>();
-                terrainFeatures = FindObjectOfType<NaturalTerrainFeatures>();
+                climateSystem = FindFirstObjectByType<ClimateSystem>();
+                terrainManager = FindFirstObjectByType<RuntimeTerrainManager>();
+                biomeModifier = FindFirstObjectByType<BiomeTerrainModifier>();
                 
                 if (climateSystem == null)
                 {

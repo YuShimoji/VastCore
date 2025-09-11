@@ -67,13 +67,13 @@ namespace Vastcore.Generation.Cache
                 cacheSystem = gameObject.AddComponent<IntelligentCacheSystem>();
             }
             
-            terrainManager = FindObjectOfType<RuntimeTerrainManager>();
+            terrainManager = FindFirstObjectByType<RuntimeTerrainManager>();
             if (terrainManager == null)
             {
                 Debug.LogWarning("RuntimeTerrainManager not found. Cache integration limited.");
             }
             
-            gpuGenerator = FindObjectOfType<GPUTerrainGenerator>();
+            gpuGenerator = FindFirstObjectByType<GPUTerrainGenerator>();
             if (gpuGenerator == null)
             {
                 Debug.LogWarning("GPUTerrainGenerator not found. Using CPU fallback.");

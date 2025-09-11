@@ -104,7 +104,7 @@ namespace Vastcore.Generation.Cache
             statistics = new CacheStatistics();
             
             // プレイヤーの検索
-            var player = FindObjectOfType<AdvancedPlayerController>();
+            var player = FindFirstObjectByType<AdvancedPlayerController>();
             if (player != null)
             {
                 playerTransform = player.transform;
@@ -341,7 +341,7 @@ namespace Vastcore.Generation.Cache
             // ディスクにない場合は新規生成をリクエスト
             if (!foundInDisk)
             {
-                var terrainGenerator = FindObjectOfType<RuntimeTerrainManager>();
+                var terrainGenerator = FindFirstObjectByType<RuntimeTerrainManager>();
                 if (terrainGenerator != null)
                 {
                     // 非同期生成リクエスト（実装は RuntimeTerrainManager に依存）

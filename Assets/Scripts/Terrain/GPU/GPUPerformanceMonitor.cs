@@ -47,7 +47,7 @@ namespace Vastcore.Generation.GPU
             gpuMemorySamples = new List<float>();
             generationCountSamples = new List<int>();
             
-            terrainGenerator = FindObjectOfType<GPUTerrainGenerator>();
+            terrainGenerator = FindFirstObjectByType<GPUTerrainGenerator>();
             if (terrainGenerator == null)
             {
                 Debug.LogWarning("GPUTerrainGenerator not found. Performance monitoring disabled.");

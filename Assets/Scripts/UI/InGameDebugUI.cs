@@ -66,7 +66,11 @@ namespace NarrativeGen.UI
         {
             SetupDefaultParameters();
             
-            if (startMinimized)
+            if (!showDebugUI)
+            {
+                HideUI();
+            }
+            else if (startMinimized)
             {
                 MinimizeUI();
             }
@@ -136,12 +140,6 @@ namespace NarrativeGen.UI
             
             // Create scroll view
             CreateScrollView();
-            
-            // Create performance display
-            if (enablePerformanceMonitoring)
-            {
-                CreatePerformanceDisplay();
-            }
             
             // Create parameter sections
             CreateParameterSections();
@@ -356,6 +354,11 @@ namespace NarrativeGen.UI
             if (showPrimitiveParameters)
             {
                 CreatePrimitiveParameterSection();
+            }
+            
+            if (showPerformanceParameters && enablePerformanceMonitoring)
+            {
+                CreatePerformanceDisplay();
             }
             
             if (showSystemParameters)

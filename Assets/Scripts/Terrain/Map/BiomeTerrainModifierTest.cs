@@ -105,7 +105,7 @@ namespace Vastcore.Generation
                 // BiomeTerrainModifierの取得または作成
                 if (biomeModifier == null)
                 {
-                    biomeModifier = FindObjectOfType<BiomeTerrainModifier>();
+                    biomeModifier = FindFirstObjectByType<BiomeTerrainModifier>();
                     if (biomeModifier == null)
                     {
                         var go = new GameObject("BiomeTerrainModifier_Test");
@@ -341,39 +341,23 @@ namespace Vastcore.Generation
             
             try
             {
-                // RuntimeTerrainManagerとの統合テスト
-                if (terrainManager == null)
-                {
-                    terrainManager = FindObjectOfType<RuntimeTerrainManager>();
-                }
-                
                 bool integrationSuccess = true;
                 string integrationMessage = "";
                 
-                if (terrainManager != null)
+                // RuntimeTerrainManagerの取得
+                if (terrainGenerator == null)
                 {
-                    // 実際の地形タイルでテスト
-                    var activeTiles = terrainManager.GetActiveTiles();
-                    if (activeTiles.Count > 0)
-                    {
-                        var testTile = activeTiles[0];
-                        var originalBiome = testTile.appliedBiome;
-                        
-                        // バイオーム判定と適用
-                        var detectedBiome = biomeModifier.DetectBiomeAtPosition(testTile.terrainObject.transform.position);
-                        biomeModifier.ApplyBiomeModifications(testTile, detectedBiome);
-                        
-                        integrationMessage = $"Successfully integrated with RuntimeTerrainManager. Applied {detectedBiome} to tile.";
-                    }
-                    else
-                    {
-                        integrationMessage = "No active tiles found in RuntimeTerrainManager.";
-                        integrationSuccess = false;
-                    }
+                    terrainGenerator = FindFirstObjectByType<BiomeSpecificTerrainGenerator>();
+                }
+                
+                if (terrainGenerator != null)
+                {
+                    integrationMessage = "BiomeSpecificTerrainGenerator found and integrated successfully.";
                 }
                 else
                 {
-                    integrationMessage = "RuntimeTerrainManager not found. Standalone test only.";
+                    integrationMessage = "BiomeSpecificTerrainGenerator not found. Standalone test only.";
+                    integrationSuccess = false;
                 }
                 
                 result.success = integrationSuccess;

@@ -77,7 +77,7 @@ namespace Vastcore.Generation
             {
                 if (presetManager == null)
                 {
-                    presetManager = FindObjectOfType<BiomePresetManager>();
+                    presetManager = FindFirstObjectByType<BiomePresetManager>();
                     if (presetManager == null)
                     {
                         var go = new GameObject("BiomePresetManager");
