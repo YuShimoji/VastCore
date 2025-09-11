@@ -47,7 +47,7 @@ namespace NarrativeGen.UI
         private void InitializeUISystem()
         {
             // Create main canvas if it doesn't exist
-            mainCanvas = FindObjectOfType<Canvas>();
+            mainCanvas = FindFirstObjectByType<Canvas>();
             if (mainCanvas == null)
             {
                 CreateMainCanvas();

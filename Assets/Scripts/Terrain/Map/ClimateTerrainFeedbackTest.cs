@@ -79,7 +79,7 @@ namespace Vastcore.Generation
                 // ClimateSystemの存在確認
                 if (climateSystem == null)
                 {
-                    climateSystem = FindObjectOfType<ClimateSystem>();
+                    climateSystem = FindFirstObjectByType<ClimateSystem>();
                 }
                 
                 if (climateSystem == null)

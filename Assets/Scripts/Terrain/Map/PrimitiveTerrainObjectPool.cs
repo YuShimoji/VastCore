@@ -48,7 +48,7 @@ namespace Vastcore.Generation
             {
                 if (instance == null)
                 {
-                    instance = FindObjectOfType<PrimitiveTerrainObjectPool>();
+                    instance = FindFirstObjectByType<PrimitiveTerrainObjectPool>();
                     if (instance == null)
                     {
                         var go = new GameObject("PrimitiveTerrainObjectPool");

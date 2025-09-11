@@ -90,14 +90,14 @@ namespace NarrativeGen.UI
         private void InitializeDebugUI()
         {
             // Get or create required systems
-            sliderSystem = FindObjectOfType<SliderBasedUISystem>();
+            sliderSystem = FindFirstObjectByType<SliderBasedUISystem>();
             if (sliderSystem == null)
             {
                 GameObject sliderSystemObject = new GameObject("SliderBasedUISystem");
                 sliderSystem = sliderSystemObject.AddComponent<SliderBasedUISystem>();
             }
             
-            updateSystem = FindObjectOfType<RealtimeUpdateSystem>();
+            updateSystem = FindFirstObjectByType<RealtimeUpdateSystem>();
             if (updateSystem == null)
             {
                 GameObject updateSystemObject = new GameObject("RealtimeUpdateSystem");

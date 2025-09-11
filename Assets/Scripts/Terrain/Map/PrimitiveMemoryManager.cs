@@ -48,7 +48,7 @@ namespace Vastcore.Generation
             {
                 if (instance == null)
                 {
-                    instance = FindObjectOfType<PrimitiveMemoryManager>();
+                    instance = FindFirstObjectByType<PrimitiveMemoryManager>();
                     if (instance == null)
                     {
                         var go = new GameObject("PrimitiveMemoryManager");

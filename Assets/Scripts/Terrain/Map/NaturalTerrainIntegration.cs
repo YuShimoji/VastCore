@@ -52,7 +52,7 @@ namespace Vastcore.Generation
         {
             if (terrainManager == null)
             {
-                terrainManager = FindObjectOfType<RuntimeTerrainManager>();
+                terrainManager = FindFirstObjectByType<RuntimeTerrainManager>();
             }
 
             if (naturalFeatures == null)

@@ -104,10 +104,10 @@ namespace Vastcore.Generation.GPU
         {
             // Unity 2021.2以降でサポート
             #if UNITY_2021_2_OR_NEWER
-            return SystemInfo.graphicsMemorySize * (UnityEngine.Profiling.Profiler.GetAllocatedMemory(UnityEngine.Profiling.Profiler.Area.GPU) / (1024f * 1024f * 1024f));
+            return SystemInfo.graphicsMemorySize * (UnityEngine.Profiling.Profiler.GetAllocatedMemoryForGraphicsDriver() / (1024f * 1024f * 1024f));
             #else
             // 推定値を返す
-            return UnityEngine.Profiling.Profiler.GetTotalAllocatedMemory(UnityEngine.Profiling.Profiler.Area.GPU) / (1024f * 1024f);
+            return UnityEngine.Profiling.Profiler.GetAllocatedMemoryForGraphicsDriver() / (1024f * 1024f);
             #endif
         }
         

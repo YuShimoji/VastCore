@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
+using System.Linq;
+using Vastcore.Utils.Collections;
 
 namespace Vastcore.Generation
 {

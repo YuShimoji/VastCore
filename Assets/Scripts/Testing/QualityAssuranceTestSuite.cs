@@ -647,7 +647,7 @@ namespace VastCore.Testing
             yield return new WaitForSeconds(1f);
             
             // メモリ使用量テスト
-            long memoryUsage = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemory(false) / (1024 * 1024);
+            long memoryUsage = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / (1024 * 1024);
             if (memoryUsage > 1024) performanceScore *= 0.7f; // 1GB以上
             
             yield return null;
