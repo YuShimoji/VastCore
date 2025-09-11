@@ -107,7 +107,7 @@ namespace NarrativeGen.UI
             labelText.text = "Parameter";
             labelText.fontSize = 14f;
             labelText.color = Color.white;
-            labelText.alignment = TextAlignmentOptions.MiddleLeft;
+            labelText.alignment = TextAlignmentOptions.MidlineLeft;
             
             RectTransform labelRect = labelObject.GetComponent<RectTransform>();
             labelRect.anchorMin = new Vector2(0, 0.6f);
@@ -219,7 +219,7 @@ namespace NarrativeGen.UI
             valueText.text = "0.50";
             valueText.fontSize = 12f;
             valueText.color = new Color(0f, 0.8f, 1f, 1f); // Accent color
-            valueText.alignment = TextAlignmentOptions.MiddleCenter;
+            valueText.alignment = TextAlignmentOptions.Center;
             
             RectTransform valueRect = valueObject.GetComponent<RectTransform>();
             valueRect.anchorMin = new Vector2(0.7f, 0.6f);
@@ -238,7 +238,7 @@ namespace NarrativeGen.UI
             minValueText.text = "0.0";
             minValueText.fontSize = 10f;
             minValueText.color = Color.gray;
-            minValueText.alignment = TextAlignmentOptions.MiddleLeft;
+            minValueText.alignment = TextAlignmentOptions.MidlineLeft;
             
             RectTransform minRect = minObject.GetComponent<RectTransform>();
             minRect.anchorMin = new Vector2(0, 0);
@@ -254,7 +254,7 @@ namespace NarrativeGen.UI
             maxValueText.text = "1.0";
             maxValueText.fontSize = 10f;
             maxValueText.color = Color.gray;
-            maxValueText.alignment = TextAlignmentOptions.MiddleRight;
+            maxValueText.alignment = TextAlignmentOptions.MidlineRight;
             
             RectTransform maxRect = maxObject.GetComponent<RectTransform>();
             maxRect.anchorMin = new Vector2(0.4f, 0);

@@ -23,8 +23,8 @@ namespace NarrativeGen.UI
         public Color errorColor = new Color(1f, 0.3f, 0.3f, 1f);           // Error/negative
         
         [Header("Typography")]
-        public Font primaryFont;
-        public Font secondaryFont;
+        public TMP_FontAsset primaryFont;
+        public TMP_FontAsset secondaryFont;
         public float headerFontSize = 18f;
         public float bodyFontSize = 14f;
         public float captionFontSize = 12f;

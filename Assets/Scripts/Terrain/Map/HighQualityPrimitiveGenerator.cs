@@ -278,10 +278,8 @@ namespace Vastcore.Generation
             // 高品質処理
             if (quality.subdivisionLevel > 0)
             {
-                for (int i = 0; i < quality.subdivisionLevel; i++)
-                {
-                    cube.Subdivide();
-                }
+                // TODO: Subdivide機能は一時的に無効化（ProBuilderのAPI変更により）
+                Debug.LogWarning($"Subdivision feature is temporarily disabled due to ProBuilder API changes. Requested level: {quality.subdivisionLevel}");
             }
             
             // 詳細な変形
@@ -359,10 +357,8 @@ namespace Vastcore.Generation
             // 高品質処理
             if (quality.subdivisionLevel > 0)
             {
-                for (int i = 0; i < quality.subdivisionLevel; i++)
-                {
-                    pyramid.Subdivide();
-                }
+                // TODO: Subdivide機能は一時的に無効化（ProBuilderのAPI変更により）
+                Debug.LogWarning($"Subdivision feature is temporarily disabled due to ProBuilder API changes. Requested level: {quality.subdivisionLevel}");
             }
             
             if (quality.enableAdvancedDeformation)
@@ -457,10 +453,8 @@ namespace Vastcore.Generation
             // 高品質処理
             if (quality.subdivisionLevel > 0)
             {
-                for (int i = 0; i < quality.subdivisionLevel; i++)
-                {
-                    octahedron.Subdivide();
-                }
+                // TODO: Subdivide機能は一時的に無効化（ProBuilderのAPI変更により）
+                Debug.LogWarning($"Subdivision feature is temporarily disabled due to ProBuilder API changes. Requested level: {quality.subdivisionLevel}");
             }
             
             if (quality.enableAdvancedDeformation)
@@ -510,10 +504,8 @@ namespace Vastcore.Generation
             // 高品質処理
             if (quality.subdivisionLevel > 0)
             {
-                for (int i = 0; i < quality.subdivisionLevel; i++)
-                {
-                    monolith.Subdivide();
-                }
+                // TODO: Subdivide機能は一時的に無効化（ProBuilderのAPI変更により）
+                Debug.LogWarning($"Subdivision feature is temporarily disabled due to ProBuilder API changes. Requested level: {quality.subdivisionLevel}");
             }
             
             // 上部を細くして自然な石柱形状に
@@ -703,10 +695,8 @@ namespace Vastcore.Generation
             // 高品質処理
             if (quality.subdivisionLevel > 0)
             {
-                for (int i = 0; i < quality.subdivisionLevel; i++)
-                {
-                    formation.Subdivide();
-                }
+                // TODO: Subdivide機能は一時的に無効化（ProBuilderのAPI変更により）
+                Debug.LogWarning($"Subdivision feature is temporarily disabled due to ProBuilder API changes. Requested level: {quality.subdivisionLevel}");
             }
             
             // 層状構造に変形

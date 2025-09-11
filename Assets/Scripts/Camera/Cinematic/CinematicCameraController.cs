@@ -1,7 +1,8 @@
 using UnityEngine;
-using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
+using Vastcore.Player;
 
 namespace Vastcore.Camera.Cinematic
 {
@@ -9,7 +10,7 @@ namespace Vastcore.Camera.Cinematic
     /// レターボックス付きシネマティックカメラコントローラー
     /// ゲーム開始時に、地形全体を見渡す映画的なカメラワークを提供する
     /// </summary>
-    [RequireComponent(typeof(Camera))]
+    [RequireComponent(typeof(UnityEngine.Camera))]
     public class CinematicCameraController : MonoBehaviour
     {
         [Header("Cinematic Settings")]
@@ -26,16 +27,16 @@ namespace Vastcore.Camera.Cinematic
 
         private AdvancedPlayerController m_PlayerController;
         private Transform m_PlayerTransform;
-        private Camera m_PlayerCamera;
-        private Camera m_CinematicCamera;
+        private UnityEngine.Camera m_PlayerCamera;
+        private UnityEngine.Camera m_CinematicCamera;
         private Transform m_TerrainTransform;
 
         public void Setup(AdvancedPlayerController playerController, GameObject terrain)
         {
             m_PlayerController = playerController;
             m_PlayerTransform = playerController.transform;
-            m_PlayerCamera = m_PlayerTransform.GetComponentInChildren<Camera>();
-            m_CinematicCamera = GetComponent<Camera>();
+            m_PlayerCamera = m_PlayerTransform.GetComponentInChildren<UnityEngine.Camera>();
+            m_CinematicCamera = GetComponent<UnityEngine.Camera>();
 
             if (terrain != null)
             {

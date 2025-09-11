@@ -4,7 +4,9 @@
     "references": [
         "Vastcore.Core",
         "Vastcore.Utils",
-        "Vastcore.Player"
+        "Vastcore.Player",
+        "Unity.TextMeshPro",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

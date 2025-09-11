@@ -1,7 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
-using Vastcore.Core;
+using System.IO;
+using Vastcore.Player;
+using Vastcore.Utils;
 using Vastcore.Generation.GPU;
 
 namespace Vastcore.Generation.Cache
@@ -119,7 +120,7 @@ namespace Vastcore.Generation.Cache
             }
         }
         
-        private IEnumerator LoadFromCacheAsync(Vector2Int coordinate, IntelligentCacheSystem.CachedTerrainData cachedData, System.Action<TerrainTile> onComplete)
+        private System.Collections.IEnumerator LoadFromCacheAsync(Vector2Int coordinate, IntelligentCacheSystem.CachedTerrainData cachedData, System.Action<TerrainTile> onComplete)
         {
             yield return null; // フレーム分散
             
@@ -189,7 +190,7 @@ namespace Vastcore.Generation.Cache
             }
         }
         
-        private IEnumerator ProcessGeneratedTerrain(Vector2Int coordinate, float[,] heightmap, GPUTerrainGenerator.TerrainGenerationParams gpuParams, System.Action<TerrainTile> onComplete)
+        private System.Collections.IEnumerator ProcessGeneratedTerrain(Vector2Int coordinate, float[,] heightmap, GPUTerrainGenerator.TerrainGenerationParams gpuParams, System.Action<TerrainTile> onComplete)
         {
             VastcoreLogger.Instance.LogDebug("TerrainCache", $"ProcessGeneratedTerrain start coord={coordinate}");
             yield return null;
@@ -231,7 +232,7 @@ namespace Vastcore.Generation.Cache
             activeLoadRequests.Remove(coordinate);
         }
         
-        private IEnumerator GenerateTerrainCPU(Vector2Int coordinate, System.Action<TerrainTile> onComplete)
+        private System.Collections.IEnumerator GenerateTerrainCPU(Vector2Int coordinate, System.Action<TerrainTile> onComplete)
         {
             // CPU フォールバック実装
             const int resolution = 256;
@@ -435,7 +436,7 @@ namespace Vastcore.Generation.Cache
             StartCoroutine(ProcessLoadRequest(request));
         }
         
-        private IEnumerator ProcessLoadRequest(TerrainLoadRequest request)
+        private System.Collections.IEnumerator ProcessLoadRequest(TerrainLoadRequest request)
         {
             VastcoreLogger.Instance.LogDebug("TerrainCache", $"ProcessLoadRequest start coord={request.coordinate}");
             yield return StartCoroutine(GenerateTerrainCPU(request.coordinate, request.onComplete));

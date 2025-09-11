@@ -1,0 +1,24 @@
+Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(123,17): error CS0305: Using the generic type 'IEnumerator<T>' requires 1 type arguments
+
+Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(193,17): error CS0305: Using the generic type 'IEnumerator<T>' requires 1 type arguments
+
+Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(235,17): error CS0305: Using the generic type 'IEnumerator<T>' requires 1 type arguments
+
+Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(439,17): error CS0305: Using the generic type 'IEnumerator<T>' requires 1 type arguments
+
+Assets\Scripts\UI\PerformanceMonitor.cs(92,29): error CS0234: The type or namespace name 'DebugUI' does not exist in the namespace 'UnityEngine.Rendering' (are you missing an assembly reference?)
+
+Assets\Scripts\UI\PerformanceMonitor.cs(93,28): error CS0234: The type or namespace name 'DebugUI' does not exist in the namespace 'UnityEngine.Rendering' (are you missing an assembly reference?)
+
+Assets\Scripts\UI\ModernUIStyleSystem.cs(132,38): error CS0029: Cannot implicitly convert type 'UnityEngine.Font' to 'TMPro.TMP_FontAsset'
+
+Assets\Scripts\UI\SliderUIElement.cs(222,56): error CS0117: 'TextAlignmentOptions' does not contain a definition for 'MidlineCenter'
+
+Assets\Scripts\UI\SliderBasedUISystem.cs(310,66): error CS0029: Cannot implicitly convert type 'UnityEngine.Font' to 'TMPro.TMP_FontAsset'
+
+Assets\Scripts\UI\SliderBasedUISystem.cs(316,66): error CS0029: Cannot implicitly convert type 'UnityEngine.Font' to 'TMPro.TMP_FontAsset'
+
+Assets\Scripts\UI\SliderBasedUISystem.cs(322,69): error CS0029: Cannot implicitly convert type 'UnityEngine.Font' to 'TMPro.TMP_FontAsset'
+
+Assets\Scripts\UI\SliderBasedUISystem.cs(328,69): error CS0029: Cannot implicitly convert type 'UnityEngine.Font' to 'TMPro.TMP_FontAsset'
+
