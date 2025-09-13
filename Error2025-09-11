@@ -1,72 +1,302 @@
-Assets\Scripts\UI\InGameDebugUI.cs(33,39): warning CS0414: The field 'InGameDebugUI.showPerformanceParameters' is assigned but its value is never used
+Assets\Scripts\Terrain\Optimization\PerformanceOptimizationController.cs(401,57): error CS0103: The name 'EditorGUIUtility' does not exist in the current context
 
-Assets\Scripts\UI\RealtimeUpdateSystem.cs(31,23): warning CS0414: The field 'RealtimeUpdateSystem.lastPerformanceCheck' is assigned but its value is never used
+Assets\Scripts\Terrain\Optimization\PerformanceOptimizationController.cs(401,89): error CS0103: The name 'EditorSkin' does not exist in the current context
 
-Assets\Scripts\UI\SliderBasedUISystem.cs(24,40): warning CS0414: The field 'SliderBasedUISystem.sliderSensitivity' is assigned but its value is never used
+Assets\Scripts\Terrain\GPU\GPUPerformanceMonitor.cs(212,56): error CS0103: The name 'EditorGUIUtility' does not exist in the current context
 
-Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(70,30): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+Assets\Scripts\Terrain\GPU\GPUPerformanceMonitor.cs(212,88): error CS0103: The name 'EditorSkin' does not exist in the current context
 
-Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(76,28): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+Assets\Scripts\Terrain\Cache\IntelligentCacheSystem.cs(200,25): error CS1628: Cannot use ref, out, or in parameter 'cachedData' inside an anonymous method, lambda expression, query expression, or local function
 
-Assets\Scripts\Terrain\Cache\IntelligentCacheSystem.cs(107,26): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+Assets\Scripts\Terrain\Cache\IntelligentCacheSystem.cs(202,54): error CS1628: Cannot use ref, out, or in parameter 'cachedData' inside an anonymous method, lambda expression, query expression, or local function
 
-Assets\Scripts\Terrain\GPU\GPUPerformanceMonitor.cs(50,32): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+Assets\Scripts\Terrain\Cache\IntelligentCacheSystem.cs(202,76): error CS1628: Cannot use ref, out, or in parameter 'cachedData' inside an anonymous method, lambda expression, query expression, or local function
 
-Assets\Scripts\Terrain\Cache\IntelligentCacheSystem.cs(344,40): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+Assets\Scripts\Terrain\Cache\IntelligentCacheSystem.cs(202,97): error CS1628: Cannot use ref, out, or in parameter 'cachedData' inside an anonymous method, lambda expression, query expression, or local function
 
-Assets\Scripts\Terrain\Map\BiomePresetManager.cs(27,33): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(410,41): error CS0103: The name 'maxMemoryCacheSize' does not exist in the current context
 
-Assets\Scripts\Terrain\Map\BiomePresetManagerTest.cs(80,37): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+Assets\Scripts\Terrain\Map\RuntimeGenerationManager.cs(347,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
 
-Assets\Scripts\Terrain\Map\ArchitecturalGeneratorTest.cs(323,40): warning CS0618: 'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'
+Assets\Scripts\Terrain\Map\AdaptiveTerrainLOD.cs(399,79): error CS1503: Argument 2: cannot convert from 'UnityEngine.Vector2Int' to 'Vastcore.Generation.MeshGenerator.TerrainGenerationParams'
 
-Assets\Scripts\Terrain\Map\BiomeTerrainModifierTest.cs(108,37): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+Assets\Scripts\Terrain\Map\BiomePresetManagerTest.cs(88,31): error CS1061: 'BiomePresetManager' does not contain a definition for 'Initialize' and no accessible extension method 'Initialize' accepting a first argument of type 'BiomePresetManager' could be found (are you missing a using directive or an assembly reference?)
 
-Assets\Scripts\Terrain\Map\BiomeTerrainModifierTest.cs(347,38): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+Assets\Scripts\Terrain\Map\BiomePresetManagerTest.cs(123,49): error CS1061: 'BiomePresetManager' does not contain a definition for 'SavePreset' and no accessible extension method 'SavePreset' accepting a first argument of type 'BiomePresetManager' could be found (are you missing a using directive or an assembly reference?)
 
-Assets\Scripts\Terrain\Map\SeamlessConnectionManagerTest.cs(192,19): warning CS0219: The variable 'valueA' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\BiomePresetManagerTest.cs(150,50): error CS1061: 'BiomePresetManager' does not contain a definition for 'LoadPreset' and no accessible extension method 'LoadPreset' accepting a first argument of type 'BiomePresetManager' could be found (are you missing a using directive or an assembly reference?)
 
-Assets\Scripts\Terrain\Map\SeamlessConnectionManagerTest.cs(193,19): warning CS0219: The variable 'valueB' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\BiomePresetManagerTest.cs(221,36): error CS1061: 'BiomePresetManager' does not contain a definition for 'PresetExists' and no accessible extension method 'PresetExists' accepting a first argument of type 'BiomePresetManager' could be found (are you missing a using directive or an assembly reference?)
 
-Assets\Scripts\Terrain\Map\BiomeTerrainModifier.cs(885,33): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+Assets\Scripts\Terrain\Map\BiomePresetManagerTest.cs(228,51): error CS1061: 'BiomePresetManager' does not contain a definition for 'DeletePreset' and no accessible extension method 'DeletePreset' accepting a first argument of type 'BiomePresetManager' could be found (are you missing a using directive or an assembly reference?)
 
-Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackSystem.cs(110,33): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+Assets\Scripts\Terrain\Map\BiomePresetManagerTest.cs(236,35): error CS1061: 'BiomePresetManager' does not contain a definition for 'PresetExists' and no accessible extension method 'PresetExists' accepting a first argument of type 'BiomePresetManager' could be found (are you missing a using directive or an assembly reference?)
 
-Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackSystem.cs(111,34): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+Assets\Scripts\Terrain\Map\RuntimeGenerationManager.cs(383,49): error CS1061: 'RuntimeTerrainManager' does not contain a definition for 'GenerateTerrainTile' and no accessible extension method 'GenerateTerrainTile' accepting a first argument of type 'RuntimeTerrainManager' could be found (are you missing a using directive or an assembly reference?)
 
-Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackSystem.cs(112,35): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+Assets\Scripts\Terrain\Map\RuntimeGenerationManager.cs(393,38): error CS0029: Cannot implicitly convert type 'Vastcore.Generation.PrimitiveTerrainObject' to 'UnityEngine.GameObject'
 
-Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackTest.cs(94,38): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+Assets\Scripts\Terrain\Map\BiomePresetManagerTest.cs(262,53): error CS1061: 'BiomePresetManager' does not contain a definition for 'SavePreset' and no accessible extension method 'SavePreset' accepting a first argument of type 'BiomePresetManager' could be found (are you missing a using directive or an assembly reference?)
 
-Assets\Scripts\Terrain\Map\ClimateSystem.cs(458,19): warning CS0219: The variable 'tempRange' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\BiomePresetManagerTest.cs(270,55): error CS1061: 'BiomePresetManager' does not contain a definition for 'LoadPreset' and no accessible extension method 'LoadPreset' accepting a first argument of type 'BiomePresetManager' could be found (are you missing a using directive or an assembly reference?)
 
-Assets\Scripts\Terrain\Map\RuntimeGenerationManager.cs(16,40): warning CS0414: The field 'RuntimeGenerationManager.generationRadius' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\BiomePresetManagerTest.cs(278,58): error CS1061: 'BiomePresetManager' does not contain a definition for 'DeletePreset' and no accessible extension method 'DeletePreset' accepting a first argument of type 'BiomePresetManager' could be found (are you missing a using directive or an assembly reference?)
 
-Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(24,40): warning CS0414: The field 'TerrainCacheManager.frequencyWeight' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\BiomePresetManagerTest.cs(312,17): error CS0200: Property or indexer 'TerrainTile.terrainObject' cannot be assigned to -- it is read only
 
-Assets\Scripts\Terrain\Map\RuntimeTerrainManager.cs(61,23): warning CS0414: The field 'RuntimeTerrainManager.lastUpdateTime' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\BiomePresetManagerTest.cs(316,31): error CS1061: 'BiomePresetManager' does not contain a definition for 'ApplyPresetToTerrain' and no accessible extension method 'ApplyPresetToTerrain' accepting a first argument of type 'BiomePresetManager' could be found (are you missing a using directive or an assembly reference?)
 
-Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(22,40): warning CS0414: The field 'TerrainCacheManager.recentAccessWeight' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\BiomePresetManagerTest.cs(319,21): error CS0019: Operator '!=' cannot be applied to operands of type 'string' and 'BiomePreset'
 
-Assets\Scripts\Terrain\Map\RunPrimitiveQualityTest.cs(14,39): warning CS0414: The field 'RunPrimitiveQualityTest.logDetailedResults' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\AdvancedLODSystemTest.cs(356,21): error CS0200: Property or indexer 'TerrainTile.terrainObject' cannot be assigned to -- it is read only
 
-Assets\Scripts\Terrain\Map\PrimitiveMemoryManager.cs(30,21): warning CS0414: The field 'PrimitiveMemoryManager.lastActiveObjectCount' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\AdvancedLODSystemTest.cs(358,21): error CS0200: Property or indexer 'TerrainTile.heightData' cannot be assigned to -- it is read only
 
-Assets\Scripts\Terrain\Map\PrimitiveTerrainManager.cs(24,39): warning CS0414: The field 'PrimitiveTerrainManager.alignToTerrainNormal' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\AdvancedLODSystemTest.cs(359,21): error CS0200: Property or indexer 'TerrainTile.isActive' cannot be assigned to -- it is read only
 
-Assets\Scripts\Terrain\Optimization\PerformanceOptimizationController.cs(18,40): warning CS0414: The field 'PerformanceOptimizationController.performanceThreshold' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\BiomeTerrainModifierTest.cs(248,25): error CS0200: Property or indexer 'TerrainTile.heightData' cannot be assigned to -- it is read only
 
-Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(23,40): warning CS0414: The field 'TerrainCacheManager.distanceWeight' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\BiomeTerrainModifierTest.cs(348,21): error CS0103: The name 'terrainGenerator' does not exist in the current context
 
-Assets\Scripts\Terrain\Map\PrimitiveTerrainManager.cs(19,40): warning CS0414: The field 'PrimitiveTerrainManager.maxPrimitiveScale' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\BiomeTerrainModifierTest.cs(350,21): error CS0103: The name 'terrainGenerator' does not exist in the current context
 
-Assets\Scripts\Terrain\Map\RuntimeGenerationManager.cs(26,39): warning CS0414: The field 'RuntimeGenerationManager.enableQueuePrioritization' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\BiomeTerrainModifierTest.cs(350,40): error CS0718: 'BiomeSpecificTerrainGenerator': static types cannot be used as type arguments
 
-Assets\Scripts\Terrain\Optimization\PerformanceOptimizationController.cs(30,40): warning CS0414: The field 'PerformanceOptimizationController.maxMemoryUsageRatio' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\BiomeTerrainModifierTest.cs(353,21): error CS0103: The name 'terrainGenerator' does not exist in the current context
 
-Assets\Scripts\Terrain\Map\PrimitiveTerrainManager.cs(18,40): warning CS0414: The field 'PrimitiveTerrainManager.minPrimitiveScale' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\BiomeTerrainModifierTest.cs(393,13): error CS0200: Property or indexer 'TerrainTile.heightData' cannot be assigned to -- it is read only
 
-Assets\Scripts\Terrain\Cache\IntelligentCacheSystem.cs(28,40): warning CS0414: The field 'IntelligentCacheSystem.preloadRadius' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\BiomeTerrainModifierTest.cs(406,13): error CS0200: Property or indexer 'TerrainTile.terrainObject' cannot be assigned to -- it is read only
 
-Assets\Scripts\Terrain\Map\AdvancedPrimitiveLODSystem.cs(40,39): warning CS0414: The field 'AdvancedPrimitiveLODSystem.enableMemoryOptimization' is assigned but its value is never used
+Assets\Scripts\Terrain\Map\BiomeTerrainModifier.cs(509,37): error CS0029: Cannot implicitly convert type 'Vastcore.Generation.BiomePreset' to 'string'
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(162,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(167,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(172,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(201,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(206,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(211,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(239,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(249,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(253,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(282,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(286,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(290,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\BiomeTerrainModifier.cs(885,13): error CS0103: The name 'terrainGenerator' does not exist in the current context
+
+Assets\Scripts\Terrain\Map\BiomeTerrainModifier.cs(885,32): error CS0718: 'BiomeSpecificTerrainGenerator': static types cannot be used as type arguments
+
+Assets\Scripts\Terrain\Map\BiomeTerrainModifier.cs(886,17): error CS0103: The name 'presetManager' does not exist in the current context
+
+Assets\Scripts\Terrain\Map\BiomeTerrainModifier.cs(889,20): error CS0103: The name 'presetManager' does not exist in the current context
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(324,29): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(334,21): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\CircularTerrainSystemIntegration.cs(329,26): error CS1061: 'LineRenderer' does not contain a definition for 'color' and no accessible extension method 'color' accepting a first argument of type 'LineRenderer' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(403,21): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\TerrainTexturingSystemTest.cs(417,21): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(53,41): error CS0103: The name 'TestInitializationSafe' does not exist in the current context
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(57,41): error CS0103: The name 'TestBasicFunctionalitySafe' does not exist in the current context
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(61,41): error CS0103: The name 'TestPlayerTrackingSafe' does not exist in the current context
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(65,41): error CS0103: The name 'TestDynamicGenerationSafe' does not exist in the current context
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(69,41): error CS0103: The name 'TestMemoryManagementSafe' does not exist in the current context
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(73,41): error CS0103: The name 'TestPerformanceSafe' does not exist in the current context
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(79,45): error CS0103: The name 'TestStressConditionsSafe' does not exist in the current context
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(113,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(141,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(144,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(188,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(192,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(196,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(228,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(238,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(280,21): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(290,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackSystem.cs(112,17): error CS0103: The name 'biomeModifier' does not exist in the current context
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(326,21): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManagerTest.cs(373,21): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackSystem.cs(287,17): error CS1612: Cannot modify the return value of 'Dictionary<Vector2Int, TerrainClimateData>.this[Vector2Int]' because it is not a variable
+
+Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackSystem.cs(288,17): error CS1612: Cannot modify the return value of 'Dictionary<Vector2Int, TerrainClimateData>.this[Vector2Int]' because it is not a variable
+
+Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackTest.cs(104,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackTest.cs(252,53): error CS1061: 'ClimateSystem' does not contain a definition for 'GetCurrentSeason' and no accessible extension method 'GetCurrentSeason' accepting a first argument of type 'ClimateSystem' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackTest.cs(255,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackTest.cs(257,49): error CS1061: 'ClimateSystem' does not contain a definition for 'GetCurrentSeason' and no accessible extension method 'GetCurrentSeason' accepting a first argument of type 'ClimateSystem' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackTest.cs(267,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackTest.cs(297,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\ClimateTerrainFeedbackTest.cs(306,17): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\DynamicMaterialBlendingSystem.cs(74,17): error CS0103: The name 'UpdateMaterialBlends' does not exist in the current context
+
+Assets\Scripts\Terrain\Map\CrystalStructureGenerator.cs(274,42): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\CrystalStructureGenerator.cs(304,42): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\CrystalStructureGenerator.cs(348,42): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\CrystalStructureGenerator.cs(383,42): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\CrystalStructureGenerator.cs(409,42): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\CrystalStructureGenerator.cs(440,42): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(275,39): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(304,41): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\ComprehensivePrimitiveTest.cs(207,29): error CS0019: Operator '!=' cannot be applied to operands of type 'PrimitiveQualityValidator.QualityReport' and '<null>'
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(324,43): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(343,42): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(370,67): error CS0117: 'PrimitiveType' does not contain a definition for 'Pyramid'
+
+Assets\Scripts\Terrain\Map\ComprehensivePrimitiveTest.cs(308,20): error CS0037: Cannot convert null to 'PrimitiveQualityValidator.QualityReport' because it is a non-nullable value type
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(383,40): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(392,65): error CS0117: 'PrimitiveType' does not contain a definition for 'Torus'
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(403,40): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(412,65): error CS0117: 'PrimitiveType' does not contain a definition for 'Prism'
+
+Assets\Scripts\Terrain\Map\ComprehensivePrimitiveTest.cs(452,46): error CS0117: 'PrimitiveTerrainGenerator' does not contain a definition for 'GetDefaultScale'
+
+Assets\Scripts\Terrain\Map\MaterialBlendData.cs(194,51): error CS1061: 'Dictionary<string, BlendTransition>' does not contain a definition for 'ToArray' and no accessible extension method 'ToArray' accepting a first argument of type 'Dictionary<string, BlendTransition>' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Terrain\Map\MaterialBlendData.cs(211,56): error CS1061: 'Dictionary<string, ColorBlendTransition>' does not contain a definition for 'ToArray' and no accessible extension method 'ToArray' accepting a first argument of type 'Dictionary<string, ColorBlendTransition>' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(423,39): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(432,64): error CS0117: 'PrimitiveType' does not contain a definition for 'Cone'
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(442,45): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(466,70): error CS0117: 'PrimitiveType' does not contain a definition for 'Octahedron'
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(487,71): error CS0117: 'PrimitiveType' does not contain a definition for 'Crystal'
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(498,43): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(529,68): error CS0117: 'PrimitiveType' does not contain a definition for 'Monolith'
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(559,40): error CS1061: 'ProBuilderMesh' does not contain a definition for 'RebuildFromMesh' and no accessible extension method 'RebuildFromMesh' accepting a first argument of type 'ProBuilderMesh' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(572,47): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(586,39): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(598,64): error CS0117: 'PrimitiveType' does not contain a definition for 'Ring'
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(609,39): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(621,64): error CS0117: 'PrimitiveType' does not contain a definition for 'Mesa'
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(632,40): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(644,65): error CS0117: 'PrimitiveType' does not contain a definition for 'Spire'
+
+Assets\Scripts\Terrain\Map\TerrainTexturingIntegration.cs(389,66): error CS1061: 'BiomePresetManager' does not contain a definition for 'availablePresets' and no accessible extension method 'availablePresets' accepting a first argument of type 'BiomePresetManager' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Terrain\Map\TerrainTexturingIntegration.cs(393,113): error CS1061: 'BiomePresetManager' does not contain a definition for 'availablePresets' and no accessible extension method 'availablePresets' accepting a first argument of type 'BiomePresetManager' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Terrain\Map\TerrainTexturingIntegration.cs(394,39): error CS1061: 'BiomePresetManager' does not contain a definition for 'availablePresets' and no accessible extension method 'availablePresets' accepting a first argument of type 'BiomePresetManager' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(655,42): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(682,67): error CS0117: 'PrimitiveType' does not contain a definition for 'Boulder'
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(692,44): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(732,69): error CS0117: 'PrimitiveType' does not contain a definition for 'Formation'
+
+Assets\Scripts\Terrain\Map\ComprehensivePrimitiveTest.cs(636,43): error CS0117: 'PrimitiveTerrainGenerator' does not contain a definition for 'GetDefaultScale'
+
+Assets\Scripts\Terrain\Map\PrimitiveQualityTestRunner.cs(116,63): error CS0117: 'PrimitiveTerrainGenerator' does not contain a definition for 'GetDefaultScale'
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(906,25): error CS0128: A local variable or function named 'vertex' is already defined in this scope
+
+Assets\Scripts\Terrain\Map\PrimitiveQualityTestScene.cs(119,47): error CS0117: 'PrimitiveTerrainGenerator' does not contain a definition for 'GetDefaultScale'
+
+Assets\Scripts\Terrain\Map\PrimitiveQualityTestScene.cs(282,54): error CS0246: The type or namespace name 'Billboard' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(1043,22): error CS1061: 'ProBuilderMesh' does not contain a definition for 'SetSmoothingGroup' and no accessible extension method 'SetSmoothingGroup' accepting a first argument of type 'ProBuilderMesh' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(1049,66): error CS0117: 'UnwrapParameters' does not contain a definition for 'Default'
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(1055,17): error CS0103: The name 'Unwrapping' does not exist in the current context
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(1061,32): error CS0117: 'MeshValidation' does not contain a definition for 'EnsureMeshIsValid'
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(1062,22): error CS1061: 'ProBuilderMesh' does not contain a definition for 'Optimize' and no accessible extension method 'Optimize' accepting a first argument of type 'ProBuilderMesh' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Terrain\Map\HighQualityPrimitiveGenerator.cs(1121,47): error CS1501: No overload for method 'CreateShape' takes 3 arguments
+
+Assets\Scripts\Terrain\Map\PrimitiveTerrainRule.cs(86,60): error CS0117: 'PrimitiveTerrainGenerator' does not contain a definition for 'GetPrimitiveDescription'
+
+Assets\Scripts\Terrain\Map\PrimitiveTerrainRule.cs(242,59): error CS0117: 'PrimitiveTerrainGenerator' does not contain a definition for 'GetPrimitiveDescription'
+
+Assets\Scripts\Terrain\Map\NaturalTerrainValidationTest.cs(507,30): error CS1061: 'LineRenderer' does not contain a definition for 'color' and no accessible extension method 'color' accepting a first argument of type 'LineRenderer' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Terrain\Map\NaturalTerrainValidationTest.cs(527,30): error CS1061: 'LineRenderer' does not contain a definition for 'color' and no accessible extension method 'color' accepting a first argument of type 'LineRenderer' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Terrain\Map\PrimitiveTerrainTest.cs(84,62): error CS0117: 'PrimitiveTerrainGenerator' does not contain a definition for 'GetDefaultScale'
+
+Assets\Scripts\Terrain\Map\TerrainMemoryManager.cs(60,50): error CS0019: Operator '-' cannot be applied to operands of type 'float' and 'DateTime'
+
+Assets\Scripts\Terrain\Map\TerrainMemoryManager.cs(65,59): error CS0019: Operator '/' cannot be applied to operands of type 'method group' and 'int'
+
+Assets\Scripts\Terrain\Map\TerrainMemoryManager.cs(65,83): error CS0019: Operator '/' cannot be applied to operands of type 'method group' and 'int'
+
+Assets\Scripts\Terrain\Map\TerrainMemoryManager.cs(67,50): error CS0019: Operator '<' cannot be applied to operands of type 'int' and 'method group'
+
+Assets\Scripts\Terrain\Map\TerrainAlignmentSystem.cs(326,19): error CS0117: 'Debug' does not contain a definition for 'DrawWireSphere'
+
+Assets\Scripts\Terrain\Map\TerrainAlignmentSystem.cs(336,19): error CS0117: 'Debug' does not contain a definition for 'DrawWireSphere'
 
