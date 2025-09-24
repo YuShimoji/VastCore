@@ -17,7 +17,7 @@ Vastcore.Player (プレイヤーレイヤー)
 
 Vastcore.Terrain (地形レイヤー)
 ├── 機能: 地形生成、キャッシュ、GPU処理、最適化
-└── 依存: Core, Utils, Unity.ProBuilder, Unity.TextMeshPro
+└── 依存: Core, Utils, Generation, Unity.ProBuilder, Unity.TextMeshPro
 
 Vastcore.Camera (カメラレイヤー)
 ├── 機能: カメラコントローラー、シネマティック
@@ -44,9 +44,9 @@ Vastcore.Editor.StructureGenerator (エディターレイヤー)
 - 新しいアセンブリ定義を作成
 
 ### アセンブリファイルの整理
-- 不正な `Generation.asmdef` を削除
-- 新規作成: `Vastcore.Camera.asmdef`, `Vastcore.Game.asmdef`
-- 依存関係を明確化
+- 空の（不正な）`Assets/Scripts/Vastcore.Generation.asmdef` を削除
+- `Assets/Scripts/Generation/Vastcore.Generation.asmdef` を維持（Core/Utils へ依存）
+- `Vastcore.Terrain.asmdef` の参照を `Core/Utils/Generation` のみに統一（Player 参照を削除）
 
 ## テスト手順
 1. Unityエディターでプロジェクトを開く
