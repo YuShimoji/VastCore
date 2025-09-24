@@ -1,5 +1,4 @@
 using UnityEngine;
-using Vastcore.Player;
 using System.Collections.Generic;
 
 namespace Vastcore.Generation
@@ -35,7 +34,16 @@ namespace Vastcore.Generation
         {
             if (playerTransform == null)
             {
-                playerTransform = FindFirstObjectByType<AdvancedPlayerController>()?.transform;
+                // プレイヤー検出: タグ / カメラの順にフォールバック
+                var playerObject = GameObject.FindGameObjectWithTag("Player");
+                if (playerObject != null)
+                {
+                    playerTransform = playerObject.transform;
+                }
+                else if (Camera.main != null)
+                {
+                    playerTransform = Camera.main.transform;
+                }
             }
             
             if (playerTransform != null)

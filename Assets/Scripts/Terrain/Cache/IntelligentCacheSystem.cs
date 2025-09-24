@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
-using Vastcore.Player;
 
 namespace Vastcore.Generation.Cache
 {
@@ -103,11 +102,15 @@ namespace Vastcore.Generation.Cache
             
             statistics = new CacheStatistics();
             
-            // プレイヤーの検索
-            var player = FindFirstObjectByType<AdvancedPlayerController>();
-            if (player != null)
+            // プレイヤーの検索（タグ/カメラフォールバック）
+            var playerObject = GameObject.FindGameObjectWithTag("Player");
+            if (playerObject != null)
             {
-                playerTransform = player.transform;
+                playerTransform = playerObject.transform;
+            }
+            else if (Camera.main != null)
+            {
+                playerTransform = Camera.main.transform;
             }
             
             // ディスクキャッシュディレクトリの作成
