@@ -21,7 +21,6 @@ namespace Vastcore.Generation
         public MeshGenerator.TerrainGenerationParams terrainParams = MeshGenerator.TerrainGenerationParams.Default();
         
         [Header("プリミティブ地形設定")]
-        public List<PrimitiveTerrainRule> primitiveRules = new List<PrimitiveTerrainRule>();
         [Range(0f, 1f)]
         public float primitiveSpawnDensity = 0.1f;
         public float minPrimitiveDistance = 200f;
@@ -45,54 +44,6 @@ namespace Vastcore.Generation
         public float rockiness = 0.5f;          // 岩石度
         
         /// <summary>
-        /// プリセットの妥当性を検証
-        /// </summary>
-        public bool ValidatePreset()
-        {
-            if (string.IsNullOrEmpty(presetName))
-            {
-                Debug.LogWarning("BiomePreset: プリセット名が設定されていません");
-                return false;
-            }
-            
-            if (terrainParams.resolution <= 0 || terrainParams.size <= 0)
-            {
-                Debug.LogWarning("BiomePreset: 地形パラメータが無効です");
-                return false;
-            }
-            
-            if (primitiveSpawnDensity < 0f || primitiveSpawnDensity > 1f)
-            {
-                Debug.LogWarning("BiomePreset: プリミティブ生成密度が範囲外です");
-                return false;
-            }
-            
-            return true;
-        }
-        
-        /// <summary>
-        /// デフォルト設定でプリセットを初期化
-        /// </summary>
-        public void InitializeDefault()
-        {
-            presetName = "Default Biome";
-            description = "デフォルトバイオーム設定";
-            terrainParams = MeshGenerator.TerrainGenerationParams.Default();
-            primitiveSpawnDensity = 0.1f;
-            minPrimitiveDistance = 200f;
-            maxPrimitiveDistance = 2000f;
-            
-            materialSettings = new MaterialSettings();
-            environmentSettings = new EnvironmentSettings();
-            structureSettings = new StructureSpawnSettings();
-            
-            moisture = 0.5f;
-            temperature = 0.5f;
-            fertility = 0.5f;
-            rockiness = 0.5f;
-        }
-        
-        /// <summary>
         /// プリセットの深いコピーを作成
         /// </summary>
         public BiomePreset CreateCopy()
@@ -102,7 +53,6 @@ namespace Vastcore.Generation
             copy.description = description;
             copy.previewImage = previewImage;
             copy.terrainParams = terrainParams;
-            copy.primitiveRules = new List<PrimitiveTerrainRule>(primitiveRules);
             copy.primitiveSpawnDensity = primitiveSpawnDensity;
             copy.minPrimitiveDistance = minPrimitiveDistance;
             copy.maxPrimitiveDistance = maxPrimitiveDistance;
