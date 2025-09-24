@@ -265,57 +265,46 @@ public abstract class BaseStructureTab : IStructureTab
 - 警告修正: ✅ 完了（new キーワード追加）
 - 全タブ統一化: ✅ 7/7タブ完了
 
-#### **未実施テスト**
-- 実際のUI表示確認
-- スクロールバー動作確認
-- リアルタイム更新動作確認
-- 各タブの機能動作確認
-- メッシュ破綻修正効果確認
-
-### ⚠️ **明確な課題**
-
-#### **統一感の問題**
-- 7タブ中2タブのみ統一インターフェース適用
-- 残り5タブは従来の個別実装
-- UI表示方法が混在（OnGUI/Draw/DrawGUI）
-
-#### **機能分類の不明確さ**
-- 生成・編集・設定の分類が部分的
-- ユーザーワークフローが不統一
-- 機能重複の可能性
-
-#### **検証不足**
-- 実際のUI動作未確認
-- メッシュ破綻修正効果未検証
-- パフォーマンス影響未測定
-
-### 📋 **次回作業項目**
-
-#### **優先度: 高**
-1. 残り5タブの統一インターフェース適用
-2. 実際のUI動作確認・修正
-3. 機能分類の明確化
-
-#### **優先度: 中**
-1. メッシュ変形機能の動作検証
-2. リアルタイム更新機能の動作確認
-3. 自動テスト機能の実動作確認
-
-#### **優先度: 低**
-1. パフォーマンス最適化
-2. Scene View統合
-3. 追加機能開発
-
-### 🔍 **実装方針**
-
-#### **段階的統一化**
-1. 各タブを順次統一インターフェースに移行
-2. 機能テストを各段階で実施
-3. 問題発生時は即座に修正
-
 #### **検証重視**
 1. 推測による判断を避ける
 2. 実際の動作確認を優先
 3. ユーザーフィードバックを重視
 
-**現状**: 全7タブの統一化完了。実際の動作検証フェーズに移行可能。 
+**現在の状況**: 全7タブの統一化完了。実際の動作検証フェーズに移行可能。
+
+---
+
+## 🧭 Runtime Terrain Minimal Test（2025-09-14 追加）
+
+### 目的
+- Terrain→Player の循環/直接依存を排除した結果、ランタイム地形生成/破棄/追跡がプレイヤー実装に依存せず動作することを検証する。
+
+### 前提
+- 対象ブランチ: `restructure-2025-09-12`
+- シーンに `RuntimeTerrainManager` をアタッチした GameObject を1つ配置（なければ空の GameObject に Add Component）
+- `Player` タグを持つオブジェクトが存在しない場合でも `Main Camera` が追跡対象となること
+
+### 手順
+1. Unity を起動し、対象シーンを開く。
+2. Console をクリアし、Play を開始する。
+3. Hierarchy で `RuntimeTerrainManager` を選択し、Inspector の以下設定を確認/調整。
+   - `enableDynamicGeneration = ON`
+   - `immediateLoadRadius = 1`, `preloadRadius = 3`, `keepAliveRadius = 5`, `forceUnloadRadius = 7`
+   - `enableFrameTimeControl = ON`, `maxFrameTimeMs = 4`
+4. シーン内のカメラを WASD/右ドラッグ等で移動し、以下を確認する。
+   - 周辺にタイルがロードされ、遠方タイルがアンロードされる。
+   - Console に `RuntimeTerrain` ログが出力され、エラー/例外がない。
+5. `RuntimeTerrainManager.LogPerformanceStats()` をコンテキストメニューから実行し、統計が出力されることを確認。
+6. `TerrainTexturingSystem` が存在する場合、プレイヤー検出が失敗せず、テクスチャ適用が継続することを確認。
+
+### 期待結果（合格基準）
+- コンパイルエラー 0。
+- `Vastcore.Terrain.asmdef` に `Vastcore.Player` 参照が存在しない。
+- `Player` タグ未配置でも `Main Camera` で追跡し、タイル生成/削除が行われる。
+- `UnloadAllTiles()` が過剰に連続呼び出しされない（ウォッチドッグが発火しない）。
+- Console に `RuntimeTerrain` の Info/Debug ログが出力され、Error ログが出ない。
+
+### 失敗時のトリアージ
+- 依存関係エラー: asmdef 参照設定を確認（`Vastcore.Terrain` → `Core/Utils/Generation` のみ）。
+- 追跡失敗: シーン内 `Player` タグ・`Main Camera` の存在を確認。`RuntimeTerrainManager.playerTransform` を Inspector で手動割り当てして切り分け。
+- パフォーマンス: `enableFrameTimeControl` と `maxFrameTimeMs` を下げ、`maxTilesPerUpdate` を調整。
