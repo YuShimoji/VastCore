@@ -4,7 +4,7 @@ using TMPro;
 using System.Collections.Generic;
 using System.Collections;
 
-namespace NarrativeGen.UI
+namespace Vastcore.UI
 {
     /// <summary>
     /// In-game debug UI system for real-time parameter adjustment and performance monitoring
@@ -476,7 +476,7 @@ namespace NarrativeGen.UI
             debugParameters[parameterName] = parameter;
             
             // Create slider UI element
-            var sliderElement = sliderSystem.CreateSliderUI(parameterName, minValue, maxValue, defaultValue, onValueChanged);
+            var sliderElement = sliderSystem.CreateSliderAndReturnElement(parameterName, minValue, maxValue, defaultValue, onValueChanged);
             sliderElement.transform.SetParent(parentPanel.transform, false);
             
             // Register with update system

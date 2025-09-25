@@ -406,7 +406,7 @@ namespace Vastcore.Generation.Cache
                 // プリロード半径の調整（実装は IntelligentCacheSystem に依存）
             }
             
-            if (stats.totalMemoryUsed > maxMemoryCacheSize * 1024 * 1024 * 0.9f)
+            if (stats.totalMemoryUsed > (100 * 1024 * 1024) * 0.9f)
             {
                 Debug.Log("High memory usage detected. Triggering cache cleanup.");
                 // メモリクリーンアップの実行

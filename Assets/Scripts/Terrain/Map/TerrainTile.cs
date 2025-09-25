@@ -34,7 +34,7 @@ namespace Vastcore.Generation
         public float[,] heightData => heightmap;        // heightmapのエイリアス
         public bool isActive => state == TileState.Active; // アクティブ状態
         public System.DateTime lastAccessTime => lastAccessedAt; // 最終アクセス時間のエイリアス
-        public string appliedBiome { get; set; } = "Default"; // 適用されたバイオーム
+        public BiomePreset appliedBiome { get; set; } // 適用されたバイオーム
         
         [Header("生成情報")]
         public float generationTime;            // 生成にかかった時間

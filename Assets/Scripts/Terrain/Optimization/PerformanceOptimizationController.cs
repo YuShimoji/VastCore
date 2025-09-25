@@ -398,8 +398,9 @@ namespace Vastcore.Generation.Optimization
             GUILayout.BeginArea(new Rect(Screen.width - 320, 10, 300, 250));
             GUILayout.BeginVertical("box");
             
-            GUILayout.Label("Performance Optimization", EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).label);
+            GUILayout.Label("Performance Optimization");
             GUILayout.Space(5);
+
             
             // 状態表示
             Color originalColor = GUI.color;

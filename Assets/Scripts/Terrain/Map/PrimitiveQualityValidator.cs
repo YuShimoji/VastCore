@@ -147,24 +147,23 @@ namespace Vastcore.Generation
         {
             if (testPosition == default) testPosition = Vector3.zero;
             if (testScale == default) testScale = Vector3.one * 100f;
-            if (standards.Equals(default(QualityStandards))) standards = QualityStandards.High;
 
-            var results = new Dictionary<PrimitiveTerrainGenerator.PrimitiveType, QualityReport>();
             var allTypes = System.Enum.GetValues(typeof(PrimitiveTerrainGenerator.PrimitiveType))
                                 .Cast<PrimitiveTerrainGenerator.PrimitiveType>();
 
             Debug.Log("Starting comprehensive quality validation for all 16 primitive types");
-
+            var results = new Dictionary<PrimitiveTerrainGenerator.PrimitiveType, QualityReport>();
+            
             foreach (var primitiveType in allTypes)
             {
                 try
                 {
                     // プリミティブを生成
-                    var primitiveObject = HighQualityPrimitiveGenerator.GenerateHighQualityPrimitive(
-                        primitiveType, 
-                        testPosition + Vector3.right * results.Count * 200f, // 間隔を空けて配置
-                        testScale
-                    );
+                    var genParams = PrimitiveTerrainGenerator.PrimitiveGenerationParams.Default(primitiveType);
+                    genParams.position = testPosition + Vector3.right * results.Count * 200f; // 間隔を空けて配置
+                    genParams.scale = testScale;
+                    genParams.generateCollider = true;
+                    var primitiveObject = PrimitiveTerrainGenerator.GeneratePrimitiveTerrain(genParams);
 
                     if (primitiveObject != null)
                     {

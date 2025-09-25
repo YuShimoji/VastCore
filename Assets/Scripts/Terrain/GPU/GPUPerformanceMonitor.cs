@@ -209,7 +209,7 @@ namespace Vastcore.Generation.GPU
             GUILayout.BeginArea(new Rect(10, 10, 300, 200));
             GUILayout.BeginVertical("box");
             
-            GUILayout.Label("GPU Performance Monitor", EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).label);
+            GUILayout.Label("GPU Performance Monitor");
             GUILayout.Space(5);
             
             GUILayout.Label($"Frame Time: {stats.averageFrameTime:F1}ms (Target: {targetFrameTime:F1}ms)");
@@ -220,7 +220,7 @@ namespace Vastcore.Generation.GPU
             
             Color originalColor = GUI.color;
             GUI.color = stats.isPerformanceGood ? Color.green : Color.red;
-            GUILayout.Label($"Performance: {(stats.isPerformanceGood ? "GOOD" : "POOR")}");
+            GUILayout.Label(stats.isPerformanceGood ? "Performance Good" : "Performance Bad");
             GUI.color = originalColor;
             
             GUILayout.Space(5);
@@ -229,7 +229,6 @@ namespace Vastcore.Generation.GPU
             {
                 LogPerformanceStats();
             }
-            
             if (GUILayout.Button("Auto Optimize"))
             {
                 AutoOptimizePerformance();

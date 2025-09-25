@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-namespace NarrativeGen.UI
+namespace Vastcore.UI
 {
     /// <summary>
     /// Individual slider UI element component with modern styling

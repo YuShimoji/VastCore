@@ -200,9 +200,8 @@ namespace Vastcore.Generation.Cache
                 {
                     if (loadedData.HasValue)
                     {
-                        cachedData = loadedData.Value;
-                        // メモリキャッシュに昇格
-                        CacheTerrainData(coordinate, cachedData.heightmap, cachedData.metadata, cachedData.primitiveObjects);
+                        var data = loadedData.Value;
+                        CacheTerrainData(coordinate, data.heightmap, data.metadata, data.primitiveObjects);
                         statistics.totalCacheHits++;
                     }
                 }));
@@ -215,7 +214,7 @@ namespace Vastcore.Generation.Cache
         }
         
         /// <summary>
-        /// 予測的プリロードの実行
+        /// 予測のプリロードの実行
         /// </summary>
         public void UpdatePredictivePreload()
         {

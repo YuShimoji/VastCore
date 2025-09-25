@@ -3,9 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using Vastcore.Core;
 using Vastcore.Utils;
-using Vastcore.Terrain;
+using Vastcore.Generation;
 using Vastcore.Player;
-using Vastcore.UI;
+using Vastcore.UI.Menus;
 using Vastcore.Camera.Cinematic;
 
 namespace Vastcore.Game.Managers

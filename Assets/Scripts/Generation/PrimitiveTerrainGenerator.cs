@@ -180,5 +180,35 @@ namespace Vastcore.Generation
             primitiveComponent.hasCollision = parameters.generateCollider;
             primitiveObject.layer = LayerMask.NameToLayer("Default");
         }
+
+        public static Vector3 GetDefaultScale(PrimitiveType type)
+        {
+            switch (type)
+            {
+                case PrimitiveType.Cube:
+                case PrimitiveType.Sphere:
+                case PrimitiveType.Cylinder:
+                case PrimitiveType.Cone:
+                case PrimitiveType.Pyramid:
+                    return Vector3.one * 100f;
+                case PrimitiveType.Torus:
+                case PrimitiveType.Prism:
+                case PrimitiveType.Octahedron:
+                    return new Vector3(150f, 150f, 150f);
+                case PrimitiveType.Crystal:
+                case PrimitiveType.Monolith:
+                case PrimitiveType.Spire:
+                    return new Vector3(100f, 200f, 100f);
+                case PrimitiveType.Arch:
+                case PrimitiveType.Ring:
+                    return new Vector3(200f, 100f, 200f);
+                case PrimitiveType.Mesa:
+                case PrimitiveType.Boulder:
+                case PrimitiveType.Formation:
+                    return new Vector3(300f, 150f, 300f);
+                default:
+                    return Vector3.one * 100f;
+            }
+        }
     }
 }
