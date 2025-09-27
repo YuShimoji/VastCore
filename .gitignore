@@ -136,3 +136,4 @@ Assembly-CSharp-Editor.csproj
 
 # Ignore problematic submodules
 Packages/co.parabox.csg/ Packages/co.parabox.csg/
+\n# Ignore Unity debug logs\nDEBUGLOG_*

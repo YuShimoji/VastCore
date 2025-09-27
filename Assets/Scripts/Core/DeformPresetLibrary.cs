@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Vastcore.Utils;
+using System.Reflection;
 
 #if DEFORM_AVAILABLE
 using Deform;
@@ -46,7 +47,6 @@ namespace Vastcore.Core
             public AnimationCurve intensityCurve = AnimationCurve.Linear(0, 0, 1, 1);
             public float frequency = 1f;
             
-            [Header("マスク設定")]
             public bool useMask = false;
             public MaskType maskType = MaskType.Sphere;
             public Vector3 maskCenter = Vector3.zero;
@@ -378,21 +378,65 @@ namespace Vastcore.Core
         private void ApplyGeologicalPreset(GameObject target, GeologicalPreset preset, float intensityMultiplier)
         {
 #if DEFORM_AVAILABLE
+            // 安全なプロパティ設定用ヘルパー（Deform のバージョン差異を吸収）
+            void TrySetProperty(object obj, string prop, object value)
+            {
+                if (obj == null || string.IsNullOrEmpty(prop)) return;
+                var t = obj.GetType();
+                var pi = t.GetProperty(prop, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (pi == null || !pi.CanWrite) return;
+                var pt = pi.PropertyType;
+                try
+                {
+                    if (pt == typeof(float))
+                    {
+                        float f = value is float fv ? fv : (value is Vector3 v3 ? v3.x : System.Convert.ToSingle(value));
+                        pi.SetValue(obj, f);
+                    }
+                    else if (pt == typeof(Vector3))
+                    {
+                        Vector3 v = value is Vector3 v3 ? v3 : (value is float fv ? Vector3.one * fv : Vector3.one);
+                        pi.SetValue(obj, v);
+                    }
+                    else
+                    {
+                        // そのまま代入を試みる
+                        pi.SetValue(obj, value);
+                    }
+                }
+                catch { /* バージョン差異で失敗しても無視 */ }
+            }
+
+            void SetAny(object obj, object value, params string[] candidates)
+            {
+                foreach (var name in candidates)
+                {
+                    var t = obj?.GetType();
+                    var pi = t?.GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                    if (pi != null && pi.CanWrite)
+                    {
+                        TrySetProperty(obj, name, value);
+                        return;
+                    }
+                }
+            }
+
             switch (preset.deformType)
             {
                 case GeologicalDeformType.Erosion:
                     var noiseDeformer = target.AddComponent<NoiseDeformer>();
-                    noiseDeformer.Factor = preset.intensity * intensityMultiplier;
+                    SetAny(noiseDeformer, preset.intensity * intensityMultiplier, "Factor", "Strength", "Amplitude", "Intensity");
                     break;
-                    
+                
                 case GeologicalDeformType.CrystalGrowth:
                     var scaleDeformer = target.AddComponent<ScaleDeformer>();
-                    scaleDeformer.Factor = Vector3.one * (1f + preset.intensity * intensityMultiplier);
+                    var scaleVec = Vector3.one * (1f + preset.intensity * intensityMultiplier);
+                    SetAny(scaleDeformer, scaleVec, "Scale", "Factor", "ScaleFactor");
                     break;
-                    
+                
                 case GeologicalDeformType.TectonicStress:
                     var bendDeformer = target.AddComponent<BendDeformer>();
-                    bendDeformer.Factor = preset.intensity * intensityMultiplier;
+                    SetAny(bendDeformer, preset.intensity * intensityMultiplier, "Factor", "Angle", "Strength", "Intensity");
                     break;
             }
 #else
@@ -406,16 +450,56 @@ namespace Vastcore.Core
         private void ApplyArchitecturalPreset(GameObject target, ArchitecturalPreset preset, float intensityMultiplier)
         {
 #if DEFORM_AVAILABLE
+            // ヘルパー（上と同一ロジック）
+            void TrySetProperty(object obj, string prop, object value)
+            {
+                if (obj == null || string.IsNullOrEmpty(prop)) return;
+                var t = obj.GetType();
+                var pi = t.GetProperty(prop, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (pi == null || !pi.CanWrite) return;
+                var pt = pi.PropertyType;
+                try
+                {
+                    if (pt == typeof(float))
+                    {
+                        float f = value is float fv ? fv : (value is Vector3 v3 ? v3.x : System.Convert.ToSingle(value));
+                        pi.SetValue(obj, f);
+                    }
+                    else if (pt == typeof(Vector3))
+                    {
+                        Vector3 v = value is Vector3 v3 ? v3 : (value is float fv ? Vector3.one * fv : Vector3.one);
+                        pi.SetValue(obj, v);
+                    }
+                    else
+                    {
+                        pi.SetValue(obj, value);
+                    }
+                }
+                catch { }
+            }
+            void SetAny(object obj, object value, params string[] candidates)
+            {
+                foreach (var name in candidates)
+                {
+                    var t = obj?.GetType();
+                    var pi = t?.GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                    if (pi != null && pi.CanWrite)
+                    {
+                        TrySetProperty(obj, name, value);
+                        return;
+                    }
+                }
+            }
             switch (preset.deformType)
             {
                 case ArchitecturalDeformType.AgeDeterioration:
                     var rippleDeformer = target.AddComponent<RippleDeformer>();
-                    rippleDeformer.Factor = preset.intensity * intensityMultiplier;
+                    SetAny(rippleDeformer, preset.intensity * intensityMultiplier, "Factor", "Strength", "Amplitude", "Intensity");
                     break;
-                    
+                
                 case ArchitecturalDeformType.ArtisticCurve:
                     var twistDeformer = target.AddComponent<TwistDeformer>();
-                    twistDeformer.Factor = preset.intensity * intensityMultiplier * 30f;
+                    SetAny(twistDeformer, preset.intensity * intensityMultiplier * 30f, "Factor", "Angle", "Strength", "Intensity");
                     break;
             }
 #else
@@ -429,22 +513,62 @@ namespace Vastcore.Core
         private void ApplyOrganicPreset(GameObject target, OrganicPreset preset, float intensityMultiplier)
         {
 #if DEFORM_AVAILABLE
+            // ヘルパー（上と同一ロジック）
+            void TrySetProperty(object obj, string prop, object value)
+            {
+                if (obj == null || string.IsNullOrEmpty(prop)) return;
+                var t = obj.GetType();
+                var pi = t.GetProperty(prop, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (pi == null || !pi.CanWrite) return;
+                var pt = pi.PropertyType;
+                try
+                {
+                    if (pt == typeof(float))
+                    {
+                        float f = value is float fv ? fv : (value is Vector3 v3 ? v3.x : System.Convert.ToSingle(value));
+                        pi.SetValue(obj, f);
+                    }
+                    else if (pt == typeof(Vector3))
+                    {
+                        Vector3 v = value is Vector3 v3 ? v3 : (value is float fv ? Vector3.one * fv : Vector3.one);
+                        pi.SetValue(obj, v);
+                    }
+                    else
+                    {
+                        pi.SetValue(obj, value);
+                    }
+                }
+                catch { }
+            }
+            void SetAny(object obj, object value, params string[] candidates)
+            {
+                foreach (var name in candidates)
+                {
+                    var t = obj?.GetType();
+                    var pi = t?.GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                    if (pi != null && pi.CanWrite)
+                    {
+                        TrySetProperty(obj, name, value);
+                        return;
+                    }
+                }
+            }
             switch (preset.deformType)
             {
                 case OrganicDeformType.NaturalGrowth:
                     var inflateDeformer = target.AddComponent<InflateDeformer>();
-                    inflateDeformer.Factor = preset.intensity * intensityMultiplier;
+                    SetAny(inflateDeformer, preset.intensity * intensityMultiplier, "Factor", "Amount", "Strength", "Intensity");
                     break;
-                    
+                
                 case OrganicDeformType.FlowingWater:
                     var waveDeformer = target.AddComponent<RippleDeformer>();
-                    waveDeformer.Factor = preset.intensity * intensityMultiplier;
-                    waveDeformer.Frequency = preset.flowStrength;
+                    SetAny(waveDeformer, preset.intensity * intensityMultiplier, "Factor", "Strength", "Amplitude", "Intensity");
+                    SetAny(waveDeformer, preset.flowStrength, "Frequency", "Speed", "Rate");
                     break;
             }
 #else
             VastcoreLogger.Instance.LogDebug("DeformPresetLibrary", $"Applied organic preset (dummy): {preset.deformType}");
 #endif
-        }
     }
+}
 }

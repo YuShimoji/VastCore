@@ -2,7 +2,8 @@
     "name": "Vastcore.Core",
     "rootNamespace": "Vastcore.Core",
     "references": [
-        "Vastcore.Utils"
+        "Vastcore.Utils",
+        "Deform"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -11,6 +12,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.beans.deform",
+            "define": "DEFORM_AVAILABLE",
+            "expression": "0.0.0"
+        }
+    ],
     "noEngineReferences": false
 }

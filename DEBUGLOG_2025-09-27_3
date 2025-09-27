@@ -1,0 +1,85 @@
+User-requested exit Safe Mode (RequestPartialScriptReload called).
+
+Main Object Name '' does not match filename 'DeformSettings'
+
+Font Asset [LiberationSans SDF - Fallback] Units Per EM set to 2048. Please commit the newly serialized value.
+
+Font Asset [Oswald Bold SDF] Units Per EM set to 2048. Please commit the newly serialized value.
+
+Font Asset [Electronic Highway Sign SDF] Units Per EM set to 1400. Please commit the newly serialized value.
+
+Font Asset [Anton SDF] Units Per EM set to 2048. Please commit the newly serialized value.
+
+The following asset(s) located in immutable packages were unexpectedly altered. Making changes to immutable packages isn't recommended because the changes can be lost without any warning during Package Manager operations.
+  Packages/com.unity.probuilder/Content/Resources/Materials/ProBuilderDefault.mat
+  Packages/com.unity.probuilder/Content/Material/Checker.mat
+
+
+Assets\Scripts\Core\DeformPresetLibrary.cs(390,35): error CS1061: 'ScaleDeformer' does not contain a definition for 'Factor' and no accessible extension method 'Factor' accepting a first argument of type 'ScaleDeformer' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Core\VastcoreDeformManager.cs(185,46): error CS1503: Argument 1: cannot convert from 'object' to 'Deform.Deformable'
+
+Assets\Scripts\Core\VastcoreDeformManager.cs(187,40): error CS1503: Argument 1: cannot convert from 'object' to 'Deform.Deformable'
+
+Assets\Scripts\Core\VastcoreDeformManager.cs(189,34): error CS1503: Argument 1: cannot convert from 'object' to 'Deform.Deformable'
+
+Assets\Scripts\Core\VastcoreDeformManager.cs(192,67): error CS1503: Argument 1: cannot convert from 'object' to 'Deform.Deformable'
+
+Assets\Scripts\Core\VastcoreDeformManager.cs(197,162): error CS1503: Argument 1: cannot convert from 'object' to 'Deform.Deformable'
+
+Assets\Scripts\Core\VastcoreDeformManager.cs(202,130): error CS1503: Argument 1: cannot convert from 'object' to 'Deform.Deformable'
+
+Assets\Scripts\Core\VastcoreDeformManager.cs(214,39): error CS1503: Argument 1: cannot convert from 'object' to 'Deform.Deformable'
+
+Assets\Scripts\Core\VastcoreDeformManager.cs(215,37): error CS1503: Argument 1: cannot convert from 'object' to 'Deform.Deformable'
+
+Assets\Scripts\Core\VastcoreDeformManager.cs(291,54): error CS0136: A local or parameter named 'deformableTarget' cannot be declared in this scope because that name is used in an enclosing local scope to define a local or parameter
+
+Assets\Scripts\Core\VastcoreDeformManager.cs(312,54): error CS0136: A local or parameter named 'deformableTarget' cannot be declared in this scope because that name is used in an enclosing local scope to define a local or parameter
+
+Failed to find entry-points:
+Mono.Cecil.AssemblyResolutionException: Failed to resolve assembly: 'Assembly-CSharp-Editor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null' ---> System.Exception: Failed to resolve assembly 'Assembly-CSharp-Editor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null' in directories: C:\Program Files\6000.2.2f1\Editor\Data\MonoBleedingEdge\lib\mono\unityjit-win32
+C:\Program Files\6000.2.2f1\Editor\Data\MonoBleedingEdge\lib\mono\unityjit-win32\Facades
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.dt.app-ui@7b87c8225c06\Runtime\SourceGenerators\netstandard2.0
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.visualscripting@6279e2b7c485\Editor\VisualScripting.Core\Dependencies\DotNetZip
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.collab-proxy@c854d1f7d97f\Lib\Editor
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.visualscripting@6279e2b7c485\Editor\VisualScripting.Core\EditorAssetResources
+C:\Users\thank\Storage\Game Projects\Vastcore\Assets\Plugins\Poly2Tri
+C:\Program Files\6000.2.2f1\Editor\Data\PlaybackEngines\WindowsStandaloneSupport
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.ai.inference@4ac711cab9a3\Runtime\Core\SourceGenerator
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.nuget.newtonsoft-json@74deb55db2a0\Runtime
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.ai.inference@4ac711cab9a3\Editor\ONNX
+C:\Program Files\6000.2.2f1\Editor\Data\Managed
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.ai.assistant@91c166a13c3b\Plugins\Markdig\Dependencies
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.collections@d49facba0036\Unity.Collections.Tests\System.IO.Hashing
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.burst@f7a407abf4d5
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.burst@f7a407abf4d5\Unity.Burst.CodeGen
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.ext.nunit@031a54704bff\net40\unity-custom
+C:\Users\thank\Storage\Game Projects\Vastcore\Assets\Plugins\Clipper
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.ai.assistant@91c166a13c3b\Plugins\CodeAnalysis
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.nuget.mono-cecil@d78732e851eb
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.collections@d49facba0036\Unity.Collections.Tests\System.Runtime.CompilerServices.Unsafe
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.visualscripting@6279e2b7c485\Editor\VisualScripting.Core\Dependencies\YamlDotNet
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.ai.toolkit@48a271771d1a\Modules\Sdk\Editor
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.nuget.newtonsoft-json@74deb55db2a0\Runtime\AOT
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.collections@d49facba0036\Unity.Collections.LowLevel.ILSupport
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.ai.assistant@91c166a13c3b\Plugins\Markdig
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\PackageCache\com.unity.visualscripting@6279e2b7c485\Runtime\VisualScripting.Flow\Dependencies\NCalc
+C:\Program Files\6000.2.2f1\Editor\Data\Managed\UnityEngine
+C:\Users\thank\Storage\Game Projects\Vastcore\Library\ScriptAssemblies ---> Mono.Cecil.AssemblyResolutionException: Failed to resolve assembly: 'Assembly-CSharp-Editor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+  at Mono.Cecil.BaseAssemblyResolver.Resolve (Mono.Cecil.AssemblyNameReference name, Mono.Cecil.ReaderParameters parameters) [0x00105] in <853812ae52c341daaef3c62ecdb86b32>:0 
+  at zzzUnity.Burst.CodeGen.AssemblyResolver.Resolve (Mono.Cecil.AssemblyNameReference name) [0x00007] in <e6b852d46e1e4bfb963d02704699e755>:0 
+   --- End of inner exception stack trace ---
+  at zzzUnity.Burst.CodeGen.AssemblyResolver.Resolve (Mono.Cecil.AssemblyNameReference name) [0x00054] in <e6b852d46e1e4bfb963d02704699e755>:0 
+  at Burst.Compiler.IL.AssemblyLoader.Resolve (Mono.Cecil.AssemblyNameReference name) [0x0007e] in <e6b852d46e1e4bfb963d02704699e755>:0 
+  at Burst.Compiler.IL.Server.EntryPointMethodFinder.FindEntryPoints (System.String[] rootAssemblyNames, Burst.Compiler.IL.Hashing.CacheRuntime.HashCacheAssemblyStore assemblyStore, Burst.Compiler.IL.AssemblyLoader assemblyLoader, Burst.Compiler.IL.NativeCompilerOptions options, Burst.Compiler.IL.Server.ProfileDelegate profileCallback, System.Boolean includeRootAssemblyReferences, System.Boolean splitTargets) [0x00055] in <e6b852d46e1e4bfb963d02704699e755>:0 
+  at Burst.Compiler.IL.Server.CompilerServer+<>c__DisplayClass18_1.<FindMethods>b__0 (Burst.Compiler.IL.Server.Caching.CacheManager cacheManager) [0x0005e] in <e6b852d46e1e4bfb963d02704699e755>:0 
+  at Burst.Compiler.IL.Server.CompilerServer+<>c__DisplayClass26_0`1[TResult].<RunTask>b__0 () [0x00145] in <e6b852d46e1e4bfb963d02704699e755>:0 
+  at Burst.Compiler.IL.Server.CompilerServer.RunTask[TResult] (Burst.Compiler.IL.Server.TargetKey target, System.String taskName, System.String[] assemblyFolders, System.Threading.CancellationToken cancellationToken, System.Func`2[T,TResult] function) [0x00131] in <e6b852d46e1e4bfb963d02704699e755>:0 
+  at Burst.Compiler.IL.Server.CompilerServer.FindMethods (Burst.Compiler.IL.Server.CompilerServerOptions options, Burst.Compiler.IL.Aot.AotCompilerOptions aotOptions, Burst.Compiler.IL.AssemblyDefinesDict assemblyDefines, Burst.Compiler.IL.Server.TargetKey target, Burst.Compiler.IL.Server.Caching.CacheManager cacheManager, Burst.Compiler.IL.CompilerStatistics stats, System.Threading.CancellationToken cancellationToken) [0x00299] in <e6b852d46e1e4bfb963d02704699e755>:0 
+  at Burst.Compiler.IL.Server.CompilerServer+<>c__DisplayClass26_0`1[TResult].<RunTask>b__0 () [0x00145] in <e6b852d46e1e4bfb963d02704699e755>:0 
+  at Burst.Compiler.IL.Server.CompilerServer.RunTask[TResult] (Burst.Compiler.IL.Server.TargetKey target, System.String taskName, System.String[] assemblyFolders, System.Threading.CancellationToken cancellationToken, System.Func`2[T,TResult] function) [0x00131] in <e6b852d46e1e4bfb963d02704699e755>:0 
+  at Burst.Compiler.IL.Server.CompilerServer.Compile (Burst.Compiler.IL.Server.CompilerServerOptions options, Burst.Compiler.IL.Server.CompilationMessageStreamer streamer, System.Threading.CancellationToken cancellationToken) [0x001ca] in <e6b852d46e1e4bfb963d02704699e755>:0 
+
+While compiling job:
+

@@ -964,9 +964,3 @@ Your branch is up to date with 'origin/master'.
 
 #### 短期目標（次回1-3セッション）
 1.  **Deformer選択UIの実装**:
-    -   `DeformerTab.cs`に、利用可能なDeformer（Bend, Twist, Noise等）を選択するドロップダウンUIを実装する。
-    -   Deformパッケージ内のコンポーネントをリフレクション等で動的に検出し、リストを自動生成する。
-2.  **動的パラメータUIの生成**:
-    -   選択されたDeformerの種類に応じて、必要なパラメータ（角度、強度など）のスライダーやフィールドを動的に表示するUIを実装する。
-3.  **基本適用ロジックの実装**:
-    -   `DeformIntegrationManager.cs`に、選択されたGameObjectにDeformerコンポーネントを追加し、UIの値を適用する基本機能を実装する。

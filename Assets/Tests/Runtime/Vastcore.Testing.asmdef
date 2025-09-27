@@ -8,6 +8,7 @@
         "Vastcore.Terrain",
         "Vastcore.Player",
         "Vastcore.UI",
+        "Deform",
         "Unity.ProBuilder",
         "Unity.ProBuilder.Editor",
         "Unity.ProBuilder.Csg",
@@ -23,7 +24,13 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.beans.deform",
+            "define": "DEFORM_AVAILABLE",
+            "expression": "0.0.0"
+        }
+    ],
     "noEngineReferences": false,
     "optionalUnityReferences": [
         "TestAssemblies"

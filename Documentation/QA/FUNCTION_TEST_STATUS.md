@@ -308,3 +308,31 @@ public abstract class BaseStructureTab : IStructureTab
 - 依存関係エラー: asmdef 参照設定を確認（`Vastcore.Terrain` → `Core/Utils/Generation` のみ）。
 - 追跡失敗: シーン内 `Player` タグ・`Main Camera` の存在を確認。`RuntimeTerrainManager.playerTransform` を Inspector で手動割り当てして切り分け。
 - パフォーマンス: `enableFrameTimeControl` と `maxFrameTimeMs` を下げ、`maxTilesPerUpdate` を調整。
+
+---
+
+## Unity Test Runner（PlayMode）更新: 2025-09-27
+
+### 対象
+- `Assets/Scripts/Terrain/Map/RuntimeGenerationManager.cs`（CS1626修正）
+- `Assets/Scripts/Terrain/Map/BiomePresetManager.cs`（FindFirstObjectByType 置換、InitializeDefault 呼び出し削除）
+- Deform 統合（`Vastcore.Core`/`Vastcore.Testing` asmdef 調整: `references: Deform`, `versionDefines: com.beans.deform → DEFORM_AVAILABLE`）
+
+### 実施項目
+1. コンパイル確認
+   - Console に `CS1626/CS1061/CS0618` が出ないこと
+2. Deform 条件付きコンパイル確認
+   - Deform 導入環境: `DEFORM_AVAILABLE` が有効になり、`DeformIntegrationTest` の Deform 依存コードがコンパイルされる
+   - 未導入環境: ダミーパスでコンパイル可能
+3. ランタイム生成最小動作確認
+   - `RuntimeGenerationManager` のキュー処理が例外なく動作し、1フレームに1回の `yield return waitEndOfFrame` で安定する
+4. バイオーム適用確認
+   - `BiomePresetManager.ApplyPresetToTerrain()` で `RenderSettings` と材質適用が例外なく行われる
+
+### 合格基準
+- コンパイルエラー 0
+- PlayMode テスト実行時に例外 0
+- Deform 導入有無でいずれもビルド・テスト継続可能
+
+### 備考
+- Deform の型検出は `typeof(Deform.Deformable)` に変更し、アセンブリ名解決の誤り（Assembly-CSharp 固定参照）を解消
