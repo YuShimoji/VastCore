@@ -44,3 +44,13 @@ Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(22,40): warning CS0414: The 
 
 Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(21,40): warning CS0414: The field 'TerrainCacheManager.recentAccessWeight' is assigned but its value is never used
 
+=== 2025-09-27 Work Summary ===
+- Fixed UI namespace alignment: ModernUIManager, RealtimeUpdateSystem, ModernUIStyleSystem, TextClickHandler, MenuManager to `Vastcore.UI`. SceneManager to `Vastcore.Core`.
+- Resolved missing types (SliderBasedUISystem, InGameDebugUI, RealtimeUpdateSystem, PerformanceMonitor, PerformanceReport) by namespace unification.
+- BiomePresetManager: Use `ScriptableObject.CreateInstance<BiomePreset>()`; move ambient light application to `MaterialSettings.ambientColor`.
+- Vastcore.Testing.asmdef: add `optionalUnityReferences: ["TestAssemblies"]`.
+
+Next steps:
+- Implement minimal `PrimitiveTerrainManager` and `RuntimeGenerationManager` stubs used by tests.
+- Verify Deform assembly references (com.beans.deform) and asmdef dependencies.
+- Re-run Unity compile and update this log.

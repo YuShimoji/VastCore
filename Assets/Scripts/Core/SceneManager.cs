@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 
-namespace NarrativeGen.Core
+namespace Vastcore.Core
 {
     /// <summary>
     /// シーン遷移を管理するマネージャー

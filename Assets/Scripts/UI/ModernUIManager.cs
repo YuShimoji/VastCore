@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-namespace NarrativeGen.UI
+namespace Vastcore.UI
 {
     /// <summary>
     /// Central manager for the modern UI system
@@ -10,9 +10,9 @@ namespace NarrativeGen.UI
     public class ModernUIManager : MonoBehaviour
     {
         [Header("UI System References")]
-        [SerializeField] private SliderBasedUISystem sliderSystem;
-        [SerializeField] private RealtimeUpdateSystem updateSystem;
-        [SerializeField] private InGameDebugUI debugUI;
+        [SerializeField] private Vastcore.UI.SliderBasedUISystem sliderSystem;
+        [SerializeField] private Vastcore.UI.RealtimeUpdateSystem updateSystem;
+        [SerializeField] private Vastcore.UI.InGameDebugUI debugUI;
         [SerializeField] private PerformanceMonitor performanceMonitor;
         [SerializeField] private ModernUIStyleSystem styleSystem;
         

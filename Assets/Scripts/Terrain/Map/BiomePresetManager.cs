@@ -301,7 +301,7 @@ namespace Vastcore.Generation
             string fullPath = Path.Combine(presetSavePath, fileName);
             if (File.Exists(fullPath)) return;
             
-            var preset = CreateInstance<BiomePreset>();
+            var preset = ScriptableObject.CreateInstance<BiomePreset>();
             preset.presetName = name;
             preset.description = description;
             preset.moisture = moisture;
@@ -354,7 +354,6 @@ namespace Vastcore.Generation
                 RenderSettings.fogStartDistance = settings.fogStartDistance;
                 RenderSettings.fogEndDistance = settings.fogEndDistance;
             }
-            RenderSettings.ambientLight = settings.ambientColor;
         }
         
         private void ApplyMaterialSettings(MaterialSettings settings, TerrainTile tile)
@@ -369,6 +368,8 @@ namespace Vastcore.Generation
                     renderer.material.color = settings.terrainTint;
                 }
             }
+            // 環境のアンビエントライトは MaterialSettings に定義されている
+            RenderSettings.ambientLight = settings.ambientColor;
         }
         #endregion
         
