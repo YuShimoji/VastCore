@@ -1,0 +1,26 @@
+[
+  {
+    "title": "Fix Deform package asmdef references and DEFORM_AVAILABLE conditional compilation",
+    "body": "Context: External package com.beans.deform exists but asmdef references are misconfigured so DEFORM_AVAILABLE is not respected.\nTasks:\n- Verify asmdef dependencies between Vastcore assemblies and Deform assemblies\n- Ensure define constraints and optional references align\n- Add editor/runtime test to validate conditional paths compile\nAcceptance Criteria:\n- No CS0246/CS0234 from Deform symbols\n- Test scene loads without compile errors",
+    "labels": ["bug", "build", "asmdef"],
+    "assignees": []
+  },
+  {
+    "title": "Complete RuntimeGenerationManager and PrimitiveTerrainManager behavior (beyond minimal stubs)",
+    "body": "Context: Minimal implementations added to satisfy tests (queue/events; runtime primitive spawns).\nTasks:\n- Flesh out task execution (terrain, structures, primitives)\n- Add load balancing and time budget enforcement\n- Integrate with PerformanceMonitor (Map) for adaptive throttling\nAcceptance Criteria:\n- Integration tests pass without warnings\n- Metrics exposed via debug UI",
+    "labels": ["enhancement", "generation", "performance"],
+    "assignees": []
+  },
+  {
+    "title": "Unify UI namespaces across scenes and prefabs",
+    "body": "Context: Code namespaces unified to Vastcore.UI; validate scene/prefab script references.\nTasks:\n- Open all scenes, fix missing MonoBehaviour due to namespace change\n- Update prefabs referencing old NarrativeGen.UI scripts\nAcceptance Criteria:\n- No Missing Script warnings on scene load",
+    "labels": ["cleanup", "ui"],
+    "assignees": []
+  },
+  {
+    "title": "Add TestAssemblies optional reference to Vastcore.Testing.asmdef in CI",
+    "body": "Context: optionalUnityReferences: [\"TestAssemblies\"] added locally.\nTasks:\n- Ensure CI/Builder includes test framework assemblies\n- Verify PlayMode tests discover and run\nAcceptance Criteria:\n- CI can compile and run tests without manual editor setup",
+    "labels": ["testing", "ci"],
+    "assignees": []
+  }
+]

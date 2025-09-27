@@ -61,6 +61,22 @@ namespace Vastcore.UI
         {
             StopAllCoroutines();
         }
+
+        /// <summary>
+        /// テストや外部コードから監視を開始するための簡易API
+        /// </summary>
+        public void StartMonitoring()
+        {
+            SetMonitoring(true);
+        }
+
+        /// <summary>
+        /// テストや外部コードから監視を停止するための簡易API
+        /// </summary>
+        public void StopMonitoring()
+        {
+            SetMonitoring(false);
+        }
         
         private IEnumerator MonitoringCoroutine()
         {
