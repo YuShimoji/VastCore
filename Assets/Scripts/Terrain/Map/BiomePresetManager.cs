@@ -20,7 +20,7 @@ namespace Vastcore.Generation
             {
                 if (_instance == null)
                 {
-                    _instance = FindObjectOfType<BiomePresetManager>();
+                    _instance = FindFirstObjectByType<BiomePresetManager>();
                     if (_instance == null)
                     {
                         GameObject obj = new GameObject("BiomePresetManager");
@@ -330,7 +330,6 @@ namespace Vastcore.Generation
                     break;
             }
             preset.terrainParams = terrainParams;
-            preset.InitializeDefault();
             
             SavePreset(preset);
         }
@@ -339,7 +338,7 @@ namespace Vastcore.Generation
         #region 設定適用
         private void ApplyEnvironmentSettings(EnvironmentSettings settings)
         {
-            var sun = FindObjectOfType<Light>();
+            var sun = FindFirstObjectByType<Light>();
             if (sun != null && sun.type == LightType.Directional)
             {
                 sun.color = settings.sunColor;

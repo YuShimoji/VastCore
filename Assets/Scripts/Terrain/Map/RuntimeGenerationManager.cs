@@ -103,13 +103,7 @@ namespace Vastcore.Generation.Map
                         task.StartExecution();
                         // 推定時間を尊重して少しだけ待つ（負荷をシミュレート）
                         float estMs = Mathf.Clamp(task.GetEstimatedExecutionTime() * 5f, 0f, 10f);
-                        if (estMs > 0f)
-                        {
-                            // 数ミリ秒相当のフレームをまたぐ処理はコルーチンで分割
-                            // ただし過剰な待機はしない
-                            // 実時間待機ではなく 1 フレーム譲る
-                            yield return null;
-                        }
+                        // try/catch 内では yield しない（CS1626 対応）
 
                         task.CompleteTask(null);
                         totalCompleted++;
@@ -144,6 +138,7 @@ namespace Vastcore.Generation.Map
                 avgFrameTimeMs = recentFrameTimes.Count > 0 ? sum / recentFrameTimes.Count : frameTimeMs;
                 isOverloaded = avgFrameTimeMs > overloadFrameTimeMs;
 
+                // 1フレームの最後にのみ yield する
                 yield return waitEndOfFrame;
             }
         }
