@@ -10,7 +10,6 @@
         "Vastcore.UI",
         "Deform",
         "Unity.ProBuilder",
-        "Unity.ProBuilder.Editor",
         "Unity.ProBuilder.Csg",
         "Unity.ProBuilder.KdTree",
         "Unity.ProBuilder.Poly2Tri",

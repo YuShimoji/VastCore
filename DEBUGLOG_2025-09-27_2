@@ -1,0 +1,30 @@
+Assets\Scripts\Terrain\Map\RuntimeGenerationManager.cs(111,29): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+
+Assets\Scripts\Terrain\Map\BiomePresetManager.cs(23,33): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\Map\BiomePresetManager.cs(333,20): error CS1061: 'BiomePreset' does not contain a definition for 'InitializeDefault' and no accessible extension method 'InitializeDefault' accepting a first argument of type 'BiomePreset' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Terrain\Map\BiomePresetManager.cs(342,23): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'
+
+Assets\Scripts\Terrain\Map\ClimateSystem.cs(458,19): warning CS0219: The variable 'tempRange' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Optimization\PerformanceOptimizationController.cs(30,40): warning CS0414: The field 'PerformanceOptimizationController.maxMemoryUsageRatio' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(23,40): warning CS0414: The field 'TerrainCacheManager.frequencyWeight' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Map\RuntimeTerrainManager.cs(60,23): warning CS0414: The field 'RuntimeTerrainManager.lastUpdateTime' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(22,40): warning CS0414: The field 'TerrainCacheManager.distanceWeight' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Map\AdvancedPrimitiveLODSystem.cs(40,39): warning CS0414: The field 'AdvancedPrimitiveLODSystem.enableMemoryOptimization' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Map\PrimitiveMemoryManager.cs(30,21): warning CS0414: The field 'PrimitiveMemoryManager.lastActiveObjectCount' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Cache\IntelligentCacheSystem.cs(27,40): warning CS0414: The field 'IntelligentCacheSystem.preloadRadius' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Cache\TerrainCacheManager.cs(21,40): warning CS0414: The field 'TerrainCacheManager.recentAccessWeight' is assigned but its value is never used
+
+Assets\Scripts\Terrain\Optimization\PerformanceOptimizationController.cs(18,40): warning CS0414: The field 'PerformanceOptimizationController.performanceThreshold' is assigned but its value is never used
+
+Assets\Scripts\UI\SliderBasedUISystem.cs(24,40): warning CS0414: The field 'SliderBasedUISystem.sliderSensitivity' is assigned but its value is never used
+

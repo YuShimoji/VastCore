@@ -1,0 +1,59 @@
+
+Assets\Scripts\Game\Managers\VastcoreGameManager.cs(8,16): error CS0234: The type or namespace name 'UI' does not exist in the namespace 'Vastcore' (are you missing an assembly reference?)
+
+Assets\Scripts\Game\Managers\VastcoreGameManager.cs(23,34): error CS0246: The type or namespace name 'TerrainGenerator' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Scripts\Game\Managers\VastcoreGameManager.cs(24,34): error CS0246: The type or namespace name 'TitleScreenManager' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Editor\StructureGenerator\Map\BiomePresetManagerEditor.cs(20,20): error CS1061: 'BiomePreset' does not contain a definition for 'InitializeDefault' and no accessible extension method 'InitializeDefault' accepting a first argument of type 'BiomePreset' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Editor\StructureGenerator\Map\CreateNaturalTerrainTestScene.cs(34,60): error CS0246: The type or namespace name 'NaturalTerrainTestRunner' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Editor\StructureGenerator\Map\BiomePresetManagerEditor.cs(55,25): error CS1061: 'BiomePresetManager' does not contain a definition for 'CreateDefaultPresets' and no accessible extension method 'CreateDefaultPresets' accepting a first argument of type 'BiomePresetManager' could be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\ComprehensiveSystemTest.cs(29,34): error CS0246: The type or namespace name 'RuntimeTerrainManager' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\BiomeTerrainModifierTest.cs(19,16): error CS0246: The type or namespace name 'BiomeTerrainModifier' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\ComprehensiveSystemTest.cs(30,34): error CS0246: The type or namespace name 'PrimitiveTerrainManager' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\AdvancedLODSystemTest.cs(23,17): error CS0246: The type or namespace name 'AdaptiveTerrainLOD' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\ComprehensiveSystemTest.cs(31,34): error CS0246: The type or namespace name 'RuntimeGenerationManager' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\ClimateTerrainFeedbackTest.cs(18,16): error CS0246: The type or namespace name 'ClimateTerrainFeedbackSystem' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\CrystalStructureGeneratorTest.cs(94,40): error CS0246: The type or namespace name 'CrystalStructureGenerator' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\CrystalStructureGeneratorTest.cs(178,60): error CS0246: The type or namespace name 'CrystalStructureGenerator' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\CrystalStructureGeneratorTest.cs(218,45): error CS0246: The type or namespace name 'CrystalStructureGenerator' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\CrystalStructureGeneratorTest.cs(18,16): error CS0246: The type or namespace name 'CrystalStructureGenerator' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\QualityAssuranceTestSuite.cs(42,17): error CS0246: The type or namespace name 'BiomePresetManager' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\TerrainTexturingSystemTest.cs(22,16): error CS0246: The type or namespace name 'DynamicMaterialBlendingSystem' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\TerrainGenerationIntegrationTests.cs(18,17): error CS0246: The type or namespace name 'DynamicMaterialBlendingSystem' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\TestCases\PlayerInteractionTestCase.cs(42,45): error CS0246: The type or namespace name 'AdvancedPlayerController' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\TestCases\PlayerInteractionTestCase.cs(101,53): error CS0246: The type or namespace name 'AdvancedPlayerController' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\TestCases\SystemIntegrationTestCase.cs(112,13): error CS0246: The type or namespace name 'RuntimeTerrainManager' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\TestCases\SystemIntegrationTestCase.cs(113,13): error CS0246: The type or namespace name 'PrimitiveTerrainManager' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\TestCases\PlayerInteractionTestCase.cs(161,49): error CS0246: The type or namespace name 'AdvancedPlayerController' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\TestCases\PlayerInteractionTestCase.cs(205,58): error CS0246: The type or namespace name 'AdvancedPlayerController' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\TestCases\SystemIntegrationTestCase.cs(155,13): error CS0246: The type or namespace name 'SliderBasedUISystem' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\TestCases\SystemIntegrationTestCase.cs(156,13): error CS0246: The type or namespace name 'RuntimeTerrainManager' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\TestCases\UISystemTestCase.cs(290,34): error CS0246: The type or namespace name 'UIStyle' could not be found (are you missing a using directive or an assembly reference?)
+
+Assets\Tests\Runtime\TestCases\UISystemTestCase.cs(290,50): error CS0246: The type or namespace name 'UIStyle' could not be found (are you missing a using directive or an assembly reference?)
+
