@@ -12,7 +12,8 @@
         "Unity.ProBuilder.Stl",
         "Vastcore.Terrain",
         "Vastcore.Core",
-        "Vastcore.Utils"
+        "Vastcore.Utils",
+        "Vastcore.Generation"
     ],
     "includePlatforms": [
         "Editor"
@@ -25,4 +26,4 @@
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false
-} 
+}

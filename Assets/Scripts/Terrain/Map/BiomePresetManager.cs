@@ -279,7 +279,7 @@ namespace Vastcore.Generation
         }
         
         #region デフォルトプリセット作成
-        private void CreateDefaultPresets()
+        public void CreateDefaultPresets()
         {
             try
             {

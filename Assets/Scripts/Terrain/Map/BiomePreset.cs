@@ -44,6 +44,27 @@ namespace Vastcore.Generation
         public float rockiness = 0.5f;          // 岩石度
         
         /// <summary>
+        /// エディタから新規作成時に利用するデフォルト初期化
+        /// </summary>
+        public void InitializeDefault()
+        {
+            presetName = "New Biome";
+            description = "Default biome preset";
+            previewImage = null;
+            terrainParams = MeshGenerator.TerrainGenerationParams.Default();
+            primitiveSpawnDensity = 0.1f;
+            minPrimitiveDistance = 200f;
+            maxPrimitiveDistance = 2000f;
+            materialSettings = new MaterialSettings();
+            environmentSettings = new EnvironmentSettings();
+            structureSettings = new StructureSpawnSettings();
+            moisture = 0.5f;
+            temperature = 0.5f;
+            fertility = 0.5f;
+            rockiness = 0.5f;
+        }
+        
+        /// <summary>
         /// プリセットの深いコピーを作成
         /// </summary>
         public BiomePreset CreateCopy()

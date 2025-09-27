@@ -6,7 +6,9 @@
         "Vastcore.Utils",
         "Vastcore.Player",
         "Vastcore.Terrain",
-        "Vastcore.Camera"
+        "Vastcore.Camera",
+        "Vastcore.UI",
+        "Vastcore.MapGenerator"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

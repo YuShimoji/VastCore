@@ -22,7 +22,9 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": [],
+    "defineConstraints": [
+        "ENABLE_VASTCORE_TESTS"
+    ],
     "versionDefines": [
         {
             "name": "com.beans.deform",
