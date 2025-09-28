@@ -1,0 +1,15 @@
+{
+  "legacyNamespaces": [],
+  "ignoreNamespaces": [
+    "UnityEngine",
+    "UnityEditor",
+    "Unity.",
+    "TMPro",
+    "Vastcore.UI"
+  ],
+  "typeMappings": [
+    { "legacyType": "", "newType": "" }
+  ],
+  "heuristicsEnabled": true,
+  "notes": "legacyNamespaces に旧UIの名前空間を列挙し、typeMappings で旧→新の型対応を定義します。heuristicsEnabled=trueのとき、型名に 'UI' 'Hud' 'Menu' を含み、ignoreNamespaces に含まれないものを候補として抽出します。"
+}
