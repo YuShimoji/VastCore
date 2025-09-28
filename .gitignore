@@ -136,4 +136,10 @@ Assembly-CSharp-Editor.csproj
 
 # Ignore problematic submodules
 Packages/co.parabox.csg/ Packages/co.parabox.csg/
-\n# Ignore Unity debug logs\nDEBUGLOG_*
+
+# Ignore Unity debug logs
+DEBUGLOG_*
+
+# Allow documentation logs to be tracked (override [Ll]ogs/)
+!Documentation/Logs/
+!Documentation/Logs/**
