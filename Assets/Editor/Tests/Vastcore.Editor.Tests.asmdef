@@ -1,0 +1,19 @@
+{
+  "name": "Vastcore.Editor.Tests",
+  "rootNamespace": "Vastcore.EditorTests",
+  "references": [
+    "Vastcore.Generation",
+    "Unity.EditorCoroutines.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
