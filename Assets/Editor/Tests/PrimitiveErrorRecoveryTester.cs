@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using Vastcore.Generation;
+using Unity.EditorCoroutines.Editor;
 
 public class PrimitiveErrorRecoveryTester : EditorWindow
 {
