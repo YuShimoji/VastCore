@@ -222,7 +222,7 @@ namespace Vastcore.EditorTools
             return path;
         }
 
-        private void RemoveAllMissingScripts()
+        public static void RemoveAllMissingScripts()
         {
             // Prefabs
             var prefabGuids = AssetDatabase.FindAssets("t:Prefab");
@@ -265,6 +265,38 @@ namespace Vastcore.EditorTools
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+        }
+
+        [MenuItem("Vastcore/Tools/Missing Script Repair/Remove All Missing Scripts (Scenes+Prefabs)")]
+        public static void RemoveAllMissingScriptsMenu()
+        {
+            if (EditorUtility.DisplayDialog("確認", "すべての対象 Prefab/Scene から Missing Script を削除します。よろしいですか？", "はい", "いいえ"))
+            {
+                RemoveAllMissingScripts();
+                EditorUtility.DisplayDialog("完了", "Missing Script の削除が完了しました。", "OK");
+            }
+        }
+
+        [InitializeOnLoadMethod]
+        private static void AutoRunIfFlagPresent()
+        {
+            try
+            {
+                const string flagPath = "Documentation/QA/AUTO_FIX_MISSING_SCRIPTS.flag";
+                var fullFlag = Path.GetFullPath(flagPath);
+                if (File.Exists(fullFlag))
+                {
+                    Debug.Log("[MissingScriptRepair] Auto-fix flag detected. Removing all missing scripts across Prefabs/Scenes...");
+                    RemoveAllMissingScripts();
+                    File.Delete(fullFlag);
+                    AssetDatabase.Refresh();
+                    Debug.Log("[MissingScriptRepair] Auto-fix completed and flag removed.");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[MissingScriptRepair] Auto-run failed: {e.Message}");
+            }
         }
 
         private static int RemoveMissingRecursive(Transform tr)

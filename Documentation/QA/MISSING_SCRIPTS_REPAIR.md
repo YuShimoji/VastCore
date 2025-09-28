@@ -44,6 +44,7 @@
 4. Missing Script を削除する場合は `Missing Script を削除 (一括)` を押下。
    - 実行前ダイアログで確認があります。
    - Prefab/Scene を自動で保存します。
+   - もしくはメニュー `Vastcore/Tools/Missing Script Repair/Remove All Missing Scripts (Scenes+Prefabs)` から直接実行できます。
 
 ---
 
@@ -69,6 +70,11 @@
   - パッケージ配下は変更せず、Package Manager から再インポート（リセット）してください。
 - 一部の Missing Script は、旧 UI/旧名前空間に由来
   - 現時点では一括削除を提供しています。今後のスプリントで 1:1 自動置換（旧→新コンポーネント）に対応予定です。
+
+### 自動修復（フラグファイル）
+
+- `Documentation/QA/AUTO_FIX_MISSING_SCRIPTS.flag` が存在する場合、Unity のドメインリロード時に自動で Prefab/Scene 全体の Missing Script 削除を実行します。
+- 実行後はフラグファイルが削除され、`AssetDatabase.Refresh()` が走ります。
 
 ---
 
