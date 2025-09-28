@@ -13,6 +13,17 @@ namespace Vastcore.EditorTools
     public class MissingScriptRepairWindow : EditorWindow
     {
         private const string ReportPath = "Documentation/QA/MISSING_SCRIPTS_REPORT.md";
+        private static readonly string[] SampleRootPaths =
+        {
+            "Assets/TextMesh Pro/Examples & Extras/",
+            "Assets/_Scenes/2d/"
+        };
+        private static readonly string[] CriticalScenePaths =
+        {
+            "Assets/Scenes/Main.unity",
+            "Assets/Scenes/VastcoreDemoScene.unity",
+            "Assets/Scenes/DeformIntegrationTestScene.unity"
+        };
 
         [Serializable]
         private class MissingEntry
@@ -224,11 +235,37 @@ namespace Vastcore.EditorTools
 
         public static void RemoveAllMissingScripts()
         {
+            RemoveMissingScriptsFiltered(_ => true, _ => true);
+        }
+
+        private static bool StartsWithAny(string path, string[] roots)
+        {
+            var p = path.Replace('\\', '/');
+            foreach (var r in roots)
+            {
+                if (p.StartsWith(r)) return true;
+            }
+            return false;
+        }
+
+        private static bool IsCriticalScene(string path)
+        {
+            var p = path.Replace('\\', '/');
+            foreach (var cs in CriticalScenePaths)
+            {
+                if (p.Equals(cs)) return true;
+            }
+            return false;
+        }
+
+        public static void RemoveMissingScriptsFiltered(System.Func<string, bool> includePrefab, System.Func<string, bool> includeScene)
+        {
             // Prefabs
             var prefabGuids = AssetDatabase.FindAssets("t:Prefab");
             for (int i = 0; i < prefabGuids.Length; i++)
             {
                 var path = AssetDatabase.GUIDToAssetPath(prefabGuids[i]);
+                if (!includePrefab(path)) continue;
                 EditorUtility.DisplayProgressBar("Prefab 修復中", path, (float)i / Math.Max(1, prefabGuids.Length));
                 var root = PrefabUtility.LoadPrefabContents(path);
                 try
@@ -247,6 +284,7 @@ namespace Vastcore.EditorTools
             for (int i = 0; i < sceneGuids.Length; i++)
             {
                 var path = AssetDatabase.GUIDToAssetPath(sceneGuids[i]);
+                if (!includeScene(path)) continue;
                 EditorUtility.DisplayProgressBar("Scene 修復中", path, (float)i / Math.Max(1, sceneGuids.Length));
                 var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Additive);
                 try
@@ -277,6 +315,32 @@ namespace Vastcore.EditorTools
             }
         }
 
+        [MenuItem("Vastcore/Tools/Missing Script Repair/Remove Missing in Sample Assets (TMP+2D)")]
+        public static void RemoveMissingInSamplesMenu()
+        {
+            if (EditorUtility.DisplayDialog("確認", "サンプル資産（TMP Examples + _Scenes/2d）内の Missing Script を削除します。よろしいですか？", "はい", "いいえ"))
+            {
+                RemoveMissingScriptsFiltered(
+                    prefabPath => StartsWithAny(prefabPath, SampleRootPaths),
+                    scenePath => StartsWithAny(scenePath, SampleRootPaths)
+                );
+                EditorUtility.DisplayDialog("完了", "サンプル資産内の Missing Script の削除が完了しました。", "OK");
+            }
+        }
+
+        [MenuItem("Vastcore/Tools/Missing Script Repair/Remove Missing (All except Critical Scenes)")]
+        public static void RemoveMissingAllExceptCriticalMenu()
+        {
+            if (EditorUtility.DisplayDialog("確認", "重要シーン（Main, VastcoreDemo, DeformIntegrationTest）を除く全アセットから Missing Script を削除します。よろしいですか？", "はい", "いいえ"))
+            {
+                RemoveMissingScriptsFiltered(
+                    prefabPath => true,
+                    scenePath => !IsCriticalScene(scenePath)
+                );
+                EditorUtility.DisplayDialog("完了", "重要シーン以外の Missing Script の削除が完了しました。", "OK");
+            }
+        }
+
         [InitializeOnLoadMethod]
         private static void AutoRunIfFlagPresent()
         {
@@ -286,8 +350,24 @@ namespace Vastcore.EditorTools
                 var fullFlag = Path.GetFullPath(flagPath);
                 if (File.Exists(fullFlag))
                 {
-                    Debug.Log("[MissingScriptRepair] Auto-fix flag detected. Removing all missing scripts across Prefabs/Scenes...");
-                    RemoveAllMissingScripts();
+                    var content = string.Empty;
+                    try { content = File.ReadAllText(fullFlag); } catch {}
+                    content = (content ?? string.Empty).ToLowerInvariant();
+
+                    if (content.Contains("all"))
+                    {
+                        Debug.Log("[MissingScriptRepair] Auto-fix flag: mode=ALL. Removing all missing scripts across Prefabs/Scenes...");
+                        RemoveAllMissingScripts();
+                    }
+                    else
+                    {
+                        Debug.Log("[MissingScriptRepair] Auto-fix flag: mode=SAMPLES. Removing missing scripts in samples (TMP + _Scenes/2d)...");
+                        RemoveMissingScriptsFiltered(
+                            prefabPath => StartsWithAny(prefabPath, SampleRootPaths),
+                            scenePath => StartsWithAny(scenePath, SampleRootPaths)
+                        );
+                    }
+
                     File.Delete(fullFlag);
                     AssetDatabase.Refresh();
                     Debug.Log("[MissingScriptRepair] Auto-fix completed and flag removed.");
