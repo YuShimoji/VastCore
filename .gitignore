@@ -143,3 +143,6 @@ DEBUGLOG_*
 # Allow documentation logs to be tracked (override [Ll]ogs/)
 !Documentation/Logs/
 !Documentation/Logs/**
+
+# Do not track one-time auto-fix flags
+Documentation/QA/*.flag
