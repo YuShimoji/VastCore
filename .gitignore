@@ -146,3 +146,4 @@ DEBUGLOG_*
 
 # Do not track one-time auto-fix flags
 Documentation/QA/*.flag
+Assets/Editor/Tools/UIMigration/*.flag

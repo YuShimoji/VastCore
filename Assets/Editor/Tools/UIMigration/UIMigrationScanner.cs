@@ -42,6 +42,8 @@ namespace Vastcore.EditorTools
         private const string RulesPath = "Assets/Editor/Tools/UIMigration/UIMigrationRules.json";
         private const string ReportPath = "Documentation/QA/LEGACY_UI_MIGRATION_REPORT.md";
         private const string AutoRunFlagPath = "Documentation/QA/AUTO_RUN_UI_MIGRATION_SCAN.flag";
+        private const string AltAutoRunFlagPath = "Assets/Editor/Tools/UIMigration/AUTO_RUN_UI_MIGRATION_SCAN.flag";
+        private const string AltAutoRunFlagPath2 = "Assets/Editor/Tools/UIMigration/AUTO_RUN_UI_MIGRATION_SCAN.txt";
 
         [MenuItem("Vastcore/Tools/UI Migration/Scan (Dry Run)")]
         public static void RunScanMenu()
@@ -56,14 +58,19 @@ namespace Vastcore.EditorTools
         {
             try
             {
-                var fullFlag = Path.GetFullPath(AutoRunFlagPath);
-                if (File.Exists(fullFlag))
+                var flagCandidates = new[] { AutoRunFlagPath, AltAutoRunFlagPath, AltAutoRunFlagPath2 };
+                foreach (var cand in flagCandidates)
                 {
-                    Debug.Log("[UIMigrationScanner] Auto-run flag detected. Running dry-run scan...");
-                    RunScan();
-                    File.Delete(fullFlag);
-                    AssetDatabase.Refresh();
-                    Debug.Log("[UIMigrationScanner] Scan completed and flag removed. Report generated at: " + ReportPath);
+                    var fullFlag = Path.GetFullPath(cand);
+                    if (File.Exists(fullFlag))
+                    {
+                        Debug.Log($"[UIMigrationScanner] Auto-run flag detected: {cand}. Running dry-run scan...");
+                        RunScan();
+                        try { File.Delete(fullFlag); } catch {}
+                        AssetDatabase.Refresh();
+                        Debug.Log("[UIMigrationScanner] Scan completed and flag removed. Report generated at: " + ReportPath);
+                        break;
+                    }
                 }
             }
             catch (Exception e)
