@@ -4,7 +4,7 @@ using TMPro;
 using System.Collections.Generic;
 using System.Collections;
 
-namespace NarrativeGen.UI
+namespace Vastcore.UI
 {
     public class TextClickHandler : MonoBehaviour, IPointerClickHandler
     {

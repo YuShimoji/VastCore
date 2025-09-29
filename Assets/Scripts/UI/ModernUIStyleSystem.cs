@@ -2,13 +2,12 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-namespace NarrativeGen.UI
+namespace Vastcore.UI
 {
     /// <summary>
-    /// Unified UI style system for consistent modern design across all UI elements
     /// Provides centralized styling configuration and application
     /// </summary>
-    [CreateAssetMenu(fileName = "ModernUIStyle", menuName = "NarrativeGen/UI/Modern UI Style")]
+    [CreateAssetMenu(fileName = "ModernUIStyle", menuName = "Vastcore/UI/Modern UI Style")]
     public class ModernUIStyleSystem : ScriptableObject
     {
         [Header("Color Palette")]
