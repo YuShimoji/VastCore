@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 
-namespace NarrativeGen.UI
+namespace Vastcore.UI
 {
     /// <summary>
     /// Modern slider-based UI system for terrain and primitive generation parameters
