@@ -29,6 +29,13 @@ namespace Vastcore.Generation
         public Material terrainMaterial;        // 地形マテリアル
         public Collider terrainCollider;        // 地形コライダー
         
+        // 互換性プロパティ（他のクラスで参照されている）
+        public GameObject terrainObject => tileObject;  // tileObjectのエイリアス
+        public float[,] heightData => heightmap;        // heightmapのエイリアス
+        public bool isActive => state == TileState.Active; // アクティブ状態
+        public System.DateTime lastAccessTime => lastAccessedAt; // 最終アクセス時間のエイリアス
+        public string appliedBiome { get; set; } = "Default"; // 適用されたバイオーム
+        
         [Header("生成情報")]
         public float generationTime;            // 生成にかかった時間
         public System.DateTime createdAt;       // 作成日時

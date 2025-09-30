@@ -1,7 +1,7 @@
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
-using Vastcore.Generation;
+using System.Collections;
+using System.Linq;
 using Vastcore.Generation.Map;
 using Vastcore.Player;
 
@@ -81,10 +81,10 @@ namespace Vastcore.Generation
             
             // 必要なコンポーネントを取得または作成
             if (terrainManager == null)
-                terrainManager = FindObjectOfType<RuntimeTerrainManager>();
+                terrainManager = FindFirstObjectByType<RuntimeTerrainManager>();
             
             if (biomePresetManager == null)
-                biomePresetManager = FindObjectOfType<BiomePresetManager>();
+                biomePresetManager = FindFirstObjectByType<BiomePresetManager>();
             
             if (texturingSystem == null)
             {
@@ -101,7 +101,7 @@ namespace Vastcore.Generation
             }
             
             // プレイヤーTransformを取得
-            var playerController = FindObjectOfType<AdvancedPlayerController>();
+            var playerController = FindFirstObjectByType<AdvancedPlayerController>();
             if (playerController != null)
             {
                 playerTransform = playerController.transform;

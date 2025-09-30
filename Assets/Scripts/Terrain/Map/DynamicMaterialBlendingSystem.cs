@@ -1,7 +1,9 @@
 using UnityEngine;
-using Vastcore.Player;
 using System.Collections.Generic;
 using System.Collections;
+using System.Linq;
+using Vastcore.Utils;
+using Vastcore.Player;
 
 namespace Vastcore.Generation
 {
@@ -99,7 +101,7 @@ namespace Vastcore.Generation
             }
             
             // プレイヤーTransformを取得
-            var playerController = FindObjectOfType<AdvancedPlayerController>();
+            var playerController = FindFirstObjectByType<AdvancedPlayerController>();
             if (playerController != null)
             {
                 playerTransform = playerController.transform;

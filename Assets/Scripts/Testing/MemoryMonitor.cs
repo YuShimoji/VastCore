@@ -235,9 +235,9 @@ namespace VastCore.Testing
         }
         
         // Unity Profiler APIを使用したメモリ情報取得
-        private long GetTotalMemoryUsage() => Profiler.GetTotalAllocatedMemory(false);
-        private long GetTotalReservedMemory() => Profiler.GetTotalReservedMemory(false);
-        private long GetTotalUnusedReservedMemory() => Profiler.GetTotalUnusedReservedMemory(false);
+        private long GetTotalMemoryUsage() => Profiler.GetTotalAllocatedMemoryLong();
+        private long GetTotalReservedMemory() => Profiler.GetTotalReservedMemoryLong();
+        private long GetTotalUnusedReservedMemory() => Profiler.GetTotalUnusedReservedMemoryLong();
         private long GetMonoHeapSize() => Profiler.GetMonoHeapSize();
         private long GetMonoUsedSize() => Profiler.GetMonoUsedSize();
         private long GetTempAllocatorSize() => Profiler.GetTempAllocatorSize();

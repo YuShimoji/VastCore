@@ -882,7 +882,7 @@ namespace Vastcore.Generation
         /// </summary>
         private BiomePreset GetBiomePreset(BiomeType biomeType)
         {
-            var presetManager = FindObjectOfType<BiomePresetManager>();
+            terrainGenerator = FindFirstObjectByType<BiomeSpecificTerrainGenerator>();
             if (presetManager == null) return null;
             
             string presetName = biomeType.ToString();
