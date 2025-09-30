@@ -601,7 +601,7 @@ namespace Vastcore.Generation
         {
             // プリミティブ地形オブジェクトコンポーネントを追加
             var primitiveComponent = primitiveObject.AddComponent<PrimitiveTerrainObject>();
-            primitiveComponent.primitiveType = parameters.primitiveType;
+            primitiveComponent.primitiveType = (GenerationPrimitiveType)(int)parameters.primitiveType;
             primitiveComponent.isClimbable = parameters.isClimbable;
             primitiveComponent.isGrindable = parameters.isGrindable;
             primitiveComponent.hasCollision = parameters.generateCollider;
@@ -610,7 +610,6 @@ namespace Vastcore.Generation
             primitiveObject.layer = LayerMask.NameToLayer("Default"); // 必要に応じて専用レイヤーを作成
         }
         #endregion
-
         #region ユーティリティ関数
         /// <summary>
         /// プリミティブタイプに応じたデフォルトスケールを取得

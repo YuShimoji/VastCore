@@ -155,18 +155,17 @@ namespace Vastcore.Generation
                     Debug.LogError($"Failed to generate high-quality mesh for {primitiveType}");
                     return null;
                 }
-
                 // GameObjectを設定
                 GameObject primitiveObject = highQualityMesh.gameObject;
                 primitiveObject.name = $"HQ_{primitiveType}_{System.Guid.NewGuid().ToString("N")[..8]}";
                 primitiveObject.transform.position = position;
 
                 // PrimitiveTerrainObjectコンポーネントを追加して初期化
-                var pto = primitiveObject.AddComponent<PrimitiveTerrainObject>();
-                pto.InitializeFromPool(primitiveType, position, scale.magnitude);
+        var pto = primitiveObject.AddComponent<PrimitiveTerrainObject>();
+        pto.InitializeFromPool((GenerationPrimitiveType)(int)primitiveType, position, scale.magnitude);
 
-                // 高品質処理を適用
-                ApplyHighQualityProcessing(highQualityMesh, quality);
+        // 高品質処理を適用
+        ApplyHighQualityProcessing(highQualityMesh, quality);
                 
                 // 詳細を追加
                 if (quality.enableProceduralDetails)

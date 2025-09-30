@@ -10,7 +10,7 @@ namespace Vastcore.Generation
     public class PrimitiveTerrainObject : MonoBehaviour
     {
         [Header("プリミティブ情報")]
-        public PrimitiveTerrainGenerator.PrimitiveType primitiveType;
+        public GenerationPrimitiveType primitiveType;
         public float scale;
         public Vector3 originalPosition;
         public bool isAlignedToTerrain;
@@ -19,100 +19,11 @@ namespace Vastcore.Generation
         public bool enableLOD = true;
         public float[] lodDistances = { 200f, 500f, 1000f, 2000f };
         public Mesh[] lodMeshes;
-        public float lodUpdateInterval = 0.1f; // LOD更新間隔（秒）
-        public bool enableDistanceCulling = true;
-        public float maxRenderDistance = 3000f;
         
-        [Header("パフォーマンス最適化")]
-        public bool enableFrustumCulling = true;
-        public bool enableOcclusionCulling = false;
-        public float lodBias = 1.0f; // LOD切り替えの閾値調整
-        
-        [Header("インタラクション")]
-        public bool isClimbable = true;
-        public bool isGrindable = true;
-        public bool hasCollision = true;
-        public bool enableInteractionLOD = true; // インタラクション用の詳細LOD
-        
-        [Header("デバッグ")]
-        public bool showLODInfo = false;
-        public bool logLODChanges = false;
-        
-        // プライベートフィールド
-        private MeshRenderer meshRenderer;
-        private MeshCollider meshCollider;
-        private MeshFilter meshFilter;
-        private int currentLOD = 0;
-        private Transform playerTransform;
-        private Camera playerCamera;
-        private float lastLODUpdateTime;
-        private bool isVisible = true;
-        private bool isInPool = false;
-        
-        // LOD統計
-        private int lodChangeCount = 0;
-        private float totalDistanceChecked = 0f;
-        
-        // 静的参照（パフォーマンス向上のため）
-        private static readonly Dictionary<int, PrimitiveTerrainObject> activeObjects = new Dictionary<int, PrimitiveTerrainObject>();
-
-        void Start()
-        {
-            Initialize();
-        }
-
-        void Update()
-        {
-            // LOD更新の間隔制御
-            if (enableLOD && playerTransform != null && Time.time - lastLODUpdateTime > lodUpdateInterval)
-            {
-                UpdateLODSystem();
-                lastLODUpdateTime = Time.time;
-            }
-        }
-
-        void OnEnable()
-        {
-            // アクティブオブジェクトリストに追加
-            if (!activeObjects.ContainsKey(GetInstanceID()))
-            {
-                activeObjects.Add(GetInstanceID(), this);
-            }
-        }
-
-        void OnDisable()
-        {
-            // アクティブオブジェクトリストから削除
-            if (activeObjects.ContainsKey(GetInstanceID()))
-            {
-                activeObjects.Remove(GetInstanceID());
-            }
-        }
-
-        /// <summary>
-        /// プリミティブオブジェクトを初期化
-        /// </summary>
-        public void Initialize()
-        {
-            originalPosition = transform.position;
-            scale = transform.localScale.magnitude;
-            
-            SetupComponents();
-            FindPlayerTransform();
-            GenerateLODMeshes();
-            
-            // 初期LOD設定
-            if (enableLOD && playerTransform != null)
-            {
-                float initialDistance = Vector3.Distance(transform.position, playerTransform.position);
-                UpdateLOD(initialDistance);
-            }
-        }
-
         /// <summary>
         /// プールから取得時の初期化
         /// </summary>
-        public void InitializeFromPool(PrimitiveTerrainGenerator.PrimitiveType type, Vector3 position, float objectScale)
+        public void InitializeFromPool(GenerationPrimitiveType type, Vector3 position, float objectScale)
         {
             primitiveType = type;
             transform.position = position;
