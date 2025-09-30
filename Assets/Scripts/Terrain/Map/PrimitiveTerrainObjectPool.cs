@@ -48,7 +48,7 @@ namespace Vastcore.Generation
             {
                 if (instance == null)
                 {
-                    instance = FindObjectOfType<PrimitiveTerrainObjectPool>();
+                    instance = FindFirstObjectByType<PrimitiveTerrainObjectPool>();
                     if (instance == null)
                     {
                         var go = new GameObject("PrimitiveTerrainObjectPool");
@@ -166,7 +166,6 @@ namespace Vastcore.Generation
             
             return primitiveObj;
         }
-
         /// <summary>
         /// プールからオブジェクトを取得
         /// </summary>
@@ -195,7 +194,7 @@ namespace Vastcore.Generation
             if (obj != null)
             {
                 // オブジェクトを初期化してアクティブリストに追加
-                obj.InitializeFromPool(primitiveType, position, scale);
+                obj.InitializeFromPool((GenerationPrimitiveType)(int)primitiveType, position, scale);
                 activeObjects.Add(obj);
                 
                 // ピーク使用数を更新
@@ -234,7 +233,7 @@ namespace Vastcore.Generation
             obj.transform.SetParent(poolParent);
             
             // タイプ固有のプールに戻す
-            var primitiveType = obj.primitiveType;
+            var primitiveType = (PrimitiveTerrainGenerator.PrimitiveType)(int)obj.primitiveType;
             if (typeSpecificPools.ContainsKey(primitiveType))
             {
                 typeSpecificPools[primitiveType].Enqueue(obj);

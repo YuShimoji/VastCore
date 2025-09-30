@@ -74,8 +74,8 @@ namespace Vastcore.Generation.Optimization
         private void InitializeComponents()
         {
             // GPU コンポーネント
-            gpuGenerator = FindObjectOfType<GPUTerrainGenerator>();
-            gpuMonitor = FindObjectOfType<GPUPerformanceMonitor>();
+            gpuGenerator = FindFirstObjectByType<GPUTerrainGenerator>();
+            gpuMonitor = FindFirstObjectByType<GPUPerformanceMonitor>();
             
             if (gpuGenerator == null)
             {
@@ -84,8 +84,8 @@ namespace Vastcore.Generation.Optimization
             }
             
             // キャッシュコンポーネント
-            cacheSystem = FindObjectOfType<IntelligentCacheSystem>();
-            cacheManager = FindObjectOfType<TerrainCacheManager>();
+            cacheSystem = FindFirstObjectByType<IntelligentCacheSystem>();
+            cacheManager = FindFirstObjectByType<TerrainCacheManager>();
             
             if (cacheSystem == null)
             {
@@ -94,7 +94,7 @@ namespace Vastcore.Generation.Optimization
             }
             
             // 地形管理コンポーネント
-            terrainManager = FindObjectOfType<RuntimeTerrainManager>();
+            terrainManager = FindFirstObjectByType<RuntimeTerrainManager>();
             
             Debug.Log("Performance Optimization Controller initialized");
         }

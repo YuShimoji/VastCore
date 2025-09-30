@@ -4,7 +4,7 @@ using TMPro;
 using System.Collections.Generic;
 using System.Collections;
 
-namespace NarrativeGen.UI
+namespace Vastcore.UI
 {
     /// <summary>
     /// In-game debug UI system for real-time parameter adjustment and performance monitoring
@@ -66,7 +66,11 @@ namespace NarrativeGen.UI
         {
             SetupDefaultParameters();
             
-            if (startMinimized)
+            if (!showDebugUI)
+            {
+                HideUI();
+            }
+            else if (startMinimized)
             {
                 MinimizeUI();
             }
@@ -90,14 +94,14 @@ namespace NarrativeGen.UI
         private void InitializeDebugUI()
         {
             // Get or create required systems
-            sliderSystem = FindObjectOfType<SliderBasedUISystem>();
+            sliderSystem = FindFirstObjectByType<SliderBasedUISystem>();
             if (sliderSystem == null)
             {
                 GameObject sliderSystemObject = new GameObject("SliderBasedUISystem");
                 sliderSystem = sliderSystemObject.AddComponent<SliderBasedUISystem>();
             }
             
-            updateSystem = FindObjectOfType<RealtimeUpdateSystem>();
+            updateSystem = FindFirstObjectByType<RealtimeUpdateSystem>();
             if (updateSystem == null)
             {
                 GameObject updateSystemObject = new GameObject("RealtimeUpdateSystem");
@@ -136,12 +140,6 @@ namespace NarrativeGen.UI
             
             // Create scroll view
             CreateScrollView();
-            
-            // Create performance display
-            if (enablePerformanceMonitoring)
-            {
-                CreatePerformanceDisplay();
-            }
             
             // Create parameter sections
             CreateParameterSections();
@@ -356,6 +354,11 @@ namespace NarrativeGen.UI
             if (showPrimitiveParameters)
             {
                 CreatePrimitiveParameterSection();
+            }
+            
+            if (showPerformanceParameters && enablePerformanceMonitoring)
+            {
+                CreatePerformanceDisplay();
             }
             
             if (showSystemParameters)

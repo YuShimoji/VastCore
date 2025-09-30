@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-namespace NarrativeGen.UI
+namespace Vastcore.UI
 {
     /// <summary>
     /// Central manager for the modern UI system
@@ -82,7 +82,7 @@ namespace NarrativeGen.UI
             // Slider System
             if (sliderSystem == null)
             {
-                sliderSystem = FindObjectOfType<SliderBasedUISystem>();
+                sliderSystem = FindFirstObjectByType<SliderBasedUISystem>();
                 if (sliderSystem == null && createMissingComponents)
                 {
                     GameObject sliderSystemObject = new GameObject("SliderBasedUISystem");
@@ -94,7 +94,7 @@ namespace NarrativeGen.UI
             // Update System
             if (updateSystem == null)
             {
-                updateSystem = FindObjectOfType<RealtimeUpdateSystem>();
+                updateSystem = FindFirstObjectByType<RealtimeUpdateSystem>();
                 if (updateSystem == null && createMissingComponents)
                 {
                     GameObject updateSystemObject = new GameObject("RealtimeUpdateSystem");
@@ -106,7 +106,7 @@ namespace NarrativeGen.UI
             // Debug UI
             if (debugUI == null)
             {
-                debugUI = FindObjectOfType<InGameDebugUI>();
+                debugUI = FindFirstObjectByType<InGameDebugUI>();
                 if (debugUI == null && createMissingComponents)
                 {
                     GameObject debugUIObject = new GameObject("InGameDebugUI");
@@ -118,7 +118,7 @@ namespace NarrativeGen.UI
             // Performance Monitor
             if (performanceMonitor == null)
             {
-                performanceMonitor = FindObjectOfType<PerformanceMonitor>();
+                performanceMonitor = FindFirstObjectByType<PerformanceMonitor>();
                 if (performanceMonitor == null && createMissingComponents)
                 {
                     GameObject performanceMonitorObject = new GameObject("PerformanceMonitor");
@@ -419,7 +419,7 @@ namespace NarrativeGen.UI
             {
                 if (instance == null)
                 {
-                    instance = FindObjectOfType<ModernUIManager>();
+                    instance = FindFirstObjectByType<ModernUIManager>();
                     if (instance == null)
                     {
                         GameObject managerObject = new GameObject("ModernUIManager");

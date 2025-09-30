@@ -125,8 +125,8 @@ namespace Vastcore.Generation.Map
             }
 
             // 地形管理システムを取得
-            terrainManager = FindObjectOfType<RuntimeTerrainManager>();
-            primitiveManager = FindObjectOfType<PrimitiveTerrainManager>();
+            terrainManager = FindFirstObjectByType<RuntimeTerrainManager>();
+            primitiveManager = FindFirstObjectByType<PrimitiveTerrainManager>();
         }
 
         #endregion

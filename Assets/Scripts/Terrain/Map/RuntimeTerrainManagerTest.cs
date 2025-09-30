@@ -46,40 +46,41 @@ namespace Vastcore.Generation.Tests
         {
             Debug.Log("=== RuntimeTerrainManager Test Suite Started ===");
             
-            try
+            bool hasError = false;
+            string errorMessage = "";
+            
+            // 初期化テスト
+            yield return StartCoroutine(TestInitializationSafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
+            if (hasError) { Debug.LogError($"TestInitialization failed: {errorMessage}"); testsFailed++; }
+            
+            // 基本機能テスト
+            yield return StartCoroutine(TestBasicFunctionalitySafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
+            if (hasError) { Debug.LogError($"TestBasicFunctionality failed: {errorMessage}"); testsFailed++; }
+            
+            // プレイヤー追跡テスト
+            yield return StartCoroutine(TestPlayerTrackingSafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
+            if (hasError) { Debug.LogError($"TestPlayerTracking failed: {errorMessage}"); testsFailed++; }
+            
+            // 動的生成テスト
+            yield return StartCoroutine(TestDynamicGenerationSafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
+            if (hasError) { Debug.LogError($"TestDynamicGeneration failed: {errorMessage}"); testsFailed++; }
+            
+            // メモリ管理テスト
+            yield return StartCoroutine(TestMemoryManagementSafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
+            if (hasError) { Debug.LogError($"TestMemoryManagement failed: {errorMessage}"); testsFailed++; }
+            
+            // パフォーマンステスト
+            yield return StartCoroutine(TestPerformanceSafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
+            if (hasError) { Debug.LogError($"TestPerformance failed: {errorMessage}"); testsFailed++; }
+            
+            // ストレステスト（オプション）
+            if (enableStressTest)
             {
-                // 初期化テスト
-                yield return StartCoroutine(TestInitialization());
-                
-                // 基本機能テスト
-                yield return StartCoroutine(TestBasicFunctionality());
-                
-                // プレイヤー追跡テスト
-                yield return StartCoroutine(TestPlayerTracking());
-                
-                // 動的生成テスト
-                yield return StartCoroutine(TestDynamicGeneration());
-                
-                // メモリ管理テスト
-                yield return StartCoroutine(TestMemoryManagement());
-                
-                // パフォーマンステスト
-                yield return StartCoroutine(TestPerformance());
-                
-                // ストレステスト（オプション）
-                if (enableStressTest)
-                {
-                    yield return StartCoroutine(TestStressConditions());
-                }
-                
-                LogTestResults();
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"Test suite failed: {e.Message}");
-                testsFailed++;
+                yield return StartCoroutine(TestStressConditionsSafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
+                if (hasError) { Debug.LogError($"TestStressConditions failed: {errorMessage}"); testsFailed++; }
             }
             
+            LogTestResults();
             Debug.Log("=== RuntimeTerrainManager Test Suite Completed ===");
         }
         

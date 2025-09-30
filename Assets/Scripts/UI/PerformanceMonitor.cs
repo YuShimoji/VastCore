@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections;
 using TMPro;
 
-namespace NarrativeGen.UI
+namespace Vastcore.UI
 {
     /// <summary>
     /// Performance monitoring system for tracking terrain generation and system performance
@@ -89,8 +89,7 @@ namespace NarrativeGen.UI
             memoryHistory.Add(memoryMB);
             
             // Collect draw call data (approximation)
-            int drawCalls = UnityEngine.Rendering.DebugUI.instance != null ? 
-                           UnityEngine.Rendering.DebugUI.instance.GetHashCode() : 0; // Placeholder
+            int drawCalls = 0; // TODO: DebugUI参照を一時的に無効化
             drawCallHistory.Add(drawCalls);
             
             // Maintain history size

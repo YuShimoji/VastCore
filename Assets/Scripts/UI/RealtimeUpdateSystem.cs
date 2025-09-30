@@ -3,7 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace NarrativeGen.UI
+namespace Vastcore.UI
 {
     /// <summary>
     /// Real-time update system for UI parameter changes with throttling and batching
@@ -264,6 +264,14 @@ namespace NarrativeGen.UI
         
         private void CheckPerformance()
         {
+            float currentTime = Time.time;
+            
+            // Only check performance at intervals to avoid overhead
+            if (currentTime - lastPerformanceCheck < performanceCheckInterval)
+                return;
+            
+            lastPerformanceCheck = currentTime;
+            
             float currentFrameTime = Time.deltaTime * 1000f;
             recentFrameTimes.Add(currentFrameTime);
             

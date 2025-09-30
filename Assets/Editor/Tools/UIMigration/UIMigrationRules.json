@@ -1,0 +1,25 @@
+{
+  "legacyNamespaces": [
+    "NarrativeGen.UI"
+  ],
+  "ignoreNamespaces": [
+    "UnityEngine",
+    "UnityEditor",
+    "Unity.",
+    "TMPro",
+    "Vastcore.UI"
+  ],
+  "typeMappings": [
+    { "legacyType": "NarrativeGen.UI.InGameDebugUI", "newType": "Vastcore.UI.InGameDebugUI" },
+    { "legacyType": "NarrativeGen.UI.ModernUIManager", "newType": "Vastcore.UI.ModernUIManager" },
+    { "legacyType": "NarrativeGen.UI.ModernUIStyleSystem", "newType": "Vastcore.UI.ModernUIStyleSystem" },
+    { "legacyType": "NarrativeGen.UI.PerformanceMonitor", "newType": "Vastcore.UI.PerformanceMonitor" },
+    { "legacyType": "NarrativeGen.UI.RealtimeUpdateSystem", "newType": "Vastcore.UI.RealtimeUpdateSystem" },
+    { "legacyType": "NarrativeGen.UI.SliderBasedUISystem", "newType": "Vastcore.UI.SliderBasedUISystem" },
+    { "legacyType": "NarrativeGen.UI.SliderUIElement", "newType": "Vastcore.UI.SliderUIElement" },
+    { "legacyType": "NarrativeGen.UI.TextClickHandler", "newType": "Vastcore.UI.TextClickHandler" },
+    { "legacyType": "NarrativeGen.UI.MenuManager", "newType": "Vastcore.UI.Menus.MenuManager" }
+  ],
+  "heuristicsEnabled": true,
+  "notes": "NarrativeGen.UI をレガシーとして検出。基本方針は Vastcore.UI へ同名クラスで移行。MenuManager は Vastcore.UI.Menus.MenuManager へ移行予定（A3で実装/レビュー）。この段階ではドライランのみで置換は行いません。"
+}

@@ -24,7 +24,7 @@ namespace Vastcore.Generation.Map
             {
                 if (_instance == null)
                 {
-                    _instance = FindObjectOfType<BiomePresetManager>();
+                    _instance = FindFirstObjectByType<BiomePresetManager>();
                     if (_instance == null)
                     {
                         GameObject obj = new GameObject("BiomePresetManager");
