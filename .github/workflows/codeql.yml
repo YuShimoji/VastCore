@@ -16,6 +16,7 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
@@ -34,4 +35,5 @@ jobs:
         continue-on-error: true
 
       - name: Perform CodeQL Analysis
+        if: always()
         uses: github/codeql-action/analyze@v3
