@@ -16,7 +16,6 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
-    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
@@ -31,9 +30,10 @@ jobs:
           languages: ${{ matrix.language }}
 
       - name: Autobuild
+        id: autobuild
         uses: github/codeql-action/autobuild@v3
         continue-on-error: true
 
       - name: Perform CodeQL Analysis
-        if: always()
+        if: ${{ steps.autobuild.outcome == 'success' }}
         uses: github/codeql-action/analyze@v3
