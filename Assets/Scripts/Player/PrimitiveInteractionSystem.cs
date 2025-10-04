@@ -195,7 +195,7 @@ namespace Vastcore.Player
             };
             
             // グラインド可能エッジを検出
-            var primitiveObject = primitive.GetComponent<PrimitiveTerrainObject>();
+            var primitiveObject = primitive.GetComponent<Vastcore.Generation.PrimitiveTerrainObject>();
             if (primitiveObject != null && primitiveObject.isGrindable)
             {
                 DetectGrindableEdges(primitive, ref interactionData);

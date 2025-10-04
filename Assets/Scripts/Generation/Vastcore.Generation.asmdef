@@ -3,7 +3,8 @@
     "rootNamespace": "Vastcore.Generation",
     "references": [
         "Vastcore.Core",
-        "Vastcore.Utils"
+        "Vastcore.Utils",
+        "Unity.ProBuilder"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

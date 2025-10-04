@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Rendering;
+using Vastcore.Utils;
 using Vastcore.Core;
 
 namespace Vastcore.Generation.GPU

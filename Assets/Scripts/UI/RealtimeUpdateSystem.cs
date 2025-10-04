@@ -264,6 +264,14 @@ namespace Vastcore.UI
         
         private void CheckPerformance()
         {
+            float currentTime = Time.time;
+            
+            // Only check performance at intervals to avoid overhead
+            if (currentTime - lastPerformanceCheck < performanceCheckInterval)
+                return;
+            
+            lastPerformanceCheck = currentTime;
+            
             float currentFrameTime = Time.deltaTime * 1000f;
             recentFrameTimes.Add(currentFrameTime);
             

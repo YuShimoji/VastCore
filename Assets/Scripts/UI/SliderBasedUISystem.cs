@@ -18,7 +18,7 @@ namespace Vastcore.UI
         [SerializeField] private Color primaryColor = new Color(0.2f, 0.6f, 1f, 1f); // Modern blue
         [SerializeField] private Color accentColor = new Color(0f, 0.8f, 1f, 1f); // Cyan accent
         [SerializeField] private Color backgroundColor = new Color(0.1f, 0.1f, 0.1f, 0.8f); // Dark background
-        [SerializeField] private Font modernFont;
+        [SerializeField] private TMP_FontAsset modernFont;
         
         [Header("Slider Configuration")]
         [SerializeField] private float sliderSensitivity = 1f;
@@ -47,7 +47,7 @@ namespace Vastcore.UI
         private void InitializeUISystem()
         {
             // Create main canvas if it doesn't exist
-            mainCanvas = FindObjectOfType<Canvas>();
+            mainCanvas = FindFirstObjectByType<Canvas>();
             if (mainCanvas == null)
             {
                 CreateMainCanvas();

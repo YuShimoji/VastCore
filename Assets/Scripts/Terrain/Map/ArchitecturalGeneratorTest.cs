@@ -320,7 +320,7 @@ namespace Vastcore.Generation
         /// </summary>
         public void ClearAllTestObjects()
         {
-            var architecturalObjects = FindObjectsOfType<GameObject>();
+            var architecturalObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
             
             foreach (var obj in architecturalObjects)
             {

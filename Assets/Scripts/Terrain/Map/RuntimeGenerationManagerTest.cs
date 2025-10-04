@@ -26,7 +26,7 @@ namespace Vastcore.Generation.Map
             // RuntimeGenerationManagerを取得
             if (generationManager == null)
             {
-                generationManager = FindObjectOfType<RuntimeGenerationManager>();
+                generationManager = FindFirstObjectByType<RuntimeGenerationManager>();
             }
 
             if (generationManager == null)
