@@ -9,15 +9,16 @@
       - 状態: 着手済（本PRで追加）
     - [A2] 検出スキャナの強化と半自動置換ツールの実装（dry-run/レポート出力）
       - JSONルールを読み込み、対象検出と変更プランを生成（適用はdry-run）
-      - 状態: 未着手（A1完了後に開始）
+      - 状態: 着手済（`UIMigrationRulesDryRunWindow.cs` を追加し、JSONルールに基づくドライランを実装）
     - [A3] 段階適用と検証
       - 限定適用→ビルド/シーン動作確認→レポート反映
       - 状態: 未着手
 
 - **管理**
-  - 追跡: Issue #11（A1）
-  - ブランチ: `feat/ui-mapping-a1`
+  - 追跡: Issue #11（A1）, Issue #13（A2）
+  - ブランチ: `feat/ui-migration-a2`
   - CI: 共有ワークフロー `ci-smoke` によりスモーク実行
+  - 実行メモ（A2）: Unity Editor のメニュー `Vastcore/Tools/UI Migration/Rules Dry-Run (JSON)` からレポート出力。
 
 - **リスク/緩和**
   - 自動置換の誤変換 → A2はdry-run限定から開始、A3で限定適用
