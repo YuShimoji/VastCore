@@ -1,10 +1,10 @@
 # AI Context
- - 最終更新: 2025-10-05T19:16:56+09:00
- - 現在のミッション: フェーズ2: Sprint 02 [A2] 検出スキャナの強化と半自動置換ツールの実装（完了）
- - ブランチ: develop
- - 関連: Issue https://github.com/YuShimoji/VastCore/issues/13, PR https://github.com/YuShimoji/VastCore/pull/14（マージ済）
- - 進捗: 100% / ステータス: 完了（CIパス＆自動マージ）
- - 次の予定: [A3] 段階適用と検証（限定適用→ビルド/シーン動作確認→レポート反映）
+ - 最終更新: 2025-10-05T20:33:26+09:00
+ - 現在のミッション: フェーズ2: Sprint 02 [A3] 段階適用と検証（限定適用→ビルド/シーン動作確認→レポート反映）
+ - ブランチ: feat/ui-migration-a3
+ - 関連: Issue https://github.com/YuShimoji/VastCore/issues/17
+ - 進捗: 20% / ステータス: 着手（適用ウィンドウ追加、ドキュ更新中）
+ - 次の中断可能点: PR 作成後、CI 成功待ち
 ## 決定事項
 - 共有ワークフロー `ci-smoke.yml`/`sync-issues.yml` を再利用する。
 - Node の簡易 dev server / smoke check を本リポジトリに追加して CI 成功を保証。

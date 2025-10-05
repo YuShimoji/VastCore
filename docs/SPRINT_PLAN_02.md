@@ -12,13 +12,14 @@
       - 状態: 完了（`UIMigrationRulesDryRunWindow.cs` を追加し、JSONルールに基づくドライランを実装、PR #14 マージ済）
     - [A3] 段階適用と検証
       - 限定適用→ビルド/シーン動作確認→レポート反映
-      - 状態: 未着手
+      - 状態: 着手済（`UIMigrationApplyWindow.cs` 追加、限定適用プレビュー・適用を実装）
 
 - **管理**
-  - 追跡: Issue #11（A1）, Issue #13（A2）
-  - ブランチ: `feat/ui-migration-a2`
+  - 追跡: Issue #11（A1）, Issue #13（A2）, Issue #17（A3）
+  - ブランチ: `feat/ui-migration-a3`
   - CI: 共有ワークフロー `ci-smoke` によりスモーク実行
   - 実行メモ（A2）: Unity Editor のメニュー `Vastcore/Tools/UI Migration/Rules Dry-Run (JSON)` からレポート出力。
+  - 実行メモ（A3）: Unity Editor のメニュー `Vastcore/Tools/UI Migration/Apply (A3 - staged)` にて、選択範囲またはフォルダに対してプレビュー→適用を実施。
   - CI: PR #14 によりマージ済
 
 - **リスク/緩和**
