@@ -1,9 +1,9 @@
 # AI Context
-- 最終更新: 2025-10-05T03:21:37+09:00
-- 現在のミッション: フェーズ1: 中央ワークフロー統合 (#TBD)
-- ブランチ: chore/central-integration
-- 関連: Issue TBD, PR TBD
-- 進捗: 40% / ステータス: 実装中（CI/Docs追加）
+- 最終更新: 2025-10-05T04:18:04+09:00
+- 現在のミッション: フェーズ2: Sprint 02 [A1] 旧→新 UI マッピング定義 (#11)
+- ブランチ: feat/ui-mapping-a1
+- 関連: Issue https://github.com/YuShimoji/VastCore/issues/11, PR TBD
+- 進捗: 60% / ステータス: 実装中（設計書/テンプレ追加、PR準備）
 - 次の中断可能点: PR 作成後、CI 成功待ち
 
 ## 決定事項
