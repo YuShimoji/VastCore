@@ -1,0 +1,14 @@
+name: CI (Shared Smoke)
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feature/**
+      - chore/**
+  pull_request:
+
+jobs:
+  smoke:
+    uses: YuShimoji/shared-workflows/.github/workflows/ci-smoke.yml@HEAD
