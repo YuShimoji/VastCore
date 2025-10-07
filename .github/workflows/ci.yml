@@ -1,0 +1,19 @@
+name: CI (Docs Only)
+
+on:
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  docs-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify docs structure
+        run: |
+          echo "Checking docs structure..."
+          test -d docs/01_planning && echo "01_planning OK"
+          test -d docs/02_design && echo "02_design OK"
+          test -d docs/03_guides && echo "03_guides OK"
+          test -d docs/04_reports && echo "04_reports OK"
