@@ -1,1284 +1,1284 @@
-# 開発作業ログ
+﻿# 髢狗匱菴懈･ｭ繝ｭ繧ｰ
 
-## 2025-08-28: Git config 重複キー修正（Cascadeファイル読取エラー対策）
+## 2025-08-28: Git config 驥崎､・く繝ｼ菫ｮ豁｣・・ascade繝輔ぃ繧､繝ｫ隱ｭ蜿悶お繝ｩ繝ｼ蟇ｾ遲厄ｼ・
 
-### 概要
-`.git/config` の `branch "master"` セクションに `vscode-merge-base = origin/master` が重複しており、厳格な INI パーサで読み取りエラーとなる可能性があったため、一方を削除して1本化。
+### 讎りｦ・
+`.git/config` 縺ｮ `branch "master"` 繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ縺ｫ `vscode-merge-base = origin/master` 縺碁㍾隍・＠縺ｦ縺翫ｊ縲∝宍譬ｼ縺ｪ INI 繝代・繧ｵ縺ｧ隱ｭ縺ｿ蜿悶ｊ繧ｨ繝ｩ繝ｼ縺ｨ縺ｪ繧句庄閭ｽ諤ｧ縺後≠縺｣縺溘◆繧√∽ｸ譁ｹ繧貞炎髯､縺励※1譛ｬ蛹悶・
 
-### 変更点
-- 修正: `.git/config` における重複キーの削除（リポジトリ管理外ファイルのため履歴対象外）
-- 記録: 本ログに対処内容とテスト手順を追記
+### 螟画峩轤ｹ
+- 菫ｮ豁｣: `.git/config` 縺ｫ縺翫￠繧矩㍾隍・く繝ｼ縺ｮ蜑企勁・医Μ繝昴ず繝医Μ邂｡逅・､悶ヵ繧｡繧､繝ｫ縺ｮ縺溘ａ螻･豁ｴ蟇ｾ雎｡螟厄ｼ・
+- 險倬鹸: 譛ｬ繝ｭ繧ｰ縺ｫ蟇ｾ蜃ｦ蜀・ｮｹ縺ｨ繝・せ繝域焔鬆・ｒ霑ｽ險・
 
-### テスト手順
-1. Cascade のファイル閲覧で `c:/Users/thank/Storage/Game Projects/Vastcore/.git/config` を開けること
-2. `git config --list --show-origin` を実行し、エラーやパース失敗が出ないこと
-3. VS Code / Cascade 操作で当該エラーが再発しないこと
+### 繝・せ繝域焔鬆・
+1. Cascade 縺ｮ繝輔ぃ繧､繝ｫ髢ｲ隕ｧ縺ｧ `c:/Users/thank/Storage/Game Projects/Vastcore/.git/config` 繧帝幕縺代ｋ縺薙→
+2. `git config --list --show-origin` 繧貞ｮ溯｡後＠縲√お繝ｩ繝ｼ繧・ヱ繝ｼ繧ｹ螟ｱ謨励′蜃ｺ縺ｪ縺・％縺ｨ
+3. VS Code / Cascade 謫堺ｽ懊〒蠖楢ｩｲ繧ｨ繝ｩ繝ｼ縺悟・逋ｺ縺励↑縺・％縺ｨ
 
-### 結果
-- Readツールで `.git/config` の読取を確認。重複キーは削除済みで1本化。
+### 邨先棡
+- Read繝・・繝ｫ縺ｧ `.git/config` 縺ｮ隱ｭ蜿悶ｒ遒ｺ隱阪る㍾隍・く繝ｼ縺ｯ蜑企勁貂医∩縺ｧ1譛ｬ蛹悶・
 
-## 2025-08-26: RuntimeTerrainManager 安定化修正（Cascade/Step is still running 緩和）
+## 2025-08-26: RuntimeTerrainManager 螳牙ｮ壼喧菫ｮ豁｣・・ascade/Step is still running 邱ｩ蜥鯉ｼ・
 
-### 概要
-`RuntimeTerrainManager.cs` のコルーチン停止漏れ/長時間実行を抑止し、生成/削除サイクルの安定性を高める改修を実施。
+### 讎りｦ・
+`RuntimeTerrainManager.cs` 縺ｮ繧ｳ繝ｫ繝ｼ繝√Φ蛛懈ｭ｢貍上ｌ/髟ｷ譎る俣螳溯｡後ｒ謚第ｭ｢縺励∫函謌・蜑企勁繧ｵ繧､繧ｯ繝ｫ縺ｮ螳牙ｮ壽ｧ繧帝ｫ倥ａ繧区隼菫ｮ繧貞ｮ滓命縲・
 
-### 変更点
-- 実装: `Assets/Scripts/Generation/Map/RuntimeTerrainManager.cs`
-  - コルーチンの安全停止を追加: `OnDisable()` / `OnDestroy()` → `StopCoroutinesSafely()`
-  - フレーム制御処理のウォッチドッグを追加: `ProcessGenerationQueueWithFrameLimit()`
-    - フレーム越え時に `yield return null` で次フレームへ退避しつつ、一定回数でブレーク
-    - マネージャ無効化/非アクティブ化で早期 `yield break`
-  - ネスト `StartCoroutine` を排し、`yield return ProcessGenerationQueueWithFrameLimit()` に変更（ステップ継続のリスク低減）
-  - 全削除の多重実行を抑制: サイクル内デバウンス `didFullUnloadThisCycle` を導入
-    - `ProcessTileDeletion()` で同一サイクル内2回目以降の `UnloadAllTiles()` をスキップ
-  - 各サイクル開始時に `didFullUnloadThisCycle = false` をリセット
+### 螟画峩轤ｹ
+- 螳溯｣・ `Assets/Scripts/Generation/Map/RuntimeTerrainManager.cs`
+  - 繧ｳ繝ｫ繝ｼ繝√Φ縺ｮ螳牙・蛛懈ｭ｢繧定ｿｽ蜉: `OnDisable()` / `OnDestroy()` 竊・`StopCoroutinesSafely()`
+  - 繝輔Ξ繝ｼ繝蛻ｶ蠕｡蜃ｦ逅・・繧ｦ繧ｩ繝・メ繝峨ャ繧ｰ繧定ｿｽ蜉: `ProcessGenerationQueueWithFrameLimit()`
+    - 繝輔Ξ繝ｼ繝雜翫∴譎ゅ↓ `yield return null` 縺ｧ谺｡繝輔Ξ繝ｼ繝縺ｸ騾驕ｿ縺励▽縺､縲∽ｸ螳壼屓謨ｰ縺ｧ繝悶Ξ繝ｼ繧ｯ
+    - 繝槭ロ繝ｼ繧ｸ繝｣辟｡蜉ｹ蛹・髱槭い繧ｯ繝・ぅ繝門喧縺ｧ譌ｩ譛・`yield break`
+  - 繝阪せ繝・`StartCoroutine` 繧呈賜縺励～yield return ProcessGenerationQueueWithFrameLimit()` 縺ｫ螟画峩・医せ繝・ャ繝礼ｶ咏ｶ壹・繝ｪ繧ｹ繧ｯ菴取ｸ幢ｼ・
+  - 蜈ｨ蜑企勁縺ｮ螟夐㍾螳溯｡後ｒ謚大宛: 繧ｵ繧､繧ｯ繝ｫ蜀・ョ繝舌え繝ｳ繧ｹ `didFullUnloadThisCycle` 繧貞ｰ主・
+    - `ProcessTileDeletion()` 縺ｧ蜷御ｸ繧ｵ繧､繧ｯ繝ｫ蜀・蝗樒岼莉･髯阪・ `UnloadAllTiles()` 繧偵せ繧ｭ繝・・
+  - 蜷・し繧､繧ｯ繝ｫ髢句ｧ区凾縺ｫ `didFullUnloadThisCycle = false` 繧偵Μ繧ｻ繝・ヨ
 
-### テスト手順（エディタ/PlayMode）
-1. シーンに `RuntimeTerrainManager` と `TileManager` を配置し、`playerTransform` を設定
-2. `enableDynamicGeneration = true`、`enableFrameTimeControl = true`（デフォルト）
-3. 数十秒プレイヤー移動。Console/ログを監視
+### 繝・せ繝域焔鬆・ｼ医お繝・ぅ繧ｿ/PlayMode・・
+1. 繧ｷ繝ｼ繝ｳ縺ｫ `RuntimeTerrainManager` 縺ｨ `TileManager` 繧帝・鄂ｮ縺励～playerTransform` 繧定ｨｭ螳・
+2. `enableDynamicGeneration = true`縲～enableFrameTimeControl = true`・医ョ繝輔か繝ｫ繝茨ｼ・
+3. 謨ｰ蜊∫ｧ偵・繝ｬ繧､繝､繝ｼ遘ｻ蜍輔・onsole/繝ｭ繧ｰ繧堤屮隕・
 
-### 期待結果
-- 生成/削除ログが周期的に出続け、処理が途切れない
-- `ProcessGenerationQueueWithFrameLimit start` → フレーム越え時は次フレームに継続し、ハングしない
-- `UnloadAllTiles()` が1サイクル内に多重実行されない（ログで一度のみ）
-- 「Step is still running」系の停止が再現しない
+### 譛溷ｾ・ｵ先棡
+- 逕滓・/蜑企勁繝ｭ繧ｰ縺悟捉譛溽噪縺ｫ蜃ｺ邯壹￠縲∝・逅・′騾泌・繧後↑縺・
+- `ProcessGenerationQueueWithFrameLimit start` 竊・繝輔Ξ繝ｼ繝雜翫∴譎ゅ・谺｡繝輔Ξ繝ｼ繝縺ｫ邯咏ｶ壹＠縲√ワ繝ｳ繧ｰ縺励↑縺・
+- `UnloadAllTiles()` 縺・繧ｵ繧､繧ｯ繝ｫ蜀・↓螟夐㍾螳溯｡後＆繧後↑縺・ｼ医Ο繧ｰ縺ｧ荳蠎ｦ縺ｮ縺ｿ・・
+- 縲郡tep is still running縲咲ｳｻ縺ｮ蛛懈ｭ｢縺悟・迴ｾ縺励↑縺・
 
-### 備考
-- 依然として問題が再現する場合は、URPシャドウカスケード設定/レンダリング設定も併せて点検すること
+### 蛯呵・
+- 萓晉┯縺ｨ縺励※蝠城｡後′蜀咲樟縺吶ｋ蝣ｴ蜷医・縲ゞRP繧ｷ繝｣繝峨え繧ｫ繧ｹ繧ｱ繝ｼ繝芽ｨｭ螳・繝ｬ繝ｳ繝繝ｪ繝ｳ繧ｰ險ｭ螳壹ｂ菴ｵ縺帙※轤ｹ讀懊☆繧九％縺ｨ
 
 ---
 
-## 2025-08-26: RuntimeTerrainManager コルーチン/キュー処理 復旧・強化
+## 2025-08-26: RuntimeTerrainManager 繧ｳ繝ｫ繝ｼ繝√Φ/繧ｭ繝･繝ｼ蜃ｦ逅・蠕ｩ譌ｧ繝ｻ蠑ｷ蛹・
 
-### 概要
-Unity ランタイム地形生成で発生していた「Step is still running」ハングの診断/解消に向けて、`RuntimeTerrainManager` のメインコルーチンと削除トリガを復旧・強化。
+### 讎りｦ・
+Unity 繝ｩ繝ｳ繧ｿ繧､繝蝨ｰ蠖｢逕滓・縺ｧ逋ｺ逕溘＠縺ｦ縺・◆縲郡tep is still running縲阪ワ繝ｳ繧ｰ縺ｮ險ｺ譁ｭ/隗｣豸医↓蜷代￠縺ｦ縲～RuntimeTerrainManager` 縺ｮ繝｡繧､繝ｳ繧ｳ繝ｫ繝ｼ繝√Φ縺ｨ蜑企勁繝医Μ繧ｬ繧貞ｾｩ譌ｧ繝ｻ蠑ｷ蛹悶・
 
-### 変更点
-- 実装: `Assets/Scripts/Generation/Map/RuntimeTerrainManager.cs`
-  - `DynamicGenerationCoroutine()` の各サイクルで `UpdatePlayerTracking()` / `UpdateTileGeneration()` を確実に呼び出すよう修正。
-  - `TriggerTileCleanup(Vector3 playerPosition)` を新規実装。
-    - `forceUnloadRadius` を超えるタイル: `TilePriority.Immediate` で削除要求。
-    - `keepAliveRadius` 超〜 `forceUnloadRadius` 以下: `TilePriority.Low` で削除要求。
-  - デバッグ: `OnDrawGizmos()` を追加し、`showDebugInfo` 有効時に `DrawDebugInfo()` を呼び出す。
-  - ログ: 既存の `VastcoreLogger` トレースでキュー処理/コルーチン進行を観測可能。
+### 螟画峩轤ｹ
+- 螳溯｣・ `Assets/Scripts/Generation/Map/RuntimeTerrainManager.cs`
+  - `DynamicGenerationCoroutine()` 縺ｮ蜷・し繧､繧ｯ繝ｫ縺ｧ `UpdatePlayerTracking()` / `UpdateTileGeneration()` 繧堤｢ｺ螳溘↓蜻ｼ縺ｳ蜃ｺ縺吶ｈ縺・ｿｮ豁｣縲・
+  - `TriggerTileCleanup(Vector3 playerPosition)` 繧呈眠隕丞ｮ溯｣・・
+    - `forceUnloadRadius` 繧定ｶ・∴繧九ち繧､繝ｫ: `TilePriority.Immediate` 縺ｧ蜑企勁隕∵ｱゅ・
+    - `keepAliveRadius` 雜・・`forceUnloadRadius` 莉･荳・ `TilePriority.Low` 縺ｧ蜑企勁隕∵ｱゅ・
+  - 繝・ヰ繝・げ: `OnDrawGizmos()` 繧定ｿｽ蜉縺励～showDebugInfo` 譛牙柑譎ゅ↓ `DrawDebugInfo()` 繧貞他縺ｳ蜃ｺ縺吶・
+  - 繝ｭ繧ｰ: 譌｢蟄倥・ `VastcoreLogger` 繝医Ξ繝ｼ繧ｹ縺ｧ繧ｭ繝･繝ｼ蜃ｦ逅・繧ｳ繝ｫ繝ｼ繝√Φ騾ｲ陦後ｒ隕ｳ貂ｬ蜿ｯ閭ｽ縲・
 
-### 背景/原因仮説
-- 生成/削除リクエストがランタイムで更新されず、キューが空/不変のまま待機し続けることで、処理が進まないフレームが継続していた可能性。
-- 各サイクルでのプレイヤー追跡・生成リクエスト更新の呼び出し欠落、ならびに削除トリガ未実装が主因と判断。
+### 閭梧勹/蜴溷屏莉ｮ隱ｬ
+- 逕滓・/蜑企勁繝ｪ繧ｯ繧ｨ繧ｹ繝医′繝ｩ繝ｳ繧ｿ繧､繝縺ｧ譖ｴ譁ｰ縺輔ｌ縺壹√く繝･繝ｼ縺檎ｩｺ/荳榊､峨・縺ｾ縺ｾ蠕・ｩ溘＠邯壹￠繧九％縺ｨ縺ｧ縲∝・逅・′騾ｲ縺ｾ縺ｪ縺・ヵ繝ｬ繝ｼ繝縺檎ｶ咏ｶ壹＠縺ｦ縺・◆蜿ｯ閭ｽ諤ｧ縲・
+- 蜷・し繧､繧ｯ繝ｫ縺ｧ縺ｮ繝励Ξ繧､繝､繝ｼ霑ｽ霍｡繝ｻ逕滓・繝ｪ繧ｯ繧ｨ繧ｹ繝域峩譁ｰ縺ｮ蜻ｼ縺ｳ蜃ｺ縺玲ｬ關ｽ縲√↑繧峨・縺ｫ蜑企勁繝医Μ繧ｬ譛ｪ螳溯｣・′荳ｻ蝗縺ｨ蛻､譁ｭ縲・
 
-### 検証手順（エディタ/PlayMode）
-1. シーンに `RuntimeTerrainManager` と `TileManager` を配置し、`playerTransform` を設定。
-2. `enableDynamicGeneration = true`、`enableFrameTimeControl` は任意。
-3. `showDebugInfo = true` にしてシーンビューの Gizmos を ON。
-4. 再生して数十秒間プレイヤーを移動。
-5. 期待挙動:
-   - Console/ファイルログに以下が周期的に出力されること。
-     - `ProcessGenerationQueueWithFrameLimit start` または `ProcessGenerationQueue start`
+### 讀懆ｨｼ謇矩・ｼ医お繝・ぅ繧ｿ/PlayMode・・
+1. 繧ｷ繝ｼ繝ｳ縺ｫ `RuntimeTerrainManager` 縺ｨ `TileManager` 繧帝・鄂ｮ縺励～playerTransform` 繧定ｨｭ螳壹・
+2. `enableDynamicGeneration = true`縲～enableFrameTimeControl` 縺ｯ莉ｻ諢上・
+3. `showDebugInfo = true` 縺ｫ縺励※繧ｷ繝ｼ繝ｳ繝薙Η繝ｼ縺ｮ Gizmos 繧・ON縲・
+4. 蜀咲函縺励※謨ｰ蜊∫ｧ帝俣繝励Ξ繧､繝､繝ｼ繧堤ｧｻ蜍輔・
+5. 譛溷ｾ・嫌蜍・
+   - Console/繝輔ぃ繧､繝ｫ繝ｭ繧ｰ縺ｫ莉･荳九′蜻ｨ譛溽噪縺ｫ蜃ｺ蜉帙＆繧後ｋ縺薙→縲・
+     - `ProcessGenerationQueueWithFrameLimit start` 縺ｾ縺溘・ `ProcessGenerationQueue start`
      - `ProcessDeletionQueue start`
-   - プレイヤー周辺にタイル生成ログが出る（High/Immediate 優先度）。
-   - 力学的に離れたタイルに対して削除要求が出る（Immediate/Low）。
-   - Gizmo でプレイヤー予測/半径が可視化される。
+   - 繝励Ξ繧､繝､繝ｼ蜻ｨ霎ｺ縺ｫ繧ｿ繧､繝ｫ逕滓・繝ｭ繧ｰ縺悟・繧具ｼ・igh/Immediate 蜆ｪ蜈亥ｺｦ・峨・
+   - 蜉帛ｭｦ逧・↓髮｢繧後◆繧ｿ繧､繝ｫ縺ｫ蟇ｾ縺励※蜑企勁隕∵ｱゅ′蜃ｺ繧具ｼ・mmediate/Low・峨・
+   - Gizmo 縺ｧ繝励Ξ繧､繝､繝ｼ莠域ｸｬ/蜊雁ｾ・′蜿ｯ隕門喧縺輔ｌ繧九・
 
-### 追加の観測/メトリクス
-- `TileManager.GetStats()` を活用して、フレーム当たり処理数/キュー長/アクティブ枚数の推移をサンプリング。
-- メモリ監視コルーチンの警告/緊急クリーンアップログが過度に発生しないことを確認。
+### 霑ｽ蜉縺ｮ隕ｳ貂ｬ/繝｡繝医Μ繧ｯ繧ｹ
+- `TileManager.GetStats()` 繧呈ｴｻ逕ｨ縺励※縲√ヵ繝ｬ繝ｼ繝蠖薙◆繧雁・逅・焚/繧ｭ繝･繝ｼ髟ｷ/繧｢繧ｯ繝・ぅ繝匁椢謨ｰ縺ｮ謗ｨ遘ｻ繧偵し繝ｳ繝励Μ繝ｳ繧ｰ縲・
+- 繝｡繝｢繝ｪ逶｣隕悶さ繝ｫ繝ｼ繝√Φ縺ｮ隴ｦ蜻・邱頑･繧ｯ繝ｪ繝ｼ繝ｳ繧｢繝・・繝ｭ繧ｰ縺碁℃蠎ｦ縺ｫ逋ｺ逕溘＠縺ｪ縺・％縺ｨ繧堤｢ｺ隱阪・
 
-### 次アクション
-- ログを解析し、生成/削除のフローが途切れず進行しているか確認。
-- 必要に応じて `updateInterval` / フレーム時間制御の閾値を調整し、スパイク抑制とレスポンスのバランスを最適化。
+### 谺｡繧｢繧ｯ繧ｷ繝ｧ繝ｳ
+- 繝ｭ繧ｰ繧定ｧ｣譫舌＠縲∫函謌・蜑企勁縺ｮ繝輔Ο繝ｼ縺碁泌・繧後★騾ｲ陦後＠縺ｦ縺・ｋ縺狗｢ｺ隱阪・
+- 蠢・ｦ√↓蠢懊§縺ｦ `updateInterval` / 繝輔Ξ繝ｼ繝譎る俣蛻ｶ蠕｡縺ｮ髢ｾ蛟､繧定ｪｿ謨ｴ縺励√せ繝代う繧ｯ謚大宛縺ｨ繝ｬ繧ｹ繝昴Φ繧ｹ縺ｮ繝舌Λ繝ｳ繧ｹ繧呈怙驕ｩ蛹悶・
 
-## 2025-08-25: VastcoreLogger.LogLevel 参照修正と asmdef 検証
+## 2025-08-25: VastcoreLogger.LogLevel 蜿ら・菫ｮ豁｣縺ｨ asmdef 讀懆ｨｼ
 
-### 概要
-Unity のコンパイルエラー（LogLevel 未解決）を修正。`VastcoreLogger.LogLevel` の完全修飾名を使用し、asmdef 参照関係を再確認。
+### 讎りｦ・
+Unity 縺ｮ繧ｳ繝ｳ繝代う繝ｫ繧ｨ繝ｩ繝ｼ・・ogLevel 譛ｪ隗｣豎ｺ・峨ｒ菫ｮ豁｣縲ＡVastcoreLogger.LogLevel` 縺ｮ螳悟・菫ｮ鬟ｾ蜷阪ｒ菴ｿ逕ｨ縺励∥smdef 蜿ら・髢｢菫ゅｒ蜀咲｢ｺ隱阪・
 
-### 変更点
-- 修正: `Assets/Scripts/Core/VastcoreSystemManager.cs` の `LogLevel` → `VastcoreLogger.LogLevel`
-- 参照確認: `Vastcore.Core.asmdef`, `Vastcore.Utilities.asmdef`, `Vastcore.Diagnostics.asmdef`, `Vastcore.Generation.asmdef` の依存関係
+### 螟画峩轤ｹ
+- 菫ｮ豁｣: `Assets/Scripts/Core/VastcoreSystemManager.cs` 縺ｮ `LogLevel` 竊・`VastcoreLogger.LogLevel`
+- 蜿ら・遒ｺ隱・ `Vastcore.Core.asmdef`, `Vastcore.Utilities.asmdef`, `Vastcore.Diagnostics.asmdef`, `Vastcore.Generation.asmdef` 縺ｮ萓晏ｭ倬未菫・
 
-### 検証手順（エディタ）
-1. Unity を起動し自動コンパイルを待機。
-2. Console を Clear → エラーが 0 件であること。
-3. `VastcoreSystemManager` 起動時のログ出力が正常（Info/Warning/Error）で出ること。
+### 讀懆ｨｼ謇矩・ｼ医お繝・ぅ繧ｿ・・
+1. Unity 繧定ｵｷ蜍輔＠閾ｪ蜍輔さ繝ｳ繝代う繝ｫ繧貞ｾ・ｩ溘・
+2. Console 繧・Clear 竊・繧ｨ繝ｩ繝ｼ縺・0 莉ｶ縺ｧ縺ゅｋ縺薙→縲・
+3. `VastcoreSystemManager` 襍ｷ蜍墓凾縺ｮ繝ｭ繧ｰ蜃ｺ蜉帙′豁｣蟶ｸ・・nfo/Warning/Error・峨〒蜃ｺ繧九％縺ｨ縲・
 
-### 結果
-- コンパイルエラー解消を確認。`LogOutputHandler.cs` を含む全ファイルで `VastcoreLogger.LogLevel` を使用していることを確認（grep）。
+### 邨先棡
+- 繧ｳ繝ｳ繝代う繝ｫ繧ｨ繝ｩ繝ｼ隗｣豸医ｒ遒ｺ隱阪ＡLogOutputHandler.cs` 繧貞性繧蜈ｨ繝輔ぃ繧､繝ｫ縺ｧ `VastcoreLogger.LogLevel` 繧剃ｽｿ逕ｨ縺励※縺・ｋ縺薙→繧堤｢ｺ隱搾ｼ・rep・峨・
 
-## 2025-08-20: PrimitiveErrorRecovery ドキュメント同期（コールバック署名修正）
+## 2025-08-20: PrimitiveErrorRecovery 繝峨く繝･繝｡繝ｳ繝亥酔譛滂ｼ医さ繝ｼ繝ｫ繝舌ャ繧ｯ鄂ｲ蜷堺ｿｮ豁｣・・
 
-### 概要
-`PrimitiveErrorRecovery.cs` のコルーチン・コールバック化（実装済み）に合わせ、ドキュメント中のコールバック署名表記を正確なシグネチャに同期。
+### 讎りｦ・
+`PrimitiveErrorRecovery.cs` 縺ｮ繧ｳ繝ｫ繝ｼ繝√Φ繝ｻ繧ｳ繝ｼ繝ｫ繝舌ャ繧ｯ蛹厄ｼ亥ｮ溯｣・ｸ医∩・峨↓蜷医ｏ縺帙√ラ繧ｭ繝･繝｡繝ｳ繝井ｸｭ縺ｮ繧ｳ繝ｼ繝ｫ繝舌ャ繧ｯ鄂ｲ蜷崎｡ｨ險倥ｒ豁｣遒ｺ縺ｪ繧ｷ繧ｰ繝阪メ繝｣縺ｫ蜷梧悄縲・
 
-### 変更点
-- `FUNCTION_TEST_STATUS.md` の記述を以下に修正：
+### 螟画峩轤ｹ
+- `FUNCTION_TEST_STATUS.md` 縺ｮ險倩ｿｰ繧剃ｻ･荳九↓菫ｮ豁｣・・
   - `FindValidPositionCoroutine(Action<Vector3> onComplete)`
   - `CreateRecoveredPrimitiveCoroutine(Action<GameObject> onComplete)`
-  - `RecoverPrimitiveSpawn(...)` は上記の結果をコールバックで受け取る設計に統一
+  - `RecoverPrimitiveSpawn(...)` 縺ｯ荳願ｨ倥・邨先棡繧偵さ繝ｼ繝ｫ繝舌ャ繧ｯ縺ｧ蜿励￠蜿悶ｋ險ｭ險医↓邨ｱ荳
 
-### 関連ファイル
-- 修正: `FUNCTION_TEST_STATUS.md`
-- 実装参照: `Assets/Scripts/Generation/PrimitiveErrorRecovery.cs`
+### 髢｢騾｣繝輔ぃ繧､繝ｫ
+- 菫ｮ豁｣: `FUNCTION_TEST_STATUS.md`
+- 螳溯｣・盾辣ｧ: `Assets/Scripts/Generation/PrimitiveErrorRecovery.cs`
 
-### 次アクション（検証）
-1. Unity エディタでエラー再現環境を用意し、有限回での収束とログスパム抑制を確認。
-2. 全16種プリミティブの復旧動作（位置再試行・フォールバック生成・Mesh/Collider 検証）を実施。
+### 谺｡繧｢繧ｯ繧ｷ繝ｧ繝ｳ・域､懆ｨｼ・・
+1. Unity 繧ｨ繝・ぅ繧ｿ縺ｧ繧ｨ繝ｩ繝ｼ蜀咲樟迺ｰ蠅・ｒ逕ｨ諢上＠縲∵怏髯仙屓縺ｧ縺ｮ蜿取據縺ｨ繝ｭ繧ｰ繧ｹ繝代Β謚大宛繧堤｢ｺ隱阪・
+2. 蜈ｨ16遞ｮ繝励Μ繝溘ユ繧｣繝悶・蠕ｩ譌ｧ蜍穂ｽ懶ｼ井ｽ咲ｽｮ蜀崎ｩｦ陦後・繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ逕滓・繝ｻMesh/Collider 讀懆ｨｼ・峨ｒ螳滓命縲・
 
-## 2025-08-18: CombineMeshes 計測ラップ導入とユーティリティ抽出（Architectural/Compound）
+## 2025-08-18: CombineMeshes 險域ｸｬ繝ｩ繝・・蟆主・縺ｨ繝ｦ繝ｼ繝・ぅ繝ｪ繝・ぅ謚ｽ蜃ｺ・・rchitectural/Compound・・
 
-### 概要
-`Mesh.CombineMeshes` 呼び出しのCPU時間/GC Allocを正確に計測するため、計測ラップを共通化した `MeshCombineHelper` を新設し、`ArchitecturalGenerator.cs` / `CompoundArchitecturalGenerator.cs` のコライダー用メッシュ結合処理を委譲。重複ロジックを排除し、計測の一貫性を担保。
+### 讎りｦ・
+`Mesh.CombineMeshes` 蜻ｼ縺ｳ蜃ｺ縺励・CPU譎る俣/GC Alloc繧呈ｭ｣遒ｺ縺ｫ險域ｸｬ縺吶ｋ縺溘ａ縲∬ｨ域ｸｬ繝ｩ繝・・繧貞・騾壼喧縺励◆ `MeshCombineHelper` 繧呈眠險ｭ縺励～ArchitecturalGenerator.cs` / `CompoundArchitecturalGenerator.cs` 縺ｮ繧ｳ繝ｩ繧､繝繝ｼ逕ｨ繝｡繝・す繝･邨仙粋蜃ｦ逅・ｒ蟋碑ｭｲ縲る㍾隍・Ο繧ｸ繝・け繧呈賜髯､縺励∬ｨ域ｸｬ縺ｮ荳雋ｫ諤ｧ繧呈球菫昴・
 
-### 変更ファイル
-- 追加: `Assets/Scripts/Utilities/MeshCombineHelper.cs`
-  - `using Vastcore.Diagnostics;` を使用し、`using (LoadProfiler.Measure($"Mesh.CombineMeshes ({label})"))` でスコープ計測
-  - 子階層 `MeshFilter` を収集し、有効メッシュのみを `CombineInstance[]` に詰め替えて結合
-- 修正: `Assets/Scripts/Generation/Map/ArchitecturalGenerator.cs`
-  - `CombineMeshesForCollider()` → `MeshCombineHelper.CombineChildrenToCollider(parent, collider, "ArchitecturalGenerator")` に委譲
-  - 直接の `LoadProfiler` 参照を削除（ユーティリティ側に集約）
-- 修正: `Assets/Scripts/Generation/Map/CompoundArchitecturalGenerator.cs`
-  - `CombineAllMeshesForCollider()` → `MeshCombineHelper.CombineChildrenToCollider(parent, collider, "CompoundArchitecturalGenerator")` に委譲
-  - `using Vastcore.Utilities;` を追加
+### 螟画峩繝輔ぃ繧､繝ｫ
+- 霑ｽ蜉: `Assets/Scripts/Utilities/MeshCombineHelper.cs`
+  - `using Vastcore.Diagnostics;` 繧剃ｽｿ逕ｨ縺励～using (LoadProfiler.Measure($"Mesh.CombineMeshes ({label})"))` 縺ｧ繧ｹ繧ｳ繝ｼ繝苓ｨ域ｸｬ
+  - 蟄宣嚴螻､ `MeshFilter` 繧貞庶髮・＠縲∵怏蜉ｹ繝｡繝・す繝･縺ｮ縺ｿ繧・`CombineInstance[]` 縺ｫ隧ｰ繧∵崛縺医※邨仙粋
+- 菫ｮ豁｣: `Assets/Scripts/Generation/Map/ArchitecturalGenerator.cs`
+  - `CombineMeshesForCollider()` 竊・`MeshCombineHelper.CombineChildrenToCollider(parent, collider, "ArchitecturalGenerator")` 縺ｫ蟋碑ｭｲ
+  - 逶ｴ謗･縺ｮ `LoadProfiler` 蜿ら・繧貞炎髯､・医Θ繝ｼ繝・ぅ繝ｪ繝・ぅ蛛ｴ縺ｫ髮・ｴ・ｼ・
+- 菫ｮ豁｣: `Assets/Scripts/Generation/Map/CompoundArchitecturalGenerator.cs`
+  - `CombineAllMeshesForCollider()` 竊・`MeshCombineHelper.CombineChildrenToCollider(parent, collider, "CompoundArchitecturalGenerator")` 縺ｫ蟋碑ｭｲ
+  - `using Vastcore.Utilities;` 繧定ｿｽ蜉
 
-### 目的と効果
-- 計測ポイントの一元化により、`CombineMeshes` のCPU/GCを正確に比較可能
-- 無効メッシュの除外と配列縮小により不要な結合処理を回避
-- 単一責任化で将来的な段階的結合/フレーム分散/ジョブ化への拡張が容易
+### 逶ｮ逧・→蜉ｹ譫・
+- 險域ｸｬ繝昴う繝ｳ繝医・荳蜈・喧縺ｫ繧医ｊ縲～CombineMeshes` 縺ｮCPU/GC繧呈ｭ｣遒ｺ縺ｫ豈碑ｼ・庄閭ｽ
+- 辟｡蜉ｹ繝｡繝・す繝･縺ｮ髯､螟悶→驟榊・邵ｮ蟆上↓繧医ｊ荳崎ｦ√↑邨仙粋蜃ｦ逅・ｒ蝗樣∩
+- 蜊倅ｸ雋ｬ莉ｻ蛹悶〒蟆・擂逧・↑谿ｵ髫守噪邨仙粋/繝輔Ξ繝ｼ繝蛻・淵/繧ｸ繝ｧ繝門喧縺ｸ縺ｮ諡｡蠑ｵ縺悟ｮｹ譏・
 
-### テスト手順（Unity エディタ／Profiler）
-1. Unityを起動し、自動コンパイル完了を待機（Consoleエラーがないこと）
-2. プロファイラを有効化（必要に応じて Deep Profile）
-3. 代表的な生成を実行：
-   - `ArchitecturalGenerator.GenerateArchitecturalStructure()`（任意の`ArchitecturalType`）
-   - `CompoundArchitecturalGenerator.GenerateCompoundArchitecturalStructure()`（`MultipleBridge`等）
-4. `Mesh.CombineMeshes (ArchitecturalGenerator)` / `Mesh.CombineMeshes (CompoundArchitecturalGenerator)` のスコープで CPU(ms)/GC(KB) を確認
-5. 生成物に `MeshCollider` が付与され、結合コライダーが設定されていることを確認
+### 繝・せ繝域焔鬆・ｼ・nity 繧ｨ繝・ぅ繧ｿ・襲rofiler・・
+1. Unity繧定ｵｷ蜍輔＠縲∬・蜍輔さ繝ｳ繝代う繝ｫ螳御ｺ・ｒ蠕・ｩ滂ｼ・onsole繧ｨ繝ｩ繝ｼ縺後↑縺・％縺ｨ・・
+2. 繝励Ο繝輔ぃ繧､繝ｩ繧呈怏蜉ｹ蛹厄ｼ亥ｿ・ｦ√↓蠢懊§縺ｦ Deep Profile・・
+3. 莉｣陦ｨ逧・↑逕滓・繧貞ｮ溯｡鯉ｼ・
+   - `ArchitecturalGenerator.GenerateArchitecturalStructure()`・井ｻｻ諢上・`ArchitecturalType`・・
+   - `CompoundArchitecturalGenerator.GenerateCompoundArchitecturalStructure()`・・MultipleBridge`遲会ｼ・
+4. `Mesh.CombineMeshes (ArchitecturalGenerator)` / `Mesh.CombineMeshes (CompoundArchitecturalGenerator)` 縺ｮ繧ｹ繧ｳ繝ｼ繝励〒 CPU(ms)/GC(KB) 繧堤｢ｺ隱・
+5. 逕滓・迚ｩ縺ｫ `MeshCollider` 縺御ｻ倅ｸ弱＆繧後∫ｵ仙粋繧ｳ繝ｩ繧､繝繝ｼ縺瑚ｨｭ螳壹＆繧後※縺・ｋ縺薙→繧堤｢ｺ隱・
 
-### 次アクション
-- 段階的結合・遅延コライダー適用（フレーム分散）のプロトタイピング
-- 計測結果を `FUNCTION_TEST_STATUS.md` のトリアージ表へ転記し、前後比較を可視化
+### 谺｡繧｢繧ｯ繧ｷ繝ｧ繝ｳ
+- 谿ｵ髫守噪邨仙粋繝ｻ驕・ｻｶ繧ｳ繝ｩ繧､繝繝ｼ驕ｩ逕ｨ・医ヵ繝ｬ繝ｼ繝蛻・淵・峨・繝励Ο繝医ち繧､繝斐Φ繧ｰ
+- 險域ｸｬ邨先棡繧・`FUNCTION_TEST_STATUS.md` 縺ｮ繝医Μ繧｢繝ｼ繧ｸ陦ｨ縺ｸ霆｢險倥＠縲∝燕蠕梧ｯ碑ｼ・ｒ蜿ｯ隕門喧
 
-## 2025-08-18: 全16プリミティブ生成のエラーフリー化テスト計画とプロファイリング
+## 2025-08-18: 蜈ｨ16繝励Μ繝溘ユ繧｣繝也函謌舌・繧ｨ繝ｩ繝ｼ繝輔Μ繝ｼ蛹悶ユ繧ｹ繝郁ｨ育判縺ｨ繝励Ο繝輔ぃ繧､繝ｪ繝ｳ繧ｰ
 
-### 概要
-プロシージャルプリミティブ（全16種）の生成品質とエラーハンドリングの確実性を担保するため、包括的テスト（`ComprehensivePrimitiveTest`）とプロファイリング手順を整備。`FUNCTION_TEST_STATUS.md` にテスト観点・手順・記録テンプレートを追記し、計測/結果記録の運用を開始。
+### 讎りｦ・
+繝励Ο繧ｷ繝ｼ繧ｸ繝｣繝ｫ繝励Μ繝溘ユ繧｣繝厄ｼ亥・16遞ｮ・峨・逕滓・蜩∬ｳｪ縺ｨ繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ縺ｮ遒ｺ螳滓ｧ繧呈球菫昴☆繧九◆繧√∝桁諡ｬ逧・ユ繧ｹ繝茨ｼ・ComprehensivePrimitiveTest`・峨→繝励Ο繝輔ぃ繧､繝ｪ繝ｳ繧ｰ謇矩・ｒ謨ｴ蛯吶ＡFUNCTION_TEST_STATUS.md` 縺ｫ繝・せ繝郁ｦｳ轤ｹ繝ｻ謇矩・・險倬鹸繝・Φ繝励Ξ繝ｼ繝医ｒ霑ｽ險倥＠縲∬ｨ域ｸｬ/邨先棡險倬鹸縺ｮ驕狗畑繧帝幕蟋九・
 
-### 対象コード
+### 蟇ｾ雎｡繧ｳ繝ｼ繝・
 - `Assets/Scripts/Generation/Map/PrimitiveTerrainGenerator.cs`
 - `Assets/Scripts/Generation/Map/HighQualityPrimitiveGenerator.cs`
 - `Assets/Scripts/Generation/Map/ComprehensivePrimitiveTest.cs`
 - `Assets/Scripts/Generation/PrimitiveErrorRecovery.cs`
 
-### テスト目的
-- 全16種が High/Medium/Low すべてで生成エラーなく完了
-- メッシュ整合性（頂点/法線/三角形）とコライダー設定の自動検証
-- 生成・配置・メッシュ失敗時の `PrimitiveErrorRecovery` による復旧動作確認
-- 自動テスト完走とレポート生成（必要時の自動 Fix → Pass）
+### 繝・せ繝育岼逧・
+- 蜈ｨ16遞ｮ縺・High/Medium/Low 縺吶∋縺ｦ縺ｧ逕滓・繧ｨ繝ｩ繝ｼ縺ｪ縺丞ｮ御ｺ・
+- 繝｡繝・す繝･謨ｴ蜷域ｧ・磯らせ/豕慕ｷ・荳芽ｧ貞ｽ｢・峨→繧ｳ繝ｩ繧､繝繝ｼ險ｭ螳壹・閾ｪ蜍墓､懆ｨｼ
+- 逕滓・繝ｻ驟咲ｽｮ繝ｻ繝｡繝・す繝･螟ｱ謨玲凾縺ｮ `PrimitiveErrorRecovery` 縺ｫ繧医ｋ蠕ｩ譌ｧ蜍穂ｽ懃｢ｺ隱・
+- 閾ｪ蜍輔ユ繧ｹ繝亥ｮ瑚ｵｰ縺ｨ繝ｬ繝昴・繝育函謌撰ｼ亥ｿ・ｦ∵凾縺ｮ閾ｪ蜍・Fix 竊・Pass・・
 
-### 手順（エディタ）
-1. 新規シーンで 4x4 グリッドに全16種を配置し、品質 High/Medium/Low を順に生成。
-2. マテリアル、コライダー、インタラクションを付与した状態で検証を実行。
-3. メッシュ/コライダー/衝突初期状態（地面との離隔）を自動チェック。
-4. 失敗時は `PrimitiveErrorRecovery` の再試行/フォールバック生成を確認。
-5. `ComprehensivePrimitiveTest` を一括実行し、レポートを保存。
+### 謇矩・ｼ医お繝・ぅ繧ｿ・・
+1. 譁ｰ隕上す繝ｼ繝ｳ縺ｧ 4x4 繧ｰ繝ｪ繝・ラ縺ｫ蜈ｨ16遞ｮ繧帝・鄂ｮ縺励∝刀雉ｪ High/Medium/Low 繧帝・↓逕滓・縲・
+2. 繝槭ユ繝ｪ繧｢繝ｫ縲√さ繝ｩ繧､繝繝ｼ縲√う繝ｳ繧ｿ繝ｩ繧ｯ繧ｷ繝ｧ繝ｳ繧剃ｻ倅ｸ弱＠縺溽憾諷九〒讀懆ｨｼ繧貞ｮ溯｡後・
+3. 繝｡繝・す繝･/繧ｳ繝ｩ繧､繝繝ｼ/陦晉ｪ∝・譛溽憾諷具ｼ亥慍髱｢縺ｨ縺ｮ髮｢髫費ｼ峨ｒ閾ｪ蜍輔メ繧ｧ繝・け縲・
+4. 螟ｱ謨玲凾縺ｯ `PrimitiveErrorRecovery` 縺ｮ蜀崎ｩｦ陦・繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ逕滓・繧堤｢ｺ隱阪・
+5. `ComprehensivePrimitiveTest` 繧剃ｸ諡ｬ螳溯｡後＠縲√Ξ繝昴・繝医ｒ菫晏ｭ倥・
 
-### プロファイリング（Unity Profiler）
-- 代表プリミティブ（Cube/Sphere/Cylinder/Torus）× 品質別で計測。
-- 指標: 生成 CPU(ms) / GC(KB)、サブディビジョン/ディテール/デフォーム各段階コスト、コライダー設定直後の Peak Mem。
-- 失敗→リカバリ発動ケースの追加コストも記録。
+### 繝励Ο繝輔ぃ繧､繝ｪ繝ｳ繧ｰ・・nity Profiler・・
+- 莉｣陦ｨ繝励Μ繝溘ユ繧｣繝厄ｼ・ube/Sphere/Cylinder/Torus・嘉・蜩∬ｳｪ蛻･縺ｧ險域ｸｬ縲・
+- 謖・ｨ・ 逕滓・ CPU(ms) / GC(KB)縲√し繝悶ョ繧｣繝薙ず繝ｧ繝ｳ/繝・ぅ繝・・繝ｫ/繝・ヵ繧ｩ繝ｼ繝蜷・ｮｵ髫弱さ繧ｹ繝医√さ繝ｩ繧､繝繝ｼ險ｭ螳夂峩蠕後・ Peak Mem縲・
+- 螟ｱ謨冷・繝ｪ繧ｫ繝舌Μ逋ｺ蜍輔こ繝ｼ繧ｹ縺ｮ霑ｽ蜉繧ｳ繧ｹ繝医ｂ險倬鹸縲・
 
-### 合否基準
-- 例外/エラー 0 件
-- Mesh バリデーション全項目 True、`MeshCollider.sharedMesh` 設定済み（フォールバック含む）
-- `ComprehensivePrimitiveTest` で全16種 Pass（必要に応じて自動 Fix 後に Pass）
+### 蜷亥凄蝓ｺ貅・
+- 萓句､・繧ｨ繝ｩ繝ｼ 0 莉ｶ
+- Mesh 繝舌Μ繝・・繧ｷ繝ｧ繝ｳ蜈ｨ鬆・岼 True縲～MeshCollider.sharedMesh` 險ｭ螳壽ｸ医∩・医ヵ繧ｩ繝ｼ繝ｫ繝舌ャ繧ｯ蜷ｫ繧・・
+- `ComprehensivePrimitiveTest` 縺ｧ蜈ｨ16遞ｮ Pass・亥ｿ・ｦ√↓蠢懊§縺ｦ閾ｪ蜍・Fix 蠕後↓ Pass・・
 
-### 反映ドキュメント
-- `FUNCTION_TEST_STATUS.md`: 手順・記録テンプレート・合否基準を追記済み
-- 本ログ: テスト計画とプロファイリング観点を記録
+### 蜿肴丐繝峨く繝･繝｡繝ｳ繝・
+- `FUNCTION_TEST_STATUS.md`: 謇矩・・險倬鹸繝・Φ繝励Ξ繝ｼ繝医・蜷亥凄蝓ｺ貅悶ｒ霑ｽ險俶ｸ医∩
+- 譛ｬ繝ｭ繧ｰ: 繝・せ繝郁ｨ育判縺ｨ繝励Ο繝輔ぃ繧､繝ｪ繝ｳ繧ｰ隕ｳ轤ｹ繧定ｨ倬鹸
 
-### 次アクション
-- 実測値の取得と `FUNCTION_TEST_STATUS.md` の表埋め
-- 生成コストのボトルネック特定（特に高品質 Sphere/Torus）
-- リカバリ経路の最適化（再試行回数・フォールバック品質）
+### 谺｡繧｢繧ｯ繧ｷ繝ｧ繝ｳ
+- 螳滓ｸｬ蛟､縺ｮ蜿門ｾ励→ `FUNCTION_TEST_STATUS.md` 縺ｮ陦ｨ蝓九ａ
+- 逕滓・繧ｳ繧ｹ繝医・繝懊ヨ繝ｫ繝阪ャ繧ｯ迚ｹ螳夲ｼ育音縺ｫ鬮伜刀雉ｪ Sphere/Torus・・
+- 繝ｪ繧ｫ繝舌Μ邨瑚ｷｯ縺ｮ譛驕ｩ蛹厄ｼ亥・隧ｦ陦悟屓謨ｰ繝ｻ繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ蜩∬ｳｪ・・
 
-## 2025-08-18: セッション再開とドキュメント同期（大量データ読込エラー後）
+## 2025-08-18: 繧ｻ繝・す繝ｧ繝ｳ蜀埼幕縺ｨ繝峨く繝･繝｡繝ｳ繝亥酔譛滂ｼ亥､ｧ驥上ョ繝ｼ繧ｿ隱ｭ霎ｼ繧ｨ繝ｩ繝ｼ蠕鯉ｼ・
 
-### 概要
-大量データ読込に起因するエラー発生後の作業再開。開発の連続性を担保するため、主要ドキュメント（`DEV_LOG.md`、`FUNCTION_TEST_STATUS.md`、`DEV_PLAN.md`、`TASK_PRIORITIZATION.md`、`README.md`）の状態を確認し、表現トーンとプレースホルダの残存状況を監査。
+### 讎りｦ・
+螟ｧ驥上ョ繝ｼ繧ｿ隱ｭ霎ｼ縺ｫ襍ｷ蝗縺吶ｋ繧ｨ繝ｩ繝ｼ逋ｺ逕溷ｾ後・菴懈･ｭ蜀埼幕縲る幕逋ｺ縺ｮ騾｣邯壽ｧ繧呈球菫昴☆繧九◆繧√∽ｸｻ隕√ラ繧ｭ繝･繝｡繝ｳ繝茨ｼ・DEV_LOG.md`縲～FUNCTION_TEST_STATUS.md`縲～DEV_PLAN.md`縲～TASK_PRIORITIZATION.md`縲～README.md`・峨・迥ｶ諷九ｒ遒ｺ隱阪＠縲∬｡ｨ迴ｾ繝医・繝ｳ縺ｨ繝励Ξ繝ｼ繧ｹ繝帙Ν繝縺ｮ谿句ｭ倡憾豕√ｒ逶｣譟ｻ縲・
 
-### 実施事項
-- 重要ドキュメントの最新状況レビューと差分確認
-- 問題パターン（`2024-XX-XX` / `2024-12-XX` / `重大修正` / `仕様外実装`）のgrepベースライン取得
-- `FUNCTION_TEST_STATUS.md` 内のベースライン数値を最新実測に更新
+### 螳滓命莠矩・
+- 驥崎ｦ√ラ繧ｭ繝･繝｡繝ｳ繝医・譛譁ｰ迥ｶ豕√Ξ繝薙Η繝ｼ縺ｨ蟾ｮ蛻・｢ｺ隱・
+- 蝠城｡後ヱ繧ｿ繝ｼ繝ｳ・・2024-XX-XX` / `2024-12-XX` / `驥榊､ｧ菫ｮ豁｣` / `莉墓ｧ伜､門ｮ溯｣・・峨・grep繝吶・繧ｹ繝ｩ繧､繝ｳ蜿門ｾ・
+- `FUNCTION_TEST_STATUS.md` 蜀・・繝吶・繧ｹ繝ｩ繧､繝ｳ謨ｰ蛟､繧呈怙譁ｰ螳滓ｸｬ縺ｫ譖ｴ譁ｰ
 
-### 確認結果（抜粋）
-- `Documentation/Logs/DEV_LOG.md` と本ログの重複・トーン差は引き続き統合対象
-- ベースライン値は `FUNCTION_TEST_STATUS.md` に反映（後述ファイル参照）
+### 遒ｺ隱咲ｵ先棡・域栢邊具ｼ・
+- `Documentation/Logs/DEV_LOG.md` 縺ｨ譛ｬ繝ｭ繧ｰ縺ｮ驥崎､・・繝医・繝ｳ蟾ｮ縺ｯ蠑輔″邯壹″邨ｱ蜷亥ｯｾ雎｡
+- 繝吶・繧ｹ繝ｩ繧､繝ｳ蛟､縺ｯ `FUNCTION_TEST_STATUS.md` 縺ｫ蜿肴丐・亥ｾ瑚ｿｰ繝輔ぃ繧､繝ｫ蜿ら・・・
 
-### 次アクション
-- `Documentation/Logs/DEV_LOG.md` を本ファイルへ統合・要約（フェーズ2）
-- 残存プレースホルダの順次除去と表現トーン統一の継続
+### 谺｡繧｢繧ｯ繧ｷ繝ｧ繝ｳ
+- `Documentation/Logs/DEV_LOG.md` 繧呈悽繝輔ぃ繧､繝ｫ縺ｸ邨ｱ蜷医・隕∫ｴ・ｼ医ヵ繧ｧ繝ｼ繧ｺ2・・
+- 谿句ｭ倥・繝ｬ繝ｼ繧ｹ繝帙Ν繝縺ｮ鬆・ｬ｡髯､蜴ｻ縺ｨ陦ｨ迴ｾ繝医・繝ｳ邨ｱ荳縺ｮ邯咏ｶ・
 
-## 2025-08-18: 大量読み込みエラートリアージ進捗（根拠の明確化・計測計画）
+## 2025-08-18: 螟ｧ驥剰ｪｭ縺ｿ霎ｼ縺ｿ繧ｨ繝ｩ繝ｼ繝医Μ繧｢繝ｼ繧ｸ騾ｲ謐暦ｼ域ｹ諡縺ｮ譏守｢ｺ蛹悶・險域ｸｬ險育判・・
 
-### 概要
-大量読み込みに起因する停止/フリーズのトリアージを前進。重負荷APIの実在箇所をコード検索で特定し、`Documentation/QA/ERROR_TRIAGE.md` に具体的ファイル/行を追記。計測観点と段階的緩和の検証計画を確定。
+### 讎りｦ・
+螟ｧ驥剰ｪｭ縺ｿ霎ｼ縺ｿ縺ｫ襍ｷ蝗縺吶ｋ蛛懈ｭ｢/繝輔Μ繝ｼ繧ｺ縺ｮ繝医Μ繧｢繝ｼ繧ｸ繧貞燕騾ｲ縲る㍾雋闕ｷAPI縺ｮ螳溷惠邂・園繧偵さ繝ｼ繝画､懃ｴ｢縺ｧ迚ｹ螳壹＠縲～docs/04_reports/ERROR_TRIAGE.md` 縺ｫ蜈ｷ菴鍋噪繝輔ぃ繧､繝ｫ/陦後ｒ霑ｽ險倥りｨ域ｸｬ隕ｳ轤ｹ縺ｨ谿ｵ髫守噪邱ｩ蜥後・讀懆ｨｼ險育判繧堤｢ｺ螳壹・
 
-### 主要発見（根拠となる該当箇所）
-- 構造物メッシュ結合（ピークメモリ/CPUスパイク要因）
+### 荳ｻ隕∫匱隕具ｼ域ｹ諡縺ｨ縺ｪ繧玖ｩｲ蠖鍋ｮ・園・・
+- 讒矩迚ｩ繝｡繝・す繝･邨仙粋・医ヴ繝ｼ繧ｯ繝｡繝｢繝ｪ/CPU繧ｹ繝代う繧ｯ隕∝屏・・
   - `Assets/Scripts/Generation/Map/ArchitecturalGenerator.cs`
-    - `CombineMeshesForCollider(parent, meshCollider);`（付近行: 1016）
-    - `combinedMesh.CombineMeshes(combines);` → `collider.sharedMesh = combinedMesh;`（付近行: 1034-1036）
+    - `CombineMeshesForCollider(parent, meshCollider);`・井ｻ倩ｿ題｡・ 1016・・
+    - `combinedMesh.CombineMeshes(combines);` 竊・`collider.sharedMesh = combinedMesh;`・井ｻ倩ｿ題｡・ 1034-1036・・
   - `Assets/Scripts/Generation/Map/CompoundArchitecturalGenerator.cs`
-    - `combinedMesh.CombineMeshes(combines);`（付近行: 1218-1219）
-- テレイン一括適用（高さ/アルファマップ適用のスパイク要因）
+    - `combinedMesh.CombineMeshes(combines);`・井ｻ倩ｿ題｡・ 1218-1219・・
+- 繝・Ξ繧､繝ｳ荳諡ｬ驕ｩ逕ｨ・磯ｫ倥＆/繧｢繝ｫ繝輔ぃ繝槭ャ繝鈴←逕ｨ縺ｮ繧ｹ繝代う繧ｯ隕∝屏・・
   - `Assets/MapGenerator/Scripts/TerrainGenerator.cs`
-    - `terrainData.SetHeights(0, 0, heights);`（付近行: 105）
+    - `terrainData.SetHeights(0, 0, heights);`・井ｻ倩ｿ題｡・ 105・・
   - `Assets/MapGenerator/Scripts/Editor/HeightmapTerrainGeneratorWindow.cs`
-    - `terrainData.SetHeights(0, 0, combinedHeightmap);`（付近行: 228-229）
-    - `terrainData.SetAlphamaps(0, 0, alphaMap);`（付近行: 393-394）
+    - `terrainData.SetHeights(0, 0, combinedHeightmap);`・井ｻ倩ｿ題｡・ 228-229・・
+    - `terrainData.SetAlphamaps(0, 0, alphaMap);`・井ｻ倩ｿ題｡・ 393-394・・
   - `Assets/MapGenerator/Scripts/TextureGenerator.cs`
-    - `terrainData.SetAlphamaps(0, 0, splatmapData);`（付近行: 88-89）
-- 大量 `Instantiate` の代表箇所（同時生成数の上限検討対象）
-  - `Assets/Scripts/VastcoreGameManager.cs`（付近行: 208-226）
-  - `Assets/Scripts/Player/EnhancedTranslocationSystem.cs`（付近行: 131, 369-370）
-  - `Assets/Scripts/Generation/Map/PrimitiveTerrainObjectPool.cs`（付近行: 151）
+    - `terrainData.SetAlphamaps(0, 0, splatmapData);`・井ｻ倩ｿ題｡・ 88-89・・
+- 螟ｧ驥・`Instantiate` 縺ｮ莉｣陦ｨ邂・園・亥酔譎ら函謌先焚縺ｮ荳企剞讀懆ｨ主ｯｾ雎｡・・
+  - `Assets/Scripts/VastcoreGameManager.cs`・井ｻ倩ｿ題｡・ 208-226・・
+  - `Assets/Scripts/Player/EnhancedTranslocationSystem.cs`・井ｻ倩ｿ題｡・ 131, 369-370・・
+  - `Assets/Scripts/Generation/Map/PrimitiveTerrainObjectPool.cs`・井ｻ倩ｿ題｡・ 151・・
 
-### ドキュメント更新
-- `Documentation/QA/ERROR_TRIAGE.md`: 影響コード/箇所の具体化、計測手順の詳細化、進行状況の更新。
-- `FUNCTION_TEST_STATUS.md`: トリアージ用計測セクション追記（この後更新）。
+### 繝峨く繝･繝｡繝ｳ繝域峩譁ｰ
+- `docs/04_reports/ERROR_TRIAGE.md`: 蠖ｱ髻ｿ繧ｳ繝ｼ繝・邂・園縺ｮ蜈ｷ菴灘喧縲∬ｨ域ｸｬ謇矩・・隧ｳ邏ｰ蛹悶・ｲ陦檎憾豕√・譖ｴ譁ｰ縲・
+- `FUNCTION_TEST_STATUS.md`: 繝医Μ繧｢繝ｼ繧ｸ逕ｨ險域ｸｬ繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ霑ｽ險假ｼ医％縺ｮ蠕梧峩譁ｰ・峨・
 
-### 計測・検証計画（要点）
-1. `SetHeights` / `SetAlphamaps` 実行フレームの CPU/GPU/GC Alloc を記録。
-2. `combinedMesh.CombineMeshes` 直後のメモリピークとフリーズ有無を記録。
-3. フレーム分散（コルーチン/ジョブ化/遅延コライダー生成）で比較計測。
-4. Addressables/非同期ロード版の比較実行。
-5. アセット最適化（Readable無効/圧縮/解像度見直し）で再計測。
+### 險域ｸｬ繝ｻ讀懆ｨｼ險育判・郁ｦ∫せ・・
+1. `SetHeights` / `SetAlphamaps` 螳溯｡後ヵ繝ｬ繝ｼ繝縺ｮ CPU/GPU/GC Alloc 繧定ｨ倬鹸縲・
+2. `combinedMesh.CombineMeshes` 逶ｴ蠕後・繝｡繝｢繝ｪ繝斐・繧ｯ縺ｨ繝輔Μ繝ｼ繧ｺ譛臥┌繧定ｨ倬鹸縲・
+3. 繝輔Ξ繝ｼ繝蛻・淵・医さ繝ｫ繝ｼ繝√Φ/繧ｸ繝ｧ繝門喧/驕・ｻｶ繧ｳ繝ｩ繧､繝繝ｼ逕滓・・峨〒豈碑ｼ・ｨ域ｸｬ縲・
+4. Addressables/髱槫酔譛溘Ο繝ｼ繝臥沿縺ｮ豈碑ｼ・ｮ溯｡後・
+5. 繧｢繧ｻ繝・ヨ譛驕ｩ蛹厄ｼ・eadable辟｡蜉ｹ/蝨ｧ邵ｮ/隗｣蜒丞ｺｦ隕狗峩縺暦ｼ峨〒蜀崎ｨ域ｸｬ縲・
 
-### テスト手順（本日の実施範囲）
-- リポジトリ検索で該当API呼び出し箇所を特定済み（grep）。
-- ドキュメント更新の差分確認済み（本ファイル/`ERROR_TRIAGE.md`）。
-- Unityランタイム計測は次回実施（Profiler手順整備完了）。
+### 繝・せ繝域焔鬆・ｼ域悽譌･縺ｮ螳滓命遽・峇・・
+- 繝ｪ繝昴ず繝医Μ讀懃ｴ｢縺ｧ隧ｲ蠖鄭PI蜻ｼ縺ｳ蜃ｺ縺礼ｮ・園繧堤音螳壽ｸ医∩・・rep・峨・
+- 繝峨く繝･繝｡繝ｳ繝域峩譁ｰ縺ｮ蟾ｮ蛻・｢ｺ隱肴ｸ医∩・域悽繝輔ぃ繧､繝ｫ/`ERROR_TRIAGE.md`・峨・
+- Unity繝ｩ繝ｳ繧ｿ繧､繝險域ｸｬ縺ｯ谺｡蝗槫ｮ滓命・・rofiler謇矩・紛蛯吝ｮ御ｺ・ｼ峨・
 
-### 次アクション
-1. テレイン適用処理のフレーム分散プロトタイピング（`SetHeights`/`SetAlphamaps` 分割適用の検討）。
-2. 構造物結合の段階処理化とコライダー後回し適用の試験実装。
-3. 計測結果を `FUNCTION_TEST_STATUS.md` に反映。
+### 谺｡繧｢繧ｯ繧ｷ繝ｧ繝ｳ
+1. 繝・Ξ繧､繝ｳ驕ｩ逕ｨ蜃ｦ逅・・繝輔Ξ繝ｼ繝蛻・淵繝励Ο繝医ち繧､繝斐Φ繧ｰ・・SetHeights`/`SetAlphamaps` 蛻・牡驕ｩ逕ｨ縺ｮ讀懆ｨ趣ｼ峨・
+2. 讒矩迚ｩ邨仙粋縺ｮ谿ｵ髫主・逅・喧縺ｨ繧ｳ繝ｩ繧､繝繝ｼ蠕悟屓縺鈴←逕ｨ縺ｮ隧ｦ鬨灘ｮ溯｣・・
+3. 險域ｸｬ邨先棡繧・`FUNCTION_TEST_STATUS.md` 縺ｫ蜿肴丐縲・
 
-## 2025-08-18: CompoundArchitecturalGenerator ランタイム停止の回避（未登録タグの安全化）
+## 2025-08-18: CompoundArchitecturalGenerator 繝ｩ繝ｳ繧ｿ繧､繝蛛懈ｭ｢縺ｮ蝗樣∩・域悴逋ｻ骭ｲ繧ｿ繧ｰ縺ｮ螳牙・蛹厄ｼ・
 
-### 概要
-複合建築生成時、`SetupCompoundInteractions()` で親 `GameObject` に `parent.tag = "CompoundArchitecture"` を設定する際、Unity の Tag Manager にタグが未登録だと例外が発生して実行が停止する問題を修正。
+### 讎りｦ・
+隍・粋蟒ｺ遽臥函謌先凾縲～SetupCompoundInteractions()` 縺ｧ隕ｪ `GameObject` 縺ｫ `parent.tag = "CompoundArchitecture"` 繧定ｨｭ螳壹☆繧矩圀縲ゞnity 縺ｮ Tag Manager 縺ｫ繧ｿ繧ｰ縺梧悴逋ｻ骭ｲ縺縺ｨ萓句､悶′逋ｺ逕溘＠縺ｦ螳溯｡後′蛛懈ｭ｢縺吶ｋ蝠城｡後ｒ菫ｮ豁｣縲・
 
-### 原因
-- Unity の仕様により、未登録タグを `GameObject.tag` に代入すると `UnityException` が発生し、生成処理全体が停止していた。
+### 蜴溷屏
+- Unity 縺ｮ莉墓ｧ倥↓繧医ｊ縲∵悴逋ｻ骭ｲ繧ｿ繧ｰ繧・`GameObject.tag` 縺ｫ莉｣蜈･縺吶ｋ縺ｨ `UnityException` 縺檎匱逕溘＠縲∫函謌仙・逅・・菴薙′蛛懈ｭ｢縺励※縺・◆縲・
 
-### 対処
-- `Assets/Scripts/Generation/Map/CompoundArchitecturalGenerator.cs` の `SetupCompoundInteractions()` にて、タグ代入を try/catch で保護。
-- タグ未登録時は `Debug.LogWarning` を出し、生成処理は継続するフェイルセーフに変更。
+### 蟇ｾ蜃ｦ
+- `Assets/Scripts/Generation/Map/CompoundArchitecturalGenerator.cs` 縺ｮ `SetupCompoundInteractions()` 縺ｫ縺ｦ縲√ち繧ｰ莉｣蜈･繧・try/catch 縺ｧ菫晁ｭｷ縲・
+- 繧ｿ繧ｰ譛ｪ逋ｻ骭ｲ譎ゅ・ `Debug.LogWarning` 繧貞・縺励∫函謌仙・逅・・邯咏ｶ壹☆繧九ヵ繧ｧ繧､繝ｫ繧ｻ繝ｼ繝輔↓螟画峩縲・
 
-### 変更ファイル
+### 螟画峩繝輔ぃ繧､繝ｫ
 - `Assets/Scripts/Generation/Map/CompoundArchitecturalGenerator.cs`
-  - 対象メソッド: `SetupCompoundInteractions(Transform parent, IEnumerable<GameObject> parts)`
-  - 変更内容: `parent.tag = "CompoundArchitecture";` を try/catch でラップし、例外時は警告ログのみ。
+  - 蟇ｾ雎｡繝｡繧ｽ繝・ラ: `SetupCompoundInteractions(Transform parent, IEnumerable<GameObject> parts)`
+  - 螟画峩蜀・ｮｹ: `parent.tag = "CompoundArchitecture";` 繧・try/catch 縺ｧ繝ｩ繝・・縺励∽ｾ句､匁凾縺ｯ隴ｦ蜻翫Ο繧ｰ縺ｮ縺ｿ縲・
 
-### エディタでのテスト手順
-1. プロジェクトを開き、自動コンパイル完了を待機。
-2. Console を Clear し、エラーが無いことを確認。
-3. （任意）`Edit > Project Settings > Tags and Layers` で `Tags` に `CompoundArchitecture` を追加。
-4. 代表構造（例: `MultipleBridge`, `CathedralComplex`, `FortressWall`）を `GenerateCompoundArchitecturalStructure()` 経由で生成。
-5. ヒエラルキー上に生成物が出現し、装飾/接続要素/コライダーが付与されることを確認。
-6. タグが登録済みなら `CompoundArchitecture` が設定されることを確認。未登録なら Warning が出るが生成継続することを確認。
+### 繧ｨ繝・ぅ繧ｿ縺ｧ縺ｮ繝・せ繝域焔鬆・
+1. 繝励Ο繧ｸ繧ｧ繧ｯ繝医ｒ髢九″縲∬・蜍輔さ繝ｳ繝代う繝ｫ螳御ｺ・ｒ蠕・ｩ溘・
+2. Console 繧・Clear 縺励√お繝ｩ繝ｼ縺檎┌縺・％縺ｨ繧堤｢ｺ隱阪・
+3. ・井ｻｻ諢擾ｼ荏Edit > Project Settings > Tags and Layers` 縺ｧ `Tags` 縺ｫ `CompoundArchitecture` 繧定ｿｽ蜉縲・
+4. 莉｣陦ｨ讒矩・井ｾ・ `MultipleBridge`, `CathedralComplex`, `FortressWall`・峨ｒ `GenerateCompoundArchitecturalStructure()` 邨檎罰縺ｧ逕滓・縲・
+5. 繝偵お繝ｩ繝ｫ繧ｭ繝ｼ荳翫↓逕滓・迚ｩ縺悟・迴ｾ縺励∬｣・｣ｾ/謗･邯夊ｦ∫ｴ/繧ｳ繝ｩ繧､繝繝ｼ縺御ｻ倅ｸ弱＆繧後ｋ縺薙→繧堤｢ｺ隱阪・
+6. 繧ｿ繧ｰ縺檎匳骭ｲ貂医∩縺ｪ繧・`CompoundArchitecture` 縺瑚ｨｭ螳壹＆繧後ｋ縺薙→繧堤｢ｺ隱阪よ悴逋ｻ骭ｲ縺ｪ繧・Warning 縺悟・繧九′逕滓・邯咏ｶ壹☆繧九％縺ｨ繧堤｢ｺ隱阪・
 
-### 結果
-- ランタイムの例外停止が発生せず、生成が継続することを確認。
+### 邨先棡
+- 繝ｩ繝ｳ繧ｿ繧､繝縺ｮ萓句､門●豁｢縺檎匱逕溘○縺壹∫函謌舌′邯咏ｶ壹☆繧九％縺ｨ繧堤｢ｺ隱阪・
 
-### 次アクション
-- 本番ビルドでは `Tags` に `CompoundArchitecture` を登録し、警告ログが出ない状態をデフォルトとする。
-- 生成フローの他のクリティカル箇所（`null` 参照、メッシュ結合、マテリアル参照）にも同様のフェイルセーフを段階的に導入。
+### 谺｡繧｢繧ｯ繧ｷ繝ｧ繝ｳ
+- 譛ｬ逡ｪ繝薙Ν繝峨〒縺ｯ `Tags` 縺ｫ `CompoundArchitecture` 繧堤匳骭ｲ縺励∬ｭｦ蜻翫Ο繧ｰ縺悟・縺ｪ縺・憾諷九ｒ繝・ヵ繧ｩ繝ｫ繝医→縺吶ｋ縲・
+- 逕滓・繝輔Ο繝ｼ縺ｮ莉悶・繧ｯ繝ｪ繝・ぅ繧ｫ繝ｫ邂・園・・null` 蜿ら・縲√Γ繝・す繝･邨仙粋縲√・繝・Μ繧｢繝ｫ蜿ら・・峨↓繧ょ酔讒倥・繝輔ぉ繧､繝ｫ繧ｻ繝ｼ繝輔ｒ谿ｵ髫守噪縺ｫ蟆主・縲・
 
-## 2025-08-17: CompoundArchitecturalGenerator コンパイルエラー修正（括弧不整合）
+## 2025-08-17: CompoundArchitecturalGenerator 繧ｳ繝ｳ繝代う繝ｫ繧ｨ繝ｩ繝ｼ菫ｮ豁｣・域峡蠑ｧ荳肴紛蜷茨ｼ・
 
-### 概要
-`Assets/Scripts/Generation/Map/CompoundArchitecturalGenerator.cs` において、誤った閉じ括弧によりクラス/名前空間が途中で閉じられ、以降の補助メソッド群がクラス外に出てしまうコンパイルエラーを修正。
+### 讎りｦ・
+`Assets/Scripts/Generation/Map/CompoundArchitecturalGenerator.cs` 縺ｫ縺翫＞縺ｦ縲∬ｪ､縺｣縺滄哩縺俶峡蠑ｧ縺ｫ繧医ｊ繧ｯ繝ｩ繧ｹ/蜷榊燕遨ｺ髢薙′騾比ｸｭ縺ｧ髢峨§繧峨ｌ縲∽ｻ･髯阪・陬懷勧繝｡繧ｽ繝・ラ鄒､縺後け繝ｩ繧ｹ螟悶↓蜃ｺ縺ｦ縺励∪縺・さ繝ｳ繝代う繝ｫ繧ｨ繝ｩ繝ｼ繧剃ｿｮ豁｣縲・
 
-### 原因
-- `GenerateTriumphalArch` の `#endregion` の直後に、不要な `}` があり、`CompoundArchitecturalGenerator` クラスおよび `Vastcore.Generation` 名前空間を早期に終了していた。
+### 蜴溷屏
+- `GenerateTriumphalArch` 縺ｮ `#endregion` 縺ｮ逶ｴ蠕後↓縲∽ｸ崎ｦ√↑ `}` 縺後≠繧翫～CompoundArchitecturalGenerator` 繧ｯ繝ｩ繧ｹ縺翫ｈ縺ｳ `Vastcore.Generation` 蜷榊燕遨ｺ髢薙ｒ譌ｩ譛溘↓邨ゆｺ・＠縺ｦ縺・◆縲・
 
-### 対処
-- 余分な閉じ括弧を削除。
-- 以降のリージョン（「補助構造生成」「接続・統合システム」「ユーティリティ関数」）をすべて `CompoundArchitecturalGenerator` クラス内に戻して再配置。
+### 蟇ｾ蜃ｦ
+- 菴吝・縺ｪ髢峨§諡ｬ蠑ｧ繧貞炎髯､縲・
+- 莉･髯阪・繝ｪ繝ｼ繧ｸ繝ｧ繝ｳ・医瑚｣懷勧讒矩逕滓・縲阪梧磁邯壹・邨ｱ蜷医す繧ｹ繝・Β縲阪後Θ繝ｼ繝・ぅ繝ｪ繝・ぅ髢｢謨ｰ縲搾ｼ峨ｒ縺吶∋縺ｦ `CompoundArchitecturalGenerator` 繧ｯ繝ｩ繧ｹ蜀・↓謌ｻ縺励※蜀埼・鄂ｮ縲・
 
-### 影響
-- C# コンパイルエラーの解消。
-- すべての複合建築生成メソッドとユーティリティが正しくクラススコープ内に収まり、参照可能に。
+### 蠖ｱ髻ｿ
+- C# 繧ｳ繝ｳ繝代う繝ｫ繧ｨ繝ｩ繝ｼ縺ｮ隗｣豸医・
+- 縺吶∋縺ｦ縺ｮ隍・粋蟒ｺ遽臥函謌舌Γ繧ｽ繝・ラ縺ｨ繝ｦ繝ｼ繝・ぅ繝ｪ繝・ぅ縺梧ｭ｣縺励￥繧ｯ繝ｩ繧ｹ繧ｹ繧ｳ繝ｼ繝怜・縺ｫ蜿弱∪繧翫∝盾辣ｧ蜿ｯ閭ｽ縺ｫ縲・
 
-### テスト手順（Unity エディタ）
-1. プロジェクトを開くと自動コンパイルが走ることを確認。
-2. スクリプトエラーが Console に出ていないことを確認（Clear → エラーなし）。
-3. 任意のエディタ拡張/呼び出しコードから `CompoundArchitecturalGenerator.GenerateCompoundArchitecturalStructure()` を下記パラメータ例で実行：
+### 繝・せ繝域焔鬆・ｼ・nity 繧ｨ繝・ぅ繧ｿ・・
+1. 繝励Ο繧ｸ繧ｧ繧ｯ繝医ｒ髢九￥縺ｨ閾ｪ蜍輔さ繝ｳ繝代う繝ｫ縺瑚ｵｰ繧九％縺ｨ繧堤｢ｺ隱阪・
+2. 繧ｹ繧ｯ繝ｪ繝励ヨ繧ｨ繝ｩ繝ｼ縺・Console 縺ｫ蜃ｺ縺ｦ縺・↑縺・％縺ｨ繧堤｢ｺ隱搾ｼ・lear 竊・繧ｨ繝ｩ繝ｼ縺ｪ縺暦ｼ峨・
+3. 莉ｻ諢上・繧ｨ繝・ぅ繧ｿ諡｡蠑ｵ/蜻ｼ縺ｳ蜃ｺ縺励さ繝ｼ繝峨°繧・`CompoundArchitecturalGenerator.GenerateCompoundArchitecturalStructure()` 繧剃ｸ玖ｨ倥ヱ繝ｩ繝｡繝ｼ繧ｿ萓九〒螳溯｡鯉ｼ・
    - `compoundType`: `MultipleBridge`, `AqueductSystem`, `CathedralComplex`, `FortressWall`, `Amphitheater`, `Basilica`, `Cloister`, `TriumphalArch`
-   - `overallSize`: 例 `new Vector3(400, 120, 60)`
-   - `structureCount`: タイプのデフォルト値
-4. 生成結果がヒエラルキー上に作成され、要素（接続要素・統一装飾・複合コライダー）が付与されていることを確認。
+   - `overallSize`: 萓・`new Vector3(400, 120, 60)`
+   - `structureCount`: 繧ｿ繧､繝励・繝・ヵ繧ｩ繝ｫ繝亥､
+4. 逕滓・邨先棡縺後ヲ繧ｨ繝ｩ繝ｫ繧ｭ繝ｼ荳翫↓菴懈・縺輔ｌ縲∬ｦ∫ｴ・域磁邯夊ｦ∫ｴ繝ｻ邨ｱ荳陬・｣ｾ繝ｻ隍・粋繧ｳ繝ｩ繧､繝繝ｼ・峨′莉倅ｸ弱＆繧後※縺・ｋ縺薙→繧堤｢ｺ隱阪・
 
-### テスト結果
-- エディタ上でコンパイルエラー解消を確認。
-- 代表タイプの生成確認（橋面/水路/塔/座席/庭園/装飾/コライダー/タグ設定が生成される）。
+### 繝・せ繝育ｵ先棡
+- 繧ｨ繝・ぅ繧ｿ荳翫〒繧ｳ繝ｳ繝代う繝ｫ繧ｨ繝ｩ繝ｼ隗｣豸医ｒ遒ｺ隱阪・
+- 莉｣陦ｨ繧ｿ繧､繝励・逕滓・遒ｺ隱搾ｼ域ｩ矩擇/豌ｴ霍ｯ/蝪・蠎ｧ蟶ｭ/蠎ｭ蝨・陬・｣ｾ/繧ｳ繝ｩ繧､繝繝ｼ/繧ｿ繧ｰ險ｭ螳壹′逕滓・縺輔ｌ繧具ｼ峨・
 
-### 次アクション
-- 実運用シーンで各タイプの生成パラメータ（サイズ・マテリアル）をチューニング。
-- 生成物の物理・インタラクション挙動（`PrimitiveTerrainObject`）の最終確認。
+### 谺｡繧｢繧ｯ繧ｷ繝ｧ繝ｳ
+- 螳滄°逕ｨ繧ｷ繝ｼ繝ｳ縺ｧ蜷・ち繧､繝励・逕滓・繝代Λ繝｡繝ｼ繧ｿ・医し繧､繧ｺ繝ｻ繝槭ユ繝ｪ繧｢繝ｫ・峨ｒ繝√Η繝ｼ繝九Φ繧ｰ縲・
+- 逕滓・迚ｩ縺ｮ迚ｩ逅・・繧､繝ｳ繧ｿ繝ｩ繧ｯ繧ｷ繝ｧ繝ｳ謖吝虚・・PrimitiveTerrainObject`・峨・譛邨ら｢ｺ隱阪・
 
-## 2025-08-18: Terrain System 監査・実装強化（Texture/Detail/Tree）
+## 2025-08-18: Terrain System 逶｣譟ｻ繝ｻ螳溯｣・ｼｷ蛹厄ｼ・exture/Detail/Tree・・
 
-### 概要
-`Vastcore` の Terrain 生成システムについて、KIROタスクリストに基づく監査を実施し、以下を実装/改善。
+### 讎りｦ・
+`Vastcore` 縺ｮ Terrain 逕滓・繧ｷ繧ｹ繝・Β縺ｫ縺､縺・※縲゜IRO繧ｿ繧ｹ繧ｯ繝ｪ繧ｹ繝医↓蝓ｺ縺･縺冗屮譟ｻ繧貞ｮ滓命縺励∽ｻ･荳九ｒ螳溯｣・謾ｹ蝟・・
 
-### 変更点
-- TextureGenerator: 傾斜/標高ベースのブレンドに加え、`m_TextureBlendFactors` によるレイヤー別係数と `m_TextureTiling` による `TerrainLayer.tileSize` 上書き対応。安全な正規化とゼロ対策を実装。
-- DetailGenerator: `TerrainData.SetDetailResolution()` を用いて `DetailResolution`/`PerPatch` を反映。`GetInterpolatedHeight`/`GetSteepness` に基づく密度制御（中高度かつ低傾斜を優先）を追加し、`DetailDensity` で全体密度をスケール。
-- TreeGenerator: グリッド＋ジッターのサンプリングで分布の均一性を確保。標高(0.15..0.65)と傾斜(<30°)の制約で配置し、確率重み付けで自然さを向上。上限インスタンス数を設定。
-- TerrainGeneratorEditor: Texture/Detail/Tree 設定を SerializedProperty で foldout 表示し、UI露出の齟齬を解消。
-- 監査ドキュメント: `.kiro/specs/vastcore-terrain-system/TERRAIN_TASK_AUDIT.md` を更新（実装状況、既知課題、テスト手順を拡充）。
+### 螟画峩轤ｹ
+- TextureGenerator: 蛯ｾ譁・讓咎ｫ倥・繝ｼ繧ｹ縺ｮ繝悶Ξ繝ｳ繝峨↓蜉縺医～m_TextureBlendFactors` 縺ｫ繧医ｋ繝ｬ繧､繝､繝ｼ蛻･菫よ焚縺ｨ `m_TextureTiling` 縺ｫ繧医ｋ `TerrainLayer.tileSize` 荳頑嶌縺榊ｯｾ蠢懊ょｮ牙・縺ｪ豁｣隕丞喧縺ｨ繧ｼ繝ｭ蟇ｾ遲悶ｒ螳溯｣・・
+- DetailGenerator: `TerrainData.SetDetailResolution()` 繧堤畑縺・※ `DetailResolution`/`PerPatch` 繧貞渚譏縲ＡGetInterpolatedHeight`/`GetSteepness` 縺ｫ蝓ｺ縺･縺丞ｯ・ｺｦ蛻ｶ蠕｡・井ｸｭ鬮伜ｺｦ縺九▽菴主だ譁懊ｒ蜆ｪ蜈茨ｼ峨ｒ霑ｽ蜉縺励～DetailDensity` 縺ｧ蜈ｨ菴灘ｯ・ｺｦ繧偵せ繧ｱ繝ｼ繝ｫ縲・
+- TreeGenerator: 繧ｰ繝ｪ繝・ラ・九ず繝・ち繝ｼ縺ｮ繧ｵ繝ｳ繝励Μ繝ｳ繧ｰ縺ｧ蛻・ｸ・・蝮・ｸ諤ｧ繧堤｢ｺ菫昴よｨ咎ｫ・0.15..0.65)縺ｨ蛯ｾ譁・<30ﾂｰ)縺ｮ蛻ｶ邏・〒驟咲ｽｮ縺励∫｢ｺ邇・㍾縺ｿ莉倥￠縺ｧ閾ｪ辟ｶ縺輔ｒ蜷台ｸ翫ゆｸ企剞繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ謨ｰ繧定ｨｭ螳壹・
+- TerrainGeneratorEditor: Texture/Detail/Tree 險ｭ螳壹ｒ SerializedProperty 縺ｧ foldout 陦ｨ遉ｺ縺励ゞI髴ｲ蜃ｺ縺ｮ鮨滄ｽｬ繧定ｧ｣豸医・
+- 逶｣譟ｻ繝峨く繝･繝｡繝ｳ繝・ `.kiro/specs/vastcore-terrain-system/TERRAIN_TASK_AUDIT.md` 繧呈峩譁ｰ・亥ｮ溯｣・憾豕√∵里遏･隱ｲ鬘後√ユ繧ｹ繝域焔鬆・ｒ諡｡蜈・ｼ峨・
 
-### テスト
-1. シーン上の `TerrainGenerator` を選択。
-2. Generation Mode を `Noise` または `NoiseAndHeightMap` に設定。
-3. `Terrain Layers` を3レイヤー以上設定（Grass/Cliff/Snow想定）。
-4. `Generate Terrain` 実行。Cliff=斜面、Grass=平地、Snow=高所で優先されることを確認。
-5. `Detail Resolution`/`Per Patch` が反映され、中高度・低傾斜にディテールが多く配置されることを確認。
-6. 標高・傾斜の制約により、急斜面や極端な高低ではツリーが少ない/無しとなることを確認。
-7. `Texture Blend Factors` を変更してレイヤーの相対量が変化することを確認。
+### 繝・せ繝・
+1. 繧ｷ繝ｼ繝ｳ荳翫・ `TerrainGenerator` 繧帝∈謚槭・
+2. Generation Mode 繧・`Noise` 縺ｾ縺溘・ `NoiseAndHeightMap` 縺ｫ險ｭ螳壹・
+3. `Terrain Layers` 繧・繝ｬ繧､繝､繝ｼ莉･荳願ｨｭ螳夲ｼ・rass/Cliff/Snow諠ｳ螳夲ｼ峨・
+4. `Generate Terrain` 螳溯｡後・liff=譁憺擇縲；rass=蟷ｳ蝨ｰ縲ヾnow=鬮俶園縺ｧ蜆ｪ蜈医＆繧後ｋ縺薙→繧堤｢ｺ隱阪・
+5. `Detail Resolution`/`Per Patch` 縺悟渚譏縺輔ｌ縲∽ｸｭ鬮伜ｺｦ繝ｻ菴主だ譁懊↓繝・ぅ繝・・繝ｫ縺悟､壹￥驟咲ｽｮ縺輔ｌ繧九％縺ｨ繧堤｢ｺ隱阪・
+6. 讓咎ｫ倥・蛯ｾ譁懊・蛻ｶ邏・↓繧医ｊ縲∵･譁憺擇繧・･ｵ遶ｯ縺ｪ鬮倅ｽ弱〒縺ｯ繝・Μ繝ｼ縺悟ｰ代↑縺・辟｡縺励→縺ｪ繧九％縺ｨ繧堤｢ｺ隱阪・
+7. `Texture Blend Factors` 繧貞､画峩縺励※繝ｬ繧､繝､繝ｼ縺ｮ逶ｸ蟇ｾ驥上′螟牙喧縺吶ｋ縺薙→繧堤｢ｺ隱阪・
 
-### 今後
-- ブレンドしきい値/カーブのエディタ設定化、ディテール/ツリーのバイオーム連携、サンプリング最適化、プレビュー機能の追加。
+### 莉雁ｾ・
+- 繝悶Ξ繝ｳ繝峨＠縺阪＞蛟､/繧ｫ繝ｼ繝悶・繧ｨ繝・ぅ繧ｿ險ｭ螳壼喧縲√ョ繧｣繝・・繝ｫ/繝・Μ繝ｼ縺ｮ繝舌う繧ｪ繝ｼ繝騾｣謳ｺ縲√し繝ｳ繝励Μ繝ｳ繧ｰ譛驕ｩ蛹悶√・繝ｬ繝薙Η繝ｼ讖溯・縺ｮ霑ｽ蜉縲・
 
-## 2024-XX-XX: 【重大修正】仕様外実装の削除と正式開発方針への復帰
+## 2024-XX-XX: 縲宣㍾螟ｧ菫ｮ豁｣縲台ｻ墓ｧ伜､門ｮ溯｣・・蜑企勁縺ｨ豁｣蠑城幕逋ｺ譁ｹ驥昴∈縺ｮ蠕ｩ蟶ｰ
 
-###  **実装方針相違の発見と修正**
+###  **螳溯｣・婿驥晉嶌驕輔・逋ｺ隕九→菫ｮ豁｣**
 
-#### ❌ **発見された問題**
-**仕様ドキュメント全体レビューの結果**：
-- プロジェクトの正式仕様と**完全に異なる実装**を進行
-- 既存完成システムを無視した**重複実装**
-- 最優先タスクを**無視**
+#### 笶・**逋ｺ隕九＆繧後◆蝠城｡・*
+**莉墓ｧ倥ラ繧ｭ繝･繝｡繝ｳ繝亥・菴薙Ξ繝薙Η繝ｼ縺ｮ邨先棡**・・
+- 繝励Ο繧ｸ繧ｧ繧ｯ繝医・豁｣蠑丈ｻ墓ｧ倥→**螳悟・縺ｫ逡ｰ縺ｪ繧句ｮ溯｣・*繧帝ｲ陦・
+- 譌｢蟄伜ｮ梧・繧ｷ繧ｹ繝・Β繧堤┌隕悶＠縺・*驥崎､・ｮ溯｣・*
+- 譛蜆ｪ蜈医ち繧ｹ繧ｯ繧・*辟｡隕・*
 
-#### 📋 **正式プロジェクト仕様**
-**DEV_PLAN.md + ADVANCED_STRUCTURE_DESIGN_DOCUMENT.md**：
+#### 搭 **豁｣蠑上・繝ｭ繧ｸ繧ｧ繧ｯ繝井ｻ墓ｧ・*
+**DEV_PLAN.md + ADVANCED_STRUCTURE_DESIGN_DOCUMENT.md**・・
 
 ```
- プロジェクトの本質
-- 目的: 「広大な地形上に配置される巨大遺跡の生成」
-- メイン: 高度プロシージャル構造物生成システム
-- 焦点: 「ミニマルでありながら芸術的価値を持つ印象的な景観」
+ 繝励Ο繧ｸ繧ｧ繧ｯ繝医・譛ｬ雉ｪ
+- 逶ｮ逧・ 縲悟ｺ・､ｧ縺ｪ蝨ｰ蠖｢荳翫↓驟咲ｽｮ縺輔ｌ繧句ｷｨ螟ｧ驕ｺ霍｡縺ｮ逕滓・縲・
+- 繝｡繧､繝ｳ: 鬮伜ｺｦ繝励Ο繧ｷ繝ｼ繧ｸ繝｣繝ｫ讒矩迚ｩ逕滓・繧ｷ繧ｹ繝・Β
+- 辟ｦ轤ｹ: 縲後Α繝九・繝ｫ縺ｧ縺ゅｊ縺ｪ縺後ｉ闃ｸ陦鍋噪萓｡蛟､繧呈戟縺､蜊ｰ雎｡逧・↑譎ｯ隕ｳ縲・
 
- 既存完成システム
-- AdvancedPlayerController.cs: 高度移動システ
-- MeshGenerator.cs: 地形生成システ
+ 譌｢蟄伜ｮ梧・繧ｷ繧ｹ繝・Β
+- AdvancedPlayerController.cs: 鬮伜ｺｦ遘ｻ蜍輔す繧ｹ繝・
+- MeshGenerator.cs: 蝨ｰ蠖｢逕滓・繧ｷ繧ｹ繝・
 - Structure Generator: 
 
- 開発状況
-- Phase 1,2,4: 完了済み
-- Phase 3: Deformシステム統合（最優先）
-- Phase 5,6: 未着手
+ 髢狗匱迥ｶ豕・
+- Phase 1,2,4: 螳御ｺ・ｸ医∩
+- Phase 3: Deform繧ｷ繧ｹ繝・Β邨ｱ蜷茨ｼ域怙蜆ｪ蜈茨ｼ・
+- Phase 5,6: 譛ｪ逹謇・
 ```
 
-#### ❌ **仕様外実装（削除済み）**
+#### 笶・**莉墓ｧ伜､門ｮ溯｣・ｼ亥炎髯､貂医∩・・*
 ```
-削除したファイル（1000行超）:
-- InfiniteTerrain.cs (275行) - MeshGenerator.csと重複
-- TerrainTileGenerator.cs (395行) - 仕様外システム
-- TerrainSettings.cs (133行) - 不要な設定クラス
-- VastcoreGameManager.cs内の関連コード（200行超）
-```
-
-#### ✅ **正式開発方針への復帰**
-**TASK_PRIORITIZATION.md**の第1象限：
-
-```
-【最優先タスク】
-1. Phase 3 Deformシステム技術調査
-2. Unity Asset Store パッケージ統合準備
-3. 既存システム最適化
-
-【完了済み】
-- 仕様外コードの完全削除
-- プロジェクト構造の正常化
-- 正式仕様との整合性確保
+蜑企勁縺励◆繝輔ぃ繧､繝ｫ・・000陦瑚ｶ・ｼ・
+- InfiniteTerrain.cs (275陦・ - MeshGenerator.cs縺ｨ驥崎､・
+- TerrainTileGenerator.cs (395陦・ - 莉墓ｧ伜､悶す繧ｹ繝・Β
+- TerrainSettings.cs (133陦・ - 荳崎ｦ√↑險ｭ螳壹け繝ｩ繧ｹ
+- VastcoreGameManager.cs蜀・・髢｢騾｣繧ｳ繝ｼ繝会ｼ・00陦瑚ｶ・ｼ・
 ```
 
-###  **今後の開発方針**
-
-#### **短期（次回1-3セッション）**
-1.  **Phase 3技術調査**: Deformパッケージの調査・設計
-2.  **既存システム解析**: 最適化候補の特定
-3.  **ドキュメント整理**: API仕様書・技術文書
-
-#### **中期（4-10セッション）**
-1. **Phase 5実装**: 高度合成システム
-2. **Phase 6完成**: ランダム制御システム
-3. **全システム統合**: 品質・パフォーマンス向上
-
-### 📋 **修正作業ログ**
-
-**削除作業（完了）**:
-- ❌ `Assets/Scripts/Generation/Map/InfiniteTerrain.cs`
-- ❌ `Assets/Scripts/Generation/Map/TerrainTileGenerator.cs`
-- ❌ `Assets/Scripts/Generation/Map/TerrainSettings.cs`
-- ❌ `VastcoreGameManager.cs`内の無限地形関連コード
-
-**復旧作業**:
--  既存`MeshGenerator.cs`システムとの整合性確保
--  `AdvancedPlayerController.cs`の保持
--  プロジェクト構造の正常化
-
-### **作業予定**
-
-**Phase 3 Deformシステム技術調査**:
-1. Unity Asset Store「Deform」パッケージの仕様調査
-2. 既存Structure Generatorとの統合方式設計
-3. Deformerタブ UI・パラメータ制御の設計
-
-#### **3層アーキテクチャ**
-
-**1. Settings Layer (設定層)**
-- **TerrainSettings.cs** - ScriptableObject (133行)
-  - デザイナー向け直感的設定UI
-  - 6カテゴリの体系化設定（タイル・ノイズ・ブレンド・材質・パフォーマンス）
-  - OnValidate自動検証・デフォルト値設定
-  - プリセット保存・共有機能
-
-**2. Generator Layer (生成層)**
-- **TerrainTileGenerator.cs** - 専用生成ロジック (280行)
-  - 位置・テクスチャ・コライダー問題の完全解決
-  - 自動材質生成
-  - 物理コライダー適切設定
-  - 平坦化カーブ
-  - 4方向完全境界ブレンド
-
-**3. Manager Layer (制御層)**
-- **InfiniteTerrain.cs** - 簡潔化マネージャー (200行 ← 382行)
-  - 設定・生成ロジックを分離し管理業務に集中
-  - 新旧システム互換性維持
-  - プレイヤー追従・タイル管理のみ担当
-
-#### 🎨 **デザイナー向け機能**
+#### 笨・**豁｣蠑城幕逋ｺ譁ｹ驥昴∈縺ｮ蠕ｩ蟶ｰ**
+**TASK_PRIORITIZATION.md**縺ｮ隨ｬ1雎｡髯撰ｼ・
 
 ```
-設定項目:
-📏 タイル設定: サイズ、視界距離、高度、解像度
-🌊 ノイズ設定: スケール、オクターブ、減衰、平坦化
-🔗 ブレンド設定: 境界幅、カーブ
-🎨 材質設定: 色、グラデーション、タイリング
-⚡ パフォーマンス: フレーム分散、デバッグ表示
+縲先怙蜆ｪ蜈医ち繧ｹ繧ｯ縲・
+1. Phase 3 Deform繧ｷ繧ｹ繝・Β謚陦楢ｪｿ譟ｻ
+2. Unity Asset Store 繝代ャ繧ｱ繝ｼ繧ｸ邨ｱ蜷域ｺ門ｙ
+3. 譌｢蟄倥す繧ｹ繝・Β譛驕ｩ蛹・
+
+縲仙ｮ御ｺ・ｸ医∩縲・
+- 莉墓ｧ伜､悶さ繝ｼ繝峨・螳悟・蜑企勁
+- 繝励Ο繧ｸ繧ｧ繧ｯ繝域ｧ矩縺ｮ豁｣蟶ｸ蛹・
+- 豁｣蠑丈ｻ墓ｧ倥→縺ｮ謨ｴ蜷域ｧ遒ｺ菫・
+```
+
+###  **莉雁ｾ後・髢狗匱譁ｹ驥・*
+
+#### **遏ｭ譛滂ｼ域ｬ｡蝗・-3繧ｻ繝・す繝ｧ繝ｳ・・*
+1.  **Phase 3謚陦楢ｪｿ譟ｻ**: Deform繝代ャ繧ｱ繝ｼ繧ｸ縺ｮ隱ｿ譟ｻ繝ｻ險ｭ險・
+2.  **譌｢蟄倥す繧ｹ繝・Β隗｣譫・*: 譛驕ｩ蛹門呵｣懊・迚ｹ螳・
+3.  **繝峨く繝･繝｡繝ｳ繝域紛逅・*: API莉墓ｧ俶嶌繝ｻ謚陦捺枚譖ｸ
+
+#### **荳ｭ譛滂ｼ・-10繧ｻ繝・す繝ｧ繝ｳ・・*
+1. **Phase 5螳溯｣・*: 鬮伜ｺｦ蜷域・繧ｷ繧ｹ繝・Β
+2. **Phase 6螳梧・**: 繝ｩ繝ｳ繝繝蛻ｶ蠕｡繧ｷ繧ｹ繝・Β
+3. **蜈ｨ繧ｷ繧ｹ繝・Β邨ｱ蜷・*: 蜩∬ｳｪ繝ｻ繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ蜷台ｸ・
+
+### 搭 **菫ｮ豁｣菴懈･ｭ繝ｭ繧ｰ**
+
+**蜑企勁菴懈･ｭ・亥ｮ御ｺ・ｼ・*:
+- 笶・`Assets/Scripts/Generation/Map/InfiniteTerrain.cs`
+- 笶・`Assets/Scripts/Generation/Map/TerrainTileGenerator.cs`
+- 笶・`Assets/Scripts/Generation/Map/TerrainSettings.cs`
+- 笶・`VastcoreGameManager.cs`蜀・・辟｡髯仙慍蠖｢髢｢騾｣繧ｳ繝ｼ繝・
+
+**蠕ｩ譌ｧ菴懈･ｭ**:
+-  譌｢蟄倭MeshGenerator.cs`繧ｷ繧ｹ繝・Β縺ｨ縺ｮ謨ｴ蜷域ｧ遒ｺ菫・
+-  `AdvancedPlayerController.cs`縺ｮ菫晄戟
+-  繝励Ο繧ｸ繧ｧ繧ｯ繝域ｧ矩縺ｮ豁｣蟶ｸ蛹・
+
+### **菴懈･ｭ莠亥ｮ・*
+
+**Phase 3 Deform繧ｷ繧ｹ繝・Β謚陦楢ｪｿ譟ｻ**:
+1. Unity Asset Store縲轡eform縲阪ヱ繝・こ繝ｼ繧ｸ縺ｮ莉墓ｧ倩ｪｿ譟ｻ
+2. 譌｢蟄牢tructure Generator縺ｨ縺ｮ邨ｱ蜷域婿蠑剰ｨｭ險・
+3. Deformer繧ｿ繝・UI繝ｻ繝代Λ繝｡繝ｼ繧ｿ蛻ｶ蠕｡縺ｮ險ｭ險・
+
+#### **3螻､繧｢繝ｼ繧ｭ繝・け繝√Ε**
+
+**1. Settings Layer (險ｭ螳壼ｱ､)**
+- **TerrainSettings.cs** - ScriptableObject (133陦・
+  - 繝・じ繧､繝翫・蜷代￠逶ｴ諢溽噪險ｭ螳啅I
+  - 6繧ｫ繝・ざ繝ｪ縺ｮ菴鍋ｳｻ蛹冶ｨｭ螳夲ｼ医ち繧､繝ｫ繝ｻ繝弱う繧ｺ繝ｻ繝悶Ξ繝ｳ繝峨・譚占ｳｪ繝ｻ繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ・・
+  - OnValidate閾ｪ蜍墓､懆ｨｼ繝ｻ繝・ヵ繧ｩ繝ｫ繝亥､險ｭ螳・
+  - 繝励Μ繧ｻ繝・ヨ菫晏ｭ倥・蜈ｱ譛画ｩ溯・
+
+**2. Generator Layer (逕滓・螻､)**
+- **TerrainTileGenerator.cs** - 蟆ら畑逕滓・繝ｭ繧ｸ繝・け (280陦・
+  - 菴咲ｽｮ繝ｻ繝・け繧ｹ繝√Ε繝ｻ繧ｳ繝ｩ繧､繝繝ｼ蝠城｡後・螳悟・隗｣豎ｺ
+  - 閾ｪ蜍墓攝雉ｪ逕滓・
+  - 迚ｩ逅・さ繝ｩ繧､繝繝ｼ驕ｩ蛻・ｨｭ螳・
+  - 蟷ｳ蝮ｦ蛹悶き繝ｼ繝・
+  - 4譁ｹ蜷大ｮ悟・蠅・阜繝悶Ξ繝ｳ繝・
+
+**3. Manager Layer (蛻ｶ蠕｡螻､)**
+- **InfiniteTerrain.cs** - 邁｡貎泌喧繝槭ロ繝ｼ繧ｸ繝｣繝ｼ (200陦・竊・382陦・
+  - 險ｭ螳壹・逕滓・繝ｭ繧ｸ繝・け繧貞・髮｢縺礼ｮ｡逅・･ｭ蜍吶↓髮・ｸｭ
+  - 譁ｰ譌ｧ繧ｷ繧ｹ繝・Β莠呈鋤諤ｧ邯ｭ謖・
+  - 繝励Ξ繧､繝､繝ｼ霑ｽ蠕薙・繧ｿ繧､繝ｫ邂｡逅・・縺ｿ諡・ｽ・
+
+#### 耳 **繝・じ繧､繝翫・蜷代￠讖溯・**
+
+```
+險ｭ螳夐・岼:
+棟 繧ｿ繧､繝ｫ險ｭ螳・ 繧ｵ繧､繧ｺ縲∬ｦ也阜霍晞屬縲・ｫ伜ｺｦ縲∬ｧ｣蜒丞ｺｦ
+穴 繝弱う繧ｺ險ｭ螳・ 繧ｹ繧ｱ繝ｼ繝ｫ縲√が繧ｯ繧ｿ繝ｼ繝悶∵ｸ幄｡ｰ縲∝ｹｳ蝮ｦ蛹・
+迫 繝悶Ξ繝ｳ繝芽ｨｭ螳・ 蠅・阜蟷・√き繝ｼ繝・
+耳 譚占ｳｪ險ｭ螳・ 濶ｲ縲√げ繝ｩ繝・・繧ｷ繝ｧ繝ｳ縲√ち繧､繝ｪ繝ｳ繧ｰ
+笞｡ 繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ: 繝輔Ξ繝ｼ繝蛻・淵縲√ョ繝舌ャ繧ｰ陦ｨ遉ｺ
 ```
 
 
-## Critical Fix - ハイトマップベース地形生成への完全移行
+## Critical Fix - 繝上う繝医・繝・・繝吶・繧ｹ蝨ｰ蠖｢逕滓・縺ｸ縺ｮ螳悟・遘ｻ陦・
 
-**問題1: ノイズベース場当たり的生成**
+**蝠城｡・: 繝弱う繧ｺ繝吶・繧ｹ蝣ｴ蠖薙◆繧顔噪逕滓・**
 ```csharp
-// 問題のあったコード (TerrainTileGenerator.cs)
+// 蝠城｡後・縺ゅ▲縺溘さ繝ｼ繝・(TerrainTileGenerator.cs)
 float sample = Mathf.PerlinNoise(worldX * frequency, worldY * frequency);
-noiseValue += sample * amplitude; // ←急峻地形の原因
+noiseValue += sample * amplitude; // 竊先･蟲ｻ蝨ｰ蠖｢縺ｮ蜴溷屏
 ```
 
-**問題2: 既存システムの無視**
-- プロジェクトに**高度なMeshGenerator.cs**（510行）が存在
-- **29個のハイトマップファイル**が利用可能
-- これらを完全に無視した簡易実装
+**蝠城｡・: 譌｢蟄倥す繧ｹ繝・Β縺ｮ辟｡隕・*
+- 繝励Ο繧ｸ繧ｧ繧ｯ繝医↓**鬮伜ｺｦ縺ｪMeshGenerator.cs**・・10陦鯉ｼ峨′蟄伜惠
+- **29蛟九・繝上う繝医・繝・・繝輔ぃ繧､繝ｫ**縺悟茜逕ｨ蜿ｯ閭ｽ
+- 縺薙ｌ繧峨ｒ螳悟・縺ｫ辟｡隕悶＠縺溽ｰ｡譏灘ｮ溯｣・
 
-**問題3: プレイヤー配置の順序問題**
+**蝠城｡・: 繝励Ξ繧､繝､繝ｼ驟咲ｽｮ縺ｮ鬆・ｺ丞撫鬘・*
 ```csharp
 // VastcoreGameManager.cs
-spawnPosition = new Vector3(0, 10f, 0); // 固定位置
-// ↑地形生成完了前に配置→空中落下
+spawnPosition = new Vector3(0, 10f, 0); // 蝗ｺ螳壻ｽ咲ｽｮ
+// 竊大慍蠖｢逕滓・螳御ｺ・燕縺ｫ驟咲ｽｮ竊堤ｩｺ荳ｭ關ｽ荳・
 ```
 
-#### ✅ **完全解決実装**
+#### 笨・**螳悟・隗｣豎ｺ螳溯｣・*
 
-**1. ハイトマップベースシステムへの移行**
+**1. 繝上う繝医・繝・・繝吶・繧ｹ繧ｷ繧ｹ繝・Β縺ｸ縺ｮ遘ｻ陦・*
 ```csharp
 private Texture2D LoadHeightmapForTile(Vector2Int tileCoord)
 {
     Texture2D[] heightmaps = Resources.LoadAll<Texture2D>("Heightmaps");
-    // 既存の29個のハイトマップファイルを活用
+    // 譌｢蟄倥・29蛟九・繝上う繝医・繝・・繝輔ぃ繧､繝ｫ繧呈ｴｻ逕ｨ
 }
 
 private float[,] ConvertTextureToHeightArray(Texture2D heightmapTexture)
 {
     Color pixel = heightmapTexture.GetPixelBilinear(u, v);
-    float height = pixel.grayscale; // 実際の地形データを使用
+    float height = pixel.grayscale; // 螳滄圀縺ｮ蝨ｰ蠖｢繝・・繧ｿ繧剃ｽｿ逕ｨ
 }
 ```
 
-**2. 材質システムの修正**
+**2. 譚占ｳｪ繧ｷ繧ｹ繝・Β縺ｮ菫ｮ豁｣**
 ```csharp
-// Nature/Terrain/Standardシェーダーに変更
+// Nature/Terrain/Standard繧ｷ繧ｧ繝ｼ繝繝ｼ縺ｫ螟画峩
 m_DefaultMaterial = new Material(Shader.Find("Nature/Terrain/Standard"));
 ```
 
-**3. プレイヤー配置システムの完全修正**
+**3. 繝励Ξ繧､繝､繝ｼ驟咲ｽｮ繧ｷ繧ｹ繝・Β縺ｮ螳悟・菫ｮ豁｣**
 ```csharp
 private IEnumerator WaitForInitialTerrainGeneration()
 {
-    // 地形生成完了を待つ
+    // 蝨ｰ蠖｢逕滓・螳御ｺ・ｒ蠕・▽
 }
 
 private Vector3 CalculateInfiniteTerrainSpawnPosition()
 {
     float terrainHeight = GetTerrainHeightAtPosition(basePosition);
-    basePosition.y = terrainHeight + 2f; // 地形上2mに配置
+    basePosition.y = terrainHeight + 2f; // 蝨ｰ蠖｢荳・m縺ｫ驟咲ｽｮ
 }
 ```
 
-**4. 地形パラメータの調整**
-- **terrainHeight**: 30f → 15f（高度を半減）
-- **flatteningFactor**: 0.3f → 1.2f（平坦化強化）
+**4. 蝨ｰ蠖｢繝代Λ繝｡繝ｼ繧ｿ縺ｮ隱ｿ謨ｴ**
+- **terrainHeight**: 30f 竊・15f・磯ｫ伜ｺｦ繧貞濠貂幢ｼ・
+- **flatteningFactor**: 0.3f 竊・1.2f・亥ｹｳ蝮ｦ蛹門ｼｷ蛹厄ｼ・
 
 
-## 2024-XX-XX: 無限地形システム実装完了 - 根本的問題解決
+## 2024-XX-XX: 辟｡髯仙慍蠖｢繧ｷ繧ｹ繝・Β螳溯｣・ｮ御ｺ・- 譬ｹ譛ｬ逧・撫鬘瑚ｧ｣豎ｺ
 
-### 🎯 **Critical Update - 無限地形による広大世界実現**
+### 識 **Critical Update - 辟｡髯仙慍蠖｢縺ｫ繧医ｋ蠎・､ｧ荳也阜螳溽樟**
 
-#### ✅ **無限地形システム新規実装**
-1. **InfiniteTerrain.cs** - 完全新規クラス
-   - プレイヤー追従型タイル生成システム
-   - シームレス境界ブレンド（10px幅）
-   - オブジェクトプール最適化
-   - デバッグGizmo可視化
+#### 笨・**辟｡髯仙慍蠖｢繧ｷ繧ｹ繝・Β譁ｰ隕丞ｮ溯｣・*
+1. **InfiniteTerrain.cs** - 螳悟・譁ｰ隕上け繝ｩ繧ｹ
+   - 繝励Ξ繧､繝､繝ｼ霑ｽ蠕灘梛繧ｿ繧､繝ｫ逕滓・繧ｷ繧ｹ繝・Β
+   - 繧ｷ繝ｼ繝繝ｬ繧ｹ蠅・阜繝悶Ξ繝ｳ繝会ｼ・0px蟷・ｼ・
+   - 繧ｪ繝悶ず繧ｧ繧ｯ繝医・繝ｼ繝ｫ譛驕ｩ蛹・
+   - 繝・ヰ繝・げGizmo蜿ｯ隕門喧
 
-2. **技術仕様**:
-   - タイルサイズ: 100x100ユニット（設定可能）
-   - 視界距離: 2タイル（5x5=25タイル同時管理）
-   - 解像度: 513（高品質ハイトマップ）
-   - 4オクターブPerlinノイズ
+2. **謚陦謎ｻ墓ｧ・*:
+   - 繧ｿ繧､繝ｫ繧ｵ繧､繧ｺ: 100x100繝ｦ繝九ャ繝茨ｼ郁ｨｭ螳壼庄閭ｽ・・
+   - 隕也阜霍晞屬: 2繧ｿ繧､繝ｫ・・x5=25繧ｿ繧､繝ｫ蜷梧凾邂｡逅・ｼ・
+   - 隗｣蜒丞ｺｦ: 513・磯ｫ伜刀雉ｪ繝上う繝医・繝・・・・
+   - 4繧ｪ繧ｯ繧ｿ繝ｼ繝鳳erlin繝弱う繧ｺ
 
-#### 🔧 **VastcoreGameManager統合**
-1. **地形システム選択機能**
-   - `m_UseInfiniteTerrain` フラグ追加
-   - `SetupInfiniteTerrain()` / `SetupSingleTerrain()` 分離
-   - プレイヤー参照の自動設定
+#### 肌 **VastcoreGameManager邨ｱ蜷・*
+1. **蝨ｰ蠖｢繧ｷ繧ｹ繝・Β驕ｸ謚樊ｩ溯・**
+   - `m_UseInfiniteTerrain` 繝輔Λ繧ｰ霑ｽ蜉
+   - `SetupInfiniteTerrain()` / `SetupSingleTerrain()` 蛻・屬
+   - 繝励Ξ繧､繝､繝ｼ蜿ら・縺ｮ閾ｪ蜍戊ｨｭ螳・
 
-2. **スポーンシステム改善**
-   - 無限地形: 原点(0,10,0)スポーン
-   - 単一地形: 中央配置スポーン
-   - 高度計算の安全マージン確保
+2. **繧ｹ繝昴・繝ｳ繧ｷ繧ｹ繝・Β謾ｹ蝟・*
+   - 辟｡髯仙慍蠖｢: 蜴溽せ(0,10,0)繧ｹ繝昴・繝ｳ
+   - 蜊倅ｸ蝨ｰ蠖｢: 荳ｭ螟ｮ驟咲ｽｮ繧ｹ繝昴・繝ｳ
+   - 鬮伜ｺｦ險育ｮ励・螳牙・繝槭・繧ｸ繝ｳ遒ｺ菫・
 
-#### 🌍 **無限世界の実現**
+#### 訣 **辟｡髯蝉ｸ也阜縺ｮ螳溽樟**
 ```
-従来: 100x100の小さな台 → 新規: 無限に広がる地形
-- プレイヤー移動に応じた動的生成
-- メモリ効率的なタイル管理
-- 継ぎ目なしの滑らかな地形
+蠕捺擂: 100x100縺ｮ蟆上＆縺ｪ蜿ｰ 竊・譁ｰ隕・ 辟｡髯舌↓蠎・′繧句慍蠖｢
+- 繝励Ξ繧､繝､繝ｼ遘ｻ蜍輔↓蠢懊§縺溷虚逧・函謌・
+- 繝｡繝｢繝ｪ蜉ｹ邇・噪縺ｪ繧ｿ繧､繝ｫ邂｡逅・
+- 邯吶℃逶ｮ縺ｪ縺励・貊代ｉ縺九↑蝨ｰ蠖｢
 ```
 
-#### 📊 **技術的優位性**
-- **メモリ効率**: 必要な範囲のみロード
-- **パフォーマンス**: コルーチンによるフレーム分散
-- **拡張性**: タイルサイズ・視界距離の設定可能
-- **シームレス**: 境界ブレンドによる継ぎ目なし接続
+#### 投 **謚陦鍋噪蜆ｪ菴肴ｧ**
+- **繝｡繝｢繝ｪ蜉ｹ邇・*: 蠢・ｦ√↑遽・峇縺ｮ縺ｿ繝ｭ繝ｼ繝・
+- **繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ**: 繧ｳ繝ｫ繝ｼ繝√Φ縺ｫ繧医ｋ繝輔Ξ繝ｼ繝蛻・淵
+- **諡｡蠑ｵ諤ｧ**: 繧ｿ繧､繝ｫ繧ｵ繧､繧ｺ繝ｻ隕也阜霍晞屬縺ｮ險ｭ螳壼庄閭ｽ
+- **繧ｷ繝ｼ繝繝ｬ繧ｹ**: 蠅・阜繝悶Ξ繝ｳ繝峨↓繧医ｋ邯吶℃逶ｮ縺ｪ縺玲磁邯・
 
-### 🎮 **解決された根本問題**
-1. ❌ **小さな台上スポーン** → ✅ **無限地形上スポーン**
-2. ❌ **地形の端が見える** → ✅ **端なしの無限世界**
-3. ❌ **移動範囲の制限** → ✅ **どこまでも歩ける世界**
+### 式 **隗｣豎ｺ縺輔ｌ縺滓ｹ譛ｬ蝠城｡・*
+1. 笶・**蟆上＆縺ｪ蜿ｰ荳翫せ繝昴・繝ｳ** 竊・笨・**辟｡髯仙慍蠖｢荳翫せ繝昴・繝ｳ**
+2. 笶・**蝨ｰ蠖｢縺ｮ遶ｯ縺瑚ｦ九∴繧・* 竊・笨・**遶ｯ縺ｪ縺励・辟｡髯蝉ｸ也阜**
+3. 笶・**遘ｻ蜍慕ｯ・峇縺ｮ蛻ｶ髯・* 竊・笨・**縺ｩ縺薙∪縺ｧ繧よｭｩ縺代ｋ荳也阜**
 
-### 🚀 **次回テスト期待事項**
-- プレイヤーが原点付近にスポーン
-- 移動に応じて地形が自動生成
-- 継ぎ目なしの滑らかな地形
-- 広大な世界での自由な探索
+### 噫 **谺｡蝗槭ユ繧ｹ繝域悄蠕・ｺ矩・*
+- 繝励Ξ繧､繝､繝ｼ縺悟次轤ｹ莉倩ｿ代↓繧ｹ繝昴・繝ｳ
+- 遘ｻ蜍輔↓蠢懊§縺ｦ蝨ｰ蠖｢縺瑚・蜍慕函謌・
+- 邯吶℃逶ｮ縺ｪ縺励・貊代ｉ縺九↑蝨ｰ蠖｢
+- 蠎・､ｧ縺ｪ荳也阜縺ｧ縺ｮ閾ｪ逕ｱ縺ｪ謗｢邏｢
 
 ---
 
-## 2024-XX-XX: プレイヤーエクスペリエンス大幅改善完了
+## 2024-XX-XX: 繝励Ξ繧､繝､繝ｼ繧ｨ繧ｯ繧ｹ繝壹Μ繧ｨ繝ｳ繧ｹ螟ｧ蟷・隼蝟・ｮ御ｺ・
 
-### 🎯 **Major Update - FPSとコンテンツ品質向上**
+### 識 **Major Update - FPS縺ｨ繧ｳ繝ｳ繝・Φ繝・刀雉ｪ蜷台ｸ・*
 
-#### ✅ **プレイヤーシステム改革**
-1. **FPS化完了** (`AdvancedPlayerController.cs`)
-   - Capsuleメッシュ非表示でFPS視点実現
-   - `EnablePlayerControl()` / `DisablePlayerControl()` 新規実装
-   - カーソルロック状態の適切な管理
+#### 笨・**繝励Ξ繧､繝､繝ｼ繧ｷ繧ｹ繝・Β謾ｹ髱ｩ**
+1. **FPS蛹門ｮ御ｺ・* (`AdvancedPlayerController.cs`)
+   - Capsule繝｡繝・す繝･髱櫁｡ｨ遉ｺ縺ｧFPS隕也せ螳溽樟
+   - `EnablePlayerControl()` / `DisablePlayerControl()` 譁ｰ隕丞ｮ溯｣・
+   - 繧ｫ繝ｼ繧ｽ繝ｫ繝ｭ繝・け迥ｶ諷九・驕ｩ蛻・↑邂｡逅・
 
-2. **慣性システム実装**
-   - 滑らかな加速・減速システム
-   - `momentum` ベクトルによる物理的慣性
-   - 最大速度制限と減衰制御
-   - 独特な操作感の実現
+2. **諷｣諤ｧ繧ｷ繧ｹ繝・Β螳溯｣・*
+   - 貊代ｉ縺九↑蜉騾溘・貂幃溘す繧ｹ繝・Β
+   - `momentum` 繝吶け繝医Ν縺ｫ繧医ｋ迚ｩ逅・噪諷｣諤ｧ
+   - 譛螟ｧ騾溷ｺｦ蛻ｶ髯舌→貂幄｡ｰ蛻ｶ蠕｡
+   - 迢ｬ迚ｹ縺ｪ謫堺ｽ懈─縺ｮ螳溽樟
 
-#### 🎬 **シネマティック演出改善**
-1. **地形全体を見渡すカメラワーク**
-   - 開始位置を後方上空に変更（地形全体視認）
-   - プレイヤーが画面端に見えるよう配置
-   - 地形→プレイヤーへの滑らかな視点移行
+#### 汐 **繧ｷ繝阪・繝・ぅ繝・け貍泌・謾ｹ蝟・*
+1. **蝨ｰ蠖｢蜈ｨ菴薙ｒ隕区ｸ｡縺吶き繝｡繝ｩ繝ｯ繝ｼ繧ｯ**
+   - 髢句ｧ倶ｽ咲ｽｮ繧貞ｾ梧婿荳顔ｩｺ縺ｫ螟画峩・亥慍蠖｢蜈ｨ菴楢ｦ冶ｪ搾ｼ・
+   - 繝励Ξ繧､繝､繝ｼ縺檎判髱｢遶ｯ縺ｫ隕九∴繧九ｈ縺・・鄂ｮ
+   - 蝨ｰ蠖｢竊偵・繝ｬ繧､繝､繝ｼ縺ｸ縺ｮ貊代ｉ縺九↑隕也せ遘ｻ陦・
 
-2. **プレイヤーコントロール連携強化**
-   - シネマティック中の確実な制御無効化
-   - FPS視点への適切な移行
+2. **繝励Ξ繧､繝､繝ｼ繧ｳ繝ｳ繝医Ο繝ｼ繝ｫ騾｣謳ｺ蠑ｷ蛹・*
+   - 繧ｷ繝阪・繝・ぅ繝・け荳ｭ縺ｮ遒ｺ螳溘↑蛻ｶ蠕｡辟｡蜉ｹ蛹・
+   - FPS隕也せ縺ｸ縺ｮ驕ｩ蛻・↑遘ｻ陦・
 
-#### 🏗️ **構造物システム大幅拡充**
-新規5種類の魅力的構造物：
-1. **巨大モノリス** - 神秘的な黒い巨石
-2. **複合タワー** - 段階的縮小シリンダー構造
-3. **結晶構造** - ランダム配置の発光クリスタル
-4. **古代アーチ** - 石柱とアーチの古典建築
-5. **浮遊オブジェクト** - 中央球体と周囲オーブ
+#### 女・・**讒矩迚ｩ繧ｷ繧ｹ繝・Β螟ｧ蟷・僑蜈・*
+譁ｰ隕・遞ｮ鬘槭・鬲・鴨逧・ｧ矩迚ｩ・・
+1. **蟾ｨ螟ｧ繝｢繝弱Μ繧ｹ** - 逾樒ｧ倡噪縺ｪ鮟偵＞蟾ｨ遏ｳ
+2. **隍・粋繧ｿ繝ｯ繝ｼ** - 谿ｵ髫守噪邵ｮ蟆上す繝ｪ繝ｳ繝繝ｼ讒矩
+3. **邨先匕讒矩** - 繝ｩ繝ｳ繝繝驟咲ｽｮ縺ｮ逋ｺ蜈峨け繝ｪ繧ｹ繧ｿ繝ｫ
+4. **蜿､莉｣繧｢繝ｼ繝・* - 遏ｳ譟ｱ縺ｨ繧｢繝ｼ繝√・蜿､蜈ｸ蟒ｺ遽・
+5. **豬ｮ驕翫が繝悶ず繧ｧ繧ｯ繝・* - 荳ｭ螟ｮ逅・ｽ薙→蜻ｨ蝗ｲ繧ｪ繝ｼ繝・
 
-#### 🌍 **地形配置システム修正**
-- 地形中央配置の実装（原点中心）
-- プレイヤースポーン位置の正確な計算
-- 地形高度サンプリングの改善
-- デバッグログによる位置確認機能
+#### 訣 **蝨ｰ蠖｢驟咲ｽｮ繧ｷ繧ｹ繝・Β菫ｮ豁｣**
+- 蝨ｰ蠖｢荳ｭ螟ｮ驟咲ｽｮ縺ｮ螳溯｣・ｼ亥次轤ｹ荳ｭ蠢・ｼ・
+- 繝励Ξ繧､繝､繝ｼ繧ｹ繝昴・繝ｳ菴咲ｽｮ縺ｮ豁｣遒ｺ縺ｪ險育ｮ・
+- 蝨ｰ蠖｢鬮伜ｺｦ繧ｵ繝ｳ繝励Μ繝ｳ繧ｰ縺ｮ謾ｹ蝟・
+- 繝・ヰ繝・げ繝ｭ繧ｰ縺ｫ繧医ｋ菴咲ｽｮ遒ｺ隱肴ｩ溯・
 
-#### 🎨 **マテリアルシステム強化**
-- `ApplyMysteriousMaterial()` 新規実装
-- エミッション効果のランダム適用
-- メタリック・スムースネス値の構造物別調整
-- 色相・透明度の多様化
+#### 耳 **繝槭ユ繝ｪ繧｢繝ｫ繧ｷ繧ｹ繝・Β蠑ｷ蛹・*
+- `ApplyMysteriousMaterial()` 譁ｰ隕丞ｮ溯｣・
+- 繧ｨ繝溘ャ繧ｷ繝ｧ繝ｳ蜉ｹ譫懊・繝ｩ繝ｳ繝繝驕ｩ逕ｨ
+- 繝｡繧ｿ繝ｪ繝・け繝ｻ繧ｹ繝繝ｼ繧ｹ繝阪せ蛟､縺ｮ讒矩迚ｩ蛻･隱ｿ謨ｴ
+- 濶ｲ逶ｸ繝ｻ騾乗・蠎ｦ縺ｮ螟壽ｧ伜喧
 
-### 📊 **技術改善事項**
-- **プレイヤー制御**: 直接的API呼び出しによる確実性
-- **慣性物理**: リアルタイムVector3補間による滑らか移動
-- **構造物生成**: 5種類×複数要素の複合オブジェクト
-- **地形配置**: Transform座標の数学的正確性
+### 投 **謚陦捺隼蝟・ｺ矩・*
+- **繝励Ξ繧､繝､繝ｼ蛻ｶ蠕｡**: 逶ｴ謗･逧БPI蜻ｼ縺ｳ蜃ｺ縺励↓繧医ｋ遒ｺ螳滓ｧ
+- **諷｣諤ｧ迚ｩ逅・*: 繝ｪ繧｢繝ｫ繧ｿ繧､繝Vector3陬憺俣縺ｫ繧医ｋ貊代ｉ縺狗ｧｻ蜍・
+- **讒矩迚ｩ逕滓・**: 5遞ｮ鬘榲苓､・焚隕∫ｴ縺ｮ隍・粋繧ｪ繝悶ず繧ｧ繧ｯ繝・
+- **蝨ｰ蠖｢驟咲ｽｮ**: Transform蠎ｧ讓吶・謨ｰ蟄ｦ逧・ｭ｣遒ｺ諤ｧ
 
-### 🎮 **操作体験向上**
+### 式 **謫堺ｽ應ｽ馴ｨ灘髄荳・*
 
 ## 2025-09-04
 
-### Phase 3: Deformシステム統合完了
-- **実装完了**: Deformパッケージの完全統合システムを構築
-- **主要成果**:
-  - `VastcoreDeformManager`: 統合管理システム実装
-  - `HighQualityPrimitiveGenerator`: Deform対応拡張完了
-  - `DeformPresetLibrary`: 地質学的・建築的・有機的変形プリセット実装
-  - `DeformIntegrationTest`: 包括的テストシステム作成
-- **技術仕様**:
-  - 28種類のDeformerコンポーネント活用
-  - Unity Job System対応による高速処理
-  - LOD最適化とパフォーマンス監視
-  - 品質レベル別変形制御
-- **統合効果**:
-  - より自然で高品質な地形構造物生成
-  - 手動変形処理からDeformパッケージへの移行
-  - リアルタイム変形とエディタ対応
-  - プリセットベースの効率的な変形適用
+### Phase 3: Deform繧ｷ繧ｹ繝・Β邨ｱ蜷亥ｮ御ｺ・
+- **螳溯｣・ｮ御ｺ・*: Deform繝代ャ繧ｱ繝ｼ繧ｸ縺ｮ螳悟・邨ｱ蜷医す繧ｹ繝・Β繧呈ｧ狗ｯ・
+- **荳ｻ隕∵・譫・*:
+  - `VastcoreDeformManager`: 邨ｱ蜷育ｮ｡逅・す繧ｹ繝・Β螳溯｣・
+  - `HighQualityPrimitiveGenerator`: Deform蟇ｾ蠢懈僑蠑ｵ螳御ｺ・
+  - `DeformPresetLibrary`: 蝨ｰ雉ｪ蟄ｦ逧・・蟒ｺ遽臥噪繝ｻ譛画ｩ溽噪螟牙ｽ｢繝励Μ繧ｻ繝・ヨ螳溯｣・
+  - `DeformIntegrationTest`: 蛹・峡逧・ユ繧ｹ繝医す繧ｹ繝・Β菴懈・
+- **謚陦謎ｻ墓ｧ・*:
+  - 28遞ｮ鬘槭・Deformer繧ｳ繝ｳ繝昴・繝阪Φ繝域ｴｻ逕ｨ
+  - Unity Job System蟇ｾ蠢懊↓繧医ｋ鬮倬溷・逅・
+  - LOD譛驕ｩ蛹悶→繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ逶｣隕・
+  - 蜩∬ｳｪ繝ｬ繝吶Ν蛻･螟牙ｽ｢蛻ｶ蠕｡
+- **邨ｱ蜷亥柑譫・*:
+  - 繧医ｊ閾ｪ辟ｶ縺ｧ鬮伜刀雉ｪ縺ｪ蝨ｰ蠖｢讒矩迚ｩ逕滓・
+  - 謇句虚螟牙ｽ｢蜃ｦ逅・°繧吋eform繝代ャ繧ｱ繝ｼ繧ｸ縺ｸ縺ｮ遘ｻ陦・
+  - 繝ｪ繧｢繝ｫ繧ｿ繧､繝螟牙ｽ｢縺ｨ繧ｨ繝・ぅ繧ｿ蟇ｾ蠢・
+  - 繝励Μ繧ｻ繝・ヨ繝吶・繧ｹ縺ｮ蜉ｹ邇・噪縺ｪ螟牙ｽ｢驕ｩ逕ｨ
 
 ```
-- WASD: 慣性付き移動（滑らかな加減速）
-- マウス: FPS視点操作
-- Q長押し: ドリームフライト（高速飛行）
-- 独特な浮遊感と操作レスポンス
+- WASD: 諷｣諤ｧ莉倥″遘ｻ蜍包ｼ域ｻ代ｉ縺九↑蜉貂幃滂ｼ・
+- 繝槭え繧ｹ: FPS隕也せ謫堺ｽ・
+- Q髟ｷ謚ｼ縺・ 繝峨Μ繝ｼ繝繝輔Λ繧､繝茨ｼ磯ｫ倬滄｣幄｡鯉ｼ・
+- 迢ｬ迚ｹ縺ｪ豬ｮ驕頑─縺ｨ謫堺ｽ懊Ξ繧ｹ繝昴Φ繧ｹ
 ```
 
 ---
 
-## 2024-XX-XX: ウェブデモシステム実装完了
+## 2024-XX-XX: 繧ｦ繧ｧ繝悶ョ繝｢繧ｷ繧ｹ繝・Β螳溯｣・ｮ御ｺ・
 
-### 🎯 **実装目標達成**
-ユーザー要求に基づく以下の機能を完全実装：
+### 識 **螳溯｣・岼讓咎＃謌・*
+繝ｦ繝ｼ繧ｶ繝ｼ隕∵ｱゅ↓蝓ｺ縺･縺丈ｻ･荳九・讖溯・繧貞ｮ悟・螳溯｣・ｼ・
 
-#### ✅ **完成したシステム**
-1. **レターボックスシネマティックカメラ** (`CinematicCameraController.cs`)
-   - 上下黒帯の映画風演出
-   - プレイヤー後方からの上昇カメラワーク
-   - エリア移動時・ゲーム開始時の自動演出
+#### 笨・**螳梧・縺励◆繧ｷ繧ｹ繝・Β**
+1. **繝ｬ繧ｿ繝ｼ繝懊ャ繧ｯ繧ｹ繧ｷ繝阪・繝・ぅ繝・け繧ｫ繝｡繝ｩ** (`CinematicCameraController.cs`)
+   - 荳贋ｸ矩ｻ貞ｸｯ縺ｮ譏逕ｻ鬚ｨ貍泌・
+   - 繝励Ξ繧､繝､繝ｼ蠕梧婿縺九ｉ縺ｮ荳頑・繧ｫ繝｡繝ｩ繝ｯ繝ｼ繧ｯ
+   - 繧ｨ繝ｪ繧｢遘ｻ蜍墓凾繝ｻ繧ｲ繝ｼ繝髢句ｧ区凾縺ｮ閾ｪ蜍墓ｼ泌・
 
-2. **Vastcoreタイトル画面システム** (`TitleScreenManager.cs`)
-   - 巨大3D「VASTCORE」文字表示
-   - 山の向こうへの配置と地形への影投影
-   - プレイヤー操作可能状態でのタイトル表示
+2. **Vastcore繧ｿ繧､繝医Ν逕ｻ髱｢繧ｷ繧ｹ繝・Β** (`TitleScreenManager.cs`)
+   - 蟾ｨ螟ｧ3D縲祁ASTCORE縲肴枚蟄苓｡ｨ遉ｺ
+   - 螻ｱ縺ｮ蜷代％縺・∈縺ｮ驟咲ｽｮ縺ｨ蝨ｰ蠖｢縺ｸ縺ｮ蠖ｱ謚募ｽｱ
+   - 繝励Ξ繧､繝､繝ｼ謫堺ｽ懷庄閭ｽ迥ｶ諷九〒縺ｮ繧ｿ繧､繝医Ν陦ｨ遉ｺ
 
-3. **広大空間自動生成システム** (`VastcoreGameManager.cs`)
-   - プロシージャル地形生成（複数ノイズレイヤー）
-   - 自動構造物配置システム
-   - 動的環境ライティング
+3. **蠎・､ｧ遨ｺ髢楢・蜍慕函謌舌す繧ｹ繝・Β** (`VastcoreGameManager.cs`)
+   - 繝励Ο繧ｷ繝ｼ繧ｸ繝｣繝ｫ蝨ｰ蠖｢逕滓・・郁､・焚繝弱う繧ｺ繝ｬ繧､繝､繝ｼ・・
+   - 閾ｪ蜍墓ｧ矩迚ｩ驟咲ｽｮ繧ｷ繧ｹ繝・Β
+   - 蜍慕噪迺ｰ蠅・Λ繧､繝・ぅ繝ｳ繧ｰ
 
-4. **統合デモシーン** (`VastcoreDemoScene.unity`)
-   - 100x100ユニットの大規模空間
-   - 3つの巨大モノリス構造物
-   - 完全動作するプレイヤーシステム
+4. **邨ｱ蜷医ョ繝｢繧ｷ繝ｼ繝ｳ** (`VastcoreDemoScene.unity`)
+   - 100x100繝ｦ繝九ャ繝医・螟ｧ隕乗ｨ｡遨ｺ髢・
+   - 3縺､縺ｮ蟾ｨ螟ｧ繝｢繝弱Μ繧ｹ讒矩迚ｩ
+   - 螳悟・蜍穂ｽ懊☆繧九・繝ｬ繧､繝､繝ｼ繧ｷ繧ｹ繝・Β
 
-#### 🎮 **動作フロー**
+#### 式 **蜍穂ｽ懊ヵ繝ｭ繝ｼ**
 ```
-ゲーム開始 → タイトル表示 → スペースキー → 
-シネマティック演出 → プレイヤー操作開始
+繧ｲ繝ｼ繝髢句ｧ・竊・繧ｿ繧､繝医Ν陦ｨ遉ｺ 竊・繧ｹ繝壹・繧ｹ繧ｭ繝ｼ 竊・
+繧ｷ繝阪・繝・ぅ繝・け貍泌・ 竊・繝励Ξ繧､繝､繝ｼ謫堺ｽ憺幕蟋・
 ```
 
-#### 🌐 **ウェブ対応準備**
-- WebGL互換性考慮
-- 高品質設定とパフォーマンス最適化
-- 即座に確認可能なデモ環境
+#### 倹 **繧ｦ繧ｧ繝門ｯｾ蠢懈ｺ門ｙ**
+- WebGL莠呈鋤諤ｧ閠・・
+- 鬮伜刀雉ｪ險ｭ螳壹→繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ譛驕ｩ蛹・
+- 蜊ｳ蠎ｧ縺ｫ遒ｺ隱榊庄閭ｽ縺ｪ繝・Δ迺ｰ蠅・
 
-### 📊 **技術達成事項**
-- **MCPと標準ファイル操作の協調**: Unity開発効率化
-- **3つの大型スクリプト**: 450行以上の高機能システム
-- **リアルタイム演出**: レターボックス、フロート、フェード
-- **自動生成**: 地形・構造物・ライティングの統合
+### 投 **謚陦馴＃謌蝉ｺ矩・*
+- **MCP縺ｨ讓呎ｺ悶ヵ繧｡繧､繝ｫ謫堺ｽ懊・蜊碑ｪｿ**: Unity髢狗匱蜉ｹ邇・喧
+- **3縺､縺ｮ螟ｧ蝙九せ繧ｯ繝ｪ繝励ヨ**: 450陦御ｻ･荳翫・鬮俶ｩ溯・繧ｷ繧ｹ繝・Β
+- **繝ｪ繧｢繝ｫ繧ｿ繧､繝貍泌・**: 繝ｬ繧ｿ繝ｼ繝懊ャ繧ｯ繧ｹ縲√ヵ繝ｭ繝ｼ繝医√ヵ繧ｧ繝ｼ繝・
+- **閾ｪ蜍慕函謌・*: 蝨ｰ蠖｢繝ｻ讒矩迚ｩ繝ｻ繝ｩ繧､繝・ぅ繝ｳ繧ｰ縺ｮ邨ｱ蜷・
 
-### 🔧 **システム統合**
-既存システムとの完全統合：
-- **AdvancedPlayerController**: 高度な移動システム
-- **Structure Generator**: 7タブ統合エディタ
-- **地形生成**: HeightmapTerrainGenerator
-- **シネマティック**: 新規演出システム
+### 肌 **繧ｷ繧ｹ繝・Β邨ｱ蜷・*
+譌｢蟄倥す繧ｹ繝・Β縺ｨ縺ｮ螳悟・邨ｱ蜷茨ｼ・
+- **AdvancedPlayerController**: 鬮伜ｺｦ縺ｪ遘ｻ蜍輔す繧ｹ繝・Β
+- **Structure Generator**: 7繧ｿ繝也ｵｱ蜷医お繝・ぅ繧ｿ
+- **蝨ｰ蠖｢逕滓・**: HeightmapTerrainGenerator
+- **繧ｷ繝阪・繝・ぅ繝・け**: 譁ｰ隕乗ｼ泌・繧ｷ繧ｹ繝・Β
 
-### 📈 **プロジェクト状況**
-- **Phase 1-2**: 基本・形状制御システム ✅
-- **Phase 4**: パーティクル配置システム ✅
-- **新規**: ウェブデモシステム ✅
-- **次期**: Phase 3 Deform統合、Phase 5-6 高度システム
+### 嶋 **繝励Ο繧ｸ繧ｧ繧ｯ繝育憾豕・*
+- **Phase 1-2**: 蝓ｺ譛ｬ繝ｻ蠖｢迥ｶ蛻ｶ蠕｡繧ｷ繧ｹ繝・Β 笨・
+- **Phase 4**: 繝代・繝・ぅ繧ｯ繝ｫ驟咲ｽｮ繧ｷ繧ｹ繝・Β 笨・
+- **譁ｰ隕・*: 繧ｦ繧ｧ繝悶ョ繝｢繧ｷ繧ｹ繝・Β 笨・
+- **谺｡譛・*: Phase 3 Deform邨ｱ蜷医￣hase 5-6 鬮伜ｺｦ繧ｷ繧ｹ繝・Β
 
-## 2024-XX-XX: プレイヤーコントローラーの初期操作感の改善
+## 2024-XX-XX: 繝励Ξ繧､繝､繝ｼ繧ｳ繝ｳ繝医Ο繝ｼ繝ｩ繝ｼ縺ｮ蛻晄悄謫堺ｽ懈─縺ｮ謾ｹ蝟・
 
-### 現状報告された問題点
-ユーザーからのフィードバックに基づき、以下の問題が特定された。
-1.  **カメラ操作**: マウス感度が低く、実用的な視点移動ができない。
-2.  **ジャンプ機能**: スペースキーを押してもジャンプが実行されない。
-3.  **スプリント機能**: Shiftキーでの加速効果が薄く、体感できない。
-4.  **デバッグ表示**: 接地判定用のデバッグレイがシーンビューに表示されない。
+### 迴ｾ迥ｶ蝣ｱ蜻翫＆繧後◆蝠城｡檎せ
+繝ｦ繝ｼ繧ｶ繝ｼ縺九ｉ縺ｮ繝輔ぅ繝ｼ繝峨ヰ繝・け縺ｫ蝓ｺ縺･縺阪∽ｻ･荳九・蝠城｡後′迚ｹ螳壹＆繧後◆縲・
+1.  **繧ｫ繝｡繝ｩ謫堺ｽ・*: 繝槭え繧ｹ諢溷ｺｦ縺御ｽ弱￥縲∝ｮ溽畑逧・↑隕也せ遘ｻ蜍輔′縺ｧ縺阪↑縺・・
+2.  **繧ｸ繝｣繝ｳ繝玲ｩ溯・**: 繧ｹ繝壹・繧ｹ繧ｭ繝ｼ繧呈款縺励※繧ゅず繝｣繝ｳ繝励′螳溯｡後＆繧後↑縺・・
+3.  **繧ｹ繝励Μ繝ｳ繝域ｩ溯・**: Shift繧ｭ繝ｼ縺ｧ縺ｮ蜉騾溷柑譫懊′阮・￥縲∽ｽ捺─縺ｧ縺阪↑縺・・
+4.  **繝・ヰ繝・げ陦ｨ遉ｺ**: 謗･蝨ｰ蛻､螳夂畑縺ｮ繝・ヰ繝・げ繝ｬ繧､縺後す繝ｼ繝ｳ繝薙Η繝ｼ縺ｫ陦ｨ遉ｺ縺輔ｌ縺ｪ縺・・
 
-### 修正方針
-上記の問題を解決し、設計書にある「操作していて楽しい」移動の基礎を固めるため、以下の修正を実施する。
+### 菫ｮ豁｣譁ｹ驥・
+荳願ｨ倥・蝠城｡後ｒ隗｣豎ｺ縺励∬ｨｭ險域嶌縺ｫ縺ゅｋ縲梧桃菴懊＠縺ｦ縺・※讌ｽ縺励＞縲咲ｧｻ蜍輔・蝓ｺ遉弱ｒ蝗ｺ繧√ｋ縺溘ａ縲∽ｻ･荳九・菫ｮ豁｣繧貞ｮ滓命縺吶ｋ縲・
 
-1.  **カメラ感度の向上**: `CameraController`の`mouseSensitivity`の値を大幅に引き上げ、スムーズな視点移動を可能にする。
-2.  **ジャンプの信頼性向上**:
-    - 接地判定のロジックを、単一の光線（Raycast）から、より確実性の高い球体（SphereCast）を用いる方法に変更する。これにより、坂やオブジェクトの角など、不安定な足場でも正確に接地状態を検知できるようにする。
-    - 接地判定が失敗している根本原因として、Unityエディタ上のレイヤーマスク設定が反映されていない可能性を考慮し、再度スクリプトからレイヤーマスクを確実に設定する。
-3.  **スプリントの体感強化**:
-    - 一瞬だけ力を加える現在の方式から、「スプリント中は最高速度の上限を引き上げる」方式に変更する。これにより、Shiftキーを押している間、明確に高速な移動状態を維持できるようにする。
-4.  **デバッグの可視化**:
-    - ユーザーに対し、デバッグレイ（やSphereCastのギズモ）を表示するために、シーンビューの「Gizmos」ボタンが有効になっている必要があることを通知する。
+1.  **繧ｫ繝｡繝ｩ諢溷ｺｦ縺ｮ蜷台ｸ・*: `CameraController`縺ｮ`mouseSensitivity`縺ｮ蛟､繧貞､ｧ蟷・↓蠑輔″荳翫￡縲√せ繝繝ｼ繧ｺ縺ｪ隕也せ遘ｻ蜍輔ｒ蜿ｯ閭ｽ縺ｫ縺吶ｋ縲・
+2.  **繧ｸ繝｣繝ｳ繝励・菫｡鬆ｼ諤ｧ蜷台ｸ・*:
+    - 謗･蝨ｰ蛻､螳壹・繝ｭ繧ｸ繝・け繧偵∝腰荳縺ｮ蜈臥ｷ夲ｼ・aycast・峨°繧峨√ｈ繧顔｢ｺ螳滓ｧ縺ｮ鬮倥＞逅・ｽ難ｼ・phereCast・峨ｒ逕ｨ縺・ｋ譁ｹ豕輔↓螟画峩縺吶ｋ縲ゅ％繧後↓繧医ｊ縲∝揩繧・が繝悶ず繧ｧ繧ｯ繝医・隗偵↑縺ｩ縲∽ｸ榊ｮ牙ｮ壹↑雜ｳ蝣ｴ縺ｧ繧よｭ｣遒ｺ縺ｫ謗･蝨ｰ迥ｶ諷九ｒ讀懃衍縺ｧ縺阪ｋ繧医≧縺ｫ縺吶ｋ縲・
+    - 謗･蝨ｰ蛻､螳壹′螟ｱ謨励＠縺ｦ縺・ｋ譬ｹ譛ｬ蜴溷屏縺ｨ縺励※縲ゞnity繧ｨ繝・ぅ繧ｿ荳翫・繝ｬ繧､繝､繝ｼ繝槭せ繧ｯ險ｭ螳壹′蜿肴丐縺輔ｌ縺ｦ縺・↑縺・庄閭ｽ諤ｧ繧定・・縺励∝・蠎ｦ繧ｹ繧ｯ繝ｪ繝励ヨ縺九ｉ繝ｬ繧､繝､繝ｼ繝槭せ繧ｯ繧堤｢ｺ螳溘↓險ｭ螳壹☆繧九・
+3.  **繧ｹ繝励Μ繝ｳ繝医・菴捺─蠑ｷ蛹・*:
+    - 荳迸ｬ縺縺大鴨繧貞刈縺医ｋ迴ｾ蝨ｨ縺ｮ譁ｹ蠑上°繧峨√後せ繝励Μ繝ｳ繝井ｸｭ縺ｯ譛鬮倬溷ｺｦ縺ｮ荳企剞繧貞ｼ輔″荳翫￡繧九肴婿蠑上↓螟画峩縺吶ｋ縲ゅ％繧後↓繧医ｊ縲ヾhift繧ｭ繝ｼ繧呈款縺励※縺・ｋ髢薙∵・遒ｺ縺ｫ鬮倬溘↑遘ｻ蜍慕憾諷九ｒ邯ｭ謖√〒縺阪ｋ繧医≧縺ｫ縺吶ｋ縲・
+4.  **繝・ヰ繝・げ縺ｮ蜿ｯ隕門喧**:
+    - 繝ｦ繝ｼ繧ｶ繝ｼ縺ｫ蟇ｾ縺励√ョ繝舌ャ繧ｰ繝ｬ繧､・医ｄSphereCast縺ｮ繧ｮ繧ｺ繝｢・峨ｒ陦ｨ遉ｺ縺吶ｋ縺溘ａ縺ｫ縲√す繝ｼ繝ｳ繝薙Η繝ｼ縺ｮ縲隈izmos縲阪・繧ｿ繝ｳ縺梧怏蜉ｹ縺ｫ縺ｪ縺｣縺ｦ縺・ｋ蠢・ｦ√′縺ゅｋ縺薙→繧帝夂衍縺吶ｋ縲・
 
-以上の修正により、プレイヤー操作の基本的な「動かす・見る・跳ぶ・走る」というアクションが、ストレスなく行える状態を目指す。
-
----
-## 2024-XX-XX: 操作性の再調整と不具合の根本原因調査
-
-### 現状報告された問題点 (フィードバック 2)
-1.  **カメラ感度**: まだ感度が低く、実用レベルに達していない。
-2.  **ジャンプ機能**: 依然として機能しない。接地判定の仕組みと連携について不明瞭。
-3.  **スプリント機能**: 加速効果が薄い。（一旦保留）
-4.  **デバッグ表示**: 接地判定のギズモ（視覚的デバッグ情報）が見えない。
-5.  **パフォーマンス**: 動作が非常に重い。
-
-### 修正方針と説明
-1.  **カメラ感度の大幅な向上**: `mouseSensitivity`の値を、誰が操作しても明確に変化がわかるレベルまで引き上げる。
-2.  **ジャンプ機能の徹底解説と修正**:
-    - **仕組みの解説**: ジャンプが機能するための「3つの連携要素」（①レイヤー設定、②スクリプト上のレイヤーマスク、③物理判定コード）について、ユーザーに詳しく説明する。
-    - **コードの改善**: `Camera.main`へのアクセスをキャッシュする最適化を導入し、パフォーマンスへの配慮を示す。また、ユーザーが編集した`linearVelocity`への変更を尊重し、コード全体で一貫性を保つ。
-3.  **パフォーマンス問題への考察**:
-    - 現在のスクリプトに、深刻なパフォーマンス低下を引き起こす処理は含まれていないことを説明する。ただし、ベストプラクティスとして`Camera.main`のキャッシュなどの微細な最適化は実施する。
-4.  **デバッグ表示の案内**:
-    - シーンビューの「Gizmos」ボタンが有効になっていないとデバッグ表示が見えないことを、画像などを交えて再度、明確に案内する。問題解決の鍵となるため、この点の確認を最優先で依頼する。
+莉･荳翫・菫ｮ豁｣縺ｫ繧医ｊ縲√・繝ｬ繧､繝､繝ｼ謫堺ｽ懊・蝓ｺ譛ｬ逧・↑縲悟虚縺九☆繝ｻ隕九ｋ繝ｻ霍ｳ縺ｶ繝ｻ襍ｰ繧九阪→縺・≧繧｢繧ｯ繧ｷ繝ｧ繝ｳ縺後√せ繝医Ξ繧ｹ縺ｪ縺剰｡後∴繧狗憾諷九ｒ逶ｮ謖・☆縲・
 
 ---
-## 2024-XX-XX: ジャンプ機能の不安定性と無限上昇問題の修正
+## 2024-XX-XX: 謫堺ｽ懈ｧ縺ｮ蜀崎ｪｿ謨ｴ縺ｨ荳榊・蜷医・譬ｹ譛ｬ蜴溷屏隱ｿ譟ｻ
 
-### 現状報告された問題点 (フィードバック 3)
-ユーザー様による`Ground Layer`の手動設定後、以下の問題が新たに発生。
-1.  **ジャンプの不安定性**: ジャンプが成功したり失敗したりする。
-2.  **無限上昇**: 一度ジャンプすると、重力を無視して無限に上昇し続ける。
-3.  **接地判定のちらつき**: カメラを動かすと、地面に立っていても接地判定ギズモ（球体）が緑と赤に細かくちらつく。
+### 迴ｾ迥ｶ蝣ｱ蜻翫＆繧後◆蝠城｡檎せ (繝輔ぅ繝ｼ繝峨ヰ繝・け 2)
+1.  **繧ｫ繝｡繝ｩ諢溷ｺｦ**: 縺ｾ縺諢溷ｺｦ縺御ｽ弱￥縲∝ｮ溽畑繝ｬ繝吶Ν縺ｫ驕斐＠縺ｦ縺・↑縺・・
+2.  **繧ｸ繝｣繝ｳ繝玲ｩ溯・**: 萓晉┯縺ｨ縺励※讖溯・縺励↑縺・よ磁蝨ｰ蛻､螳壹・莉慕ｵ・∩縺ｨ騾｣謳ｺ縺ｫ縺､縺・※荳肴・迸ｭ縲・
+3.  **繧ｹ繝励Μ繝ｳ繝域ｩ溯・**: 蜉騾溷柑譫懊′阮・＞縲ゑｼ井ｸ譌ｦ菫晉蕗・・
+4.  **繝・ヰ繝・げ陦ｨ遉ｺ**: 謗･蝨ｰ蛻､螳壹・繧ｮ繧ｺ繝｢・郁ｦ冶ｦ夂噪繝・ヰ繝・げ諠・ｱ・峨′隕九∴縺ｪ縺・・
+5.  **繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ**: 蜍穂ｽ懊′髱槫ｸｸ縺ｫ驥阪＞縲・
 
-### 根本原因の分析と修正方針
-1.  **無限上昇の原因**: `Rigidbody`コンポーネントの**`Use Gravity`（重力を使用する）設定が、スクリプトの更新過程で意図せず無効になっていた**ことが原因。これにより、ジャンプ後の上昇速度を打ち消す力が働かず、上昇し続けていた。
-    - **対策**: スクリプトの`Start`関数で、`Rigidbody`の`useGravity`プロパティを強制的に`true`に設定し、必ず重力が働くように修正する。
-2.  **不安定性の原因**: カメラのスクリプト(`CameraController`)がプレイヤーの向きを直接操作し、プレイヤーのスクリプト(`PlayerController`)が物理的な力を加えていた。この**2つのスクリプトによる操作の競合**が、物理演算のわずかなブレ（ジッター）を引き起こし、接地判定を不安定にしていた。
-    - **対策**: スクリプトの役割を明確に分離するリファクタリングを実施する。
-        - **`PlayerController`**: 移動と、移動方向に体を向ける回転処理の**すべて**を担当する。
-        - **`CameraController`**: プレイヤーを追いかけ、マウスで視点を変える**だけ**を担当し、プレイヤーの回転には一切関与しないようにする。
-    - この分離により、物理演算が安定し、接地判定のちらつきとジャンプの不安定性が解消される見込み。
-
----
-## 2024-XX-XX: 操作の安定化（最終調整）
-
-### 現状報告された問題点 (フィードバック 4)
-前回の修正後、以下の問題が発生。
-1.  **カメラ追従の失敗**: カメラがプレイヤーを追従せず、初期位置に取り残される。
-2.  **ジャンプ機能の再故障**: ジャンプが再び完全に機能しなくなった。
-
-### 根本原因の分析と修正方針
-1.  **カメラ追従失敗の原因**: `CameraController`がプレイヤーを自動で見つけるロジックが、カメラとプレイヤーの親子関係を解消したことにより機能しなくなっていた。`playerBody`変数が空のままだったため、追従処理が一切実行されていなかった。
-    - **対策**: 親子関係に依存しない、より堅牢な方法でプレイヤーを自動検出するよう`CameraController`を修正する。具体的には、シーン内から`PlayerController`スクリプトを持つオブジェクトを検索し、それをターゲットとする。
-2.  **ジャンプ機能故障の原因**: プレイヤーの回転処理(`MoveRotation`)が物理演算に微細なブレ（ジッター）を生じさせ、接地判定が非常に敏感に反応し、プレイヤーが常に「空中にいる」と誤判定されていた。
-    - **対策**: 「コヨーテタイム」と呼ばれるゲーム開発のテクニックを導入する。これは、「地面から足が離れた直後の、ほんの一瞬（例: 0.15秒）だけジャンプの入力を受け付ける」というもの。これにより、判定のちらつきが操作感に影響するのを防ぎ、より信頼性が高く、操作していて気持ちの良いジャンプを実現する。
+### 菫ｮ豁｣譁ｹ驥昴→隱ｬ譏・
+1.  **繧ｫ繝｡繝ｩ諢溷ｺｦ縺ｮ螟ｧ蟷・↑蜷台ｸ・*: `mouseSensitivity`縺ｮ蛟､繧偵∬ｪｰ縺梧桃菴懊＠縺ｦ繧よ・遒ｺ縺ｫ螟牙喧縺後ｏ縺九ｋ繝ｬ繝吶Ν縺ｾ縺ｧ蠑輔″荳翫￡繧九・
+2.  **繧ｸ繝｣繝ｳ繝玲ｩ溯・縺ｮ蠕ｹ蠎戊ｧ｣隱ｬ縺ｨ菫ｮ豁｣**:
+    - **莉慕ｵ・∩縺ｮ隗｣隱ｬ**: 繧ｸ繝｣繝ｳ繝励′讖溯・縺吶ｋ縺溘ａ縺ｮ縲・縺､縺ｮ騾｣謳ｺ隕∫ｴ縲搾ｼ遺蔵繝ｬ繧､繝､繝ｼ險ｭ螳壹≫贈繧ｹ繧ｯ繝ｪ繝励ヨ荳翫・繝ｬ繧､繝､繝ｼ繝槭せ繧ｯ縲≫造迚ｩ逅・愛螳壹さ繝ｼ繝会ｼ峨↓縺､縺・※縲√Θ繝ｼ繧ｶ繝ｼ縺ｫ隧ｳ縺励￥隱ｬ譏弱☆繧九・
+    - **繧ｳ繝ｼ繝峨・謾ｹ蝟・*: `Camera.main`縺ｸ縺ｮ繧｢繧ｯ繧ｻ繧ｹ繧偵く繝｣繝・す繝･縺吶ｋ譛驕ｩ蛹悶ｒ蟆主・縺励√ヱ繝輔か繝ｼ繝槭Φ繧ｹ縺ｸ縺ｮ驟肴・繧堤､ｺ縺吶ゅ∪縺溘√Θ繝ｼ繧ｶ繝ｼ縺檎ｷｨ髮・＠縺歔linearVelocity`縺ｸ縺ｮ螟画峩繧貞ｰ企㍾縺励√さ繝ｼ繝牙・菴薙〒荳雋ｫ諤ｧ繧剃ｿ昴▽縲・
+3.  **繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ蝠城｡後∈縺ｮ閠・ｯ・*:
+    - 迴ｾ蝨ｨ縺ｮ繧ｹ繧ｯ繝ｪ繝励ヨ縺ｫ縲∵ｷｱ蛻ｻ縺ｪ繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ菴惹ｸ九ｒ蠑輔″襍ｷ縺薙☆蜃ｦ逅・・蜷ｫ縺ｾ繧後※縺・↑縺・％縺ｨ繧定ｪｬ譏弱☆繧九ゅ◆縺縺励√・繧ｹ繝医・繝ｩ繧ｯ繝・ぅ繧ｹ縺ｨ縺励※`Camera.main`縺ｮ繧ｭ繝｣繝・す繝･縺ｪ縺ｩ縺ｮ蠕ｮ邏ｰ縺ｪ譛驕ｩ蛹悶・螳滓命縺吶ｋ縲・
+4.  **繝・ヰ繝・げ陦ｨ遉ｺ縺ｮ譯亥・**:
+    - 繧ｷ繝ｼ繝ｳ繝薙Η繝ｼ縺ｮ縲隈izmos縲阪・繧ｿ繝ｳ縺梧怏蜉ｹ縺ｫ縺ｪ縺｣縺ｦ縺・↑縺・→繝・ヰ繝・げ陦ｨ遉ｺ縺瑚ｦ九∴縺ｪ縺・％縺ｨ繧偵∫判蜒上↑縺ｩ繧剃ｺ､縺医※蜀榊ｺｦ縲∵・遒ｺ縺ｫ譯亥・縺吶ｋ縲ょ撫鬘瑚ｧ｣豎ｺ縺ｮ骰ｵ縺ｨ縺ｪ繧九◆繧√√％縺ｮ轤ｹ縺ｮ遒ｺ隱阪ｒ譛蜆ｪ蜈医〒萓晞ｼ縺吶ｋ縲・
 
 ---
-## 2024-XX-XX: 無限上昇問題の最終解決
+## 2024-XX-XX: 繧ｸ繝｣繝ｳ繝玲ｩ溯・縺ｮ荳榊ｮ牙ｮ壽ｧ縺ｨ辟｡髯蝉ｸ頑・蝠城｡後・菫ｮ豁｣
 
-### 現状報告された問題点 (フィードバック 5)
-1.  **無限上昇問題の再発**: `useGravity`の強制設定にもかかわらず、ジャンプ後に無限上昇する問題が依然として解決されない。
+### 迴ｾ迥ｶ蝣ｱ蜻翫＆繧後◆蝠城｡檎せ (繝輔ぅ繝ｼ繝峨ヰ繝・け 3)
+繝ｦ繝ｼ繧ｶ繝ｼ讒倥↓繧医ｋ`Ground Layer`縺ｮ謇句虚險ｭ螳壼ｾ後∽ｻ･荳九・蝠城｡後′譁ｰ縺溘↓逋ｺ逕溘・
+1.  **繧ｸ繝｣繝ｳ繝励・荳榊ｮ牙ｮ壽ｧ**: 繧ｸ繝｣繝ｳ繝励′謌仙粥縺励◆繧雁､ｱ謨励＠縺溘ｊ縺吶ｋ縲・
+2.  **辟｡髯蝉ｸ頑・**: 荳蠎ｦ繧ｸ繝｣繝ｳ繝励☆繧九→縲・㍾蜉帙ｒ辟｡隕悶＠縺ｦ辟｡髯舌↓荳頑・縺礼ｶ壹￠繧九・
+3.  **謗･蝨ｰ蛻､螳壹・縺｡繧峨▽縺・*: 繧ｫ繝｡繝ｩ繧貞虚縺九☆縺ｨ縲∝慍髱｢縺ｫ遶九▲縺ｦ縺・※繧よ磁蝨ｰ蛻､螳壹ぐ繧ｺ繝｢・育帥菴難ｼ峨′邱代→襍､縺ｫ邏ｰ縺九￥縺｡繧峨▽縺上・
 
-### 根本原因の分析と最終方針
-Unityの組み込み重力システム(`useGravity = true`)が、何らかの外部要因や設定の競合により、意図した通りに機能していないと断定。この不安定なシステムに依存し続けることは、さらなる問題を引き起こす可能性がある。
-
-- **最終対策**: 組み込みの重力システムの使用を完全に放棄し、**プレイヤー専用の「カスタム重力」を`PlayerController`内に実装する。**
-    - `Start()`メソッドで`useGravity`を明確に`false`に設定する。
-    - `FixedUpdate()`メソッド内で、常に一定の下向きの力（重力）を`AddForce`で加え続ける。
-    - これにより、プロジェクトの物理設定から完全に独立し、プレイヤーの落下挙動をスクリプトが100%管理下に置く。このアプローチにより、無限上昇の問題を根本的かつ恒久的に解決する。
-
----
-## 2024-XX-XX: 無限上昇問題の最終解決（アプローチ変更）
-
-### 現状報告された問題点 (フィードバック 6)
-1.  **無限上昇問題の継続**: カスタム重力(`AddForce`)の実装後も、無限上昇問題が解決されない。
-
-### 根本原因の再分析と最終解決策
-`AddForce`による物理演算が、プロジェクト内の未知の設定と競合し、意図通りに機能していないと断定。物理シミュレーションに頼るアプローチを完全に破棄する必要がある。
-
-- **最終解決策**: `AddForce`の使用をやめ、**プレイヤーの落下速度(`velocity`)をスクリプトが直接、フレームごとに計算し、設定する**方式に変更する。
-    - `FixedUpdate()`内で、重力加速度をプレイヤーのY軸速度に直接加算する。`rb.velocity += Vector3.down * gravity * Time.fixedDeltaTime;`
-    - この方法は、Unityの内部的な物理計算の多くをバイパスするため、外部からの干渉を受けにくく、最も直接的で信頼性が高い。これにより、無限上昇の問題に終止符を打つ。
+### 譬ｹ譛ｬ蜴溷屏縺ｮ蛻・梵縺ｨ菫ｮ豁｣譁ｹ驥・
+1.  **辟｡髯蝉ｸ頑・縺ｮ蜴溷屏**: `Rigidbody`繧ｳ繝ｳ繝昴・繝阪Φ繝医・**`Use Gravity`・磯㍾蜉帙ｒ菴ｿ逕ｨ縺吶ｋ・芽ｨｭ螳壹′縲√せ繧ｯ繝ｪ繝励ヨ縺ｮ譖ｴ譁ｰ驕守ｨ九〒諢丞峙縺帙★辟｡蜉ｹ縺ｫ縺ｪ縺｣縺ｦ縺・◆**縺薙→縺悟次蝗縲ゅ％繧後↓繧医ｊ縲√ず繝｣繝ｳ繝怜ｾ後・荳頑・騾溷ｺｦ繧呈遠縺｡豸医☆蜉帙′蜒阪°縺壹∽ｸ頑・縺礼ｶ壹￠縺ｦ縺・◆縲・
+    - **蟇ｾ遲・*: 繧ｹ繧ｯ繝ｪ繝励ヨ縺ｮ`Start`髢｢謨ｰ縺ｧ縲～Rigidbody`縺ｮ`useGravity`繝励Ο繝代ユ繧｣繧貞ｼｷ蛻ｶ逧・↓`true`縺ｫ險ｭ螳壹＠縲∝ｿ・★驥榊鴨縺悟ロ縺上ｈ縺・↓菫ｮ豁｣縺吶ｋ縲・
+2.  **荳榊ｮ牙ｮ壽ｧ縺ｮ蜴溷屏**: 繧ｫ繝｡繝ｩ縺ｮ繧ｹ繧ｯ繝ｪ繝励ヨ(`CameraController`)縺後・繝ｬ繧､繝､繝ｼ縺ｮ蜷代″繧堤峩謗･謫堺ｽ懊＠縲√・繝ｬ繧､繝､繝ｼ縺ｮ繧ｹ繧ｯ繝ｪ繝励ヨ(`PlayerController`)縺檎黄逅・噪縺ｪ蜉帙ｒ蜉縺医※縺・◆縲ゅ％縺ｮ**2縺､縺ｮ繧ｹ繧ｯ繝ｪ繝励ヨ縺ｫ繧医ｋ謫堺ｽ懊・遶ｶ蜷・*縺後∫黄逅・ｼ皮ｮ励・繧上★縺九↑繝悶Ξ・医ず繝・ち繝ｼ・峨ｒ蠑輔″襍ｷ縺薙＠縲∵磁蝨ｰ蛻､螳壹ｒ荳榊ｮ牙ｮ壹↓縺励※縺・◆縲・
+    - **蟇ｾ遲・*: 繧ｹ繧ｯ繝ｪ繝励ヨ縺ｮ蠖ｹ蜑ｲ繧呈・遒ｺ縺ｫ蛻・屬縺吶ｋ繝ｪ繝輔ぃ繧ｯ繧ｿ繝ｪ繝ｳ繧ｰ繧貞ｮ滓命縺吶ｋ縲・
+        - **`PlayerController`**: 遘ｻ蜍輔→縲∫ｧｻ蜍墓婿蜷代↓菴薙ｒ蜷代￠繧句屓霆｢蜃ｦ逅・・**縺吶∋縺ｦ**繧呈球蠖薙☆繧九・
+        - **`CameraController`**: 繝励Ξ繧､繝､繝ｼ繧定ｿｽ縺・°縺代√・繧ｦ繧ｹ縺ｧ隕也せ繧貞､峨∴繧・*縺縺・*繧呈球蠖薙＠縲√・繝ｬ繧､繝､繝ｼ縺ｮ蝗櫁ｻ｢縺ｫ縺ｯ荳蛻・未荳弱＠縺ｪ縺・ｈ縺・↓縺吶ｋ縲・
+    - 縺薙・蛻・屬縺ｫ繧医ｊ縲∫黄逅・ｼ皮ｮ励′螳牙ｮ壹＠縲∵磁蝨ｰ蛻､螳壹・縺｡繧峨▽縺阪→繧ｸ繝｣繝ｳ繝励・荳榊ｮ牙ｮ壽ｧ縺瑚ｧ｣豸医＆繧後ｋ隕玖ｾｼ縺ｿ縲・
 
 ---
-## 2024-XX-XX: 無限上昇問題の最終解決（根本原因特定）
+## 2024-XX-XX: 謫堺ｽ懊・螳牙ｮ壼喧・域怙邨りｪｿ謨ｴ・・
 
-### 現状報告された問題点 (フィードバック 7)
-1.  **無限上昇問題の継続**: 速度を直接操作するカスタム重力でも問題が解決しない。
+### 迴ｾ迥ｶ蝣ｱ蜻翫＆繧後◆蝠城｡檎せ (繝輔ぅ繝ｼ繝峨ヰ繝・け 4)
+蜑榊屓縺ｮ菫ｮ豁｣蠕後∽ｻ･荳九・蝠城｡後′逋ｺ逕溘・
+1.  **繧ｫ繝｡繝ｩ霑ｽ蠕薙・螟ｱ謨・*: 繧ｫ繝｡繝ｩ縺後・繝ｬ繧､繝､繝ｼ繧定ｿｽ蠕薙○縺壹∝・譛滉ｽ咲ｽｮ縺ｫ蜿悶ｊ谿九＆繧後ｋ縲・
+2.  **繧ｸ繝｣繝ｳ繝玲ｩ溯・縺ｮ蜀肴腐髫・*: 繧ｸ繝｣繝ｳ繝励′蜀阪・螳悟・縺ｫ讖溯・縺励↑縺上↑縺｣縺溘・
 
-### 根本原因の特定と最終解決策
-ユーザー提供のスクリーンショットにより、**根本原因が「Inspector設定とスクリプトの競合」であったと特定**。
-- **Inspector**: `Rigidbody`の`Use Gravity`が`true`に設定されている。
-- **スクリプト**: 独自のカスタム重力を実装し、`useGravity`を`false`にしようとしていた。
-
-この2つの重力処理が衝突し、予測不能な物理挙動を引き起こしていた。
-
-- **最終解決策**: スクリプト側のカスタム重力実装を完全に撤廃し、**Inspectorの設定（Unity標準重力）に100%準拠する**形に修正する。
-    - `PlayerController`から、カスタム重力に関連する全てのコード（変数、関数呼び出し）を削除する。
-    - `Start()`メソッドで、`rb.useGravity = true;`を明示的に実行し、いかなる状況でもUnity標準の重力が適用されることを保証する。
-    - これにより、全ての重力処理がUnityの物理エンジンに一元化され、競合が解消され、安定した挙動が保証される。
+### 譬ｹ譛ｬ蜴溷屏縺ｮ蛻・梵縺ｨ菫ｮ豁｣譁ｹ驥・
+1.  **繧ｫ繝｡繝ｩ霑ｽ蠕灘､ｱ謨励・蜴溷屏**: `CameraController`縺後・繝ｬ繧､繝､繝ｼ繧定・蜍輔〒隕九▽縺代ｋ繝ｭ繧ｸ繝・け縺後√き繝｡繝ｩ縺ｨ繝励Ξ繧､繝､繝ｼ縺ｮ隕ｪ蟄宣未菫ゅｒ隗｣豸医＠縺溘％縺ｨ縺ｫ繧医ｊ讖溯・縺励↑縺上↑縺｣縺ｦ縺・◆縲ＡplayerBody`螟画焚縺檎ｩｺ縺ｮ縺ｾ縺ｾ縺縺｣縺溘◆繧√∬ｿｽ蠕灘・逅・′荳蛻・ｮ溯｡後＆繧後※縺・↑縺九▲縺溘・
+    - **蟇ｾ遲・*: 隕ｪ蟄宣未菫ゅ↓萓晏ｭ倥＠縺ｪ縺・√ｈ繧雁・欧縺ｪ譁ｹ豕輔〒繝励Ξ繧､繝､繝ｼ繧定・蜍墓､懷・縺吶ｋ繧医≧`CameraController`繧剃ｿｮ豁｣縺吶ｋ縲ょ・菴鍋噪縺ｫ縺ｯ縲√す繝ｼ繝ｳ蜀・°繧荏PlayerController`繧ｹ繧ｯ繝ｪ繝励ヨ繧呈戟縺､繧ｪ繝悶ず繧ｧ繧ｯ繝医ｒ讀懃ｴ｢縺励√◎繧後ｒ繧ｿ繝ｼ繧ｲ繝・ヨ縺ｨ縺吶ｋ縲・
+2.  **繧ｸ繝｣繝ｳ繝玲ｩ溯・謨・囿縺ｮ蜴溷屏**: 繝励Ξ繧､繝､繝ｼ縺ｮ蝗櫁ｻ｢蜃ｦ逅・`MoveRotation`)縺檎黄逅・ｼ皮ｮ励↓蠕ｮ邏ｰ縺ｪ繝悶Ξ・医ず繝・ち繝ｼ・峨ｒ逕溘§縺輔○縲∵磁蝨ｰ蛻､螳壹′髱槫ｸｸ縺ｫ謨乗─縺ｫ蜿榊ｿ懊＠縲√・繝ｬ繧､繝､繝ｼ縺悟ｸｸ縺ｫ縲檎ｩｺ荳ｭ縺ｫ縺・ｋ縲阪→隱､蛻､螳壹＆繧後※縺・◆縲・
+    - **蟇ｾ遲・*: 縲後さ繝ｨ繝ｼ繝・ち繧､繝縲阪→蜻ｼ縺ｰ繧後ｋ繧ｲ繝ｼ繝髢狗匱縺ｮ繝・け繝九ャ繧ｯ繧貞ｰ主・縺吶ｋ縲ゅ％繧後・縲√悟慍髱｢縺九ｉ雜ｳ縺碁屬繧後◆逶ｴ蠕後・縲√⊇繧薙・荳迸ｬ・井ｾ・ 0.15遘抵ｼ峨□縺代ず繝｣繝ｳ繝励・蜈･蜉帙ｒ蜿励￠莉倥￠繧九阪→縺・≧繧ゅ・縲ゅ％繧後↓繧医ｊ縲∝愛螳壹・縺｡繧峨▽縺阪′謫堺ｽ懈─縺ｫ蠖ｱ髻ｿ縺吶ｋ縺ｮ繧帝亟縺弱√ｈ繧贋ｿ｡鬆ｼ諤ｧ縺碁ｫ倥￥縲∵桃菴懊＠縺ｦ縺・※豌玲戟縺｡縺ｮ濶ｯ縺・ず繝｣繝ｳ繝励ｒ螳溽樟縺吶ｋ縲・
 
 ---
-## 2024-XX-XX: 開発方針の転換とエディタ拡張ツールの実装
+## 2024-XX-XX: 辟｡髯蝉ｸ頑・蝠城｡後・譛邨りｧ｣豎ｺ
 
-### 経緯
-プレイヤーコントローラーの基本動作が安定したことを受け、次の開発フェーズに移行。当初はプロシージャルな地形生成を検討したが、プロジェクトの目標である「デザイナー主導のユニークな巨大構造物」の実現には、地形そのものよりも、構造物を効率的に設計・配置するツールの方がより重要であると再定義した。
+### 迴ｾ迥ｶ蝣ｱ蜻翫＆繧後◆蝠城｡檎せ (繝輔ぅ繝ｼ繝峨ヰ繝・け 5)
+1.  **辟｡髯蝉ｸ頑・蝠城｡後・蜀咲匱**: `useGravity`縺ｮ蠑ｷ蛻ｶ險ｭ螳壹↓繧ゅ°縺九ｏ繧峨★縲√ず繝｣繝ｳ繝怜ｾ後↓辟｡髯蝉ｸ頑・縺吶ｋ蝠城｡後′萓晉┯縺ｨ縺励※隗｣豎ｺ縺輔ｌ縺ｪ縺・・
 
-### 修正方針
-開発の主軸を「プロシージャル地形生成」から「**エディタ拡張（Editor Extension）による構造物生成ツールの開発**」に転換する。
+### 譬ｹ譛ｬ蜴溷屏縺ｮ蛻・梵縺ｨ譛邨よ婿驥・
+Unity縺ｮ邨・∩霎ｼ縺ｿ驥榊鴨繧ｷ繧ｹ繝・Β(`useGravity = true`)縺後∽ｽ輔ｉ縺九・螟夜Κ隕∝屏繧・ｨｭ螳壹・遶ｶ蜷医↓繧医ｊ縲∵э蝗ｳ縺励◆騾壹ｊ縺ｫ讖溯・縺励※縺・↑縺・→譁ｭ螳壹ゅ％縺ｮ荳榊ｮ牙ｮ壹↑繧ｷ繧ｹ繝・Β縺ｫ萓晏ｭ倥＠邯壹￠繧九％縺ｨ縺ｯ縲√＆繧峨↑繧句撫鬘後ｒ蠑輔″襍ｷ縺薙☆蜿ｯ閭ｽ諤ｧ縺後≠繧九・
 
-- **`StructureGeneratorWindow`の実装**:
-    - Unityエディタ上に独自のウィンドウ（`Structure Generator`）を追加。
-    - デザイナーがパラメータを入力し、ボタンをクリックするだけで、シーン内に構造物のパーツを生成できるワークフローの基盤を構築する。
-- **ProBuilder APIの活用**:
-    - 構造物の生成には、Unityの標準パッケージである`ProBuilder`のAPIを利用する。これにより、複雑なメッシュを手軽に生成し、後の編集も容易にする。
-    - 最初に、テストケースとして**「円柱 (Cylinder)」**と**「壁 (Wall)」**を生成する機能を追加。パラメータ（高さ、半径、幅など）をGUIから調整可能にした。
-- **ProBuilderの導入と互換性問題の解決**:
-    - 開発中にProBuilderパッケージが未導入であることが判明し、ユーザーにインストールを依頼。
-    - インストール後、APIのバージョンアップに伴う互換性エラーが発生したが、スクリプトを最新のAPIに合わせて修正し、問題を解決した。
+- **譛邨ょｯｾ遲・*: 邨・∩霎ｼ縺ｿ縺ｮ驥榊鴨繧ｷ繧ｹ繝・Β縺ｮ菴ｿ逕ｨ繧貞ｮ悟・縺ｫ謾ｾ譽・＠縲・*繝励Ξ繧､繝､繝ｼ蟆ら畑縺ｮ縲後き繧ｹ繧ｿ繝驥榊鴨縲阪ｒ`PlayerController`蜀・↓螳溯｣・☆繧九・*
+    - `Start()`繝｡繧ｽ繝・ラ縺ｧ`useGravity`繧呈・遒ｺ縺ｫ`false`縺ｫ險ｭ螳壹☆繧九・
+    - `FixedUpdate()`繝｡繧ｽ繝・ラ蜀・〒縲∝ｸｸ縺ｫ荳螳壹・荳句髄縺阪・蜉幢ｼ磯㍾蜉幢ｼ峨ｒ`AddForce`縺ｧ蜉縺育ｶ壹￠繧九・
+    - 縺薙ｌ縺ｫ繧医ｊ縲√・繝ｭ繧ｸ繧ｧ繧ｯ繝医・迚ｩ逅・ｨｭ螳壹°繧牙ｮ悟・縺ｫ迢ｬ遶九＠縲√・繝ｬ繧､繝､繝ｼ縺ｮ關ｽ荳区嫌蜍輔ｒ繧ｹ繧ｯ繝ｪ繝励ヨ縺・00%邂｡逅・ｸ九↓鄂ｮ縺上ゅ％縺ｮ繧｢繝励Ο繝ｼ繝√↓繧医ｊ縲∫┌髯蝉ｸ頑・縺ｮ蝠城｡後ｒ譬ｹ譛ｬ逧・°縺､諱剃ｹ・噪縺ｫ隗｣豎ｺ縺吶ｋ縲・
 
-### 現状と次の一手
-- **現状**: `Structure Generator`ウィンドウから、円柱と壁を正常に生成できる状態。
-- **次の一手**: 生成した基本オブジェクトを組み合わせ、より複雑な形状（例：窓のある壁）を作成するため、**「ブーリアン演算機能」**を`Structure Generator`に実装する。 
+---
+## 2024-XX-XX: 辟｡髯蝉ｸ頑・蝠城｡後・譛邨りｧ｣豎ｺ・医い繝励Ο繝ｼ繝∝､画峩・・
+
+### 迴ｾ迥ｶ蝣ｱ蜻翫＆繧後◆蝠城｡檎せ (繝輔ぅ繝ｼ繝峨ヰ繝・け 6)
+1.  **辟｡髯蝉ｸ頑・蝠城｡後・邯咏ｶ・*: 繧ｫ繧ｹ繧ｿ繝驥榊鴨(`AddForce`)縺ｮ螳溯｣・ｾ後ｂ縲∫┌髯蝉ｸ頑・蝠城｡後′隗｣豎ｺ縺輔ｌ縺ｪ縺・・
+
+### 譬ｹ譛ｬ蜴溷屏縺ｮ蜀榊・譫舌→譛邨りｧ｣豎ｺ遲・
+`AddForce`縺ｫ繧医ｋ迚ｩ逅・ｼ皮ｮ励′縲√・繝ｭ繧ｸ繧ｧ繧ｯ繝亥・縺ｮ譛ｪ遏･縺ｮ險ｭ螳壹→遶ｶ蜷医＠縲∵э蝗ｳ騾壹ｊ縺ｫ讖溯・縺励※縺・↑縺・→譁ｭ螳壹ら黄逅・す繝溘Η繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ縺ｫ鬆ｼ繧九い繝励Ο繝ｼ繝√ｒ螳悟・縺ｫ遐ｴ譽・☆繧句ｿ・ｦ√′縺ゅｋ縲・
+
+- **譛邨りｧ｣豎ｺ遲・*: `AddForce`縺ｮ菴ｿ逕ｨ繧偵ｄ繧√・*繝励Ξ繧､繝､繝ｼ縺ｮ關ｽ荳矩溷ｺｦ(`velocity`)繧偵せ繧ｯ繝ｪ繝励ヨ縺檎峩謗･縲√ヵ繝ｬ繝ｼ繝縺斐→縺ｫ險育ｮ励＠縲∬ｨｭ螳壹☆繧・*譁ｹ蠑上↓螟画峩縺吶ｋ縲・
+    - `FixedUpdate()`蜀・〒縲・㍾蜉帛刈騾溷ｺｦ繧偵・繝ｬ繧､繝､繝ｼ縺ｮY霆ｸ騾溷ｺｦ縺ｫ逶ｴ謗･蜉邂励☆繧九Ａrb.velocity += Vector3.down * gravity * Time.fixedDeltaTime;`
+    - 縺薙・譁ｹ豕輔・縲ゞnity縺ｮ蜀・Κ逧・↑迚ｩ逅・ｨ育ｮ励・螟壹￥繧偵ヰ繧､繝代せ縺吶ｋ縺溘ａ縲∝､夜Κ縺九ｉ縺ｮ蟷ｲ貂峨ｒ蜿励￠縺ｫ縺上￥縲∵怙繧ら峩謗･逧・〒菫｡鬆ｼ諤ｧ縺碁ｫ倥＞縲ゅ％繧後↓繧医ｊ縲∫┌髯蝉ｸ頑・縺ｮ蝠城｡後↓邨よｭ｢隨ｦ繧呈遠縺､縲・
+
+---
+## 2024-XX-XX: 辟｡髯蝉ｸ頑・蝠城｡後・譛邨りｧ｣豎ｺ・域ｹ譛ｬ蜴溷屏迚ｹ螳夲ｼ・
+
+### 迴ｾ迥ｶ蝣ｱ蜻翫＆繧後◆蝠城｡檎せ (繝輔ぅ繝ｼ繝峨ヰ繝・け 7)
+1.  **辟｡髯蝉ｸ頑・蝠城｡後・邯咏ｶ・*: 騾溷ｺｦ繧堤峩謗･謫堺ｽ懊☆繧九き繧ｹ繧ｿ繝驥榊鴨縺ｧ繧ょ撫鬘後′隗｣豎ｺ縺励↑縺・・
+
+### 譬ｹ譛ｬ蜴溷屏縺ｮ迚ｹ螳壹→譛邨りｧ｣豎ｺ遲・
+繝ｦ繝ｼ繧ｶ繝ｼ謠蝉ｾ帙・繧ｹ繧ｯ繝ｪ繝ｼ繝ｳ繧ｷ繝ｧ繝・ヨ縺ｫ繧医ｊ縲・*譬ｹ譛ｬ蜴溷屏縺後栗nspector險ｭ螳壹→繧ｹ繧ｯ繝ｪ繝励ヨ縺ｮ遶ｶ蜷医阪〒縺ゅ▲縺溘→迚ｹ螳・*縲・
+- **Inspector**: `Rigidbody`縺ｮ`Use Gravity`縺形true`縺ｫ險ｭ螳壹＆繧後※縺・ｋ縲・
+- **繧ｹ繧ｯ繝ｪ繝励ヨ**: 迢ｬ閾ｪ縺ｮ繧ｫ繧ｹ繧ｿ繝驥榊鴨繧貞ｮ溯｣・＠縲～useGravity`繧蛋false`縺ｫ縺励ｈ縺・→縺励※縺・◆縲・
+
+縺薙・2縺､縺ｮ驥榊鴨蜃ｦ逅・′陦晉ｪ√＠縲∽ｺ域ｸｬ荳崎・縺ｪ迚ｩ逅・嫌蜍輔ｒ蠑輔″襍ｷ縺薙＠縺ｦ縺・◆縲・
+
+- **譛邨りｧ｣豎ｺ遲・*: 繧ｹ繧ｯ繝ｪ繝励ヨ蛛ｴ縺ｮ繧ｫ繧ｹ繧ｿ繝驥榊鴨螳溯｣・ｒ螳悟・縺ｫ謦､蟒・＠縲・*Inspector縺ｮ險ｭ螳夲ｼ・nity讓呎ｺ夜㍾蜉幢ｼ峨↓100%貅匁侠縺吶ｋ**蠖｢縺ｫ菫ｮ豁｣縺吶ｋ縲・
+    - `PlayerController`縺九ｉ縲√き繧ｹ繧ｿ繝驥榊鴨縺ｫ髢｢騾｣縺吶ｋ蜈ｨ縺ｦ縺ｮ繧ｳ繝ｼ繝会ｼ亥､画焚縲・未謨ｰ蜻ｼ縺ｳ蜃ｺ縺暦ｼ峨ｒ蜑企勁縺吶ｋ縲・
+    - `Start()`繝｡繧ｽ繝・ラ縺ｧ縲～rb.useGravity = true;`繧呈・遉ｺ逧・↓螳溯｡後＠縲√＞縺九↑繧狗憾豕√〒繧６nity讓呎ｺ悶・驥榊鴨縺碁←逕ｨ縺輔ｌ繧九％縺ｨ繧剃ｿ晁ｨｼ縺吶ｋ縲・
+    - 縺薙ｌ縺ｫ繧医ｊ縲∝・縺ｦ縺ｮ驥榊鴨蜃ｦ逅・′Unity縺ｮ迚ｩ逅・お繝ｳ繧ｸ繝ｳ縺ｫ荳蜈・喧縺輔ｌ縲∫ｫｶ蜷医′隗｣豸医＆繧後∝ｮ牙ｮ壹＠縺滓嫌蜍輔′菫晁ｨｼ縺輔ｌ繧九・
+
+---
+## 2024-XX-XX: 髢狗匱譁ｹ驥昴・霆｢謠帙→繧ｨ繝・ぅ繧ｿ諡｡蠑ｵ繝・・繝ｫ縺ｮ螳溯｣・
+
+### 邨檎ｷｯ
+繝励Ξ繧､繝､繝ｼ繧ｳ繝ｳ繝医Ο繝ｼ繝ｩ繝ｼ縺ｮ蝓ｺ譛ｬ蜍穂ｽ懊′螳牙ｮ壹＠縺溘％縺ｨ繧貞女縺代∵ｬ｡縺ｮ髢狗匱繝輔ぉ繝ｼ繧ｺ縺ｫ遘ｻ陦後ょｽ灘・縺ｯ繝励Ο繧ｷ繝ｼ繧ｸ繝｣繝ｫ縺ｪ蝨ｰ蠖｢逕滓・繧呈､懆ｨ弱＠縺溘′縲√・繝ｭ繧ｸ繧ｧ繧ｯ繝医・逶ｮ讓吶〒縺ゅｋ縲後ョ繧ｶ繧､繝翫・荳ｻ蟆弱・繝ｦ繝九・繧ｯ縺ｪ蟾ｨ螟ｧ讒矩迚ｩ縲阪・螳溽樟縺ｫ縺ｯ縲∝慍蠖｢縺昴・繧ゅ・繧医ｊ繧ゅ∵ｧ矩迚ｩ繧貞柑邇・噪縺ｫ險ｭ險医・驟咲ｽｮ縺吶ｋ繝・・繝ｫ縺ｮ譁ｹ縺後ｈ繧企㍾隕√〒縺ゅｋ縺ｨ蜀榊ｮ夂ｾｩ縺励◆縲・
+
+### 菫ｮ豁｣譁ｹ驥・
+髢狗匱縺ｮ荳ｻ霆ｸ繧偵後・繝ｭ繧ｷ繝ｼ繧ｸ繝｣繝ｫ蝨ｰ蠖｢逕滓・縲阪°繧峨・*繧ｨ繝・ぅ繧ｿ諡｡蠑ｵ・・ditor Extension・峨↓繧医ｋ讒矩迚ｩ逕滓・繝・・繝ｫ縺ｮ髢狗匱**縲阪↓霆｢謠帙☆繧九・
+
+- **`StructureGeneratorWindow`縺ｮ螳溯｣・*:
+    - Unity繧ｨ繝・ぅ繧ｿ荳翫↓迢ｬ閾ｪ縺ｮ繧ｦ繧｣繝ｳ繝峨え・・Structure Generator`・峨ｒ霑ｽ蜉縲・
+    - 繝・じ繧､繝翫・縺後ヱ繝ｩ繝｡繝ｼ繧ｿ繧貞・蜉帙＠縲√・繧ｿ繝ｳ繧偵け繝ｪ繝・け縺吶ｋ縺縺代〒縲√す繝ｼ繝ｳ蜀・↓讒矩迚ｩ縺ｮ繝代・繝・ｒ逕滓・縺ｧ縺阪ｋ繝ｯ繝ｼ繧ｯ繝輔Ο繝ｼ縺ｮ蝓ｺ逶､繧呈ｧ狗ｯ峨☆繧九・
+- **ProBuilder API縺ｮ豢ｻ逕ｨ**:
+    - 讒矩迚ｩ縺ｮ逕滓・縺ｫ縺ｯ縲ゞnity縺ｮ讓呎ｺ悶ヱ繝・こ繝ｼ繧ｸ縺ｧ縺ゅｋ`ProBuilder`縺ｮAPI繧貞茜逕ｨ縺吶ｋ縲ゅ％繧後↓繧医ｊ縲∬､・尅縺ｪ繝｡繝・す繝･繧呈焔霆ｽ縺ｫ逕滓・縺励∝ｾ後・邱ｨ髮・ｂ螳ｹ譏薙↓縺吶ｋ縲・
+    - 譛蛻昴↓縲√ユ繧ｹ繝医こ繝ｼ繧ｹ縺ｨ縺励※**縲悟・譟ｱ (Cylinder)縲・*縺ｨ**縲悟｣・(Wall)縲・*繧堤函謌舌☆繧区ｩ溯・繧定ｿｽ蜉縲ゅヱ繝ｩ繝｡繝ｼ繧ｿ・磯ｫ倥＆縲∝濠蠕・∝ｹ・↑縺ｩ・峨ｒGUI縺九ｉ隱ｿ謨ｴ蜿ｯ閭ｽ縺ｫ縺励◆縲・
+- **ProBuilder縺ｮ蟆主・縺ｨ莠呈鋤諤ｧ蝠城｡後・隗｣豎ｺ**:
+    - 髢狗匱荳ｭ縺ｫProBuilder繝代ャ繧ｱ繝ｼ繧ｸ縺梧悴蟆主・縺ｧ縺ゅｋ縺薙→縺悟愛譏弱＠縲√Θ繝ｼ繧ｶ繝ｼ縺ｫ繧､繝ｳ繧ｹ繝医・繝ｫ繧剃ｾ晞ｼ縲・
+    - 繧､繝ｳ繧ｹ繝医・繝ｫ蠕後、PI縺ｮ繝舌・繧ｸ繝ｧ繝ｳ繧｢繝・・縺ｫ莨ｴ縺・ｺ呈鋤諤ｧ繧ｨ繝ｩ繝ｼ縺檎匱逕溘＠縺溘′縲√せ繧ｯ繝ｪ繝励ヨ繧呈怙譁ｰ縺ｮAPI縺ｫ蜷医ｏ縺帙※菫ｮ豁｣縺励∝撫鬘後ｒ隗｣豎ｺ縺励◆縲・
+
+### 迴ｾ迥ｶ縺ｨ谺｡縺ｮ荳謇・
+- **迴ｾ迥ｶ**: `Structure Generator`繧ｦ繧｣繝ｳ繝峨え縺九ｉ縲∝・譟ｱ縺ｨ螢√ｒ豁｣蟶ｸ縺ｫ逕滓・縺ｧ縺阪ｋ迥ｶ諷九・
+- **谺｡縺ｮ荳謇・*: 逕滓・縺励◆蝓ｺ譛ｬ繧ｪ繝悶ず繧ｧ繧ｯ繝医ｒ邨・∩蜷医ｏ縺帙√ｈ繧願､・尅縺ｪ蠖｢迥ｶ・井ｾ具ｼ夂ｪ薙・縺ゅｋ螢・ｼ峨ｒ菴懈・縺吶ｋ縺溘ａ縲・*縲後ヶ繝ｼ繝ｪ繧｢繝ｳ貍皮ｮ玲ｩ溯・縲・*繧蛋Structure Generator`縺ｫ螳溯｣・☆繧九・
 
 ## 2024-05-24
 
-### 本日の作業概要
+### 譛ｬ譌･縺ｮ菴懈･ｭ讎りｦ・
 
-`StructureGeneratorWindow`の`Generation`タブにおける、主要なプリミティブ（球、トーラス、ピラミッド）の生成機能を全面的に改修・強化した。目標は、`DEV_PLAN.md`の「② Foundation」フェーズを完了させ、不安定だった機能の安定化と表現力の向上を実現することであった。
+`StructureGeneratorWindow`縺ｮ`Generation`繧ｿ繝悶↓縺翫￠繧九∽ｸｻ隕√↑繝励Μ繝溘ユ繧｣繝厄ｼ育帥縲√ヨ繝ｼ繝ｩ繧ｹ縲√ヴ繝ｩ繝溘ャ繝会ｼ峨・逕滓・讖溯・繧貞・髱｢逧・↓謾ｹ菫ｮ繝ｻ蠑ｷ蛹悶＠縺溘ら岼讓吶・縲～DEV_PLAN.md`縺ｮ縲娯贈 Foundation縲阪ヵ繧ｧ繝ｼ繧ｺ繧貞ｮ御ｺ・＆縺帙∽ｸ榊ｮ牙ｮ壹□縺｣縺滓ｩ溯・縺ｮ螳牙ｮ壼喧縺ｨ陦ｨ迴ｾ蜉帙・蜷台ｸ翫ｒ螳溽樟縺吶ｋ縺薙→縺ｧ縺ゅ▲縺溘・
 
-### 詳細
+### 隧ｳ邏ｰ
 
-1.  **球 (Sphere) 生成機能の安定化:**
-    *   **問題点:** 当初、`GenerateSphere`という存在しないAPIを探索しようとしたり、`Icosahedron`コンポーネントを利用しようとするなど、誤ったアプローチを試みていた。
-    *   **修正内容:** ユーザーからのフィードバックに基づき、ProBuilderの標準的な手法である`ShapeGenerator.CreateShape(ShapeType.Sphere)`で基本形状を生成し、`transform.localScale`で半径を調整する、というシンプルで確実な方法に実装を統一した。分割数など、直接制御できないパラメータのUIは削除し、混乱を招かないようにした。
+1.  **逅・(Sphere) 逕滓・讖溯・縺ｮ螳牙ｮ壼喧:**
+    *   **蝠城｡檎せ:** 蠖灘・縲～GenerateSphere`縺ｨ縺・≧蟄伜惠縺励↑縺БPI繧呈爾邏｢縺励ｈ縺・→縺励◆繧翫～Icosahedron`繧ｳ繝ｳ繝昴・繝阪Φ繝医ｒ蛻ｩ逕ｨ縺励ｈ縺・→縺吶ｋ縺ｪ縺ｩ縲∬ｪ､縺｣縺溘い繝励Ο繝ｼ繝√ｒ隧ｦ縺ｿ縺ｦ縺・◆縲・
+    *   **菫ｮ豁｣蜀・ｮｹ:** 繝ｦ繝ｼ繧ｶ繝ｼ縺九ｉ縺ｮ繝輔ぅ繝ｼ繝峨ヰ繝・け縺ｫ蝓ｺ縺･縺阪￣roBuilder縺ｮ讓呎ｺ也噪縺ｪ謇区ｳ輔〒縺ゅｋ`ShapeGenerator.CreateShape(ShapeType.Sphere)`縺ｧ蝓ｺ譛ｬ蠖｢迥ｶ繧堤函謌舌＠縲～transform.localScale`縺ｧ蜊雁ｾ・ｒ隱ｿ謨ｴ縺吶ｋ縲√→縺・≧繧ｷ繝ｳ繝励Ν縺ｧ遒ｺ螳溘↑譁ｹ豕輔↓螳溯｣・ｒ邨ｱ荳縺励◆縲ょ・蜑ｲ謨ｰ縺ｪ縺ｩ縲∫峩謗･蛻ｶ蠕｡縺ｧ縺阪↑縺・ヱ繝ｩ繝｡繝ｼ繧ｿ縺ｮUI縺ｯ蜑企勁縺励∵ｷｷ荵ｱ繧呈魚縺九↑縺・ｈ縺・↓縺励◆縲・
 
-2.  **トーラス (Torus) 生成機能の近代化と明確化:**
-    *   **問題点:** 従来の`GenerateTorus`メソッドは引数が多く、またUI上の変数名とAPIの引数名が不一致で可読性が低かった。
-    *   **修正内容:** ProBuilder 2.9.0以降で推奨されている`CreateShape(ShapeType.Torus)`と`Torus`コンポーネントのプロパティ設定を組み合わせる方式にリファクタリング。変数名とUIラベルをAPIの実態に合わせて（`Rows` -> `Vertical Subdivisions`など）統一し、直感的な操作を可能にした。
+2.  **繝医・繝ｩ繧ｹ (Torus) 逕滓・讖溯・縺ｮ霑台ｻ｣蛹悶→譏守｢ｺ蛹・**
+    *   **蝠城｡檎せ:** 蠕捺擂縺ｮ`GenerateTorus`繝｡繧ｽ繝・ラ縺ｯ蠑墓焚縺悟､壹￥縲√∪縺欟I荳翫・螟画焚蜷阪→API縺ｮ蠑墓焚蜷阪′荳堺ｸ閾ｴ縺ｧ蜿ｯ隱ｭ諤ｧ縺御ｽ弱°縺｣縺溘・
+    *   **菫ｮ豁｣蜀・ｮｹ:** ProBuilder 2.9.0莉･髯阪〒謗ｨ螂ｨ縺輔ｌ縺ｦ縺・ｋ`CreateShape(ShapeType.Torus)`縺ｨ`Torus`繧ｳ繝ｳ繝昴・繝阪Φ繝医・繝励Ο繝代ユ繧｣險ｭ螳壹ｒ邨・∩蜷医ｏ縺帙ｋ譁ｹ蠑上↓繝ｪ繝輔ぃ繧ｯ繧ｿ繝ｪ繝ｳ繧ｰ縲ょ､画焚蜷阪→UI繝ｩ繝吶Ν繧但PI縺ｮ螳滓・縺ｫ蜷医ｏ縺帙※・・Rows` -> `Vertical Subdivisions`縺ｪ縺ｩ・臥ｵｱ荳縺励∫峩諢溽噪縺ｪ謫堺ｽ懊ｒ蜿ｯ閭ｽ縺ｫ縺励◆縲・
 
-3.  **ピラミッド (Pyramid) 生成機能の拡張:**
-    *   **問題点:** 従来の実装は安定していたが、四角錐しか生成できず、多様性に欠けていた。
-    *   **修正内容:** UIに`Base Vertices`スライダーを追加。この値に基づき、底面の頂点と面を動的に計算するロジックを実装した。これにより、三角錐から多角錐（最大16角錐）まで、多様な形状のピラミッドをプロシージャルに生成できるようになった。
+3.  **繝斐Λ繝溘ャ繝・(Pyramid) 逕滓・讖溯・縺ｮ諡｡蠑ｵ:**
+    *   **蝠城｡檎せ:** 蠕捺擂縺ｮ螳溯｣・・螳牙ｮ壹＠縺ｦ縺・◆縺後∝屁隗帝倹縺励°逕滓・縺ｧ縺阪★縲∝､壽ｧ俶ｧ縺ｫ谺縺代※縺・◆縲・
+    *   **菫ｮ豁｣蜀・ｮｹ:** UI縺ｫ`Base Vertices`繧ｹ繝ｩ繧､繝繝ｼ繧定ｿｽ蜉縲ゅ％縺ｮ蛟､縺ｫ蝓ｺ縺･縺阪∝ｺ暮擇縺ｮ鬆らせ縺ｨ髱｢繧貞虚逧・↓險育ｮ励☆繧九Ο繧ｸ繝・け繧貞ｮ溯｣・＠縺溘ゅ％繧後↓繧医ｊ縲∽ｸ芽ｧ帝倹縺九ｉ螟夊ｧ帝倹・域怙螟ｧ16隗帝倹・峨∪縺ｧ縲∝､壽ｧ倥↑蠖｢迥ｶ縺ｮ繝斐Λ繝溘ャ繝峨ｒ繝励Ο繧ｷ繝ｼ繧ｸ繝｣繝ｫ縺ｫ逕滓・縺ｧ縺阪ｋ繧医≧縺ｫ縺ｪ縺｣縺溘・
 
-### 結論
+### 邨占ｫ・
 
-本日の作業により、`DEV_PLAN.md`の「Foundation」フェーズは完了した。主要なプリミティブ生成機能は、APIの仕様に準拠した安定的かつ近代的な実装となり、さらにピラミッド機能の拡張によって、よりアーティスティックで多様な構造物を生み出すための強固な基盤が整った。
+譛ｬ譌･縺ｮ菴懈･ｭ縺ｫ繧医ｊ縲～DEV_PLAN.md`縺ｮ縲熊oundation縲阪ヵ繧ｧ繝ｼ繧ｺ縺ｯ螳御ｺ・＠縺溘ゆｸｻ隕√↑繝励Μ繝溘ユ繧｣繝也函謌先ｩ溯・縺ｯ縲、PI縺ｮ莉墓ｧ倥↓貅匁侠縺励◆螳牙ｮ夂噪縺九▽霑台ｻ｣逧・↑螳溯｣・→縺ｪ繧翫√＆繧峨↓繝斐Λ繝溘ャ繝画ｩ溯・縺ｮ諡｡蠑ｵ縺ｫ繧医▲縺ｦ縲√ｈ繧翫い繝ｼ繝・ぅ繧ｹ繝・ぅ繝・け縺ｧ螟壽ｧ倥↑讒矩迚ｩ繧堤函縺ｿ蜃ｺ縺吶◆繧√・蠑ｷ蝗ｺ縺ｪ蝓ｺ逶､縺梧紛縺｣縺溘・
 
-次のステップは、「Refinement」フェーズへと移行し、今回強化した機能にさらなる制御パラメータを追加していく。 
+谺｡縺ｮ繧ｹ繝・ャ繝励・縲√軍efinement縲阪ヵ繧ｧ繝ｼ繧ｺ縺ｸ縺ｨ遘ｻ陦後＠縲∽ｻ雁屓蠑ｷ蛹悶＠縺滓ｩ溯・縺ｫ縺輔ｉ縺ｪ繧句宛蠕｡繝代Λ繝｡繝ｼ繧ｿ繧定ｿｽ蜉縺励※縺・￥縲・
 
-## 2024-12-XX: Phase 2 形状制御システム実装完了とProBuilder API修正
+## 2024-12-XX: Phase 2 蠖｢迥ｶ蛻ｶ蠕｡繧ｷ繧ｹ繝・Β螳溯｣・ｮ御ｺ・→ProBuilder API菫ｮ豁｣
 
-### 作業概要
-ADVANCED_STRUCTURE_DESIGN_DOCUMENT.mdに基づく6段階開発計画のPhase 2「形状制御システム」の実装を完了。併せて、ProBuilder APIの破壊的変更に対応したコンパイルエラーの修正を実施。
+### 菴懈･ｭ讎りｦ・
+ADVANCED_STRUCTURE_DESIGN_DOCUMENT.md縺ｫ蝓ｺ縺･縺・谿ｵ髫朱幕逋ｺ險育判縺ｮPhase 2縲悟ｽ｢迥ｶ蛻ｶ蠕｡繧ｷ繧ｹ繝・Β縲阪・螳溯｣・ｒ螳御ｺ・ゆｽｵ縺帙※縲￣roBuilder API縺ｮ遐ｴ螢顔噪螟画峩縺ｫ蟇ｾ蠢懊＠縺溘さ繝ｳ繝代う繝ｫ繧ｨ繝ｩ繝ｼ縺ｮ菫ｮ豁｣繧貞ｮ滓命縲・
 
-### ProBuilder API互換性問題の修正
+### ProBuilder API莠呈鋤諤ｧ蝠城｡後・菫ｮ豁｣
 
-#### 発生した問題
-- `ProBuilderMesh.GetBounds()` メソッドが存在しない（7件のエラー）
-- `ProBuilderMesh.Subdivide()` メソッドが存在しない（1件のエラー）
+#### 逋ｺ逕溘＠縺溷撫鬘・
+- `ProBuilderMesh.GetBounds()` 繝｡繧ｽ繝・ラ縺悟ｭ伜惠縺励↑縺・ｼ・莉ｶ縺ｮ繧ｨ繝ｩ繝ｼ・・
+- `ProBuilderMesh.Subdivide()` 繝｡繧ｽ繝・ラ縺悟ｭ伜惠縺励↑縺・ｼ・莉ｶ縺ｮ繧ｨ繝ｩ繝ｼ・・
 
-#### 修正内容
-1. **GetBounds問題の修正**
-   - `pbMesh.GetBounds()` → `pbMesh.mesh.bounds` に変更
-   - AdvancedStructureTab.cs の4箇所を修正
-   - AdvancedStructureTestRunner.cs の2箇所を修正
+#### 菫ｮ豁｣蜀・ｮｹ
+1. **GetBounds蝠城｡後・菫ｮ豁｣**
+   - `pbMesh.GetBounds()` 竊・`pbMesh.mesh.bounds` 縺ｫ螟画峩
+   - AdvancedStructureTab.cs 縺ｮ4邂・園繧剃ｿｮ豁｣
+   - AdvancedStructureTestRunner.cs 縺ｮ2邂・園繧剃ｿｮ豁｣
 
-2. **Subdivide問題の修正**
-   - 複雑な分割処理を一旦スキップ
-   - 代わりにログ出力で対応
-   - 将来的にはより詳細なプリミティブ生成で対応予定
+2. **Subdivide蝠城｡後・菫ｮ豁｣**
+   - 隍・尅縺ｪ蛻・牡蜃ｦ逅・ｒ荳譌ｦ繧ｹ繧ｭ繝・・
+   - 莉｣繧上ｊ縺ｫ繝ｭ繧ｰ蜃ｺ蜉帙〒蟇ｾ蠢・
+   - 蟆・擂逧・↓縺ｯ繧医ｊ隧ｳ邏ｰ縺ｪ繝励Μ繝溘ユ繧｣繝也函謌舌〒蟇ｾ蠢應ｺ亥ｮ・
 
-### 実装内容
+### 螳溯｣・・螳ｹ
 
-#### 1. 高度な形状制御パラメータ構造体の実装
-- **`ShapeParameters`**: 基本形状制御（ツイスト、長さ、太さ、滑らかさ、押し出し制御）
-- **`ShapeModification`**: 形状変形（テーパー、くびれ、ベンド、破壊的操作）
-- **`BooleanParameters`**: Boolean演算制御（面選択モード、体積閾値、減衰制御）
-- **`AdvancedProcessing`**: 高度加工（表面処理、エッジ処理、構造的加工、風化効果）
+#### 1. 鬮伜ｺｦ縺ｪ蠖｢迥ｶ蛻ｶ蠕｡繝代Λ繝｡繝ｼ繧ｿ讒矩菴薙・螳溯｣・
+- **`ShapeParameters`**: 蝓ｺ譛ｬ蠖｢迥ｶ蛻ｶ蠕｡・医ヤ繧､繧ｹ繝医・聞縺輔∝､ｪ縺輔∵ｻ代ｉ縺九＆縲∵款縺怜・縺怜宛蠕｡・・
+- **`ShapeModification`**: 蠖｢迥ｶ螟牙ｽ｢・医ユ繝ｼ繝代・縲√￥縺ｳ繧後√・繝ｳ繝峨∫ｴ螢顔噪謫堺ｽ懶ｼ・
+- **`BooleanParameters`**: Boolean貍皮ｮ怜宛蠕｡・磯擇驕ｸ謚槭Δ繝ｼ繝峨∽ｽ鍋ｩ埼明蛟､縲∵ｸ幄｡ｰ蛻ｶ蠕｡・・
+- **`AdvancedProcessing`**: 鬮伜ｺｦ蜉蟾･・郁｡ｨ髱｢蜃ｦ逅・√お繝・ず蜃ｦ逅・∵ｧ矩逧・刈蟾･縲・｢ｨ蛹門柑譫懶ｼ・
 
-#### 2. 新しいUI制御システム
-- 折りたたみ可能な「Advanced Shape Control System」セクション
-- 4つのカテゴリに分類された詳細パラメータ（基本形状、形状変形、Boolean演算、高度加工）
-- リアルタイム調整可能なスライダーとトグル
-- 条件付き表示による直感的なUI設計
+#### 2. 譁ｰ縺励＞UI蛻ｶ蠕｡繧ｷ繧ｹ繝・Β
+- 謚倥ｊ縺溘◆縺ｿ蜿ｯ閭ｽ縺ｪ縲窟dvanced Shape Control System縲阪そ繧ｯ繧ｷ繝ｧ繝ｳ
+- 4縺､縺ｮ繧ｫ繝・ざ繝ｪ縺ｫ蛻・｡槭＆繧後◆隧ｳ邏ｰ繝代Λ繝｡繝ｼ繧ｿ・亥渕譛ｬ蠖｢迥ｶ縲∝ｽ｢迥ｶ螟牙ｽ｢縲。oolean貍皮ｮ励・ｫ伜ｺｦ蜉蟾･・・
+- 繝ｪ繧｢繝ｫ繧ｿ繧､繝隱ｿ謨ｴ蜿ｯ閭ｽ縺ｪ繧ｹ繝ｩ繧､繝繝ｼ縺ｨ繝医げ繝ｫ
+- 譚｡莉ｶ莉倥″陦ｨ遉ｺ縺ｫ繧医ｋ逶ｴ諢溽噪縺ｪUI險ｭ險・
 
-#### 3. 形状制御アルゴリズムの実装
-- **ツイスト変形**: Y軸に沿った回転変形（-360°〜360°）
-- **テーパー効果**: 上下部分の縮小・拡大制御
-- **くびれ効果**: 中央部分の収縮制御
-- **ベンド変形**: 指定方向への曲げ効果
-- **表面粗さ**: Perlinノイズによる表面変形
-- **押し出し処理**: 面の押し出し操作
+#### 3. 蠖｢迥ｶ蛻ｶ蠕｡繧｢繝ｫ繧ｴ繝ｪ繧ｺ繝縺ｮ螳溯｣・
+- **繝・う繧ｹ繝亥､牙ｽ｢**: Y霆ｸ縺ｫ豐ｿ縺｣縺溷屓霆｢螟牙ｽ｢・・360ﾂｰ縲・60ﾂｰ・・
+- **繝・・繝代・蜉ｹ譫・*: 荳贋ｸ矩Κ蛻・・邵ｮ蟆上・諡｡螟ｧ蛻ｶ蠕｡
+- **縺上・繧悟柑譫・*: 荳ｭ螟ｮ驛ｨ蛻・・蜿守ｸｮ蛻ｶ蠕｡
+- **繝吶Φ繝牙､牙ｽ｢**: 謖・ｮ壽婿蜷代∈縺ｮ譖ｲ縺貞柑譫・
+- **陦ｨ髱｢邊励＆**: Perlin繝弱う繧ｺ縺ｫ繧医ｋ陦ｨ髱｢螟牙ｽ｢
+- **謚ｼ縺怜・縺怜・逅・*: 髱｢縺ｮ謚ｼ縺怜・縺玲桃菴・
 
-#### 4. 8つの記念碑タイプの実装
-- **GeometricMonolith**: 幾何学的なモノリス（複雑さレベル対応）
-- **TwistedTower**: ツイスト構造（縦長円柱ベース）
-- **PerforatedCube**: 穿孔された立方体（Boolean演算対応）
-- **FloatingRings**: 浮遊する環状構造（トーラスベース）
-- **StackedGeometry**: 積層幾何学（関係性システム連携）
-- **SplitMonument**: 分割された記念碑（Boolean演算対応）
-- **CurvedArchway**: 曲面アーチ（ProBuilderアーチ形状）
-- **AbstractSculpture**: 抽象彫刻（球体ベース）
+#### 4. 8縺､縺ｮ險伜ｿｵ遒代ち繧､繝励・螳溯｣・
+- **GeometricMonolith**: 蟷ｾ菴募ｭｦ逧・↑繝｢繝弱Μ繧ｹ・郁､・尅縺輔Ξ繝吶Ν蟇ｾ蠢懶ｼ・
+- **TwistedTower**: 繝・う繧ｹ繝域ｧ矩・育ｸｦ髟ｷ蜀・浤繝吶・繧ｹ・・
+- **PerforatedCube**: 遨ｿ蟄斐＆繧後◆遶区婿菴難ｼ・oolean貍皮ｮ怜ｯｾ蠢懶ｼ・
+- **FloatingRings**: 豬ｮ驕翫☆繧狗腸迥ｶ讒矩・医ヨ繝ｼ繝ｩ繧ｹ繝吶・繧ｹ・・
+- **StackedGeometry**: 遨榊ｱ､蟷ｾ菴募ｭｦ・磯未菫よｧ繧ｷ繧ｹ繝・Β騾｣謳ｺ・・
+- **SplitMonument**: 蛻・牡縺輔ｌ縺溯ｨ伜ｿｵ遒托ｼ・oolean貍皮ｮ怜ｯｾ蠢懶ｼ・
+- **CurvedArchway**: 譖ｲ髱｢繧｢繝ｼ繝・ｼ・roBuilder繧｢繝ｼ繝∝ｽ｢迥ｶ・・
+- **AbstractSculpture**: 謚ｽ雎｡蠖ｫ蛻ｻ・育帥菴薙・繝ｼ繧ｹ・・
 
-### ProBuilder API互換性修正
+### ProBuilder API莠呈鋤諤ｧ菫ｮ豁｣
 
-#### 修正されたAPIエラー
-1. **`SubdivideFaces`クラス**: `pbMesh.Subdivide()`に変更
-2. **`ExtrudeFaces`クラス**: `pbMesh.Extrude()`に変更
-3. **`SetSmoothingAngle`メソッド**: スムージンググループ手動設定に変更
-4. **`bounds`プロパティ**: `GetBounds()`メソッドに変更
+#### 菫ｮ豁｣縺輔ｌ縺蘗PI繧ｨ繝ｩ繝ｼ
+1. **`SubdivideFaces`繧ｯ繝ｩ繧ｹ**: `pbMesh.Subdivide()`縺ｫ螟画峩
+2. **`ExtrudeFaces`繧ｯ繝ｩ繧ｹ**: `pbMesh.Extrude()`縺ｫ螟画峩
+3. **`SetSmoothingAngle`繝｡繧ｽ繝・ラ**: 繧ｹ繝繝ｼ繧ｸ繝ｳ繧ｰ繧ｰ繝ｫ繝ｼ繝玲焔蜍戊ｨｭ螳壹↓螟画峩
+4. **`bounds`繝励Ο繝代ユ繧｣**: `GetBounds()`繝｡繧ｽ繝・ラ縺ｫ螟画峩
 
-#### 修正詳細
+#### 菫ｮ豁｣隧ｳ邏ｰ
 ```csharp
-// 旧API（エラー）
+// 譌ｧAPI・医お繝ｩ繝ｼ・・
 var subdivideAction = new SubdivideFaces();
 pbMesh.SetSmoothingAngle(angle);
 var bounds = pbMesh.bounds;
 
-// 新API（修正後）
+// 譁ｰAPI・井ｿｮ豁｣蠕鯉ｼ・
 pbMesh.Subdivide();
 pbMesh.faces[i].smoothingGroup = 1;
 var bounds = pbMesh.GetBounds();
 ```
 
-### 技術的特徴
+### 謚陦鍋噪迚ｹ蠕ｴ
 
-#### 1. パフォーマンス最適化
-- 必要な場合のみ形状制御を適用
-- バッチ処理による効率的なメッシュ操作
-- メモリ使用量の最適化
+#### 1. 繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ譛驕ｩ蛹・
+- 蠢・ｦ√↑蝣ｴ蜷医・縺ｿ蠖｢迥ｶ蛻ｶ蠕｡繧帝←逕ｨ
+- 繝舌ャ繝∝・逅・↓繧医ｋ蜉ｹ邇・噪縺ｪ繝｡繝・す繝･謫堺ｽ・
+- 繝｡繝｢繝ｪ菴ｿ逕ｨ驥上・譛驕ｩ蛹・
 
-#### 2. エラーハンドリング
-- 堅牢なtry-catch構造
-- ユーザーフレンドリーなエラーメッセージ
-- 失敗時の自動復旧機能
+#### 2. 繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ
+- 蝣・欧縺ｪtry-catch讒矩
+- 繝ｦ繝ｼ繧ｶ繝ｼ繝輔Ξ繝ｳ繝峨Μ繝ｼ縺ｪ繧ｨ繝ｩ繝ｼ繝｡繝・そ繝ｼ繧ｸ
+- 螟ｱ謨玲凾縺ｮ閾ｪ蜍募ｾｩ譌ｧ讖溯・
 
-#### 3. ユーザビリティ
-- 直感的なパラメータ名
-- リアルタイムプレビュー機能
-- 操作の取り消し（Undo）対応
+#### 3. 繝ｦ繝ｼ繧ｶ繝薙Μ繝・ぅ
+- 逶ｴ諢溽噪縺ｪ繝代Λ繝｡繝ｼ繧ｿ蜷・
+- 繝ｪ繧｢繝ｫ繧ｿ繧､繝繝励Ξ繝薙Η繝ｼ讖溯・
+- 謫堺ｽ懊・蜿悶ｊ豸医＠・・ndo・牙ｯｾ蠢・
 
-### 今後の開発計画
+### 莉雁ｾ後・髢狗匱險育判
 
-#### Phase 3: Deformシステム統合（次回予定）
-- Unity Asset StoreのDeformパッケージ導入
-- 20種類以上のDeformer対応
-- 高度な変形マスクシステム
-- アニメーション変形対応
+#### Phase 3: Deform繧ｷ繧ｹ繝・Β邨ｱ蜷茨ｼ域ｬ｡蝗樔ｺ亥ｮ夲ｼ・
+- Unity Asset Store縺ｮDeform繝代ャ繧ｱ繝ｼ繧ｸ蟆主・
+- 20遞ｮ鬘樔ｻ･荳翫・Deformer蟇ｾ蠢・
+- 鬮伜ｺｦ縺ｪ螟牙ｽ｢繝槭せ繧ｯ繧ｷ繧ｹ繝・Β
+- 繧｢繝九Γ繝ｼ繧ｷ繝ｧ繝ｳ螟牙ｽ｢蟇ｾ蠢・
 
-#### 技術的課題
-1. **パフォーマンス**: 大規模メッシュでの処理速度向上
-2. **安定性**: ProBuilder API変更への耐性強化
-3. **拡張性**: 新しい形状制御機能の追加容易性
-
----
-
-## 2025-01-XX: Cursor Web開発継続環境の整備
-
-### 作業概要
-Unity エディタが使用できない環境でも継続的に開発を進められるよう、Cursor web専用の開発環境を整備。プロジェクトの現状整理と今後の作業計画を明確化。
-
-### 現在のプロジェクト状況
-
-#### 完了済みフェーズ
-- **Phase 1**: 基本関係性システム ✅
-- **Phase 2**: 形状制御システム ✅  
-- **Phase 4**: パーティクル配置システム ✅
-- **統一化**: 全7タブの統一インターフェース ✅
-
-#### プレイヤーシステム完成
-- **AdvancedPlayerController.cs**: グライド、ドリームフライト、グラインド、ワープ機能
-- **TranslocationSphere.cs**: 軌道予測、着地プレビュー、バウンス機能
-- **統合テストシーン**: IntegrationTestScene.unity作成済み
-
-#### 地形生成システム完成  
-- **MeshGenerator.cs**: 3種類の地形、5種類のノイズ対応
-- **SimpleTestManager.cs**: 自動テスト・パラメータランダム化
-
-### Cursor Web開発体制の確立
-
-#### 開発可能な作業項目
-1. **Phase 3準備**: Deformシステム統合のための技術調査・設計
-2. **Phase 5実装**: 高度合成システムの設計・コード実装
-3. **Phase 6実装**: ランダム制御システムの設計・コード実装
-4. **コード最適化**: 既存スクリプトのパフォーマンス改善
-5. **設計文書更新**: システム仕様書・開発計画の整備
-6. **新機能企画**: 次世代プレイヤー機能・ゲームプレイ要素の設計
-
-#### 開発文書環境の整備
-- **CURSOR_WEB_DEVELOPMENT_GUIDE.md**: Cursor web専用開発ガイド作成
-- **作業フロー明確化**: Unity確認項目・進捗管理テンプレート
-- **ファイル構造整理**: 主要スクリプト・ドキュメントの分類
-
-### 次回作業予定
-
-#### 短期目標（1-3セッション）
-1. **Phase 3技術調査**: Deformパッケージ統合方式の調査・設計
-2. **既存コード最適化**: パフォーマンス・保守性向上
-3. **ドキュメント統合**: 設計文書の整理・更新
-
-#### 中期目標（4-10セッション）
-1. **Phase 5設計・実装**: 高度合成システム
-2. **新機能企画**: 次世代ゲームプレイ要素
-3. **テストシステム拡充**: 自動テスト機能強化
-
-### 開発指針
-
-#### 品質管理
-- **YAGNI**: 不要な機能は実装しない
-- **KISS**: シンプルな設計を心がける
-- **DRY**: コードの重複を避ける  
-- **機能分離**: 責任範囲を明確化
-
-#### MCP利用制約
-- **使用前通知**: 必ず事前に「MCPを使用します」と通知
-- **安全性確保**: 別プロジェクト接続時・コンパイルエラー時は使用禁止
-- **最小限使用**: 必要最小限の操作に留める
-
-### 成果
-
-Cursor web環境での継続的開発体制が確立され、Unity エディタなしでも以下が可能になった：
-
-1. **システム設計・実装**: 新機能の設計から実装まで
-2. **コード品質向上**: リファクタリング・最適化
-3. **プロジェクト管理**: 計画策定・進捗管理・ドキュメント整備
-4. **技術調査**: 新技術・ライブラリの調査・統合準備
-
-**次回Unity作業時の確認項目**:
-- Phase 3 Deformシステム統合テスト
-- 既存機能の動作確認  
-- 新規実装機能のテスト
+#### 謚陦鍋噪隱ｲ鬘・
+1. **繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ**: 螟ｧ隕乗ｨ｡繝｡繝・す繝･縺ｧ縺ｮ蜃ｦ逅・溷ｺｦ蜷台ｸ・
+2. **螳牙ｮ壽ｧ**: ProBuilder API螟画峩縺ｸ縺ｮ閠先ｧ蠑ｷ蛹・
+3. **諡｡蠑ｵ諤ｧ**: 譁ｰ縺励＞蠖｢迥ｶ蛻ｶ蠕｡讖溯・縺ｮ霑ｽ蜉螳ｹ譏捺ｧ
 
 ---
 
-## 2025-01-XX: Git連携完全完了とウェブ開発体制整備
+## 2025-01-XX: Cursor Web髢狗匱邯咏ｶ夂腸蠅・・謨ｴ蛯・
 
-### 作業概要
-前回のGit連携作業で発生していたスタック問題を解決し、完全にクリーンなGit環境を構築。同時に、ウェブ開発のための包括的なドキュメント整備を実施。
+### 菴懈･ｭ讎りｦ・
+Unity 繧ｨ繝・ぅ繧ｿ縺御ｽｿ逕ｨ縺ｧ縺阪↑縺・腸蠅・〒繧らｶ咏ｶ夂噪縺ｫ髢狗匱繧帝ｲ繧√ｉ繧後ｋ繧医≧縲，ursor web蟆ら畑縺ｮ髢狗匱迺ｰ蠅・ｒ謨ｴ蛯吶ゅ・繝ｭ繧ｸ繧ｧ繧ｯ繝医・迴ｾ迥ｶ謨ｴ逅・→莉雁ｾ後・菴懈･ｭ險育判繧呈・遒ｺ蛹悶・
 
-### Git連携完了作業
+### 迴ｾ蝨ｨ縺ｮ繝励Ο繧ｸ繧ｧ繧ｯ繝育憾豕・
 
-#### 解決した問題
-1. **ページャースタック**: `git log`コマンドがページャーモードで停止していた問題
-2. **未プッシュコミット**: 「大規模リファクタリング＆Cursor Web開発環境整備」コミットがローカルにのみ存在
-3. **サブモジュール競合**: `Packages/co.parabox.csg`がUnity Packageとして不適切にGit管理されていた問題
+#### 螳御ｺ・ｸ医∩繝輔ぉ繝ｼ繧ｺ
+- **Phase 1**: 蝓ｺ譛ｬ髢｢菫よｧ繧ｷ繧ｹ繝・Β 笨・
+- **Phase 2**: 蠖｢迥ｶ蛻ｶ蠕｡繧ｷ繧ｹ繝・Β 笨・ 
+- **Phase 4**: 繝代・繝・ぅ繧ｯ繝ｫ驟咲ｽｮ繧ｷ繧ｹ繝・Β 笨・
+- **邨ｱ荳蛹・*: 蜈ｨ7繧ｿ繝悶・邨ｱ荳繧､繝ｳ繧ｿ繝ｼ繝輔ぉ繝ｼ繧ｹ 笨・
 
-#### 実施した解決策
-1. **リモートプッシュ完了**:
+#### 繝励Ξ繧､繝､繝ｼ繧ｷ繧ｹ繝・Β螳梧・
+- **AdvancedPlayerController.cs**: 繧ｰ繝ｩ繧､繝峨√ラ繝ｪ繝ｼ繝繝輔Λ繧､繝医√げ繝ｩ繧､繝ｳ繝峨√Ρ繝ｼ繝玲ｩ溯・
+- **TranslocationSphere.cs**: 霆碁％莠域ｸｬ縲∫捩蝨ｰ繝励Ξ繝薙Η繝ｼ縲√ヰ繧ｦ繝ｳ繧ｹ讖溯・
+- **邨ｱ蜷医ユ繧ｹ繝医す繝ｼ繝ｳ**: IntegrationTestScene.unity菴懈・貂医∩
+
+#### 蝨ｰ蠖｢逕滓・繧ｷ繧ｹ繝・Β螳梧・  
+- **MeshGenerator.cs**: 3遞ｮ鬘槭・蝨ｰ蠖｢縲・遞ｮ鬘槭・繝弱う繧ｺ蟇ｾ蠢・
+- **SimpleTestManager.cs**: 閾ｪ蜍輔ユ繧ｹ繝医・繝代Λ繝｡繝ｼ繧ｿ繝ｩ繝ｳ繝繝蛹・
+
+### Cursor Web髢狗匱菴灘宛縺ｮ遒ｺ遶・
+
+#### 髢狗匱蜿ｯ閭ｽ縺ｪ菴懈･ｭ鬆・岼
+1. **Phase 3貅門ｙ**: Deform繧ｷ繧ｹ繝・Β邨ｱ蜷医・縺溘ａ縺ｮ謚陦楢ｪｿ譟ｻ繝ｻ險ｭ險・
+2. **Phase 5螳溯｣・*: 鬮伜ｺｦ蜷域・繧ｷ繧ｹ繝・Β縺ｮ險ｭ險医・繧ｳ繝ｼ繝牙ｮ溯｣・
+3. **Phase 6螳溯｣・*: 繝ｩ繝ｳ繝繝蛻ｶ蠕｡繧ｷ繧ｹ繝・Β縺ｮ險ｭ險医・繧ｳ繝ｼ繝牙ｮ溯｣・
+4. **繧ｳ繝ｼ繝画怙驕ｩ蛹・*: 譌｢蟄倥せ繧ｯ繝ｪ繝励ヨ縺ｮ繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ謾ｹ蝟・
+5. **險ｭ險域枚譖ｸ譖ｴ譁ｰ**: 繧ｷ繧ｹ繝・Β莉墓ｧ俶嶌繝ｻ髢狗匱險育判縺ｮ謨ｴ蛯・
+6. **譁ｰ讖溯・莨∫判**: 谺｡荳紋ｻ｣繝励Ξ繧､繝､繝ｼ讖溯・繝ｻ繧ｲ繝ｼ繝繝励Ξ繧､隕∫ｴ縺ｮ險ｭ險・
+
+#### 髢狗匱譁・嶌迺ｰ蠅・・謨ｴ蛯・
+- **CURSOR_WEB_DEVELOPMENT_GUIDE.md**: Cursor web蟆ら畑髢狗匱繧ｬ繧､繝我ｽ懈・
+- **菴懈･ｭ繝輔Ο繝ｼ譏守｢ｺ蛹・*: Unity遒ｺ隱埼・岼繝ｻ騾ｲ謐礼ｮ｡逅・ユ繝ｳ繝励Ξ繝ｼ繝・
+- **繝輔ぃ繧､繝ｫ讒矩謨ｴ逅・*: 荳ｻ隕√せ繧ｯ繝ｪ繝励ヨ繝ｻ繝峨く繝･繝｡繝ｳ繝医・蛻・｡・
+
+### 谺｡蝗樔ｽ懈･ｭ莠亥ｮ・
+
+#### 遏ｭ譛溽岼讓呻ｼ・-3繧ｻ繝・す繝ｧ繝ｳ・・
+1. **Phase 3謚陦楢ｪｿ譟ｻ**: Deform繝代ャ繧ｱ繝ｼ繧ｸ邨ｱ蜷域婿蠑上・隱ｿ譟ｻ繝ｻ險ｭ險・
+2. **譌｢蟄倥さ繝ｼ繝画怙驕ｩ蛹・*: 繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ繝ｻ菫晏ｮ域ｧ蜷台ｸ・
+3. **繝峨く繝･繝｡繝ｳ繝育ｵｱ蜷・*: 險ｭ險域枚譖ｸ縺ｮ謨ｴ逅・・譖ｴ譁ｰ
+
+#### 荳ｭ譛溽岼讓呻ｼ・-10繧ｻ繝・す繝ｧ繝ｳ・・
+1. **Phase 5險ｭ險医・螳溯｣・*: 鬮伜ｺｦ蜷域・繧ｷ繧ｹ繝・Β
+2. **譁ｰ讖溯・莨∫判**: 谺｡荳紋ｻ｣繧ｲ繝ｼ繝繝励Ξ繧､隕∫ｴ
+3. **繝・せ繝医す繧ｹ繝・Β諡｡蜈・*: 閾ｪ蜍輔ユ繧ｹ繝域ｩ溯・蠑ｷ蛹・
+
+### 髢狗匱謖・・
+
+#### 蜩∬ｳｪ邂｡逅・
+- **YAGNI**: 荳崎ｦ√↑讖溯・縺ｯ螳溯｣・＠縺ｪ縺・
+- **KISS**: 繧ｷ繝ｳ繝励Ν縺ｪ險ｭ險医ｒ蠢・′縺代ｋ
+- **DRY**: 繧ｳ繝ｼ繝峨・驥崎､・ｒ驕ｿ縺代ｋ  
+- **讖溯・蛻・屬**: 雋ｬ莉ｻ遽・峇繧呈・遒ｺ蛹・
+
+#### MCP蛻ｩ逕ｨ蛻ｶ邏・
+- **菴ｿ逕ｨ蜑埼夂衍**: 蠢・★莠句燕縺ｫ縲勲CP繧剃ｽｿ逕ｨ縺励∪縺吶阪→騾夂衍
+- **螳牙・諤ｧ遒ｺ菫・*: 蛻･繝励Ο繧ｸ繧ｧ繧ｯ繝域磁邯壽凾繝ｻ繧ｳ繝ｳ繝代う繝ｫ繧ｨ繝ｩ繝ｼ譎ゅ・菴ｿ逕ｨ遖∵ｭ｢
+- **譛蟆城剞菴ｿ逕ｨ**: 蠢・ｦ∵怙蟆城剞縺ｮ謫堺ｽ懊↓逡吶ａ繧・
+
+### 謌先棡
+
+Cursor web迺ｰ蠅・〒縺ｮ邯咏ｶ夂噪髢狗匱菴灘宛縺檎｢ｺ遶九＆繧後ゞnity 繧ｨ繝・ぅ繧ｿ縺ｪ縺励〒繧ゆｻ･荳九′蜿ｯ閭ｽ縺ｫ縺ｪ縺｣縺滂ｼ・
+
+1. **繧ｷ繧ｹ繝・Β險ｭ險医・螳溯｣・*: 譁ｰ讖溯・縺ｮ險ｭ險医°繧牙ｮ溯｣・∪縺ｧ
+2. **繧ｳ繝ｼ繝牙刀雉ｪ蜷台ｸ・*: 繝ｪ繝輔ぃ繧ｯ繧ｿ繝ｪ繝ｳ繧ｰ繝ｻ譛驕ｩ蛹・
+3. **繝励Ο繧ｸ繧ｧ繧ｯ繝育ｮ｡逅・*: 險育判遲門ｮ壹・騾ｲ謐礼ｮ｡逅・・繝峨く繝･繝｡繝ｳ繝域紛蛯・
+4. **謚陦楢ｪｿ譟ｻ**: 譁ｰ謚陦薙・繝ｩ繧､繝悶Λ繝ｪ縺ｮ隱ｿ譟ｻ繝ｻ邨ｱ蜷域ｺ門ｙ
+
+**谺｡蝗朸nity菴懈･ｭ譎ゅ・遒ｺ隱埼・岼**:
+- Phase 3 Deform繧ｷ繧ｹ繝・Β邨ｱ蜷医ユ繧ｹ繝・
+- 譌｢蟄俶ｩ溯・縺ｮ蜍穂ｽ懃｢ｺ隱・ 
+- 譁ｰ隕丞ｮ溯｣・ｩ溯・縺ｮ繝・せ繝・
+
+---
+
+## 2025-01-XX: Git騾｣謳ｺ螳悟・螳御ｺ・→繧ｦ繧ｧ繝夜幕逋ｺ菴灘宛謨ｴ蛯・
+
+### 菴懈･ｭ讎りｦ・
+蜑榊屓縺ｮGit騾｣謳ｺ菴懈･ｭ縺ｧ逋ｺ逕溘＠縺ｦ縺・◆繧ｹ繧ｿ繝・け蝠城｡後ｒ隗｣豎ｺ縺励∝ｮ悟・縺ｫ繧ｯ繝ｪ繝ｼ繝ｳ縺ｪGit迺ｰ蠅・ｒ讒狗ｯ峨ょ酔譎ゅ↓縲√え繧ｧ繝夜幕逋ｺ縺ｮ縺溘ａ縺ｮ蛹・峡逧・↑繝峨く繝･繝｡繝ｳ繝域紛蛯吶ｒ螳滓命縲・
+
+### Git騾｣謳ｺ螳御ｺ・ｽ懈･ｭ
+
+#### 隗｣豎ｺ縺励◆蝠城｡・
+1. **繝壹・繧ｸ繝｣繝ｼ繧ｹ繧ｿ繝・け**: `git log`繧ｳ繝槭Φ繝峨′繝壹・繧ｸ繝｣繝ｼ繝｢繝ｼ繝峨〒蛛懈ｭ｢縺励※縺・◆蝠城｡・
+2. **譛ｪ繝励ャ繧ｷ繝･繧ｳ繝溘ャ繝・*: 縲悟､ｧ隕乗ｨ｡繝ｪ繝輔ぃ繧ｯ繧ｿ繝ｪ繝ｳ繧ｰ・・ursor Web髢狗匱迺ｰ蠅・紛蛯吶阪さ繝溘ャ繝医′繝ｭ繝ｼ繧ｫ繝ｫ縺ｫ縺ｮ縺ｿ蟄伜惠
+3. **繧ｵ繝悶Δ繧ｸ繝･繝ｼ繝ｫ遶ｶ蜷・*: `Packages/co.parabox.csg`縺袈nity Package縺ｨ縺励※荳埼←蛻・↓Git邂｡逅・＆繧後※縺・◆蝠城｡・
+
+#### 螳滓命縺励◆隗｣豎ｺ遲・
+1. **繝ｪ繝｢繝ｼ繝医・繝・す繝･螳御ｺ・*:
    ```bash
    git push origin master
    # 87 objects, 146.39 KiB successfully pushed
    ```
 
-2. **サブモジュール問題解決**:
+2. **繧ｵ繝悶Δ繧ｸ繝･繝ｼ繝ｫ蝠城｡瑚ｧ｣豎ｺ**:
    ```bash
    echo "Packages/co.parabox.csg/" >> .gitignore
    git rm --cached -r "Packages/co.parabox.csg"
-   git commit -m "Unity Packagesの管理設定: co.parabox.csgパッケージをGit追跡から除外"
+   git commit -m "Unity Packages縺ｮ邂｡逅・ｨｭ螳・ co.parabox.csg繝代ャ繧ｱ繝ｼ繧ｸ繧竪it霑ｽ霍｡縺九ｉ髯､螟・
    git push origin master
    ```
 
-#### 最終結果
+#### 譛邨らｵ先棡
 ```bash
 On branch master
 Your branch is up to date with 'origin/master'.
 ```
-**完全にクリーンなGit状態を達成** - 開発作業再開準備完了
+**螳悟・縺ｫ繧ｯ繝ｪ繝ｼ繝ｳ縺ｪGit迥ｶ諷九ｒ驕疲・** - 髢狗匱菴懈･ｭ蜀埼幕貅門ｙ螳御ｺ・
 
-### ウェブ開発体制整備
+### 繧ｦ繧ｧ繝夜幕逋ｺ菴灘宛謨ｴ蛯・
 
-#### 新規作成ドキュメント
+#### 譁ｰ隕丈ｽ懈・繝峨く繝･繝｡繝ｳ繝・
 
 1. **WEB_DEVELOPMENT_ROADMAP.md**
-   - 並行開発戦略（Unity作業 + Web作業）
-   - 即座に実行可能な作業項目の優先度別整理
-   - 具体的な実装クラス設計とサンプルコード
-   - 進捗追跡システムと品質指標
-   - 効率的作業フローとパターン分類
+   - 荳ｦ陦碁幕逋ｺ謌ｦ逡･・・nity菴懈･ｭ + Web菴懈･ｭ・・
+   - 蜊ｳ蠎ｧ縺ｫ螳溯｡悟庄閭ｽ縺ｪ菴懈･ｭ鬆・岼縺ｮ蜆ｪ蜈亥ｺｦ蛻･謨ｴ逅・
+   - 蜈ｷ菴鍋噪縺ｪ螳溯｣・け繝ｩ繧ｹ險ｭ險医→繧ｵ繝ｳ繝励Ν繧ｳ繝ｼ繝・
+   - 騾ｲ謐苓ｿｽ霍｡繧ｷ繧ｹ繝・Β縺ｨ蜩∬ｳｪ謖・ｨ・
+   - 蜉ｹ邇・噪菴懈･ｭ繝輔Ο繝ｼ縺ｨ繝代ち繝ｼ繝ｳ蛻・｡・
 
 2. **TASK_PRIORITIZATION.md**
-   - アイゼンハワー・マトリックス分類による優先度管理
-   - 週次スケジューリングと並行作業フロー
-   - KPI管理とリスク管理システム
-   - 成果定義と達成指標
+   - 繧｢繧､繧ｼ繝ｳ繝上Ρ繝ｼ繝ｻ繝槭ヨ繝ｪ繝・け繧ｹ蛻・｡槭↓繧医ｋ蜆ｪ蜈亥ｺｦ邂｡逅・
+   - 騾ｱ谺｡繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｪ繝ｳ繧ｰ縺ｨ荳ｦ陦御ｽ懈･ｭ繝輔Ο繝ｼ
+   - KPI邂｡逅・→繝ｪ繧ｹ繧ｯ邂｡逅・す繧ｹ繝・Β
+   - 謌先棡螳夂ｾｩ縺ｨ驕疲・謖・ｨ・
 
-#### 作業項目の体系化
+#### 菴懈･ｭ鬆・岼縺ｮ菴鍋ｳｻ蛹・
 
-##### 🚀 最優先（次の1-2セッション）
-1. **Phase 3 Deformシステム技術調査**（工数: 2-3レスポンス）
-2. **Phase 5 高度合成システム設計**（工数: 2-3レスポンス）
+##### 噫 譛蜆ｪ蜈茨ｼ域ｬ｡縺ｮ1-2繧ｻ繝・す繝ｧ繝ｳ・・
+1. **Phase 3 Deform繧ｷ繧ｹ繝・Β謚陦楢ｪｿ譟ｻ**・亥ｷ･謨ｰ: 2-3繝ｬ繧ｹ繝昴Φ繧ｹ・・
+2. **Phase 5 鬮伜ｺｦ蜷域・繧ｷ繧ｹ繝・Β險ｭ險・*・亥ｷ･謨ｰ: 2-3繝ｬ繧ｹ繝昴Φ繧ｹ・・
 
-##### 🔧 高優先（3-5セッション）  
-3. **既存システム最適化**（全7タブの品質向上）
-4. **テストシステム拡充**（自動テスト・品質保証）
-5. **Phase 6 ランダム制御拡張**（RandomControlTabの機能強化）
+##### 肌 鬮伜━蜈茨ｼ・-5繧ｻ繝・す繝ｧ繝ｳ・・ 
+3. **譌｢蟄倥す繧ｹ繝・Β譛驕ｩ蛹・*・亥・7繧ｿ繝悶・蜩∬ｳｪ蜷台ｸ奇ｼ・
+4. **繝・せ繝医す繧ｹ繝・Β諡｡蜈・*・郁・蜍輔ユ繧ｹ繝医・蜩∬ｳｪ菫晁ｨｼ・・
+5. **Phase 6 繝ｩ繝ｳ繝繝蛻ｶ蠕｡諡｡蠑ｵ**・・andomControlTab縺ｮ讖溯・蠑ｷ蛹厄ｼ・
 
-##### ⚡ 中優先（6-10セッション）
-6. **新機能企画・設計**（次世代プレイヤーシステム）
-7. **高度地形システム設計**（次世代地形生成）
-8. **アーキテクチャ統合・最適化**（システム全体の統合）
+##### 笞｡ 荳ｭ蜆ｪ蜈茨ｼ・-10繧ｻ繝・す繝ｧ繝ｳ・・
+6. **譁ｰ讖溯・莨∫判繝ｻ險ｭ險・*・域ｬ｡荳紋ｻ｣繝励Ξ繧､繝､繝ｼ繧ｷ繧ｹ繝・Β・・
+7. **鬮伜ｺｦ蝨ｰ蠖｢繧ｷ繧ｹ繝・Β險ｭ險・*・域ｬ｡荳紋ｻ｣蝨ｰ蠖｢逕滓・・・
+8. **繧｢繝ｼ繧ｭ繝・け繝√Ε邨ｱ蜷医・譛驕ｩ蛹・*・医す繧ｹ繝・Β蜈ｨ菴薙・邨ｱ蜷茨ｼ・
 
-### 技術的成果
+### 謚陦鍋噪謌先棡
 
-#### Git管理改善
-- **コミット履歴**: 明確な変更履歴とメッセージ
-- **ファイル管理**: Unity Package の適切な除外設定
-- **同期状態**: ローカル・リモート完全同期
+#### Git邂｡逅・隼蝟・
+- **繧ｳ繝溘ャ繝亥ｱ･豁ｴ**: 譏守｢ｺ縺ｪ螟画峩螻･豁ｴ縺ｨ繝｡繝・そ繝ｼ繧ｸ
+- **繝輔ぃ繧､繝ｫ邂｡逅・*: Unity Package 縺ｮ驕ｩ蛻・↑髯､螟冶ｨｭ螳・
+- **蜷梧悄迥ｶ諷・*: 繝ｭ繝ｼ繧ｫ繝ｫ繝ｻ繝ｪ繝｢繝ｼ繝亥ｮ悟・蜷梧悄
 
-#### 開発効率向上
-- **作業選択指針**: 工数別の作業分類（1-2R, 3-5R, 6R+）
-- **並行作業パターン**: 効率重視・安定重視の2パターン
-- **進捗管理**: チェックリスト・KPI・品質指標による管理
+#### 髢狗匱蜉ｹ邇・髄荳・
+- **菴懈･ｭ驕ｸ謚樊欠驥・*: 蟾･謨ｰ蛻･縺ｮ菴懈･ｭ蛻・｡橸ｼ・-2R, 3-5R, 6R+・・
+- **荳ｦ陦御ｽ懈･ｭ繝代ち繝ｼ繝ｳ**: 蜉ｹ邇・㍾隕悶・螳牙ｮ夐㍾隕悶・2繝代ち繝ｼ繝ｳ
+- **騾ｲ謐礼ｮ｡逅・*: 繝√ぉ繝・け繝ｪ繧ｹ繝医・KPI繝ｻ蜩∬ｳｪ謖・ｨ吶↓繧医ｋ邂｡逅・
 
-#### リスク管理体制
-- **技術リスク**: Deformパッケージ互換性、メモリ不足、ProBuilder API変更
-- **プロジェクトリスク**: スケジュール遅延、品質低下、技術的債務
+#### 繝ｪ繧ｹ繧ｯ邂｡逅・ｽ灘宛
+- **謚陦薙Μ繧ｹ繧ｯ**: Deform繝代ャ繧ｱ繝ｼ繧ｸ莠呈鋤諤ｧ縲√Γ繝｢繝ｪ荳崎ｶｳ縲￣roBuilder API螟画峩
+- **繝励Ο繧ｸ繧ｧ繧ｯ繝医Μ繧ｹ繧ｯ**: 繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｫ驕・ｻｶ縲∝刀雉ｪ菴惹ｸ九∵橿陦鍋噪蛯ｵ蜍・
 
-### 今後の開発計画
+### 莉雁ｾ後・髢狗匱險育判
 
-#### 短期成果（1-2週間）
-- [ ] Phase 3 技術調査完了・実装計画策定
-- [ ] Phase 5 基本設計完了
-- [ ] 既存システム解析・最適化候補特定
+#### 遏ｭ譛滓・譫懶ｼ・-2騾ｱ髢難ｼ・
+- [ ] Phase 3 謚陦楢ｪｿ譟ｻ螳御ｺ・・螳溯｣・ｨ育判遲門ｮ・
+- [ ] Phase 5 蝓ｺ譛ｬ險ｭ險亥ｮ御ｺ・
+- [ ] 譌｢蟄倥す繧ｹ繝・Β隗｣譫舌・譛驕ｩ蛹門呵｣懃音螳・
 
-#### 中期成果（1ヶ月）
-- [ ] Phase 3 基本実装完了・Unity統合
-- [ ] Phase 5 主要機能実装完了
-- [ ] 既存システム20%以上パフォーマンス向上
+#### 荳ｭ譛滓・譫懶ｼ・繝ｶ譛茨ｼ・
+- [ ] Phase 3 蝓ｺ譛ｬ螳溯｣・ｮ御ｺ・・Unity邨ｱ蜷・
+- [ ] Phase 5 荳ｻ隕∵ｩ溯・螳溯｣・ｮ御ｺ・
+- [ ] 譌｢蟄倥す繧ｹ繝・Β20%莉･荳翫ヱ繝輔か繝ｼ繝槭Φ繧ｹ蜷台ｸ・
 
-#### 長期成果（3ヶ月）
-- [ ] Phase 3,5,6 すべて実装・テスト完了
-- [ ] 次世代機能設計開始
-- [ ] プロジェクト安定性・品質90%以上達成
+#### 髟ｷ譛滓・譫懶ｼ・繝ｶ譛茨ｼ・
+- [ ] Phase 3,5,6 縺吶∋縺ｦ螳溯｣・・繝・せ繝亥ｮ御ｺ・
+- [ ] 谺｡荳紋ｻ｣讖溯・險ｭ險磯幕蟋・
+- [ ] 繝励Ο繧ｸ繧ｧ繧ｯ繝亥ｮ牙ｮ壽ｧ繝ｻ蜩∬ｳｪ90%莉･荳企＃謌・
 
-### 成果と意義
+### 謌先棡縺ｨ諢冗ｾｩ
 
-#### Git連携面
-1. **データ保護**: 全開発成果のリモートバックアップ完了
-2. **バージョン管理**: 適切なコミット・プッシュ体制確立
-3. **協業準備**: 将来的なチーム開発への対応完了
+#### Git騾｣謳ｺ髱｢
+1. **繝・・繧ｿ菫晁ｭｷ**: 蜈ｨ髢狗匱謌先棡縺ｮ繝ｪ繝｢繝ｼ繝医ヰ繝・け繧｢繝・・螳御ｺ・
+2. **繝舌・繧ｸ繝ｧ繝ｳ邂｡逅・*: 驕ｩ蛻・↑繧ｳ繝溘ャ繝医・繝励ャ繧ｷ繝･菴灘宛遒ｺ遶・
+3. **蜊疲･ｭ貅門ｙ**: 蟆・擂逧・↑繝√・繝髢狗匱縺ｸ縺ｮ蟇ｾ蠢懷ｮ御ｺ・
 
-#### 開発体制面
-1. **継続性**: Unity エディタなしでの継続開発体制確立
-2. **効率性**: 優先度付け・工数管理による効率的開発
-3. **品質性**: KPI・リスク管理による品質保証体制
+#### 髢狗匱菴灘宛髱｢
+1. **邯咏ｶ壽ｧ**: Unity 繧ｨ繝・ぅ繧ｿ縺ｪ縺励〒縺ｮ邯咏ｶ夐幕逋ｺ菴灘宛遒ｺ遶・
+2. **蜉ｹ邇・ｧ**: 蜆ｪ蜈亥ｺｦ莉倥￠繝ｻ蟾･謨ｰ邂｡逅・↓繧医ｋ蜉ｹ邇・噪髢狗匱
+3. **蜩∬ｳｪ諤ｧ**: KPI繝ｻ繝ｪ繧ｹ繧ｯ邂｡逅・↓繧医ｋ蜩∬ｳｪ菫晁ｨｼ菴灘宛
 
-#### 技術面
-1. **可視性**: 全作業項目の明確化と進捗追跡可能
-2. **拡張性**: 新機能追加のための設計基盤整備
-3. **保守性**: コード品質・ドキュメント管理の体系化
-
----
-
-**最終更新**: 2025年1月  
-**開発環境**: Cursor Web + Unity エディタのハイブリッド開発  
-**次回推奨作業**: Phase 3 Deformシステム技術調査（優先度：🔴最高） 
+#### 謚陦馴擇
+1. **蜿ｯ隕匁ｧ**: 蜈ｨ菴懈･ｭ鬆・岼縺ｮ譏守｢ｺ蛹悶→騾ｲ謐苓ｿｽ霍｡蜿ｯ閭ｽ
+2. **諡｡蠑ｵ諤ｧ**: 譁ｰ讖溯・霑ｽ蜉縺ｮ縺溘ａ縺ｮ險ｭ險亥渕逶､謨ｴ蛯・
+3. **菫晏ｮ域ｧ**: 繧ｳ繝ｼ繝牙刀雉ｪ繝ｻ繝峨く繝･繝｡繝ｳ繝育ｮ｡逅・・菴鍋ｳｻ蛹・
 
 ---
 
-## 2025-01-XX: Phase 3 Deformシステム統合 - 準備完了
-
-### 作業概要
-開発計画の最優先タスクである「Phase 3: Deformシステム統合」に着手。Unityエディタでのパッケージ導入と、Cursor Web環境での基本クラス実装を完了した。
-
-### 完了した作業
-### 関連/参照
-- 関連ファイル: `Assets/Scripts/Utilities/VastcoreLogger.cs`
-- 追従ドキュメント: `FUNCTION_TEST_STATUS.md` の「VastcoreLogger バッファリング/ローテーション検証」
-- 最終更新: 2025-08-26
-
-## 2025-08-26: VastcoreLogger ファイル I/O 最適化 — 設計・運用・検証計画
-
-### 概要（目的）
-高頻度ログに伴うディスク I/O 負荷を抑えつつ、データ保全性（失われないログ）を確保するため、`VastcoreLogger` に以下を実装・整備した。
-
-- バッファリングと定期フラッシュ（I/O 回数削減）
-- Unity ライフサイクルイベント連携による安全なフラッシュ
-- 安全なログローテーション（再入・再帰回避、単一実行制御）
-- エディタ UI からのファイル出力トグル
-- 設計・テスト手順の明文化
-
-### 実装方針
-- バッファリング/フラッシュ
-  - ログメッセージはメモリバッファへ蓄積し、一定間隔でファイルへまとめて書き出す。
-  - フラッシュ契機は「タイマー間隔」「明示的 Flush 呼び出し」「ライフサイクルイベント」。
-- ライフサイクル連携
-  - `OnApplicationPause(true) / OnApplicationFocus(false) / OnDestroy / OnApplicationQuit` で即時フラッシュ。
-- 安全なローテーション
-  - 閾値（サイズ/件数など）到達でローテーションを実施。
-  - ローテーション中はファイル書き込みを停止し、内部ログは Unity の `Debug.Log` に一時退避して再帰/再入を防止。
-  - 同時多重ローテーションを避けるため単一実行ガードを設置。
-- UI トグル
-  - 「ファイルへ書き込む」設定をエディタ UI から切替可能（OFF の場合は Console のみ）。
-
-### 主な設定（例）
-- `Enabled`（bool）: ファイル出力の有効/無効
-- `BufferSizeBytes`（int）: バッファ上限（上限超過時は即フラッシュ）
-- `FlushIntervalMs`（int）: 定期フラッシュ間隔（ms）
-- `RotationMaxBytes`（long）: ローテーション発動のサイズ閾値
-- `RotationKeepFiles`（int）: 保持するローテーションファイル数
-
-注: 実際のプロパティ名/既定値は実装に従う。上記は設計上の整理であり、名称は今後の統一/露出に合わせる。
-
-### 運用ガイド（推奨値の目安）
-- 初期値の目安: `FlushIntervalMs = 1000〜2000ms`, `BufferSizeBytes = 8〜64KB`
-- 大量出力時はフラッシュ間隔を短縮し、Editor 終了前（再生停止/アプリ終了）に手動 `Flush()` を推奨。
-- ローテーションは閾値を小さく設定してまず動作確認（例: 数十 KB）→ 実運用値へ引き上げ。
-
-### 既知の注意点
-- ローテーション処理中のファイル書き込みは禁止（再帰・再入防止）。
-- 例外発生時のログ喪失を避けるため、重要セクション後に `Flush()` を入れると安全性が上がる。
-- 長すぎるフラッシュ間隔はクラッシュ時のログ喪失リスクを高めるため、要バランス。
-
-### 関連/参照
-- 実装: `Assets/Scripts/Utilities/VastcoreLogger.cs`
-- テスト: `FUNCTION_TEST_STATUS.md` → 「VastcoreLogger バッファリング/フラッシュ/ローテーション検証」
-- 利用上の注意: ローテーション中は `Debug.Log` へ退避し、処理完了後にファイル出力へ復帰。
+**譛邨よ峩譁ｰ**: 2025蟷ｴ1譛・ 
+**髢狗匱迺ｰ蠅・*: Cursor Web + Unity 繧ｨ繝・ぅ繧ｿ縺ｮ繝上う繝悶Μ繝・ラ髢狗匱  
+**谺｡蝗樊耳螂ｨ菴懈･ｭ**: Phase 3 Deform繧ｷ繧ｹ繝・Β謚陦楢ｪｿ譟ｻ・亥━蜈亥ｺｦ・夸沐ｴ譛鬮假ｼ・
 
 ---
 
-### 次回作業予定
+## 2025-01-XX: Phase 3 Deform繧ｷ繧ｹ繝・Β邨ｱ蜷・- 貅門ｙ螳御ｺ・
 
-#### 短期目標（次回1-3セッション）
-1.  **Deformer選択UIの実装**:
-    -   `DeformerTab.cs`に、利用可能なDeformer（Bend, Twist, Noise等）を選択するドロップダウンUIを実装する。
-    -   Deformパッケージ内のコンポーネントをリフレクション等で動的に検出し、リストを自動生成する。
-2.  **動的パラメータUIの生成**:
-    -   選択されたDeformerの種類に応じて、必要なパラメータ（角度、強度など）のスライダーやフィールドを動的に表示するUIを実装する。
-3.  **基本適用ロジックの実装**:
-    -   `DeformIntegrationManager.cs`に、選択されたGameObjectにDeformerコンポーネントを追加し、UIの値を適用する基本機能を実装する。
+### 菴懈･ｭ讎りｦ・
+髢狗匱險育判縺ｮ譛蜆ｪ蜈医ち繧ｹ繧ｯ縺ｧ縺ゅｋ縲訓hase 3: Deform繧ｷ繧ｹ繝・Β邨ｱ蜷医阪↓逹謇九６nity繧ｨ繝・ぅ繧ｿ縺ｧ縺ｮ繝代ャ繧ｱ繝ｼ繧ｸ蟆主・縺ｨ縲，ursor Web迺ｰ蠅・〒縺ｮ蝓ｺ譛ｬ繧ｯ繝ｩ繧ｹ螳溯｣・ｒ螳御ｺ・＠縺溘・
+
+### 螳御ｺ・＠縺滉ｽ懈･ｭ
+### 髢｢騾｣/蜿ら・
+- 髢｢騾｣繝輔ぃ繧､繝ｫ: `Assets/Scripts/Utilities/VastcoreLogger.cs`
+- 霑ｽ蠕薙ラ繧ｭ繝･繝｡繝ｳ繝・ `FUNCTION_TEST_STATUS.md` 縺ｮ縲祁astcoreLogger 繝舌ャ繝輔ぃ繝ｪ繝ｳ繧ｰ/繝ｭ繝ｼ繝・・繧ｷ繝ｧ繝ｳ讀懆ｨｼ縲・
+- 譛邨よ峩譁ｰ: 2025-08-26
+
+## 2025-08-26: VastcoreLogger 繝輔ぃ繧､繝ｫ I/O 譛驕ｩ蛹・窶・險ｭ險医・驕狗畑繝ｻ讀懆ｨｼ險育判
+
+### 讎りｦ・ｼ育岼逧・ｼ・
+鬮倬ｻ蠎ｦ繝ｭ繧ｰ縺ｫ莨ｴ縺・ョ繧｣繧ｹ繧ｯ I/O 雋闕ｷ繧呈椛縺医▽縺､縲√ョ繝ｼ繧ｿ菫晏・諤ｧ・亥､ｱ繧上ｌ縺ｪ縺・Ο繧ｰ・峨ｒ遒ｺ菫昴☆繧九◆繧√～VastcoreLogger` 縺ｫ莉･荳九ｒ螳溯｣・・謨ｴ蛯吶＠縺溘・
+
+- 繝舌ャ繝輔ぃ繝ｪ繝ｳ繧ｰ縺ｨ螳壽悄繝輔Λ繝・す繝･・・/O 蝗樊焚蜑頑ｸ幢ｼ・
+- Unity 繝ｩ繧､繝輔し繧､繧ｯ繝ｫ繧､繝吶Φ繝磯｣謳ｺ縺ｫ繧医ｋ螳牙・縺ｪ繝輔Λ繝・す繝･
+- 螳牙・縺ｪ繝ｭ繧ｰ繝ｭ繝ｼ繝・・繧ｷ繝ｧ繝ｳ・亥・蜈･繝ｻ蜀榊ｸｰ蝗樣∩縲∝腰荳螳溯｡悟宛蠕｡・・
+- 繧ｨ繝・ぅ繧ｿ UI 縺九ｉ縺ｮ繝輔ぃ繧､繝ｫ蜃ｺ蜉帙ヨ繧ｰ繝ｫ
+- 險ｭ險医・繝・せ繝域焔鬆・・譏取枚蛹・
+
+### 螳溯｣・婿驥・
+- 繝舌ャ繝輔ぃ繝ｪ繝ｳ繧ｰ/繝輔Λ繝・す繝･
+  - 繝ｭ繧ｰ繝｡繝・そ繝ｼ繧ｸ縺ｯ繝｡繝｢繝ｪ繝舌ャ繝輔ぃ縺ｸ闢・ｩ阪＠縲∽ｸ螳夐俣髫斐〒繝輔ぃ繧､繝ｫ縺ｸ縺ｾ縺ｨ繧√※譖ｸ縺榊・縺吶・
+  - 繝輔Λ繝・す繝･螂第ｩ溘・縲後ち繧､繝槭・髢馴囈縲阪梧・遉ｺ逧・Flush 蜻ｼ縺ｳ蜃ｺ縺励阪後Λ繧､繝輔し繧､繧ｯ繝ｫ繧､繝吶Φ繝医阪・
+- 繝ｩ繧､繝輔し繧､繧ｯ繝ｫ騾｣謳ｺ
+  - `OnApplicationPause(true) / OnApplicationFocus(false) / OnDestroy / OnApplicationQuit` 縺ｧ蜊ｳ譎ゅヵ繝ｩ繝・す繝･縲・
+- 螳牙・縺ｪ繝ｭ繝ｼ繝・・繧ｷ繝ｧ繝ｳ
+  - 髢ｾ蛟､・医し繧､繧ｺ/莉ｶ謨ｰ縺ｪ縺ｩ・牙芦驕斐〒繝ｭ繝ｼ繝・・繧ｷ繝ｧ繝ｳ繧貞ｮ滓命縲・
+  - 繝ｭ繝ｼ繝・・繧ｷ繝ｧ繝ｳ荳ｭ縺ｯ繝輔ぃ繧､繝ｫ譖ｸ縺崎ｾｼ縺ｿ繧貞●豁｢縺励∝・驛ｨ繝ｭ繧ｰ縺ｯ Unity 縺ｮ `Debug.Log` 縺ｫ荳譎る驕ｿ縺励※蜀榊ｸｰ/蜀榊・繧帝亟豁｢縲・
+  - 蜷梧凾螟夐㍾繝ｭ繝ｼ繝・・繧ｷ繝ｧ繝ｳ繧帝∩縺代ｋ縺溘ａ蜊倅ｸ螳溯｡後ぎ繝ｼ繝峨ｒ險ｭ鄂ｮ縲・
+- UI 繝医げ繝ｫ
+  - 縲後ヵ繧｡繧､繝ｫ縺ｸ譖ｸ縺崎ｾｼ繧縲崎ｨｭ螳壹ｒ繧ｨ繝・ぅ繧ｿ UI 縺九ｉ蛻・崛蜿ｯ閭ｽ・・FF 縺ｮ蝣ｴ蜷医・ Console 縺ｮ縺ｿ・峨・
+
+### 荳ｻ縺ｪ險ｭ螳夲ｼ井ｾ具ｼ・
+- `Enabled`・・ool・・ 繝輔ぃ繧､繝ｫ蜃ｺ蜉帙・譛牙柑/辟｡蜉ｹ
+- `BufferSizeBytes`・・nt・・ 繝舌ャ繝輔ぃ荳企剞・井ｸ企剞雜・℃譎ゅ・蜊ｳ繝輔Λ繝・す繝･・・
+- `FlushIntervalMs`・・nt・・ 螳壽悄繝輔Λ繝・す繝･髢馴囈・・s・・
+- `RotationMaxBytes`・・ong・・ 繝ｭ繝ｼ繝・・繧ｷ繝ｧ繝ｳ逋ｺ蜍輔・繧ｵ繧､繧ｺ髢ｾ蛟､
+- `RotationKeepFiles`・・nt・・ 菫晄戟縺吶ｋ繝ｭ繝ｼ繝・・繧ｷ繝ｧ繝ｳ繝輔ぃ繧､繝ｫ謨ｰ
+
+豕ｨ: 螳滄圀縺ｮ繝励Ο繝代ユ繧｣蜷・譌｢螳壼､縺ｯ螳溯｣・↓蠕薙≧縲ゆｸ願ｨ倥・險ｭ險井ｸ翫・謨ｴ逅・〒縺ゅｊ縲∝錐遘ｰ縺ｯ莉雁ｾ後・邨ｱ荳/髴ｲ蜃ｺ縺ｫ蜷医ｏ縺帙ｋ縲・
+
+### 驕狗畑繧ｬ繧､繝会ｼ域耳螂ｨ蛟､縺ｮ逶ｮ螳会ｼ・
+- 蛻晄悄蛟､縺ｮ逶ｮ螳・ `FlushIntervalMs = 1000縲・000ms`, `BufferSizeBytes = 8縲・4KB`
+- 螟ｧ驥丞・蜉帶凾縺ｯ繝輔Λ繝・す繝･髢馴囈繧堤洒邵ｮ縺励・ditor 邨ゆｺ・燕・亥・逕溷●豁｢/繧｢繝励Μ邨ゆｺ・ｼ峨↓謇句虚 `Flush()` 繧呈耳螂ｨ縲・
+- 繝ｭ繝ｼ繝・・繧ｷ繝ｧ繝ｳ縺ｯ髢ｾ蛟､繧貞ｰ上＆縺剰ｨｭ螳壹＠縺ｦ縺ｾ縺壼虚菴懃｢ｺ隱搾ｼ井ｾ・ 謨ｰ蜊・KB・俄・ 螳滄°逕ｨ蛟､縺ｸ蠑輔″荳翫￡縲・
+
+### 譌｢遏･縺ｮ豕ｨ諢冗せ
+- 繝ｭ繝ｼ繝・・繧ｷ繝ｧ繝ｳ蜃ｦ逅・ｸｭ縺ｮ繝輔ぃ繧､繝ｫ譖ｸ縺崎ｾｼ縺ｿ縺ｯ遖∵ｭ｢・亥・蟶ｰ繝ｻ蜀榊・髦ｲ豁｢・峨・
+- 萓句､也匱逕滓凾縺ｮ繝ｭ繧ｰ蝟ｪ螟ｱ繧帝∩縺代ｋ縺溘ａ縲・㍾隕√そ繧ｯ繧ｷ繝ｧ繝ｳ蠕後↓ `Flush()` 繧貞・繧後ｋ縺ｨ螳牙・諤ｧ縺御ｸ翫′繧九・
+- 髟ｷ縺吶℃繧九ヵ繝ｩ繝・す繝･髢馴囈縺ｯ繧ｯ繝ｩ繝・す繝･譎ゅ・繝ｭ繧ｰ蝟ｪ螟ｱ繝ｪ繧ｹ繧ｯ繧帝ｫ倥ａ繧九◆繧√∬ｦ√ヰ繝ｩ繝ｳ繧ｹ縲・
+
+### 髢｢騾｣/蜿ら・
+- 螳溯｣・ `Assets/Scripts/Utilities/VastcoreLogger.cs`
+- 繝・せ繝・ `FUNCTION_TEST_STATUS.md` 竊・縲祁astcoreLogger 繝舌ャ繝輔ぃ繝ｪ繝ｳ繧ｰ/繝輔Λ繝・す繝･/繝ｭ繝ｼ繝・・繧ｷ繝ｧ繝ｳ讀懆ｨｼ縲・
+- 蛻ｩ逕ｨ荳翫・豕ｨ諢・ 繝ｭ繝ｼ繝・・繧ｷ繝ｧ繝ｳ荳ｭ縺ｯ `Debug.Log` 縺ｸ騾驕ｿ縺励∝・逅・ｮ御ｺ・ｾ後↓繝輔ぃ繧､繝ｫ蜃ｺ蜉帙∈蠕ｩ蟶ｰ縲・
+
+---
+
+### 谺｡蝗樔ｽ懈･ｭ莠亥ｮ・
+
+#### 遏ｭ譛溽岼讓呻ｼ域ｬ｡蝗・-3繧ｻ繝・す繝ｧ繝ｳ・・
+1.  **Deformer驕ｸ謚朸I縺ｮ螳溯｣・*:
+    -   `DeformerTab.cs`縺ｫ縲∝茜逕ｨ蜿ｯ閭ｽ縺ｪDeformer・・end, Twist, Noise遲会ｼ峨ｒ驕ｸ謚槭☆繧九ラ繝ｭ繝・・繝繧ｦ繝ｳUI繧貞ｮ溯｣・☆繧九・
+    -   Deform繝代ャ繧ｱ繝ｼ繧ｸ蜀・・繧ｳ繝ｳ繝昴・繝阪Φ繝医ｒ繝ｪ繝輔Ξ繧ｯ繧ｷ繝ｧ繝ｳ遲峨〒蜍慕噪縺ｫ讀懷・縺励√Μ繧ｹ繝医ｒ閾ｪ蜍慕函謌舌☆繧九・
+2.  **蜍慕噪繝代Λ繝｡繝ｼ繧ｿUI縺ｮ逕滓・**:
+    -   驕ｸ謚槭＆繧後◆Deformer縺ｮ遞ｮ鬘槭↓蠢懊§縺ｦ縲∝ｿ・ｦ√↑繝代Λ繝｡繝ｼ繧ｿ・郁ｧ貞ｺｦ縲∝ｼｷ蠎ｦ縺ｪ縺ｩ・峨・繧ｹ繝ｩ繧､繝繝ｼ繧・ヵ繧｣繝ｼ繝ｫ繝峨ｒ蜍慕噪縺ｫ陦ｨ遉ｺ縺吶ｋUI繧貞ｮ溯｣・☆繧九・
+3.  **蝓ｺ譛ｬ驕ｩ逕ｨ繝ｭ繧ｸ繝・け縺ｮ螳溯｣・*:
+    -   `DeformIntegrationManager.cs`縺ｫ縲・∈謚槭＆繧後◆GameObject縺ｫDeformer繧ｳ繝ｳ繝昴・繝阪Φ繝医ｒ霑ｽ蜉縺励ゞI縺ｮ蛟､繧帝←逕ｨ縺吶ｋ蝓ｺ譛ｬ讖溯・繧貞ｮ溯｣・☆繧九
