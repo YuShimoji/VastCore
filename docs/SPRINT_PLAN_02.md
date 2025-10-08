@@ -13,6 +13,7 @@
     - [A3] 段階適用と検証
       - 限定適用→ビルド/シーン動作確認→レポート反映
       - 状態: 着手済（`UIMigrationApplyWindow.cs` 追加、限定適用プレビュー・適用を実装）
+      - A3-1: `Assets/Scripts/UI/Menus/`（変更なし）→ `Documentation/QA/UI_MIGRATION_APPLY_PREVIEW_MENUS.md`, `UI_MIGRATION_APPLY_RESULT_MENUS.md` を更新
 
 - **管理**
   - 追跡: Issue #11（A1）, Issue #13（A2）, Issue #17（A3）
