@@ -1,11 +1,5 @@
 {
   "dependencies": {
-    "co.parabox.csg": {
-      "version": "file:co.parabox.csg",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {}
-    },
     "com.beans.deform": {
       "version": "https://github.com/keenanwoodall/Deform.git",
       "depth": 0,
