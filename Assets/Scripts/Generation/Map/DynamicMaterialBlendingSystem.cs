@@ -1,5 +1,4 @@
 using UnityEngine;
-using Vastcore.Player;
 using System.Collections.Generic;
 using System.Collections;
 
@@ -99,11 +98,7 @@ namespace Vastcore.Generation
             }
             
             // プレイヤーTransformを取得
-            var playerController = FindObjectOfType<AdvancedPlayerController>();
-            if (playerController != null)
-            {
-                playerTransform = playerController.transform;
-            }
+            playerTransform = ResolvePlayerTransform();
             
             // コルーチンを開始
             StartBlendProcessing();
@@ -140,6 +135,19 @@ namespace Vastcore.Generation
             }
             
             environmentalUpdateCoroutine = StartCoroutine(EnvironmentalUpdateCoroutine());
+        }
+        #endregion
+
+        #region ヘルパー
+        private Transform ResolvePlayerTransform()
+        {
+            var playerObject = GameObject.FindGameObjectWithTag("Player");
+            if (playerObject != null)
+            {
+                return playerObject.transform;
+            }
+
+            return Camera.main != null ? Camera.main.transform : null;
         }
         #endregion
 

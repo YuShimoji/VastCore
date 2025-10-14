@@ -1,0 +1,16 @@
+{
+    "name": "Vastcore.Player",
+    "rootNamespace": "Vastcore.Player",
+    "references": [
+        "Vastcore.Generation"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

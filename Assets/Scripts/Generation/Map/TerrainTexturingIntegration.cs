@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Vastcore.Generation;
 using Vastcore.Generation.Map;
-using Vastcore.Player;
 
 namespace Vastcore.Generation
 {
@@ -101,11 +100,7 @@ namespace Vastcore.Generation
             }
             
             // プレイヤーTransformを取得
-            var playerController = FindObjectOfType<AdvancedPlayerController>();
-            if (playerController != null)
-            {
-                playerTransform = playerController.transform;
-            }
+            playerTransform = ResolvePlayerTransform();
             
             // イベントハンドラーを登録
             RegisterEventHandlers();
