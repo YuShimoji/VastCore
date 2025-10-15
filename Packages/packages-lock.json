@@ -1,11 +1,5 @@
 {
   "dependencies": {
-    "co.parabox.csg": {
-      "version": "file:co.parabox.csg",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {}
-    },
     "com.beans.deform": {
       "version": "https://github.com/keenanwoodall/Deform.git",
       "depth": 0,
@@ -113,9 +107,9 @@
       "depth": 1,
       "source": "registry",
       "dependencies": {
+        "com.unity.modules.physics": "1.0.0",
         "com.unity.modules.androidjni": "1.0.0",
         "com.unity.modules.uielements": "1.0.0",
-        "com.unity.modules.physics": "1.0.0",
         "com.unity.modules.screencapture": "1.0.0"
       },
       "url": "https://packages.unity.com"

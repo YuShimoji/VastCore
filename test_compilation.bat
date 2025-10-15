@@ -3,7 +3,7 @@ echo ===== Vastcore コンパイルテスト =====
 echo.
 
 echo Unity テスト（EditMode/PlayMode）を実行中...
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\run-tests.ps1" -TestMode all
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\run-tests.ps1" -TestMode all -UnityPath "C:\Program Files\6000.2.2f1\Editor\Unity.exe"
 
 echo.
 if %ERRORLEVEL%==0 (
