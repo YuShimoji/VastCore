@@ -43,7 +43,7 @@ namespace Vastcore.EditorTools.UIMigration
 
         private Vector2 _scroll;
         private string _rulesJsonPath = "docs/ui-migration/ui_mapping_rules.template.json"; // relative to project root
-        private string _reportPath = "Documentation/QA/UI_MIGRATION_APPLY_PREVIEW.md";     // relative to project root
+        private string _reportPath = "docs/04_reports/A3-2_UI_MIGRATION_APPLY_REPORT.md";     // relative to project root
         private string _scopeFolder = "Assets"; // apply to this folder (or below)
         private bool _useSelectionOnly = true;  // limit to current selection when true
         private bool _excludeExamples = true;
