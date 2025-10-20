@@ -1,6 +1,11 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Profiling;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Vastcore.Generation.GPU
 {
@@ -28,6 +33,11 @@ namespace Vastcore.Generation.GPU
         private GPUTerrainGenerator terrainGenerator;
         private float lastUpdateTime;
         
+#if UNITY_2021_2_OR_NEWER
+        private ProfilerRecorder gpuMemoryRecorder;
+        private bool gpuMemoryRecorderUnavailable;
+#endif
+        
         // 統計データ
         public struct PerformanceStats
         {
@@ -47,12 +57,33 @@ namespace Vastcore.Generation.GPU
             gpuMemorySamples = new List<float>();
             generationCountSamples = new List<int>();
             
+#if UNITY_2022_2_OR_NEWER
+            terrainGenerator = FindFirstObjectByType<GPUTerrainGenerator>();
+#else
             terrainGenerator = FindObjectOfType<GPUTerrainGenerator>();
+#endif
             if (terrainGenerator == null)
             {
                 Debug.LogWarning("GPUTerrainGenerator not found. Performance monitoring disabled.");
                 enableMonitoring = false;
             }
+        }
+
+        private void OnEnable()
+        {
+#if UNITY_2021_2_OR_NEWER
+            StartGpuMemoryRecorderIfNeeded();
+#endif
+        }
+
+        private void OnDisable()
+        {
+#if UNITY_2021_2_OR_NEWER
+            if (gpuMemoryRecorder.Valid)
+            {
+                gpuMemoryRecorder.Dispose();
+            }
+#endif
         }
         
         private void Update()
@@ -102,13 +133,16 @@ namespace Vastcore.Generation.GPU
         
         private float GetGPUMemoryUsage()
         {
-            // Unity 2021.2以降でサポート
-            #if UNITY_2021_2_OR_NEWER
-            return SystemInfo.graphicsMemorySize * (UnityEngine.Profiling.Profiler.GetAllocatedMemory(UnityEngine.Profiling.Profiler.Area.GPU) / (1024f * 1024f * 1024f));
-            #else
-            // 推定値を返す
-            return UnityEngine.Profiling.Profiler.GetTotalAllocatedMemory(UnityEngine.Profiling.Profiler.Area.GPU) / (1024f * 1024f);
-            #endif
+#if UNITY_2021_2_OR_NEWER
+            StartGpuMemoryRecorderIfNeeded();
+
+            if (gpuMemoryRecorder.Valid)
+            {
+                return gpuMemoryRecorder.LastValue / (1024f * 1024f);
+            }
+#endif
+            // Fallback: グラフィックスメモリ総量を最大値として使用
+            return SystemInfo.graphicsMemorySize;
         }
         
         private void SuggestPerformanceOptimization(GPUTerrainGenerator.GPUPerformanceInfo perfInfo)
@@ -209,7 +243,13 @@ namespace Vastcore.Generation.GPU
             GUILayout.BeginArea(new Rect(10, 10, 300, 200));
             GUILayout.BeginVertical("box");
             
-            GUILayout.Label("GPU Performance Monitor", EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).label);
+#if UNITY_EDITOR
+            GUIStyle headerStyle = EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).label;
+#else
+            GUIStyle headerStyle = GUI.skin.label;
+#endif
+            GUILayout.Label("GPU Performance Monitor", headerStyle);
+            
             GUILayout.Space(5);
             
             GUILayout.Label($"Frame Time: {stats.averageFrameTime:F1}ms (Target: {targetFrameTime:F1}ms)");
@@ -238,5 +278,30 @@ namespace Vastcore.Generation.GPU
             GUILayout.EndVertical();
             GUILayout.EndArea();
         }
+
+#if UNITY_2021_2_OR_NEWER
+        private void StartGpuMemoryRecorderIfNeeded()
+        {
+            if (!enableMonitoring || gpuMemoryRecorderUnavailable)
+            {
+                return;
+            }
+
+            if (gpuMemoryRecorder.Valid)
+            {
+                return;
+            }
+
+            try
+            {
+                gpuMemoryRecorder = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "Graphics Used Memory", 1);
+            }
+            catch (System.ArgumentException)
+            {
+                gpuMemoryRecorderUnavailable = true;
+                Debug.LogWarning("GPUPerformanceMonitor: Graphics Used Memory profiler recorder is unavailable. GPU memory metrics will use SystemInfo.graphicsMemorySize as a fallback.");
+            }
+        }
+#endif
     }
 }

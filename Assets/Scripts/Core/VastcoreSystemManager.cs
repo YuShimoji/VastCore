@@ -21,7 +21,6 @@ namespace Vastcore.Core
         public bool enableDebugVisualizer = true;
         public bool enableDiagnostics = true;
         public bool enableTerrainErrorRecovery = true;
-        public bool enablePrimitiveErrorRecovery = true;
         
         [Header("システム設定")]
         public VastcoreLogger.LogLevel systemLogLevel = VastcoreLogger.LogLevel.Info;
@@ -66,7 +65,6 @@ namespace Vastcore.Core
         private VastcoreDebugVisualizer debugVisualizer;
         private VastcoreDiagnostics diagnostics;
         private TerrainErrorRecovery terrainErrorRecovery;
-        private PrimitiveErrorRecovery primitiveErrorRecovery;
         
         private void Awake()
         {
@@ -136,12 +134,6 @@ namespace Vastcore.Core
                 if (enableTerrainErrorRecovery)
                 {
                     InitializeTerrainErrorRecovery();
-                }
-                
-                // 6. プリミティブエラー回復システムの初期化
-                if (enablePrimitiveErrorRecovery)
-                {
-                    InitializePrimitiveErrorRecovery();
                 }
                 
                 // システム初期化完了
@@ -275,29 +267,6 @@ namespace Vastcore.Core
             }
         }
         
-        private void InitializePrimitiveErrorRecovery()
-        {
-            try
-            {
-                primitiveErrorRecovery = PrimitiveErrorRecovery.Instance;
-                if (primitiveErrorRecovery != null)
-                {
-                    if (logger != null)
-                    {
-                        logger.LogInfo("SystemManager", "PrimitiveErrorRecovery初期化完了");
-                    }
-                    else
-                    {
-                        Debug.Log("PrimitiveErrorRecovery初期化完了");
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Debug.LogError($"PrimitiveErrorRecovery初期化エラー: {error.Message}");
-            }
-        }
-        
         private void LogSystemStatus()
         {
             if (logger == null) return;
@@ -309,7 +278,6 @@ namespace Vastcore.Core
             logger.LogInfo("SystemManager", $"DebugVisualizer: {(debugVisualizer != null ? "Active" : "Inactive")}");
             logger.LogInfo("SystemManager", $"Diagnostics: {(diagnostics != null ? "Active" : "Inactive")}");
             logger.LogInfo("SystemManager", $"TerrainErrorRecovery: {(terrainErrorRecovery != null ? "Active" : "Inactive")}");
-            logger.LogInfo("SystemManager", $"PrimitiveErrorRecovery: {(primitiveErrorRecovery != null ? "Active" : "Inactive")}");
         }
         
         private void PerformSystemHealthCheck()
@@ -467,7 +435,6 @@ namespace Vastcore.Core
             info.AppendLine($"DebugVisualizer: {(debugVisualizer != null ? "Active" : "Inactive")}");
             info.AppendLine($"Diagnostics: {(diagnostics != null ? "Active" : "Inactive")}");
             info.AppendLine($"TerrainErrorRecovery: {(terrainErrorRecovery != null ? "Active" : "Inactive")}");
-            info.AppendLine($"PrimitiveErrorRecovery: {(primitiveErrorRecovery != null ? "Active" : "Inactive")}");
             info.AppendLine($"Health Monitoring: {enableSystemHealthMonitoring}");
             info.AppendLine($"Last Health Check: {lastHealthCheck}");
             

@@ -34,12 +34,39 @@ namespace Vastcore.Generation
         public System.DateTime createdAt;       // 作成日時
         public System.DateTime lastAccessedAt; // 最終アクセス日時
         public int accessCount;                 // アクセス回数
+        public BiomePreset appliedBiome;        // 適用中のバイオーム
         
         [Header("最適化情報")]
         public bool isVisible;                  // 可視状態
         public bool hasCollider;                // コライダー有効状態
         public float distanceFromPlayer;        // プレイヤーからの距離
         public LODLevel currentLOD;             // 現在のLODレベル
+        
+        #region 互換プロパティ
+        public GameObject terrainObject
+        {
+            get => tileObject;
+            set => tileObject = value;
+        }
+
+        public float[,] heightData
+        {
+            get => heightmap;
+            set => heightmap = value;
+        }
+
+        public bool isActive
+        {
+            get => state == TileState.Active;
+            set => state = value ? TileState.Active : TileState.Inactive;
+        }
+
+        public System.DateTime lastAccessTime
+        {
+            get => lastAccessedAt;
+            set => lastAccessedAt = value;
+        }
+        #endregion
         
         /// <summary>
         /// タイルの状態

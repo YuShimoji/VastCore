@@ -332,6 +332,8 @@ namespace Vastcore.Generation.Map
             if (task == null || !task.IsValid())
                 yield break;
 
+            GameObject result = null;
+
             try
             {
                 task.StartExecution();
@@ -342,11 +344,9 @@ namespace Vastcore.Generation.Map
                     Debug.Log($"RuntimeGenerationManager: タスク実行開始 - {task}");
                 }
 
-                // タスクタイプに応じて処理を分岐
-                GameObject result = null;
-                yield return StartCoroutine(ExecuteTaskByType(task, (r) => result = r));
+                result = ExecuteTaskByType(task);
 
-                // タスク完了
+                // タスク完了処理
                 task.CompleteTask(result);
                 activeTasksById.Remove(task.taskId);
                 OnTaskCompleted?.Invoke(task);
@@ -358,19 +358,29 @@ namespace Vastcore.Generation.Map
             }
             catch (Exception ex)
             {
-                string errorMessage = $"タスク実行エラー: {ex.Message}";
-                task.ErrorTask(errorMessage);
+                HandleTaskException(task, ex);
+            }
+
+            yield return null;
+        }
+
+        private void HandleTaskException(GenerationTask task, Exception ex)
+        {
+            string errorMessage = $"タスク実行エラー: {ex.Message}";
+            task?.ErrorTask(errorMessage);
+            if (task != null)
+            {
                 activeTasksById.Remove(task.taskId);
                 OnTaskError?.Invoke(task, errorMessage);
-                
-                Debug.LogError($"RuntimeGenerationManager: {errorMessage}\n{ex.StackTrace}");
             }
+
+            Debug.LogError($"RuntimeGenerationManager: {errorMessage}\n{ex.StackTrace}");
         }
 
         /// <summary>
         /// タスクタイプに応じた実行処理
         /// </summary>
-        private IEnumerator ExecuteTaskByType(GenerationTask task, Action<GameObject> onResult)
+        private GameObject ExecuteTaskByType(GenerationTask task)
         {
             GameObject result = null;
 
@@ -397,13 +407,9 @@ namespace Vastcore.Generation.Map
 
                 case GenerationTask.TaskType.TileCleanup:
                     var tileToClean = task.GetParameter<TerrainTile>("tile");
-                    if (tileToClean != null && terrainManager != null)
+                    if (tileToClean != null)
                     {
-                        // タイル削除処理（実装は RuntimeTerrainManager に依存）
-                        if (tileToClean.terrainObject != null)
-                        {
-                            DestroyImmediate(tileToClean.terrainObject);
-                        }
+                        CleanupTerrainTile(tileToClean);
                     }
                     break;
 
@@ -412,8 +418,15 @@ namespace Vastcore.Generation.Map
                     break;
             }
 
-            onResult?.Invoke(result);
-            yield return null;
+            return result;
+        }
+
+        private void CleanupTerrainTile(TerrainTile tileToClean)
+        {
+            if (tileToClean.terrainObject != null)
+            {
+                DestroyImmediate(tileToClean.terrainObject);
+            }
         }
 
         #endregion

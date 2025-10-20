@@ -227,7 +227,6 @@ namespace Vastcore.Generation
             int processedCount = 0;
             int safetyFrameYields = 0;
             const int maxSafetyFrameYields = 300; // 約5秒(60FPS想定)の安全弁
-
             while (generationQueue.Count > 0 && processedCount < maxTilesPerUpdate)
             {
                 // フレーム時間をチェック
@@ -235,25 +234,12 @@ namespace Vastcore.Generation
                 if (elapsedTime > maxFrameTimeMs && processedCount >= minTilesPerUpdate)
                 {
                     VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"GenQueue frame limit hit elapsed={elapsedTime:F2}ms processed={processedCount}/{maxTilesPerUpdate} q={generationQueue.Count}");
-                    yield return null; // 次のフレームに延期
-                    safetyFrameYields++;
                     if (!enableDynamicGeneration || !gameObject.activeInHierarchy)
                     {
                         VastcoreLogger.Instance.LogWarning("RuntimeTerrain", "GenQueue canceled due to disabled manager or inactive object");
-                        yield break;
-                    }
-                    if (safetyFrameYields > maxSafetyFrameYields)
-                    {
-                        VastcoreLogger.Instance.LogError("RuntimeTerrain", $"GenQueue watchdog triggered. Breaking to avoid long-running step. processed={processedCount} remaining={generationQueue.Count}");
                         break;
                     }
-                    frameStartTime = Time.realtimeSinceStartup;
-                }
-
-                var request = generationQueue.Dequeue();
-                VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"GenQueueWL dequeue coord={request.coordinate} pri={request.priority} remain={generationQueue.Count}");
-                ProcessTileGenerationRequest(request);
-                processedCount++;
+                    if (safetyFrameYields > maxSafetyFrameYields)
 
                 performanceStats.tilesGeneratedThisFrame++;
             }
