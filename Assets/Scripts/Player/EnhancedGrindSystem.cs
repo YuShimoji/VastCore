@@ -224,12 +224,8 @@ namespace Vastcore.Player
             
             foreach (Collider col in grindableObjects)
             {
-                // プリミティブオブジェクトでない場合の処理
-                if (col.GetComponent<PrimitiveTerrainObject>() == null)
-                {
-                    // 従来のグラインド表面として処理
-                    ProcessTraditionalGrindSurface(col);
-                }
+                // 従来のグラインド表面として処理
+                ProcessTraditionalGrindSurface(col);
             }
         }
         

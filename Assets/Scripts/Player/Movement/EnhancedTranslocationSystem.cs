@@ -318,12 +318,12 @@ namespace Vastcore.Player
             
             foreach (Collider primitive in primitives)
             {
-                PrimitiveTerrainObject primitiveObject = primitive.GetComponent<PrimitiveTerrainObject>();
-                if (primitiveObject != null && primitiveObject.isClimbable)
-                {
-                    Vector3[] landingPoints = GenerateLandingPoints(primitive);
-                    CreateLandingPointIndicators(landingPoints);
-                }
+                // PrimitiveTerrainObject primitiveObject = primitive.GetComponent<PrimitiveTerrainObject>();
+                // if (primitiveObject != null && primitiveObject.isClimbable)
+                // {
+                //     Vector3[] landingPoints = GenerateLandingPoints(primitive);
+                //     CreateLandingPointIndicators(landingPoints);
+                // }
             }
         }
         
@@ -448,7 +448,7 @@ namespace Vastcore.Player
             // 地形やプリミティブオブジェクトかチェック
             return other.gameObject.layer == LayerMask.NameToLayer("Terrain") ||
                    other.gameObject.layer == LayerMask.NameToLayer("Primitive") ||
-                   other.GetComponent<PrimitiveTerrainObject>() != null;
+                   // other.GetComponent<PrimitiveTerrainObject>() != null;
         }
     }
 }
