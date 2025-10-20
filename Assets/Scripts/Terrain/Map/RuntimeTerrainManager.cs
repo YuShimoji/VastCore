@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
-using Vastcore.Player;
 using Vastcore.Utils;
 using Vastcore.Generation;
 using Vastcore.Core;
@@ -86,6 +85,11 @@ namespace Vastcore.Generation
             {
                 tileManager = gameObject.AddComponent<TileManager>();
                 VastcoreLogger.Instance.LogInfo("RuntimeTerrain", "TileManager component added by RuntimeTerrainManager");
+            }
+
+            if (playerTransform == null)
+            {
+                playerTransform = ResolvePlayerTransform();
             }
 
             // TileManagerにプレイヤー参照を連携

@@ -12,7 +12,7 @@ namespace Vastcore.Terrain
         [SerializeField] private TerrainGenerationConfig _config;
         [SerializeField] private Vector2 _worldOrigin;
 
-        public Terrain UnityTerrain { get; private set; }
+        public UnityEngine.Terrain UnityTerrain { get; private set; }
         public TerrainData TerrainData { get; private set; }
 
         /// <summary>

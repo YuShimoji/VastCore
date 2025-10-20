@@ -447,8 +447,7 @@ namespace Vastcore.Player
                 
             // 地形やプリミティブオブジェクトかチェック
             return other.gameObject.layer == LayerMask.NameToLayer("Terrain") ||
-                   other.gameObject.layer == LayerMask.NameToLayer("Primitive") ||
-                   // other.GetComponent<PrimitiveTerrainObject>() != null;
+                   other.gameObject.layer == LayerMask.NameToLayer("Primitive");
         }
     }
 }

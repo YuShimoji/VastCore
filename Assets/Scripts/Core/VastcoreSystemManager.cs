@@ -1,6 +1,8 @@
 using System;
+using System.Reflection;
 using UnityEngine;
 using Vastcore.Core;
+using Vastcore.Core.Interfaces;
 using Vastcore.Utils;
 
 namespace Vastcore.Core
@@ -65,7 +67,7 @@ namespace Vastcore.Core
         private VastcoreLogger logger;
         private VastcoreDebugVisualizer debugVisualizer;
         private VastcoreDiagnostics diagnostics;
-        private TerrainErrorRecovery terrainErrorRecovery;
+        private ITerrainRecoveryService terrainRecoveryService;
         private PrimitiveErrorRecovery primitiveErrorRecovery;
         
         private void Awake()
@@ -254,23 +256,98 @@ namespace Vastcore.Core
         
         private void InitializeTerrainErrorRecovery()
         {
+            terrainRecoveryService = null;
+
             try
             {
-                terrainErrorRecovery = TerrainErrorRecovery.Instance;
-                if (terrainErrorRecovery != null)
+                var recoveryType = Type.GetType("Vastcore.Generation.TerrainErrorRecovery, Vastcore.Terrain", false)
+                    ?? Type.GetType("Vastcore.Generation.TerrainErrorRecovery, Vastcore.Generation", false);
+
+                if (recoveryType == null)
                 {
                     if (logger != null)
                     {
-                        logger.LogInfo("SystemManager", "TerrainErrorRecovery初期化完了");
+                        logger.LogWarning("SystemManager", "TerrainErrorRecoveryタイプが検出されませんでした");
                     }
                     else
                     {
-                        Debug.Log("TerrainErrorRecovery初期化完了");
+                        Debug.LogWarning("TerrainErrorRecoveryタイプが検出されませんでした");
                     }
+                    return;
+                }
+
+                ITerrainRecoveryService resolvedService = null;
+
+                var instanceProperty = recoveryType.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
+                if (instanceProperty != null)
+                {
+                    if (instanceProperty.GetValue(null) is ITerrainRecoveryService serviceInstance)
+                    {
+                        resolvedService = serviceInstance;
+                    }
+                    else if (instanceProperty.GetValue(null) is Component componentInstance)
+                    {
+                        resolvedService = componentInstance as ITerrainRecoveryService;
+                    }
+                }
+
+                if (resolvedService == null)
+                {
+                    UnityEngine.Object found = null;
+                    var findFirstMethod = typeof(UnityEngine.Object).GetMethod("FindFirstObjectByType", new[] { typeof(Type) });
+                    if (findFirstMethod != null)
+                    {
+                        found = findFirstMethod.Invoke(null, new object[] { recoveryType }) as UnityEngine.Object;
+                    }
+                    else
+                    {
+                        found = UnityEngine.Object.FindObjectOfType(recoveryType);
+                    }
+
+                    if (found is ITerrainRecoveryService foundService)
+                    {
+                        resolvedService = foundService;
+                    }
+                    else if (found is Component foundComponent)
+                    {
+                        resolvedService = foundComponent as ITerrainRecoveryService;
+                    }
+                }
+
+                if (resolvedService == null)
+                {
+                    var go = new GameObject("TerrainErrorRecovery");
+                    var createdComponent = go.AddComponent(recoveryType);
+                    resolvedService = createdComponent as ITerrainRecoveryService;
+                }
+
+                if (resolvedService == null)
+                {
+                    if (logger != null)
+                    {
+                        logger.LogWarning("SystemManager", "TerrainErrorRecovery が ITerrainRecoveryService を実装していません");
+                    }
+                    else
+                    {
+                        Debug.LogWarning("TerrainErrorRecovery が ITerrainRecoveryService を実装していません");
+                    }
+                    return;
+                }
+
+                terrainRecoveryService = resolvedService;
+
+                if (logger != null)
+                {
+                    logger.LogInfo("SystemManager", "TerrainRecoveryService 初期化完了");
+                }
+                else
+                {
+                    Debug.Log("TerrainRecoveryService 初期化完了");
                 }
             }
             catch (Exception error)
             {
+                terrainRecoveryService = null;
                 Debug.LogError($"TerrainErrorRecovery初期化エラー: {error.Message}");
             }
         }
@@ -308,7 +385,7 @@ namespace Vastcore.Core
             logger.LogInfo("SystemManager", $"Logger: {(logger != null ? "Active" : "Inactive")}");
             logger.LogInfo("SystemManager", $"DebugVisualizer: {(debugVisualizer != null ? "Active" : "Inactive")}");
             logger.LogInfo("SystemManager", $"Diagnostics: {(diagnostics != null ? "Active" : "Inactive")}");
-            logger.LogInfo("SystemManager", $"TerrainErrorRecovery: {(terrainErrorRecovery != null ? "Active" : "Inactive")}");
+            logger.LogInfo("SystemManager", $"TerrainRecoveryService: {(terrainRecoveryService != null ? "Active" : "Inactive")}");
             logger.LogInfo("SystemManager", $"PrimitiveErrorRecovery: {(primitiveErrorRecovery != null ? "Active" : "Inactive")}");
         }
         
@@ -466,7 +543,7 @@ namespace Vastcore.Core
             info.AppendLine($"Logger: {(logger != null ? "Active" : "Inactive")}");
             info.AppendLine($"DebugVisualizer: {(debugVisualizer != null ? "Active" : "Inactive")}");
             info.AppendLine($"Diagnostics: {(diagnostics != null ? "Active" : "Inactive")}");
-            info.AppendLine($"TerrainErrorRecovery: {(terrainErrorRecovery != null ? "Active" : "Inactive")}");
+            info.AppendLine($"TerrainRecoveryService: {(terrainRecoveryService != null ? "Active" : "Inactive")}");
             info.AppendLine($"PrimitiveErrorRecovery: {(primitiveErrorRecovery != null ? "Active" : "Inactive")}");
             info.AppendLine($"Health Monitoring: {enableSystemHealthMonitoring}");
             info.AppendLine($"Last Health Check: {lastHealthCheck}");

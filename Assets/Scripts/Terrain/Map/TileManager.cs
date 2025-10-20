@@ -1,5 +1,4 @@
 using UnityEngine;
-using Vastcore.Player;
 using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Generation;
@@ -124,15 +123,12 @@ namespace Vastcore.Generation
         /// </summary>
         private void FindPlayerTransform()
         {
-            // AdvancedPlayerControllerを検索
-            var playerController = FindFirstObjectByType<Vastcore.Player.AdvancedPlayerController>();
-            if (playerController != null)
+            // 既存のTransformが設定されている場合は何もしない
+            if (playerTransform != null)
             {
-                playerTransform = playerController.transform;
-                Debug.Log("Found AdvancedPlayerController");
                 return;
             }
-            
+
             // "Player"タグのオブジェクトを検索
             var playerObject = GameObject.FindGameObjectWithTag("Player");
             if (playerObject != null)

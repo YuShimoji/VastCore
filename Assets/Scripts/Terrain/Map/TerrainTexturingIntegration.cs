@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using Vastcore.Generation.Map;
-using Vastcore.Player;
 
 namespace Vastcore.Generation
 {
@@ -42,6 +41,7 @@ namespace Vastcore.Generation
         private Dictionary<TerrainTile, TextureIntegrationData> tileTextureData = new Dictionary<TerrainTile, TextureIntegrationData>();
         private Queue<TextureIntegrationRequest> integrationQueue = new Queue<TextureIntegrationRequest>();
         private Transform playerTransform;
+        
         private float lastIntegrationUpdate = 0f;
         
         // パフォーマンス統計
@@ -101,10 +101,9 @@ namespace Vastcore.Generation
             }
             
             // プレイヤーTransformを取得
-            var playerController = FindFirstObjectByType<AdvancedPlayerController>();
-            if (playerController != null)
+            if (playerTransform == null)
             {
-                playerTransform = playerController.transform;
+                playerTransform = ResolvePlayerTransform();
             }
             
             // イベントハンドラーを登録

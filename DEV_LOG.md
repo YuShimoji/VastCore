@@ -1,6 +1,26 @@
-﻿# 髢狗匱菴懈･ｭ繝ｭ繧ｰ
+# 髢狗匱菴懈･ｭ繝ｭ繧ｰ
 
 ## 2025-08-28: Git config 驥崎､・く繝ｼ菫ｮ豁｣・・ascade繝輔ぃ繧､繝ｫ隱ｭ蜿悶お繝ｩ繝ｼ蟇ｾ遲厄ｼ・
+
+## 2025-10-19: TerrainErrorRecovery モジュール分割と asmdef 循環解消
+
+### 目的
+- `Vastcore.Core` と `Vastcore.Generation` 間の循環参照を解消し、地形エラー回復ロジックを世代アセンブリ側へ移管する。
+
+### 対応内容
+- `Assets/Scripts/Terrain/Map/TerrainErrorRecovery.cs` を Core から移動し、名前空間を `Vastcore.Generation` に変更。
+- `Assets/Scripts/Core/VastcoreSystemManager.cs` で `TerrainErrorRecovery` をリフレクション経由で遅延解決する初期化ロジックを追加し、モジュール間依存を緩和。
+- `Assets/Scripts/Core/Vastcore.Core.asmdef` から `Vastcore.Generation` 参照を削除し、`python scripts/analyze_asmdef_dependencies.py --root Assets --format text` で循環なしを確認。
+
+### 影響とメモ
+- Core アセンブリから Terrain 系 API へ直接アクセスしない方針を明確化。長期的には Terrain サービスのインターフェース化・DTO 抽出を検討。
+- 旧コマンド ID 201 で実行した依存解析プロセスが継続中のため、不要なら停止が必要。
+
+### フォローアップ
+- `Assets/Scripts/Core/Interfaces/ITerrainRecoveryService.cs` を新設し、`TerrainRecoveryRequest` DTO とサービス契約を定義。
+- `Assets/Scripts/Terrain/Map/TerrainErrorRecovery.cs` が `ITerrainRecoveryService` を実装し、Core 側からの要求を受け取れるよう変換ロジックを加えた。
+- `Assets/Scripts/Core/VastcoreSystemManager.cs` をリファクタリングし、反射で取得した `TerrainErrorRecovery` を `ITerrainRecoveryService` として扱う初期化フローへ更新。
+- `python scripts/analyze_asmdef_dependencies.py --root Assets --format text` を再実行し、循環依存が再発していないことを確認。
 
 ### 讎りｦ・
 `.git/config` 縺ｮ `branch "master"` 繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ縺ｫ `vscode-merge-base = origin/master` 縺碁㍾隍・＠縺ｦ縺翫ｊ縲∝宍譬ｼ縺ｪ INI 繝代・繧ｵ縺ｧ隱ｭ縺ｿ蜿悶ｊ繧ｨ繝ｩ繝ｼ縺ｨ縺ｪ繧句庄閭ｽ諤ｧ縺後≠縺｣縺溘◆繧√∽ｸ譁ｹ繧貞炎髯､縺励※1譛ｬ蛹悶・
