@@ -57,7 +57,7 @@ namespace Vastcore.Generation
             
             // 使用されていないタイルを特定
             var unusedTiles = activeTiles.Values
-                .Where(tile => !tile.isActive && Time.time - tile.lastAccessTime > 30f)
+                .Where(tile => !tile.isActive && (Time.time - tile.lastAccessTime) > 30f)
                 .OrderBy(tile => tile.lastAccessTime)
                 .ToList();
             

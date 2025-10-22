@@ -1217,7 +1217,7 @@ namespace Vastcore.Generation
         {
             // プリミティブ地形オブジェクトコンポーネントを追加
             var compoundComponent = parent.AddComponent<PrimitiveTerrainObject>();
-            compoundComponent.primitiveType = PrimitiveTerrainGenerator.PrimitiveType.Arch;
+            compoundComponent.primitiveType = GenerationPrimitiveType.Arch;
             compoundComponent.isClimbable = true;
             compoundComponent.isGrindable = true;
             compoundComponent.hasCollision = true;

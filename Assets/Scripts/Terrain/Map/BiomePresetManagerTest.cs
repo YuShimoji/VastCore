@@ -302,21 +302,21 @@ namespace Vastcore.Generation
             try
             {
                 // テスト用のデフォルトプリセットを作成
-                var testPreset = ScriptableObject.CreateInstance<BiomePreset>();
                 testPreset.presetName = "ApplicationTest";
                 testPreset.InitializeDefault();
                 
                 // テスト用のTerrainTileを作成
                 var testTile = new TerrainTile();
-                testTile.coordinate = Vector2Int.zero;
-                testTile.terrainObject = new GameObject("TestTerrain");
-                testTile.terrainObject.AddComponent<MeshRenderer>();
+                testTile.coordinate = new Vector2Int(0, 0);
+                testTile.tileObject = testTerrain;
+                testTile.heightmap = testHeightmap;
+                testTile.state = TerrainTile.TileState.Active;
                 
                 // プリセットを適用
                 presetManager.ApplyPresetToTerrain(testPreset, testTile);
                 
                 // 適用されたことを確認
-                if (testTile.appliedBiome != testPreset)
+                if (testTile.appliedBiome != testPreset.presetName)
                 {
                     LogTest("✗ Preset was not applied to terrain tile");
                     return false;

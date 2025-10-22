@@ -1,6 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Vastcore.Generation.GPU
 {
@@ -202,6 +205,7 @@ namespace Vastcore.Generation.GPU
         
         private void OnGUI()
         {
+#if UNITY_EDITOR
             if (!enableMonitoring) return;
             
             var stats = GetCurrentStats();
@@ -237,6 +241,7 @@ namespace Vastcore.Generation.GPU
             
             GUILayout.EndVertical();
             GUILayout.EndArea();
+#endif
         }
     }
 }

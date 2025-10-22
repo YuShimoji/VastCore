@@ -36,6 +36,9 @@ namespace Vastcore.Generation
         private BiomeType[,] biomeTypeMap;
         private bool isInitialized = false;
         
+        // 依存コンポーネント
+        private BiomePresetManager presetManager;
+        
         // イベント
         public System.Action<Vector3, BiomeType> OnBiomeDetected;
         public System.Action<TerrainTile, BiomeType> OnBiomeApplied;
@@ -77,6 +80,16 @@ namespace Vastcore.Generation
                 
                 // バイオーム定義の初期化
                 InitializeBiomeDefinitions();
+                
+                // BiomePresetManagerの初期化
+                if (presetManager == null)
+                {
+                    presetManager = FindFirstObjectByType<BiomePresetManager>();
+                    if (presetManager == null)
+                    {
+                        presetManager = gameObject.AddComponent<BiomePresetManager>();
+                    }
+                }
                 
                 // バイオームマップの作成
                 CreateBiomeMap();
@@ -506,7 +519,7 @@ namespace Vastcore.Generation
                 GenerateSpecialFeatures(tile, definition);
                 
                 // バイオーム情報の記録
-                tile.appliedBiome = GetBiomePreset(biomeType);
+                tile.appliedBiome = biomeType.ToString();
                 
                 // イベント発火
                 OnBiomeApplied?.Invoke(tile, biomeType);
@@ -873,7 +886,6 @@ namespace Vastcore.Generation
                     }
                 }
             }
-            
             return minDistance == float.MaxValue ? 100f : minDistance;
         }
         
@@ -882,17 +894,32 @@ namespace Vastcore.Generation
         /// </summary>
         private BiomePreset GetBiomePreset(BiomeType biomeType)
         {
-            terrainGenerator = FindFirstObjectByType<BiomeSpecificTerrainGenerator>();
             if (presetManager == null) return null;
             
             string presetName = biomeType.ToString();
-            return presetManager.LoadPreset(presetName);
+            return presetManager.GetPreset(presetName);
         }
         
         /// <summary>
         /// バイオームマップを作成
         /// </summary>
         private void CreateBiomeMap()
+        {
+            // バイオームマップの構築
+            biomeMap = new Dictionary<BiomeType, BiomeDefinition>();
+            foreach (var definition in biomeDefinitions)
+            {
+                if (!biomeMap.ContainsKey(definition.biomeType))
+                {
+                    biomeMap[definition.biomeType] = definition;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 大規模バイオームマップを作成
+        /// </summary>
+        private void CreateLargeBiomeMap()
         {
             // 将来的な実装: 大規模なバイオームマップの生成
             // 現在は動的判定を使用

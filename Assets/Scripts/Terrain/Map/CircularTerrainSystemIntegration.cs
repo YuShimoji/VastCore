@@ -326,7 +326,8 @@ namespace Vastcore.Generation
             
             var lineRenderer = boundaryObject.AddComponent<LineRenderer>();
             lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-            lineRenderer.color = boundaryColor;
+            lineRenderer.startColor = boundaryColor;
+            lineRenderer.endColor = boundaryColor;
             lineRenderer.startWidth = 2f;
             lineRenderer.endWidth = 2f;
             lineRenderer.positionCount = connectionData.borderVertices.Length;

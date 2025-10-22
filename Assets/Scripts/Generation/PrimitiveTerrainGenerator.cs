@@ -174,7 +174,7 @@ namespace Vastcore.Generation
         private static void SetupInteractionComponents(GameObject primitiveObject, PrimitiveGenerationParams parameters)
         {
             var primitiveComponent = primitiveObject.AddComponent<PrimitiveTerrainObject>();
-            primitiveComponent.primitiveType = parameters.primitiveType;
+            primitiveComponent.primitiveType = (GenerationPrimitiveType)parameters.primitiveType;
             primitiveComponent.isClimbable = parameters.isClimbable;
             primitiveComponent.isGrindable = parameters.isGrindable;
             primitiveComponent.hasCollision = parameters.generateCollider;

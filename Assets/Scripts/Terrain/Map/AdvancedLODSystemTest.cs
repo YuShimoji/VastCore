@@ -353,10 +353,10 @@ namespace Vastcore.Generation.Map
                 var tile = new TerrainTile
                 {
                     coordinate = new Vector2Int(i, 0),
-                    terrainObject = tileObject,
+                    tileObject = tileObject,
                     terrainMesh = tileObject.GetComponent<MeshFilter>().mesh,
-                    heightData = GenerateTestHeightData(64),
-                    isActive = true
+                    heightmap = GenerateTestHeightData(64),
+                    state = TerrainTile.TileState.Active
                 };
                 
                 tiles.Add(tile);
@@ -381,7 +381,7 @@ namespace Vastcore.Generation.Map
                 primitiveObject.transform.localScale = Vector3.one * Random.Range(5f, 20f);
                 
                 var primitive = primitiveObject.AddComponent<PrimitiveTerrainObject>();
-                primitive.primitiveType = (PrimitiveTerrainGenerator.PrimitiveType)(i % 4);
+                primitive.primitiveType = (GenerationPrimitiveType)((PrimitiveTerrainGenerator.PrimitiveType)(i % 4));
                 primitive.scale = primitiveObject.transform.localScale.magnitude;
                 primitive.enableLOD = true;
                 

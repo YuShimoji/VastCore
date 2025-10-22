@@ -17,6 +17,7 @@ namespace Vastcore.Generation.Cache
         [SerializeField] private bool enableIntegratedCaching = true;
         [SerializeField] private float cacheCheckInterval = 2f;
         [SerializeField] private int maxSimultaneousLoads = 3;
+        [SerializeField] private float maxMemoryCacheSize = 512f; // MB
         
         [Header("キャッシュ優先度")]
         [SerializeField] private float recentAccessWeight = 2f;

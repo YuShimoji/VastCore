@@ -807,24 +807,14 @@ namespace Vastcore.Generation
                 vertices[i] = vertex;
             }
             
-            cylinder.positions = vertices;
-        }
-
-        /// <summary>
-        /// 高度なピラミッド変形
-        /// </summary>
-        private static void ApplyAdvancedPyramidDeformation(ProBuilderMesh pyramid, QualitySettings quality) 
-        {
-            var vertices = pyramid.positions.ToArray();
-            
-            for (int i = 0; i < vertices.Length; i++)
+            /// <summary>
+            /// 高度なトーラス変形
+            /// </summary>
+            private static void ApplyAdvancedTorusDeformation(ProBuilderMesh torus, QualitySettings quality) 
             {
-                Vector3 vertex = vertices[i];
+                var vertices = torus.positions.ToArray();
                 
-                // 高さに応じた段階的変形
-                float heightFactor = (vertex.y + 1f) * 0.5f;
-                float stepDeformation = Mathf.Floor(heightFactor * 5f) / 5f * quality.detailIntensity * 0.1f;
-                
+                for (int i = 0; i < vertices.Length; i++)
                 // 古代建築の風化効果
                 float weathering = Mathf.PerlinNoise(vertex.x * 15f, vertex.z * 15f) * quality.detailIntensity * 0.03f;
                 

@@ -332,20 +332,20 @@ namespace Vastcore.Generation.Map
             if (task == null || !task.IsValid())
                 yield break;
 
+            task.StartExecution();
+            OnTaskStarted?.Invoke(task);
+
+            if (showDebugInfo)
+            {
+                Debug.Log($"RuntimeGenerationManager: タスク実行開始 - {task}");
+            }
+
+            // タスクタイプに応じて処理を分岐
+            GameObject result = null;
+            yield return StartCoroutine(ExecuteTaskByType(task, (r) => result = r));
+
             try
             {
-                task.StartExecution();
-                OnTaskStarted?.Invoke(task);
-
-                if (showDebugInfo)
-                {
-                    Debug.Log($"RuntimeGenerationManager: タスク実行開始 - {task}");
-                }
-
-                // タスクタイプに応じて処理を分岐
-                GameObject result = null;
-                yield return StartCoroutine(ExecuteTaskByType(task, (r) => result = r));
-
                 // タスク完了
                 task.CompleteTask(result);
                 activeTasksById.Remove(task.taskId);
@@ -380,7 +380,8 @@ namespace Vastcore.Generation.Map
                     if (terrainManager != null)
                     {
                         var coordinate = task.GetParameter<Vector2Int>("coordinate");
-                        result = terrainManager.GenerateTerrainTile(coordinate)?.terrainObject;
+                        var tile = terrainManager.GetTerrainTile(coordinate);
+                        result = tile?.terrainObject;
                     }
                     break;
 
@@ -390,7 +391,8 @@ namespace Vastcore.Generation.Map
                         var rule = task.GetParameter<PrimitiveTerrainRule>("rule");
                         if (rule != null)
                         {
-                            result = primitiveManager.SpawnPrimitiveTerrain(rule, task.position);
+                            var primitive = primitiveManager.SpawnPrimitiveTerrain(rule, task.position);
+                            result = primitive?.gameObject;
                         }
                     }
                     break;

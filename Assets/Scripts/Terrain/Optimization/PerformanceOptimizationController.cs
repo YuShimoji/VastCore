@@ -2,6 +2,9 @@ using UnityEngine;
 using Vastcore.Generation.GPU;
 using Vastcore.Generation.Cache;
 using System.Collections;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Vastcore.Generation.Optimization
 {
@@ -393,6 +396,7 @@ namespace Vastcore.Generation.Optimization
         
         private void OnGUI()
         {
+#if UNITY_EDITOR
             if (!enableAutoOptimization) return;
             
             GUILayout.BeginArea(new Rect(Screen.width - 320, 10, 300, 250));
@@ -444,6 +448,7 @@ namespace Vastcore.Generation.Optimization
             
             GUILayout.EndVertical();
             GUILayout.EndArea();
+#endif
         }
     }
 }

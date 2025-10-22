@@ -20,9 +20,66 @@ namespace Vastcore.Generation
         public float[] lodDistances = { 200f, 500f, 1000f, 2000f };
         public Mesh[] lodMeshes;
         
-        /// <summary>
-        /// プールから取得時の初期化
-        /// </summary>
+        // プール関連
+        private bool isInPool;
+        
+        // コンポーネント参照
+        private MeshRenderer meshRenderer;
+        private MeshCollider meshCollider;
+        private MeshFilter meshFilter;
+        
+        // インタラクション設定
+        public bool hasCollision = true;
+        public bool isClimbable;
+        public bool isGrindable;
+        
+        // LOD管理
+        private int currentLOD = -1;
+        private float lastLODUpdateTime;
+        private int lodChangeCount;
+        private float totalDistanceChecked;
+        private bool isVisible;
+        
+        // カリング設定
+        private bool enableDistanceCulling = true;
+        private float maxRenderDistance = 5000f;
+        private bool enableFrustumCulling = true;
+        
+        // デバッグ設定
+        private bool logLODChanges;
+        private bool enableInteractionLOD;
+        private bool showLODInfo;
+        private float lodBias = 1f;
+        
+        // プレイヤー参照
+        private Transform playerTransform;
+        private Camera playerCamera;
+        
+        // グローバル統計用
+        private static Dictionary<GameObject, PrimitiveTerrainObject> activeObjects = new Dictionary<GameObject, PrimitiveTerrainObject>();
+        
+        void Awake()
+        {
+            SetupComponents();
+            FindPlayerTransform();
+            
+            // グローバルリストに追加
+            activeObjects[gameObject] = this;
+        }
+
+        void Start()
+        {
+            if (enableLOD && lodMeshes == null)
+            {
+                GenerateLODMeshes();
+            }
+        }
+
+        void OnDestroy()
+        {
+            // グローバルリストから削除
+            activeObjects.Remove(gameObject);
+        }
         public void InitializeFromPool(GenerationPrimitiveType type, Vector3 position, float objectScale)
         {
             primitiveType = type;
@@ -182,10 +239,6 @@ namespace Vastcore.Generation
 
             return simplifiedMesh;
         }
-
-        /// <summary>
-        /// 高度なLODシステムの更新
-        /// </summary>
         private void UpdateLODSystem()
         {
             if (playerTransform == null || isInPool) return;
@@ -304,12 +357,16 @@ namespace Vastcore.Generation
         {
             if (lodLevel < lodMeshes.Length && lodMeshes[lodLevel] != null)
             {
-                // メッシュを切り替え
-                if (meshFilter != null)
+                currentLOD = lodLevel;
+                lodChangeCount++;
+                
+                if (meshFilter != null && lodMeshes != null && lodLevel < lodMeshes.Length)
                 {
-                    meshFilter.mesh = lodMeshes[lodLevel];
+                    meshFilter.sharedMesh = lodMeshes[lodLevel];
                 }
-
+                
+                lastLODUpdateTime = Time.time;
+                
                 // コライダーメッシュも更新（パフォーマンス重視の場合は低LODメッシュを使用）
                 if (meshCollider != null && hasCollision)
                 {
