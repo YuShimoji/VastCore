@@ -38,7 +38,7 @@ namespace Vastcore.Core
             {
                 if (instance == null)
                 {
-                    instance = FindObjectOfType<VastcoreDiagnostics>();
+                    instance = FindFirstObjectByType<VastcoreDiagnostics>();
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreDiagnostics");
@@ -403,7 +403,7 @@ namespace Vastcore.Core
         private void CheckTerrainGenerationHealth()
         {
             // 地形生成システムの健全性チェック
-            var terrainManagers = FindObjectsOfType<MonoBehaviour>()
+            var terrainManagers = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
                 .Where(mb => mb.GetType().Name.Contains("Terrain")).ToArray();
             
             var result = new DiagnosticResult
@@ -429,7 +429,7 @@ namespace Vastcore.Core
         private void CheckPrimitiveSpawnHealth()
         {
             // プリミティブ生成システムの健全性チェック
-            var primitiveObjects = FindObjectsOfType<MonoBehaviour>()
+            var primitiveObjects = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
                 .Where(mb => mb.GetType().Name.Contains("Primitive")).ToArray();
             
             var result = new DiagnosticResult
@@ -456,7 +456,7 @@ namespace Vastcore.Core
         private void CheckUISystemHealth()
         {
             // UIシステムの健全性チェック
-            var canvases = FindObjectsOfType<Canvas>();
+            var canvases = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
             
             var result = new DiagnosticResult
             {
@@ -481,7 +481,7 @@ namespace Vastcore.Core
         private void CheckPlayerControllerHealth()
         {
             // プレイヤーコントローラーの健全性チェック
-            var playerControllers = FindObjectsOfType<MonoBehaviour>()
+            var playerControllers = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
                 .Where(mb => mb.GetType().Name.Contains("Player")).ToArray();
             
             var result = new DiagnosticResult

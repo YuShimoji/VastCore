@@ -34,7 +34,7 @@ namespace Vastcore.Core
             {
                 if (instance == null)
                 {
-                    instance = FindObjectOfType<VastcoreSystemManager>();
+                    instance = FindFirstObjectByType<VastcoreSystemManager>();
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreSystemManager");

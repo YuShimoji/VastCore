@@ -31,7 +31,7 @@ namespace Vastcore.Core
             {
                 if (instance == null)
                 {
-                    instance = FindObjectOfType<VastcoreErrorHandler>();
+                    instance = FindFirstObjectByType<VastcoreErrorHandler>();
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreErrorHandler");
@@ -186,34 +186,64 @@ namespace Vastcore.Core
             }
         }
         
-        private GameObject GenerateFallbackObject(int attempt)
+        private GameObject GenerateFallbackTerrain(TerrainGenerationParams parameters, int attempt)
         {
-            // 試行回数に応じて品質を下げる
-            float qualityReduction = 1f - (attempt * 0.2f);
-            qualityReduction = Mathf.Max(qualityReduction, 0.2f);
-            
-            // 簡単な平面オブジェクトを生成
-            GameObject fallbackObject = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            fallbackObject.name = $"FallbackObject_{attempt}";
-            
-            // スケールを調整
-            float scale = 10f * qualityReduction;
-            fallbackObject.transform.localScale = new Vector3(scale, 1f, scale);
-            
-            // 基本的なマテリアルを適用
-            var renderer = fallbackObject.GetComponent<MeshRenderer>();
-            if (renderer != null)
+            try
             {
-                renderer.material = Resources.Load<Material>("Materials/DefaultMaterial");
+                // 試行回数に応じて品質を下げる
+                float qualityReduction = 1f - (attempt * 0.2f);
+                qualityReduction = Mathf.Max(qualityReduction, 0.2f);
+
+                // 基本的な地形オブジェクトを生成
+                GameObject terrainObject = new GameObject($"FallbackTerrain_{attempt}");
+
+                // Terrainコンポーネントの追加
+                var terrain = terrainObject.AddComponent<Terrain>();
+                var terrainCollider = terrainObject.AddComponent<TerrainCollider>();
+
+                // TerrainDataの作成
+                var terrainData = new TerrainData();
+                terrainData.heightmapResolution = Mathf.RoundToInt(parameters.resolution * qualityReduction);
+                terrainData.size = new Vector3(parameters.terrainSize * qualityReduction, parameters.heightScale, parameters.terrainSize * qualityReduction);
+
+                // シンプルな平面地形データを生成
+                float[,] heights = new float[terrainData.heightmapResolution, terrainData.heightmapResolution];
+                for (int x = 0; x < terrainData.heightmapResolution; x++)
+                {
+                    for (int y = 0; y < terrainData.heightmapResolution; y++)
+                    {
+                        // 非常にシンプルな高さ（ほぼ平坦）
+                        heights[x, y] = 0.1f + Random.Range(-0.05f, 0.05f) * qualityReduction;
+                    }
+                }
+                terrainData.SetHeights(0, 0, heights);
+
+                // Terrainにデータを設定
+                terrain.terrainData = terrainData;
+                terrainCollider.terrainData = terrainData;
+
+                // 基本的なマテリアル設定
+                var material = Resources.Load<Material>("Materials/TerrainMaterial");
+                if (material != null)
+                {
+                    terrain.materialTemplate = material;
+                }
+
+                VastcoreLogger.Instance.LogInfo("FallbackTerrain", $"フォールバック地形生成完了 (試行 {attempt + 1}, 品質: {qualityReduction:F2})");
+
+                return terrainObject;
             }
-            
-            return fallbackObject;
+            catch (Exception error)
+            {
+                VastcoreLogger.Instance.LogError("FallbackTerrain", $"フォールバック地形生成中にエラー: {error.Message}");
+                return null;
+            }
         }
         
         private void CleanupUnusedObjects()
         {
             // 非アクティブなテレインタイルを削除
-            var terrainTiles = FindObjectsOfType<TerrainTile>();
+            var terrainTiles = FindObjectsByType<TerrainTile>(FindObjectsSortMode.None);
             foreach (var tile in terrainTiles)
             {
                 if (!tile.isActive && Time.time - tile.lastAccessTime > 60f)
