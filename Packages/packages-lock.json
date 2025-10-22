@@ -9,14 +9,14 @@
       },
       "hash": "9e57dd3864ea6c742d819959724c99ca574a2f76"
     },
-    "com.justinpbarnett.unity-mcp": {
-      "version": "https://github.com/justinpbarnett/unity-mcp.git?path=/UnityMcpBridge",
+    "com.coplaydev.unity-mcp": {
+      "version": "https://github.com/CoplayDev/unity-mcp.git?path=/UnityMcpBridge",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.0.2"
       },
-      "hash": "cbe9b3a2f00e1bbc8f353ea71514580732922ed7"
+      "hash": "e3e5485d3904b94962b8cd821d3ad353c02c1ec3"
     },
     "com.unity.adaptiveperformance": {
       "version": "6.0.0",

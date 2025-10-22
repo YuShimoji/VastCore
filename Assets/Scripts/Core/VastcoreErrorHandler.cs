@@ -213,7 +213,7 @@ namespace Vastcore.Core
                     for (int y = 0; y < terrainData.heightmapResolution; y++)
                     {
                         // 非常にシンプルな高さ（ほぼ平坦）
-                        heights[x, y] = 0.1f + Random.Range(-0.05f, 0.05f) * qualityReduction;
+                        heights[x, y] = 0.1f + UnityEngine.Random.Range(-0.05f, 0.05f) * qualityReduction;
                     }
                 }
                 terrainData.SetHeights(0, 0, heights);
