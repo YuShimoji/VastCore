@@ -17,7 +17,7 @@ namespace Vastcore.Generation
         [Header("物理設定")]
         public bool usePhysics = true;
         public float mass = 1f;
-        public PhysicMaterial physicsMaterial;
+        public PhysicsMaterial physicsMaterial;
 
         [Header("ビジュアル設定")]
         public Material material;
@@ -103,7 +103,7 @@ namespace Vastcore.Generation
             var rb = GetComponent<Rigidbody>();
             if (rb != null)
             {
-                rb.velocity = Vector3.zero;
+                rb.linearVelocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
             }
 
