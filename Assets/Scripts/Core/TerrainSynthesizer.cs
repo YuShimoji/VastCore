@@ -13,7 +13,6 @@ namespace Vastcore.Core
         [Header("合成設定")]
         [SerializeField] private TerrainType dominantType = TerrainType.Plain;
         [SerializeField] private List<TerrainTypeDefinition> availableTypes;
-        [SerializeField] private float blendRadius = 100f;
         [SerializeField] private AnimationCurve blendCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
         [Header("生成パラメータ")]

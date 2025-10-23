@@ -240,8 +240,15 @@ namespace Vastcore.Generation
                         break;
                     }
                     if (safetyFrameYields > maxSafetyFrameYields)
+                    {
+                        VastcoreLogger.Instance.LogWarning("RuntimeTerrain", $"GenQueue safety yield limit hit {safetyFrameYields}/{maxSafetyFrameYields}");
+                        break;
+                    }
 
-                performanceStats.tilesGeneratedThisFrame++;
+                    performanceStats.tilesGeneratedThisFrame++;
+                    processedCount++;
+                }
+                VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"GenQueueWithFrameLimit processed={processedCount} q={generationQueue.Count}");
             }
         }
 
