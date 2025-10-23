@@ -756,6 +756,18 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
+        /// 指定座標のタイルを取得
+        /// </summary>
+        public TerrainTile GetTerrainTile(Vector2Int coordinate)
+        {
+            if (tileManager != null)
+            {
+                return tileManager.GetActiveTiles().FirstOrDefault(t => t.coordinate == coordinate);
+            }
+            return null;
+        }
+
+        /// <summary>
         /// アクティブなタイルのリストを取得
         /// </summary>
         public List<TerrainTile> GetActiveTiles()

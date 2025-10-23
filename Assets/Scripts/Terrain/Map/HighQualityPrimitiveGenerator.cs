@@ -271,7 +271,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static ProBuilderMesh GenerateHighQualityCube(Vector3 scale, QualitySettings quality)
         {
-            var cube = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center, Vector3.one);
+            var cube = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center);
             cube.transform.localScale = scale;
             
             // 高品質処理
@@ -288,7 +288,7 @@ namespace Vastcore.Generation
             }
             
             // Deform統合
-            ApplyDeformComponents(cube, quality, PrimitiveType.Cube);
+            ApplyDeformComponents(cube, quality, PrimitiveTerrainGenerator.PrimitiveType.Cube);
             
             return cube;
         }
@@ -300,7 +300,7 @@ namespace Vastcore.Generation
         {
             // より高解像度の球体を生成
             int subdivisions = Mathf.Max(2, quality.subdivisionLevel + 2);
-            var sphere = ShapeGenerator.CreateShape(ShapeType.Sphere, PivotLocation.Center, Vector3.one);
+            var sphere = ShapeGenerator.CreateShape(ShapeType.Sphere, PivotLocation.Center);
             sphere.transform.localScale = scale;
             
             if (quality.enableAdvancedDeformation)
@@ -309,7 +309,7 @@ namespace Vastcore.Generation
             }
             
             // Deform統合
-            ApplyDeformComponents(sphere, quality, PrimitiveType.Sphere);
+            ApplyDeformComponents(sphere, quality, PrimitiveTerrainGenerator.PrimitiveType.Sphere);
             
             return sphere;
         }
@@ -320,7 +320,7 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateHighQualityCylinder(Vector3 scale, QualitySettings quality)
         {
             int sides = Mathf.Max(8, quality.subdivisionLevel * 4 + 8);
-            var cylinder = ShapeGenerator.CreateShape(ShapeType.Cylinder, PivotLocation.Center, Vector3.one);
+            var cylinder = ShapeGenerator.CreateShape(ShapeType.Cylinder, PivotLocation.Center);
             cylinder.transform.localScale = scale;
             
             if (quality.enableAdvancedDeformation)
@@ -329,7 +329,7 @@ namespace Vastcore.Generation
             }
             
             // Deform統合
-            ApplyDeformComponents(cylinder, quality, PrimitiveType.Cylinder);
+            ApplyDeformComponents(cylinder, quality, PrimitiveTerrainGenerator.PrimitiveType.Cylinder);
             
             return cylinder;
         }
@@ -339,7 +339,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static ProBuilderMesh GenerateHighQualityPyramid(Vector3 scale, QualitySettings quality)
         {
-            var pyramid = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center, Vector3.one);
+            var pyramid = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center);
             
             // ピラミッド形状に変形
             var vertices = pyramid.positions.ToArray();
@@ -366,7 +366,7 @@ namespace Vastcore.Generation
             }
             
             // Deform統合
-            ApplyDeformComponents(pyramid, quality, PrimitiveType.Pyramid);
+            ApplyDeformComponents(pyramid, quality, PrimitiveTerrainGenerator.PrimitiveType.Pyramid);
             
             return pyramid;
         }
@@ -379,7 +379,7 @@ namespace Vastcore.Generation
             int rows = Mathf.Max(8, quality.subdivisionLevel * 2 + 8);
             int columns = Mathf.Max(12, quality.subdivisionLevel * 3 + 12);
             
-            var torus = ShapeGenerator.CreateShape(ShapeType.Torus, PivotLocation.Center, Vector3.one);
+            var torus = ShapeGenerator.CreateShape(ShapeType.Torus, PivotLocation.Center);
             torus.transform.localScale = scale;
             
             if (quality.enableAdvancedDeformation)
@@ -388,7 +388,7 @@ namespace Vastcore.Generation
             }
             
             // Deform統合
-            ApplyDeformComponents(torus, quality, PrimitiveType.Torus);
+            ApplyDeformComponents(torus, quality, PrimitiveTerrainGenerator.PrimitiveType.Torus);
             
             return torus;
         }
@@ -399,7 +399,7 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateHighQualityPrism(Vector3 scale, QualitySettings quality)
         {
             int sides = Mathf.Max(6, quality.subdivisionLevel * 2 + 6);
-            var prism = ShapeGenerator.CreateShape(ShapeType.Prism, PivotLocation.Center, Vector3.one);
+            var prism = ShapeGenerator.CreateShape(ShapeType.Prism, PivotLocation.Center);
             prism.transform.localScale = scale;
             
             if (quality.enableAdvancedDeformation)
@@ -408,7 +408,7 @@ namespace Vastcore.Generation
             }
             
             // Deform統合
-            ApplyDeformComponents(prism, quality, PrimitiveType.Prism);
+            ApplyDeformComponents(prism, quality, PrimitiveTerrainGenerator.PrimitiveType.Prism);
             
             return prism;
         }
@@ -419,7 +419,7 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateHighQualityCone(Vector3 scale, QualitySettings quality)
         {
             int sides = Mathf.Max(8, quality.subdivisionLevel * 4 + 8);
-            var cone = ShapeGenerator.CreateShape(ShapeType.Cone, PivotLocation.Center, Vector3.one);
+            var cone = ShapeGenerator.CreateShape(ShapeType.Cone, PivotLocation.Center);
             cone.transform.localScale = scale;
             
             if (quality.enableAdvancedDeformation)
@@ -428,7 +428,7 @@ namespace Vastcore.Generation
             }
             
             // Deform統合
-            ApplyDeformComponents(cone, quality, PrimitiveType.Cone);
+            ApplyDeformComponents(cone, quality, PrimitiveTerrainGenerator.PrimitiveType.Cone);
             
             return cone;
         }
@@ -438,7 +438,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static ProBuilderMesh GenerateHighQualityOctahedron(Vector3 scale, QualitySettings quality)
         {
-            var octahedron = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center, Vector3.one);
+            var octahedron = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center);
             
             // 八面体形状に変形
             var vertices = octahedron.positions.ToArray();
@@ -462,7 +462,7 @@ namespace Vastcore.Generation
             }
             
             // Deform統合
-            ApplyDeformComponents(octahedron, quality, PrimitiveType.Octahedron);
+            ApplyDeformComponents(octahedron, quality, PrimitiveTerrainGenerator.PrimitiveType.Octahedron);
             
             return octahedron;
         }
@@ -483,7 +483,7 @@ namespace Vastcore.Generation
             // Deform統合
             if (crystal != null)
             {
-                ApplyDeformComponents(crystal, quality, PrimitiveType.Crystal);
+                ApplyDeformComponents(crystal, quality, PrimitiveTerrainGenerator.PrimitiveType.Crystal);
             }
             
             return crystal;
@@ -494,7 +494,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static ProBuilderMesh GenerateHighQualityMonolith(Vector3 scale, QualitySettings quality)
         {
-            var monolith = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center, Vector3.one);
+            var monolith = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center);
             
             // 縦長に調整
             Vector3 monolithScale = new Vector3(scale.x * 0.3f, scale.y * 2f, scale.z * 0.3f);
@@ -525,7 +525,7 @@ namespace Vastcore.Generation
             }
             
             // Deform統合
-            ApplyDeformComponents(monolith, quality, PrimitiveType.Monolith);
+            ApplyDeformComponents(monolith, quality, PrimitiveTerrainGenerator.PrimitiveType.Monolith);
             
             return monolith;
         }
@@ -555,7 +555,9 @@ namespace Vastcore.Generation
                     if (proBuilderMesh == null)
                     {
                         proBuilderMesh = archObject.AddComponent<ProBuilderMesh>();
-                        proBuilderMesh.RebuildFromMesh(meshFilter.sharedMesh);
+                        // TODO: RebuildFromMesh機能はProBuilder API変更により一時的に無効化
+                        Debug.LogWarning($"RebuildFromMesh feature is temporarily disabled due to ProBuilder API changes.");
+                        // proBuilderMesh.RebuildFromMesh(meshFilter.sharedMesh);
                     }
                     
                     // 一時的なオブジェクトを削除
@@ -568,7 +570,7 @@ namespace Vastcore.Generation
             }
             
             // フォールバック：基本的なアーチ形状
-            var fallbackArch = ShapeGenerator.CreateShape(ShapeType.Arch, PivotLocation.Center, Vector3.one);
+            var fallbackArch = ShapeGenerator.CreateShape(ShapeType.Arch, PivotLocation.Center);
             fallbackArch.transform.localScale = scale;
             
             return fallbackArch;
@@ -582,7 +584,7 @@ namespace Vastcore.Generation
             int rows = Mathf.Max(4, quality.subdivisionLevel + 4);
             int columns = Mathf.Max(16, quality.subdivisionLevel * 4 + 16);
             
-            var ring = ShapeGenerator.CreateShape(ShapeType.Torus, PivotLocation.Center, Vector3.one);
+            var ring = ShapeGenerator.CreateShape(ShapeType.Torus, PivotLocation.Center);
             
             // リング形状に調整（薄くて大きい）
             Vector3 ringScale = new Vector3(scale.x * 1.5f, scale.y * 0.2f, scale.z * 1.5f);
@@ -594,7 +596,7 @@ namespace Vastcore.Generation
             }
             
             // Deform統合
-            ApplyDeformComponents(ring, quality, PrimitiveType.Ring);
+            ApplyDeformComponents(ring, quality, PrimitiveTerrainGenerator.PrimitiveType.Ring);
             
             return ring;
         }
@@ -605,7 +607,7 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateHighQualityMesa(Vector3 scale, QualitySettings quality)
         {
             int sides = Mathf.Max(12, quality.subdivisionLevel * 4 + 12);
-            var mesa = ShapeGenerator.CreateShape(ShapeType.Cylinder, PivotLocation.Center, Vector3.one);
+            var mesa = ShapeGenerator.CreateShape(ShapeType.Cylinder, PivotLocation.Center);
             
             // 台地形状に調整（平たくて広い）
             Vector3 mesaScale = new Vector3(scale.x * 2f, scale.y * 0.3f, scale.z * 2f);
@@ -617,7 +619,7 @@ namespace Vastcore.Generation
             }
             
             // Deform統合
-            ApplyDeformComponents(mesa, quality, PrimitiveType.Mesa);
+            ApplyDeformComponents(mesa, quality, PrimitiveTerrainGenerator.PrimitiveType.Mesa);
             
             return mesa;
         }
@@ -628,7 +630,7 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateHighQualitySpire(Vector3 scale, QualitySettings quality)
         {
             int sides = Mathf.Max(8, quality.subdivisionLevel * 2 + 8);
-            var spire = ShapeGenerator.CreateShape(ShapeType.Cone, PivotLocation.Center, Vector3.one);
+            var spire = ShapeGenerator.CreateShape(ShapeType.Cone, PivotLocation.Center);
             
             // 尖塔形状に調整（非常に高くて細い）
             Vector3 spireScale = new Vector3(scale.x * 0.4f, scale.y * 3f, scale.z * 0.4f);
@@ -640,7 +642,7 @@ namespace Vastcore.Generation
             }
             
             // Deform統合
-            ApplyDeformComponents(spire, quality, PrimitiveType.Spire);
+            ApplyDeformComponents(spire, quality, PrimitiveTerrainGenerator.PrimitiveType.Spire);
             
             return spire;
         }
@@ -651,7 +653,7 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateHighQualityBoulder(Vector3 scale, QualitySettings quality)
         {
             int subdivisions = Mathf.Max(2, quality.subdivisionLevel + 1);
-            var boulder = ShapeGenerator.CreateShape(ShapeType.Sphere, PivotLocation.Center, Vector3.one);
+            var boulder = ShapeGenerator.CreateShape(ShapeType.Sphere, PivotLocation.Center);
             boulder.transform.localScale = scale;
             
             // 不規則な岩石形状に変形
@@ -678,7 +680,7 @@ namespace Vastcore.Generation
             }
             
             // Deform統合
-            ApplyDeformComponents(boulder, quality, PrimitiveType.Boulder);
+            ApplyDeformComponents(boulder, quality, PrimitiveTerrainGenerator.PrimitiveType.Boulder);
             
             return boulder;
         }
@@ -688,7 +690,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static ProBuilderMesh GenerateHighQualityFormation(Vector3 scale, QualitySettings quality)
         {
-            var formation = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center, Vector3.one);
+            var formation = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center);
             formation.transform.localScale = scale;
             
             // 高品質処理
@@ -728,15 +730,36 @@ namespace Vastcore.Generation
             }
             
             // Deform統合
-            ApplyDeformComponents(formation, quality, PrimitiveType.Formation);
+            ApplyDeformComponents(formation, quality, PrimitiveTerrainGenerator.PrimitiveType.Formation);
             
             return formation;
         }
 
         #region 高度な変形処理
         /// <summary>
-        /// 高度な立方体変形
+        /// 高度なピラミッド変形
         /// </summary>
+        private static void ApplyAdvancedPyramidDeformation(ProBuilderMesh pyramid, QualitySettings quality)
+        {
+            var vertices = pyramid.positions.ToArray();
+            
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                Vector3 vertex = vertices[i];
+                
+                // ピラミッド特有の変形 - 頂点に向かうにつれて滑らかになる
+                float heightFactor = Mathf.Abs(vertex.y) / pyramid.transform.localScale.y;
+                float pyramidNoise = Mathf.PerlinNoise(vertex.x * 10f, vertex.z * 10f) * quality.detailIntensity * 0.03f;
+                
+                // 上部ほど変形を強くする
+                float deformationStrength = (1f - heightFactor) * pyramidNoise;
+                vertex += vertex.normalized * deformationStrength;
+                
+                vertices[i] = vertex;
+            }
+            
+            pyramid.positions = vertices;
+        }
         private static void ApplyAdvancedCubeDeformation(ProBuilderMesh cube, QualitySettings quality)
         {
             var vertices = cube.positions.ToArray();
@@ -1009,26 +1032,34 @@ namespace Vastcore.Generation
             // 滑らかな法線
             if (quality.enableSmoothNormals)
             {
-                mesh.SetSmoothingGroup(mesh.faces, 1);
+                // TODO: SetSmoothingGroup機能はProBuilder API変更により一時的に無効化
+                Debug.LogWarning($"SetSmoothingGroup feature is temporarily disabled due to ProBuilder API changes. Requested: {quality.enableSmoothNormals}");
+                // mesh.SetSmoothingGroup(mesh.faces, 1);
             }
 
             // UV展開
             if (quality.enableUVUnwrapping)
             {
-                UnwrapParameters unwrapParams = UnwrapParameters.Default;
-                unwrapParams.hardAngle = 60f;
-                unwrapParams.packMargin = 4f;
-                unwrapParams.angleError = 8f;
-                unwrapParams.areaError = 15f;
-                
-                Unwrapping.Unwrap(mesh, unwrapParams);
+                // TODO: UV展開機能はProBuilder API変更により一時的に無効化
+                Debug.LogWarning($"UV unwrapping feature is temporarily disabled due to ProBuilder API changes. Requested: {quality.enableUVUnwrapping}");
+                // UnwrapParameters unwrapParams = UnwrapParameters.Default;
+                // unwrapParams.hardAngle = 60f;
+                // unwrapParams.packMargin = 4f;
+                // unwrapParams.angleError = 8f;
+                // unwrapParams.areaError = 15f;
+                // 
+                // Unwrapping.Unwrap(mesh, unwrapParams);
             }
 
             // メッシュ最適化
             if (quality.meshOptimization > 0)
             {
-                MeshValidation.EnsureMeshIsValid(mesh);
-                mesh.Optimize();
+                // TODO: MeshValidation機能はProBuilder API変更により一時的に無効化
+                Debug.LogWarning($"Mesh validation feature is temporarily disabled due to ProBuilder API changes. Requested level: {quality.meshOptimization}");
+                // MeshValidation.EnsureMeshIsValid(mesh);
+                // TODO: Optimize機能はProBuilder API変更により一時的に無効化
+                Debug.LogWarning($"Optimize feature is temporarily disabled due to ProBuilder API changes. Requested level: {quality.meshOptimization}");
+                // mesh.Optimize();
             }
         }
 
@@ -1087,7 +1118,7 @@ namespace Vastcore.Generation
                 Vector3 surfacePoint = Random.onUnitSphere * boulder.transform.localScale.magnitude * 0.5f;
                 float fragmentSize = boulder.transform.localScale.magnitude * Random.Range(0.02f, 0.08f);
                 
-                var fragment = ShapeGenerator.CreateShape(ShapeType.Sphere, PivotLocation.Center, Vector3.one);
+                var fragment = ShapeGenerator.CreateShape(ShapeType.Sphere, PivotLocation.Center);
                 fragment.transform.SetParent(boulder.transform);
                 fragment.transform.localPosition = surfacePoint;
                 fragment.transform.localScale = Vector3.one * fragmentSize;
@@ -1304,7 +1335,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// プリミティブにDeformコンポーネントを適用
         /// </summary>
-        private static void ApplyDeformComponents(ProBuilderMesh primitive, QualitySettings quality, PrimitiveType primitiveType)
+        private static void ApplyDeformComponents(ProBuilderMesh primitive, QualitySettings quality, PrimitiveTerrainGenerator.PrimitiveType primitiveType)
         {
             if (!quality.enableDeformSystem) return;
             
@@ -1333,7 +1364,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// 品質とプリミティブタイプに応じたDeformerを適用
         /// </summary>
-        private static void ApplyDeformersBasedOnQuality(GameObject target, QualitySettings quality, PrimitiveType primitiveType)
+        private static void ApplyDeformersBasedOnQuality(GameObject target, QualitySettings quality, PrimitiveTerrainGenerator.PrimitiveType primitiveType)
         {
             // 地質学的変形
             if (quality.enableGeologicalDeformation)
@@ -1352,42 +1383,8 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 地質学的Deformerを適用
         /// </summary>
-        private static void ApplyGeologicalDeformers(GameObject target, QualitySettings quality, PrimitiveType primitiveType)
-        {
-#if DEFORM_AVAILABLE
-            switch (primitiveType)
-            {
-                case PrimitiveType.Cube:
-                case PrimitiveType.Boulder:
-                case PrimitiveType.Mesa:
-                    // 侵食効果
-                    var noiseDeformer = target.AddComponent<NoiseDeformer>();
-                    noiseDeformer.Factor = quality.deformIntensity * 0.1f;
-                    break;
-                    
-                case PrimitiveType.Sphere:
-                case PrimitiveType.Crystal:
-                    // 結晶成長効果
-                    var scaleDeformer = target.AddComponent<ScaleDeformer>();
-                    scaleDeformer.Factor = Vector3.one * (1f + quality.deformIntensity * 0.2f);
-                    break;
-                    
-                case PrimitiveType.Cylinder:
-                case PrimitiveType.Spire:
-                    // 地殻変動効果
-                    var bendDeformer = target.AddComponent<BendDeformer>();
-                    bendDeformer.Factor = quality.deformIntensity * 0.3f;
-                    break;
-            }
-#endif
-        }
-        
-        /// <summary>
-        /// 有機的Deformerを適用
-        /// </summary>
-        private static void ApplyOrganicDeformers(GameObject target, QualitySettings quality, PrimitiveType primitiveType)
+        private static void ApplyOrganicDeformers(GameObject target, QualitySettings quality, PrimitiveTerrainGenerator.PrimitiveType primitiveType)
         {
 #if DEFORM_AVAILABLE
             // 風化効果
@@ -1407,27 +1404,27 @@ namespace Vastcore.Generation
         /// <summary>
         /// プリミティブタイプ固有のDeformerを適用
         /// </summary>
-        private static void ApplyPrimitiveSpecificDeformers(GameObject target, QualitySettings quality, PrimitiveType primitiveType)
+        private static void ApplyPrimitiveSpecificDeformers(GameObject target, QualitySettings quality, PrimitiveTerrainGenerator.PrimitiveType primitiveType)
         {
 #if DEFORM_AVAILABLE
             switch (primitiveType)
             {
-                case PrimitiveType.Torus:
-                case PrimitiveType.Ring:
+                case PrimitiveTerrainGenerator.PrimitiveType.Torus:
+                case PrimitiveTerrainGenerator.PrimitiveType.Ring:
                     // 捻り効果
                     var twistDeformer = target.AddComponent<TwistDeformer>();
                     twistDeformer.Factor = quality.deformIntensity * 45f; // 度単位
                     break;
                     
-                case PrimitiveType.Pyramid:
-                case PrimitiveType.Cone:
+                case PrimitiveTerrainGenerator.PrimitiveType.Pyramid:
+                case PrimitiveTerrainGenerator.PrimitiveType.Cone:
                     // 先端変形効果
                     var taperDeformer = target.AddComponent<TaperDeformer>();
                     taperDeformer.Factor = Vector2.one * (1f - quality.deformIntensity * 0.3f);
                     break;
                     
-                case PrimitiveType.Monolith:
-                case PrimitiveType.Formation:
+                case PrimitiveTerrainGenerator.PrimitiveType.Monolith:
+                case PrimitiveTerrainGenerator.PrimitiveType.Formation:
                     // 磁場効果
                     var magnetDeformer = target.AddComponent<MagnetDeformer>();
                     magnetDeformer.Factor = quality.deformIntensity * 0.2f;

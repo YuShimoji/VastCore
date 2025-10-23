@@ -272,7 +272,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// プリミティブを再テスト
         /// </summary>
-        private PrimitiveQualityValidator.QualityReport RetestPrimitive(PrimitiveTerrainGenerator.PrimitiveType primitiveType)
+        private PrimitiveQualityValidator.QualityReport? RetestPrimitive(PrimitiveTerrainGenerator.PrimitiveType primitiveType)
         {
             try
             {
@@ -305,7 +305,7 @@ namespace Vastcore.Generation
                 Debug.LogError($"Error retesting {primitiveType}: {e.Message}");
             }
             
-            return null;
+            return default;
         }
         #endregion
 
@@ -313,7 +313,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// 追加のテストを実行
         /// </summary>
-        private void PerformAdditionalTests(GameObject primitiveObject, PrimitiveTerrainGenerator.PrimitiveType primitiveType, PrimitiveQualityValidator.QualityReport report)
+        private void PerformAdditionalTests(GameObject primitiveObject, PrimitiveTerrainGenerator.PrimitiveType primitiveType, PrimitiveQualityValidator.QualityReport? report)
         {
             // パフォーマンステスト
             TestRenderingPerformance(primitiveObject, report);
@@ -331,8 +331,11 @@ namespace Vastcore.Generation
         /// <summary>
         /// レンダリングパフォーマンステスト
         /// </summary>
-        private void TestRenderingPerformance(GameObject primitiveObject, PrimitiveQualityValidator.QualityReport report)
+        private void TestRenderingPerformance(GameObject primitiveObject, PrimitiveQualityValidator.QualityReport? report)
         {
+            if (!report.HasValue) return;
+            var rep = report.Value;
+            
             var meshFilter = primitiveObject.GetComponent<MeshFilter>();
             if (meshFilter?.sharedMesh != null)
             {
@@ -342,13 +345,13 @@ namespace Vastcore.Generation
                 // 三角形数が多すぎる場合は警告
                 if (triangleCount > 2000)
                 {
-                    report.issues.Add($"High triangle count may impact performance: {triangleCount}");
+                    rep.issues.Add($"High triangle count may impact performance: {triangleCount}");
                 }
                 
                 // UV座標の確認
                 if (mesh.uv == null || mesh.uv.Length == 0)
                 {
-                    report.issues.Add("Missing UV coordinates for texturing");
+                    rep.issues.Add("Missing UV coordinates for texturing");
                 }
             }
         }
@@ -356,8 +359,11 @@ namespace Vastcore.Generation
         /// <summary>
         /// メモリ使用量テスト
         /// </summary>
-        private void TestMemoryUsage(GameObject primitiveObject, PrimitiveQualityValidator.QualityReport report)
+        private void TestMemoryUsage(GameObject primitiveObject, PrimitiveQualityValidator.QualityReport? report)
         {
+            if (!report.HasValue) return;
+            var rep = report.Value;
+            
             var meshFilter = primitiveObject.GetComponent<MeshFilter>();
             if (meshFilter?.sharedMesh != null)
             {
@@ -371,7 +377,7 @@ namespace Vastcore.Generation
                 // 1MB以上の場合は警告
                 if (totalMemory > 1024 * 1024)
                 {
-                    report.issues.Add($"High memory usage: {totalMemory / 1024}KB");
+                    rep.issues.Add($"High memory usage: {totalMemory / 1024}KB");
                 }
             }
         }
@@ -379,19 +385,22 @@ namespace Vastcore.Generation
         /// <summary>
         /// LODシステムテスト
         /// </summary>
-        private void TestLODSystem(GameObject primitiveObject, PrimitiveQualityValidator.QualityReport report)
+        private void TestLODSystem(GameObject primitiveObject, PrimitiveQualityValidator.QualityReport? report)
         {
+            if (!report.HasValue) return;
+            var rep = report.Value;
+            
             var primitiveComponent = primitiveObject.GetComponent<PrimitiveTerrainObject>();
             if (primitiveComponent != null)
             {
                 if (!primitiveComponent.enableLOD)
                 {
-                    report.recommendations.Add("Consider enabling LOD for better performance");
+                    rep.recommendations.Add("Consider enabling LOD for better performance");
                 }
                 
                 if (primitiveComponent.lodMeshes == null || primitiveComponent.lodMeshes.Length == 0)
                 {
-                    report.recommendations.Add("Generate LOD meshes for distance-based optimization");
+                    rep.recommendations.Add("Generate LOD meshes for distance-based optimization");
                 }
             }
         }
@@ -399,8 +408,11 @@ namespace Vastcore.Generation
         /// <summary>
         /// インタラクションシステムテスト
         /// </summary>
-        private void TestInteractionSystems(GameObject primitiveObject, PrimitiveTerrainGenerator.PrimitiveType primitiveType, PrimitiveQualityValidator.QualityReport report)
+        private void TestInteractionSystems(GameObject primitiveObject, PrimitiveTerrainGenerator.PrimitiveType primitiveType, PrimitiveQualityValidator.QualityReport? report)
         {
+            if (!report.HasValue) return;
+            var rep = report.Value;
+            
             var primitiveComponent = primitiveObject.GetComponent<PrimitiveTerrainObject>();
             if (primitiveComponent != null)
             {
@@ -411,7 +423,7 @@ namespace Vastcore.Generation
                     case PrimitiveTerrainGenerator.PrimitiveType.Ring:
                         if (!primitiveComponent.isGrindable)
                         {
-                            report.recommendations.Add("Arch/Ring structures should be grindable");
+                            rep.recommendations.Add("Arch/Ring structures should be grindable");
                         }
                         break;
                         
@@ -419,7 +431,7 @@ namespace Vastcore.Generation
                     case PrimitiveTerrainGenerator.PrimitiveType.Formation:
                         if (!primitiveComponent.isClimbable)
                         {
-                            report.recommendations.Add("Mesa/Formation structures should be climbable");
+                            rep.recommendations.Add("Mesa/Formation structures should be climbable");
                         }
                         break;
                 }

@@ -85,6 +85,32 @@ namespace Vastcore.Generation
         }
         #endregion
 
+        /// <summary>
+        /// マテリアルブレンドを更新
+        /// </summary>
+        private void UpdateMaterialBlends()
+        {
+            if (!enableDynamicBlending)
+                return;
+
+            // アクティブなブレンドを更新
+            UpdateActiveBlends();
+
+            // 完了したブレンドをクリーンアップ
+            CleanupCompletedBlends();
+
+            // フレームレート制御
+            if (enableFrameRateControl)
+            {
+                float elapsedTime = (Time.realtimeSinceStartup - frameStartTime) * 1000f;
+                if (elapsedTime > targetFrameTime)
+                {
+                    // 次のフレームまで待機
+                    return;
+                }
+            }
+        }
+
         #region 初期化
         /// <summary>
         /// ブレンディングシステムを初期化

@@ -446,8 +446,8 @@ namespace Vastcore.Generation
             
             // Wait operations outside try-catch
             yield return new WaitForSeconds(0.5f);
-            float testStartTime = Time.time;
-            while (Time.time - testStartTime < testDuration)
+            float waitStartTime = Time.time;
+            while (Time.time - waitStartTime < testDuration)
             {
                 yield return new WaitForSeconds(1f);
             }

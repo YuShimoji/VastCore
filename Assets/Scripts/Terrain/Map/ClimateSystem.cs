@@ -754,6 +754,14 @@ namespace Vastcore.Generation
         #region パブリックメソッド
         
         /// <summary>
+        /// 現在の季節を取得
+        /// </summary>
+        public float GetCurrentSeason()
+        {
+            return currentSeason;
+        }
+        
+        /// <summary>
         /// 季節を手動設定
         /// </summary>
         public void SetSeason(float season)

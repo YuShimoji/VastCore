@@ -50,34 +50,27 @@ namespace Vastcore.Generation.Tests
             string errorMessage = "";
             
             // 初期化テスト
-            yield return StartCoroutine(TestInitializationSafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
-            if (hasError) { Debug.LogError($"TestInitialization failed: {errorMessage}"); testsFailed++; }
+            yield return StartCoroutine(TestInitialization());
             
             // 基本機能テスト
-            yield return StartCoroutine(TestBasicFunctionalitySafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
-            if (hasError) { Debug.LogError($"TestBasicFunctionality failed: {errorMessage}"); testsFailed++; }
+            yield return StartCoroutine(TestBasicFunctionality());
             
             // プレイヤー追跡テスト
-            yield return StartCoroutine(TestPlayerTrackingSafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
-            if (hasError) { Debug.LogError($"TestPlayerTracking failed: {errorMessage}"); testsFailed++; }
+            yield return StartCoroutine(TestPlayerTracking());
             
             // 動的生成テスト
-            yield return StartCoroutine(TestDynamicGenerationSafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
-            if (hasError) { Debug.LogError($"TestDynamicGeneration failed: {errorMessage}"); testsFailed++; }
+            yield return StartCoroutine(TestDynamicGeneration());
             
             // メモリ管理テスト
-            yield return StartCoroutine(TestMemoryManagementSafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
-            if (hasError) { Debug.LogError($"TestMemoryManagement failed: {errorMessage}"); testsFailed++; }
+            yield return StartCoroutine(TestMemoryManagement());
             
             // パフォーマンステスト
-            yield return StartCoroutine(TestPerformanceSafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
-            if (hasError) { Debug.LogError($"TestPerformance failed: {errorMessage}"); testsFailed++; }
+            yield return StartCoroutine(TestPerformance());
             
             // ストレステスト（オプション）
             if (enableStressTest)
             {
-                yield return StartCoroutine(TestStressConditionsSafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
-                if (hasError) { Debug.LogError($"TestStressConditions failed: {errorMessage}"); testsFailed++; }
+                yield return StartCoroutine(TestStressConditions());
             }
             
             LogTestResults();

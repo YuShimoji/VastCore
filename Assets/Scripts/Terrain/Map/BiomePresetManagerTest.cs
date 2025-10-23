@@ -18,6 +18,11 @@ namespace Vastcore.Generation
         [Header("テスト対象")]
         public BiomePresetManager presetManager;
         
+        // テスト用フィールド
+        private BiomePreset testPreset;
+        private GameObject testTerrain;
+        private Texture2D testHeightmap;
+        
         [Header("テスト結果")]
         public bool allTestsPassed = false;
         public List<string> testResults = new List<string>();
@@ -120,8 +125,17 @@ namespace Vastcore.Generation
                 }
                 
                 // プリセット保存
-                bool saveResult = presetManager.SavePreset(testPreset);
-                if (!saveResult)
+                try
+                {
+                    presetManager.SavePreset(testPreset);
+                    // 保存成功を確認
+                    if (!presetManager.PresetExists(testPreset.presetName))
+                    {
+                        LogTest("✗ Preset saving failed - preset not found after save");
+                        return false;
+                    }
+                }
+                catch (System.Exception e)
                 {
                     LogTest("✗ Preset saving failed");
                     return false;
@@ -225,8 +239,17 @@ namespace Vastcore.Generation
                 }
                 
                 // プリセットを削除
-                bool deleteResult = presetManager.DeletePreset("TestBiome");
-                if (!deleteResult)
+                try
+                {
+                    presetManager.DeletePreset("TestBiome");
+                    // 削除成功を確認
+                    if (presetManager.PresetExists("TestBiome"))
+                    {
+                        LogTest("✗ Preset deletion failed - preset still exists");
+                        return false;
+                    }
+                }
+                catch (System.Exception e)
                 {
                     LogTest("✗ Preset deletion failed");
                     return false;
@@ -258,12 +281,16 @@ namespace Vastcore.Generation
             
             try
             {
-                // null プリセットの保存テスト
-                bool nullSaveResult = presetManager.SavePreset(null);
-                if (nullSaveResult)
+                // null プリセットの保存テスト - 例外が発生しないことを確認
+                try
                 {
-                    LogTest("✗ Null preset save should have failed");
+                    presetManager.SavePreset(null);
+                    LogTest("✗ Null preset save should have thrown an exception");
                     return false;
+                }
+                catch (System.Exception)
+                {
+                    // 期待される例外が発生した
                 }
                 
                 // 存在しないプリセットの読み込みテスト
@@ -274,12 +301,16 @@ namespace Vastcore.Generation
                     return false;
                 }
                 
-                // 無効なプリセット名での削除テスト
-                bool invalidDeleteResult = presetManager.DeletePreset("");
-                if (invalidDeleteResult)
+                // 無効なプリセット名での削除テスト - 例外が発生しないことを確認
+                try
                 {
-                    LogTest("✗ Invalid preset name delete should have failed");
+                    presetManager.DeletePreset("");
+                    LogTest("✗ Invalid preset name delete should have thrown an exception");
                     return false;
+                }
+                catch (System.Exception)
+                {
+                    // 期待される例外が発生した
                 }
                 
                 LogTest("✓ Error handling tests passed");

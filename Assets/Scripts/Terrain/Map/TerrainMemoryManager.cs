@@ -67,11 +67,11 @@ namespace Vastcore.Generation
             for (int i = 0; i < tilesToRemove && i < unusedTiles.Count; i++)
             {
                 var tile = unusedTiles[i];
-                if (tile.gameObject != null)
+                if (tile.tileObject != null)
                 {
-                    DestroyImmediate(tile.gameObject);
+                    DestroyImmediate(tile.tileObject);
                 }
-                activeTiles.Remove(tile.tileCoordinate);
+                activeTiles.Remove(tile.coordinate);
             }
             
             // ガベージコレクションを実行

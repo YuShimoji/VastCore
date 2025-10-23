@@ -323,17 +323,19 @@ namespace Vastcore.Generation
         public static void DrawPlacementDebugInfo(Vector3 position, float radius, AlignmentSettings settings, Color color)
         {
             // 配置範囲を表示
-            Debug.DrawWireSphere(position, radius, color, 5f);
+            Gizmos.color = color;
+            Gizmos.DrawWireSphere(position, radius);
             
             // 地形法線を表示
             TerrainInfo terrainInfo = GetTerrainInfoAtPosition(position);
             if (terrainInfo.hasValidTerrain)
             {
-                Debug.DrawRay(terrainInfo.position, terrainInfo.normal * 20f, color, 5f);
+                Gizmos.DrawRay(terrainInfo.position, terrainInfo.normal * 20f);
             }
             
             // 最小距離範囲を表示
-            Debug.DrawWireSphere(position, settings.minDistanceBetweenObjects, Color.yellow, 5f);
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(position, settings.minDistanceBetweenObjects);
         }
 
         /// <summary>
