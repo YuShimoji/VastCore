@@ -1,0 +1,18 @@
+{
+    "name": "Vastcore.Terrain",
+    "rootNamespace": "Vastcore.Terrain",
+    "references": [
+        "Unity.ProBuilder",
+        "Unity.TextMeshPro",
+        "Vastcore.Core",
+        "Vastcore.Utilities",
+        "Vastcore.Diagnostics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
+}
