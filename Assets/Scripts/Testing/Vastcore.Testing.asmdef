@@ -24,5 +24,12 @@
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
-    "noEngineReferences": false
+    "noEngineReferences": false,
+    "burstSettings": {
+        "enableBurstCompilation": false,
+        "enableBurstSafetyChecks": false,
+        "enableBurstDebug": false,
+        "enableBurstTimings": false,
+        "burstCompilationOptions": {}
+    }
 }
