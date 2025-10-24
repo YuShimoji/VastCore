@@ -135,7 +135,7 @@ namespace Vastcore.Generation
                         return false;
                     }
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     LogTest("✗ Preset saving failed");
                     return false;
@@ -249,7 +249,7 @@ namespace Vastcore.Generation
                         return false;
                     }
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     LogTest("✗ Preset deletion failed");
                     return false;
@@ -340,7 +340,22 @@ namespace Vastcore.Generation
                 var testTile = new TerrainTile();
                 testTile.coordinate = new Vector2Int(0, 0);
                 testTile.tileObject = testTerrain;
-                testTile.heightmap = testHeightmap;
+                // Texture2Dをfloat配列に変換
+                if (testHeightmap != null)
+                {
+                    int width = testHeightmap.width;
+                    int height = testHeightmap.height;
+                    float[,] heightData = new float[width, height];
+                    Color[] pixels = testHeightmap.GetPixels();
+                    for (int y = 0; y < height; y++)
+                    {
+                        for (int x = 0; x < width; x++)
+                        {
+                            heightData[x, y] = pixels[y * width + x].r;
+                        }
+                    }
+                    testTile.heightmap = heightData;
+                }
                 testTile.state = TerrainTile.TileState.Active;
                 
                 // プリセットを適用

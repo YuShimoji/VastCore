@@ -204,9 +204,9 @@ namespace Vastcore.Generation
                         
                         // 修正後に再テスト
                         var retestResult = RetestPrimitive(primitiveType);
-                        if (retestResult != null)
+                        if (retestResult.HasValue)
                         {
-                            testResults[primitiveType] = retestResult;
+                            testResults[primitiveType] = retestResult.Value;
                         }
                     }
                 }

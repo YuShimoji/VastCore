@@ -1383,6 +1383,40 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
+        /// 地質学的Deformerを適用
+        /// </summary>
+        private static void ApplyGeologicalDeformers(GameObject target, QualitySettings quality, PrimitiveTerrainGenerator.PrimitiveType primitiveType)
+        {
+#if DEFORM_AVAILABLE
+            switch (primitiveType)
+            {
+                case PrimitiveTerrainGenerator.PrimitiveType.Cube:
+                case PrimitiveTerrainGenerator.PrimitiveType.Boulder:
+                case PrimitiveTerrainGenerator.PrimitiveType.Mesa:
+                    // 侵食効果
+                    var noiseDeformer = target.AddComponent<NoiseDeformer>();
+                    noiseDeformer.Factor = quality.deformIntensity * 0.1f;
+                    break;
+                    
+                case PrimitiveTerrainGenerator.PrimitiveType.Sphere:
+                case PrimitiveTerrainGenerator.PrimitiveType.Crystal:
+                    // 結晶成長効果
+                    var scaleDeformer = target.AddComponent<ScaleDeformer>();
+                    scaleDeformer.Factor = Vector3.one * (1f + quality.deformIntensity * 0.2f);
+                    break;
+                    
+                case PrimitiveTerrainGenerator.PrimitiveType.Cylinder:
+                case PrimitiveTerrainGenerator.PrimitiveType.Spire:
+                    // 地殻変動効果
+                    var bendDeformer = target.AddComponent<BendDeformer>();
+                    bendDeformer.Factor = quality.deformIntensity * 0.3f;
+                    break;
+            }
+#endif
+        }
+        
+        /// <summary>
+        /// 有機的Deformerを適用
         /// </summary>
         private static void ApplyOrganicDeformers(GameObject target, QualitySettings quality, PrimitiveTerrainGenerator.PrimitiveType primitiveType)
         {

@@ -278,8 +278,8 @@ namespace Vastcore.Generation
             textMesh.anchor = TextAnchor.MiddleCenter;
             textMesh.alignment = TextAlignment.Center;
             
-            // カメラの方を向くように設定
-            var billboard = labelObject.AddComponent<Billboard>();
+            // TODO: Billboard機能を実装する（現在はBillboardコンポーネントが存在しないためコメントアウト）
+            // var billboard = labelObject.AddComponent<Billboard>();
             
             qualityLabels.Add(labelObject);
         }
