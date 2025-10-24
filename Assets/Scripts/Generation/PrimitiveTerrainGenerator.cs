@@ -3,6 +3,12 @@ using UnityEngine.ProBuilder;
 using UnityEngine.ProBuilder.MeshOperations;
 using System.Linq;
 
+// このファイルは廃止予定です。
+// より完全な実装が Assets/Scripts/Terrain/Map/PrimitiveTerrainGenerator.cs に存在します。
+// CS0436警告（型衝突）を解消するため、このクラスをコメントアウトしています。
+// 将来的にこのファイルは削除される予定です。
+
+/* DEPRECATED - DO NOT USE
 namespace Vastcore.Generation
 {
     public static class PrimitiveTerrainGenerator
@@ -182,3 +188,4 @@ namespace Vastcore.Generation
         }
     }
 }
+*/
