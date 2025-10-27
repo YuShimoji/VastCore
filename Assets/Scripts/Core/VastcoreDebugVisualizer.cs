@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Vastcore.Core;
+using Vastcore.Utils;
 
 namespace Vastcore.Core
 {
@@ -41,7 +42,11 @@ namespace Vastcore.Core
             {
                 if (instance == null)
                 {
+<<<<<<< HEAD
                     instance = FindFirstObjectByType<VastcoreDebugVisualizer>();
+=======
+                    var existingVisualizer = FindFirstObjectByType<VastcoreDebugVisualizer>();
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreDebugVisualizer");

@@ -1,0 +1,35 @@
+{
+    "name": "Vastcore.Testing",
+    "rootNamespace": "Vastcore.Testing",
+    "references": [
+        "Vastcore.Core",
+        "Vastcore.Utils",
+        "Vastcore.Generation",
+        "Vastcore.Terrain",
+        "Vastcore.Player",
+        "Vastcore.UI",
+        "Unity.ProBuilder",
+        "Unity.ProBuilder.Editor",
+        "Unity.ProBuilder.Csg",
+        "Unity.ProBuilder.KdTree",
+        "Unity.ProBuilder.Poly2Tri",
+        "Unity.ProBuilder.Stl",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "burstSettings": {
+        "enableBurstCompilation": false,
+        "enableBurstSafetyChecks": false,
+        "enableBurstDebug": false,
+        "enableBurstTimings": false,
+        "burstCompilationOptions": {}
+    }
+}

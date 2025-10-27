@@ -37,7 +37,7 @@ namespace Vastcore.Testing
         {
             if (performanceSystem == null)
             {
-                performanceSystem = FindObjectOfType<PerformanceTestingSystem>();
+                performanceSystem = FindFirstObjectByType<PerformanceTestingSystem>();
             }
             
             if (performanceSystem == null)

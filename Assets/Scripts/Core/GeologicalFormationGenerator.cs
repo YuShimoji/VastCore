@@ -1,7 +1,8 @@
-using UnityEngine;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
+using UnityEngine;
 using Vastcore.Core;
+using Vastcore.Utils;
 
 namespace Vastcore.Generation.Map
 {
@@ -132,6 +133,18 @@ namespace Vastcore.Generation.Map
         [SerializeField] private float seaLevel = 0f;
         [SerializeField] private float tectonicActivity = 0.5f;
         [SerializeField] private float volcanicActivity = 0.3f;
+<<<<<<< HEAD
+=======
+        [SerializeField] private float erosionRate = 0.1f; // TODO: Implement erosion simulation
+        
+        // エロージョンシミュレーション用メソッド（将来実装予定）
+        private void ApplyErosion(GeologicalLayer layer)
+        {
+            // 現在は未実装だが、erosionRateを使用する予定
+            float erosionEffect = erosionRate * Time.deltaTime;
+            // TODO: 実際のエロージョン処理を実装
+        }
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
 
         private List<GeologicalLayer> formationLayers;
         private GeologicalEnvironment currentEnvironment;

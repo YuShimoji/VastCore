@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -755,3 +756,5 @@ namespace Vastcore.Core
         }
     }
 }
+=======
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da

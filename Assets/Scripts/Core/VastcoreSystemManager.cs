@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 using Vastcore.Core;
-using Vastcore.Generation;
+using Vastcore.Utils;
 
 namespace Vastcore.Core
 {
@@ -23,7 +23,7 @@ namespace Vastcore.Core
         public bool enableTerrainErrorRecovery = true;
         
         [Header("システム設定")]
-        public VastcoreLogger.LogLevel systemLogLevel = VastcoreLogger.LogLevel.Info;
+        public Vastcore.Utils.VastcoreLogger.LogLevel systemLogLevel = Vastcore.Utils.VastcoreLogger.LogLevel.Info;
         public bool enableSystemHealthMonitoring = true;
         public float healthCheckInterval = 60f;
         
@@ -34,7 +34,11 @@ namespace Vastcore.Core
             {
                 if (instance == null)
                 {
+<<<<<<< HEAD
                     instance = FindFirstObjectByType<VastcoreSystemManager>();
+=======
+                    var existingManager = FindFirstObjectByType<VastcoreSystemManager>();
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreSystemManager");

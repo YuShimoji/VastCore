@@ -1,0 +1,20 @@
+{
+    "name": "Vastcore.Game",
+    "rootNamespace": "Vastcore.Game",
+    "references": [
+        "Vastcore.Core",
+        "Vastcore.Utils",
+        "Vastcore.Player",
+        "Vastcore.Terrain",
+        "Vastcore.Camera"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

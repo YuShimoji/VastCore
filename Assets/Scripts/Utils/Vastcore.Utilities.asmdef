@@ -1,0 +1,23 @@
+{
+<<<<<<< HEAD:Assets/Scripts/Utilities/Vastcore.Utilities.asmdef
+    "name": "Vastcore.Utilities",
+    "rootNamespace": "Vastcore.Utilities",
+    "references": [
+        "Unity.InputSystem",
+        "Vastcore.Diagnostics"
+    ],
+=======
+    "name": "Vastcore.Utils",
+    "rootNamespace": "Vastcore.Utils",
+    "references": [],
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da:Assets/Scripts/Utils/Vastcore.Utilities.asmdef
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

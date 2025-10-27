@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
@@ -879,3 +880,5 @@ namespace Vastcore.Generation
         #endregion
     }
 }
+=======
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da

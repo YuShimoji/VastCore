@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Vastcore.Core;
+using Vastcore.Utils;
 
 namespace Vastcore.Core
 {
@@ -31,7 +33,11 @@ namespace Vastcore.Core
             {
                 if (instance == null)
                 {
+<<<<<<< HEAD
                     instance = FindFirstObjectByType<VastcoreErrorHandler>();
+=======
+                    var existingHandler = FindFirstObjectByType<VastcoreErrorHandler>();
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreErrorHandler");
@@ -252,6 +258,19 @@ namespace Vastcore.Core
                 }
             }
             
+<<<<<<< HEAD
+=======
+            // 使用されていないプリミティブオブジェクトを削除
+            var primitiveObjects = FindObjectsByType<PrimitiveTerrainObject>(FindObjectsSortMode.None);
+            foreach (var primitive in primitiveObjects)
+            {
+                if (Vector3.Distance(primitive.transform.position, Camera.main.transform.position) > 3000f)
+                {
+                    DestroyImmediate(primitive.gameObject);
+                }
+            }
+            
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
             // リソースのアンロード
             Resources.UnloadUnusedAssets();
         }

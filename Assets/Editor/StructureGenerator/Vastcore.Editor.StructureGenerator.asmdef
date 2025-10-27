@@ -10,7 +10,9 @@
         "Unity.ProBuilder.KdTree",
         "Unity.ProBuilder.Poly2Tri",
         "Unity.ProBuilder.Stl",
-        "Vastcore.Generation"
+        "Vastcore.Terrain",
+        "Vastcore.Core",
+        "Vastcore.Utils"
     ],
     "includePlatforms": [
         "Editor"

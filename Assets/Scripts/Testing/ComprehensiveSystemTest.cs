@@ -257,7 +257,7 @@ namespace VastCore.Testing
         
         private long GetCurrentMemoryUsage()
         {
-            return Profiler.GetTotalAllocatedMemory(false);
+            return Profiler.GetTotalAllocatedMemoryLong();
         }
         
         private int GetActiveTerrainTileCount()

@@ -5,7 +5,6 @@ using TMPro;
 namespace Vastcore.UI
 {
     /// <summary>
-    /// Unified UI style system for consistent modern design across all UI elements
     /// Provides centralized styling configuration and application
     /// </summary>
     [CreateAssetMenu(fileName = "ModernUIStyle", menuName = "Vastcore/UI/Modern UI Style")]
@@ -23,8 +22,8 @@ namespace Vastcore.UI
         public Color errorColor = new Color(1f, 0.3f, 0.3f, 1f);           // Error/negative
         
         [Header("Typography")]
-        public Font primaryFont;
-        public Font secondaryFont;
+        public TMP_FontAsset primaryFont;
+        public TMP_FontAsset secondaryFont;
         public float headerFontSize = 18f;
         public float bodyFontSize = 14f;
         public float captionFontSize = 12f;

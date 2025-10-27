@@ -67,7 +67,11 @@ namespace Vastcore.UI
         {
             SetupDefaultParameters();
             
-            if (startMinimized)
+            if (!showDebugUI)
+            {
+                HideUI();
+            }
+            else if (startMinimized)
             {
                 MinimizeUI();
             }
@@ -91,14 +95,14 @@ namespace Vastcore.UI
         private void InitializeDebugUI()
         {
             // Get or create required systems
-            sliderSystem = FindObjectOfType<SliderBasedUISystem>();
+            sliderSystem = FindFirstObjectByType<SliderBasedUISystem>();
             if (sliderSystem == null)
             {
                 GameObject sliderSystemObject = new GameObject("SliderBasedUISystem");
                 sliderSystem = sliderSystemObject.AddComponent<SliderBasedUISystem>();
             }
             
-            updateSystem = FindObjectOfType<RealtimeUpdateSystem>();
+            updateSystem = FindFirstObjectByType<RealtimeUpdateSystem>();
             if (updateSystem == null)
             {
                 GameObject updateSystemObject = new GameObject("RealtimeUpdateSystem");
@@ -137,12 +141,6 @@ namespace Vastcore.UI
             
             // Create scroll view
             CreateScrollView();
-            
-            // Create performance display
-            if (enablePerformanceMonitoring)
-            {
-                CreatePerformanceDisplay();
-            }
             
             // Create parameter sections
             CreateParameterSections();
@@ -357,6 +355,11 @@ namespace Vastcore.UI
             if (showPrimitiveParameters)
             {
                 CreatePrimitiveParameterSection();
+            }
+            
+            if (showPerformanceParameters && enablePerformanceMonitoring)
+            {
+                CreatePerformanceDisplay();
             }
             
             if (showSystemParameters)

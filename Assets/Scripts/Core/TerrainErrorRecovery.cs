@@ -2,8 +2,9 @@ using System;
 using System.Collections;
 using UnityEngine;
 using Vastcore.Core;
+using Vastcore.Utils;
 
-namespace Vastcore.Generation
+namespace Vastcore.Core
 {
     /// <summary>
     /// 地形生成専用のエラー回復システム
