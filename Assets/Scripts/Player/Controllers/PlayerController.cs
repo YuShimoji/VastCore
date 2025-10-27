@@ -12,6 +12,8 @@ public class PlayerController : MonoBehaviour
     public float moveForce = 70f;
     [Tooltip("プレイヤーの最高速度")]
     public float maxSpeed = 15f;
+    [Tooltip("入力感度（1.0が標準）")]
+    public float inputSensitivity = 1.0f;
     [Tooltip("空中でのコントロールのしやすさ（0に近いほど操作不能）")]
     [Range(0.0f, 1.0f)]
     public float airControlFactor = 0.5f;
@@ -49,6 +51,22 @@ public class PlayerController : MonoBehaviour
     [Header("コヨーテタイム")]
     [Tooltip("地面から離れてもジャンプできる猶予時間")]
     public float coyoteTimeDuration = 0.15f;
+    #endregion
+
+    #region カメラ追従
+    [Header("カメラ追従")]
+    [Tooltip("カメラの相対位置オフセット")]
+    public Vector3 cameraOffset = new Vector3(0, 5, -10);
+    [Tooltip("カメラ追従のスムーズさ")]
+    public float cameraSmoothSpeed = 5f;
+    [Tooltip("カメラがプレイヤーを注視する高さオフセット")]
+    public float cameraLookAtHeight = 2f;
+    #endregion
+    
+    #region 回転
+    [Header("回転")]
+    [Tooltip("キャラクターの回転速度")]
+    public float rotationSpeed = 10f;
     #endregion
 
     #region 内部変数
@@ -103,6 +121,7 @@ public class PlayerController : MonoBehaviour
         }
 
         moveInput = keyboardInput;
+        moveInput *= inputSensitivity;
 
         if (Keyboard.current != null && Keyboard.current[jumpKey].wasPressedThisFrame)
         {
@@ -139,7 +158,7 @@ public class PlayerController : MonoBehaviour
 
             // キャラクターを移動方向へスムーズに向ける
             Quaternion targetRotation = Quaternion.LookRotation(controlDirection, Vector3.up);
-            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime * 10f));
+            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime * rotationSpeed));
         }
 
         // 3. ジャンプ処理
@@ -199,6 +218,23 @@ public class PlayerController : MonoBehaviour
         {
             Vector3 limitedVel = horizontalVelocity.normalized * currentMaxSpeed;
             rb.linearVelocity = new Vector3(limitedVel.x, rb.linearVelocity.y, limitedVel.z);
+        }
+    }
+    
+    private void LateUpdate()
+    {
+        // カメラ追従処理
+        if (mainCamera != null)
+        {
+            // カメラの目標位置を計算（プレイヤーの位置 + オフセットをプレイヤーの回転で変換）
+            Vector3 desiredPosition = transform.position + transform.rotation * cameraOffset;
+            
+            // スムーズにカメラを移動
+            mainCamera.transform.position = Vector3.Lerp(mainCamera.transform.position, desiredPosition, Time.deltaTime * cameraSmoothSpeed);
+            
+            // カメラをプレイヤーの少し上を向くように設定
+            Vector3 lookAtTarget = transform.position + Vector3.up * cameraLookAtHeight;
+            mainCamera.transform.LookAt(lookAtTarget);
         }
     }
     
