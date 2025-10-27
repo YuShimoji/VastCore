@@ -291,6 +291,32 @@ namespace Vastcore.UI
                 averageFrameTime += frameTime;
             }
             averageFrameTime /= recentFrameTimes.Count;
+
+            // Adjust performance limitations
+            bool wasPerformanceLimited = isPerformanceLimited;
+            isPerformanceLimited = averageFrameTime > targetFrameTime * 1.2f; // 20% tolerance
+
+            if (isPerformanceLimited != wasPerformanceLimited)
+            {
+                if (isPerformanceLimited)
+                {
+                    Debug.LogWarning("RealtimeUpdateSystem: Performance limited mode enabled");
+                    // Reduce update frequency
+                    updateThrottleTime = Mathf.Min(updateThrottleTime * 1.5f, 0.5f);
+                    // Reduce batch size
+                    maxUpdatesPerFrame = Mathf.Max(1, maxUpdatesPerFrame / 2);
+                }
+                else
+                {
+                    Debug.Log("RealtimeUpdateSystem: Performance limitation removed");
+                    // Restore normal update frequency
+                    updateThrottleTime = Mathf.Max(updateThrottleTime / 1.5f, 0.05f);
+                    // Restore batch size
+                    maxUpdatesPerFrame = Mathf.Min(baseMaxUpdatesPerFrame, maxUpdatesPerFrame * 2);
+                }
+            }
+        }
+
         public PerformanceStats GetPerformanceStats()
         {
             float averageFrameTime = 0f;

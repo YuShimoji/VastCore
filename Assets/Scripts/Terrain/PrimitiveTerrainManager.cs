@@ -55,11 +55,20 @@ namespace Vastcore.Terrain
             primitiveContainer = new GameObject("PrimitiveContainer").transform;
             primitiveContainer.SetParent(transform);
 
-            // プレイヤー参照を取得
-            playerTransform = FindObjectOfType<Vastcore.Player.Controllers.PlayerController>()?.transform;
+            // プレイヤー参照を取得（型依存を避け、タグやRigidbodyから探索）
             if (playerTransform == null)
             {
-                VastcoreLogger.Instance.LogWarning("PrimitiveTerrainManager", "PlayerControllerが見つかりません。LOD機能が動作しません。");
+                var tagged = GameObject.FindWithTag("Player");
+                if (tagged != null) playerTransform = tagged.transform;
+            }
+            if (playerTransform == null)
+            {
+                var rbAny = FindFirstObjectByType<Rigidbody>();
+                if (rbAny != null) playerTransform = rbAny.transform;
+            }
+            if (playerTransform == null)
+            {
+                VastcoreLogger.Instance.LogWarning("PrimitiveTerrainManager", "Player Transformが見つかりません。LOD機能が動作しません。");
             }
 
             VastcoreLogger.Instance.LogInfo("PrimitiveTerrainManager", "プリミティブ地形マネージャーが初期化されました");
