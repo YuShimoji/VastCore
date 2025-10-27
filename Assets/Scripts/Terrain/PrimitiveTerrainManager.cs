@@ -15,16 +15,32 @@ namespace Vastcore.Terrain
         [SerializeField] private float primitiveCleanupDistance = 2000f;
         [SerializeField] private bool enablePrimitivePooling = true;
 
+        [Header("LOD設定")]
+        [SerializeField] private float lodDistance1 = 500f;
+        [SerializeField] private float lodDistance2 = 1000f;
+        [SerializeField] private float lodScale1 = 0.8f;
+        [SerializeField] private float lodScale2 = 0.5f;
+        [SerializeField] private bool enableLOD = true;
+
         // 内部データ
         private Dictionary<Vector2Int, List<GameObject>> activePrimitives;
         private Queue<GameObject> primitivePool;
         private Transform primitiveContainer;
         private int primitivesSpawnedThisFrame;
         private int lastSpawnFrame = -1;
+        private Transform playerTransform;
 
         private void Awake()
         {
             InitializeManager();
+        }
+
+        private void Update()
+        {
+            if (enableLOD && playerTransform != null)
+            {
+                ApplyLODToPrimitives();
+            }
         }
 
         /// <summary>
@@ -38,6 +54,13 @@ namespace Vastcore.Terrain
             // プリミティブコンテナを作成
             primitiveContainer = new GameObject("PrimitiveContainer").transform;
             primitiveContainer.SetParent(transform);
+
+            // プレイヤー参照を取得
+            playerTransform = FindObjectOfType<Vastcore.Player.Controllers.PlayerController>()?.transform;
+            if (playerTransform == null)
+            {
+                VastcoreLogger.Instance.LogWarning("PrimitiveTerrainManager", "PlayerControllerが見つかりません。LOD機能が動作しません。");
+            }
 
             VastcoreLogger.Instance.LogInfo("PrimitiveTerrainManager", "プリミティブ地形マネージャーが初期化されました");
         }
@@ -177,8 +200,21 @@ namespace Vastcore.Terrain
                 collider.sharedMesh = primitiveMesh;
             }
 
-            // デフォルトマテリアルを設定
-            meshRenderer.material = new Material(Shader.Find("Standard"));
+            // デフォルトマテリアルを設定（URP対応）
+            Shader litShader = Shader.Find("Universal Render Pipeline/Lit");
+            if (litShader != null)
+            {
+                meshRenderer.material = new Material(litShader);
+            }
+            else
+            {
+                // Fallback to Standard shader
+                meshRenderer.material = new Material(Shader.Find("Standard"));
+            }
+
+            // ライティング設定
+            meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            meshRenderer.receiveShadows = true;
 
             return primitiveObject;
         }
@@ -287,6 +323,35 @@ namespace Vastcore.Terrain
                 0f,
                 tileCoord.y * 1000f + 500f
             );
+        }
+
+        /// <summary>
+        /// 距離に基づいてLODを適用
+        /// </summary>
+        private void ApplyLODToPrimitives()
+        {
+            foreach (var tilePrimitives in activePrimitives.Values)
+            {
+                foreach (GameObject primitive in tilePrimitives)
+                {
+                    if (primitive == null) continue;
+
+                    float distance = Vector3.Distance(playerTransform.position, primitive.transform.position);
+                    float targetScale = 1.0f;
+
+                    if (distance > lodDistance2)
+                    {
+                        targetScale = lodScale2;
+                    }
+                    else if (distance > lodDistance1)
+                    {
+                        targetScale = lodScale1;
+                    }
+
+                    // スムーズにスケールを変更
+                    primitive.transform.localScale = Vector3.Lerp(primitive.transform.localScale, Vector3.one * targetScale, Time.deltaTime * 2f);
+                }
+            }
         }
 
         /// <summary>
