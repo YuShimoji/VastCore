@@ -2,6 +2,7 @@
     "name": "Vastcore.Utilities",
     "rootNamespace": "Vastcore.Utilities",
     "references": [
+        "Unity.InputSystem",
         "Vastcore.Diagnostics"
     ],
     "includePlatforms": [],

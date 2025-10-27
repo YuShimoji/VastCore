@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Core;
 
 namespace Vastcore.Terrain
 {
@@ -18,6 +19,8 @@ namespace Vastcore.Terrain
         private Dictionary<Vector2Int, List<GameObject>> activePrimitives;
         private Queue<GameObject> primitivePool;
         private Transform primitiveContainer;
+        private int primitivesSpawnedThisFrame;
+        private int lastSpawnFrame = -1;
 
         private void Awake()
         {
@@ -44,6 +47,18 @@ namespace Vastcore.Terrain
         /// </summary>
         public GameObject SpawnPrimitiveTerrain(PrimitiveTerrainRule rule, Vector3 position)
         {
+            if (lastSpawnFrame != Time.frameCount)
+            {
+                lastSpawnFrame = Time.frameCount;
+                primitivesSpawnedThisFrame = 0;
+            }
+
+            if (primitivesSpawnedThisFrame >= maxPrimitivesPerFrame)
+            {
+                VastcoreLogger.Instance.LogDebug("PrimitiveTerrainManager", "1フレーム当たりの生成上限に達しました");
+                return null;
+            }
+
             if (rule == null)
             {
                 VastcoreLogger.Instance.LogWarning("PrimitiveTerrainManager", "プリミティブルールがnullです");
@@ -85,6 +100,8 @@ namespace Vastcore.Terrain
 
                 VastcoreLogger.Instance.LogDebug("PrimitiveTerrainManager",
                     $"プリミティブ生成: {rule.primitiveType} at {position}, tile {tileCoord}");
+
+                primitivesSpawnedThisFrame++;
             }
 
             return primitiveObject;
@@ -214,8 +231,13 @@ namespace Vastcore.Terrain
         /// <summary>
         /// 距離に基づいてプリミティブをクリーンアップ
         /// </summary>
-        public void CleanupDistantPrimitives(Vector3 playerPosition, float maxDistance)
+        public void CleanupDistantPrimitives(Vector3 playerPosition, float maxDistance = -1f)
         {
+            if (maxDistance < 0f)
+            {
+                maxDistance = primitiveCleanupDistance;
+            }
+
             List<Vector2Int> tilesToRemove = new List<Vector2Int>();
 
             foreach (var kvp in activePrimitives)

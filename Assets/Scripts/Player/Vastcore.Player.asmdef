@@ -4,6 +4,7 @@
     "references": [
         "Unity.ProBuilder",
         "Unity.TextMeshPro",
+        "Unity.InputSystem",
         "Vastcore.Core",
         "Vastcore.Utilities",
         "Vastcore.Diagnostics",

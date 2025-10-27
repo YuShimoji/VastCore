@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Vastcore.Core
 {
@@ -27,7 +28,7 @@ namespace Vastcore.Core
         [Header("インゲームログ設定")]
         public int maxInGameLogEntries = 100;
         public bool showLogInUI = true;
-        public KeyCode toggleLogUIKey = KeyCode.F12;
+        public Key toggleLogUIKey = Key.F12;
         
         [Header("パフォーマンス監視")]
         public bool enablePerformanceLogging = true;
@@ -153,7 +154,7 @@ namespace Vastcore.Core
         
         private void Update()
         {
-            if (Input.GetKeyDown(toggleLogUIKey))
+            if (Keyboard.current != null && Keyboard.current[toggleLogUIKey].wasPressedThisFrame)
             {
                 showLogUI = !showLogUI;
             }

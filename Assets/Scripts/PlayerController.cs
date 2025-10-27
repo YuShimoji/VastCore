@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CapsuleCollider))]
@@ -23,7 +24,7 @@ public class PlayerController : MonoBehaviour
     [Tooltip("スプリントの持続時間（秒）")]
     public float sprintDuration = 1.5f;
     [Tooltip("スプリント入力キー")]
-    public KeyCode sprintKey = KeyCode.LeftShift;
+    public Key sprintKey = Key.LeftShift;
     #endregion
 
     #region ジャンプ
@@ -31,7 +32,7 @@ public class PlayerController : MonoBehaviour
     [Tooltip("ジャンプの強さ")]
     public float jumpForce = 8f;
     [Tooltip("ジャンプ入力キー")]
-    public KeyCode jumpKey = KeyCode.Space;
+    public Key jumpKey = Key.Space;
     #endregion
     
     #region 接地判定
@@ -91,15 +92,24 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         // 入力受付
-        moveInput.x = Input.GetAxis("Horizontal");
-        moveInput.y = Input.GetAxis("Vertical");
+        // Input Systemでのキーボード入力取得
+        Vector2 keyboardInput = Vector2.zero;
+        if (Keyboard.current != null)
+        {
+            if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed) keyboardInput.y += 1;
+            if (Keyboard.current.sKey.isPressed || Keyboard.current.downArrowKey.isPressed) keyboardInput.y -= 1;
+            if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) keyboardInput.x += 1;
+            if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) keyboardInput.x -= 1;
+        }
 
-        if (Input.GetKeyDown(jumpKey))
+        moveInput = keyboardInput;
+
+        if (Keyboard.current != null && Keyboard.current[jumpKey].wasPressedThisFrame)
         {
             jumpRequested = true;
         }
 
-        if (Input.GetKeyDown(sprintKey))
+        if (Keyboard.current != null && Keyboard.current[sprintKey].wasPressedThisFrame)
         {
             TrySprint();
         }
