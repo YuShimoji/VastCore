@@ -1,5 +1,5 @@
 using UnityEngine;
-using Vastcore.Diagnostics;
+// using Vastcore.Diagnostics;
 
 namespace Vastcore.Generation
 {
@@ -86,7 +86,7 @@ namespace Vastcore.Generation
                 }
             }
 
-            using (LoadProfiler.Measure("TerrainData.SetAlphamaps (TextureGenerator)"))
+            // using (LoadProfiler.Measure("TerrainData.SetAlphamaps (TextureGenerator)"))
             {
                 terrainData.SetAlphamaps(0, 0, splatmapData);
             }

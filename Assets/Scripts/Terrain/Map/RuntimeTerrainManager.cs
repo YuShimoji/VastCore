@@ -67,9 +67,14 @@ namespace Vastcore.Generation
         private bool didFullUnloadThisCycle = false;
         #endregion
 
-        void Start()
+        void Update()
         {
-            InitializeRuntimeManager();
+            // 更新間隔チェック
+            if (Time.time - lastUpdateTime >= 0.1f)
+            {
+                Debug.Log($"Update called after {Time.time - lastUpdateTime:F3} seconds");
+                lastUpdateTime = Time.time;
+            }
         }
 
         /// <summary>

@@ -4,7 +4,9 @@ using UnityEngine.ProBuilder;
 using UnityEngine.ProBuilder.MeshOperations;
 using UnityEditor.ProBuilder;
 using UnityEditor.ProBuilder.Actions;
+#if PARABOX_AVAILABLE
 using Parabox.CSG;
+#endif
 using System.Collections.Generic;
 using System.Linq;
 using EditorUtility = UnityEditor.EditorUtility;

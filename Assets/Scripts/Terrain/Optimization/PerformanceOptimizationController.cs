@@ -214,15 +214,21 @@ namespace Vastcore.Generation.Optimization
         {
             float score = 1f;
             
-            // フレームレート評価
+            // フレームレート評価（performanceThresholdを使用）
             float frameRateRatio = currentMetrics.frameRate / targetFrameRate;
-            score *= Mathf.Clamp01(frameRateRatio);
+            if (frameRateRatio < performanceThreshold)
+            {
+                score *= frameRateRatio / performanceThreshold; // 閾値未満の場合ペナルティ
+            }
             
-            // GPU メモリ評価
+            // GPU メモリ評価（maxMemoryUsageRatioを使用）
             if (currentMetrics.gpuMemoryUsage > 0)
             {
-                float memoryRatio = 1f - (currentMetrics.gpuMemoryUsage / 1024f); // 1GB基準
-                score *= Mathf.Clamp01(memoryRatio);
+                float memoryRatio = currentMetrics.gpuMemoryUsage / 1024f; // 1GB基準
+                if (memoryRatio > maxMemoryUsageRatio)
+                {
+                    score *= maxMemoryUsageRatio / memoryRatio; // メモリ使用率超過でペナルティ
+                }
             }
             
             // キャッシュ効率評価

@@ -38,7 +38,7 @@ namespace Vastcore.Testing
         [ContextMenu("Run All Tests")]
         public void RunAllTests()
         {
-            VastcoreLogger.Log("=== Deform統合テスト開始 ===", VastcoreLogger.LogLevel.Info);
+            Debug.Log("=== Deform統合テスト開始 ===");
             
             if (testInstance == null)
             {
@@ -57,7 +57,7 @@ namespace Vastcore.Testing
             if (testCompilation)
             {
                 testCount++;
-                VastcoreLogger.Log("--- コンパイル確認テスト ---", VastcoreLogger.LogLevel.Info);
+                Debug.Log("--- コンパイル確認テスト ---");
                 bool result = TestCompilation();
                 if (result) passedCount++;
                 allPassed &= result;
@@ -68,7 +68,7 @@ namespace Vastcore.Testing
             if (testManagerInitialization)
             {
                 testCount++;
-                VastcoreLogger.Log("--- マネージャー初期化テスト ---", VastcoreLogger.LogLevel.Info);
+                Debug.Log("--- マネージャー初期化テスト ---");
                 bool result = testInstance.TestManagerInitialization();
                 if (result) passedCount++;
                 allPassed &= result;
@@ -79,7 +79,7 @@ namespace Vastcore.Testing
             if (testPrimitiveGeneration)
             {
                 testCount++;
-                VastcoreLogger.Log("--- プリミティブ生成テスト ---", VastcoreLogger.LogLevel.Info);
+                Debug.Log("--- プリミティブ生成テスト ---");
                 bool result = testInstance.TestPrimitiveGeneration();
                 if (result) passedCount++;
                 allPassed &= result;
@@ -90,7 +90,7 @@ namespace Vastcore.Testing
             if (testDeformComponents)
             {
                 testCount++;
-                VastcoreLogger.Log("--- Deformコンポーネントテスト ---", VastcoreLogger.LogLevel.Info);
+                Debug.Log("--- Deformコンポーネントテスト ---");
                 bool result = testInstance.TestDeformComponentApplication();
                 if (result) passedCount++;
                 allPassed &= result;
@@ -101,7 +101,7 @@ namespace Vastcore.Testing
             if (testQualitySwitching)
             {
                 testCount++;
-                VastcoreLogger.Log("--- 品質切り替えテスト ---", VastcoreLogger.LogLevel.Info);
+                Debug.Log("--- 品質切り替えテスト ---");
                 bool result = testInstance.TestQualitySwitching();
                 if (result) passedCount++;
                 allPassed &= result;
@@ -112,7 +112,7 @@ namespace Vastcore.Testing
             if (testPerformance)
             {
                 testCount++;
-                VastcoreLogger.Log("--- パフォーマンステスト ---", VastcoreLogger.LogLevel.Info);
+                Debug.Log("--- パフォーマンステスト ---");
                 bool result = testInstance.TestPerformance();
                 if (result) passedCount++;
                 allPassed &= result;
@@ -123,7 +123,7 @@ namespace Vastcore.Testing
             if (testPresetLibrary)
             {
                 testCount++;
-                VastcoreLogger.Log("--- プリセットライブラリテスト ---", VastcoreLogger.LogLevel.Info);
+                Debug.Log("--- プリセットライブラリテスト ---");
                 bool result = testInstance.TestPresetLibrary();
                 if (result) passedCount++;
                 allPassed &= result;
@@ -131,18 +131,15 @@ namespace Vastcore.Testing
             }
             
             // 最終結果
-            VastcoreLogger.Log($"=== テスト結果: {passedCount}/{testCount} 成功 ===", 
-                allPassed ? VastcoreLogger.LogLevel.Info : VastcoreLogger.LogLevel.Warning);
+            Debug.Log($"=== テスト結果: {passedCount}/{testCount} 成功 ===");
             
             if (allPassed)
             {
-                VastcoreLogger.Log("🎉 全てのテストが成功しました！Deform統合システムは正常に動作しています。", 
-                    VastcoreLogger.LogLevel.Info);
+                Debug.Log("🎉 全てのテストが成功しました！Deform統合システムは正常に動作しています。");
             }
             else
             {
-                VastcoreLogger.Log("⚠️ 一部のテストが失敗しました。詳細を確認してください。", 
-                    VastcoreLogger.LogLevel.Warning);
+                Debug.Log("⚠️ 一部のテストが失敗しました。詳細を確認してください。");
             }
         }
         
@@ -155,20 +152,20 @@ namespace Vastcore.Testing
             {
                 // 条件付きコンパイルの確認
 #if DEFORM_AVAILABLE
-                VastcoreLogger.Log("✓ DEFORM_AVAILABLEシンボルが定義されています", VastcoreLogger.LogLevel.Debug);
+                Debug.Log("✓ DEFORM_AVAILABLEシンボルが定義されています");
                 
                 // Deform名前空間の確認
                 var deformType = System.Type.GetType("Deform.Deformable, Assembly-CSharp");
                 if (deformType != null)
                 {
-                    VastcoreLogger.Log("✓ Deform.Deformableクラスにアクセス可能です", VastcoreLogger.LogLevel.Debug);
+                    Debug.Log("✓ Deform.Deformableクラスにアクセス可能です");
                 }
                 else
                 {
-                    VastcoreLogger.Log("⚠️ Deform.Deformableクラスが見つかりません", VastcoreLogger.LogLevel.Warning);
+                    Debug.Log("⚠️ Deform.Deformableクラスが見つかりません");
                 }
 #else
-                VastcoreLogger.Log("✓ DEFORM_AVAILABLEシンボルが未定義（ダミーモード）", VastcoreLogger.LogLevel.Debug);
+                Debug.Log("✓ DEFORM_AVAILABLEシンボルが未定義（ダミーモード）");
 #endif
                 
                 // 必要なクラスの存在確認
@@ -176,15 +173,15 @@ namespace Vastcore.Testing
                 var generatorType = typeof(Vastcore.Generation.HighQualityPrimitiveGenerator);
                 var presetType = typeof(Vastcore.Core.DeformPresetLibrary);
                 
-                VastcoreLogger.Log($"✓ VastcoreDeformManager: {managerType.Name}", VastcoreLogger.LogLevel.Debug);
-                VastcoreLogger.Log($"✓ HighQualityPrimitiveGenerator: {generatorType.Name}", VastcoreLogger.LogLevel.Debug);
-                VastcoreLogger.Log($"✓ DeformPresetLibrary: {presetType.Name}", VastcoreLogger.LogLevel.Debug);
+                Debug.Log($"✓ VastcoreDeformManager: {managerType.Name}");
+                Debug.Log($"✓ HighQualityPrimitiveGenerator: {generatorType.Name}");
+                Debug.Log($"✓ DeformPresetLibrary: {presetType.Name}");
                 
                 return true;
             }
             catch (System.Exception ex)
             {
-                VastcoreLogger.Log($"❌ コンパイル確認エラー: {ex.Message}", VastcoreLogger.LogLevel.Error);
+                Debug.Log($"❌ コンパイル確認エラー: {ex.Message}");
                 return false;
             }
         }
@@ -195,11 +192,10 @@ namespace Vastcore.Testing
         private void LogTestResult(string testName, bool passed)
         {
             string status = passed ? "✓ 成功" : "❌ 失敗";
-            var logLevel = passed ? VastcoreLogger.LogLevel.Info : VastcoreLogger.LogLevel.Error;
             
             if (logDetailedResults)
             {
-                VastcoreLogger.Log($"{status} {testName}テスト", logLevel);
+                Debug.Log($"{status} {testName}テスト");
             }
         }
         

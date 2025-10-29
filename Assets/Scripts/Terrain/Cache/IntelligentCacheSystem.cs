@@ -297,10 +297,11 @@ namespace Vastcore.Generation.Cache
             {
                 var tileCoord = WorldToTileCoordinate(position);
                 
-                // 周辺タイルも含める
-                for (int x = -1; x <= 1; x++)
+                // preloadRadiusに基づいて周辺タイルも含める
+                int radius = Mathf.CeilToInt(preloadRadius / 2000f); // tileSize = 2000f
+                for (int x = -radius; x <= radius; x++)
                 {
-                    for (int y = -1; y <= 1; y++)
+                    for (int y = -radius; y <= radius; y++)
                     {
                         var neighborCoord = new Vector2Int(tileCoord.x + x, tileCoord.y + y);
                         

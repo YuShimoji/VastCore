@@ -14,7 +14,10 @@
         "Unity.ProBuilder.KdTree",
         "Unity.ProBuilder.Poly2Tri",
         "Unity.ProBuilder.Stl",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.TestFramework"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

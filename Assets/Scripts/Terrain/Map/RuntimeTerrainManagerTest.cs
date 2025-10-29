@@ -74,6 +74,7 @@ namespace Vastcore.Generation.Tests
             }
             
             LogTestResults();
+            Debug.Log($"Test completion status: HasError={hasError}, Message={errorMessage}");
             Debug.Log("=== RuntimeTerrainManager Test Suite Completed ===");
         }
         

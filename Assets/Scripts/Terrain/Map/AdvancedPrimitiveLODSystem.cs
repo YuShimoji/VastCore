@@ -702,6 +702,8 @@ namespace Vastcore.Generation.Map
         /// </summary>
         private void CacheMesh(string meshKey, Mesh mesh)
         {
+            if (!enableMemoryOptimization) return;
+            
             if (meshCache.Count >= maxCachedMeshes)
             {
                 CleanupMeshCache();

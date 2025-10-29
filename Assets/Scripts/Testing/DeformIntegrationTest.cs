@@ -1,5 +1,5 @@
 using UnityEngine;
-using Unity.ProBuilder;
+using UnityEngine.ProBuilder;
 using Vastcore.Core;
 using Vastcore.Generation;
 using Vastcore.Utils;
@@ -50,12 +50,12 @@ namespace Vastcore.Testing
         [ContextMenu("Run Deform Integration Test")]
         public void RunDeformIntegrationTest()
         {
-            VastcoreLogger.Log("Starting Deform Integration Test", VastcoreLogger.LogLevel.Info);
+            Debug.Log("Starting Deform Integration Test");
             
             bool allTestsPassed = true;
             
             // 1. VastcoreDeformManagerの初期化テスト
-            allTestsPassed &= TestDeformManagerInitialization();
+            allTestsPassed &= TestManagerInitialization();
             
             // 2. プリミティブ生成テスト
             allTestsPassed &= TestPrimitiveGeneration();
@@ -64,7 +64,7 @@ namespace Vastcore.Testing
             allTestsPassed &= TestDeformComponentApplication();
             
             // 4. 品質レベル切り替えテスト
-            allTestsPassed &= TestQualityLevelSwitching();
+            allTestsPassed &= TestQualitySwitching();
             
             // 5. パフォーマンステスト
             if (enablePerformanceTest)
@@ -76,35 +76,33 @@ namespace Vastcore.Testing
             allTestsPassed &= TestPresetLibrary();
             
             string result = allTestsPassed ? "PASSED" : "FAILED";
-            VastcoreLogger.Log($"Deform Integration Test completed: {result}", 
-                allTestsPassed ? VastcoreLogger.LogLevel.Info : VastcoreLogger.LogLevel.Error);
+            Debug.Log($"Deform Integration Test completed: {result}");
         }
         
         /// <summary>
         /// VastcoreDeformManagerの初期化テスト
         /// </summary>
-        private bool TestDeformManagerInitialization()
+        public bool TestManagerInitialization()
         {
-            VastcoreLogger.Log("Testing VastcoreDeformManager initialization...", VastcoreLogger.LogLevel.Debug);
+            Debug.Log("Testing VastcoreDeformManager initialization...");
             
             try
             {
                 var manager = VastcoreDeformManager.Instance;
                 if (manager == null)
                 {
-                    VastcoreLogger.Log("VastcoreDeformManager instance is null", VastcoreLogger.LogLevel.Error);
+                    Debug.Log("VastcoreDeformManager instance is null");
                     return false;
                 }
                 
                 var stats = manager.GetStats();
-                VastcoreLogger.Log($"DeformManager Stats - Managed: {stats.managedDeformablesCount}, " +
-                    $"Queued: {stats.queuedRequestsCount}, Enabled: {stats.systemEnabled}", VastcoreLogger.LogLevel.Debug);
+                Debug.Log($"DeformManager Stats - Managed: {stats.managedDeformablesCount}, Queued: {stats.queuedRequestsCount}, Enabled: {stats.systemEnabled}");
                 
                 return true;
             }
             catch (System.Exception ex)
             {
-                VastcoreLogger.Log($"DeformManager initialization failed: {ex.Message}", VastcoreLogger.LogLevel.Error);
+                Debug.Log($"DeformManager initialization failed: {ex.Message}");
                 return false;
             }
         }
@@ -112,9 +110,9 @@ namespace Vastcore.Testing
         /// <summary>
         /// プリミティブ生成テスト
         /// </summary>
-        private bool TestPrimitiveGeneration()
+        public bool TestPrimitiveGeneration()
         {
-            VastcoreLogger.Log("Testing primitive generation with Deform integration...", VastcoreLogger.LogLevel.Debug);
+            Debug.Log("Testing primitive generation with Deform integration...");
             
             bool allPassed = true;
             
@@ -123,36 +121,35 @@ namespace Vastcore.Testing
                 try
                 {
                     var quality = HighQualityPrimitiveGenerator.QualitySettings.High;
-                    var primitive = HighQualityPrimitiveGenerator.GeneratePrimitive(
-                        primitiveType, Vector3.one, quality);
+                    // var primitive = HighQualityPrimitiveGenerator.GeneratePrimitive(
+                    //     primitiveType, Vector3.one, quality);
+                    GameObject primitive = null; // TODO: 未実装のためコメント化
                     
                     if (primitive == null)
                     {
-                        VastcoreLogger.Log($"Failed to generate {primitiveType}", VastcoreLogger.LogLevel.Error);
+                        Debug.Log($"Failed to generate {primitiveType}");
                         allPassed = false;
                         continue;
                     }
                     
-                    #if DEFORM_AVAILABLE
+#if DEFORM_AVAILABLE
                     // Deformableコンポーネントの確認
                     var deformable = primitive.GetComponent<Deformable>();
                     if (quality.enableDeformSystem && deformable == null)
                     {
-                        VastcoreLogger.Log($"Deformable component missing on {primitiveType}", VastcoreLogger.LogLevel.Warning);
+                        Debug.Log($"Deformable component missing on {primitiveType}");
                     }
                     
                     // Deformerコンポーネントの確認
                     var deformers = primitive.GetComponents<Deformer>();
                     if (quality.enableDeformSystem && deformers.Length == 0)
                     {
-                        VastcoreLogger.Log($"No Deformer components found on {primitiveType}", VastcoreLogger.LogLevel.Warning);
+                        Debug.Log($"No Deformer components found on {primitiveType}");
                     }
                     
-                    VastcoreLogger.Log($"Successfully generated {primitiveType} with {deformers.Length} deformers", 
-                        VastcoreLogger.LogLevel.Debug);
+                    Debug.Log($"Successfully generated {primitiveType} with {deformers.Length} deformers");
 #else
-                    VastcoreLogger.Log($"Successfully generated {primitiveType} (Deform disabled)", 
-                        VastcoreLogger.LogLevel.Debug);
+                    Debug.Log($"Successfully generated {primitiveType} (Deform disabled)");
 #endif
                     
                     // テスト後のクリーンアップ
@@ -167,7 +164,7 @@ namespace Vastcore.Testing
                 }
                 catch (System.Exception ex)
                 {
-                    VastcoreLogger.Log($"Exception testing {primitiveType}: {ex.Message}", VastcoreLogger.LogLevel.Error);
+                    Debug.Log($"Exception testing {primitiveType}: {ex.Message}");
                     allPassed = false;
                 }
             }
@@ -178,9 +175,9 @@ namespace Vastcore.Testing
         /// <summary>
         /// Deformコンポーネント適用テスト
         /// </summary>
-        private bool TestDeformComponentApplication()
+        public bool TestDeformComponentApplication()
         {
-            VastcoreLogger.Log("Testing Deform component application...", VastcoreLogger.LogLevel.Debug);
+            Debug.Log("Testing Deform component application...");
             
             try
             {
@@ -219,7 +216,7 @@ namespace Vastcore.Testing
             }
             catch (System.Exception ex)
             {
-                VastcoreLogger.Log($"Deform component application test failed: {ex.Message}", VastcoreLogger.LogLevel.Error);
+                Debug.Log($"Deform component application test failed: {ex.Message}");
                 return false;
             }
         }
@@ -227,9 +224,9 @@ namespace Vastcore.Testing
         /// <summary>
         /// 品質レベル切り替えテスト
         /// </summary>
-        private bool TestQualityLevelSwitching()
+        public bool TestQualitySwitching()
         {
-            VastcoreLogger.Log("Testing quality level switching...", VastcoreLogger.LogLevel.Debug);
+            Debug.Log("Testing quality level switching...");
             
             bool allPassed = true;
             
@@ -237,8 +234,9 @@ namespace Vastcore.Testing
             {
                 try
                 {
-                    var primitive = HighQualityPrimitiveGenerator.GeneratePrimitive(
-                        PrimitiveTerrainGenerator.PrimitiveType.Cube, Vector3.one, quality);
+                    // var primitive = HighQualityPrimitiveGenerator.GeneratePrimitive(
+                    //     PrimitiveTerrainGenerator.PrimitiveType.Cube, Vector3.one, quality);
+                    GameObject primitive = null; // TODO: 未実装のためコメント化
                     
                     if (primitive == null)
                     {
@@ -259,8 +257,7 @@ namespace Vastcore.Testing
                         (quality.enableGeologicalDeformation ? 1 : 0) + 
                         (quality.enableOrganicDeformation ? 1 : 0) + 1 : 0;
                     
-                    VastcoreLogger.Log($"Quality {quality.deformQuality}: Expected {expectedDeformers}, " +
-                        $"Found {deformers.Length} deformers", VastcoreLogger.LogLevel.Debug);
+                    Debug.Log($"Quality {quality.deformQuality}: Expected {expectedDeformers}, Found {deformers.Length} deformers");
                     
                     // クリーンアップ
                     if (Application.isPlaying)
@@ -274,7 +271,7 @@ namespace Vastcore.Testing
                 }
                 catch (System.Exception ex)
                 {
-                    VastcoreLogger.Log($"Quality level test failed: {ex.Message}", VastcoreLogger.LogLevel.Error);
+                    Debug.Log($"Quality level test failed: {ex.Message}");
                     allPassed = false;
                 }
             }
@@ -285,9 +282,9 @@ namespace Vastcore.Testing
         /// <summary>
         /// パフォーマンステスト
         /// </summary>
-        private bool TestPerformance()
+        public bool TestPerformance()
         {
-            VastcoreLogger.Log("Running performance test...", VastcoreLogger.LogLevel.Debug);
+            Debug.Log("Running performance test...");
             
             try
             {
@@ -298,10 +295,11 @@ namespace Vastcore.Testing
                 {
                     float startTime = Time.realtimeSinceStartup;
                     
-                    var primitive = HighQualityPrimitiveGenerator.GeneratePrimitive(
-                        PrimitiveTerrainGenerator.PrimitiveType.Sphere, 
-                        Vector3.one, 
-                        HighQualityPrimitiveGenerator.QualitySettings.High);
+                    // var primitive = HighQualityPrimitiveGenerator.GeneratePrimitive(
+                    //     PrimitiveTerrainGenerator.PrimitiveType.Sphere, 
+                    //     Vector3.one, 
+                    //     HighQualityPrimitiveGenerator.QualitySettings.High);
+                    GameObject primitive = null; // TODO: 未実装のためコメント化
                     
                     float endTime = Time.realtimeSinceStartup;
                     
@@ -323,14 +321,13 @@ namespace Vastcore.Testing
                 }
                 
                 float averageTime = totalTime / successCount;
-                VastcoreLogger.Log($"Performance Test Results: {successCount}/{testIterations} successful, " +
-                    $"Average time: {averageTime * 1000f:F2}ms", VastcoreLogger.LogLevel.Info);
+                Debug.Log($"Performance Test Results: {successCount}/{testIterations} successful, Average time: {averageTime * 1000f:F2}ms");
                 
                 return successCount == testIterations && averageTime < 0.1f; // 100ms以下を目標
             }
             catch (System.Exception ex)
             {
-                VastcoreLogger.Log($"Performance test failed: {ex.Message}", VastcoreLogger.LogLevel.Error);
+                Debug.Log($"Performance test failed: {ex.Message}");
                 return false;
             }
         }
@@ -338,9 +335,9 @@ namespace Vastcore.Testing
         /// <summary>
         /// プリセットライブラリテスト
         /// </summary>
-        private bool TestPresetLibrary()
+        public bool TestPresetLibrary()
         {
-            VastcoreLogger.Log("Testing DeformPresetLibrary...", VastcoreLogger.LogLevel.Debug);
+            Debug.Log("Testing DeformPresetLibrary...");
             
             try
             {
@@ -354,8 +351,12 @@ namespace Vastcore.Testing
                 library.ApplyPresetToGameObject(testObject, "風化侵食", 0.5f);
                 
                 // Deformerが追加されたかチェック
+#if DEFORM_AVAILABLE
                 var deformers = testObject.GetComponents<Deformer>();
                 bool hasDeformers = deformers.Length > 0;
+#else
+                bool hasDeformers = false; // Deform disabled
+#endif
                 
                 // クリーンアップ
                 if (Application.isPlaying)
@@ -369,14 +370,13 @@ namespace Vastcore.Testing
                     DestroyImmediate(library);
                 }
                 
-                VastcoreLogger.Log($"Preset library test: {(hasDeformers ? "PASSED" : "FAILED")}", 
-                    hasDeformers ? VastcoreLogger.LogLevel.Debug : VastcoreLogger.LogLevel.Warning);
+                Debug.Log($"Preset library test: {(hasDeformers ? "PASSED" : "FAILED")}");
                 
                 return hasDeformers;
             }
             catch (System.Exception ex)
             {
-                VastcoreLogger.Log($"Preset library test failed: {ex.Message}", VastcoreLogger.LogLevel.Error);
+                Debug.Log($"Preset library test failed: {ex.Message}");
                 return false;
             }
         }
@@ -387,15 +387,16 @@ namespace Vastcore.Testing
         [ContextMenu("Test Single Primitive")]
         public void TestSinglePrimitive()
         {
-            var primitive = HighQualityPrimitiveGenerator.GeneratePrimitive(
-                PrimitiveTerrainGenerator.PrimitiveType.Crystal,
-                new Vector3(2f, 3f, 2f),
-                HighQualityPrimitiveGenerator.QualitySettings.High);
+            // var primitive = HighQualityPrimitiveGenerator.GeneratePrimitive(
+            //     PrimitiveTerrainGenerator.PrimitiveType.Crystal,
+            //     new Vector3(2f, 3f, 2f),
+            //     HighQualityPrimitiveGenerator.QualitySettings.High);
+            GameObject primitive = null; // TODO: 未実装のためコメント化
             
             if (primitive != null)
             {
                 primitive.transform.position = transform.position;
-                VastcoreLogger.Log("Test primitive generated successfully", VastcoreLogger.LogLevel.Info);
+                Debug.Log("Test primitive generated successfully");
             }
         }
     }

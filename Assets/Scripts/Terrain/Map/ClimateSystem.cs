@@ -459,6 +459,9 @@ namespace Vastcore.Generation
             modified.temperature = Mathf.Lerp(-25f, 25f, globalTemperature) + 
                                  (baseClimate.temperature - 0f) * 0.5f;
             
+            // 温度範囲の検証（tempRangeを使用）
+            modified.temperature = Mathf.Clamp(modified.temperature, -tempRange/2, tempRange/2);
+            
             // 全球湿度調整
             modified.moisture *= globalMoisture;
             

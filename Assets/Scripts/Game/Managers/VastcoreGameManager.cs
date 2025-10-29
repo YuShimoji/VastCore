@@ -3,9 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using Vastcore.Core;
 using Vastcore.Utils;
-using Vastcore.Terrain;
 using Vastcore.Player;
 using Vastcore.UI;
+using Vastcore.UI.Menus;
 using Vastcore.Camera.Cinematic;
 
 namespace Vastcore.Game.Managers
@@ -20,7 +20,7 @@ namespace Vastcore.Game.Managers
 
         #region マネージャー参照
         [Header("Managers")]
-        [SerializeField] private TerrainGenerator m_TerrainGenerator;
+        // [SerializeField] private TerrainGenerator m_TerrainGenerator; // TODO: TerrainGeneratorクラスが未実装
         [SerializeField] private TitleScreenManager m_TitleScreenManager;
         #endregion
 
@@ -150,18 +150,18 @@ namespace Vastcore.Game.Managers
         {
             Debug.Log("[VastcoreGameManager] Starting Game Sequence...");
 
-            if (m_TerrainGenerator == null)
-            {
-                m_TerrainGenerator = FindFirstObjectByType<TerrainGenerator>();
-            }
+            // if (m_TerrainGenerator == null)
+            // {
+            //     m_TerrainGenerator = FindFirstObjectByType<TerrainGenerator>();
+            // }
 
-            if (m_TerrainGenerator == null)
-            {
-                Debug.LogError("TerrainGenerator is not assigned!");
-                yield break;
-            }
-            yield return StartCoroutine(m_TerrainGenerator.GenerateTerrain());
-            Debug.Log("[VastcoreGameManager] Terrain Generation Completed.");
+            // if (m_TerrainGenerator == null)
+            // {
+            //     Debug.LogError("TerrainGenerator is not assigned!");
+            //     yield break;
+            // }
+            // yield return StartCoroutine(m_TerrainGenerator.GenerateTerrain());
+            // Debug.Log("[VastcoreGameManager] Terrain Generation Completed.");
 
             yield return StartCoroutine(SetupPlayer());
             Debug.Log("[VastcoreGameManager] Player Setup Completed.");
@@ -198,12 +198,12 @@ namespace Vastcore.Game.Managers
             if (m_CurrentPlayer == null && m_PlayerPrefab != null)
             {
                 Vector3 spawnPosition = Vector3.zero;
-                if (m_TerrainGenerator != null)
-                {
-                    // A more robust spawn position logic is needed here.
-                    // For now, spawn at a safe height above the center.
-                    spawnPosition = new Vector3(m_TerrainGenerator.terrainSize.x / 2, 100, m_TerrainGenerator.terrainSize.z / 2);
-                }
+                // if (m_TerrainGenerator != null)
+                // {
+                //     // A more robust spawn position logic is needed here.
+                //     // For now, spawn at a safe height above the center.
+                //     spawnPosition = new Vector3(m_TerrainGenerator.terrainSize.x / 2, 100, m_TerrainGenerator.terrainSize.z / 2);
+                // }
                 m_CurrentPlayer = Instantiate(m_PlayerPrefab, spawnPosition, Quaternion.identity);
             }
 
@@ -225,7 +225,8 @@ namespace Vastcore.Game.Managers
                 m_CinematicCamera = camObj.GetComponent<CinematicCameraController>();
                 if (m_CinematicCamera != null)
                 {
-                    m_CinematicCamera.Setup(m_CurrentPlayer.GetComponent<AdvancedPlayerController>(), m_TerrainGenerator.gameObject);
+                    // m_CinematicCamera.Setup(m_CurrentPlayer.GetComponent<AdvancedPlayerController>(), m_TerrainGenerator.gameObject);
+                    m_CinematicCamera.Setup(m_CurrentPlayer.GetComponent<AdvancedPlayerController>(), null); // TODO: TerrainGenerator実装後に修正
                 }
             }
 

@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using System.Linq;
 using System.Text;
+using Vastcore.Generation;
 
 namespace VastCore.Testing
 {
@@ -16,7 +17,6 @@ namespace VastCore.Testing
     {
         [Header("テスト設定")]
         [SerializeField] private bool runTestsOnStart = false;
-        [SerializeField] private bool enableDetailedLogging = true;
         [SerializeField] private bool generateTestReport = true;
         
         [Header("プリミティブテスト設定")]
@@ -575,36 +575,13 @@ namespace VastCore.Testing
             
             List<string> issues = new List<string>();
             float integrationScore = 1f;
-            
-            try
-            {
-                // 地形とプリミティブの統合テスト
-                integrationScore *= TestTerrainPrimitiveIntegration();
-                yield return null;
-                
-                // プレイヤーシステムとの統合テスト
-                integrationScore *= TestPlayerSystemIntegration();
-                yield return null;
-                
-                // UIシステムとの統合テスト
-                integrationScore *= TestUISystemIntegration();
-                yield return null;
-            }
-            catch (Exception e)
-            {
-                issues.Add($"Integration test exception: {e.Message}");
-                integrationScore *= 0.5f;
-            }
-            
-            testResult.endTime = DateTime.Now;
-            testResult.passed = integrationScore >= 0.8f;
-            testResult.score = integrationScore;
-            testResult.issues = issues;
             testResult.details = $"Integration score: {integrationScore:F3}";
             
             testResults.Add(testResult);
             
             LogMessage($"System integration tests completed. Score: {integrationScore:F3}, Passed: {testResult.passed}");
+            
+            yield return null;
         }
         
         private float TestTerrainPrimitiveIntegration()

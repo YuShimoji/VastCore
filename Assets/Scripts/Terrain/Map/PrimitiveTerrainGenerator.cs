@@ -386,7 +386,6 @@ namespace Vastcore.Generation
                         proBuilderMesh = archObject.AddComponent<ProBuilderMesh>();
                         // TODO: RebuildFromMesh機能はProBuilder API変更により一時的に無効化
                         Debug.LogWarning($"RebuildFromMesh feature is temporarily disabled due to ProBuilder API changes.");
-                        // proBuilderMesh.RebuildFromMesh(meshFilter.sharedMesh);
                     }
                     
                     // 一時的なオブジェクトを削除
@@ -552,7 +551,6 @@ namespace Vastcore.Generation
             {
                 // TODO: Subdivide機能はProBuilder API変更により一時的に無効化
                 Debug.LogWarning($"Subdivide feature is temporarily disabled due to ProBuilder API changes. Requested level: {subdivisionLevel}");
-                // mesh.Subdivide();
             }
         }
         #endregion     

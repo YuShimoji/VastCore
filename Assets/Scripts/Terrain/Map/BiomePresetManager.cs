@@ -258,36 +258,5 @@ namespace Vastcore.Generation
                 Debug.LogError($"BiomePresetManager: Failed to apply preset to terrain: {e.Message}");
             }
         }
-
-#if UNITY_EDITOR
-        /// <summary>
-        /// Creates a new BiomePreset asset in the editor.
-        /// </summary>
-        [MenuItem("Vastcore/Create New Biome Preset")]
-        public static void CreateNewPresetInEditor()
-        {
-            var preset = ScriptableObject.CreateInstance<BiomePreset>();
-            // preset.InitializeDefault(); // Assuming BiomePreset has this method
-
-            if (!AssetDatabase.IsValidFolder("Assets/Data"))
-            {
-                AssetDatabase.CreateFolder("Assets", "Data");
-            }
-            if (!AssetDatabase.IsValidFolder("Assets/Data/BiomePresets"))
-            {
-                AssetDatabase.CreateFolder("Assets/Data", "BiomePresets");
-            }
-
-            string path = AssetDatabase.GenerateUniqueAssetPath("Assets/Data/BiomePresets/NewBiomePreset.asset");
-            AssetDatabase.CreateAsset(preset, path);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-
-            Selection.activeObject = preset;
-            EditorGUIUtility.PingObject(preset);
-
-            Debug.Log($"Created a new biome preset at: {path}");
-        }
-#endif
     }
 }

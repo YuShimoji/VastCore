@@ -124,6 +124,8 @@ namespace Vastcore.Generation
             foreach (var type in basicTypes)
             {
                 var rule = PrimitiveTerrainRule.CreateDefault(type);
+                // minPrimitiveScaleとmaxPrimitiveScaleを使用したスケール範囲設定
+                rule.scaleRange = new Vector2(minPrimitiveScale, maxPrimitiveScale);
                 primitiveRules.Add(rule);
             }
         }
@@ -301,7 +303,10 @@ namespace Vastcore.Generation
                 }
                 
                 // 地形に整列
-                TerrainAlignmentSystem.AlignPrimitiveToTerrain(primitiveComponent.gameObject, terrainInfo.normal, alignmentSettings);
+                if (alignToTerrainNormal)
+                {
+                    TerrainAlignmentSystem.AlignPrimitiveToTerrain(primitiveComponent.gameObject, terrainInfo.normal, alignmentSettings);
+                }
                 
                 // LOD設定
                 if (primitiveComponent != null)

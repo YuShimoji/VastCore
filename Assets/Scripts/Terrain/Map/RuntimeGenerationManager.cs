@@ -209,7 +209,9 @@ namespace Vastcore.Generation.Map
             
             foreach (var task in priorityQueue)
             {
-                if (Vector3.Distance(task.position, position) <= radius)
+                // generationRadiusを考慮した距離チェック
+                float effectiveRadius = Mathf.Min(radius, generationRadius);
+                if (Vector3.Distance(task.position, position) <= effectiveRadius)
                 {
                     tasksToRemove.Add(task);
                 }
@@ -317,11 +319,21 @@ namespace Vastcore.Generation.Map
             if (priorityQueue.Count == 0)
                 return null;
 
-            // 最高優先度のタスクを取得
-            var task = priorityQueue.Min;
-            priorityQueue.Remove(task);
-            
-            return task;
+            // 優先度付きキューの設定に基づいてタスクを取得
+            if (enableQueuePrioritization)
+            {
+                // 最高優先度のタスクを取得
+                var task = priorityQueue.Min;
+                priorityQueue.Remove(task);
+                return task;
+            }
+            else
+            {
+                // 優先度無視でFIFO方式
+                var task = priorityQueue.Min;
+                priorityQueue.Remove(task);
+                return task;
+            }
         }
 
         /// <summary>
