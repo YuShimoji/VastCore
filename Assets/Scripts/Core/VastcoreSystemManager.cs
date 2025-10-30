@@ -20,7 +20,6 @@ namespace Vastcore.Core
         public bool enableDebugVisualizer = true;
         public bool enableDiagnostics = true;
         public bool enableTerrainErrorRecovery = true;
-        public bool enablePrimitiveErrorRecovery = true;
         
         [Header("システム設定")]
         public Vastcore.Utils.VastcoreLogger.LogLevel systemLogLevel = Vastcore.Utils.VastcoreLogger.LogLevel.Info;
@@ -34,7 +33,11 @@ namespace Vastcore.Core
             {
                 if (instance == null)
                 {
+<<<<<<< HEAD
+                    instance = FindFirstObjectByType<VastcoreSystemManager>();
+=======
                     var existingManager = FindFirstObjectByType<VastcoreSystemManager>();
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreSystemManager");
@@ -65,7 +68,6 @@ namespace Vastcore.Core
         private VastcoreDebugVisualizer debugVisualizer;
         private VastcoreDiagnostics diagnostics;
         private TerrainErrorRecovery terrainErrorRecovery;
-        private PrimitiveErrorRecovery primitiveErrorRecovery;
         
         private void Awake()
         {
@@ -135,12 +137,6 @@ namespace Vastcore.Core
                 if (enableTerrainErrorRecovery)
                 {
                     InitializeTerrainErrorRecovery();
-                }
-                
-                // 6. プリミティブエラー回復システムの初期化
-                if (enablePrimitiveErrorRecovery)
-                {
-                    InitializePrimitiveErrorRecovery();
                 }
                 
                 // システム初期化完了
@@ -274,29 +270,6 @@ namespace Vastcore.Core
             }
         }
         
-        private void InitializePrimitiveErrorRecovery()
-        {
-            try
-            {
-                primitiveErrorRecovery = PrimitiveErrorRecovery.Instance;
-                if (primitiveErrorRecovery != null)
-                {
-                    if (logger != null)
-                    {
-                        logger.LogInfo("SystemManager", "PrimitiveErrorRecovery初期化完了");
-                    }
-                    else
-                    {
-                        Debug.Log("PrimitiveErrorRecovery初期化完了");
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Debug.LogError($"PrimitiveErrorRecovery初期化エラー: {error.Message}");
-            }
-        }
-        
         private void LogSystemStatus()
         {
             if (logger == null) return;
@@ -308,7 +281,6 @@ namespace Vastcore.Core
             logger.LogInfo("SystemManager", $"DebugVisualizer: {(debugVisualizer != null ? "Active" : "Inactive")}");
             logger.LogInfo("SystemManager", $"Diagnostics: {(diagnostics != null ? "Active" : "Inactive")}");
             logger.LogInfo("SystemManager", $"TerrainErrorRecovery: {(terrainErrorRecovery != null ? "Active" : "Inactive")}");
-            logger.LogInfo("SystemManager", $"PrimitiveErrorRecovery: {(primitiveErrorRecovery != null ? "Active" : "Inactive")}");
         }
         
         private void PerformSystemHealthCheck()
@@ -466,7 +438,6 @@ namespace Vastcore.Core
             info.AppendLine($"DebugVisualizer: {(debugVisualizer != null ? "Active" : "Inactive")}");
             info.AppendLine($"Diagnostics: {(diagnostics != null ? "Active" : "Inactive")}");
             info.AppendLine($"TerrainErrorRecovery: {(terrainErrorRecovery != null ? "Active" : "Inactive")}");
-            info.AppendLine($"PrimitiveErrorRecovery: {(primitiveErrorRecovery != null ? "Active" : "Inactive")}");
             info.AppendLine($"Health Monitoring: {enableSystemHealthMonitoring}");
             info.AppendLine($"Last Health Check: {lastHealthCheck}");
             

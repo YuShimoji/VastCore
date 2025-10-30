@@ -31,6 +31,7 @@ namespace Vastcore.UI
         private float lastPerformanceCheck = 0f;
         private List<float> recentFrameTimes = new List<float>();
         private bool isPerformanceLimited = false;
+        private int baseMaxUpdatesPerFrame;
         
         // Coroutines
         private Coroutine batchUpdateCoroutine;
@@ -38,6 +39,8 @@ namespace Vastcore.UI
         
         private void Start()
         {
+            baseMaxUpdatesPerFrame = maxUpdatesPerFrame;
+
             if (enableRealtimeUpdates)
             {
                 StartBatchUpdateSystem();
@@ -288,11 +291,11 @@ namespace Vastcore.UI
                 averageFrameTime += frameTime;
             }
             averageFrameTime /= recentFrameTimes.Count;
-            
+
             // Adjust performance limitations
             bool wasPerformanceLimited = isPerformanceLimited;
             isPerformanceLimited = averageFrameTime > targetFrameTime * 1.2f; // 20% tolerance
-            
+
             if (isPerformanceLimited != wasPerformanceLimited)
             {
                 if (isPerformanceLimited)
@@ -300,19 +303,20 @@ namespace Vastcore.UI
                     Debug.LogWarning("RealtimeUpdateSystem: Performance limited mode enabled");
                     // Reduce update frequency
                     updateThrottleTime = Mathf.Min(updateThrottleTime * 1.5f, 0.5f);
+                    // Reduce batch size
+                    maxUpdatesPerFrame = Mathf.Max(1, maxUpdatesPerFrame / 2);
                 }
                 else
                 {
                     Debug.Log("RealtimeUpdateSystem: Performance limitation removed");
                     // Restore normal update frequency
                     updateThrottleTime = Mathf.Max(updateThrottleTime / 1.5f, 0.05f);
+                    // Restore batch size
+                    maxUpdatesPerFrame = Mathf.Min(baseMaxUpdatesPerFrame, maxUpdatesPerFrame * 2);
                 }
             }
         }
-        
-        /// <summary>
-        /// Gets current performance statistics
-        /// </summary>
+
         public PerformanceStats GetPerformanceStats()
         {
             float averageFrameTime = 0f;

@@ -39,7 +39,11 @@ namespace Vastcore
             {
                 if (instance == null)
                 {
+<<<<<<< HEAD
+                    instance = FindFirstObjectByType<VastcoreDiagnostics>();
+=======
                     var existingDiagnostics = FindFirstObjectByType<VastcoreDiagnostics>();
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreDiagnostics");

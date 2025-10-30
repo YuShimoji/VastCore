@@ -1,5 +1,4 @@
 using UnityEngine;
-using Vastcore.Player;
 using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Generation;
@@ -102,7 +101,7 @@ namespace Vastcore.Generation
             // プレイヤーを自動検索
             if (autoFindPlayer && playerTransform == null)
             {
-                FindPlayerTransform();
+                playerTransform = FindPlayerTransform();
             }
             
             // デフォルト設定を調整
@@ -122,8 +121,10 @@ namespace Vastcore.Generation
         /// <summary>
         /// プレイヤーのTransformを検索
         /// </summary>
-        private void FindPlayerTransform()
+        private Transform FindPlayerTransform()
         {
+<<<<<<< HEAD:Assets/Scripts/Generation/Map/TileManager.cs
+=======
             // AdvancedPlayerControllerを検索
             var playerController = FindFirstObjectByType<Vastcore.Player.AdvancedPlayerController>();
             if (playerController != null)
@@ -134,23 +135,22 @@ namespace Vastcore.Generation
             }
             
             // "Player"タグのオブジェクトを検索
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da:Assets/Scripts/Terrain/Map/TileManager.cs
             var playerObject = GameObject.FindGameObjectWithTag("Player");
             if (playerObject != null)
             {
-                playerTransform = playerObject.transform;
                 Debug.Log("Found Player by tag");
-                return;
+                return playerObject.transform;
             }
-            
-            // メインカメラを使用
+
             if (Camera.main != null)
             {
-                playerTransform = Camera.main.transform;
                 Debug.Log("Using Main Camera as player");
-                return;
+                return Camera.main.transform;
             }
-            
+
             Debug.LogWarning("Could not find player transform");
+            return null;
         }
         
         /// <summary>

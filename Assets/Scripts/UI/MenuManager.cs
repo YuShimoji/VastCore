@@ -2,9 +2,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
-using NarrativeGen.Core;
+using Vastcore.Core;
 
-namespace NarrativeGen.UI
+namespace Vastcore.UI
 {
     public class MenuManager : MonoBehaviour
     {

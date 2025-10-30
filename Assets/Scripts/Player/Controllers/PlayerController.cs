@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CapsuleCollider))]
@@ -11,6 +12,8 @@ public class PlayerController : MonoBehaviour
     public float moveForce = 70f;
     [Tooltip("プレイヤーの最高速度")]
     public float maxSpeed = 15f;
+    [Tooltip("入力感度（1.0が標準）")]
+    public float inputSensitivity = 1.0f;
     [Tooltip("空中でのコントロールのしやすさ（0に近いほど操作不能）")]
     [Range(0.0f, 1.0f)]
     public float airControlFactor = 0.5f;
@@ -23,7 +26,10 @@ public class PlayerController : MonoBehaviour
     [Tooltip("スプリントの持続時間（秒）")]
     public float sprintDuration = 1.5f;
     [Tooltip("スプリント入力キー")]
-    public KeyCode sprintKey = KeyCode.LeftShift;
+    public Key sprintKey = Key.LeftShift;
+    public bool enableSprintFov = true;
+    public float sprintFov = 70f;
+    public float fovLerpSpeed = 6f;
     #endregion
 
     #region ジャンプ
@@ -31,7 +37,7 @@ public class PlayerController : MonoBehaviour
     [Tooltip("ジャンプの強さ")]
     public float jumpForce = 8f;
     [Tooltip("ジャンプ入力キー")]
-    public KeyCode jumpKey = KeyCode.Space;
+    public Key jumpKey = Key.Space;
     #endregion
     
     #region 接地判定
@@ -50,6 +56,26 @@ public class PlayerController : MonoBehaviour
     public float coyoteTimeDuration = 0.15f;
     #endregion
 
+    #region ジャンプバッファ
+    public float jumpBufferDuration = 0.12f;
+    #endregion
+
+    #region カメラ追従
+    [Header("カメラ追従")]
+    [Tooltip("カメラの相対位置オフセット")]
+    public Vector3 cameraOffset = new Vector3(0, 5, -10);
+    [Tooltip("カメラ追従のスムーズさ")]
+    public float cameraSmoothSpeed = 5f;
+    [Tooltip("カメラがプレイヤーを注視する高さオフセット")]
+    public float cameraLookAtHeight = 2f;
+    #endregion
+    
+    #region 回転
+    [Header("回転")]
+    [Tooltip("キャラクターの回転速度")]
+    public float rotationSpeed = 10f;
+    #endregion
+
     #region 内部変数
     private Rigidbody rb;
     private CapsuleCollider capsule;
@@ -58,6 +84,9 @@ public class PlayerController : MonoBehaviour
     private Coroutine sprintCoroutine;
     private float coyoteTimeCounter;
     private Camera mainCamera;
+    private float jumpBufferCounter;
+    private float defaultFov;
+    private bool isSprinting;
     #endregion
 
     #region 状態プロパティ（デバッグ用）
@@ -86,20 +115,32 @@ public class PlayerController : MonoBehaviour
 
         // パフォーマンス向上のため、メインカメラをキャッシュ
         mainCamera = Camera.main;
+        if (mainCamera != null) defaultFov = mainCamera.fieldOfView;
     }
 
     void Update()
     {
         // 入力受付
-        moveInput.x = Input.GetAxis("Horizontal");
-        moveInput.y = Input.GetAxis("Vertical");
-
-        if (Input.GetKeyDown(jumpKey))
+        // Input Systemでのキーボード入力取得
+        Vector2 keyboardInput = Vector2.zero;
+        if (Keyboard.current != null)
         {
-            jumpRequested = true;
+            if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed) keyboardInput.y += 1;
+            if (Keyboard.current.sKey.isPressed || Keyboard.current.downArrowKey.isPressed) keyboardInput.y -= 1;
+            if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) keyboardInput.x += 1;
+            if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) keyboardInput.x -= 1;
         }
 
-        if (Input.GetKeyDown(sprintKey))
+        moveInput = keyboardInput;
+        moveInput *= inputSensitivity;
+
+        if (Keyboard.current != null && Keyboard.current[jumpKey].wasPressedThisFrame)
+        {
+            jumpRequested = true;
+            jumpBufferCounter = jumpBufferDuration;
+        }
+
+        if (Keyboard.current != null && Keyboard.current[sprintKey].wasPressedThisFrame)
         {
             TrySprint();
         }
@@ -119,6 +160,7 @@ public class PlayerController : MonoBehaviour
         {
             coyoteTimeCounter -= Time.fixedDeltaTime;
         }
+        if (jumpBufferCounter > 0f) jumpBufferCounter -= Time.fixedDeltaTime;
 
         // 2. 移動処理
         Vector3 controlDirection = GetControlDirection();
@@ -129,7 +171,7 @@ public class PlayerController : MonoBehaviour
 
             // キャラクターを移動方向へスムーズに向ける
             Quaternion targetRotation = Quaternion.LookRotation(controlDirection, Vector3.up);
-            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime * 10f));
+            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime * rotationSpeed));
         }
 
         // 3. ジャンプ処理
@@ -153,7 +195,7 @@ public class PlayerController : MonoBehaviour
     private void HandleJump()
     {
         // 接地しているか、またはコヨーテタイム中であればジャンプ可能
-        if (jumpRequested && coyoteTimeCounter > 0f)
+        if ((jumpRequested || jumpBufferCounter > 0f) && coyoteTimeCounter > 0f)
         {
             // Y軸の速度を一度リセットしてから力を加える
             rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
@@ -161,6 +203,7 @@ public class PlayerController : MonoBehaviour
 
             // ジャンプしたらコヨーテタイムは即時終了
             coyoteTimeCounter = 0f;
+            jumpBufferCounter = 0f;
         }
         jumpRequested = false;
     }
@@ -176,9 +219,11 @@ public class PlayerController : MonoBehaviour
 
     private IEnumerator SprintCoroutine()
     {
+        isSprinting = true;
         currentMaxSpeed = sprintMaxSpeed;
         yield return new WaitForSeconds(sprintDuration);
         currentMaxSpeed = maxSpeed;
+        isSprinting = false;
         sprintCoroutine = null;
     }
     
@@ -189,6 +234,28 @@ public class PlayerController : MonoBehaviour
         {
             Vector3 limitedVel = horizontalVelocity.normalized * currentMaxSpeed;
             rb.linearVelocity = new Vector3(limitedVel.x, rb.linearVelocity.y, limitedVel.z);
+        }
+    }
+    
+    private void LateUpdate()
+    {
+        // カメラ追従処理
+        if (mainCamera != null)
+        {
+            // カメラの目標位置を計算（プレイヤーの位置 + オフセットをプレイヤーの回転で変換）
+            Vector3 desiredPosition = transform.position + transform.rotation * cameraOffset;
+            
+            // スムーズにカメラを移動
+            mainCamera.transform.position = Vector3.Lerp(mainCamera.transform.position, desiredPosition, Time.deltaTime * cameraSmoothSpeed);
+            
+            // カメラをプレイヤーの少し上を向くように設定
+            Vector3 lookAtTarget = transform.position + Vector3.up * cameraLookAtHeight;
+            mainCamera.transform.LookAt(lookAtTarget);
+            if (enableSprintFov)
+            {
+                float targetFov = isSprinting ? sprintFov : defaultFov;
+                mainCamera.fieldOfView = Mathf.Lerp(mainCamera.fieldOfView, targetFov, Time.deltaTime * fovLerpSpeed);
+            }
         }
     }
     

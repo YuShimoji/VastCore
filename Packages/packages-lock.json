@@ -10,10 +10,18 @@
       "hash": "9e57dd3864ea6c742d819959724c99ca574a2f76"
     },
     "com.unity.adaptiveperformance": {
+<<<<<<< HEAD
+      "version": "6.0.0",
+=======
       "version": "5.1.5",
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
       "depth": 1,
-      "source": "registry",
+      "source": "builtin",
       "dependencies": {
+<<<<<<< HEAD
+        "com.unity.modules.adaptiveperformance": "1.0.0"
+      }
+=======
         "com.unity.profiling.core": "1.0.2",
         "com.unity.modules.subsystems": "1.0.0"
       },
@@ -62,6 +70,7 @@
         "com.unity.nuget.newtonsoft-json": "3.2.1"
       },
       "url": "https://packages.unity.com"
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
     },
     "com.unity.burst": {
       "version": "1.8.24",
@@ -74,7 +83,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.collab-proxy": {
-      "version": "2.8.2",
+      "version": "2.9.3",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
@@ -82,7 +91,11 @@
     },
     "com.unity.collections": {
       "version": "2.5.7",
+<<<<<<< HEAD
+      "depth": 2,
+=======
       "depth": 1,
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
       "source": "registry",
       "dependencies": {
         "com.unity.burst": "1.8.19",
@@ -117,8 +130,13 @@
       "source": "builtin",
       "dependencies": {
         "com.unity.mobile.android-logcat": "1.4.5",
+<<<<<<< HEAD
+        "com.unity.adaptiveperformance": "6.0.0",
+        "com.unity.mobile.notifications": "2.4.2"
+=======
         "com.unity.adaptiveperformance": "5.1.5",
         "com.unity.mobile.notifications": "2.4.1"
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
       }
     },
     "com.unity.ide.visualstudio": {
@@ -154,7 +172,11 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.mobile.notifications": {
+<<<<<<< HEAD
+      "version": "2.4.2",
+=======
       "version": "2.4.1",
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -172,14 +194,11 @@
     },
     "com.unity.nuget.mono-cecil": {
       "version": "1.11.5",
+<<<<<<< HEAD
+      "depth": 3,
+=======
       "depth": 2,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://packages.unity.com"
-    },
-    "com.unity.nuget.newtonsoft-json": {
-      "version": "3.2.1",
-      "depth": 1,
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -196,15 +215,12 @@
       },
       "url": "https://packages.unity.com"
     },
-    "com.unity.profiling.core": {
-      "version": "1.0.2",
-      "depth": 2,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://packages.unity.com"
-    },
     "com.unity.render-pipelines.core": {
+<<<<<<< HEAD
+      "version": "17.3.0",
+=======
       "version": "17.2.0",
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
       "depth": 1,
       "source": "builtin",
       "dependencies": {
@@ -214,17 +230,25 @@
         "com.unity.collections": "2.4.3",
         "com.unity.modules.physics": "1.0.0",
         "com.unity.modules.terrain": "1.0.0",
-        "com.unity.modules.jsonserialize": "1.0.0",
-        "com.unity.rendering.light-transport": "1.0.1"
+        "com.unity.modules.jsonserialize": "1.0.0"
       }
     },
     "com.unity.render-pipelines.universal": {
+<<<<<<< HEAD
+      "version": "17.3.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.render-pipelines.core": "17.3.0",
+        "com.unity.shadergraph": "17.3.0",
+=======
       "version": "17.2.0",
       "depth": 0,
       "source": "builtin",
       "dependencies": {
         "com.unity.render-pipelines.core": "17.2.0",
         "com.unity.shadergraph": "17.2.0",
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
         "com.unity.render-pipelines.universal-config": "17.0.3"
       }
     },
@@ -234,16 +258,6 @@
       "source": "builtin",
       "dependencies": {
         "com.unity.render-pipelines.core": "17.0.3"
-      }
-    },
-    "com.unity.rendering.light-transport": {
-      "version": "1.0.1",
-      "depth": 2,
-      "source": "builtin",
-      "dependencies": {
-        "com.unity.collections": "2.2.0",
-        "com.unity.mathematics": "1.2.4",
-        "com.unity.modules.terrain": "1.0.0"
       }
     },
     "com.unity.searcher": {
@@ -271,16 +285,28 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.shadergraph": {
+<<<<<<< HEAD
+      "version": "17.3.0",
+      "depth": 1,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.render-pipelines.core": "17.3.0",
+=======
       "version": "17.2.0",
       "depth": 1,
       "source": "builtin",
       "dependencies": {
         "com.unity.render-pipelines.core": "17.2.0",
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
         "com.unity.searcher": "4.9.3"
       }
     },
     "com.unity.test-framework": {
+<<<<<<< HEAD
+      "version": "1.6.0",
+=======
       "version": "1.5.1",
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
       "depth": 1,
       "source": "builtin",
       "dependencies": {
@@ -291,7 +317,11 @@
     },
     "com.unity.test-framework.performance": {
       "version": "3.1.0",
+<<<<<<< HEAD
+      "depth": 3,
+=======
       "depth": 2,
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
       "source": "registry",
       "dependencies": {
         "com.unity.test-framework": "1.1.33",
@@ -335,6 +365,14 @@
       "depth": 0,
       "source": "builtin",
       "dependencies": {}
+    },
+    "com.unity.modules.adaptiveperformance": {
+      "version": "1.0.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.modules.subsystems": "1.0.0"
+      }
     },
     "com.unity.modules.ai": {
       "version": "1.0.0",
@@ -541,6 +579,16 @@
         "com.unity.modules.audio": "1.0.0",
         "com.unity.modules.assetbundle": "1.0.0",
         "com.unity.modules.imageconversion": "1.0.0"
+      }
+    },
+    "com.unity.modules.vectorgraphics": {
+      "version": "1.0.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.modules.uielements": "1.0.0",
+        "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.imgui": "1.0.0"
       }
     },
     "com.unity.modules.vehicles": {

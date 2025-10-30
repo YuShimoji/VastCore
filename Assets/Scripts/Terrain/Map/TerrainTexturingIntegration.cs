@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using Vastcore.Generation.Map;
-using Vastcore.Player;
 
 namespace Vastcore.Generation
 {
@@ -101,11 +100,15 @@ namespace Vastcore.Generation
             }
             
             // プレイヤーTransformを取得
+<<<<<<< HEAD:Assets/Scripts/Generation/Map/TerrainTexturingIntegration.cs
+            playerTransform = ResolvePlayerTransform();
+=======
             var playerController = FindFirstObjectByType<AdvancedPlayerController>();
             if (playerController != null)
             {
                 playerTransform = playerController.transform;
             }
+>>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da:Assets/Scripts/Terrain/Map/TerrainTexturingIntegration.cs
             
             // イベントハンドラーを登録
             RegisterEventHandlers();
