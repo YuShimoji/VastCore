@@ -1,7 +1,7 @@
 using UnityEngine;
-using Vastcore.Diagnostics;
 using System.IO;
 using System.Collections;
+using Vastcore.Utils;
 
 namespace Vastcore.Generation
 {
@@ -90,14 +90,14 @@ namespace Vastcore.Generation
 
         public Vector3 terrainSize => new Vector3(m_Width, m_Depth, m_Height);
 
-        public Terrain GeneratedTerrain { get; private set; }
+        public UnityEngine.Terrain GeneratedTerrain { get; private set; }
 
         public IEnumerator GenerateTerrain()
         {
             Debug.Log("[TerrainGenerator] Starting terrain generation...");
 
             // テレインデータの作成
-            var terrainData = new TerrainData();
+            var terrainData = new UnityEngine.TerrainData();
             terrainData.heightmapResolution = m_Resolution;
             terrainData.size = new Vector3(m_Width, m_Depth, m_Height);
 
@@ -109,9 +109,9 @@ namespace Vastcore.Generation
             }
 
             // テレインオブジェクトの作成
-            GameObject terrainObject = Terrain.CreateTerrainGameObject(terrainData);
+            GameObject terrainObject = UnityEngine.Terrain.CreateTerrainGameObject(terrainData);
             terrainObject.name = "Generated_Vastcore_Terrain";
-            GeneratedTerrain = terrainObject.GetComponent<Terrain>();
+            GeneratedTerrain = terrainObject.GetComponent<UnityEngine.Terrain>();
 
             // マテリアルの設定
             if (m_TerrainMaterial == null)
@@ -167,17 +167,17 @@ namespace Vastcore.Generation
 
 
 
-        private void ConfigureTextureLayers(TerrainData terrainData, float[,] heights)
+        private void ConfigureTextureLayers(UnityEngine.TerrainData terrainData, float[,] heights)
         {
             TextureGenerator.ConfigureTextureLayers(this, terrainData, heights);
         }
 
-        private void ConfigureDetailMap(TerrainData terrainData)
+        private void ConfigureDetailMap(UnityEngine.TerrainData terrainData)
         {
             DetailGenerator.ConfigureDetailMap(this, terrainData);
         }
 
-        private void ConfigureTrees(TerrainData terrainData)
+        private void ConfigureTrees(UnityEngine.TerrainData terrainData)
         {
             TreeGenerator.ConfigureTrees(this, terrainData);
         }

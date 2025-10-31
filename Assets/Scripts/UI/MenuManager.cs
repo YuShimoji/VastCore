@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections;
 using Vastcore.Core;
+using CoreSceneManager = Vastcore.Core.SceneManager;
 
 namespace Vastcore.UI
 {
@@ -105,14 +106,16 @@ namespace Vastcore.UI
         private void OnStartButtonClicked()
         {
             buttonsGroup.interactable = false;
-            if (SceneManager.Instance != null)
-                SceneManager.Instance.LoadGameScene();
+            var sceneManager = CoreSceneManager.Instance;
+            if (sceneManager != null)
+                sceneManager.LoadGameScene();
         }
 
         private void OnQuitButtonClicked()
         {
-            if (SceneManager.Instance != null)
-                SceneManager.Instance.QuitApplication();
+            var sceneManager = CoreSceneManager.Instance;
+            if (sceneManager != null)
+                sceneManager.QuitApplication();
         }
     }
 }

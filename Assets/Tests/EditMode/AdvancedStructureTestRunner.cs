@@ -1,3 +1,4 @@
+#if UNITY_EDITOR && HAS_PROBUILDER
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.ProBuilder;
@@ -340,4 +341,5 @@ namespace Vastcore.Editor.Generation
             return new Bounds((min + max) * 0.5f, max - min);
         }
     }
-} 
+}
+#endif

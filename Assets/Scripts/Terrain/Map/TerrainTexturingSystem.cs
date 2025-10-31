@@ -62,7 +62,7 @@ namespace Vastcore.Generation
             Debug.Log("Initializing TerrainTexturingSystem...");
             
             // プレイヤーTransformを取得
-            var player = FindFirstObjectByType<IPlayerController>();
+            var player = FindFirstObjectByType<Vastcore.Player.AdvancedPlayerController>();
             if (player != null)
             {
                 playerTransform = player.Transform;

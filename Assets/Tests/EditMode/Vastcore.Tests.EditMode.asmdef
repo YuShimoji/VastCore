@@ -1,0 +1,27 @@
+{
+  "name": "Vastcore.Tests.EditMode",
+  "rootNamespace": "Vastcore.Tests.EditMode",
+  "references": [
+    "Vastcore.Core",
+    "Vastcore.Utilities",
+    "Vastcore.Generation",
+    "Vastcore.Terrain",
+    "Vastcore.Player",
+    "Vastcore.UI"
+  ],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "versionDefines": [
+    {
+      "name": "com.unity.probuilder",
+      "expression": "6.0.0",
+      "define": "HAS_PROBUILDER"
+    }
+  ],
+  "noEngineReferences": false
+}

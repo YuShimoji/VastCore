@@ -36,10 +36,10 @@ namespace Vastcore.Generation
         {
             if (playerTransform == null)
             {
-                var playerController = FindFirstObjectByType<IPlayerController>();
-                if (playerController != null)
+                var player = FindFirstObjectByType<Vastcore.Player.AdvancedPlayerController>();
+                if (player != null)
                 {
-                    playerTransform = playerController.Transform;
+                    playerTransform = player.Transform;
                 }
             }
             

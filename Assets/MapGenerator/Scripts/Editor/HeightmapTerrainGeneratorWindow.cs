@@ -1,6 +1,6 @@
 using UnityEditor;
 using UnityEngine;
-using Vastcore.Diagnostics;
+using Vastcore.Utils;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -223,7 +223,7 @@ namespace Vastcore.Editor.Generation
             int width = combinedHeightmap.GetLength(1);
             int height = combinedHeightmap.GetLength(0);
 
-            TerrainData terrainData = new TerrainData();
+            UnityEngine.TerrainData terrainData = new UnityEngine.TerrainData();
             terrainData.heightmapResolution = width;
             terrainData.size = new Vector3(terrainSize.x, terrainHeight, terrainSize.z);
             using (LoadProfiler.Measure("TerrainData.SetHeights (EditorWindow)"))
@@ -233,7 +233,7 @@ namespace Vastcore.Editor.Generation
             
             ApplySplatmap(terrainData);
 
-            GameObject terrainObject = Terrain.CreateTerrainGameObject(terrainData);
+            GameObject terrainObject = UnityEngine.Terrain.CreateTerrainGameObject(terrainData);
             Undo.RegisterCreatedObjectUndo(terrainObject, "Generate Terrain");
 
             Selection.activeGameObject = terrainObject;
