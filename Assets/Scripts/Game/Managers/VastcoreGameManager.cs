@@ -7,6 +7,8 @@ using Vastcore.Terrain;
 using Vastcore.Player;
 using Vastcore.UI;
 using Vastcore.Camera.Cinematic;
+using Vastcore.Generation;
+using Vastcore.UI.Menus;
 
 namespace Vastcore.Game.Managers
 {

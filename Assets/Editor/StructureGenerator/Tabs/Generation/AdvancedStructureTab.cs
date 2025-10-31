@@ -1,10 +1,10 @@
+#if HAS_PROBUILDER
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.ProBuilder;
 using UnityEngine.ProBuilder.MeshOperations;
 using UnityEditor.ProBuilder;
 using UnityEditor.ProBuilder.Actions;
-using Parabox.CSG;
 using System.Collections.Generic;
 using System.Linq;
 using EditorUtility = UnityEditor.EditorUtility;
@@ -347,4 +347,5 @@ namespace Vastcore.Editor.Generation
         Subtract,
         Intersect
     }
-} 
+}
+#endif

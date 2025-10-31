@@ -3,7 +3,7 @@
     "rootNamespace": "Vastcore.Testing",
     "references": [
         "Vastcore.Core",
-        "Vastcore.Utils",
+        "Vastcore.Utilities",
         "Vastcore.Generation",
         "Vastcore.Terrain",
         "Vastcore.Player",
@@ -21,8 +21,10 @@
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
     "versionDefines": [],
     "noEngineReferences": false,
     "burstSettings": {

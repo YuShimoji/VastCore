@@ -1,5 +1,5 @@
 using UnityEngine;
-using Unity.ProBuilder;
+using UnityEngine.ProBuilder;
 using Vastcore.Core;
 using Vastcore.Generation;
 using Vastcore.Utils;
@@ -397,6 +397,331 @@ namespace Vastcore.Testing
                 primitive.transform.position = transform.position;
                 VastcoreLogger.Log("Test primitive generated successfully", VastcoreLogger.LogLevel.Info);
             }
+        }
+
+        /// <summary>
+        /// Deformパフォーマンスベンチマークを実行
+        /// </summary>
+        [ContextMenu("Run Performance Benchmark")]
+        public void RunPerformanceBenchmark()
+        {
+            StartCoroutine(PerformanceBenchmarkCoroutine());
+        }
+
+        private System.Collections.IEnumerator PerformanceBenchmarkCoroutine()
+        {
+            VastcoreLogger.Log("Starting Deform Performance Benchmark", VastcoreLogger.LogLevel.Info);
+
+            // テスト対象のプリミティブを生成
+            var testPrimitives = new PrimitiveTerrainGenerator.PrimitiveType[] {
+                PrimitiveTerrainGenerator.PrimitiveType.Cube,
+                PrimitiveTerrainGenerator.PrimitiveType.Sphere,
+                PrimitiveTerrainGenerator.PrimitiveType.Cylinder
+            };
+
+            foreach (var primitiveType in testPrimitives)
+            {
+                yield return StartCoroutine(BenchmarkPrimitiveType(primitiveType));
+            }
+
+            VastcoreLogger.Log("Deform Performance Benchmark completed", VastcoreLogger.LogLevel.Info);
+        }
+
+        private System.Collections.IEnumerator BenchmarkPrimitiveType(PrimitiveTerrainGenerator.PrimitiveType primitiveType)
+        {
+            VastcoreLogger.Log($"Benchmarking {primitiveType}", VastcoreLogger.LogLevel.Info);
+
+            // 変形なしのベースラインベンチマーク
+            float baselineTime = BenchmarkWithoutDeformation(primitiveType);
+            VastcoreLogger.Log($"{primitiveType} - Baseline (no deformation): {baselineTime:F4} seconds", VastcoreLogger.LogLevel.Info);
+
+            // 変形ありのベンチマーク
+            float deformedTime = BenchmarkWithDeformation(primitiveType);
+            VastcoreLogger.Log($"{primitiveType} - With deformation: {deformedTime:F4} seconds", VastcoreLogger.LogLevel.Info);
+
+            // パフォーマンス差を計算
+            float overhead = deformedTime - baselineTime;
+            float overheadPercent = (overhead / baselineTime) * 100f;
+            VastcoreLogger.Log($"{primitiveType} - Performance overhead: {overhead:F4}s ({overheadPercent:F1}%)", VastcoreLogger.LogLevel.Info);
+
+            yield return null;
+        }
+
+        private float BenchmarkWithoutDeformation(PrimitiveTerrainGenerator.PrimitiveType primitiveType)
+        {
+            float totalTime = 0f;
+            int iterations = 10;
+
+            for (int i = 0; i < iterations; i++)
+            {
+                float startTime = Time.realtimeSinceStartup;
+
+                // 変形なしでプリミティブ生成
+                var parameters = PrimitiveGenerationParams.Default(primitiveType);
+                parameters.enableDeformation = false;
+                parameters.generateCollider = false; // コライダー生成をスキップして純粋なメッシュ生成時間を計測
+
+                var primitive = PrimitiveTerrainGenerator.GeneratePrimitiveTerrain(parameters);
+
+                float endTime = Time.realtimeSinceStartup;
+                totalTime += (endTime - startTime);
+
+                // 生成されたオブジェクトを破棄
+                if (primitive != null)
+                {
+                    DestroyImmediate(primitive);
+                }
+            }
+
+            return totalTime / iterations;
+        }
+
+        private float BenchmarkWithDeformation(PrimitiveTerrainGenerator.PrimitiveType primitiveType)
+        {
+            float totalTime = 0f;
+            int iterations = 10;
+
+            for (int i = 0; i < iterations; i++)
+            {
+                float startTime = Time.realtimeSinceStartup;
+
+                // 変形ありでプリミティブ生成
+                var parameters = PrimitiveGenerationParams.Default(primitiveType);
+                parameters.enableDeformation = true;
+                parameters.generateCollider = false;
+
+                var primitive = PrimitiveTerrainGenerator.GeneratePrimitiveTerrain(parameters);
+
+                // 変形適用時間を計測
+                if (primitive != null)
+                {
+                    var terrainObj = primitive.GetComponent<PrimitiveTerrainObject>();
+                    if (terrainObj != null)
+                    {
+                        terrainObj.ApplyTerrainSpecificDeformation();
+                    }
+                }
+
+                float endTime = Time.realtimeSinceStartup;
+                totalTime += (endTime - startTime);
+
+                // 生成されたオブジェクトを破棄
+                if (primitive != null)
+                {
+                    DestroyImmediate(primitive);
+                }
+            }
+
+            return totalTime / iterations;
+        }
+
+        /// <summary>
+        /// メモリ使用量ベンチマーク
+        /// </summary>
+        [ContextMenu("Run Memory Benchmark")]
+        public void RunMemoryBenchmark()
+        {
+            VastcoreLogger.Log("Starting Memory Usage Benchmark", VastcoreLogger.LogLevel.Info);
+
+            long initialMemory = System.GC.GetTotalMemory(true);
+
+            // 変形ありで多数のプリミティブを生成
+            var primitives = new System.Collections.Generic.List<GameObject>();
+            for (int i = 0; i < 50; i++)
+            {
+                var parameters = PrimitiveGenerationParams.Default(PrimitiveTerrainGenerator.PrimitiveType.Cube);
+                parameters.enableDeformation = true;
+                parameters.position = new Vector3(i * 2f, 0f, 0f);
+
+                var primitive = PrimitiveTerrainGenerator.GeneratePrimitiveTerrain(parameters);
+                if (primitive != null)
+                {
+                    primitives.Add(primitive);
+                    var terrainObj = primitive.GetComponent<PrimitiveTerrainObject>();
+                    if (terrainObj != null)
+                    {
+                        terrainObj.ApplyTerrainSpecificDeformation();
+                    }
+                }
+            }
+
+            // メモリ使用量を計測
+            System.GC.Collect();
+            long finalMemory = System.GC.GetTotalMemory(true);
+            long memoryUsage = finalMemory - initialMemory;
+
+            VastcoreLogger.Log($"Memory usage for 50 deformed primitives: {memoryUsage / 1024 / 1024} MB", VastcoreLogger.LogLevel.Info);
+
+            // クリーンアップ
+            foreach (var primitive in primitives)
+            {
+                DestroyImmediate(primitive);
+            }
+        }
+
+        /// <summary>
+        /// 既存の地形機能との互換性テストを実行
+        /// </summary>
+        [ContextMenu("Run Compatibility Test")]
+        public void RunCompatibilityTest()
+        {
+            StartCoroutine(CompatibilityTestCoroutine());
+        }
+
+        private System.Collections.IEnumerator CompatibilityTestCoroutine()
+        {
+            VastcoreLogger.Log("Starting Deform Compatibility Test", VastcoreLogger.LogLevel.Info);
+
+            // LODシステムとの互換性テスト
+            yield return StartCoroutine(TestLODCompatibility());
+
+            // プーリングシステムとの互換性テスト
+            yield return StartCoroutine(TestPoolingCompatibility());
+
+            // コライダーシステムとの互換性テスト
+            yield return StartCoroutine(TestColliderCompatibility());
+
+            VastcoreLogger.Log("Deform Compatibility Test completed", VastcoreLogger.LogLevel.Info);
+        }
+
+        private System.Collections.IEnumerator TestLODCompatibility()
+        {
+            VastcoreLogger.Log("Testing LOD system compatibility", VastcoreLogger.LogLevel.Info);
+
+            // 変形ありのプリミティブを生成
+            var parameters = PrimitiveGenerationParams.Default(PrimitiveTerrainGenerator.PrimitiveType.Cube);
+            parameters.enableDeformation = true;
+            parameters.generateCollider = true;
+
+            var primitive = PrimitiveTerrainGenerator.GeneratePrimitiveTerrain(parameters);
+            if (primitive != null)
+            {
+                primitive.transform.position = new Vector3(0f, 0f, 10f); // 少し離れた位置
+
+                var terrainObj = primitive.GetComponent<PrimitiveTerrainObject>();
+                if (terrainObj != null)
+                {
+                    // 地形固有変形を適用
+                    terrainObj.ApplyTerrainSpecificDeformation();
+
+                    // カメラをシミュレート
+                    var testCamera = new GameObject("TestCamera").AddComponent<Camera>();
+                    testCamera.transform.position = new Vector3(0f, 0f, 0f);
+
+                    // LOD更新をテスト
+                    for (int distance = 50; distance <= 250; distance += 50)
+                    {
+                        testCamera.transform.position = new Vector3(0f, 0f, -distance);
+                        terrainObj.UpdateLOD(Vector3.Distance(primitive.transform.position, testCamera.transform.position));
+
+                        VastcoreLogger.Log($"LOD test at distance {distance}m: LOD level {terrainObj.GetLODInfo().currentLOD}", VastcoreLogger.LogLevel.Info);
+
+                        yield return null;
+                    }
+
+                    DestroyImmediate(testCamera.gameObject);
+                }
+
+                DestroyImmediate(primitive);
+                VastcoreLogger.Log("LOD compatibility test passed", VastcoreLogger.LogLevel.Info);
+            }
+            else
+            {
+                VastcoreLogger.Log("LOD compatibility test failed - primitive generation failed", VastcoreLogger.LogLevel.Error);
+            }
+        }
+
+        private System.Collections.IEnumerator TestPoolingCompatibility()
+        {
+            VastcoreLogger.Log("Testing pooling system compatibility", VastcoreLogger.LogLevel.Info);
+
+            // プーリング可能なプリミティブを生成
+            var parameters = PrimitiveGenerationParams.Default(PrimitiveTerrainGenerator.PrimitiveType.Sphere);
+            parameters.enableDeformation = true;
+
+            var primitive = PrimitiveTerrainGenerator.GeneratePrimitiveTerrain(parameters);
+            if (primitive != null)
+            {
+                var terrainObj = primitive.GetComponent<PrimitiveTerrainObject>();
+                if (terrainObj != null)
+                {
+                    // 変形を適用
+                    terrainObj.ApplyTerrainSpecificDeformation();
+
+                    // プールに戻すテスト
+                    terrainObj.PrepareForPool();
+
+                    // プールから再利用
+                    terrainObj.InitializeFromPool(
+                        PrimitiveTerrainGenerator.PrimitiveType.Sphere,
+                        new Vector3(5f, 0f, 0f),
+                        2f);
+
+                    // 再変形を適用
+                    terrainObj.ApplyTerrainSpecificDeformation();
+
+                    VastcoreLogger.Log("Pooling compatibility test passed", VastcoreLogger.LogLevel.Info);
+                }
+
+                DestroyImmediate(primitive);
+            }
+            else
+            {
+                VastcoreLogger.Log("Pooling compatibility test failed - primitive generation failed", VastcoreLogger.LogLevel.Error);
+            }
+
+            yield return null;
+        }
+
+        private System.Collections.IEnumerator TestColliderCompatibility()
+        {
+            VastcoreLogger.Log("Testing collider system compatibility", VastcoreLogger.LogLevel.Info);
+
+            // コライダー付きプリミティブを生成
+            var parameters = PrimitiveGenerationParams.Default(PrimitiveTerrainGenerator.PrimitiveType.Cylinder);
+            parameters.enableDeformation = true;
+            parameters.generateCollider = true;
+
+            var primitive = PrimitiveTerrainGenerator.GeneratePrimitiveTerrain(parameters);
+            if (primitive != null)
+            {
+                var terrainObj = primitive.GetComponent<PrimitiveTerrainObject>();
+                var meshCollider = primitive.GetComponent<MeshCollider>();
+
+                if (terrainObj != null && meshCollider != null)
+                {
+                    // 変形を適用
+                    terrainObj.ApplyTerrainSpecificDeformation();
+
+                    // コライダーが有効かチェック
+                    if (meshCollider.enabled && meshCollider.sharedMesh != null)
+                    {
+                        VastcoreLogger.Log("Collider compatibility test passed", VastcoreLogger.LogLevel.Info);
+                    }
+                    else
+                    {
+                        VastcoreLogger.Log("Collider compatibility test failed - collider not properly configured", VastcoreLogger.LogLevel.Error);
+                    }
+
+                    // インタラクション機能をテスト
+                    bool canClimb = terrainObj.CanInteract("climb");
+                    bool canGrind = terrainObj.CanInteract("grind");
+
+                    VastcoreLogger.Log($"Interaction test - CanClimb: {canClimb}, CanGrind: {canGrind}", VastcoreLogger.LogLevel.Info);
+                }
+                else
+                {
+                    VastcoreLogger.Log("Collider compatibility test failed - components missing", VastcoreLogger.LogLevel.Error);
+                }
+
+                DestroyImmediate(primitive);
+            }
+            else
+            {
+                VastcoreLogger.Log("Collider compatibility test failed - primitive generation failed", VastcoreLogger.LogLevel.Error);
+            }
+
+            yield return null;
         }
     }
 }

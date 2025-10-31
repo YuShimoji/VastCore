@@ -1,3 +1,4 @@
+#if HAS_PROBUILDER && HAS_PARABOX_CSG
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.ProBuilder;
@@ -254,4 +255,6 @@ namespace Vastcore.Editor.Test
             }
         }
     }
-} 
+}
+#endif
+ 

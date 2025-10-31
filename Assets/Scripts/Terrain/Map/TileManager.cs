@@ -125,7 +125,7 @@ namespace Vastcore.Generation
         private Transform FindPlayerTransform()
         {
             // AdvancedPlayerControllerを検索
-            var playerController = FindFirstObjectByType<IPlayerController>();
+            var playerController = FindFirstObjectByType<Vastcore.Player.AdvancedPlayerController>();
             if (playerController != null)
             {
                 playerTransform = playerController.Transform;

@@ -6,7 +6,7 @@ using Vastcore.Utils;
 using Deform;
 #endif
 
-namespace Vastcore.Core
+namespace Vastcore.Generation
 {
     /// <summary>
     /// Vastcore統合Deform管理システム

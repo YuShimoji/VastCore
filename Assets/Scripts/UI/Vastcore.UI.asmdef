@@ -3,10 +3,11 @@
     "rootNamespace": "Vastcore.UI",
     "references": [
         "Vastcore.Core",
-        "Vastcore.Utils",
+        "Vastcore.Utilities",
         "Vastcore.Player",
         "Unity.TextMeshPro",
-        "Unity.Rendering.DebugUI"
+        "Unity.Rendering.DebugUI",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

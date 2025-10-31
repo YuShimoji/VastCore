@@ -3,7 +3,7 @@
     "rootNamespace": "Vastcore.Camera",
     "references": [
         "Vastcore.Core",
-        "Vastcore.Utils",
+        "Vastcore.Utilities",
         "Vastcore.Player",
         "Unity.TextMeshPro",
         "Unity.InputSystem"
