@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Generation;
+using Vastcore.Core;
 
 namespace Vastcore.Generation
 {
@@ -34,11 +36,11 @@ namespace Vastcore.Generation
         {
             if (playerTransform == null)
             {
-<<<<<<< HEAD:Assets/Scripts/Generation/Map/PlayerTrackingSystem.cs
-                playerTransform = ResolvePlayerTransform();
-=======
-                playerTransform = FindFirstObjectByType<AdvancedPlayerController>()?.transform;
->>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da:Assets/Scripts/Terrain/Map/PlayerTrackingSystem.cs
+                var playerController = FindFirstObjectByType<IPlayerController>();
+                if (playerController != null)
+                {
+                    playerTransform = playerController.Transform;
+                }
             }
             
             if (playerTransform != null)

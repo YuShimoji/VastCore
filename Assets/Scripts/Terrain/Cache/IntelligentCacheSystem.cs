@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using Vastcore.Generation;
 
 namespace Vastcore.Generation.Cache
 {
@@ -101,17 +102,11 @@ namespace Vastcore.Generation.Cache
             
             statistics = new CacheStatistics();
             
-<<<<<<< HEAD:Assets/Scripts/Generation/Cache/IntelligentCacheSystem.cs
-            // プレイヤーTransformの検索
-            var playerObject = GameObject.FindGameObjectWithTag("Player");
-            if (playerObject != null)
-=======
             // プレイヤーの検索
-            var player = FindFirstObjectByType<AdvancedPlayerController>();
+            var player = FindFirstObjectByType<Vastcore.Player.AdvancedPlayerController>();
             if (player != null)
->>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da:Assets/Scripts/Terrain/Cache/IntelligentCacheSystem.cs
             {
-                playerTransform = playerObject.transform;
+                playerTransform = player.transform;
                 lastPlayerPosition = playerTransform.position;
                 playerPositionHistory = new List<Vector3> { playerTransform.position };
             }

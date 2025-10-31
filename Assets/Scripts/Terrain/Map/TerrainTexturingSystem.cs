@@ -1,7 +1,7 @@
 using UnityEngine;
-using Vastcore.Player;
 using System.Collections.Generic;
 using System.Linq;
+using Vastcore.Core;
 
 namespace Vastcore.Generation
 {
@@ -62,10 +62,10 @@ namespace Vastcore.Generation
             Debug.Log("Initializing TerrainTexturingSystem...");
             
             // プレイヤーTransformを取得
-            var playerController = FindFirstObjectByType<AdvancedPlayerController>();
-            if (playerController != null)
+            var player = FindFirstObjectByType<IPlayerController>();
+            if (player != null)
             {
-                playerTransform = playerController.transform;
+                playerTransform = player.Transform;
             }
             
             // MaterialPropertyBlockを初期化

@@ -329,26 +329,6 @@ namespace Vastcore.Generation.Map
         /// </summary>
         private IEnumerator ProcessSingleTask(GenerationTask task)
         {
-            if (task == null || !task.IsValid())
-                yield break;
-
-<<<<<<< HEAD:Assets/Scripts/Generation/Map/RuntimeGenerationManager.cs
-            GameObject result = null;
-
-            try
-            {
-                task.StartExecution();
-                OnTaskStarted?.Invoke(task);
-
-                if (showDebugInfo)
-                {
-                    Debug.Log($"RuntimeGenerationManager: タスク実行開始 - {task}");
-                }
-
-                result = ExecuteTaskByType(task);
-
-                // タスク完了処理
-=======
             task.StartExecution();
             OnTaskStarted?.Invoke(task);
 
@@ -364,7 +344,6 @@ namespace Vastcore.Generation.Map
             try
             {
                 // タスク完了
->>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da:Assets/Scripts/Terrain/Map/RuntimeGenerationManager.cs
                 task.CompleteTask(result);
                 activeTasksById.Remove(task.taskId);
                 OnTaskCompleted?.Invoke(task);
@@ -398,7 +377,7 @@ namespace Vastcore.Generation.Map
         /// <summary>
         /// タスクタイプに応じた実行処理
         /// </summary>
-        private GameObject ExecuteTaskByType(GenerationTask task)
+        private IEnumerator ExecuteTaskByType(GenerationTask task, System.Action<GameObject> onComplete)
         {
             GameObject result = null;
 
@@ -438,7 +417,8 @@ namespace Vastcore.Generation.Map
                     break;
             }
 
-            return result;
+            onComplete?.Invoke(result);
+            yield return null;
         }
 
         private void CleanupTerrainTile(TerrainTile tileToClean)

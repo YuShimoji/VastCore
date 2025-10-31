@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Vastcore.Core;
+using Vastcore.Generation;
 using Vastcore.Utils;
 
 namespace Vastcore.Core
@@ -33,11 +34,7 @@ namespace Vastcore.Core
             {
                 if (instance == null)
                 {
-<<<<<<< HEAD
                     instance = FindFirstObjectByType<VastcoreErrorHandler>();
-=======
-                    var existingHandler = FindFirstObjectByType<VastcoreErrorHandler>();
->>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreErrorHandler");
@@ -192,6 +189,9 @@ namespace Vastcore.Core
             }
         }
         
+        /// <summary>
+        /// フォールバック地形を生成
+        /// </summary>
         private GameObject GenerateFallbackTerrain(TerrainGenerationParams parameters, int attempt)
         {
             try
@@ -200,50 +200,56 @@ namespace Vastcore.Core
                 float qualityReduction = 1f - (attempt * 0.2f);
                 qualityReduction = Mathf.Max(qualityReduction, 0.2f);
 
-                // 基本的な地形オブジェクトを生成
-                GameObject terrainObject = new GameObject($"FallbackTerrain_{attempt}");
+                // 基本的な平面地形を生成
+                GameObject fallbackTerrain = GameObject.CreatePrimitive(PrimitiveType.Plane);
+                fallbackTerrain.name = $"FallbackTerrain_{attempt}";
 
-                // Terrainコンポーネントの追加
-                var terrain = terrainObject.AddComponent<Terrain>();
-                var terrainCollider = terrainObject.AddComponent<TerrainCollider>();
+                // パラメータに基づいてスケールを設定
+                float scale = parameters.terrainSize * qualityReduction;
+                fallbackTerrain.transform.localScale = new Vector3(scale, 1f, scale);
 
-                // TerrainDataの作成
-                var terrainData = new TerrainData();
-                terrainData.heightmapResolution = Mathf.RoundToInt(parameters.resolution * qualityReduction);
-                terrainData.size = new Vector3(parameters.terrainSize * qualityReduction, parameters.heightScale, parameters.terrainSize * qualityReduction);
-
-                // シンプルな平面地形データを生成
-                float[,] heights = new float[terrainData.heightmapResolution, terrainData.heightmapResolution];
-                for (int x = 0; x < terrainData.heightmapResolution; x++)
+                // 基本的なマテリアルを適用
+                var renderer = fallbackTerrain.GetComponent<MeshRenderer>();
+                if (renderer != null)
                 {
-                    for (int y = 0; y < terrainData.heightmapResolution; y++)
-                    {
-                        // 非常にシンプルな高さ（ほぼ平坦）
-                        heights[x, y] = 0.1f + UnityEngine.Random.Range(-0.05f, 0.05f) * qualityReduction;
-                    }
-                }
-                terrainData.SetHeights(0, 0, heights);
-
-                // Terrainにデータを設定
-                terrain.terrainData = terrainData;
-                terrainCollider.terrainData = terrainData;
-
-                // 基本的なマテリアル設定
-                var material = Resources.Load<Material>("Materials/TerrainMaterial");
-                if (material != null)
-                {
-                    terrain.materialTemplate = material;
+                    renderer.material = Resources.Load<Material>("Materials/DefaultMaterial");
                 }
 
-                VastcoreLogger.Instance.LogInfo("FallbackTerrain", $"フォールバック地形生成完了 (試行 {attempt + 1}, 品質: {qualityReduction:F2})");
+                // 高さ調整
+                fallbackTerrain.transform.position = new Vector3(0f, parameters.heightScale * 0.1f, 0f);
 
-                return terrainObject;
+                return fallbackTerrain;
             }
             catch (Exception error)
             {
-                VastcoreLogger.Instance.LogError("FallbackTerrain", $"フォールバック地形生成中にエラー: {error.Message}");
+                VastcoreLogger.Instance.LogError("FallbackTerrain", 
+                    $"フォールバック地形生成エラー: {error.Message}");
                 return null;
             }
+        }
+        
+        private GameObject GenerateFallbackObject(int attempt)
+        {
+            // 試行回数に応じて品質を下げる
+            float qualityReduction = 1f - (attempt * 0.2f);
+            qualityReduction = Mathf.Max(qualityReduction, 0.2f);
+            
+            // 簡単な平面オブジェクトを生成
+            GameObject fallbackObject = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            fallbackObject.name = $"FallbackObject_{attempt}";
+            
+            // スケールを調整
+            float scale = 10f * qualityReduction;
+            fallbackObject.transform.localScale = new Vector3(scale, 1f, scale);
+            
+            // 基本的なマテリアルを適用
+            var renderer = fallbackObject.GetComponent<MeshRenderer>();
+            if (renderer != null)
+            {
+                renderer.material = Resources.Load<Material>("Materials/DefaultMaterial");
+            }
+            
+            return fallbackObject;
         }
         
         private void CleanupUnusedObjects()
@@ -258,19 +264,6 @@ namespace Vastcore.Core
                 }
             }
             
-<<<<<<< HEAD
-=======
-            // 使用されていないプリミティブオブジェクトを削除
-            var primitiveObjects = FindObjectsByType<PrimitiveTerrainObject>(FindObjectsSortMode.None);
-            foreach (var primitive in primitiveObjects)
-            {
-                if (Vector3.Distance(primitive.transform.position, Camera.main.transform.position) > 3000f)
-                {
-                    DestroyImmediate(primitive.gameObject);
-                }
-            }
-            
->>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da
             // リソースのアンロード
             Resources.UnloadUnusedAssets();
         }

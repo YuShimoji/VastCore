@@ -14,7 +14,9 @@ namespace Vastcore.Core
         Lake,       // 湖 - 水面レベル、平坦
         Forest,     // 森林 - 中高度、中起伏、木生成
         Desert,     // 砂漠 - 低高度、低起伏
-        Coast       // 海岸 - 水面近辺、特殊処理
+        Coast,      // 海岸 - 水面近辺、特殊処理
+        Hill,       // 丘陵 - 中高度、中起伏
+        Plateau     // 台地 - 高高度、低起伏
     }
 
     /// <summary>
@@ -41,6 +43,7 @@ namespace Vastcore.Core
         public Color baseColor = Color.white;
         public Material terrainMaterial;
         public Texture2D heightMapTexture;
+        public Texture2D terrainTexture;
 
         [Header("特殊設定")]
         public bool generatesTrees = false;
@@ -138,6 +141,26 @@ namespace Vastcore.Core
                     definition.noiseScale = 0.01f;
                     definition.baseColor = new Color(0.8f, 0.7f, 0.5f);
                     definition.blendStrength = 0.8f;
+                    break;
+
+                case TerrainType.Hill:
+                    definition.displayName = "丘陵";
+                    definition.description = "起伏のある中高度地形";
+                    definition.baseHeight = 50f;
+                    definition.heightVariation = 25f;
+                    definition.noiseScale = 0.012f;
+                    definition.baseColor = new Color(0.5f, 0.6f, 0.3f);
+                    definition.blendStrength = 0.7f;
+                    break;
+
+                case TerrainType.Plateau:
+                    definition.displayName = "台地";
+                    definition.description = "平坦な高高度地形";
+                    definition.baseHeight = 150f;
+                    definition.heightVariation = 10f;
+                    definition.noiseScale = 0.005f;
+                    definition.baseColor = new Color(0.6f, 0.5f, 0.4f);
+                    definition.blendStrength = 0.6f;
                     break;
             }
 

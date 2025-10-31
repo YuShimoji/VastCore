@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Generation;
+using Vastcore.Core;
 
 namespace Vastcore.Generation
 {
@@ -123,19 +124,16 @@ namespace Vastcore.Generation
         /// </summary>
         private Transform FindPlayerTransform()
         {
-<<<<<<< HEAD:Assets/Scripts/Generation/Map/TileManager.cs
-=======
             // AdvancedPlayerControllerを検索
-            var playerController = FindFirstObjectByType<Vastcore.Player.AdvancedPlayerController>();
+            var playerController = FindFirstObjectByType<IPlayerController>();
             if (playerController != null)
             {
-                playerTransform = playerController.transform;
+                playerTransform = playerController.Transform;
                 Debug.Log("Found AdvancedPlayerController");
-                return;
+                return playerTransform;
             }
             
             // "Player"タグのオブジェクトを検索
->>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da:Assets/Scripts/Terrain/Map/TileManager.cs
             var playerObject = GameObject.FindGameObjectWithTag("Player");
             if (playerObject != null)
             {

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.ProBuilder;
 using System.Collections.Generic;
 using System.Linq;
+using Vastcore.Generation;
 
 namespace Vastcore.Generation
 {

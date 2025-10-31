@@ -1,8 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
 using System.Linq;
-using Vastcore.Generation.Map;
+using Vastcore.Utils;
+using Vastcore.Core;
 
 namespace Vastcore.Generation
 {
@@ -100,15 +100,11 @@ namespace Vastcore.Generation
             }
             
             // プレイヤーTransformを取得
-<<<<<<< HEAD:Assets/Scripts/Generation/Map/TerrainTexturingIntegration.cs
-            playerTransform = ResolvePlayerTransform();
-=======
-            var playerController = FindFirstObjectByType<AdvancedPlayerController>();
-            if (playerController != null)
+            var player = FindFirstObjectByType<IPlayerController>();
+            if (player != null)
             {
-                playerTransform = playerController.transform;
+                playerTransform = player.Transform;
             }
->>>>>>> 386c3b806d99895c652c4a4763bab04a3d0867da:Assets/Scripts/Terrain/Map/TerrainTexturingIntegration.cs
             
             // イベントハンドラーを登録
             RegisterEventHandlers();
@@ -131,7 +127,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// 新しいタイルを監視
         /// </summary>
-        private IEnumerator MonitorNewTiles()
+        private System.Collections.IEnumerator MonitorNewTiles()
         {
             while (true)
             {
