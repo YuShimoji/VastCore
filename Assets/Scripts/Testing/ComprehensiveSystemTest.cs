@@ -5,6 +5,8 @@ using UnityEngine;
 using UnityEngine.Profiling;
 using System.IO;
 using System.Text;
+using Vastcore.Generation;
+using Vastcore.Generation.Map;
 
 namespace VastCore.Testing
 {
@@ -16,7 +18,7 @@ namespace VastCore.Testing
     {
         [Header("テスト設定")]
         [SerializeField] private bool enableLongTermTest = false;
-        [SerializeField] private float testDurationHours = 24f;
+        [SerializeField] public float testDurationHours = 24f;
         [SerializeField] private float monitoringIntervalSeconds = 60f;
         [SerializeField] private bool enableDetailedLogging = true;
         
@@ -31,7 +33,7 @@ namespace VastCore.Testing
         [SerializeField] private RuntimeGenerationManager generationManager;
         
         // テスト状態
-        private bool isTestRunning = false;
+        public bool isTestRunning = false;
         private DateTime testStartTime;
         private float testElapsedTime = 0f;
         private int monitoringCycleCount = 0;

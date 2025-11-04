@@ -37,12 +37,58 @@ VastCore is a Unity-based terrain generation and exploration game engine. It pro
 - ✅ Player movement and camera systems implemented
 - ✅ LOD and performance optimizations added
 
-## Development Phases
-1. **Phase 1-2**: Compilation fixes and UI migration (✅ Completed)
-2. **Phase 3**: Deform system integration (🔄 In Progress)
-3. **Phase 4**: Terrain streaming system
-4. **Phase 5**: Advanced terrain synthesis
-5. **Phase 6**: Random control extensions
+## Future Tasks Roadmap
+
+| フェーズ | タスク名 | 優先度 | ステータス | 概要 |
+|---------|---------|-------|-----------|-----|
+| Phase 3 | Deform System Integration | 高 | 進行中 | Deformパッケージ（v1.2.2）の統合。ランタイムメッシュ変形、視覚品質向上。 |
+| Phase 4 | Terrain Streaming System | 中 | 未着手 | 地形のストリーミングシステム実装。 |
+| Phase 5 | Advanced Terrain Synthesis | 中 | 未着手 | 高度な地形合成アルゴリズム。 |
+| Phase 6 | Random Control Extensions | 低 | 未着手 | ランダム制御の拡張。 |
+| Quality Gates | Unit Tests 80% Coverage | 高 | 未着手 | ユニットテストカバレッジを80%まで向上。 |
+| Quality Gates | Security Scans | 高 | 未着手 | 高/重要脆弱性のゼロ化。 |
+| Quality Gates | Performance 60 FPS | 中 | 未着手 | パフォーマンス最適化。 |
+| Quality Gates | Code Review Process | 低 | 未着手 | Tier 2+変更のコードレビュープロセス確立。 |
+| OpenSpec Changes | Player Controller Refinement | 中 | 未着手 | プレイヤーコントローラーの改良。 |
+| OpenSpec Changes | Terrain Visual Improvement | 中 | 未着手 | 地形視覚効果の向上。 |
+| OpenSpec Changes | UI Realtime Optimization | 低 | 未着手 | UIリアルタイム最適化。 |
+
+## Blind Spot Proposals (Critical Analysis)
+
+### セキュリティ強化
+- APIキー管理: 環境変数や暗号化ストレージを使用
+- 入力検証: ユーザー入力のサニタイズ強化
+- 依存関係スキャン: 定期的な脆弱性スキャン
+
+### ドキュメント・運用
+- ユーザー向けドキュメント: エンドユーザー向けマニュアル作成
+- APIドキュメント自動生成: DoxygenでHTML生成
+- 変更ログ管理: 自動生成CHANGELOG.md
+
+### CI/CD強化
+- 自動デプロイ: ビルド→テスト→デプロイスクリプト
+- ロールバック戦略: 失敗時の自動ロールバック
+- マルチプラットフォームビルド: 並行ビルド対応
+
+### ユーザーエクスペリエンス（UX）
+- モバイル対応: タッチ操作最適化
+- アクセシビリティ: 色覚障害者対応、キーボード操作
+- ローカライズ: 多言語対応
+
+### 拡張性・アーキテクチャ
+- プラグインシステム: Package Manager経由拡張
+- モジュール化強化: asmdef細分化、循環参照防止
+- 設定管理: ScriptableObjectベース強化
+
+### パフォーマンス・品質
+- メモリ管理: 地形データ監視、GC最適化
+- プロファイリング統合: 自動レポート生成
+- 統合テスト/E2Eテスト: シーン単位テスト、実機自動化
+
+### コミュニティ・ビジネス
+- コミュニティ管理: Discord/GitHub Discussionsサポート
+- ビジネスモデル検討: 無料/有料版、DLC展開
+- フィードバック収集: ユーザー調査、アナリティクス統合
 
 ## Quality Gates
 - Unit tests: 80% coverage minimum

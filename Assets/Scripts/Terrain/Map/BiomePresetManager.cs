@@ -259,35 +259,58 @@ namespace Vastcore.Generation
             }
         }
 
-#if UNITY_EDITOR
         /// <summary>
-        /// Creates a new BiomePreset asset in the editor.
+        /// Create default biome presets
         /// </summary>
-        [MenuItem("Vastcore/Create New Biome Preset")]
-        public static void CreateNewPresetInEditor()
+        public void CreateDefaultPresets()
         {
-            var preset = ScriptableObject.CreateInstance<BiomePreset>();
-            // preset.InitializeDefault(); // Assuming BiomePreset has this method
+#if UNITY_EDITOR
+            // Create Forests preset
+            var forestsPreset = ScriptableObject.CreateInstance<BiomePreset>();
+            forestsPreset.InitializeDefault();
+            forestsPreset.presetName = "Forests";
+            forestsPreset.description = "Dense forest biome with moderate terrain";
+            forestsPreset.moisture = 0.8f;
+            forestsPreset.temperature = 0.6f;
+            forestsPreset.fertility = 0.7f;
+            forestsPreset.rockiness = 0.3f;
+            SavePreset(forestsPreset);
 
-            if (!AssetDatabase.IsValidFolder("Assets/Data"))
-            {
-                AssetDatabase.CreateFolder("Assets", "Data");
-            }
-            if (!AssetDatabase.IsValidFolder("Assets/Data/BiomePresets"))
-            {
-                AssetDatabase.CreateFolder("Assets/Data", "BiomePresets");
-            }
+            // Create Mountains preset
+            var mountainsPreset = ScriptableObject.CreateInstance<BiomePreset>();
+            mountainsPreset.InitializeDefault();
+            mountainsPreset.presetName = "Mountains";
+            mountainsPreset.description = "Rugged mountain terrain with high elevation";
+            mountainsPreset.moisture = 0.4f;
+            mountainsPreset.temperature = 0.3f;
+            mountainsPreset.fertility = 0.4f;
+            mountainsPreset.rockiness = 0.9f;
+            SavePreset(mountainsPreset);
 
-            string path = AssetDatabase.GenerateUniqueAssetPath("Assets/Data/BiomePresets/NewBiomePreset.asset");
-            AssetDatabase.CreateAsset(preset, path);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
+            // Create Plains preset
+            var plainsPreset = ScriptableObject.CreateInstance<BiomePreset>();
+            plainsPreset.InitializeDefault();
+            plainsPreset.presetName = "Plains";
+            plainsPreset.description = "Flat plains with fertile soil";
+            plainsPreset.moisture = 0.6f;
+            plainsPreset.temperature = 0.7f;
+            plainsPreset.fertility = 0.9f;
+            plainsPreset.rockiness = 0.1f;
+            SavePreset(plainsPreset);
 
-            Selection.activeObject = preset;
-            EditorGUIUtility.PingObject(preset);
+            // Create Desert preset
+            var desertPreset = ScriptableObject.CreateInstance<BiomePreset>();
+            desertPreset.InitializeDefault();
+            desertPreset.presetName = "Desert";
+            desertPreset.description = "Arid desert with sandy terrain";
+            desertPreset.moisture = 0.1f;
+            desertPreset.temperature = 0.9f;
+            desertPreset.fertility = 0.2f;
+            desertPreset.rockiness = 0.2f;
+            SavePreset(desertPreset);
 
-            Debug.Log($"Created a new biome preset at: {path}");
-        }
+            Debug.Log("Created default biome presets");
 #endif
+        }
     }
 }

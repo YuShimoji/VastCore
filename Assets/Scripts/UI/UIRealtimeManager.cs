@@ -138,6 +138,11 @@ namespace Vastcore.UI
             {
                 VastcoreLogger.Instance.LogWarning("UIRealtimeManager", $"Memory usage high: {currentMetrics.memoryUsage:F1}MB");
             }
+
+            if (currentMetrics.cpuUsage > cpuThresholdPercent)
+            {
+                VastcoreLogger.Instance.LogWarning("UIRealtimeManager", $"CPU usage high: {currentMetrics.cpuUsage:F1}%");
+            }
         }
 
         private void AdjustQualityBasedOnPerformance()
@@ -161,6 +166,12 @@ namespace Vastcore.UI
         /// </summary>
         public void RegisterComponent(IRealtimeUIComponent component)
         {
+            if (activeComponents.Count >= maxActiveUIElements)
+            {
+                VastcoreLogger.Instance.LogWarning("UIRealtimeManager", $"Maximum active UI elements reached ({maxActiveUIElements}). Cannot register new component.");
+                return;
+            }
+
             if (!activeComponents.Contains(component))
             {
                 activeComponents.Add(component);

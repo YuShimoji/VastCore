@@ -238,8 +238,11 @@ namespace Vastcore.UI
         {
             element.slider.onValueChanged.AddListener((float value) =>
             {
+                // Apply sensitivity scaling
+                float adjustedValue = value * sliderSensitivity;
+                
                 // Update value display immediately
-                element.valueText.text = value.ToString("F2");
+                element.valueText.text = adjustedValue.ToString("F2");
                 
                 // Throttle the actual parameter updates if enabled
                 if (enableRealtimeUpdate)
@@ -250,18 +253,18 @@ namespace Vastcore.UI
                     if (!lastUpdateTimes.ContainsKey(parameterName) || 
                         currentTime - lastUpdateTimes[parameterName] >= updateThrottle)
                     {
-                        onValueChanged?.Invoke(value);
+                        onValueChanged?.Invoke(adjustedValue);
                         lastUpdateTimes[parameterName] = currentTime;
                     }
                     else
                     {
                         // Schedule delayed update
-                        StartCoroutine(DelayedUpdate(parameterName, value, onValueChanged));
+                        StartCoroutine(DelayedUpdate(parameterName, adjustedValue, onValueChanged));
                     }
                 }
                 else
                 {
-                    onValueChanged?.Invoke(value);
+                    onValueChanged?.Invoke(adjustedValue);
                 }
             });
         }

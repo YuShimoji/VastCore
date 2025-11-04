@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using Vastcore.Generation;
+using Vastcore.Core;
 
 public class PrimitiveErrorRecoveryTester : EditorWindow
 {
@@ -87,7 +88,7 @@ public class PrimitiveErrorRecoveryTester : EditorWindow
         }
 
         // This coroutine will attempt to spawn, and find a new position if the original is occupied.
-        EditorCoroutineUtility.StartCoroutine(recoverySystem.RecoverPrimitiveSpawn(spawnPosition, primitiveType, scale,
+        recoverySystem.StartCoroutine(recoverySystem.RecoverPrimitiveSpawn(spawnPosition, primitiveType, scale,
             (spawnedObject) =>
             {
                 if (spawnedObject != null)
@@ -98,7 +99,7 @@ public class PrimitiveErrorRecoveryTester : EditorWindow
             () =>
             {
                 Debug.LogError("Failure! Primitive could not be spawned.");
-            }), this);
+            }));
     }
 
     private void TestPositionRecovery_OnSteepSlope()
@@ -114,7 +115,7 @@ public class PrimitiveErrorRecoveryTester : EditorWindow
             return;
         }
 
-        EditorCoroutineUtility.StartCoroutine(recoverySystem.RecoverPrimitiveSpawn(slopePosition, primitiveType, scale,
+        recoverySystem.StartCoroutine(recoverySystem.RecoverPrimitiveSpawn(slopePosition, primitiveType, scale,
             (spawnedObject) =>
             {
                 if (spawnedObject != null)
@@ -125,7 +126,7 @@ public class PrimitiveErrorRecoveryTester : EditorWindow
             () =>
             {
                 Debug.LogError("Failure! Primitive could not be spawned.");
-            }), this);
+            }));
     }
 
     private void TestMeshRecovery()
@@ -145,7 +146,7 @@ public class PrimitiveErrorRecoveryTester : EditorWindow
         // The system is designed to try standard creation first, then fallback.
         Vector3 clearPosition = new Vector3(-50, 10, 0);
 
-        EditorCoroutineUtility.StartCoroutine(recoverySystem.RecoverPrimitiveSpawn(clearPosition, PrimitiveType.Quad, scale, // Quad often has no default collider/mesh setup that works everywhere
+        recoverySystem.StartCoroutine(recoverySystem.RecoverPrimitiveSpawn(clearPosition, PrimitiveType.Quad, scale, // Quad often has no default collider/mesh setup that works everywhere
             (spawnedObject) =>
             {
                 if (spawnedObject != null)
@@ -156,6 +157,6 @@ public class PrimitiveErrorRecoveryTester : EditorWindow
             () =>
             {
                 Debug.LogError("Failure! Primitive could not be spawned.");
-            }), this);
+            }));
     }
 }

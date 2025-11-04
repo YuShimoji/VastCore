@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.TestTools;
-using System.Linq;
-using System.Text;
+using NUnit.Framework;
+using Vastcore.Generation;
 
 namespace VastCore.Testing
 {
@@ -576,25 +578,41 @@ namespace VastCore.Testing
             List<string> issues = new List<string>();
             float integrationScore = 1f;
             
+            // 地形とプリミティブの統合テスト
             try
             {
-                // 地形とプリミティブの統合テスト
                 integrationScore *= TestTerrainPrimitiveIntegration();
-                yield return null;
-                
-                // プレイヤーシステムとの統合テスト
-                integrationScore *= TestPlayerSystemIntegration();
-                yield return null;
-                
-                // UIシステムとの統合テスト
-                integrationScore *= TestUISystemIntegration();
-                yield return null;
             }
             catch (Exception e)
             {
-                issues.Add($"Integration test exception: {e.Message}");
+                issues.Add($"Terrain primitive integration test exception: {e.Message}");
                 integrationScore *= 0.5f;
             }
+            yield return null;
+            
+            // プレイヤーシステムとの統合テスト
+            try
+            {
+                integrationScore *= TestPlayerSystemIntegration();
+            }
+            catch (Exception e)
+            {
+                issues.Add($"Player system integration test exception: {e.Message}");
+                integrationScore *= 0.5f;
+            }
+            yield return null;
+            
+            // UIシステムとの統合テスト
+            try
+            {
+                integrationScore *= TestUISystemIntegration();
+            }
+            catch (Exception e)
+            {
+                issues.Add($"UI system integration test exception: {e.Message}");
+                integrationScore *= 0.5f;
+            }
+            yield return null;
             
             testResult.endTime = DateTime.Now;
             testResult.passed = integrationScore >= 0.8f;

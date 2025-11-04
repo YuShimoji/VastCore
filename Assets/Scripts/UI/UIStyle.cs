@@ -316,4 +316,32 @@ namespace Vastcore.UI
         Normal,
         Slow
     }
+
+    /// <summary>
+    /// Simple UI style data structure for comparison and storage
+    /// </summary>
+    [System.Serializable]
+    public class UIStyle
+    {
+        public Color primaryColor;
+        public Color accentColor;
+        public TMP_FontAsset fontFamily;
+        
+        public UIStyle(Color primary, Color accent, TMP_FontAsset font)
+        {
+            primaryColor = primary;
+            accentColor = accent;
+            fontFamily = font;
+        }
+        
+        public UIStyle(ModernUIStyleSystem styleSystem)
+        {
+            if (styleSystem != null)
+            {
+                primaryColor = styleSystem.primaryColor;
+                accentColor = styleSystem.accentColor;
+                fontFamily = styleSystem.primaryFont;
+            }
+        }
+    }
 }

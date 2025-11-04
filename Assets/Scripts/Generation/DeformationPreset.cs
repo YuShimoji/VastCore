@@ -50,6 +50,26 @@ namespace Vastcore.Generation
         public VastcoreDeformManager.DeformQualityLevel DefaultQualityLevel => defaultQualityLevel;
 
         /// <summary>
+        /// ノイズ強度を取得/設定
+        /// </summary>
+        public float NoiseIntensity { get => noiseIntensity; set => noiseIntensity = value; }
+
+        /// <summary>
+        /// ノイズ周波数を取得/設定
+        /// </summary>
+        public float NoiseFrequency { get => noiseFrequency; set => noiseFrequency = value; }
+
+        /// <summary>
+        /// ディスプレイス強度を取得/設定
+        /// </summary>
+        public float DisplaceStrength { get => displaceStrength; set => displaceStrength = value; }
+
+        /// <summary>
+        /// ディスプレイスマップを取得/設定
+        /// </summary>
+        public Texture2D DisplaceMap { get => displaceMap; set => displaceMap = value; }
+
+        /// <summary>
         /// プリセットを適用
         /// </summary>
         public void ApplyToTerrainObject(PrimitiveTerrainObject terrainObject)

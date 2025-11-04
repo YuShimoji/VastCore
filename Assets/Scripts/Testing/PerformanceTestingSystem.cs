@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Text;
 
@@ -271,7 +272,8 @@ namespace Vastcore.Testing
         /// </summary>
         private int GetActiveObjectCount()
         {
-            return FindObjectsOfType<GameObject>().Length;
+            var allObjects = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+            return allObjects.Length;
         }
         
         /// <summary>

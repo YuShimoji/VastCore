@@ -27,6 +27,9 @@ namespace Vastcore.UI
         public float hoverScale = 1.05f;
         public float animationDuration = 0.2f;
         
+        [Header("Style System")]
+        public ModernUIStyleSystem styleSystem;
+        
         private RectTransform rectTransform;
         private Vector3 originalScale;
         private bool isHovered = false;
@@ -363,6 +366,22 @@ namespace Vastcore.UI
             if (labelText != null)
             {
                 labelText.text = parameterName;
+            }
+        }
+        
+        /// <summary>
+        /// Gets the current style applied to this slider element
+        /// </summary>
+        public UIStyle GetCurrentStyle()
+        {
+            if (styleSystem != null)
+            {
+                return new UIStyle(styleSystem);
+            }
+            else
+            {
+                // Return default style if no style system is assigned
+                return new UIStyle(new Color(0.2f, 0.6f, 1f), new Color(0f, 0.8f, 1f), null);
             }
         }
     }
