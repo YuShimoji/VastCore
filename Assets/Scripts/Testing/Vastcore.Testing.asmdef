@@ -3,7 +3,7 @@
     "rootNamespace": "Vastcore.Testing",
     "references": [
         "Vastcore.Core",
-        "Vastcore.Utils",
+        "Vastcore.Utilities",
         "Vastcore.Generation",
         "Vastcore.Terrain",
         "Vastcore.Player",

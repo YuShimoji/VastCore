@@ -3,7 +3,7 @@
     "rootNamespace": "Vastcore.Game",
     "references": [
         "Vastcore.Core",
-        "Vastcore.Utils",
+        "Vastcore.Utilities",
         "Vastcore.Player",
         "Vastcore.Terrain",
         "Vastcore.Camera",
