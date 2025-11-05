@@ -9,14 +9,6 @@
       },
       "hash": "9e57dd3864ea6c742d819959724c99ca574a2f76"
     },
-    "com.unity.adaptiveperformance": {
-      "version": "6.0.0",
-      "depth": 1,
-      "source": "builtin",
-      "dependencies": {
-        "com.unity.modules.adaptiveperformance": "1.0.0"
-      }
-    },
     "com.unity.ai.assistant": {
       "version": "1.0.0-pre.12",
       "depth": 0,
@@ -109,16 +101,6 @@
       "source": "builtin",
       "dependencies": {}
     },
-    "com.unity.feature.mobile": {
-      "version": "1.0.0",
-      "depth": 0,
-      "source": "builtin",
-      "dependencies": {
-        "com.unity.mobile.android-logcat": "1.4.5",
-        "com.unity.adaptiveperformance": "6.0.0",
-        "com.unity.mobile.notifications": "2.4.1"
-      }
-    },
     "com.unity.ide.visualstudio": {
       "version": "2.0.23",
       "depth": 0,
@@ -142,22 +124,6 @@
       "depth": 1,
       "source": "registry",
       "dependencies": {},
-      "url": "https://packages.unity.com"
-    },
-    "com.unity.mobile.android-logcat": {
-      "version": "1.4.5",
-      "depth": 1,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://packages.unity.com"
-    },
-    "com.unity.mobile.notifications": {
-      "version": "2.4.1",
-      "depth": 1,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.modules.androidjni": "1.0.0"
-      },
       "url": "https://packages.unity.com"
     },
     "com.unity.multiplayer.center": {
