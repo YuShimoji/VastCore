@@ -74,7 +74,7 @@ namespace Vastcore.Terrain
         private void SetupLighting()
         {
             // ディレクショナルライトを取得または作成
-            Light directionalLight = FindObjectOfType<Light>();
+            Light directionalLight = FindFirstObjectByType<Light>();
             if (directionalLight == null || directionalLight.type != LightType.Directional)
             {
                 GameObject lightObject = new GameObject("Directional Light");
@@ -96,7 +96,7 @@ namespace Vastcore.Terrain
         private void SetupTerrain()
         {
             // 既存の地形を確認
-            BasicTerrainDisplay existingTerrain = FindObjectOfType<BasicTerrainDisplay>();
+            BasicTerrainDisplay existingTerrain = FindFirstObjectByType<BasicTerrainDisplay>();
             if (existingTerrain != null)
             {
                 Debug.Log("Terrain already exists in scene");
