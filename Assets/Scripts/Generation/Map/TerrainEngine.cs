@@ -34,6 +34,11 @@ namespace Vastcore.Generation
         public bool enableTerrainEngine = true;
         public TerrainGenerationMode generationMode = TerrainGenerationMode.Hybrid;
 
+        [Header("ジオメトリ設定")]
+        public TerrainGeometryType geometryType = TerrainGeometryType.UnityTerrain;
+        public bool enableBoxTerrainSupport = false;
+        public Material boxTerrainMaterial;
+
         [Header("テンプレート設定")]
         public List<DesignerTerrainTemplate> availableTemplates = new List<DesignerTerrainTemplate>();
         public bool autoRegisterTemplates = true;
@@ -51,6 +56,9 @@ namespace Vastcore.Generation
         private Queue<TerrainGenerationTask> generationQueue = new Queue<TerrainGenerationTask>();
         private HashSet<Vector2Int> processingTiles = new HashSet<Vector2Int>();
         private bool isInitialized = false;
+
+        // コンポーネント参照
+        private BoxTerrainGenerator boxTerrainGenerator;
 
         #region Unity Lifecycle
 
@@ -96,6 +104,7 @@ namespace Vastcore.Generation
                 // 依存コンポーネントの初期化
                 InitializeBiomeSystem();
                 InitializeClimateSystem();
+                InitializeBoxTerrainGenerator();
 
                 // デザイナーテンプレートの登録
                 if (autoRegisterTemplates)
@@ -142,6 +151,29 @@ namespace Vastcore.Generation
                 }
             }
             climateSystem.Initialize();
+        }
+
+        /// <summary>
+        /// 箱型地形ジェネレーターを初期化
+        /// </summary>
+        private void InitializeBoxTerrainGenerator()
+        {
+            if (enableBoxTerrainSupport && geometryType == TerrainGeometryType.BoxTerrain)
+            {
+                boxTerrainGenerator = GetComponent<BoxTerrainGenerator>();
+                if (boxTerrainGenerator == null)
+                {
+                    boxTerrainGenerator = gameObject.AddComponent<BoxTerrainGenerator>();
+                }
+
+                // 設定の適用
+                if (boxTerrainGenerator != null && boxTerrainMaterial != null)
+                {
+                    boxTerrainGenerator.topMaterial = boxTerrainMaterial;
+                    boxTerrainGenerator.bottomMaterial = boxTerrainMaterial;
+                    boxTerrainGenerator.sideMaterial = boxTerrainMaterial;
+                }
+            }
         }
 
         /// <summary>
@@ -340,17 +372,20 @@ namespace Vastcore.Generation
         /// </summary>
         private void GenerateProcedural(TerrainTile tile)
         {
-            // バイオーム判定
+            // バイオーム固有のプロシージャル生成
             BiomeType biomeType = DetermineBiomeAtPosition(tile.worldPosition);
             var biomeDefinition = biomeSystem?.GetBiomeDefinition(biomeType);
 
-            // プロシージャル生成
-            BiomeSpecificTerrainGenerator.GenerateTerrainForBiome(
-                tile.heightData,
-                biomeType,
-                biomeDefinition,
-                tile.worldPosition
-            );
+            if (biomeDefinition != null)
+            {
+                // バイオーム定義に基づくプロシージャル生成
+                BiomeSpecificTerrainGenerator.GenerateProceduralTerrain(tile.heightData, biomeDefinition, tile.worldPosition);
+            }
+            else
+            {
+                // フォールバック：ベース地形生成
+                GenerateBaseTerrain(tile);
+            }
         }
 
         /// <summary>
@@ -411,8 +446,29 @@ namespace Vastcore.Generation
             tile.coordinate = coordinate;
             tile.worldPosition = worldPosition;
 
-            // 地形データの初期化（仮定値）
-            tile.heightData = new float[256, 256]; // 256x256の地形データ
+            // ジオメトリタイプに応じた初期化
+            switch (geometryType)
+            {
+                case TerrainGeometryType.UnityTerrain:
+                    // Unity Terrainコンポーネントの初期化
+                    tile.heightData = new float[256, 256]; // 256x256の地形データ
+                    break;
+
+                case TerrainGeometryType.BoxTerrain:
+                    // 箱型地形の場合、BoxTerrainGeneratorで処理
+                    if (boxTerrainGenerator != null)
+                    {
+                        boxTerrainGenerator.GenerateBoxTerrain(worldPosition);
+                    }
+                    tile.heightData = new float[1, 1]; // 最小データ
+                    break;
+
+                case TerrainGeometryType.MeshTerrain:
+                case TerrainGeometryType.CustomMesh:
+                    // メッシュベース地形の初期化（将来拡張）
+                    tile.heightData = new float[256, 256];
+                    break;
+            }
 
             return tile;
         }
@@ -473,6 +529,17 @@ namespace Vastcore.Generation
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// 地形のジオメトリタイプ
+    /// </summary>
+    public enum TerrainGeometryType
+    {
+        UnityTerrain,      // Unity Terrainコンポーネント
+        MeshTerrain,       // 3Dメッシュベース地形
+        BoxTerrain,        // 箱型地形（六面体）
+        CustomMesh         // カスタムメッシュ
     }
 
     /// <summary>

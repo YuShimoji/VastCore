@@ -1,14 +1,16 @@
 {
-    "name": "Vastcore.Terrain",
-    "rootNamespace": "Vastcore.Terrain",
+    "name": "Vastcore.Editor",
+    "rootNamespace": "Vastcore.Editor",
     "references": [
-        "Unity.ProBuilder",
-        "Unity.TextMeshPro",
         "Vastcore.Core",
         "Vastcore.Utilities",
-        "Vastcore.Player"
+        "Vastcore.Generation",
+        "Vastcore.Terrain",
+        "Unity.TextMeshPro"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

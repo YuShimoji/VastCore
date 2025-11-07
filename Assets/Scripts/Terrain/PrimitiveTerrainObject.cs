@@ -1,7 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Core;
 
-namespace Vastcore.Generation
+namespace Vastcore.Terrain
 {
     /// <summary>
     /// プリミティブ地形オブジェクトのコンポーネント

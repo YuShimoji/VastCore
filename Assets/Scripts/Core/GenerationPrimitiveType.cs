@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Vastcore.Generation
+namespace Vastcore.Core
 {
     /// <summary>
     /// 生成系と地形系の循環依存を避けるために切り出したプリミティブタイプ定義。

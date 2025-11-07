@@ -5,8 +5,7 @@
         "Vastcore.Core",
         "Vastcore.Utilities",
         "Vastcore.Player",
-        "Unity.TextMeshPro",
-        "Unity.Rendering.DebugUI"
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
