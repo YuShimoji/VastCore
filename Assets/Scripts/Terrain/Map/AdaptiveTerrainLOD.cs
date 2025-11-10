@@ -396,7 +396,8 @@ namespace Vastcore.Generation.Map
             var reducedHeightData = DownsampleHeightData(tile.heightData, targetResolution);
             
             // 新しいメッシュを生成
-            return MeshGenerator.GenerateMeshFromHeightmap(reducedHeightData, tile.coordinate);
+            var defaultParams = MeshGenerator.TerrainGenerationParams.Default();
+            return MeshGenerator.GenerateMeshFromHeightmap(reducedHeightData, defaultParams);
         }
         
         /// <summary>

@@ -5,16 +5,97 @@ namespace Vastcore.Generation
 {
     /// <summary>
     /// バイオーム特有地形生成システム
-    /// 各バイオームの特徴的な地形パターンと浸食・堆積パターンを実装
+    /// デザイナーテンプレートとプロシージャル生成を組み合わせたハイブリッドアプローチ
     /// </summary>
     public static class BiomeSpecificTerrainGenerator
     {
-        #region 公開メソッド
-        
+        #region デザイナーテンプレート管理
+
+        /// <summary>
+        /// バイオームごとのデザイナーテンプレートライブラリ
+        /// </summary>
+        private static readonly Dictionary<BiomeType, List<DesignerTerrainTemplate>> templateLibraries = new Dictionary<BiomeType, List<DesignerTerrainTemplate>>();
+
+        /// <summary>
+        /// テンプレートをライブラリに登録
+        /// </summary>
+        public static void RegisterTemplate(DesignerTerrainTemplate template)
+        {
+            if (template == null) return;
+
+            if (!templateLibraries.ContainsKey(template.associatedBiome))
+            {
+                templateLibraries[template.associatedBiome] = new List<DesignerTerrainTemplate>();
+            }
+
+            if (!templateLibraries[template.associatedBiome].Contains(template))
+            {
+                templateLibraries[template.associatedBiome].Add(template);
+            }
+        }
+
+        /// <summary>
+        /// バイオームに適したテンプレートを取得
+        /// </summary>
+        public static DesignerTerrainTemplate GetRandomTemplateForBiome(BiomeType biomeType, Vector3 worldPosition)
+        {
+            if (!templateLibraries.ContainsKey(biomeType) || templateLibraries[biomeType].Count == 0)
+            {
+                return null;
+            }
+
+            var templates = templateLibraries[biomeType];
+            int seed = Mathf.FloorToInt(worldPosition.x + worldPosition.z);
+            System.Random random = new System.Random(seed);
+
+            return templates[random.Next(templates.Count)];
+        }
+
+        #endregion
+
+        #region メイン生成メソッド
+
         /// <summary>
         /// バイオームタイプに応じた地形生成を実行
+        /// デザイナーテンプレート優先、フォールバックでプロシージャル生成
         /// </summary>
         public static void GenerateTerrainForBiome(float[,] heightmap, BiomeType biomeType, BiomeDefinition biomeDefinition, Vector3 worldPosition)
+        {
+            // デザイナーテンプレートベースの生成を試行
+            bool templateApplied = TryApplyDesignerTemplates(heightmap, biomeType, worldPosition);
+
+            // テンプレートが適用できなかった場合のみプロシージャル生成
+            if (!templateApplied)
+            {
+                GenerateProceduralTerrain(heightmap, biomeType, biomeDefinition, worldPosition);
+            }
+
+            // 共通の後処理
+            ApplyBiomePostProcessing(heightmap, biomeDefinition, worldPosition);
+        }
+
+        /// <summary>
+        /// デザイナーテンプレートの適用を試行
+        /// </summary>
+        private static bool TryApplyDesignerTemplates(float[,] heightmap, BiomeType biomeType, Vector3 worldPosition)
+        {
+            var template = GetRandomTemplateForBiome(biomeType, worldPosition);
+
+            if (template != null && template.CanApplyAt(worldPosition, GetTerrainHeightAt(worldPosition), GetTerrainSlopeAt(worldPosition)))
+            {
+                // テンプレートベース生成を実行
+                float seed = worldPosition.x * 0.01f + worldPosition.z * 0.01f;
+                TerrainSynthesizer.SynthesizeTerrain(heightmap, template, worldPosition, seed);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// プロシージャル地形生成（フォールバック）
+        /// </summary>
+        private static void GenerateProceduralTerrain(float[,] heightmap, BiomeType biomeType, BiomeDefinition biomeDefinition, Vector3 worldPosition)
         {
             switch (biomeType)
             {
@@ -41,7 +122,262 @@ namespace Vastcore.Generation
                     break;
             }
         }
-        
+
+        /// <summary>
+        /// 地形修正を適用
+        /// </summary>
+        private static void ApplyTerrainModifiers(float[,] heightmap, TerrainModificationData modifiers)
+        {
+            if (modifiers == null) return;
+
+            // 高度乗数を適用
+            if (modifiers.heightMultiplier != 1f)
+            {
+                ApplyHeightMultiplier(heightmap, modifiers.heightMultiplier);
+            }
+
+            // 粗さ調整
+            if (modifiers.roughnessMultiplier != 1f)
+            {
+                ApplyRoughness(heightmap, modifiers.roughnessMultiplier);
+            }
+
+            // 特殊地形生成
+            if (modifiers.enableDuneGeneration)
+            {
+                GenerateDunesForBiome(heightmap, modifiers);
+            }
+
+            if (modifiers.enableRidgeGeneration)
+            {
+                GenerateRidgesForBiome(heightmap, modifiers);
+            }
+
+            if (modifiers.enablePeakGeneration)
+            {
+                GeneratePeaksForBiome(heightmap, modifiers);
+            }
+
+            if (modifiers.enableBeachGeneration)
+            {
+                GenerateBeachForBiome(heightmap, modifiers);
+            }
+
+            if (modifiers.enableGlacialGeneration)
+            {
+                GenerateGlacialTerrainForBiome(heightmap, modifiers);
+            }
+
+            if (modifiers.enableRollingHills)
+            {
+                GenerateRollingHillsForBiome(heightmap, modifiers);
+            }
+
+            // 浸食・堆積
+            if (modifiers.erosionStrength > 0f)
+            {
+                ApplyErosion(heightmap, modifiers.erosionStrength);
+            }
+
+            if (modifiers.sedimentationRate > 0f)
+            {
+                ApplySedimentation(heightmap, modifiers.sedimentationRate);
+            }
+        }
+
+        /// <summary>
+        /// 高度乗数を適用
+        /// </summary>
+        private static void ApplyHeightMultiplier(float[,] heightmap, float multiplier)
+        {
+            int width = heightmap.GetLength(0);
+            int height = heightmap.GetLength(1);
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    heightmap[x, y] *= multiplier;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 粗さを適用
+        /// </summary>
+        private static void ApplyRoughness(float[,] heightmap, float roughnessMultiplier)
+        {
+            int width = heightmap.GetLength(0);
+            int height = heightmap.GetLength(1);
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    float noise = Mathf.PerlinNoise(x * 0.1f, y * 0.1f) - 0.5f;
+                    heightmap[x, y] += noise * roughnessMultiplier * 10f;
+                }
+            }
+        }
+
+        #region ユーティリティメソッド
+
+        /// <summary>
+        /// 指定位置の地形高度を取得（簡易実装）
+        /// </summary>
+        private static float GetTerrainHeightAt(Vector3 worldPosition)
+        {
+            // 実際の実装ではTerrain.SampleHeightを使用
+            return worldPosition.y;
+        }
+
+        /// <summary>
+        /// 指定位置の地形傾斜を取得（簡易実装）
+        /// </summary>
+        private static float GetTerrainSlopeAt(Vector3 worldPosition)
+        {
+            // 実際の実装ではTerrain.SampleSlopeを使用
+            return 0f;
+        }
+
+        /// <summary>
+        /// 浸食を適用
+        /// </summary>
+        private static void ApplyErosion(float[,] heightmap, float strength)
+        {
+            int width = heightmap.GetLength(0);
+            int height = heightmap.GetLength(1);
+
+            for (int x = 1; x < width - 1; x++)
+            {
+                for (int y = 1; y < height - 1; y++)
+                {
+                    float currentHeight = heightmap[x, y];
+                    float avgNeighbor = (
+                        heightmap[x-1, y] + heightmap[x+1, y] +
+                        heightmap[x, y-1] + heightmap[x, y+1]
+                    ) / 4f;
+
+                    if (currentHeight > avgNeighbor)
+                    {
+                        float erosion = (currentHeight - avgNeighbor) * strength * 0.1f;
+                        heightmap[x, y] -= erosion;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 堆積を適用
+        /// </summary>
+        private static void ApplySedimentation(float[,] heightmap, float rate)
+        {
+            int width = heightmap.GetLength(0);
+            int height = heightmap.GetLength(1);
+
+            for (int x = 1; x < width - 1; x++)
+            {
+                for (int y = 1; y < height - 1; y++)
+                {
+                    float currentHeight = heightmap[x, y];
+                    float avgNeighbor = (
+                        heightmap[x-1, y] + heightmap[x+1, y] +
+                        heightmap[x, y-1] + heightmap[x, y+1]
+                    ) / 4f;
+
+                    if (currentHeight < avgNeighbor)
+                    {
+                        float deposition = (avgNeighbor - currentHeight) * rate * 0.1f;
+                        heightmap[x, y] += deposition;
+                    }
+                }
+            }
+        }
+
+        #endregion
+
+        #region 特殊地形生成メソッド
+
+        /// <summary>
+        /// バイオーム用の砂丘生成
+        /// </summary>
+        private static void GenerateDunesForBiome(float[,] heightmap, TerrainModificationData modifiers)
+        {
+            Vector3 worldPosition = Vector3.zero; // 仮定値
+            GenerateDuneSystems(heightmap, worldPosition);
+        }
+
+        /// <summary>
+        /// バイオーム用の尾根生成
+        /// </summary>
+        private static void GenerateRidgesForBiome(float[,] heightmap, TerrainModificationData modifiers)
+        {
+            Vector3 worldPosition = Vector3.zero;
+            GenerateForestRidges(heightmap, worldPosition);
+        }
+
+        /// <summary>
+        /// バイオーム用の山頂生成
+        /// </summary>
+        private static void GeneratePeaksForBiome(float[,] heightmap, TerrainModificationData modifiers)
+        {
+            Vector3 worldPosition = Vector3.zero;
+            GenerateMountainPeaks(heightmap, worldPosition);
+        }
+
+        /// <summary>
+        /// バイオーム用の海岸生成
+        /// </summary>
+        private static void GenerateBeachForBiome(float[,] heightmap, TerrainModificationData modifiers)
+        {
+            GenerateCoastalTerrain(heightmap, null, Vector3.zero);
+        }
+
+        /// <summary>
+        /// バイオーム用の氷河地形生成
+        /// </summary>
+        private static void GenerateGlacialTerrainForBiome(float[,] heightmap, TerrainModificationData modifiers)
+        {
+            int width = heightmap.GetLength(0);
+            int height = heightmap.GetLength(1);
+
+            // 簡易的な氷河平滑化
+            for (int x = 1; x < width - 1; x++)
+            {
+                for (int y = 1; y < height - 1; y++)
+                {
+                    float avg = (
+                        heightmap[x-1, y] + heightmap[x+1, y] +
+                        heightmap[x, y-1] + heightmap[x, y+1]
+                    ) / 4f;
+
+                    heightmap[x, y] = Mathf.Lerp(heightmap[x, y], avg, modifiers.glacialSmoothness);
+                    heightmap[x, y] -= modifiers.glacialDepth;
+                }
+            }
+        }
+
+        /// <summary>
+        /// バイオーム用の起伏丘陵生成
+        /// </summary>
+        private static void GenerateRollingHillsForBiome(float[,] heightmap, TerrainModificationData modifiers)
+        {
+            int width = heightmap.GetLength(0);
+            int height = heightmap.GetLength(1);
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    float hillNoise1 = Mathf.PerlinNoise(x * modifiers.hillFrequency, y * modifiers.hillFrequency);
+                    float hillNoise2 = Mathf.PerlinNoise(x * modifiers.hillFrequency * 2f, y * modifiers.hillFrequency * 2f) * 0.5f;
+                    float hillHeight = (hillNoise1 + hillNoise2) * modifiers.hillAmplitude;
+
+                    heightmap[x, y] += hillHeight;
+                }
+            }
+        }
+
         #endregion
         
         #region 砂漠地形生成

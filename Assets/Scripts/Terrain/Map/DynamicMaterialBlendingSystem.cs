@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using Vastcore.Utils;
+<<<<<<< HEAD
+using Vastcore.Player;
+=======
+>>>>>>> origin/develop
 
 namespace Vastcore.Generation
 {
@@ -85,6 +89,32 @@ namespace Vastcore.Generation
         }
         #endregion
 
+        /// <summary>
+        /// マテリアルブレンドを更新
+        /// </summary>
+        private void UpdateMaterialBlends()
+        {
+            if (!enableDynamicBlending)
+                return;
+
+            // アクティブなブレンドを更新
+            UpdateActiveBlends();
+
+            // 完了したブレンドをクリーンアップ
+            CleanupCompletedBlends();
+
+            // フレームレート制御
+            if (enableFrameRateControl)
+            {
+                float elapsedTime = (Time.realtimeSinceStartup - frameStartTime) * 1000f;
+                if (elapsedTime > targetFrameTime)
+                {
+                    // 次のフレームまで待機
+                    return;
+                }
+            }
+        }
+
         #region 初期化
         /// <summary>
         /// ブレンディングシステムを初期化
@@ -101,7 +131,12 @@ namespace Vastcore.Generation
             }
             
             // プレイヤーTransformを取得
+<<<<<<< HEAD
+            var playerController = FindFirstObjectByType<AdvancedPlayerController>();
+            if (playerController != null)
+=======
             if (playerTransform == null)
+>>>>>>> origin/develop
             {
                 playerTransform = ResolvePlayerTransform();
             }

@@ -17,6 +17,7 @@ namespace Vastcore.Generation.Cache
         [SerializeField] private bool enableIntegratedCaching = true;
         [SerializeField] private float cacheCheckInterval = 2f;
         [SerializeField] private int maxSimultaneousLoads = 3;
+        [SerializeField] private float maxMemoryCacheSize = 512f; // MB
         
         [Header("キャッシュ優先度")]
         [SerializeField] private float recentAccessWeight = 2f;
@@ -102,7 +103,6 @@ namespace Vastcore.Generation.Cache
                 return;
             }
             
-            // キャッシュミス - 生成キューに追加
             var request = new TerrainLoadRequest
             {
                 coordinate = coordinate,
@@ -111,6 +111,20 @@ namespace Vastcore.Generation.Cache
                 isFromCache = false,
                 requestTime = Time.time
             };
+            
+            // 優先度計算（recentAccessWeight, distanceWeight, frequencyWeightを使用）
+            if (terrainManager != null)
+            {
+                Vector3 playerPos = terrainManager.playerTransform != null ? terrainManager.playerTransform.position : Vector3.zero;
+                Vector3 tilePos = new Vector3(coordinate.x * 2000f, 0, coordinate.y * 2000f);
+                float distance = Vector3.Distance(playerPos, tilePos);
+                float requestTime = Time.time; // 現在の時間を取得
+                float timeSinceRequest = Time.time - requestTime;
+                
+                request.priority = (recentAccessWeight * (1f / (1f + timeSinceRequest))) + 
+                                 (distanceWeight * (1f / (1f + distance / 1000f))) + 
+                                 (frequencyWeight * priority);
+            }
             
             if (!activeLoadRequests.ContainsKey(coordinate))
             {

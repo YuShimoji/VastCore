@@ -209,7 +209,9 @@ namespace Vastcore.Generation.Map
             
             foreach (var task in priorityQueue)
             {
-                if (Vector3.Distance(task.position, position) <= radius)
+                // generationRadiusを考慮した距離チェック
+                float effectiveRadius = Mathf.Min(radius, generationRadius);
+                if (Vector3.Distance(task.position, position) <= effectiveRadius)
                 {
                     tasksToRemove.Add(task);
                 }
@@ -317,11 +319,21 @@ namespace Vastcore.Generation.Map
             if (priorityQueue.Count == 0)
                 return null;
 
-            // 最高優先度のタスクを取得
-            var task = priorityQueue.Min;
-            priorityQueue.Remove(task);
-            
-            return task;
+            // 優先度付きキューの設定に基づいてタスクを取得
+            if (enableQueuePrioritization)
+            {
+                // 最高優先度のタスクを取得
+                var task = priorityQueue.Min;
+                priorityQueue.Remove(task);
+                return task;
+            }
+            else
+            {
+                // 優先度無視でFIFO方式
+                var task = priorityQueue.Min;
+                priorityQueue.Remove(task);
+                return task;
+            }
         }
 
         /// <summary>
@@ -332,20 +344,20 @@ namespace Vastcore.Generation.Map
             if (task == null || !task.IsValid())
                 yield break;
 
+            task.StartExecution();
+            OnTaskStarted?.Invoke(task);
+
+            if (showDebugInfo)
+            {
+                Debug.Log($"RuntimeGenerationManager: タスク実行開始 - {task}");
+            }
+
+            // タスクタイプに応じて処理を分岐
+            GameObject result = null;
+            yield return StartCoroutine(ExecuteTaskByType(task, (r) => result = r));
+
             try
             {
-                task.StartExecution();
-                OnTaskStarted?.Invoke(task);
-
-                if (showDebugInfo)
-                {
-                    Debug.Log($"RuntimeGenerationManager: タスク実行開始 - {task}");
-                }
-
-                // タスクタイプに応じて処理を分岐
-                GameObject result = null;
-                yield return StartCoroutine(ExecuteTaskByType(task, (r) => result = r));
-
                 // タスク完了
                 task.CompleteTask(result);
                 activeTasksById.Remove(task.taskId);
@@ -380,7 +392,8 @@ namespace Vastcore.Generation.Map
                     if (terrainManager != null)
                     {
                         var coordinate = task.GetParameter<Vector2Int>("coordinate");
-                        result = terrainManager.GenerateTerrainTile(coordinate)?.terrainObject;
+                        var tile = terrainManager.GetTerrainTile(coordinate);
+                        result = tile?.terrainObject;
                     }
                     break;
 
@@ -390,7 +403,8 @@ namespace Vastcore.Generation.Map
                         var rule = task.GetParameter<PrimitiveTerrainRule>("rule");
                         if (rule != null)
                         {
-                            result = primitiveManager.SpawnPrimitiveTerrain(rule, task.position);
+                            var primitive = primitiveManager.SpawnPrimitiveTerrain(rule, task.position);
+                            result = primitive?.gameObject;
                         }
                     }
                     break;

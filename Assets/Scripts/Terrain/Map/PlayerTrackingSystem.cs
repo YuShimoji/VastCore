@@ -33,7 +33,11 @@ namespace Vastcore.Generation
         {
             if (playerTransform == null)
             {
+<<<<<<< HEAD
+                playerTransform = FindFirstObjectByType<AdvancedPlayerController>()?.transform;
+=======
                 playerTransform = ResolvePlayerTransform();
+>>>>>>> origin/develop
             }
             
             if (playerTransform != null)

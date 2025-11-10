@@ -1,6 +1,6 @@
 using UnityEditor;
 using UnityEngine;
-using Vastcore.Diagnostics;
+// using Vastcore.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -226,7 +226,7 @@ namespace Vastcore.Editor.Generation
             TerrainData terrainData = new TerrainData();
             terrainData.heightmapResolution = width;
             terrainData.size = new Vector3(terrainSize.x, terrainHeight, terrainSize.z);
-            using (LoadProfiler.Measure("TerrainData.SetHeights (EditorWindow)"))
+            // using (LoadProfiler.Measure("TerrainData.SetHeights (EditorWindow)"))
             {
                 // 大規模Terrainをバッチ処理で設定（メモリスパイク軽減）
                 SetHeightsInBatches(terrainData, combinedHeightmap);
@@ -234,7 +234,7 @@ namespace Vastcore.Editor.Generation
             
             ApplySplatmap(terrainData);
 
-            GameObject terrainObject = Terrain.CreateTerrainGameObject(terrainData);
+            GameObject terrainObject = UnityEngine.Terrain.CreateTerrainGameObject(terrainData);
             Undo.RegisterCreatedObjectUndo(terrainObject, "Generate Terrain");
 
             Selection.activeGameObject = terrainObject;
@@ -403,7 +403,7 @@ namespace Vastcore.Editor.Generation
                 }
             }
 
-            using (LoadProfiler.Measure("TerrainData.SetAlphamaps (EditorWindow)"))
+            // using (LoadProfiler.Measure("TerrainData.SetAlphamaps (EditorWindow)"))
             {
                 // 大規模Terrainをバッチ処理で設定（メモリスパイク軽減）
                 SetAlphamapsInBatches(terrainData, alphaMap);

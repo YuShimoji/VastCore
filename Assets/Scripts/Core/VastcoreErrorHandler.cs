@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Vastcore.Core;
 using Vastcore.Utils;
 
 namespace Vastcore.Core

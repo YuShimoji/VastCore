@@ -15,7 +15,7 @@ namespace Vastcore.Generation
             terrainData.RefreshPrototypes();
 
             // 既存のツリーをクリア
-            terrainData.treeInstances = new TreeInstance[0];
+            var treeInstances = new System.Collections.Generic.List<TreeInstance>();
 
             // 配置ルール:
             // - 標高: 0.15..0.65 (極端な低地/高地を回避)
@@ -56,10 +56,13 @@ namespace Vastcore.Generation
                         color = Color.white,
                         lightmapColor = Color.white
                     };
-                    terrainData.AddTreeInstance(ti);
+                    treeInstances.Add(ti);
                     placed++;
                 }
             }
+
+            // ツリーインスタンスを設定
+            terrainData.treeInstances = treeInstances.ToArray();
         }
     }
 }

@@ -178,4 +178,46 @@ public static class ProBuilderAdapter
 4.  **水理浸食の適用:** `Apply Erosion to Preview`ボタンで、浸食シミュレーションを実行。これにより、より自然で滑らかな地形形状に進化した。
 5.  **ゲームオブジェクトの確定:** `Generate Terrain GameObject`ボタンで、完成した地形を永続的なゲームオブジェクトとしてシーンに保存した。
 
-以上のプロセスを経て、`HeightmapTerrainGenerator`は正常に機能することが確認された。 
+---
+
+## 7. 【補遺】アセンブリ定義の整理とUnityコンパイルエラーの解決 (2025/11/07実施)
+
+Unity Editorのコンパイル時に発生していた `ArgumentNullException: Value cannot be null. Parameter name: key` エラーを解決するためのアセンブリ定義ファイル(.asmdef)の全面的な整理を実施した。
+
+### 7.1. 発見された問題
+
+- **存在しないパッケージ参照:** `Vastcore.Editor.StructureGenerator.asmdef` が存在しない `Deform`, `Parabox.CSG` を参照。
+- **未導入パッケージ参照:** `Vastcore.UI.asmdef` が未導入の `Unity.Rendering.DebugUI` を参照。
+- **空参照ファイル:** `Assets/MapGenerator/Scripts/Vastcore.Generation.asmref` が空ファイルで存在。
+- **循環依存のリスク:** EditorアセンブリとRuntimeアセンブリの依存関係が整理されていない。
+
+### 7.2. 実施した修正
+
+1. **Vastcore.Editor.StructureGenerator.asmdef の修正:**
+   - `overrideReferences` を `false` に戻し、標準参照解決へ統一。
+   - 存在しない参照 (`Deform`, `Parabox.CSG`) と versionDefines を削除。
+
+2. **Vastcore.UI.asmdef の修正:**
+   - 未導入パッケージ `Unity.Rendering.DebugUI` の参照を削除。
+
+3. **空ファイルの削除:**
+   - `Vastcore.Generation.asmref` を削除。
+
+4. **新規アセンブリ定義の作成:**
+   - `Vastcore.Editor.asmdef` を作成し、Editorウィンドウ (`TerrainTemplateEditor`, `TerrainAssetBrowser`) を専用アセンブリに配置。
+
+### 7.3. 検証結果
+
+- 全 `.asmdef` が存在するアセンブリのみを参照する状態に整理。
+- Unity再起動後のコンパイルエラーが解消。
+- `Window > VastCore` メニューにEditorウィンドウが表示されることを確認。
+
+### 7.4. 今後の推奨事項
+
+- `.asmdef` 変更時は必ずUnity再起動とコンパイルテストを実施。
+- 新規パッケージ導入時は依存関係の検証を徹底。
+- Editor/Runtimeの境界を明確にし、循環依存を回避。
+
+---
+
+このドキュメントが、プロジェクトの継続開発における参考となることを願います。 

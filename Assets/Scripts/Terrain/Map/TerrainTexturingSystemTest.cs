@@ -159,17 +159,14 @@ namespace Vastcore.Generation
                 // 低高度テスト
                 SetTestTileHeight(testTile, 10f);
                 texturingSystem.ApplyTextureToTile(testTile);
-                yield return new WaitForSeconds(0.1f);
                 
                 // 中高度テスト
                 SetTestTileHeight(testTile, 100f);
                 texturingSystem.ApplyTextureToTile(testTile);
-                yield return new WaitForSeconds(0.1f);
                 
                 // 高高度テスト
                 SetTestTileHeight(testTile, 200f);
                 texturingSystem.ApplyTextureToTile(testTile);
-                yield return new WaitForSeconds(0.1f);
                 
                 Debug.Log("Altitude-based texturing: PASS");
             }
@@ -178,6 +175,11 @@ namespace Vastcore.Generation
                 Debug.LogError($"Altitude-based texturing failed: {e.Message}");
                 altitudeTestPassed = false;
             }
+            
+            // Wait operations outside try-catch
+            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.1f);
             
             testResults.altitudeBasedTexturing = altitudeTestPassed;
             CleanupTestTile(testTile);
@@ -198,17 +200,14 @@ namespace Vastcore.Generation
                 // 平坦地形テスト
                 SetTestTileSlope(testTile, 5f);
                 texturingSystem.ApplyTextureToTile(testTile);
-                yield return new WaitForSeconds(0.1f);
                 
                 // 緩斜面テスト
                 SetTestTileSlope(testTile, 25f);
                 texturingSystem.ApplyTextureToTile(testTile);
-                yield return new WaitForSeconds(0.1f);
                 
                 // 急斜面テスト
                 SetTestTileSlope(testTile, 50f);
                 texturingSystem.ApplyTextureToTile(testTile);
-                yield return new WaitForSeconds(0.1f);
                 
                 Debug.Log("Slope-based texturing: PASS");
             }
@@ -217,6 +216,11 @@ namespace Vastcore.Generation
                 Debug.LogError($"Slope-based texturing failed: {e.Message}");
                 slopeTestPassed = false;
             }
+            
+            // Wait operations outside try-catch
+            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.1f);
             
             testResults.slopeBasedTexturing = slopeTestPassed;
             CleanupTestTile(testTile);
@@ -236,7 +240,6 @@ namespace Vastcore.Generation
             {
                 // 距離LODブレンドテスト
                 blendingSystem.ApplyDistanceLODBlend(testTile);
-                yield return new WaitForSeconds(0.5f);
                 
                 // 環境ブレンドテスト
                 var conditions = new EnvironmentalConditions
@@ -246,11 +249,9 @@ namespace Vastcore.Generation
                     timeOfDay = 0.5f
                 };
                 blendingSystem.ApplyEnvironmentalBlend(testTile, conditions);
-                yield return new WaitForSeconds(0.5f);
                 
                 // 季節ブレンドテスト
                 blendingSystem.ApplySeasonalBlend(testTile, Season.Summer);
-                yield return new WaitForSeconds(0.5f);
                 
                 Debug.Log("Dynamic blending: PASS");
             }
@@ -259,6 +260,11 @@ namespace Vastcore.Generation
                 Debug.LogError($"Dynamic blending failed: {e.Message}");
                 blendTestPassed = false;
             }
+            
+            // Wait operations outside try-catch
+            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.5f);
             
             testResults.dynamicBlending = blendTestPassed;
             CleanupTestTile(testTile);
@@ -279,15 +285,12 @@ namespace Vastcore.Generation
                 // 異なる距離でのLOD適用をテスト
                 testTile.distanceFromPlayer = 100f;
                 blendingSystem.ApplyDistanceLODBlend(testTile);
-                yield return new WaitForSeconds(0.2f);
                 
                 testTile.distanceFromPlayer = 800f;
                 blendingSystem.ApplyDistanceLODBlend(testTile);
-                yield return new WaitForSeconds(0.2f);
                 
                 testTile.distanceFromPlayer = 1500f;
                 blendingSystem.ApplyDistanceLODBlend(testTile);
-                yield return new WaitForSeconds(0.2f);
                 
                 Debug.Log("LOD system: PASS");
             }
@@ -296,6 +299,11 @@ namespace Vastcore.Generation
                 Debug.LogError($"LOD system failed: {e.Message}");
                 lodTestPassed = false;
             }
+            
+            // Wait operations outside try-catch
+            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(0.2f);
             
             testResults.lodSystem = lodTestPassed;
             CleanupTestTile(testTile);
@@ -321,7 +329,6 @@ namespace Vastcore.Generation
                         {
                             texturingSystem.ApplyBiomeTextures(testTile, biomePreset);
                             blendingSystem.ApplyBiomeBlend(testTile, biomePreset);
-                            yield return new WaitForSeconds(0.3f);
                         }
                     }
                 }
@@ -331,7 +338,6 @@ namespace Vastcore.Generation
                     var defaultBiome = ScriptableObject.CreateInstance<BiomePreset>();
                     defaultBiome.InitializeDefault();
                     texturingSystem.ApplyBiomeTextures(testTile, defaultBiome);
-                    yield return new WaitForSeconds(0.3f);
                 }
                 
                 Debug.Log("Biome integration: PASS");
@@ -340,6 +346,22 @@ namespace Vastcore.Generation
             {
                 Debug.LogError($"Biome integration failed: {e.Message}");
                 biomeTestPassed = false;
+            }
+            
+            // Wait operations outside try-catch
+            if (testBiomePresets != null && testBiomePresets.Length > 0)
+            {
+                foreach (var biomePreset in testBiomePresets)
+                {
+                    if (biomePreset != null)
+                    {
+                        yield return new WaitForSeconds(0.3f);
+                    }
+                }
+            }
+            else
+            {
+                yield return new WaitForSeconds(0.3f);
             }
             
             testResults.biomeIntegration = biomeTestPassed;
@@ -400,7 +422,6 @@ namespace Vastcore.Generation
                 if (terrainManager != null)
                 {
                     // 実際の地形タイルでテスト
-                    yield return new WaitForSeconds(0.5f);
                 }
                 
                 // 長時間動作テスト
@@ -413,8 +434,6 @@ namespace Vastcore.Generation
                         integrationTestPassed = false;
                         break;
                     }
-                    
-                    yield return new WaitForSeconds(1f);
                 }
                 
                 Debug.Log("System integration: PASS");
@@ -423,6 +442,14 @@ namespace Vastcore.Generation
             {
                 Debug.LogError($"System integration failed: {e.Message}");
                 integrationTestPassed = false;
+            }
+            
+            // Wait operations outside try-catch
+            yield return new WaitForSeconds(0.5f);
+            float waitStartTime = Time.time;
+            while (Time.time - waitStartTime < testDuration)
+            {
+                yield return new WaitForSeconds(1f);
             }
             
             testResults.systemIntegration = integrationTestPassed;

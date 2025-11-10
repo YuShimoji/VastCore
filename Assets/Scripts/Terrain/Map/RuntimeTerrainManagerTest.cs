@@ -50,6 +50,24 @@ namespace Vastcore.Generation.Tests
             string errorMessage = "";
             
             // 初期化テスト
+<<<<<<< HEAD
+            yield return StartCoroutine(TestInitialization());
+            
+            // 基本機能テスト
+            yield return StartCoroutine(TestBasicFunctionality());
+            
+            // プレイヤー追跡テスト
+            yield return StartCoroutine(TestPlayerTracking());
+            
+            // 動的生成テスト
+            yield return StartCoroutine(TestDynamicGeneration());
+            
+            // メモリ管理テスト
+            yield return StartCoroutine(TestMemoryManagement());
+            
+            // パフォーマンステスト
+            yield return StartCoroutine(TestPerformance());
+=======
             yield return StartCoroutine(TestInitializationSafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
             if (hasError) { Debug.LogError($"TestInitialization failed: {errorMessage}"); testsFailed++; }
             
@@ -72,15 +90,24 @@ namespace Vastcore.Generation.Tests
             // パフォーマンステスト
             yield return StartCoroutine(TestPerformanceSafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
             if (hasError) { Debug.LogError($"TestPerformance failed: {errorMessage}"); testsFailed++; }
+>>>>>>> origin/develop
             
             // ストレステスト（オプション）
             if (enableStressTest)
             {
+<<<<<<< HEAD
+                yield return StartCoroutine(TestStressConditions());
+            }
+            
+            LogTestResults();
+            Debug.Log($"Test completion status: HasError={hasError}, Message={errorMessage}");
+=======
                 yield return StartCoroutine(TestStressConditionsSafe(result => { hasError = result.hasError; errorMessage = result.errorMessage; }));
                 if (hasError) { Debug.LogError($"TestStressConditions failed: {errorMessage}"); testsFailed++; }
             }
             
             LogTestResults();
+>>>>>>> origin/develop
             Debug.Log("=== RuntimeTerrainManager Test Suite Completed ===");
         }
         
@@ -110,8 +137,6 @@ namespace Vastcore.Generation.Tests
                 runtimeManager.playerTransform = testPlayer;
                 initialPlayerPosition = testPlayer.position;
                 
-                yield return new WaitForSeconds(1f); // 初期化待機
-                
                 Assert(runtimeManager != null, "RuntimeTerrainManager should be created");
                 Assert(tileManager != null, "TileManager should be created");
                 Assert(runtimeManager.enableDynamicGeneration, "Dynamic generation should be enabled by default");
@@ -124,6 +149,9 @@ namespace Vastcore.Generation.Tests
                 Debug.LogError($"Initialization test failed: {e.Message}");
                 testsFailed++;
             }
+            
+            // Wait operations outside try-catch
+            yield return new WaitForSeconds(1f);
         }
         
         /// <summary>
@@ -138,10 +166,8 @@ namespace Vastcore.Generation.Tests
             {
                 // 動的生成の有効/無効化テスト
                 runtimeManager.SetDynamicGenerationEnabled(false);
-                yield return new WaitForSeconds(0.5f);
                 
                 runtimeManager.SetDynamicGenerationEnabled(true);
-                yield return new WaitForSeconds(0.5f);
                 
                 // パフォーマンス統計取得テスト
                 var stats = runtimeManager.GetPerformanceStats();
@@ -169,6 +195,9 @@ namespace Vastcore.Generation.Tests
                 Debug.LogError($"Basic functionality test failed: {e.Message}");
                 testsFailed++;
             }
+            
+            // Wait after operations
+            yield return new WaitForSeconds(1f);
         }
         
         /// <summary>
@@ -185,15 +214,12 @@ namespace Vastcore.Generation.Tests
                 
                 // プレイヤーを移動
                 testPlayer.position = startPosition + Vector3.right * 1000f;
-                yield return new WaitForSeconds(2f);
                 
                 // さらに移動
                 testPlayer.position = startPosition + Vector3.forward * 1000f;
-                yield return new WaitForSeconds(2f);
                 
                 // 元の位置に戻す
                 testPlayer.position = startPosition;
-                yield return new WaitForSeconds(1f);
                 
                 var stats = runtimeManager.GetPerformanceStats();
                 Assert(stats.totalTilesGenerated > 0, "Some tiles should have been generated during movement");
@@ -206,6 +232,11 @@ namespace Vastcore.Generation.Tests
                 Debug.LogError($"Player tracking test failed: {e.Message}");
                 testsFailed++;
             }
+            
+            // Wait operations outside try-catch
+            yield return new WaitForSeconds(2f);
+            yield return new WaitForSeconds(2f);
+            yield return new WaitForSeconds(1f);
         }
         
         /// <summary>
@@ -225,8 +256,6 @@ namespace Vastcore.Generation.Tests
                 Vector3 originalPos = testPlayer.position;
                 testPlayer.position = originalPos + Vector3.right * 3000f;
                 
-                yield return new WaitForSeconds(3f);
-                
                 var newStats = runtimeManager.GetPerformanceStats();
                 int newTileCount = tileManager.GetActiveTileCount();
                 
@@ -235,7 +264,6 @@ namespace Vastcore.Generation.Tests
                 
                 // 元の位置に戻す
                 testPlayer.position = originalPos;
-                yield return new WaitForSeconds(2f);
                 
                 testsPasssed++;
                 Debug.Log("✓ Dynamic generation test passed");
@@ -245,6 +273,10 @@ namespace Vastcore.Generation.Tests
                 Debug.LogError($"Dynamic generation test failed: {e.Message}");
                 testsFailed++;
             }
+            
+            // Wait operations outside try-catch
+            yield return new WaitForSeconds(3f);
+            yield return new WaitForSeconds(2f);
         }
         
         /// <summary>
@@ -277,7 +309,6 @@ namespace Vastcore.Generation.Tests
                 for (int i = 0; i < 10; i++)
                 {
                     testPlayer.position = originalPos + new Vector3(i * 1000f, 0, i * 1000f);
-                    yield return new WaitForSeconds(0.5f);
                 }
                 
                 var stats = runtimeManager.GetPerformanceStats();
@@ -287,7 +318,6 @@ namespace Vastcore.Generation.Tests
                 
                 // 強制クリーンアップテスト
                 runtimeManager.ForceCleanup();
-                yield return new WaitForSeconds(1f);
                 
                 testPlayer.position = originalPos;
                 
@@ -299,6 +329,13 @@ namespace Vastcore.Generation.Tests
                 Debug.LogError($"Memory management test failed: {e.Message}");
                 testsFailed++;
             }
+            
+            // Wait operations outside try-catch
+            for (int i = 0; i < 10; i++)
+            {
+                yield return new WaitForSeconds(0.5f);
+            }
+            yield return new WaitForSeconds(1f);
         }
         
         /// <summary>
@@ -322,8 +359,6 @@ namespace Vastcore.Generation.Tests
                     float angle = i * 18f * Mathf.Deg2Rad; // 18度ずつ回転
                     Vector3 offset = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * 2000f;
                     testPlayer.position = startPos + offset;
-                    
-                    yield return new WaitForSeconds(0.1f);
                 }
                 
                 var finalStats = runtimeManager.GetPerformanceStats();
@@ -341,6 +376,12 @@ namespace Vastcore.Generation.Tests
             {
                 Debug.LogError($"Performance test failed: {e.Message}");
                 testsFailed++;
+            }
+            
+            // Wait operations outside try-catch
+            for (int i = 0; i < 20; i++)
+            {
+                yield return new WaitForSeconds(0.1f);
             }
         }
         
@@ -369,8 +410,6 @@ namespace Vastcore.Generation.Tests
                     );
                     
                     testPlayer.position = centerPos + randomOffset;
-                    
-                    yield return new WaitForSeconds(Random.Range(0.1f, 0.5f));
                 }
                 
                 var stats = runtimeManager.GetPerformanceStats();
@@ -387,6 +426,13 @@ namespace Vastcore.Generation.Tests
             {
                 Debug.LogError($"Stress test failed: {e.Message}");
                 testsFailed++;
+            }
+            
+            // Wait operations outside try-catch
+            float startTime = Time.time;
+            while (Time.time - startTime < testDuration)
+            {
+                yield return new WaitForSeconds(Random.Range(0.1f, 0.5f));
             }
         }
         

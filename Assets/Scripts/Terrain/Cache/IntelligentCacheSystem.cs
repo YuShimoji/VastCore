@@ -193,18 +193,16 @@ namespace Vastcore.Generation.Cache
             // ディスクキャッシュから検索
             if (enablePersistentCache && diskCacheIndex.ContainsKey(coordinate))
             {
-                StartCoroutine(LoadFromDiskAsync(coordinate, (loadedData) =>
+                // 同期的にディスクから読み込み
+                var loadedData = LoadFromDiskSync(coordinate);
+                if (loadedData.HasValue)
                 {
-                    if (loadedData.HasValue)
-                    {
-                        cachedData = loadedData.Value;
-                        // メモリキャッシュに昇格
-                        CacheTerrainData(coordinate, cachedData.heightmap, cachedData.metadata, cachedData.primitiveObjects);
-                        statistics.totalCacheHits++;
-                    }
-                }));
-                
-                return false; // 非同期読み込みのため即座にはfalse
+                    cachedData = loadedData.Value;
+                    // メモリキャッシュに昇格
+                    CacheTerrainData(coordinate, cachedData.heightmap, cachedData.metadata, cachedData.primitiveObjects);
+                    statistics.totalCacheHits++;
+                    return true;
+                }
             }
             
             statistics.totalCacheMisses++;
@@ -299,10 +297,11 @@ namespace Vastcore.Generation.Cache
             {
                 var tileCoord = WorldToTileCoordinate(position);
                 
-                // 周辺タイルも含める
-                for (int x = -1; x <= 1; x++)
+                // preloadRadiusに基づいて周辺タイルも含める
+                int radius = Mathf.CeilToInt(preloadRadius / 2000f); // tileSize = 2000f
+                for (int x = -radius; x <= radius; x++)
                 {
-                    for (int y = -1; y <= 1; y++)
+                    for (int y = -radius; y <= radius; y++)
                     {
                         var neighborCoord = new Vector2Int(tileCoord.x + x, tileCoord.y + y);
                         
@@ -462,6 +461,38 @@ namespace Vastcore.Generation.Cache
             {
                 Debug.LogError($"Failed to load tile {coordinate} from disk: {e.Message}");
                 onComplete(null);
+            }
+        }
+        
+        private CachedTerrainData? LoadFromDiskSync(Vector2Int coordinate)
+        {
+            try
+            {
+                if (!diskCacheIndex.TryGetValue(coordinate, out string fileName))
+                {
+                    return null;
+                }
+                
+                string filePath = Path.Combine(Application.persistentDataPath, cacheDirectory, fileName);
+                
+                if (!File.Exists(filePath))
+                {
+                    return null;
+                }
+                
+                using (var fileStream = new FileStream(filePath, FileMode.Open))
+                {
+                    var formatter = new BinaryFormatter();
+                    var data = (CachedTerrainData)formatter.Deserialize(fileStream);
+                    
+                    statistics.diskReads++;
+                    return data;
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Failed to load tile {coordinate} from disk: {e.Message}");
+                return null;
             }
         }
         

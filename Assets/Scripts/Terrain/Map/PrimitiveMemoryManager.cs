@@ -387,6 +387,8 @@ namespace Vastcore.Generation
         /// </summary>
         public PerformanceMetrics GetPerformanceMetrics()
         {
+            lastActiveObjectCount = managedObjects.Count; // アクティブオブジェクト数を記録
+            
             return new PerformanceMetrics
             {
                 managedObjectCount = managedObjects.Count,

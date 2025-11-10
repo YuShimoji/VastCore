@@ -504,7 +504,8 @@ namespace Vastcore.Generation
                 var lineRenderer = riverObject.AddComponent<LineRenderer>();
                 
                 lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-                lineRenderer.color = Color.blue;
+                lineRenderer.startColor = Color.blue;
+                lineRenderer.endColor = Color.blue;
                 lineRenderer.startWidth = river.width * 0.1f;
                 lineRenderer.endWidth = river.width * 0.05f;
                 lineRenderer.positionCount = river.riverPath.Count;
@@ -524,7 +525,8 @@ namespace Vastcore.Generation
                 var lineRenderer = rangeObject.AddComponent<LineRenderer>();
                 
                 lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-                lineRenderer.color = Color.red;
+                lineRenderer.startColor = Color.red;
+                lineRenderer.endColor = Color.red;
                 lineRenderer.startWidth = 20f;
                 lineRenderer.endWidth = 20f;
                 lineRenderer.positionCount = range.ridgeLine.Count;

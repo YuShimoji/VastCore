@@ -2,8 +2,6 @@
     "name": "Vastcore.Editor.StructureGenerator",
     "rootNamespace": "Vastcore.Editor.StructureGenerator",
     "references": [
-        "Deform",
-        "Parabox.CSG",
         "Unity.ProBuilder",
         "Unity.ProBuilder.Editor",
         "Unity.ProBuilder.Csg",
@@ -12,14 +10,14 @@
         "Unity.ProBuilder.Stl",
         "Vastcore.Terrain",
         "Vastcore.Core",
-        "Vastcore.Utils"
+        "Vastcore.Utilities"
     ],
     "includePlatforms": [
         "Editor"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": true,
+    "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],

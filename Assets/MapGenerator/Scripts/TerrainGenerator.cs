@@ -1,5 +1,5 @@
 using UnityEngine;
-using Vastcore.Diagnostics;
+// using Vastcore.Diagnostics;
 using System.IO;
 using System.Collections;
 
@@ -90,7 +90,7 @@ namespace Vastcore.Generation
 
         public Vector3 terrainSize => new Vector3(m_Width, m_Depth, m_Height);
 
-        public Terrain GeneratedTerrain { get; private set; }
+        public UnityEngine.Terrain GeneratedTerrain { get; private set; }
 
         public IEnumerator GenerateTerrain()
         {
@@ -103,16 +103,16 @@ namespace Vastcore.Generation
 
             // 高さマップの生成
             var heights = HeightMapGenerator.GenerateHeights(this);
-            using (LoadProfiler.Measure("TerrainData.SetHeights (TerrainGenerator)"))
+            // using (LoadProfiler.Measure("TerrainData.SetHeights (TerrainGenerator)"))
             {
                 // 大規模Terrainをバッチ処理で設定（メモリスパイク軽減）
                 SetHeightsInBatches(terrainData, heights);
             }
 
             // テレインオブジェクトの作成
-            GameObject terrainObject = Terrain.CreateTerrainGameObject(terrainData);
+            GameObject terrainObject = UnityEngine.Terrain.CreateTerrainGameObject(terrainData);
             terrainObject.name = "Generated_Vastcore_Terrain";
-            GeneratedTerrain = terrainObject.GetComponent<Terrain>();
+            GeneratedTerrain = terrainObject.GetComponent<UnityEngine.Terrain>();
 
             // マテリアルの設定
             if (m_TerrainMaterial == null)

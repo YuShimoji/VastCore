@@ -3,7 +3,7 @@
     "rootNamespace": "Vastcore.Testing",
     "references": [
         "Vastcore.Core",
-        "Vastcore.Utils",
+        "Vastcore.Utilities",
         "Vastcore.Generation",
         "Vastcore.Terrain",
         "Vastcore.Player",
@@ -14,7 +14,10 @@
         "Unity.ProBuilder.KdTree",
         "Unity.ProBuilder.Poly2Tri",
         "Unity.ProBuilder.Stl",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.TestFramework"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -25,7 +28,17 @@
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false,
+<<<<<<< HEAD
+    "burstSettings": {
+        "enableBurstCompilation": false,
+        "enableBurstSafetyChecks": false,
+        "enableBurstDebug": false,
+        "enableBurstTimings": false,
+        "burstCompilationOptions": {}
+    }
+=======
     "optionalUnityReferences": [
         "TestAssemblies"
     ]
+>>>>>>> origin/develop
 }

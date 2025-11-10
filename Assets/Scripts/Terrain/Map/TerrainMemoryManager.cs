@@ -57,7 +57,7 @@ namespace Vastcore.Generation
             
             // 使用されていないタイルを特定
             var unusedTiles = activeTiles.Values
-                .Where(tile => !tile.isActive && Time.time - tile.lastAccessTime > 30f)
+                .Where(tile => !tile.isActive && (Time.time - tile.lastAccessTime) > 30f)
                 .OrderBy(tile => tile.lastAccessTime)
                 .ToList();
             
@@ -67,11 +67,11 @@ namespace Vastcore.Generation
             for (int i = 0; i < tilesToRemove && i < unusedTiles.Count; i++)
             {
                 var tile = unusedTiles[i];
-                if (tile.gameObject != null)
+                if (tile.tileObject != null)
                 {
-                    DestroyImmediate(tile.gameObject);
+                    DestroyImmediate(tile.tileObject);
                 }
-                activeTiles.Remove(tile.tileCoordinate);
+                activeTiles.Remove(tile.coordinate);
             }
             
             // ガベージコレクションを実行

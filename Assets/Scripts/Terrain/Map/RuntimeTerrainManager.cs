@@ -2,7 +2,12 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
+<<<<<<< HEAD
+using Vastcore.Player;
+using Vastcore.Utilities;
+=======
 using Vastcore.Utils;
+>>>>>>> origin/develop
 using Vastcore.Generation;
 using Vastcore.Core;
 
@@ -66,9 +71,14 @@ namespace Vastcore.Generation
         private bool didFullUnloadThisCycle = false;
         #endregion
 
-        void Start()
+        void Update()
         {
-            InitializeRuntimeManager();
+            // 更新間隔チェック
+            if (Time.time - lastUpdateTime >= 0.1f)
+            {
+                Debug.Log($"Update called after {Time.time - lastUpdateTime:F3} seconds");
+                lastUpdateTime = Time.time;
+            }
         }
 
         /// <summary>
@@ -757,6 +767,18 @@ namespace Vastcore.Generation
         {
             TriggerEmergencyCleanup();
             PerformAggressiveCleanup();
+        }
+
+        /// <summary>
+        /// 指定座標のタイルを取得
+        /// </summary>
+        public TerrainTile GetTerrainTile(Vector2Int coordinate)
+        {
+            if (tileManager != null)
+            {
+                return tileManager.GetActiveTiles().FirstOrDefault(t => t.coordinate == coordinate);
+            }
+            return null;
         }
 
         /// <summary>

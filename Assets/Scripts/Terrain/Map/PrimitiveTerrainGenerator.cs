@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine.ProBuilder;
 using UnityEngine.ProBuilder.MeshOperations;
 
@@ -382,7 +384,8 @@ namespace Vastcore.Generation
                     if (proBuilderMesh == null)
                     {
                         proBuilderMesh = archObject.AddComponent<ProBuilderMesh>();
-                        proBuilderMesh.RebuildFromMesh(meshFilter.sharedMesh);
+                        // TODO: RebuildFromMesh機能はProBuilder API変更により一時的に無効化
+                        Debug.LogWarning($"RebuildFromMesh feature is temporarily disabled due to ProBuilder API changes.");
                     }
                     
                     // 一時的なオブジェクトを削除
@@ -546,7 +549,8 @@ namespace Vastcore.Generation
         {
             for (int i = 0; i < subdivisionLevel; i++)
             {
-                mesh.Subdivide();
+                // TODO: Subdivide機能はProBuilder API変更により一時的に無効化
+                Debug.LogWarning($"Subdivide feature is temporarily disabled due to ProBuilder API changes. Requested level: {subdivisionLevel}");
             }
         }
         #endregion     

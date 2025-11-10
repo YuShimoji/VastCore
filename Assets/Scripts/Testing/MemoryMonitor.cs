@@ -238,8 +238,13 @@ namespace VastCore.Testing
         private long GetTotalMemoryUsage() => Profiler.GetTotalAllocatedMemoryLong();
         private long GetTotalReservedMemory() => Profiler.GetTotalReservedMemoryLong();
         private long GetTotalUnusedReservedMemory() => Profiler.GetTotalUnusedReservedMemoryLong();
+<<<<<<< HEAD
+        private long GetMonoHeapSize() => Profiler.GetMonoHeapSizeLong();
+        private long GetMonoUsedSize() => Profiler.GetMonoUsedSizeLong();
+=======
         private long GetMonoHeapSize() => Profiler.GetMonoHeapSize();
         private long GetMonoUsedSize() => Profiler.GetMonoUsedSize();
+>>>>>>> origin/develop
         private long GetTempAllocatorSize() => Profiler.GetTempAllocatorSize();
         private long GetGfxDriverMemory() => Profiler.GetAllocatedMemoryForGraphicsDriver();
         private long GetAudioMemory() => 0; // Unity 2019.3以降で利用可能

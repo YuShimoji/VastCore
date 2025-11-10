@@ -1,3 +1,5 @@
+<<<<<<< HEAD
+=======
 using UnityEngine;
 using System.Collections.Generic;
 using System.IO;
@@ -129,3 +131,4 @@ namespace Vastcore.Generation.Map
 #endif
     }
 }
+>>>>>>> origin/develop

@@ -2,6 +2,9 @@ using UnityEngine;
 using Vastcore.Generation.GPU;
 using Vastcore.Generation.Cache;
 using System.Collections;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Vastcore.Generation.Optimization
 {
@@ -211,15 +214,21 @@ namespace Vastcore.Generation.Optimization
         {
             float score = 1f;
             
-            // フレームレート評価
+            // フレームレート評価（performanceThresholdを使用）
             float frameRateRatio = currentMetrics.frameRate / targetFrameRate;
-            score *= Mathf.Clamp01(frameRateRatio);
+            if (frameRateRatio < performanceThreshold)
+            {
+                score *= frameRateRatio / performanceThreshold; // 閾値未満の場合ペナルティ
+            }
             
-            // GPU メモリ評価
+            // GPU メモリ評価（maxMemoryUsageRatioを使用）
             if (currentMetrics.gpuMemoryUsage > 0)
             {
-                float memoryRatio = 1f - (currentMetrics.gpuMemoryUsage / 1024f); // 1GB基準
-                score *= Mathf.Clamp01(memoryRatio);
+                float memoryRatio = currentMetrics.gpuMemoryUsage / 1024f; // 1GB基準
+                if (memoryRatio > maxMemoryUsageRatio)
+                {
+                    score *= maxMemoryUsageRatio / memoryRatio; // メモリ使用率超過でペナルティ
+                }
             }
             
             // キャッシュ効率評価
@@ -393,6 +402,7 @@ namespace Vastcore.Generation.Optimization
         
         private void OnGUI()
         {
+#if UNITY_EDITOR
             if (!enableAutoOptimization) return;
             
             GUILayout.BeginArea(new Rect(Screen.width - 320, 10, 300, 250));
@@ -444,6 +454,7 @@ namespace Vastcore.Generation.Optimization
             
             GUILayout.EndVertical();
             GUILayout.EndArea();
+#endif
         }
     }
 }

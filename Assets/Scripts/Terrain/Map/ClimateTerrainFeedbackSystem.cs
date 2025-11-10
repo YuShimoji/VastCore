@@ -47,6 +47,7 @@ namespace Vastcore.Generation
         // システム参照
         private ClimateSystem climateSystem;
         private RuntimeTerrainManager terrainManager;
+        private BiomeTerrainModifier biomeModifier;
         private NaturalTerrainFeatures terrainFeatures;
         
         // フィードバックデータ
@@ -284,8 +285,10 @@ namespace Vastcore.Generation
                     feedbackCache[key] = new TerrainClimateData();
                 }
                 
-                feedbackCache[key].modifiedClimate = modifiedClimate;
-                feedbackCache[key].lastUpdateTime = Time.time;
+                var feedbackData = feedbackCache[key];
+                feedbackData.modifiedClimate = modifiedClimate;
+                feedbackData.lastUpdateTime = Time.time;
+                feedbackCache[key] = feedbackData;
                 
                 OnClimateModification?.Invoke(worldPos, modifiedClimate);
             }

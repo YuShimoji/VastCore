@@ -101,7 +101,12 @@ namespace Vastcore.Generation
             }
             
             // プレイヤーTransformを取得
+<<<<<<< HEAD
+            var playerController = FindFirstObjectByType<AdvancedPlayerController>();
+            if (playerController != null)
+=======
             if (playerTransform == null)
+>>>>>>> origin/develop
             {
                 playerTransform = ResolvePlayerTransform();
             }

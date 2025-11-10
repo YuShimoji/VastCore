@@ -99,9 +99,23 @@ namespace Vastcore.Generation
                     Debug.LogError("ClimateTerrainFeedbackSystem not found!");
                     yield break;
                 }
-                
-                // 初期化待機
-                yield return new WaitForSeconds(1f);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"✗ System initialization test failed: {e.Message}");
+            }
+            
+            // Wait operations outside try-catch
+            yield return new WaitForSeconds(1f);
+            
+            try
+            {
+                // システム初期化テスト
+                if (climateSystem == null || feedbackSystem == null)
+                {
+                    Debug.LogError("✗ Required systems not initialized");
+                    yield break;
+                }
                 
                 Debug.Log("✓ System initialization test passed");
             }
@@ -252,8 +266,6 @@ namespace Vastcore.Generation
                 float initialSeason = climateSystem.GetCurrentSeason();
                 climateSystem.SetSeason(0.5f); // 夏に設定
                 
-                yield return new WaitForSeconds(0.1f);
-                
                 float newSeason = climateSystem.GetCurrentSeason();
                 if (Mathf.Abs(newSeason - 0.5f) > 0.1f)
                 {
@@ -263,8 +275,6 @@ namespace Vastcore.Generation
                 
                 // 気候パラメータ変更テスト
                 climateSystem.SetGlobalClimateParameters(0.7f, 1.2f, 0.8f);
-                
-                yield return new WaitForSeconds(0.1f);
                 
                 // 変更後の気候データを確認
                 ClimateData modifiedClimate = climateSystem.GetClimateAt(Vector3.zero);
@@ -276,6 +286,10 @@ namespace Vastcore.Generation
             {
                 Debug.LogError($"✗ Long-term changes test failed: {e.Message}");
             }
+            
+            // Wait operations outside try-catch
+            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.1f);
         }
         
         /// <summary>
@@ -294,8 +308,6 @@ namespace Vastcore.Generation
                 // フィードバックデータリセットテスト
                 feedbackSystem.ResetFeedbackData();
                 
-                yield return new WaitForSeconds(0.5f);
-                
                 // リセット後のデータ確認
                 VegetationData resetVegetation = feedbackSystem.GetVegetationAt(Vector3.zero);
                 Debug.Log($"Reset vegetation data: Density={resetVegetation.density:F2}");
@@ -303,14 +315,16 @@ namespace Vastcore.Generation
                 // 気候キャッシュクリアテスト
                 climateSystem.ClearClimateCache();
                 
-                yield return new WaitForSeconds(0.5f);
-                
                 Debug.Log("✓ System integration test passed");
             }
             catch (System.Exception e)
             {
                 Debug.LogError($"✗ System integration test failed: {e.Message}");
             }
+            
+            // Wait operations outside try-catch
+            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.5f);
         }
         
         /// <summary>

@@ -203,6 +203,12 @@ namespace Vastcore.Generation.Tests
                     // プライベートメソッドのテストは困難なので、実際の使用を通じてテスト
                     // ここでは基本的な範囲チェックのみ実行
                     Assert(factor >= 0f && factor <= 1f, "Test factor should be in valid range");
+                    
+                    // 補間アルゴリズムのテスト（valueAとvalueBを使用）
+                    float t = factor;
+                    float interpolatedValue = valueA + (valueB - valueA) * t;
+                    Assert(interpolatedValue >= Mathf.Min(valueA, valueB) && interpolatedValue <= Mathf.Max(valueA, valueB), 
+                          $"Interpolated value {interpolatedValue} should be between {valueA} and {valueB}");
                 }
                 
                 Debug.Log($"✓ {interpolationType} interpolation test passed");

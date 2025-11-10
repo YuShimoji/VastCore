@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Linq;
 
 namespace Vastcore.Testing
 {
@@ -271,7 +272,7 @@ namespace Vastcore.Testing
         /// </summary>
         private int GetActiveObjectCount()
         {
-            return FindObjectsOfType<GameObject>().Length;
+            return FindObjectsByType<GameObject>(FindObjectsSortMode.None).Length;
         }
         
         /// <summary>

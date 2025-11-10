@@ -94,14 +94,17 @@ namespace Vastcore.Generation
         /// </summary>
         private void LogSuccessMessage()
         {
-            Debug.Log("✅ TASK COMPLETED SUCCESSFULLY!");
-            Debug.Log("📋 Summary:");
-            Debug.Log($"   • All 16 primitive types generated: ✅");
-            Debug.Log($"   • All primitives high quality (≥0.8): ✅");
-            Debug.Log($"   • Average quality score: {averageQualityScore:F2}");
-            Debug.Log($"   • Success rate: 100%");
-            Debug.Log("");
-            Debug.Log("🎯 The task '16種類全てのプリミティブが高品質で生成される' has been completed!");
+            if (logDetailedResults)
+            {
+                Debug.Log("✅ TASK COMPLETED SUCCESSFULLY!");
+                Debug.Log("📋 Summary:");
+                Debug.Log($"   • All 16 primitive types generated: ✅");
+                Debug.Log($"   • All primitives high quality (≥0.8): ✅");
+                Debug.Log($"   • Average quality score: {averageQualityScore:F2}");
+                Debug.Log($"   • Success rate: 100%");
+                Debug.Log("");
+                Debug.Log("🎯 The task '16種類全てのプリミティブが高品質で生成される' has been completed!");
+            }
         }
 
         /// <summary>

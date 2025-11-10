@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
-using Vastcore.Core;
 using Vastcore.Utils;
+using Vastcore.Core;
 
-namespace Vastcore.Core
+namespace Vastcore
 {
     /// <summary>
     /// Vastcore専用の問題診断支援システム
