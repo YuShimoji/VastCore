@@ -2,9 +2,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
-using NarrativeGen.Core;
+using Vastcore.Core;
 
-namespace NarrativeGen.UI
+namespace Vastcore.UI.Menus
 {
     public class MenuManager : MonoBehaviour
     {
@@ -104,15 +104,14 @@ namespace NarrativeGen.UI
 
         private void OnStartButtonClicked()
         {
-            buttonsGroup.interactable = false;
-            if (SceneManager.Instance != null)
-                SceneManager.Instance.LoadGameScene();
+            if (buttonsGroup != null)
+                buttonsGroup.interactable = false;
+            SceneNavigator.Current.LoadGameScene();
         }
 
         private void OnQuitButtonClicked()
         {
-            if (SceneManager.Instance != null)
-                SceneManager.Instance.QuitApplication();
+            SceneNavigator.Current.QuitApplication();
         }
     }
 }

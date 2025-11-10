@@ -1,0 +1,20 @@
+{
+  "version": "1.0",
+  "namespaceMappings": [
+    { "from": "NarrativeGen.UI", "to": "Vastcore.UI" }
+  ],
+  "classMappings": [
+    { "fromQualified": "NarrativeGen.UI.MenuManager", "toQualified": "Vastcore.UI.Menus.MenuManager", "note": "サブ名前空間へ集約" }
+  ],
+  "attributeRules": [
+    {
+      "attribute": "UnityEngine.CreateAssetMenuAttribute",
+      "fields": {
+        "menuName": { "replaceRegexFrom": "^NarrativeGen/", "replaceTo": "Vastcore/" }
+      }
+    }
+  ],
+  "constraints": { "preserveGUID": true, "moveFiles": false },
+  "validation": { "compile": true, "scenesSmoke": ["Assets/Scenes/Main.unity"] },
+  "$comment": "テンプレート: 必要に応じて項目を追記。"
+}

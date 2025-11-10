@@ -345,11 +345,7 @@ namespace Vastcore.Player
             
             foreach (Collider col in climbableObjects)
             {
-                // プリミティブオブジェクトでない場合の処理
-                if (col.GetComponent<PrimitiveTerrainObject>() == null)
-                {
-                    ProcessTraditionalClimbSurface(col);
-                }
+                ProcessTraditionalClimbSurface(col);
             }
         }
         

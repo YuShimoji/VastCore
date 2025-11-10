@@ -1,11 +1,15 @@
 using UnityEngine;
+<<<<<<< HEAD
 using System.Collections.Generic;
 using Vastcore.Core;
+=======
+>>>>>>> origin/develop
 using Vastcore.Generation;
 
 namespace Vastcore.Terrain.Map
 {
     /// <summary>
+<<<<<<< HEAD
     /// プリミティブ地形オブジェクトのコンポーネント
     /// インタラクション、LOD、プール管理に関する情報を保持
     /// </summary>
@@ -89,10 +93,22 @@ namespace Vastcore.Terrain.Map
         /// <summary>
         /// プールから初期化
         /// </summary>
+=======
+    /// プリミティブ地形オブジェクトのデータコンテナ
+    /// </summary>
+    public class PrimitiveTerrainObject : MonoBehaviour
+    {
+        public GenerationPrimitiveType primitiveType;
+        public bool isClimbable;
+        public bool isGrindable;
+        public bool hasCollision = true;
+
+>>>>>>> origin/develop
         public void InitializeFromPool(GenerationPrimitiveType type, Vector3 position, float scale)
         {
             primitiveType = type;
             transform.position = position;
+<<<<<<< HEAD
             originalScale = Vector3.one * scale;
             transform.localScale = originalScale;
             generationTime = Time.time;
@@ -275,6 +291,38 @@ namespace Vastcore.Terrain.Map
         public override string ToString()
         {
             return $"Total: {totalActiveObjects}, LOD0: {lod0Count}, LOD1: {lod1Count}, LOD2: {lod2Count}, LOD3: {lod3Count}";
+=======
+            transform.localScale = new Vector3(scale, scale, scale);
+            gameObject.SetActive(true);
+
+            UpdateInteractionSettings();
+        }
+
+        public void PrepareForPool()
+        {
+            gameObject.SetActive(false);
+        }
+
+        private void UpdateInteractionSettings()
+        {
+            switch (primitiveType)
+            {
+                case GenerationPrimitiveType.Sphere:
+                case GenerationPrimitiveType.Boulder:
+                    isClimbable = true;
+                    isGrindable = false;
+                    break;
+                case GenerationPrimitiveType.Ring:
+                case GenerationPrimitiveType.Torus:
+                    isClimbable = false;
+                    isGrindable = true;
+                    break;
+                default:
+                    isClimbable = true;
+                    isGrindable = false;
+                    break;
+            }
+>>>>>>> origin/develop
         }
     }
 }

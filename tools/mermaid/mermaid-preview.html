@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mermaid 分岐プレビュー</title>
+  <style>
+    :root { --bg:#0f172a; --fg:#e2e8f0; --panel:#111827; --accent:#22d3ee; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial; background:var(--bg); color:var(--fg); }
+    header { padding:12px 16px; border-bottom:1px solid #1f2937; display:flex; gap:12px; align-items:center; }
+    header h1 { font-size:16px; margin:0; font-weight:600; }
+    .container { display:grid; grid-template-columns: 420px 1fr; gap:12px; height: calc(100vh - 54px); }
+    .panel { padding:12px; overflow:auto; background:var(--panel); }
+    .controls label { display:block; margin:8px 0 4px; font-size:12px; opacity:.9; }
+    textarea { width:100%; min-height:320px; resize:vertical; border:1px solid #374151; background:#0b1220; color:var(--fg); padding:8px; border-radius:6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    input[type="text"] { width:100%; border:1px solid #374151; background:#0b1220; color:var(--fg); padding:8px; border-radius:6px; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    button { background:#0ea5e9; color:white; border:0; padding:8px 10px; border-radius:6px; cursor:pointer; font-weight:600; }
+    button.secondary { background:#334155; }
+    button.warning { background:#f59e0b; }
+    .hint { font-size:12px; opacity:.8; }
+    .viewer { background:white; border-radius:6px; padding:8px; min-height: 300px; overflow:auto; }
+    .light { --bg:#f8fafc; --fg:#0f172a; --panel:#ffffff; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Mermaid 分岐プレビュー（ローカル）</h1>
+    <div class="row">
+      <button id="btnRender">Render</button>
+      <button id="btnExample" class="secondary">Load Example</button>
+      <button id="btnTheme" class="secondary">Toggle Dark/Light</button>
+      <button id="btnDownload" class="warning">Download SVG</button>
+    </div>
+  </header>
+  <div class="container">
+    <div class="panel controls">
+      <label>Highlight IDs (comma-separated)</label>
+      <input id="ids" type="text" placeholder="e.g. A1,B2,C3" />
+      <label>Diagram (Mermaid)</label>
+      <textarea id="src" spellcheck="false"></textarea>
+      <p class="hint">Tips: 指定したIDのノードにハイライト用クラスを付与します（<code>classDef highlight ...</code> + <code>class id1,id2 highlight;</code> を自動追記）。</p>
+    </div>
+    <div class="panel">
+      <div id="out" class="viewer"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+
+    let theme = 'dark';
+    function initMermaid() {
+      mermaid.initialize({ startOnLoad:false, theme: theme === 'dark' ? 'dark' : 'default', securityLevel: 'strict' });
+    }
+    initMermaid();
+
+    const $src = document.getElementById('src');
+    const $ids = document.getElementById('ids');
+    const $out = document.getElementById('out');
+
+    const example = `flowchart TD
+  A[Start] --> B{Condition?}
+  B -- Yes --> C[Path 1]
+  B -- No  --> D[Path 2]
+  C --> E[Merge]
+  D --> E[Merge]
+  E --> F[End]
+`;
+
+    document.getElementById('btnExample').addEventListener('click', () => {
+      $src.value = example;
+      $ids.value = 'B,C';
+      render();
+    });
+
+    document.getElementById('btnTheme').addEventListener('click', () => {
+      document.body.classList.toggle('light');
+      theme = document.body.classList.contains('light') ? 'light' : 'dark';
+      initMermaid();
+      render();
+    });
+
+    function buildText(raw, ids) {
+      let finalText = raw || '';
+      const list = (ids || '').split(',').map(s => s.trim()).filter(Boolean);
+      if (list.length > 0) {
+        finalText += `\n%% highlight injected\nclassDef highlight fill:#fff3b0,stroke:#f39c12,stroke-width:2px,color:#111;\nclass ${list.join(',')} highlight;\n`;
+      }
+      return finalText;
+    }
+
+    async function render() {
+      const text = buildText($src.value, $ids.value);
+      try {
+        const { svg } = await mermaid.render('m-md-' + Date.now(), text);
+        $out.innerHTML = svg;
+      } catch (e) {
+        $out.innerHTML = `<pre style="color:#ef4444">${(e && e.message) || e}</pre>`;
+      }
+    }
+
+    document.getElementById('btnRender').addEventListener('click', render);
+
+    document.getElementById('btnDownload').addEventListener('click', () => {
+      const svgEl = $out.querySelector('svg');
+      if (!svgEl) return;
+      const serializer = new XMLSerializer();
+      const svgText = serializer.serializeToString(svgEl);
+      const blob = new Blob([svgText], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'diagram.svg';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Initialize with example for convenience
+    $src.value = example;
+    $ids.value = 'B,C';
+    render();
+  </script>
+</body>
+</html>
