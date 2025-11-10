@@ -1,5 +1,4 @@
 using UnityEngine;
-using Vastcore.Player;
 using System.Collections.Generic;
 
 namespace Vastcore.Generation
@@ -27,7 +26,6 @@ namespace Vastcore.Generation
         private Vector2Int currentPlayerTile;
         private Vector2Int lastPlayerTile;
         
-        public Vector2Int CurrentPlayerTile => currentPlayerTile;
         public Vector3 PlayerVelocity => playerVelocity;
         public Vector3 PredictedPosition => GetPredictedPlayerPosition();
         
@@ -35,7 +33,11 @@ namespace Vastcore.Generation
         {
             if (playerTransform == null)
             {
+<<<<<<< HEAD
                 playerTransform = FindFirstObjectByType<AdvancedPlayerController>()?.transform;
+=======
+                playerTransform = ResolvePlayerTransform();
+>>>>>>> origin/develop
             }
             
             if (playerTransform != null)
@@ -179,6 +181,27 @@ namespace Vastcore.Generation
                 0f,
                 tileCoord.y * tileSize + tileSize * 0.5f
             );
+        }
+
+        private Transform ResolvePlayerTransform()
+        {
+            if (playerTransform != null)
+                return playerTransform;
+
+            GameObject taggedObject = null;
+            try
+            {
+                taggedObject = GameObject.FindGameObjectWithTag("Player");
+            }
+            catch (UnityException)
+            {
+            }
+
+            if (taggedObject != null)
+                return taggedObject.transform;
+
+            var mainCamera = Camera.main;
+            return mainCamera != null ? mainCamera.transform : null;
         }
     }
 }

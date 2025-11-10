@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
     "name": "Vastcore.Tests.EditMode",
     "rootNamespace": "",
     "references": [
@@ -19,3 +20,32 @@
     "versionDefines": [],
     "noEngineReferences": false
 }
+=======
+  "name": "Vastcore.Tests.EditMode",
+  "rootNamespace": "Vastcore.Tests.EditMode",
+  "references": [
+    "Vastcore.Core",
+    "Vastcore.Utilities",
+    "Vastcore.Generation",
+    "Vastcore.Terrain",
+    "Vastcore.Player",
+    "Vastcore.UI",
+    "Unity.ProBuilder",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}
+>>>>>>> origin/develop

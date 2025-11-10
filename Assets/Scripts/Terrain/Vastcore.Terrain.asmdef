@@ -5,7 +5,12 @@
         "Unity.ProBuilder",
         "Unity.TextMeshPro",
         "Vastcore.Core",
+<<<<<<< HEAD
         "Vastcore.Utilities",
+=======
+        "Vastcore.Utils",
+        "Vastcore.Generation",
+>>>>>>> origin/develop
         "Vastcore.Player"
     ],
     "includePlatforms": [],

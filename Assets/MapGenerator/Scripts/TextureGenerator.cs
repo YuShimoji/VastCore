@@ -88,7 +88,44 @@ namespace Vastcore.Generation
 
             // using (LoadProfiler.Measure("TerrainData.SetAlphamaps (TextureGenerator)"))
             {
-                terrainData.SetAlphamaps(0, 0, splatmapData);
+                // 大規模Terrainをバッチ処理で設定（メモリスパイク軽減）
+                SetAlphamapsInBatches(terrainData, splatmapData);
+            }
+        }
+
+        /// <summary>
+        /// アルファマップをバッチ処理で設定（メモリスパイク軽減）
+        /// </summary>
+        private static void SetAlphamapsInBatches(TerrainData terrainData, float[,,] splatmapData)
+        {
+            int height = splatmapData.GetLength(0);
+            int width = splatmapData.GetLength(1);
+            int layers = splatmapData.GetLength(2);
+            int batchSize = 256;
+
+            for (int yStart = 0; yStart < height; yStart += batchSize)
+            {
+                for (int xStart = 0; xStart < width; xStart += batchSize)
+                {
+                    int yEnd = Mathf.Min(yStart + batchSize, height);
+                    int xEnd = Mathf.Min(xStart + batchSize, width);
+                    int batchHeight = yEnd - yStart;
+                    int batchWidth = xEnd - xStart;
+
+                    float[,,] batchSplatmap = new float[batchHeight, batchWidth, layers];
+                    for (int y = 0; y < batchHeight; y++)
+                    {
+                        for (int x = 0; x < batchWidth; x++)
+                        {
+                            for (int l = 0; l < layers; l++)
+                            {
+                                batchSplatmap[y, x, l] = splatmapData[yStart + y, xStart + x, l];
+                            }
+                        }
+                    }
+
+                    terrainData.SetAlphamaps(yStart, xStart, batchSplatmap);
+                }
             }
         }
     }

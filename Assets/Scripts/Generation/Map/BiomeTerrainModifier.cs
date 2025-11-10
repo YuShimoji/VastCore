@@ -38,6 +38,7 @@ namespace Vastcore.Generation
         
         // 依存コンポーネント
         private BiomePresetManager presetManager;
+        private BiomeSpecificTerrainGenerator terrainGenerator;
         
         // イベント
         public System.Action<Vector3, BiomeType> OnBiomeDetected;
@@ -894,6 +895,7 @@ namespace Vastcore.Generation
         /// </summary>
         private BiomePreset GetBiomePreset(BiomeType biomeType)
         {
+            terrainGenerator = FindFirstObjectByType<BiomeSpecificTerrainGenerator>();
             if (presetManager == null) return null;
             
             string presetName = biomeType.ToString();

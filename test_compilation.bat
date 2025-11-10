@@ -2,23 +2,15 @@
 echo ===== Vastcore コンパイルテスト =====
 echo.
 
-echo Unity エディタでコンパイルテスト実行中...
-"C:\Program Files\Unity\Hub\Editor\2022.3.21f1\Editor\Unity.exe" -batchmode -quit -projectPath "%~dp0" -logFile "%~dp0compile_test.log"
+echo Unity テスト（EditMode/PlayMode）を実行中...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\run-tests.ps1" -TestMode all -UnityPath "C:\Program Files\6000.2.2f1\Editor\Unity.exe"
 
 echo.
-echo コンパイル結果確認中...
-if exist "%~dp0compile_test.log" (
-    echo ログファイルが生成されました
-    findstr /i "error" "%~dp0compile_test.log" > nul
-    if errorlevel 1 (
-        echo ✓ コンパイルエラーなし
-    ) else (
-        echo ❌ コンパイルエラーが検出されました
-        echo エラー詳細:
-        findstr /i "error" "%~dp0compile_test.log"
-    )
+if %ERRORLEVEL%==0 (
+    echo ✓ テスト成功（EditMode/PlayMode）
 ) else (
-    echo ⚠️ ログファイルが見つかりません
+    echo ❌ テスト失敗（詳細は artifacts/logs/ を確認）
+    exit /b 1
 )
 
 echo.
