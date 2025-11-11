@@ -39,7 +39,7 @@ namespace Vastcore.Editor
         private bool showAdvancedSettings = false;
         private bool showBlendSettings = false;
         private int selectedTab = 0;
-        private string[] tabNames = { "基本設定", "地形生成", "ブレンド設定", "プレビュー" };
+        private string[] tabNames = { "基本設定", "地形生成", "ブレンド設定", "プレビュー", "Deform" };
         #endregion
 
         #region メニュー
@@ -209,6 +209,7 @@ namespace Vastcore.Editor
                         case 1: DrawTerrainGenerationSettings(); break;
                         case 2: DrawBlendSettings(); break;
                         case 3: DrawPreviewTab(); break;
+                        case 4: DrawDeformTab(); break;
                     }
                 }
             }
@@ -595,7 +596,151 @@ namespace Vastcore.Editor
                 previewTexture = null;
             }
         }
-        #endregion
-    }
-}
+        /// <summary>
+        /// Deformタブを描画
+        /// </summary>
+        private void DrawDeformTab()
+        {
+            EditorGUILayout.LabelField("Deform設定", EditorStyles.boldLabel);
+
+#if DEFORM_AVAILABLE
+            EditorGUI.indentLevel++;
+
+            // Deform統合有効化
+            selectedTemplate.enableDeformIntegration = EditorGUILayout.Toggle("Deform統合有効", selectedTemplate.enableDeformIntegration);
+
+            if (selectedTemplate.enableDeformIntegration)
+            {
+                // Deformプリセットライブラリ
+                selectedTemplate.deformPresetLibrary = (Vastcore.Core.DeformPresetLibrary)EditorGUILayout.ObjectField(
+                    "Deformプリセットライブラリ", selectedTemplate.deformPresetLibrary, typeof(Vastcore.Core.DeformPresetLibrary), false);
+
+                EditorGUILayout.Space();
+
+                // Deformプリセット選択
+                if (selectedTemplate.deformPresetLibrary != null)
+                {
+                    EditorGUILayout.LabelField("利用可能なプリセット", EditorStyles.boldLabel);
+
+                    // Geological presets
+                    if (selectedTemplate.deformPresetLibrary.geologicalPresets.Count > 0)
+                    {
+                        EditorGUILayout.LabelField("地質学的プリセット", EditorStyles.miniBoldLabel);
+                        foreach (var preset in selectedTemplate.deformPresetLibrary.geologicalPresets)
+                        {
+                            if (preset.enabled)
+                            {
+                                EditorGUILayout.LabelField($"• {preset.presetName} ({preset.deformType})");
+                            }
+                        }
+                    }
+
+                    // Architectural presets
+                    if (selectedTemplate.deformPresetLibrary.architecturalPresets.Count > 0)
+                    {
+                        EditorGUILayout.LabelField("建築的プリセット", EditorStyles.miniBoldLabel);
+                        foreach (var preset in selectedTemplate.deformPresetLibrary.architecturalPresets)
+                        {
+                            if (preset.enabled)
+                            {
+                                EditorGUILayout.LabelField($"• {preset.presetName}");
+                            }
+                        }
+                    }
+
+                    // Organic presets
+                    if (selectedTemplate.deformPresetLibrary.organicPresets.Count > 0)
+                    {
+                        EditorGUILayout.LabelField("有機的プリセット", EditorStyles.miniBoldLabel);
+                        foreach (var preset in selectedTemplate.deformPresetLibrary.organicPresets)
+                        {
+                            if (preset.enabled)
+                            {
+                                EditorGUILayout.LabelField($"• {preset.presetName}");
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox("Deformプリセットライブラリを選択してください", MessageType.Info);
+                }
+
+                EditorGUILayout.Space();
+
+                // 適用オプション
+                selectedTemplate.autoApplyDeform = EditorGUILayout.Toggle("自動適用", selectedTemplate.autoApplyDeform);
+                selectedTemplate.deformQuality = (Vastcore.Core.VastcoreDeformManager.DeformQualityLevel)EditorGUILayout.EnumPopup("品質レベル", selectedTemplate.deformQuality);
+
+                EditorGUILayout.Space();
+
+                // テスト適用ボタン
+                if (GUILayout.Button("Deform適用テスト"))
+                {
+                    TestApplyDeform();
+                }
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("Deform統合を有効化すると、地形生成時に自動的に変形が適用されます", MessageType.Info);
+            }
+
+            EditorGUI.indentLevel--;
+#else
+            EditorGUILayout.HelpBox("Deformパッケージが利用できません。Package ManagerからDeformをインストールしてください。", MessageType.Warning);
 #endif
+        }
+
+        /// <summary>
+        /// Deform適用テスト
+        /// </summary>
+        private void TestApplyDeform()
+        {
+#if DEFORM_AVAILABLE
+            if (selectedTemplate == null || selectedTemplate.deformPresetLibrary == null)
+            {
+                Debug.LogWarning("テンプレートまたはDeformプリセットライブラリが設定されていません");
+                return;
+            }
+
+            // テスト用のゲームオブジェクトを作成
+            GameObject testObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            testObject.name = "DeformTestObject";
+
+            // Deform統合を適用
+            var deformIntegration = testObject.AddComponent<Vastcore.Generation.DeformIntegration>();
+            deformIntegration.deformPresetLibrary = selectedTemplate.deformPresetLibrary;
+
+            // 最初の有効なプリセットを適用（テスト用）
+            var testPreset = CreateTestDeformPreset();
+            if (testPreset != null)
+            {
+                deformIntegration.ApplyDeformPreset(testObject, testPreset);
+                Debug.Log("Deformテスト適用完了");
+            }
+#endif
+        }
+
+        /// <summary>
+        /// テスト用Deformプリセット作成
+        /// </summary>
+        private Vastcore.Generation.DeformPreset CreateTestDeformPreset()
+        {
+#if DEFORM_AVAILABLE
+            if (selectedTemplate.deformPresetLibrary == null) return null;
+
+            // 最初の有効な地質学的プリセットを使用
+            var geoPreset = selectedTemplate.deformPresetLibrary.geologicalPresets.Find(p => p.enabled);
+            if (geoPreset != null)
+            {
+                return new Vastcore.Generation.DeformPreset
+                {
+                    presetName = geoPreset.presetName,
+                    presetType = Vastcore.Generation.DeformPreset.DeformPresetType.Custom,
+                    intensity = geoPreset.intensity,
+                    enabled = true
+                };
+            }
+#endif
+            return null;
+        }
