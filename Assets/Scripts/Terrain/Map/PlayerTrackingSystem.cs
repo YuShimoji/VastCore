@@ -1,5 +1,4 @@
 using UnityEngine;
-using Vastcore.Player;
 using System.Collections.Generic;
 
 namespace Vastcore.Terrain.Map
@@ -35,7 +34,12 @@ namespace Vastcore.Terrain.Map
         {
             if (playerTransform == null)
             {
-                playerTransform = FindFirstObjectByType<AdvancedPlayerController>()?.transform;
+                // Player tagを持つオブジェクトを探す
+                var playerObj = GameObject.FindGameObjectWithTag("Player");
+                if (playerObj != null)
+                {
+                    playerTransform = playerObj.transform;
+                }
             }
             
             if (playerTransform != null)

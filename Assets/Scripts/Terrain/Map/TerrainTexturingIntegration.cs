@@ -3,24 +3,24 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using Vastcore.Generation.Map;
-using Vastcore.Player;
+
 
 namespace Vastcore.Generation
 {
     /// <summary>
-    /// 地形テクスチャリングシステム統合クラス
-    /// 既存のRuntimeTerrainManagerとBiomePresetManagerとの統合を管理
-    /// 要求2.1: リアルタイムでの環境変化の反映
+    /// 地形チE��スチャリングシスチE��統合クラス
+    /// 既存�ERuntimeTerrainManagerとBiomePresetManagerとの統合を管琁E
+    /// 要汁E.1: リアルタイムでの環墁E��化の反映
     /// </summary>
     public class TerrainTexturingIntegration : MonoBehaviour
     {
         #region 設定パラメータ
-        [Header("統合設定")]
+        [Header("統合設宁E)]
         public bool enableAutoIntegration = true;
         public float integrationUpdateInterval = 0.5f;
         public float textureUpdateRadius = 2000f;
         
-        [Header("システム参照")]
+        [Header("シスチE��参�E")]
         public RuntimeTerrainManager terrainManager;
         public BiomePresetManager biomePresetManager;
         public TerrainTexturingSystem texturingSystem;
@@ -38,17 +38,17 @@ namespace Vastcore.Generation
         public bool enableFrameTimeControl = true;
         #endregion
 
-        #region プライベート変数
+        #region プライベ�Eト変数
         private Dictionary<TerrainTile, TextureIntegrationData> tileTextureData = new Dictionary<TerrainTile, TextureIntegrationData>();
         private Queue<TextureIntegrationRequest> integrationQueue = new Queue<TextureIntegrationRequest>();
         private Transform playerTransform;
         private float lastIntegrationUpdate = 0f;
         
-        // パフォーマンス統計
+        // パフォーマンス統訁E
         private IntegrationStatistics statistics = new IntegrationStatistics();
         #endregion
 
-        #region Unity イベント
+        #region Unity イベンチE
         void Start()
         {
             InitializeIntegration();
@@ -71,15 +71,15 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region 初期化
+        #region 初期匁E
         /// <summary>
-        /// 統合システムを初期化
+        /// 統合シスチE��を�E期化
         /// </summary>
         private void InitializeIntegration()
         {
             Debug.Log("Initializing TerrainTexturingIntegration...");
             
-            // 必要なコンポーネントを取得または作成
+            // 忁E��なコンポ�Eネントを取得また�E作�E
             if (terrainManager == null)
                 terrainManager = FindFirstObjectByType<RuntimeTerrainManager>();
             
@@ -100,7 +100,7 @@ namespace Vastcore.Generation
                     blendingSystem = gameObject.AddComponent<DynamicMaterialBlendingSystem>();
             }
             
-            // プレイヤーTransformを取得
+            // プレイヤーTransformを取征E
             var playerController = FindFirstObjectByType<AdvancedPlayerController>();
             if (playerController != null)
             {
@@ -118,15 +118,15 @@ namespace Vastcore.Generation
         /// </summary>
         private void RegisterEventHandlers()
         {
-            // RuntimeTerrainManagerのイベントに登録（可能な場合）
-            // 注意: 実際のイベントシステムが実装されている場合のみ
+            // RuntimeTerrainManagerのイベントに登録�E�可能な場合！E
+            // 注愁E 実際のイベントシスチE��が実裁E��れてぁE��場合�Eみ
             
-            // 代替として、定期的なポーリングで新しいタイルを検出
+            // 代替として、定期皁E��ポ�Eリングで新しいタイルを検�E
             StartCoroutine(MonitorNewTiles());
         }
         
         /// <summary>
-        /// 新しいタイルを監視
+        /// 新しいタイルを監要E
         /// </summary>
         private IEnumerator MonitorNewTiles()
         {
@@ -142,7 +142,7 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region 統合処理
+        #region 統合�E琁E
         /// <summary>
         /// 統合を更新
         /// </summary>
@@ -154,7 +154,7 @@ namespace Vastcore.Generation
             // プレイヤー周辺のタイルを更新
             UpdateNearbyTileTextures();
             
-            // 環境変化を適用
+            // 環墁E��化を適用
             if (autoUpdateEnvironmentalTextures)
             {
                 UpdateEnvironmentalTextures();
@@ -171,20 +171,20 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 新しいタイルをチェック
+        /// 新しいタイルをチェチE��
         /// </summary>
         private void CheckForNewTiles()
         {
-            // RuntimeTerrainManagerから現在アクティブなタイルを取得
-            // 注意: 実際のAPIに応じて実装を調整
+            // RuntimeTerrainManagerから現在アクチE��ブなタイルを取征E
+            // 注愁E 実際のAPIに応じて実裁E��調整
             
             if (playerTransform == null)
                 return;
             
             Vector3 playerPos = playerTransform.position;
             
-            // プレイヤー周辺の範囲でタイルをチェック
-            int tileRadius = Mathf.CeilToInt(textureUpdateRadius / 1000f); // タイルサイズを1000mと仮定
+            // プレイヤー周辺の篁E��でタイルをチェチE��
+            int tileRadius = Mathf.CeilToInt(textureUpdateRadius / 1000f); // タイルサイズめE000mと仮宁E
             
             for (int x = -tileRadius; x <= tileRadius; x++)
             {
@@ -192,7 +192,7 @@ namespace Vastcore.Generation
                 {
                     Vector3 tileWorldPos = playerPos + new Vector3(x * 1000f, 0f, y * 1000f);
                     
-                    // この位置にタイルが存在するかチェック（仮想的な実装）
+                    // こ�E位置にタイルが存在するかチェチE���E�仮想皁E��実裁E��E
                     var tile = GetTileAtWorldPosition(tileWorldPos);
                     if (tile != null && !tileTextureData.ContainsKey(tile))
                     {
@@ -203,13 +203,13 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 新しいタイルが検出された時の処理
+        /// 新しいタイルが検�Eされた時の処琁E
         /// </summary>
         private void OnNewTileDetected(TerrainTile tile)
         {
             Debug.Log($"New tile detected: {tile.coordinate}");
             
-            // テクスチャ統合データを作成
+            // チE��スチャ統合データを作�E
             var integrationData = new TextureIntegrationData(tile);
             tileTextureData[tile] = integrationData;
             
@@ -219,7 +219,7 @@ namespace Vastcore.Generation
                 RequestTextureApplication(tile, TextureApplicationType.Initial);
             }
             
-            // バイオームテクスチャ適用
+            // バイオームチE��スチャ適用
             if (autoApplyBiomeTextures)
             {
                 ApplyBiomeTextureToTile(tile);
@@ -229,7 +229,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 近くのタイルテクスチャを更新
+        /// 近くのタイルチE��スチャを更新
         /// </summary>
         private void UpdateNearbyTileTextures()
         {
@@ -250,7 +250,7 @@ namespace Vastcore.Generation
                 
                 if (distance <= textureUpdateRadius)
                 {
-                    // 更新が必要かチェック
+                    // 更新が忁E��かチェチE��
                     if (ShouldUpdateTileTexture(tile, integrationData))
                     {
                         RequestTextureApplication(tile, TextureApplicationType.Update);
@@ -266,7 +266,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// タイルテクスチャの更新が必要かチェック
+        /// タイルチE��スチャの更新が忁E��かチェチE��
         /// </summary>
         private bool ShouldUpdateTileTexture(TerrainTile tile, TextureIntegrationData integrationData)
         {
@@ -290,7 +290,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 環境テクスチャを更新
+        /// 環墁E��クスチャを更新
         /// </summary>
         private void UpdateEnvironmentalTextures()
         {
@@ -311,7 +311,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// LODテクスチャを更新
+        /// LODチE��スチャを更新
         /// </summary>
         private void UpdateLODTextures()
         {
@@ -339,9 +339,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region テクスチャ適用
+        #region チE��スチャ適用
         /// <summary>
-        /// テクスチャ適用をリクエスト
+        /// チE��スチャ適用をリクエスチE
         /// </summary>
         private void RequestTextureApplication(TerrainTile tile, TextureApplicationType applicationType)
         {
@@ -357,14 +357,14 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// バイオームテクスチャをタイルに適用
+        /// バイオームチE��スチャをタイルに適用
         /// </summary>
         private void ApplyBiomeTextureToTile(TerrainTile tile)
         {
             if (biomePresetManager == null)
                 return;
             
-            // タイル位置に基づいてバイオームを決定
+            // タイル位置に基づぁE��バイオームを決宁E
             var biomePreset = DetermineBiomeForTile(tile);
             
             if (biomePreset != null)
@@ -382,20 +382,20 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// タイルのバイオームを決定
+        /// タイルのバイオームを決宁E
         /// </summary>
         private BiomePreset DetermineBiomeForTile(TerrainTile tile)
         {
             if (biomePresetManager == null || biomePresetManager.availablePresets.Count == 0)
                 return null;
             
-            // 簡易実装: タイル座標に基づいてバイオームを選択
+            // 簡易実裁E タイル座標に基づぁE��バイオームを選抁E
             int biomeIndex = (Mathf.Abs(tile.coordinate.x) + Mathf.Abs(tile.coordinate.y)) % biomePresetManager.availablePresets.Count;
             return biomePresetManager.availablePresets[biomeIndex];
         }
         
         /// <summary>
-        /// 統合キューを処理
+        /// 統合キューを�E琁E
         /// </summary>
         private void ProcessIntegrationQueue()
         {
@@ -423,7 +423,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 統合リクエストを処理
+        /// 統合リクエストを処琁E
         /// </summary>
         private void ProcessIntegrationRequest(TextureIntegrationRequest request)
         {
@@ -474,19 +474,19 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region ユーティリティ
+        #region ユーチE��リチE��
         /// <summary>
-        /// ワールド位置のタイルを取得（仮想実装）
+        /// ワールド位置のタイルを取得（仮想実裁E��E
         /// </summary>
         private TerrainTile GetTileAtWorldPosition(Vector3 worldPos)
         {
-            // 実際の実装では、RuntimeTerrainManagerのAPIを使用
-            // ここでは仮想的な実装
+            // 実際の実裁E��は、RuntimeTerrainManagerのAPIを使用
+            // ここでは仮想皁E��実裁E
             return null;
         }
         
         /// <summary>
-        /// リクエスト優先度を計算
+        /// リクエスト優先度を計箁E
         /// </summary>
         private int CalculateRequestPriority(TerrainTile tile)
         {
@@ -504,7 +504,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 現在の環境条件を取得
+        /// 現在の環墁E��件を取征E
         /// </summary>
         private EnvironmentalConditions GetCurrentEnvironmentalConditions()
         {
@@ -518,7 +518,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 環境変化があるかチェック
+        /// 環墁E��化があるかチェチE��
         /// </summary>
         private bool HasEnvironmentalChange(TextureIntegrationData integrationData, EnvironmentalConditions currentConditions)
         {
@@ -541,7 +541,7 @@ namespace Vastcore.Generation
             statistics.memoryUsage = System.GC.GetTotalMemory(false) / (1024 * 1024);
         }
         
-        // 環境データ取得メソッド（簡易実装）
+        // 環墁E��ータ取得メソチE���E�簡易実裁E��E
         private Season GetCurrentSeason()
         {
             float seasonTime = (Time.time / 300f) % 4f;
@@ -566,9 +566,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region パブリックAPI
+        #region パブリチE��API
         /// <summary>
-        /// 手動でタイルテクスチャを更新
+        /// 手動でタイルチE��スチャを更新
         /// </summary>
         public void UpdateTileTexture(TerrainTile tile)
         {
@@ -597,7 +597,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 統計情報を取得
+        /// 統計情報を取征E
         /// </summary>
         public IntegrationStatistics GetStatistics()
         {
@@ -605,7 +605,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 統合を有効/無効化
+        /// 統合を有効/無効匁E
         /// </summary>
         public void SetIntegrationEnabled(bool enabled)
         {
@@ -613,9 +613,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region クリーンアップ
+        #region クリーンアチE�E
         /// <summary>
-        /// 統合をクリーンアップ
+        /// 統合をクリーンアチE�E
         /// </summary>
         private void CleanupIntegration()
         {
@@ -631,7 +631,7 @@ namespace Vastcore.Generation
     }
     
     /// <summary>
-    /// テクスチャ統合データ
+    /// チE��スチャ統合データ
     /// </summary>
     [System.Serializable]
     public class TextureIntegrationData
@@ -659,7 +659,7 @@ namespace Vastcore.Generation
     }
     
     /// <summary>
-    /// テクスチャ統合リクエスト
+    /// チE��スチャ統合リクエスチE
     /// </summary>
     [System.Serializable]
     public class TextureIntegrationRequest
@@ -671,7 +671,7 @@ namespace Vastcore.Generation
     }
     
     /// <summary>
-    /// 統合統計
+    /// 統合統訁E
     /// </summary>
     [System.Serializable]
     public class IntegrationStatistics
@@ -686,14 +686,14 @@ namespace Vastcore.Generation
     }
     
     /// <summary>
-    /// テクスチャ適用タイプ
+    /// チE��スチャ適用タイチE
     /// </summary>
     public enum TextureApplicationType
     {
         Initial,        // 初期適用
         Update,         // 更新
         BiomeChange,    // バイオーム変更
-        Environmental,  // 環境変化
+        Environmental,  // 環墁E��化
         LOD            // LOD変更
     }
 }

@@ -3,24 +3,24 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using Vastcore.Utils;
-using Vastcore.Player;
+
 
 namespace Vastcore.Generation
 {
     /// <summary>
-    /// 動的マテリアルブレンディングシステム
-    /// 要求2.1: 複数テクスチャの自然なブレンディングとリアルタイム環境変化の反映
+    /// 動的マテリアルブレンチE��ングシスチE��
+    /// 要汁E.1: 褁E��チE��スチャの自然なブレンチE��ングとリアルタイム環墁E��化の反映
     /// </summary>
     public class DynamicMaterialBlendingSystem : MonoBehaviour
     {
         #region 設定パラメータ
-        [Header("ブレンディング設定")]
+        [Header("ブレンチE��ング設宁E)]
         public bool enableDynamicBlending = true;
         public float blendTransitionSpeed = 2f;
         public int maxSimultaneousBlends = 4;
         public AnimationCurve blendCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
         
-        [Header("距離ベースLOD")]
+        [Header("距離ベ�EスLOD")]
         public bool enableDistanceLOD = true;
         public float[] lodDistances = { 500f, 1000f, 2000f, 4000f };
         public float[] lodTextureScales = { 1f, 0.75f, 0.5f, 0.25f };
@@ -32,7 +32,7 @@ namespace Vastcore.Generation
         public int maxUpdatesPerFrame = 5;
         public float updateRadius = 1500f;
         
-        [Header("環境変化対応")]
+        [Header("環墁E��化対忁E)]
         public bool enableEnvironmentalBlending = true;
         public float environmentalBlendSpeed = 1f;
         public bool enableSeasonalTransitions = true;
@@ -45,23 +45,23 @@ namespace Vastcore.Generation
         public int maxBlendsPerFrame = 10;
         #endregion
 
-        #region プライベート変数
+        #region プライベ�Eト変数
         private Dictionary<TerrainTile, MaterialBlendData> activeMaterialBlends = new Dictionary<TerrainTile, MaterialBlendData>();
         private Queue<MaterialBlendRequest> blendRequestQueue = new Queue<MaterialBlendRequest>();
         private Transform playerTransform;
         private TerrainTexturingSystem texturingSystem;
         
-        // パフォーマンス統計
+        // パフォーマンス統訁E
         private float lastUpdateTime = 0f;
         private int blendsProcessedThisFrame = 0;
         private float frameStartTime = 0f;
         
-        // コルーチン管理
+        // コルーチン管琁E
         private Coroutine blendProcessingCoroutine;
         private Coroutine environmentalUpdateCoroutine;
         #endregion
 
-        #region Unity イベント
+        #region Unity イベンチE
         void Start()
         {
             InitializeBlendingSystem();
@@ -93,10 +93,10 @@ namespace Vastcore.Generation
             if (!enableDynamicBlending)
                 return;
 
-            // アクティブなブレンドを更新
+            // アクチE��ブなブレンドを更新
             UpdateActiveBlends();
 
-            // 完了したブレンドをクリーンアップ
+            // 完亁E��たブレンドをクリーンアチE�E
             CleanupCompletedBlends();
 
             // フレームレート制御
@@ -105,35 +105,35 @@ namespace Vastcore.Generation
                 float elapsedTime = (Time.realtimeSinceStartup - frameStartTime) * 1000f;
                 if (elapsedTime > targetFrameTime)
                 {
-                    // 次のフレームまで待機
+                    // 次のフレームまで征E��E
                     return;
                 }
             }
         }
 
-        #region 初期化
+        #region 初期匁E
         /// <summary>
-        /// ブレンディングシステムを初期化
+        /// ブレンチE��ングシスチE��を�E期化
         /// </summary>
         private void InitializeBlendingSystem()
         {
             Debug.Log("Initializing DynamicMaterialBlendingSystem...");
             
-            // 必要なコンポーネントを取得
+            // 忁E��なコンポ�Eネントを取征E
             texturingSystem = GetComponent<TerrainTexturingSystem>();
             if (texturingSystem == null)
             {
                 texturingSystem = gameObject.AddComponent<TerrainTexturingSystem>();
             }
             
-            // プレイヤーTransformを取得
+            // プレイヤーTransformを取征E
             var playerController = FindFirstObjectByType<AdvancedPlayerController>();
             if (playerController != null)
             {
                 playerTransform = playerController.transform;
             }
             
-            // コルーチンを開始
+            // コルーチンを開姁E
             StartBlendProcessing();
             
             if (enableEnvironmentalBlending)
@@ -145,7 +145,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// ブレンド処理コルーチンを開始
+        /// ブレンド�E琁E��ルーチンを開姁E
         /// </summary>
         private void StartBlendProcessing()
         {
@@ -158,7 +158,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 環境更新コルーチンを開始
+        /// 環墁E��新コルーチンを開姁E
         /// </summary>
         private void StartEnvironmentalUpdates()
         {
@@ -171,9 +171,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region パブリックAPI
+        #region パブリチE��API
         /// <summary>
-        /// マテリアルブレンドをリクエスト
+        /// マテリアルブレンドをリクエスチE
         /// </summary>
         public void RequestMaterialBlend(TerrainTile tile, MaterialBlendType blendType, object blendData = null)
         {
@@ -193,7 +193,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 距離ベースLODブレンドを適用
+        /// 距離ベ�EスLODブレンドを適用
         /// </summary>
         public void ApplyDistanceLODBlend(TerrainTile tile)
         {
@@ -207,7 +207,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 環境変化ブレンドを適用
+        /// 環墁E��化ブレンドを適用
         /// </summary>
         public void ApplyEnvironmentalBlend(TerrainTile tile, EnvironmentalConditions conditions)
         {
@@ -240,9 +240,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region ブレンド処理
+        #region ブレンド�E琁E
         /// <summary>
-        /// ブレンド処理メインコルーチン
+        /// ブレンド�E琁E��インコルーチン
         /// </summary>
         private IEnumerator BlendProcessingCoroutine()
         {
@@ -250,16 +250,16 @@ namespace Vastcore.Generation
             {
                 yield return new WaitForSeconds(updateInterval);
                 
-                // アクティブなブレンドを更新
+                // アクチE��ブなブレンドを更新
                 UpdateActiveBlends();
                 
-                // 完了したブレンドをクリーンアップ
+                // 完亁E��たブレンドをクリーンアチE�E
                 CleanupCompletedBlends();
             }
         }
         
         /// <summary>
-        /// ブレンドリクエストを処理
+        /// ブレンドリクエストを処琁E
         /// </summary>
         private void ProcessBlendRequests()
         {
@@ -285,14 +285,14 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// ブレンドリクエストを処理
+        /// ブレンドリクエストを処琁E
         /// </summary>
         private void ProcessBlendRequest(MaterialBlendRequest request)
         {
             if (request.tile == null || request.tile.tileObject == null)
                 return;
             
-            // 既存のブレンドデータを取得または作成
+            // 既存�Eブレンドデータを取得また�E作�E
             if (!activeMaterialBlends.ContainsKey(request.tile))
             {
                 activeMaterialBlends[request.tile] = new MaterialBlendData(request.tile);
@@ -300,7 +300,7 @@ namespace Vastcore.Generation
             
             var blendData = activeMaterialBlends[request.tile];
             
-            // ブレンドタイプに応じて処理
+            // ブレンドタイプに応じて処琁E
             switch (request.blendType)
             {
                 case MaterialBlendType.DistanceLOD:
@@ -326,7 +326,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 距離LODブレンドを処理
+        /// 距離LODブレンドを処琁E
         /// </summary>
         private void ProcessDistanceLODBlend(MaterialBlendData blendData, int lodLevel)
         {
@@ -336,7 +336,7 @@ namespace Vastcore.Generation
             float targetScale = lodTextureScales[lodLevel];
             float targetBlendSpeed = lodBlendSpeeds[lodLevel];
             
-            // LODブレンドを開始
+            // LODブレンドを開姁E
             StartBlendTransition(blendData, "LOD_Scale", blendData.currentLODScale, targetScale, targetBlendSpeed);
             
             blendData.targetLODLevel = lodLevel;
@@ -344,7 +344,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 環境ブレンドを処理
+        /// 環墁E��レンドを処琁E
         /// </summary>
         private void ProcessEnvironmentalBlend(MaterialBlendData blendData, EnvironmentalConditions conditions)
         {
@@ -356,7 +356,7 @@ namespace Vastcore.Generation
             float moistureSaturation = CalculateMoistureSaturation(conditions.moisture);
             StartBlendTransition(blendData, "Moisture_Saturation", blendData.currentMoistureSaturation, moistureSaturation, environmentalBlendSpeed);
             
-            // 時刻に基づく明度変化
+            // 時刻に基づく�E度変化
             float timeBrightness = CalculateTimeBrightness(conditions.timeOfDay);
             StartBlendTransition(blendData, "Time_Brightness", blendData.currentTimeBrightness, timeBrightness, environmentalBlendSpeed);
             
@@ -364,19 +364,19 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 季節ブレンドを処理
+        /// 季節ブレンドを処琁E
         /// </summary>
         private void ProcessSeasonalBlend(MaterialBlendData blendData, Season targetSeason)
         {
             if (blendData.currentSeason == targetSeason)
                 return;
             
-            // 季節変化の色調を計算
+            // 季節変化の色調を計箁E
             Color seasonalColor = CalculateSeasonalColor(targetSeason);
             float seasonalBrightness = CalculateSeasonalBrightness(targetSeason);
             float seasonalSaturation = CalculateSeasonalSaturation(targetSeason);
             
-            // 季節変化ブレンドを開始
+            // 季節変化ブレンドを開姁E
             float transitionSpeed = 1f / seasonalTransitionDuration;
             
             StartBlendTransition(blendData, "Seasonal_Color", blendData.currentSeasonalColor, seasonalColor, transitionSpeed);
@@ -387,7 +387,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// バイオームブレンドを処理
+        /// バイオームブレンドを処琁E
         /// </summary>
         private void ProcessBiomeBlend(MaterialBlendData blendData, BiomePreset biomePreset)
         {
@@ -405,18 +405,18 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// テクスチャブレンドを処理
+        /// チE��スチャブレンドを処琁E
         /// </summary>
         private void ProcessTextureBlend(MaterialBlendData blendData, object textureData)
         {
-            // テクスチャブレンドの実装
-            // 複数テクスチャの重み付きブレンディング
+            // チE��スチャブレンド�E実裁E
+            // 褁E��チE��スチャの重み付きブレンチE��ング
         }
         #endregion
 
-        #region ブレンド遷移
+        #region ブレンド�E移
         /// <summary>
-        /// ブレンド遷移を開始
+        /// ブレンド�E移を開姁E
         /// </summary>
         private void StartBlendTransition(MaterialBlendData blendData, string propertyName, float fromValue, float toValue, float speed)
         {
@@ -435,7 +435,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// ブレンド遷移を開始（Color版）
+        /// ブレンド�E移を開始！Eolor版！E
         /// </summary>
         private void StartBlendTransition(MaterialBlendData blendData, string propertyName, Color fromColor, Color toColor, float speed)
         {
@@ -454,7 +454,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// アクティブなブレンドを更新
+        /// アクチE��ブなブレンドを更新
         /// </summary>
         private void UpdateActiveBlends()
         {
@@ -475,7 +475,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// ブレンド遷移を更新
+        /// ブレンド�E移を更新
         /// </summary>
         private void UpdateBlendTransitions(MaterialBlendData blendData)
         {
@@ -579,9 +579,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region 環境更新
+        #region 環墁E��新
         /// <summary>
-        /// 環境更新コルーチン
+        /// 環墁E��新コルーチン
         /// </summary>
         private IEnumerator EnvironmentalUpdateCoroutine()
         {
@@ -597,13 +597,13 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 環境条件を更新
+        /// 環墁E��件を更新
         /// </summary>
         private void UpdateEnvironmentalConditions()
         {
             var currentConditions = GetCurrentEnvironmentalConditions();
             
-            // プレイヤー周辺のタイルに環境変化を適用
+            // プレイヤー周辺のタイルに環墁E��化を適用
             foreach (var kvp in activeMaterialBlends.ToArray())
             {
                 var tile = kvp.Key;
@@ -623,7 +623,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 現在の環境条件を取得
+        /// 現在の環墁E��件を取征E
         /// </summary>
         private EnvironmentalConditions GetCurrentEnvironmentalConditions()
         {
@@ -639,9 +639,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region 計算ユーティリティ
+        #region 計算ユーチE��リチE��
         /// <summary>
-        /// ブレンド優先度を計算
+        /// ブレンド優先度を計箁E
         /// </summary>
         private int CalculateBlendPriority(TerrainTile tile)
         {
@@ -658,7 +658,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// プレイヤーからの距離を計算
+        /// プレイヤーからの距離を計箁E
         /// </summary>
         private float CalculateDistanceToPlayer(TerrainTile tile)
         {
@@ -669,7 +669,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// LODレベルを計算
+        /// LODレベルを計箁E
         /// </summary>
         private int CalculateLODLevel(float distance)
         {
@@ -682,7 +682,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 温度色を計算
+        /// 温度色を計箁E
         /// </summary>
         private Color CalculateTemperatureColor(float temperature)
         {
@@ -690,7 +690,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 湿度彩度を計算
+        /// 湿度彩度を計箁E
         /// </summary>
         private float CalculateMoistureSaturation(float moisture)
         {
@@ -698,21 +698,21 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 時刻明度を計算
+        /// 時刻明度を計箁E
         /// </summary>
         private float CalculateTimeBrightness(float timeOfDay)
         {
-            // 0.25 = 朝6時, 0.5 = 正午, 0.75 = 夕方6時, 0.0/1.0 = 深夜
+            // 0.25 = 朁E晁E 0.5 = 正十E 0.75 = 夕方6晁E 0.0/1.0 = 深夁E
             if (timeOfDay < 0.25f || timeOfDay > 0.75f)
                 return 0.3f; // 夜間
             else if (timeOfDay >= 0.4f && timeOfDay <= 0.6f)
-                return 1.2f; // 昼間
+                return 1.2f; // 昼閁E
             else
-                return 0.8f; // 朝夕
+                return 0.8f; // 朝夁E
         }
         
         /// <summary>
-        /// 季節色を計算
+        /// 季節色を計箁E
         /// </summary>
         private Color CalculateSeasonalColor(Season season)
         {
@@ -727,7 +727,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 季節明度を計算
+        /// 季節明度を計箁E
         /// </summary>
         private float CalculateSeasonalBrightness(Season season)
         {
@@ -742,7 +742,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 季節彩度を計算
+        /// 季節彩度を計箁E
         /// </summary>
         private float CalculateSeasonalSaturation(Season season)
         {
@@ -757,11 +757,11 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region 環境データ取得
+        #region 環墁E��ータ取征E
         private Season GetCurrentSeason()
         {
-            // 簡易実装：時間ベースの季節変化
-            float seasonTime = (Time.time / 300f) % 4f; // 5分で1季節
+            // 簡易実裁E��時間�Eースの季節変化
+            float seasonTime = (Time.time / 300f) % 4f; // 5刁E��1季節
             return (Season)Mathf.FloorToInt(seasonTime);
         }
         
@@ -794,9 +794,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region クリーンアップ
+        #region クリーンアチE�E
         /// <summary>
-        /// 完了したブレンドをクリーンアップ
+        /// 完亁E��たブレンドをクリーンアチE�E
         /// </summary>
         private void CleanupCompletedBlends()
         {
@@ -804,7 +804,7 @@ namespace Vastcore.Generation
             {
                 var blendData = kvp.Value;
                 
-                // 完了した遷移を削除
+                // 完亁E��た�E移を削除
                 var completedTransitions = blendData.activeTransitions.Where(t => t.Value.isComplete).ToArray();
                 foreach (var transition in completedTransitions)
                 {
@@ -817,7 +817,7 @@ namespace Vastcore.Generation
                     blendData.activeColorTransitions.Remove(transition.Key);
                 }
                 
-                // アクティブな遷移がない場合は削除
+                // アクチE��ブな遷移がなぁE��合�E削除
                 if (blendData.activeTransitions.Count == 0 && blendData.activeColorTransitions.Count == 0)
                 {
                     activeMaterialBlends.Remove(kvp.Key);
@@ -826,7 +826,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// すべてのブレンドをクリーンアップ
+        /// すべてのブレンドをクリーンアチE�E
         /// </summary>
         private void CleanupAllBlends()
         {

@@ -3,33 +3,33 @@ using System.Collections.Generic;
 using System.Collections;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
-using Vastcore.Player;
+
 
 namespace Vastcore.Generation.Cache
 {
     /// <summary>
-    /// インテリジェントキャッシュシステム
-    /// 生成済み地形・オブジェクトの効率的なキャッシュと予測的プリロード
+    /// インチE��ジェントキャチE��ュシスチE��
+    /// 生�E済み地形・オブジェクト�E効玁E��なキャチE��ュと予測皁E�EリローチE
     /// </summary>
     public class IntelligentCacheSystem : MonoBehaviour
     {
-        [Header("キャッシュ設定")]
+        [Header("キャチE��ュ設宁E)]
         [SerializeField] private bool enableCaching = true;
         [SerializeField] private bool enablePersistentCache = true;
         [SerializeField] private bool enablePredictivePreload = true;
         [SerializeField] private string cacheDirectory = "TerrainCache";
         
-        [Header("メモリ管理")]
+        [Header("メモリ管琁E)]
         [SerializeField] private int maxMemoryCacheSize = 100; // MB
         [SerializeField] private int maxCachedTiles = 50;
         [SerializeField] private float cacheEvictionThreshold = 0.8f;
         
-        [Header("予測プリロード")]
+        [Header("予測プリローチE)]
         [SerializeField] private float preloadRadius = 1500f;
         [SerializeField] private int maxPreloadTasks = 3;
         [SerializeField] private float playerVelocityPredictionTime = 5f;
         
-        // キャッシュデータ構造
+        // キャチE��ュチE�Eタ構造
         private Dictionary<Vector2Int, CachedTerrainData> memoryCache;
         private Dictionary<Vector2Int, string> diskCacheIndex;
         private Queue<Vector2Int> accessOrder;
@@ -110,7 +110,7 @@ namespace Vastcore.Generation.Cache
                 playerTransform = player.transform;
             }
             
-            // ディスクキャッシュディレクトリの作成
+            // チE��スクキャチE��ュチE��レクトリの作�E
             if (enablePersistentCache)
             {
                 string cachePath = Path.Combine(Application.persistentDataPath, cacheDirectory);
@@ -126,7 +126,7 @@ namespace Vastcore.Generation.Cache
         }
         
         /// <summary>
-        /// 地形データをキャッシュに保存
+        /// 地形チE�EタをキャチE��ュに保孁E
         /// </summary>
         public void CacheTerrainData(Vector2Int coordinate, float[,] heightmap, TerrainMetadata metadata, List<PrimitiveObjectData> primitives = null)
         {
@@ -143,7 +143,7 @@ namespace Vastcore.Generation.Cache
                 memorySize = CalculateMemorySize(heightmap, primitives)
             };
             
-            // メモリキャッシュに追加
+            // メモリキャチE��ュに追加
             if (memoryCache.ContainsKey(coordinate))
             {
                 memoryCache[coordinate] = cachedData;
@@ -156,13 +156,13 @@ namespace Vastcore.Generation.Cache
             
             statistics.totalMemoryUsed += cachedData.memorySize;
             
-            // メモリ制限チェック
+            // メモリ制限チェチE��
             if (ShouldEvictMemoryCache())
             {
                 EvictLeastRecentlyUsed();
             }
             
-            // ディスクキャッシュに非同期保存
+            // チE��スクキャチE��ュに非同期保孁E
             if (enablePersistentCache)
             {
                 StartCoroutine(SaveToDiskAsync(coordinate, cachedData));
@@ -170,7 +170,7 @@ namespace Vastcore.Generation.Cache
         }
         
         /// <summary>
-        /// キャッシュから地形データを取得
+        /// キャチE��ュから地形チE�Eタを取征E
         /// </summary>
         public bool TryGetCachedTerrainData(Vector2Int coordinate, out CachedTerrainData cachedData)
         {
@@ -178,10 +178,10 @@ namespace Vastcore.Generation.Cache
             
             if (!enableCaching) return false;
             
-            // メモリキャッシュから検索
+            // メモリキャチE��ュから検索
             if (memoryCache.TryGetValue(coordinate, out cachedData))
             {
-                // アクセス情報更新
+                // アクセス惁E��更新
                 cachedData.lastAccessTime = Time.time;
                 cachedData.accessCount++;
                 memoryCache[coordinate] = cachedData;
@@ -190,15 +190,15 @@ namespace Vastcore.Generation.Cache
                 return true;
             }
             
-            // ディスクキャッシュから検索
+            // チE��スクキャチE��ュから検索
             if (enablePersistentCache && diskCacheIndex.ContainsKey(coordinate))
             {
-                // 同期的にディスクから読み込み
+                // 同期皁E��チE��スクから読み込み
                 var loadedData = LoadFromDiskSync(coordinate);
                 if (loadedData.HasValue)
                 {
                     cachedData = loadedData.Value;
-                    // メモリキャッシュに昇格
+                    // メモリキャチE��ュに昁E��
                     CacheTerrainData(coordinate, cachedData.heightmap, cachedData.metadata, cachedData.primitiveObjects);
                     statistics.totalCacheHits++;
                     return true;
@@ -210,7 +210,7 @@ namespace Vastcore.Generation.Cache
         }
         
         /// <summary>
-        /// 予測的プリロードの実行
+        /// 予測皁E�Eリロード�E実衁E
         /// </summary>
         public void UpdatePredictivePreload()
         {
@@ -234,7 +234,7 @@ namespace Vastcore.Generation.Cache
         {
             Vector3 currentPosition = playerTransform.position;
             
-            // 速度計算
+            // 速度計箁E
             if (lastPlayerPosition != Vector3.zero)
             {
                 playerVelocity = (currentPosition - lastPlayerPosition) / Time.deltaTime;
@@ -261,7 +261,7 @@ namespace Vastcore.Generation.Cache
             Vector3 predictedPos = currentPos + playerVelocity * playerVelocityPredictionTime;
             predictions.Add(predictedPos);
             
-            // 移動パターンの分析
+            // 移動パターンの刁E��
             if (playerPositionHistory.Count >= 3)
             {
                 Vector3 trend = AnalyzeMovementTrend();
@@ -297,7 +297,7 @@ namespace Vastcore.Generation.Cache
             {
                 var tileCoord = WorldToTileCoordinate(position);
                 
-                // preloadRadiusに基づいて周辺タイルも含める
+                // preloadRadiusに基づぁE��周辺タイルも含める
                 int radius = Mathf.CeilToInt(preloadRadius / 2000f); // tileSize = 2000f
                 for (int x = -radius; x <= radius; x++)
                 {
@@ -321,7 +321,7 @@ namespace Vastcore.Generation.Cache
         {
             preloadingTiles.Add(coordinate);
             
-            // ディスクキャッシュから読み込み試行
+            // チE��スクキャチE��ュから読み込み試衁E
             bool foundInDisk = false;
             if (enablePersistentCache && diskCacheIndex.ContainsKey(coordinate))
             {
@@ -337,13 +337,13 @@ namespace Vastcore.Generation.Cache
                 }));
             }
             
-            // ディスクにない場合は新規生成をリクエスト
+            // チE��スクになぁE��合�E新規生成をリクエスチE
             if (!foundInDisk)
             {
                 var terrainGenerator = FindFirstObjectByType<RuntimeTerrainManager>();
                 if (terrainGenerator != null)
                 {
-                    // 非同期生成リクエスト（実装は RuntimeTerrainManager に依存）
+                    // 非同期生成リクエスト（実裁E�E RuntimeTerrainManager に依存！E
                     Debug.Log($"Requesting preload generation for tile {coordinate}");
                 }
             }
@@ -394,7 +394,7 @@ namespace Vastcore.Generation.Cache
             
             if (primitives != null)
             {
-                size += primitives.Count * 100; // 概算
+                size += primitives.Count * 100; // 概箁E
             }
             
             return size;
@@ -402,7 +402,7 @@ namespace Vastcore.Generation.Cache
         
         private IEnumerator SaveToDiskAsync(Vector2Int coordinate, CachedTerrainData data)
         {
-            yield return null; // フレーム分散
+            yield return null; // フレーム刁E��
             
             try
             {
@@ -428,7 +428,7 @@ namespace Vastcore.Generation.Cache
         
         private IEnumerator LoadFromDiskAsync(Vector2Int coordinate, System.Action<CachedTerrainData?> onComplete)
         {
-            yield return null; // フレーム分散
+            yield return null; // フレーム刁E��
             
             try
             {
@@ -542,7 +542,7 @@ namespace Vastcore.Generation.Cache
         }
         
         /// <summary>
-        /// キャッシュ統計情報の取得
+        /// キャチE��ュ統計情報の取征E
         /// </summary>
         public CacheStatistics GetStatistics()
         {
@@ -554,7 +554,7 @@ namespace Vastcore.Generation.Cache
         }
         
         /// <summary>
-        /// キャッシュのクリア
+        /// キャチE��ュのクリア
         /// </summary>
         public void ClearCache(bool includeDisk = false)
         {
@@ -595,7 +595,7 @@ namespace Vastcore.Generation.Cache
         
         private void OnDestroy()
         {
-            // 未完了の非同期処理をクリーンアップ
+            // 未完亁E�E非同期�E琁E��クリーンアチE�E
             StopAllCoroutines();
         }
     }
