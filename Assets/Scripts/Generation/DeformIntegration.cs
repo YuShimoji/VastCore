@@ -15,7 +15,7 @@ namespace Vastcore.Generation
         void ApplyDeformPreset(GameObject target, DeformPreset preset);
         void RemoveDeformFromObject(GameObject target);
         bool HasDeformableComponent(GameObject target);
-        Deformable GetDeformable(GameObject target);
+        object GetDeformable(GameObject target);
     }
 
     /// <summary>
@@ -101,7 +101,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// Deformableコンポーネントを取得
         /// </summary>
-        public virtual Deformable GetDeformable(GameObject target)
+        public virtual object GetDeformable(GameObject target)
         {
 #if DEFORM_AVAILABLE
             return target?.GetComponent<Deformable>();
