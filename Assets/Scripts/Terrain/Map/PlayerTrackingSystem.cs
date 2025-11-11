@@ -2,7 +2,7 @@ using UnityEngine;
 using Vastcore.Player;
 using System.Collections.Generic;
 
-namespace Vastcore.Generation
+namespace Vastcore.Terrain.Map
 {
     /// <summary>
     /// プレイヤー追跡システム

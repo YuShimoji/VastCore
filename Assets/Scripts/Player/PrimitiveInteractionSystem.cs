@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Core;
 using Vastcore.Utils;
-using Vastcore.Generation;
+using Vastcore.Terrain.Map;
 
 namespace Vastcore.Player
 {
@@ -195,7 +195,7 @@ namespace Vastcore.Player
             };
             
             // グラインド可能エッジを検出
-            var primitiveObject = primitive.GetComponent<Vastcore.Generation.PrimitiveTerrainObject>();
+            var primitiveObject = primitive.GetComponent<PrimitiveTerrainObject>();
             if (primitiveObject != null && primitiveObject.isGrindable)
             {
                 DetectGrindableEdges(primitive, ref interactionData);

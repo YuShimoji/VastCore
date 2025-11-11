@@ -4,7 +4,6 @@
     "references": [
         "Vastcore.Core",
         "Vastcore.Utilities",
-        "Vastcore.Terrain",
         "Unity.ProBuilder"
     ],
     "includePlatforms": [],
