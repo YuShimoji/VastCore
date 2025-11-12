@@ -15,8 +15,7 @@
         "Unity.ProBuilder.Poly2Tri",
         "Unity.ProBuilder.Stl",
         "Unity.TextMeshPro",
-        "UnityEditor.TestRunner",
-        "Unity.TestFramework"
+        "UnityEditor.TestRunner"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
