@@ -123,14 +123,17 @@ namespace Vastcore.Generation
         /// </summary>
         private void FindPlayerTransform()
         {
-<<<<<<< HEAD
             // AdvancedPlayerControllerを検索
             var playerController = FindFirstObjectByType<Vastcore.Player.AdvancedPlayerController>();
             if (playerController != null)
-=======
+            {
+                playerTransform = playerController.transform;
+                Debug.Log("Found Player by AdvancedPlayerController");
+                return;
+            }
+            
             // 既存のTransformが設定されている場合は何もしない
             if (playerTransform != null)
->>>>>>> origin/develop
             {
                 return;
             }

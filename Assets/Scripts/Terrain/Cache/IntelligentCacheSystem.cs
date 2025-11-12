@@ -8,40 +8,37 @@ using System.Runtime.Serialization.Formatters.Binary;
 namespace Vastcore.Generation.Cache
 {
     /// <summary>
-    /// インチE��ジェントキャチE��ュシスチE��
-    /// 生�E済み地形・オブジェクト�E効玁E��なキャチE��ュと予測皁E�EリローチE
+    /// 繧､繝ｳ繝・Μ繧ｸ繧ｧ繝ｳ繝医く繝｣繝・す繝･繧ｷ繧ｹ繝・Β
+    /// 逕滓・貂医∩蝨ｰ蠖｢繝ｻ繧ｪ繝悶ず繧ｧ繧ｯ繝医・蜉ｹ邇・噪縺ｪ繧ｭ繝｣繝・す繝･縺ｨ莠域ｸｬ逧・・繝ｪ繝ｭ繝ｼ繝・
     /// </summary>
     public class IntelligentCacheSystem : MonoBehaviour
     {
-        [Header("キャチE��ュ設宁E)]
-        [SerializeField] private bool enableCaching = true;
+        [Header("Cache Settings")]public bool enableCaching = true;
         [SerializeField] private bool enablePersistentCache = true;
         [SerializeField] private bool enablePredictivePreload = true;
         [SerializeField] private string cacheDirectory = "TerrainCache";
-        
-        [Header("メモリ管琁E)]
+        [Header("Memory Management")]
         [SerializeField] private int maxMemoryCacheSize = 100; // MB
         [SerializeField] private int maxCachedTiles = 50;
         [SerializeField] private float cacheEvictionThreshold = 0.8f;
-        
-        [Header("予測プリローチE)]
+        [Header("Predictive Preload")]
         [SerializeField] private float preloadRadius = 1500f;
         [SerializeField] private int maxPreloadTasks = 3;
         [SerializeField] private float playerVelocityPredictionTime = 5f;
         
-        // キャチE��ュチE�Eタ構造
+        // 繧ｭ繝｣繝・す繝･繝・・繧ｿ讒矩�
         private Dictionary<Vector2Int, CachedTerrainData> memoryCache;
         private Dictionary<Vector2Int, string> diskCacheIndex;
         private Queue<Vector2Int> accessOrder;
         private HashSet<Vector2Int> preloadingTiles;
         
-        // プレイヤー追跡
+        // 繝励Ξ繧､繝､繝ｼ霑ｽ霍｡
         private Transform playerTransform;
         private Vector3 lastPlayerPosition;
         private Vector3 playerVelocity;
         private List<Vector3> playerPositionHistory;
         
-        // 統計情報
+        // 邨ｱ險域ュ蝣ｱ
         private CacheStatistics statistics;
         
         [System.Serializable]
@@ -103,14 +100,14 @@ namespace Vastcore.Generation.Cache
             
             statistics = new CacheStatistics();
             
-            // プレイヤーの検索
+            // 繝励Ξ繧､繝､繝ｼ縺ｮ讀懃ｴ｢
             var player = FindFirstObjectByType<AdvancedPlayerController>();
             if (player != null)
             {
                 playerTransform = player.transform;
             }
             
-            // チE��スクキャチE��ュチE��レクトリの作�E
+            // 繝・ぅ繧ｹ繧ｯ繧ｭ繝｣繝・す繝･繝・ぅ繝ｬ繧ｯ繝医Μ縺ｮ菴懈・
             if (enablePersistentCache)
             {
                 string cachePath = Path.Combine(Application.persistentDataPath, cacheDirectory);
@@ -126,7 +123,7 @@ namespace Vastcore.Generation.Cache
         }
         
         /// <summary>
-        /// 地形チE�EタをキャチE��ュに保孁E
+        /// 蝨ｰ蠖｢繝・・繧ｿ繧偵く繝｣繝・す繝･縺ｫ菫晏ｭ・
         /// </summary>
         public void CacheTerrainData(Vector2Int coordinate, float[,] heightmap, TerrainMetadata metadata, List<PrimitiveObjectData> primitives = null)
         {
@@ -143,7 +140,7 @@ namespace Vastcore.Generation.Cache
                 memorySize = CalculateMemorySize(heightmap, primitives)
             };
             
-            // メモリキャチE��ュに追加
+            // 繝｡繝｢繝ｪ繧ｭ繝｣繝・す繝･縺ｫ霑ｽ蜉�
             if (memoryCache.ContainsKey(coordinate))
             {
                 memoryCache[coordinate] = cachedData;
@@ -156,13 +153,13 @@ namespace Vastcore.Generation.Cache
             
             statistics.totalMemoryUsed += cachedData.memorySize;
             
-            // メモリ制限チェチE��
+            // 繝｡繝｢繝ｪ蛻ｶ髯舌メ繧ｧ繝・け
             if (ShouldEvictMemoryCache())
             {
                 EvictLeastRecentlyUsed();
             }
             
-            // チE��スクキャチE��ュに非同期保孁E
+            // 繝・ぅ繧ｹ繧ｯ繧ｭ繝｣繝・す繝･縺ｫ髱槫酔譛滉ｿ晏ｭ・
             if (enablePersistentCache)
             {
                 StartCoroutine(SaveToDiskAsync(coordinate, cachedData));
@@ -170,7 +167,7 @@ namespace Vastcore.Generation.Cache
         }
         
         /// <summary>
-        /// キャチE��ュから地形チE�Eタを取征E
+        /// 繧ｭ繝｣繝・す繝･縺九ｉ蝨ｰ蠖｢繝・・繧ｿ繧貞叙蠕・
         /// </summary>
         public bool TryGetCachedTerrainData(Vector2Int coordinate, out CachedTerrainData cachedData)
         {
@@ -178,10 +175,10 @@ namespace Vastcore.Generation.Cache
             
             if (!enableCaching) return false;
             
-            // メモリキャチE��ュから検索
+            // 繝｡繝｢繝ｪ繧ｭ繝｣繝・す繝･縺九ｉ讀懃ｴ｢
             if (memoryCache.TryGetValue(coordinate, out cachedData))
             {
-                // アクセス惁E��更新
+                // 繧｢繧ｯ繧ｻ繧ｹ諠・�ｱ譖ｴ譁ｰ
                 cachedData.lastAccessTime = Time.time;
                 cachedData.accessCount++;
                 memoryCache[coordinate] = cachedData;
@@ -190,15 +187,15 @@ namespace Vastcore.Generation.Cache
                 return true;
             }
             
-            // チE��スクキャチE��ュから検索
+            // 繝・ぅ繧ｹ繧ｯ繧ｭ繝｣繝・す繝･縺九ｉ讀懃ｴ｢
             if (enablePersistentCache && diskCacheIndex.ContainsKey(coordinate))
             {
-                // 同期皁E��チE��スクから読み込み
+                // 蜷梧悄逧・↓繝・ぅ繧ｹ繧ｯ縺九ｉ隱ｭ縺ｿ霎ｼ縺ｿ
                 var loadedData = LoadFromDiskSync(coordinate);
                 if (loadedData.HasValue)
                 {
                     cachedData = loadedData.Value;
-                    // メモリキャチE��ュに昁E��
+                    // 繝｡繝｢繝ｪ繧ｭ繝｣繝・す繝･縺ｫ譏・�ｼ
                     CacheTerrainData(coordinate, cachedData.heightmap, cachedData.metadata, cachedData.primitiveObjects);
                     statistics.totalCacheHits++;
                     return true;
@@ -210,7 +207,7 @@ namespace Vastcore.Generation.Cache
         }
         
         /// <summary>
-        /// 予測皁E�Eリロード�E実衁E
+        /// 莠域ｸｬ逧・・繝ｪ繝ｭ繝ｼ繝峨・螳溯｡・
         /// </summary>
         public void UpdatePredictivePreload()
         {
@@ -234,13 +231,13 @@ namespace Vastcore.Generation.Cache
         {
             Vector3 currentPosition = playerTransform.position;
             
-            // 速度計箁E
+            // 騾溷ｺｦ險育ｮ・
             if (lastPlayerPosition != Vector3.zero)
             {
                 playerVelocity = (currentPosition - lastPlayerPosition) / Time.deltaTime;
             }
             
-            // 位置履歴の更新
+            // 菴咲ｽｮ螻･豁ｴ縺ｮ譖ｴ譁ｰ
             playerPositionHistory.Add(currentPosition);
             if (playerPositionHistory.Count > 10)
             {
@@ -256,12 +253,12 @@ namespace Vastcore.Generation.Cache
             
             if (playerVelocity.magnitude < 0.1f) return predictions;
             
-            // 現在の速度に基づく予測
+            // 迴ｾ蝨ｨ縺ｮ騾溷ｺｦ縺ｫ蝓ｺ縺･縺丈ｺ域ｸｬ
             Vector3 currentPos = playerTransform.position;
             Vector3 predictedPos = currentPos + playerVelocity * playerVelocityPredictionTime;
             predictions.Add(predictedPos);
             
-            // 移動パターンの刁E��
+            // 遘ｻ蜍輔ヱ繧ｿ繝ｼ繝ｳ縺ｮ蛻・梵
             if (playerPositionHistory.Count >= 3)
             {
                 Vector3 trend = AnalyzeMovementTrend();
@@ -297,7 +294,7 @@ namespace Vastcore.Generation.Cache
             {
                 var tileCoord = WorldToTileCoordinate(position);
                 
-                // preloadRadiusに基づぁE��周辺タイルも含める
+                // preloadRadius縺ｫ蝓ｺ縺･縺・※蜻ｨ霎ｺ繧ｿ繧､繝ｫ繧ょ性繧√ｋ
                 int radius = Mathf.CeilToInt(preloadRadius / 2000f); // tileSize = 2000f
                 for (int x = -radius; x <= radius; x++)
                 {
@@ -321,7 +318,7 @@ namespace Vastcore.Generation.Cache
         {
             preloadingTiles.Add(coordinate);
             
-            // チE��スクキャチE��ュから読み込み試衁E
+            // 繝・ぅ繧ｹ繧ｯ繧ｭ繝｣繝・す繝･縺九ｉ隱ｭ縺ｿ霎ｼ縺ｿ隧ｦ陦・
             bool foundInDisk = false;
             if (enablePersistentCache && diskCacheIndex.ContainsKey(coordinate))
             {
@@ -337,13 +334,13 @@ namespace Vastcore.Generation.Cache
                 }));
             }
             
-            // チE��スクになぁE��合�E新規生成をリクエスチE
+            // 繝・ぅ繧ｹ繧ｯ縺ｫ縺ｪ縺・�ｴ蜷医・譁ｰ隕冗函謌舌ｒ繝ｪ繧ｯ繧ｨ繧ｹ繝・
             if (!foundInDisk)
             {
                 var terrainGenerator = FindFirstObjectByType<RuntimeTerrainManager>();
                 if (terrainGenerator != null)
                 {
-                    // 非同期生成リクエスト（実裁E�E RuntimeTerrainManager に依存！E
+                    // 髱槫酔譛溽函謌舌Μ繧ｯ繧ｨ繧ｹ繝茨ｼ亥ｮ溯｣・・ RuntimeTerrainManager 縺ｫ萓晏ｭ假ｼ・
                     Debug.Log($"Requesting preload generation for tile {coordinate}");
                 }
             }
@@ -353,7 +350,7 @@ namespace Vastcore.Generation.Cache
         
         private Vector2Int WorldToTileCoordinate(Vector3 worldPosition)
         {
-            const float tileSize = 2000f; // RuntimeTerrainManager の tileSize と同期
+            const float tileSize = 2000f; // RuntimeTerrainManager 縺ｮ tileSize 縺ｨ蜷梧悄
             return new Vector2Int(
                 Mathf.FloorToInt(worldPosition.x / tileSize),
                 Mathf.FloorToInt(worldPosition.z / tileSize)
@@ -394,7 +391,7 @@ namespace Vastcore.Generation.Cache
             
             if (primitives != null)
             {
-                size += primitives.Count * 100; // 概箁E
+                size += primitives.Count * 100; // 讎らｮ・
             }
             
             return size;
@@ -402,7 +399,7 @@ namespace Vastcore.Generation.Cache
         
         private IEnumerator SaveToDiskAsync(Vector2Int coordinate, CachedTerrainData data)
         {
-            yield return null; // フレーム刁E��
+            yield return null; // 繝輔Ξ繝ｼ繝�蛻・淵
             
             try
             {
@@ -428,7 +425,7 @@ namespace Vastcore.Generation.Cache
         
         private IEnumerator LoadFromDiskAsync(Vector2Int coordinate, System.Action<CachedTerrainData?> onComplete)
         {
-            yield return null; // フレーム刁E��
+            yield return null; // 繝輔Ξ繝ｼ繝�蛻・淵
             
             try
             {
@@ -527,7 +524,7 @@ namespace Vastcore.Generation.Cache
             if (!fileName.StartsWith("terrain_") || !fileName.EndsWith(".cache"))
                 return false;
             
-            string coords = fileName.Substring(8, fileName.Length - 14); // "terrain_" と ".cache" を除去
+            string coords = fileName.Substring(8, fileName.Length - 14); // "terrain_" 縺ｨ ".cache" 繧帝勁蜴ｻ
             string[] parts = coords.Split('_');
             
             if (parts.Length == 2 && 
@@ -542,7 +539,7 @@ namespace Vastcore.Generation.Cache
         }
         
         /// <summary>
-        /// キャチE��ュ統計情報の取征E
+        /// 繧ｭ繝｣繝・す繝･邨ｱ險域ュ蝣ｱ縺ｮ蜿門ｾ・
         /// </summary>
         public CacheStatistics GetStatistics()
         {
@@ -554,7 +551,7 @@ namespace Vastcore.Generation.Cache
         }
         
         /// <summary>
-        /// キャチE��ュのクリア
+        /// 繧ｭ繝｣繝・す繝･縺ｮ繧ｯ繝ｪ繧｢
         /// </summary>
         public void ClearCache(bool includeDisk = false)
         {
@@ -595,7 +592,7 @@ namespace Vastcore.Generation.Cache
         
         private void OnDestroy()
         {
-            // 未完亁E�E非同期�E琁E��クリーンアチE�E
+            // 譛ｪ螳御ｺ・・髱槫酔譛溷・逅・ｒ繧ｯ繝ｪ繝ｼ繝ｳ繧｢繝・・
             StopAllCoroutines();
         }
     }

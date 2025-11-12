@@ -28,7 +28,9 @@
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false,
-<<<<<<< HEAD
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
     "burstSettings": {
         "enableBurstCompilation": false,
         "enableBurstSafetyChecks": false,
@@ -36,9 +38,4 @@
         "enableBurstTimings": false,
         "burstCompilationOptions": {}
     }
-=======
-    "optionalUnityReferences": [
-        "TestAssemblies"
-    ]
->>>>>>> origin/develop
 }
