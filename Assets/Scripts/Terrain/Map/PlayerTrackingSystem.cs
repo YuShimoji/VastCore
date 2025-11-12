@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-namespace Vastcore.Generation
+namespace Vastcore.Terrain.Map
 {
     /// <summary>
     /// プレイヤー追跡システム
@@ -33,11 +33,23 @@ namespace Vastcore.Generation
         {
             if (playerTransform == null)
             {
-<<<<<<< HEAD
+                // 複数の方法でPlayer Transformを検索
                 playerTransform = FindFirstObjectByType<AdvancedPlayerController>()?.transform;
-=======
-                playerTransform = ResolvePlayerTransform();
->>>>>>> origin/develop
+                
+                if (playerTransform == null)
+                {
+                    playerTransform = ResolvePlayerTransform();
+                }
+                
+                if (playerTransform == null)
+                {
+                    // Player tagを持つオブジェクトを探す
+                    var playerObj = GameObject.FindGameObjectWithTag("Player");
+                    if (playerObj != null)
+                    {
+                        playerTransform = playerObj.transform;
+                    }
+                }
             }
             
             if (playerTransform != null)

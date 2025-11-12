@@ -1,35 +1,35 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.IO;
-using Vastcore.Player;
+
 using Vastcore.Utils;
 using Vastcore.Generation.GPU;
 
 namespace Vastcore.Generation.Cache
 {
     /// <summary>
-    /// 地形キャッシュマネージャー
-    /// IntelligentCacheSystemとRuntimeTerrainManagerの統合
+    /// 地形キャチE��ュマネージャー
+    /// IntelligentCacheSystemとRuntimeTerrainManagerの統吁E
     /// </summary>
     public class TerrainCacheManager : MonoBehaviour
     {
-        [Header("統合設定")]
+        [Header("統合設宁E)]
         [SerializeField] private bool enableIntegratedCaching = true;
         [SerializeField] private float cacheCheckInterval = 2f;
         [SerializeField] private int maxSimultaneousLoads = 3;
         [SerializeField] private float maxMemoryCacheSize = 512f; // MB
         
-        [Header("キャッシュ優先度")]
+        [Header("キャチE��ュ優先度")]
         [SerializeField] private float recentAccessWeight = 2f;
         [SerializeField] private float distanceWeight = 1f;
         [SerializeField] private float frequencyWeight = 1.5f;
         
-        // 統合コンポーネント
+        // 統合コンポ�EネンチE
         private IntelligentCacheSystem cacheSystem;
         private RuntimeTerrainManager terrainManager;
         private GPUTerrainGenerator gpuGenerator;
         
-        // 処理管理
+        // 処琁E��琁E
         private Dictionary<Vector2Int, TerrainLoadRequest> activeLoadRequests;
         private Queue<TerrainLoadRequest> loadQueue;
         private float lastCacheCheck;
@@ -82,22 +82,22 @@ namespace Vastcore.Generation.Cache
         }
         
         /// <summary>
-        /// 地形タイルの要求（キャッシュ統合）
+        /// 地形タイルの要求（キャチE��ュ統合！E
         /// </summary>
         public void RequestTerrainTile(Vector2Int coordinate, System.Action<TerrainTile> onComplete, float priority = 1f)
         {
             VastcoreLogger.Instance.LogInfo("TerrainCache", $"RequestTerrainTile start coord={coordinate} priority={priority}");
             if (!enableIntegratedCaching)
             {
-                // キャッシュなしで直接生成
+                // キャチE��ュなしで直接生�E
                 RequestDirectGeneration(coordinate, onComplete);
                 return;
             }
             
-            // キャッシュから検索
+            // キャチE��ュから検索
             if (cacheSystem.TryGetCachedTerrainData(coordinate, out var cachedData))
             {
-                // キャッシュヒット
+                // キャチE��ュヒッチE
                 VastcoreLogger.Instance.LogInfo("TerrainCache", $"Cache hit coord={coordinate}");
                 StartCoroutine(LoadFromCacheAsync(coordinate, cachedData, onComplete));
                 return;
@@ -112,13 +112,13 @@ namespace Vastcore.Generation.Cache
                 requestTime = Time.time
             };
             
-            // 優先度計算（recentAccessWeight, distanceWeight, frequencyWeightを使用）
+            // 優先度計算！EecentAccessWeight, distanceWeight, frequencyWeightを使用�E�E
             if (terrainManager != null)
             {
                 Vector3 playerPos = terrainManager.playerTransform != null ? terrainManager.playerTransform.position : Vector3.zero;
                 Vector3 tilePos = new Vector3(coordinate.x * 2000f, 0, coordinate.y * 2000f);
                 float distance = Vector3.Distance(playerPos, tilePos);
-                float requestTime = Time.time; // 現在の時間を取得
+                float requestTime = Time.time; // 現在の時間を取征E
                 float timeSinceRequest = Time.time - requestTime;
                 
                 request.priority = (recentAccessWeight * (1f / (1f + timeSinceRequest))) + 
@@ -136,12 +136,12 @@ namespace Vastcore.Generation.Cache
         
         private System.Collections.IEnumerator LoadFromCacheAsync(Vector2Int coordinate, IntelligentCacheSystem.CachedTerrainData cachedData, System.Action<TerrainTile> onComplete)
         {
-            yield return null; // フレーム分散
+            yield return null; // フレーム刁E��
             
             try
             {
                 VastcoreLogger.Instance.LogDebug("TerrainCache", $"LoadFromCacheAsync start coord={coordinate}");
-                // キャッシュデータからTerrainTileを構築
+                // キャチE��ュチE�EタからTerrainTileを構篁E
                 var terrainTile = new TerrainTile
                 {
                     coordinate = coordinate,
@@ -149,13 +149,13 @@ namespace Vastcore.Generation.Cache
                     isFromCache = true
                 };
                 
-                // メッシュ生成
+                // メチE��ュ生�E
                 terrainTile.terrainMesh = GenerateMeshFromHeightmap(cachedData.heightmap);
                 
-                // GameObjectの作成
+                // GameObjectの作�E
                 terrainTile.terrainObject = CreateTerrainGameObject(coordinate, terrainTile.terrainMesh);
                 
-                // プリミティブオブジェクトの復元
+                // プリミティブオブジェクト�E復允E
                 terrainTile.structures = RestorePrimitiveObjects(cachedData.primitiveObjects, terrainTile.terrainObject.transform);
                 
                 VastcoreLogger.Instance.LogInfo("TerrainCache", $"LoadFromCacheAsync complete coord={coordinate}");
@@ -168,7 +168,7 @@ namespace Vastcore.Generation.Cache
                 Debug.LogError($"Failed to load terrain tile {coordinate} from cache: {e.Message}");
                 VastcoreLogger.Instance.LogError("TerrainCache", $"LoadFromCacheAsync error coord={coordinate}: {e.Message}", e);
                 
-                // フォールバック: 新規生成
+                // フォールバック: 新規生戁E
                 RequestDirectGeneration(coordinate, onComplete);
             }
         }
@@ -177,7 +177,7 @@ namespace Vastcore.Generation.Cache
         {
             if (gpuGenerator != null)
             {
-                // GPU生成
+                // GPU生�E
                 VastcoreLogger.Instance.LogInfo("TerrainCache", $"RequestDirectGeneration GPU path coord={coordinate}");
                 var gpuParams = new GPUTerrainGenerator.TerrainGenerationParams
                 {
@@ -209,7 +209,7 @@ namespace Vastcore.Generation.Cache
             VastcoreLogger.Instance.LogDebug("TerrainCache", $"ProcessGeneratedTerrain start coord={coordinate}");
             yield return null;
             
-            // TerrainTileの構築
+            // TerrainTileの構篁E
             var terrainTile = new TerrainTile
             {
                 coordinate = coordinate,
@@ -217,16 +217,16 @@ namespace Vastcore.Generation.Cache
                 isFromCache = false
             };
             
-            // メッシュ生成
+            // メチE��ュ生�E
             terrainTile.terrainMesh = GenerateMeshFromHeightmap(heightmap);
             
-            // GameObjectの作成
+            // GameObjectの作�E
             terrainTile.terrainObject = CreateTerrainGameObject(coordinate, terrainTile.terrainMesh);
             
-            // プリミティブオブジェクトの生成
+            // プリミティブオブジェクト�E生�E
             terrainTile.structures = GeneratePrimitiveObjects(coordinate, terrainTile.terrainObject.transform);
             
-            // キャッシュに保存
+            // キャチE��ュに保孁E
             var metadata = new IntelligentCacheSystem.TerrainMetadata
             {
                 generationTime = Time.time,
@@ -242,13 +242,13 @@ namespace Vastcore.Generation.Cache
             VastcoreLogger.Instance.LogInfo("TerrainCache", $"ProcessGeneratedTerrain complete coord={coordinate} cached=true");
             onComplete?.Invoke(terrainTile);
             
-            // アクティブリクエストから削除
+            // アクチE��ブリクエストから削除
             activeLoadRequests.Remove(coordinate);
         }
         
         private System.Collections.IEnumerator GenerateTerrainCPU(Vector2Int coordinate, System.Action<TerrainTile> onComplete)
         {
-            // CPU フォールバック実装
+            // CPU フォールバック実裁E
             const int resolution = 256;
             var heightmap = new float[resolution, resolution];
             
@@ -262,7 +262,7 @@ namespace Vastcore.Generation.Cache
                     heightmap[x, y] = Mathf.PerlinNoise(nx * 0.1f, ny * 0.1f) * 100f;
                 }
                 
-                if (y % 16 == 0) yield return null; // 負荷分散
+                if (y % 16 == 0) yield return null; // 負荷刁E��
             }
             
             VastcoreLogger.Instance.LogInfo("TerrainCache", $"GenerateTerrainCPU complete coord={coordinate}");
@@ -278,7 +278,7 @@ namespace Vastcore.Generation.Cache
             var triangles = new int[(width - 1) * (height - 1) * 6];
             var uvs = new Vector2[width * height];
             
-            // 頂点生成
+            // 頂点生�E
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
@@ -289,7 +289,7 @@ namespace Vastcore.Generation.Cache
                 }
             }
             
-            // 三角形生成
+            // 三角形生�E
             int triangleIndex = 0;
             for (int y = 0; y < height - 1; y++)
             {
@@ -335,7 +335,7 @@ namespace Vastcore.Generation.Cache
             var meshCollider = terrainObject.AddComponent<MeshCollider>();
             meshCollider.sharedMesh = mesh;
             
-            // 位置設定
+            // 位置設宁E
             const float tileSize = 2000f;
             terrainObject.transform.position = new Vector3(coordinate.x * tileSize, 0, coordinate.y * tileSize);
             
@@ -346,7 +346,7 @@ namespace Vastcore.Generation.Cache
         {
             var primitives = new List<GameObject>();
             
-            // 簡単なプリミティブ生成（実際の実装では PrimitiveTerrainManager を使用）
+            // 簡単なプリミティブ生成（実際の実裁E��は PrimitiveTerrainManager を使用�E�E
             int primitiveCount = Random.Range(1, 4);
             
             for (int i = 0; i < primitiveCount; i++)
@@ -372,7 +372,7 @@ namespace Vastcore.Generation.Cache
             
             foreach (var data in primitiveData)
             {
-                var primitive = GameObject.CreatePrimitive(PrimitiveType.Cube); // 簡略化
+                var primitive = GameObject.CreatePrimitive(PrimitiveType.Cube); // 簡略匁E
                 primitive.transform.parent = parent;
                 primitive.transform.localPosition = data.position;
                 primitive.transform.localRotation = Quaternion.Euler(data.rotation);
@@ -395,7 +395,7 @@ namespace Vastcore.Generation.Cache
                     position = primitive.transform.localPosition,
                     rotation = primitive.transform.localRotation.eulerAngles,
                     scale = primitive.transform.localScale,
-                    primitiveType = "Cube", // 簡略化
+                    primitiveType = "Cube", // 簡略匁E
                     materialName = "Default"
                 });
             }
@@ -409,7 +409,7 @@ namespace Vastcore.Generation.Cache
         }
         
         /// <summary>
-        /// キャッシュ効率の最適化
+        /// キャチE��ュ効玁E�E最適匁E
         /// </summary>
         public void OptimizeCacheEfficiency()
         {
@@ -418,26 +418,26 @@ namespace Vastcore.Generation.Cache
             if (stats.hitRatio < 0.7f)
             {
                 Debug.Log("Low cache hit ratio detected. Increasing preload radius.");
-                // プリロード半径の調整（実装は IntelligentCacheSystem に依存）
+                // プリロード半征E�E調整�E�実裁E�E IntelligentCacheSystem に依存！E
             }
             
             if (stats.totalMemoryUsed > maxMemoryCacheSize * 1024 * 1024 * 0.9f)
             {
                 Debug.Log("High memory usage detected. Triggering cache cleanup.");
-                // メモリクリーンアップの実行
+                // メモリクリーンアチE�Eの実衁E
             }
         }
         
         private void Update()
         {
-            // 定期的なキャッシュ最適化
+            // 定期皁E��キャチE��ュ最適匁E
             if (Time.time - lastCacheCheck > cacheCheckInterval)
             {
                 OptimizeCacheEfficiency();
                 lastCacheCheck = Time.time;
             }
             
-            // ロードキューの処理
+            // ロードキューの処琁E
             ProcessLoadQueue();
         }
         
@@ -457,7 +457,7 @@ namespace Vastcore.Generation.Cache
         }
         
         /// <summary>
-        /// キャッシュ統計の取得
+        /// キャチE��ュ統計�E取征E
         /// </summary>
         public IntelligentCacheSystem.CacheStatistics GetCacheStatistics()
         {

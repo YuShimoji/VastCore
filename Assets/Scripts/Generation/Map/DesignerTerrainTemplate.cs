@@ -29,10 +29,11 @@ namespace Vastcore.Generation
         public bool allowVerticalFlip = true; // 垂直反転許可
         public bool allowHorizontalFlip = true; // 水平反転許可
 
-        [Header("適応範囲")]
-        public Vector2 sizeRange = new Vector2(50f, 200f); // 適用サイズ範囲
-        public Vector2 heightRange = new Vector2(-50f, 200f); // 高度範囲
-        public Vector2 slopeRange = new Vector2(0f, 45f); // 斜面範囲
+        [Header("Deform統合")]
+        public bool enableDeformIntegration = false;
+        public Vastcore.Core.DeformPresetLibrary deformPresetLibrary;
+        public bool autoApplyDeform = true;
+        public Vastcore.Core.VastcoreDeformManager.DeformQualityLevel deformQuality = Vastcore.Core.VastcoreDeformManager.DeformQualityLevel.High;
 
         // キャッシュされたデータ
         private float[,] cachedHeightmap;
