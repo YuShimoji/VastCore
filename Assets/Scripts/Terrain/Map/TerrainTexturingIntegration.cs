@@ -13,25 +13,31 @@ namespace Vastcore.Generation
     /// </summary>
     public class TerrainTexturingIntegration : MonoBehaviour
     {
-        #region 設定パラメータ
-        [Header("統合設定")]
+        #region Integration Settings
+        [Header("Integration Settings")]
         public bool enableAutoIntegration = true;
         public float integrationUpdateInterval = 0.5f;
         public float textureUpdateRadius = 2000f;
-        
-        [Header("システム参照")]
+        #endregion
+
+        #region System References
+        [Header("System References")]
         public RuntimeTerrainManager terrainManager;
         public BiomePresetManager biomePresetManager;
         public TerrainTexturingSystem texturingSystem;
         public DynamicMaterialBlendingSystem blendingSystem;
-        
-        [Header("自動テクスチャ適用")]
+        #endregion
+
+        #region Auto Texture Application
+        [Header("Auto Texture Application")]
         public bool autoApplyTexturesOnTileGeneration = true;
         public bool autoApplyBiomeTextures = true;
         public bool autoUpdateEnvironmentalTextures = true;
         public bool autoUpdateLODTextures = true;
-        
-        [Header("パフォーマンス制御")]
+        #endregion
+
+        #region Performance Control
+        [Header("Performance Control")]
         public int maxTextureUpdatesPerFrame = 3;
         public float maxFrameTimeMs = 10f;
         public bool enableFrameTimeControl = true;

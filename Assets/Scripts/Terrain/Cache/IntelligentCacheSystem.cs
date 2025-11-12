@@ -13,19 +13,28 @@ namespace Vastcore.Generation.Cache
     /// </summary>
     public class IntelligentCacheSystem : MonoBehaviour
     {
-        [Header("Cache Settings")]public bool enableCaching = true;
+        #region Cache Settings
+        [Header("Cache Settings")]
+        [SerializeField] private bool enableCaching = true;
         [SerializeField] private bool enablePersistentCache = true;
         [SerializeField] private bool enablePredictivePreload = true;
         [SerializeField] private string cacheDirectory = "TerrainCache";
+        #endregion
+
+        #region Memory Management
         [Header("Memory Management")]
         [SerializeField] private int maxMemoryCacheSize = 100; // MB
         [SerializeField] private int maxCachedTiles = 50;
         [SerializeField] private float cacheEvictionThreshold = 0.8f;
+        #endregion
+
+        #region Predictive Preload
         [Header("Predictive Preload")]
         [SerializeField] private float preloadRadius = 1500f;
         [SerializeField] private int maxPreloadTasks = 3;
         [SerializeField] private float playerVelocityPredictionTime = 5f;
-        
+        #endregion
+
         // 繧ｭ繝｣繝・す繝･繝・・繧ｿ讒矩�
         private Dictionary<Vector2Int, CachedTerrainData> memoryCache;
         private Dictionary<Vector2Int, string> diskCacheIndex;

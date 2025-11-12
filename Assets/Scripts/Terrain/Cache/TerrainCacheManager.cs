@@ -13,16 +13,20 @@ namespace Vastcore.Generation.Cache
     /// </summary>
     public class TerrainCacheManager : MonoBehaviour
     {
-        [Header("統合設定")]
+        #region Integrated Settings
+        [Header("Integrated Settings")]
         [SerializeField] private bool enableIntegratedCaching = true;
         [SerializeField] private float cacheCheckInterval = 2f;
         [SerializeField] private int maxSimultaneousLoads = 3;
         [SerializeField] private float maxMemoryCacheSize = 512f; // MB
-        
-        [Header("繧ｭ繝｣繝・す繝･蜆ｪ蜈亥ｺｦ")]
+        #endregion
+
+        #region Cache Priority Weights
+        [Header("Cache Priority Weights")]
         [SerializeField] private float recentAccessWeight = 2f;
         [SerializeField] private float distanceWeight = 1f;
         [SerializeField] private float frequencyWeight = 1.5f;
+        #endregion
         
         // 邨ｱ蜷医さ繝ｳ繝昴・繝阪Φ繝・
         private IntelligentCacheSystem cacheSystem;

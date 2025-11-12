@@ -16,8 +16,8 @@ namespace Vastcore.Generation
     /// </summary>
     public class RuntimeTerrainManager : MonoBehaviour
     {
-        #region 設定/参照
-        [Header("動的生成設定")]
+        #region Dynamic Generation Settings
+        [Header("Dynamic Generation Settings")]
         public bool enableDynamicGeneration = true;
         public bool enableFrameTimeControl = true;
         public int maxGenerationsPerFrame = 4;
@@ -26,25 +26,33 @@ namespace Vastcore.Generation
         public int minTilesPerUpdate = 1;   // フレーム制御時の最低処理数
         public float maxFrameTimeMs = 4f;   // 1フレームで許容する処理時間(ms)
         public float updateInterval = 0.1f; // 動的生成の更新間隔
+        #endregion
 
-        [Header("半径設定(タイル単位)")]
+        #region Radius Settings (Tile Units)
+        [Header("Radius Settings (Tile Units)")]
         public int immediateLoadRadius = 1;
         public int preloadRadius = 3;
         public int keepAliveRadius = 5;
         public int forceUnloadRadius = 7;
+        #endregion
 
-        [Header("メモリ管理")]
+        #region Memory Management
+        [Header("Memory Management")]
         public float memoryLimitMB = 1024f;
         public float memoryWarningThresholdMB = 768f; // 警告しきい値
         public float cleanupInterval = 2f;
         public bool enableAggressiveCleanup = false;
+        #endregion
 
-        [Header("デバッグ")]
+        #region Debug
+        [Header("Debug")]
         public bool showDebugInfo = false;
         public bool logTileOperations = false;
         public bool predictPlayerMovement = true;
+        #endregion
 
-        [Header("参照")]
+        #region References
+        [Header("References")]
         public Transform playerTransform;
         private TileManager tileManager;
         #endregion

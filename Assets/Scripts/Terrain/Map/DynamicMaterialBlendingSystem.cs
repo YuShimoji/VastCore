@@ -13,31 +13,39 @@ namespace Vastcore.Generation
     /// </summary>
     public class DynamicMaterialBlendingSystem : MonoBehaviour
     {
-        #region 險ｭ螳壹ヱ繝ｩ繝｡繝ｼ繧ｿ
+        #region Material Blending Settings
         [Header("Material Blending Settings")]
         public bool enableDynamicBlending = true;
         public float blendTransitionSpeed = 2f;
         public int maxSimultaneousBlends = 4;
         public AnimationCurve blendCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-        
+        #endregion
+
+        #region Distance LOD
         [Header("Distance LOD")]
         public bool enableDistanceLOD = true;
         public float[] lodDistances = { 500f, 1000f, 2000f, 4000f };
         public float[] lodTextureScales = { 1f, 0.75f, 0.5f, 0.25f };
         public float[] lodBlendSpeeds = { 1f, 0.8f, 0.6f, 0.4f };
-        
+        #endregion
+
+        #region Realtime Updates
         [Header("Realtime Updates")]
         public bool enableRealtimeUpdates = true;
         public float updateInterval = 0.1f;
         public int maxUpdatesPerFrame = 5;
         public float updateRadius = 1500f;
-        
+        #endregion
+
+        #region Environmental Blending
         [Header("Environmental Blending")]
         public bool enableEnvironmentalBlending = true;
         public float environmentalBlendSpeed = 1f;
         public bool enableSeasonalTransitions = true;
         public float seasonalTransitionDuration = 10f;
-        
+        #endregion
+
+        #region Frame Rate Control
         [Header("Frame Rate Control")]
         public bool enableFrameRateControl = true;
         public float targetFrameTime = 16.67f; // 60FPS

@@ -10,23 +10,29 @@ namespace Vastcore.Generation
     /// </summary>
     public class TerrainTexturingSystem : MonoBehaviour
     {
-        #region 設定パラメータ
-        [Header("高度ベーステクスチャリング")]
+        #region Altitude-based Texturing
+        [Header("Altitude-based Texturing")]
         public List<AltitudeTextureLayer> altitudeLayers = new List<AltitudeTextureLayer>();
         public AnimationCurve altitudeBlendCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
         public float altitudeBlendSmoothness = 0.1f;
-        
-        [Header("傾斜ベーステクスチャリング")]
+        #endregion
+
+        #region Slope-based Texturing
+        [Header("Slope-based Texturing")]
         public List<SlopeTextureLayer> slopeLayers = new List<SlopeTextureLayer>();
         public AnimationCurve slopeBlendCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
         public float slopeBlendSmoothness = 5f;
-        
-        [Header("動的マテリアルブレンディング")]
+        #endregion
+
+        #region Dynamic Material Blending
+        [Header("Dynamic Material Blending")]
         public bool enableDynamicBlending = true;
         public float blendTransitionSpeed = 2f;
         public int maxTextureBlends = 4;
-        
-        [Header("LODテクスチャシステム")]
+        #endregion
+
+        #region LOD Texture System
+        [Header("LOD Texture System")]
         public bool enableLODTextures = true;
         public float[] lodDistances = { 500f, 1000f, 2000f };
         public List<LODTextureSet> lodTextureSets = new List<LODTextureSet>();

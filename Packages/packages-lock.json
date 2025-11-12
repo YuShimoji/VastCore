@@ -145,8 +145,6 @@
       "source": "builtin",
       "dependencies": {}
     },
-<<<<<<< HEAD
-=======
     "com.unity.feature.mobile": {
       "version": "1.0.0",
       "depth": 0,
@@ -157,7 +155,6 @@
         "com.unity.mobile.notifications": "2.4.1"
       }
     },
->>>>>>> origin/develop
     "com.unity.ide.visualstudio": {
       "version": "2.0.23",
       "depth": 0,
