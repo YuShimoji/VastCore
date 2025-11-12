@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using Vastcore.Utilities;
-using Vastcore.Player;
 
 namespace Vastcore.Generation
 {
@@ -136,12 +135,7 @@ namespace Vastcore.Generation
             }
             
             // プレイヤーTransformを取得
-            var playerController = FindFirstObjectByType<AdvancedPlayerController>();
-            if (playerController != null)
-            {
-                playerTransform = playerController.transform;
-            }
-            else if (playerTransform == null)
+            if (playerTransform == null)
             {
                 playerTransform = ResolvePlayerTransform();
             }
