@@ -342,8 +342,28 @@ namespace Vastcore.Generation
             try
             {
                 bool integrationSuccess = true;
+<<<<<<< HEAD
                 string integrationMessage = "BiomeSpecificTerrainGenerator is a static utility class. Integration test skipped.";
                 integrationSuccess = true; // Static classes don't need instantiation
+=======
+                string integrationMessage = "";
+                
+                // RuntimeTerrainManagerの取得
+                if (terrainGenerator == null)
+                {
+                    terrainGenerator = FindFirstObjectByType<BiomeSpecificTerrainGenerator>();
+                }
+                
+                if (terrainGenerator != null)
+                {
+                    integrationMessage = "BiomeSpecificTerrainGenerator found and integrated successfully.";
+                }
+                else
+                {
+                    integrationMessage = "BiomeSpecificTerrainGenerator not found. Standalone test only.";
+                    integrationSuccess = false;
+                }
+>>>>>>> origin/develop
                 
                 result.success = integrationSuccess;
                 result.message = integrationMessage;

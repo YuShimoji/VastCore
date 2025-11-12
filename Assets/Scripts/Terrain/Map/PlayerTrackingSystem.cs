@@ -26,7 +26,6 @@ namespace Vastcore.Terrain.Map
         private Vector2Int currentPlayerTile;
         private Vector2Int lastPlayerTile;
         
-        public Vector2Int CurrentPlayerTile => currentPlayerTile;
         public Vector3 PlayerVelocity => playerVelocity;
         public Vector3 PredictedPosition => GetPredictedPlayerPosition();
         
@@ -34,11 +33,22 @@ namespace Vastcore.Terrain.Map
         {
             if (playerTransform == null)
             {
-                // Player tagを持つオブジェクトを探す
-                var playerObj = GameObject.FindGameObjectWithTag("Player");
-                if (playerObj != null)
+                // 複数の方法でPlayer Transformを検索
+                playerTransform = FindFirstObjectByType<AdvancedPlayerController>()?.transform;
+                
+                if (playerTransform == null)
                 {
-                    playerTransform = playerObj.transform;
+                    playerTransform = ResolvePlayerTransform();
+                }
+                
+                if (playerTransform == null)
+                {
+                    // Player tagを持つオブジェクトを探す
+                    var playerObj = GameObject.FindGameObjectWithTag("Player");
+                    if (playerObj != null)
+                    {
+                        playerTransform = playerObj.transform;
+                    }
                 }
             }
             
@@ -183,6 +193,27 @@ namespace Vastcore.Terrain.Map
                 0f,
                 tileCoord.y * tileSize + tileSize * 0.5f
             );
+        }
+
+        private Transform ResolvePlayerTransform()
+        {
+            if (playerTransform != null)
+                return playerTransform;
+
+            GameObject taggedObject = null;
+            try
+            {
+                taggedObject = GameObject.FindGameObjectWithTag("Player");
+            }
+            catch (UnityException)
+            {
+            }
+
+            if (taggedObject != null)
+                return taggedObject.transform;
+
+            var mainCamera = Camera.main;
+            return mainCamera != null ? mainCamera.transform : null;
         }
     }
 }

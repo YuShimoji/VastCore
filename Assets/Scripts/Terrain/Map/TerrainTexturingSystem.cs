@@ -1,39 +1,38 @@
 using UnityEngine;
-
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Vastcore.Generation
 {
     /// <summary>
-    /// 地形チE��スチャリングシスチE��
-    /// 要汁E.5, 2.1: 高度・傾斜に応じた�E動テクスチャリングとバイオーム設宁E
+    /// 地形テクスチャリングシステム
+    /// 要求1.5, 2.1: 高度・傾斜に応じた自動テクスチャリングとバイオーム設定
     /// </summary>
     public class TerrainTexturingSystem : MonoBehaviour
     {
         #region 設定パラメータ
-        [Header("高度ベ�EスチE��スチャリング")]
+        [Header("高度ベーステクスチャリング")]
         public List<AltitudeTextureLayer> altitudeLayers = new List<AltitudeTextureLayer>();
         public AnimationCurve altitudeBlendCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
         public float altitudeBlendSmoothness = 0.1f;
         
-        [Header("傾斜�EースチE��スチャリング")]
+        [Header("傾斜ベーステクスチャリング")]
         public List<SlopeTextureLayer> slopeLayers = new List<SlopeTextureLayer>();
         public AnimationCurve slopeBlendCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
         public float slopeBlendSmoothness = 5f;
         
-        [Header("動的マテリアルブレンチE��ング")]
+        [Header("動的マテリアルブレンディング")]
         public bool enableDynamicBlending = true;
         public float blendTransitionSpeed = 2f;
         public int maxTextureBlends = 4;
         
-        [Header("LODチE��スチャシスチE��")]
+        [Header("LODテクスチャシステム")]
         public bool enableLODTextures = true;
         public float[] lodDistances = { 500f, 1000f, 2000f };
         public List<LODTextureSet> lodTextureSets = new List<LODTextureSet>();
         #endregion
 
-        #region プライベ�Eト変数
+        #region プライベート変数
         private Dictionary<TerrainTile, TerrainTextureData> tileTextureData = new Dictionary<TerrainTile, TerrainTextureData>();
         private Queue<TextureUpdateRequest> textureUpdateQueue = new Queue<TextureUpdateRequest>();
         private Transform playerTransform;
@@ -41,7 +40,7 @@ namespace Vastcore.Generation
         private Shader terrainShader;
         #endregion
 
-        #region Unity イベンチE
+        #region Unity イベント
         void Start()
         {
             InitializeTexturingSystem();
@@ -53,35 +52,39 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region 初期匁E
+        #region 初期化
         /// <summary>
-        /// チE��スチャリングシスチE��を�E期化
+        /// テクスチャリングシステムを初期化
         /// </summary>
         private void InitializeTexturingSystem()
         {
             Debug.Log("Initializing TerrainTexturingSystem...");
             
-            // プレイヤーTransformを取征E
+<<<<<<< HEAD
+            // プレイヤーTransformを取得
             var playerController = FindFirstObjectByType<AdvancedPlayerController>();
             if (playerController != null)
+=======
+            if (playerTransform == null)
+>>>>>>> origin/develop
             {
-                playerTransform = playerController.transform;
+                playerTransform = ResolvePlayerTransform();
             }
             
-            // MaterialPropertyBlockを�E期化
+            // MaterialPropertyBlockを初期化
             materialPropertyBlock = new MaterialPropertyBlock();
             
-            // 地形シェーダーを取征E
+            // 地形シェーダーを取得
             terrainShader = Shader.Find("Standard");
             
-            // チE��ォルト設定を初期匁E
+            // デフォルト設定を初期化
             InitializeDefaultSettings();
             
             Debug.Log("TerrainTexturingSystem initialized successfully");
         }
         
         /// <summary>
-        /// チE��ォルト設定を初期匁E
+        /// デフォルト設定を初期化
         /// </summary>
         private void InitializeDefaultSettings()
         {
@@ -102,9 +105,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region パブリチE��API
+        #region パブリックAPI
         /// <summary>
-        /// 地形タイルにチE��スチャを適用
+        /// 地形タイルにテクスチャを適用
         /// </summary>
         public void ApplyTextureToTile(TerrainTile tile)
         {
@@ -118,7 +121,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// バイオームプリセチE��に基づぁE��チE��スチャを適用
+        /// バイオームプリセットに基づいてテクスチャを適用
         /// </summary>
         public void ApplyBiomeTextures(TerrainTile tile, BiomePreset biomePreset)
         {
@@ -132,9 +135,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region チE��ォルト設定作�E
+        #region デフォルト設定作成
         /// <summary>
-        /// チE��ォルト高度レイヤーを作�E
+        /// デフォルト高度レイヤーを作成
         /// </summary>
         private void CreateDefaultAltitudeLayers()
         {
@@ -180,7 +183,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// チE��ォルト傾斜レイヤーを作�E
+        /// デフォルト傾斜レイヤーを作成
         /// </summary>
         private void CreateDefaultSlopeLayers()
         {
@@ -226,7 +229,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// チE��ォルチEODチE��スチャセチE��を作�E
+        /// デフォルトLODテクスチャセットを作成
         /// </summary>
         private void CreateDefaultLODTextureSets()
         {
@@ -259,9 +262,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region チE��スチャ生�E
+        #region テクスチャ生成
         /// <summary>
-        /// タイル用のチE��スチャチE�Eタを生戁E
+        /// タイル用のテクスチャデータを生成
         /// </summary>
         private TerrainTextureData GenerateTextureDataForTile(TerrainTile tile)
         {
@@ -274,14 +277,14 @@ namespace Vastcore.Generation
             textureData.textureWeights = new float[resolution, resolution, maxTextureBlends];
             textureData.textureIndices = new int[resolution, resolution, maxTextureBlends];
             
-            // 吁E��クセルのチE��スチャウェイトを計箁E
+            // 各ピクセルのテクスチャウェイトを計算
             for (int y = 0; y < resolution; y++)
             {
                 for (int x = 0; x < resolution; x++)
                 {
                     var weights = CalculateTextureWeightsAtPosition(tile, x, y, resolution);
                     
-                    // 上佁EつのチE��スチャを選抁E
+                    // 上位4つのテクスチャを選択
                     var sortedWeights = weights.OrderByDescending(w => w.weight).Take(maxTextureBlends).ToArray();
                     
                     for (int i = 0; i < maxTextureBlends && i < sortedWeights.Length; i++)
@@ -296,7 +299,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// バイオーム用のチE��スチャチE�Eタを生戁E
+        /// バイオーム用のテクスチャデータを生成
         /// </summary>
         private TerrainTextureData GenerateBiomeTextureData(TerrainTile tile, BiomePreset biomePreset)
         {
@@ -309,19 +312,19 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 持E��位置でのチE��スチャウェイトを計箁E
+        /// 指定位置でのテクスチャウェイトを計算
         /// </summary>
         private List<TextureWeight> CalculateTextureWeightsAtPosition(TerrainTile tile, int x, int y, int resolution)
         {
             var weights = new List<TextureWeight>();
             
-            // 高度を取征E
+            // 高度を取得
             float height = tile.heightmap[y, x] * tile.terrainParams.maxHeight;
             
-            // 傾斜を計箁E
+            // 傾斜を計算
             float slope = CalculateSlopeAtPosition(tile.heightmap, x, y, resolution);
             
-            // 高度ベ�EスのチE��スチャウェイトを計箁E
+            // 高度ベースのテクスチャウェイトを計算
             foreach (var layer in altitudeLayers)
             {
                 float weight = CalculateAltitudeWeight(height, layer);
@@ -331,7 +334,7 @@ namespace Vastcore.Generation
                 }
             }
             
-            // 傾斜�EースのチE��スチャウェイトを計箁E
+            // 傾斜ベースのテクスチャウェイトを計算
             foreach (var layer in slopeLayers)
             {
                 float weight = CalculateSlopeWeight(slope, layer);
@@ -341,7 +344,7 @@ namespace Vastcore.Generation
                     
                     if (layer.overrideAltitude)
                     {
-                        // 傾斜テクスチャが高度チE��スチャを上書ぁE
+                        // 傾斜テクスチャが高度テクスチャを上書き
                         weights.RemoveAll(w => w.textureType != layer.textureType);
                         weights.Add(textureWeight);
                     }
@@ -368,7 +371,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 高度ウェイトを計箁E
+        /// 高度ウェイトを計算
         /// </summary>
         private float CalculateAltitudeWeight(float height, AltitudeTextureLayer layer)
         {
@@ -382,7 +385,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 傾斜ウェイトを計箁E
+        /// 傾斜ウェイトを計算
         /// </summary>
         private float CalculateSlopeWeight(float slope, SlopeTextureLayer layer)
         {
@@ -396,11 +399,11 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 持E��位置での傾斜を計箁E
+        /// 指定位置での傾斜を計算
         /// </summary>
         private float CalculateSlopeAtPosition(float[,] heightmap, int x, int y, int resolution)
         {
-            // 隣接ピクセルの高度差から傾斜を計箁E
+            // 隣接ピクセルの高度差から傾斜を計算
             float currentHeight = heightmap[y, x];
             
             float leftHeight = x > 0 ? heightmap[y, x - 1] : currentHeight;
@@ -416,9 +419,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region チE��スチャ適用
+        #region テクスチャ適用
         /// <summary>
-        /// チE��スチャチE�Eタをタイルに適用
+        /// テクスチャデータをタイルに適用
         /// </summary>
         private void ApplyTextureDataToTile(TerrainTile tile, TerrainTextureData textureData)
         {
@@ -429,16 +432,16 @@ namespace Vastcore.Generation
             if (meshRenderer == null)
                 return;
             
-            // LODレベルに応じたテクスチャセチE��を選抁E
+            // LODレベルに応じたテクスチャセットを選択
             var lodSet = GetLODTextureSetForDistance(tile.distanceFromPlayer);
             
-            // マテリアルを作�Eまた�E更新
+            // マテリアルを作成または更新
             Material material = CreateOrUpdateMaterial(tile, textureData, lodSet);
             meshRenderer.material = material;
         }
         
         /// <summary>
-        /// マテリアルを作�Eまた�E更新
+        /// マテリアルを作成または更新
         /// </summary>
         private Material CreateOrUpdateMaterial(TerrainTile tile, TerrainTextureData textureData, LODTextureSet lodSet)
         {
@@ -468,10 +471,10 @@ namespace Vastcore.Generation
             if (tile.heightmap == null)
                 return;
             
-            // 平坁E��度を計箁E
+            // 平均高度を計算
             float averageHeight = CalculateAverageHeight(tile.heightmap) * tile.terrainParams.maxHeight;
             
-            // 高度に基づぁE��色を調整
+            // 高度に基づいて色を調整
             Color baseColor = Color.white;
             
             if (averageHeight < 10f)
@@ -495,7 +498,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// 平坁E��度を計箁E
+        /// 平均高度を計算
         /// </summary>
         private float CalculateAverageHeight(float[,] heightmap)
         {
@@ -518,36 +521,36 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region バイオーム処琁E
+        #region バイオーム処理
         /// <summary>
-        /// バイオーム変更をテクスチャチE�Eタに適用
+        /// バイオーム変更をテクスチャデータに適用
         /// </summary>
         private void ApplyBiomeModifications(TerrainTextureData textureData, BiomePreset biomePreset)
         {
-            // バイオーム特性に基づぁE��チE��スチャウェイトを調整
+            // バイオーム特性に基づいてテクスチャウェイトを調整
             ModifyTextureWeightsForBiome(textureData, biomePreset);
             
-            // バイオーム固有�E色調を適用
+            // バイオーム固有の色調を適用
             ApplyBiomeColorModifications(textureData, biomePreset);
         }
         
         /// <summary>
-        /// バイオーム用のチE��スチャウェイトを調整
+        /// バイオーム用のテクスチャウェイトを調整
         /// </summary>
         private void ModifyTextureWeightsForBiome(TerrainTextureData textureData, BiomePreset biomePreset)
         {
-            // バイオーム特性に基づぁE��ウェイトを調整
+            // バイオーム特性に基づいてウェイトを調整
             float moistureFactor = biomePreset.moisture;
             float temperatureFactor = biomePreset.temperature;
             float fertilityFactor = biomePreset.fertility;
             float rockinessFactor = biomePreset.rockiness;
             
-            // 吁E��クスチャタイプ�Eウェイトを調整
+            // 各テクスチャタイプのウェイトを調整
             AdjustTextureWeightsByBiomeFactors(textureData, moistureFactor, temperatureFactor, fertilityFactor, rockinessFactor);
         }
         
         /// <summary>
-        /// バイオーム要因によるチE��スチャウェイト調整
+        /// バイオーム要因によるテクスチャウェイト調整
         /// </summary>
         private void AdjustTextureWeightsByBiomeFactors(TerrainTextureData textureData, float moisture, float temperature, float fertility, float rockiness)
         {
@@ -577,7 +580,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// バイオーム調整係数を計箁E
+        /// バイオーム調整係数を計算
         /// </summary>
         private float CalculateBiomeAdjustmentFactor(TerrainTextureType textureType, float moisture, float temperature, float fertility, float rockiness)
         {
@@ -607,7 +610,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// チE��スチャウェイトを正規化
+        /// テクスチャウェイトを正規化
         /// </summary>
         private void NormalizeTextureWeights(TerrainTextureData textureData)
         {
@@ -651,9 +654,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region チE��スチャ更新キュー処琁E
+        #region テクスチャ更新キュー処理
         /// <summary>
-        /// チE��スチャ更新キューを�E琁E
+        /// テクスチャ更新キューを処理
         /// </summary>
         private void ProcessTextureUpdateQueue()
         {
@@ -669,7 +672,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// チE��スチャ更新リクエストを処琁E
+        /// テクスチャ更新リクエストを処理
         /// </summary>
         private void ProcessTextureUpdateRequest(TextureUpdateRequest request)
         {
@@ -680,9 +683,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region ユーチE��リチE��
+        #region ユーティリティ
         /// <summary>
-        /// 距離に応じたLODチE��スチャセチE��を取征E
+        /// 距離に応じたLODテクスチャセットを取得
         /// </summary>
         private LODTextureSet GetLODTextureSetForDistance(float distance)
         {
@@ -698,7 +701,7 @@ namespace Vastcore.Generation
         }
         
         /// <summary>
-        /// チE��スチャチE�EタをクリーンアチE�E
+        /// テクスチャデータをクリーンアップ
         /// </summary>
         public void CleanupTextureData(TerrainTile tile)
         {
@@ -706,7 +709,7 @@ namespace Vastcore.Generation
             {
                 var textureData = tileTextureData[tile];
                 
-                // チE��スチャを削除
+                // テクスチャを削除
                 if (textureData.weightTexture != null)
                 {
                     Destroy(textureData.weightTexture);

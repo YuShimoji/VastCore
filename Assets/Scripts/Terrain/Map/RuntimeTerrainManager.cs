@@ -2,55 +2,59 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
-
+<<<<<<< HEAD
+using Vastcore.Player;
 using Vastcore.Utilities;
+=======
+using Vastcore.Utils;
+>>>>>>> origin/develop
 using Vastcore.Generation;
 using Vastcore.Core;
 
 namespace Vastcore.Generation
 {
     /// <summary>
-    /// 実行時地形管琁E��スチE��
-    /// プレイヤー位置に基づくタイルの動的ローチEアンロード、メモリ監視、簡易統計を行う、E
-    /// VastcoreLogger を用ぁE��軽量トレースログを�E力する、E
+    /// 実行時地形管理システム
+    /// プレイヤー位置に基づくタイルの動的ロード/アンロード、メモリ監視、簡易統計を行う。
+    /// VastcoreLogger を用いた軽量トレースログを出力する。
     /// </summary>
     public class RuntimeTerrainManager : MonoBehaviour
     {
-        #region 設宁E参�E
-        [Header("動的生�E設宁E)]
+        #region 設定/参照
+        [Header("動的生成設定")]
         public bool enableDynamicGeneration = true;
         public bool enableFrameTimeControl = true;
         public int maxGenerationsPerFrame = 4;
         public int maxDeletionsPerFrame = 6;
-        public int maxTilesPerUpdate = 8;   // フレーム制御時�E上限
-        public int minTilesPerUpdate = 1;   // フレーム制御時�E最低�E琁E��
-        public float maxFrameTimeMs = 4f;   // 1フレームで許容する処琁E��閁Ems)
-        public float updateInterval = 0.1f; // 動的生�Eの更新間隔
+        public int maxTilesPerUpdate = 8;   // フレーム制御時の上限
+        public int minTilesPerUpdate = 1;   // フレーム制御時の最低処理数
+        public float maxFrameTimeMs = 4f;   // 1フレームで許容する処理時間(ms)
+        public float updateInterval = 0.1f; // 動的生成の更新間隔
 
-        [Header("半征E��宁Eタイル単佁E")]
+        [Header("半径設定(タイル単位)")]
         public int immediateLoadRadius = 1;
         public int preloadRadius = 3;
         public int keepAliveRadius = 5;
         public int forceUnloadRadius = 7;
 
-        [Header("メモリ管琁E)]
+        [Header("メモリ管理")]
         public float memoryLimitMB = 1024f;
         public float memoryWarningThresholdMB = 768f; // 警告しきい値
         public float cleanupInterval = 2f;
         public bool enableAggressiveCleanup = false;
 
-        [Header("チE��チE��")]
+        [Header("デバッグ")]
         public bool showDebugInfo = false;
         public bool logTileOperations = false;
         public bool predictPlayerMovement = true;
 
-        [Header("参�E")]
+        [Header("参照")]
         public Transform playerTransform;
         private TileManager tileManager;
         #endregion
 
-        #region 冁E��状慁E
-        // キューと状慁E
+        #region 内部状態
+        // キューと状態
         private readonly Queue<TileGenerationRequest> generationQueue = new Queue<TileGenerationRequest>();
         private readonly Queue<Vector2Int> deletionQueue = new Queue<Vector2Int>();
         private readonly Dictionary<Vector2Int, TilePriority> tilePriorities = new Dictionary<Vector2Int, TilePriority>();
@@ -63,13 +67,13 @@ namespace Vastcore.Generation
         private Vector3 predictedPlayerPosition = Vector3.zero;
 
         private PerformanceStats performanceStats;
-        // 一度の更新サイクル冁E��重い全削除を多重実行しなぁE��め�Eフラグ
+        // 一度の更新サイクル内で重い全削除を多重実行しないためのフラグ
         private bool didFullUnloadThisCycle = false;
         #endregion
 
         void Update()
         {
-            // 更新間隔チェチE��
+            // 更新間隔チェック
             if (Time.time - lastUpdateTime >= 0.1f)
             {
                 Debug.Log($"Update called after {Time.time - lastUpdateTime:F3} seconds");
@@ -78,14 +82,14 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// ランタイムマネージャーを�E期化
+        /// ランタイムマネージャーを初期化
         /// </summary>
         private void InitializeRuntimeManager()
         {
             Debug.Log("Initializing RuntimeTerrainManager...");
             VastcoreLogger.Instance.LogInfo("RuntimeTerrain", $"Init start dyn={(enableDynamicGeneration?1:0)} upd={updateInterval}s maxGenPerFrame={maxGenerationsPerFrame} maxDelPerFrame={maxDeletionsPerFrame}");
 
-            // TileManagerを取得また�E作�E
+            // TileManagerを取得または作成
             tileManager = GetComponent<TileManager>();
             if (tileManager == null)
             {
@@ -93,7 +97,12 @@ namespace Vastcore.Generation
                 VastcoreLogger.Instance.LogInfo("RuntimeTerrain", "TileManager component added by RuntimeTerrainManager");
             }
 
-            // TileManagerにプレイヤー参�Eを連携
+            if (playerTransform == null)
+            {
+                playerTransform = ResolvePlayerTransform();
+            }
+
+            // TileManagerにプレイヤー参照を連携
             if (tileManager.playerTransform == null && playerTransform != null)
             {
                 tileManager.playerTransform = playerTransform;
@@ -104,7 +113,7 @@ namespace Vastcore.Generation
                 lastPlayerPosition = playerTransform.position;
             }
 
-            // コルーチンを開姁E
+            // コルーチンを開始
             StartDynamicGeneration();
             StartMemoryManagement();
 
@@ -137,7 +146,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// 動的生�Eコルーチンを開姁E
+        /// 動的生成コルーチンを開始
         /// </summary>
         private void StartDynamicGeneration()
         {
@@ -151,7 +160,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// メモリ管琁E��ルーチンを開姁E
+        /// メモリ管理コルーチンを開始
         /// </summary>
         private void StartMemoryManagement()
         {
@@ -173,26 +182,26 @@ namespace Vastcore.Generation
             if (playerTransform == null)
                 return;
 
-            // TileManager にプレイヤー参�Eを反映
+            // TileManager にプレイヤー参照を反映
             if (tileManager != null && tileManager.playerTransform != playerTransform)
             {
                 tileManager.playerTransform = playerTransform;
             }
 
-            // 予測�E�簡昁E 直近速度ベ�Eス�E�E
+            // 予測（簡易: 直近速度ベース）
             if (predictPlayerMovement)
             {
                 Vector3 velocity = (playerTransform.position - lastPlayerPosition) / Mathf.Max(Time.deltaTime, 1e-4f);
-                predictedPlayerPosition = playerTransform.position + velocity * 0.25f; // 250ms 先を推宁E
+                predictedPlayerPosition = playerTransform.position + velocity * 0.25f; // 250ms 先を推定
             }
 
             // メモ: TileManager 側の Update が読込/削除を実施するため、ここでは要求準備のみ
             lastPlayerPosition = playerTransform.position;
         }
 
-        #region 動的生�Eコルーチン
+        #region 動的生成コルーチン
         /// <summary>
-        /// 動的生�Eメインコルーチン
+        /// 動的生成メインコルーチン
         /// </summary>
         private IEnumerator DynamicGenerationCoroutine()
         {
@@ -200,17 +209,17 @@ namespace Vastcore.Generation
             {
                 yield return new WaitForSeconds(updateInterval);
                 
-                // プレイヤー追跡と周辺タイル要求�E更新
+                // プレイヤー追跡と周辺タイル要求の更新
                 UpdatePlayerTracking();
                 UpdateTileGeneration();
 
-                // 本サイクルでの重褁E�E削除を防止
+                // 本サイクルでの重複全削除を防止
                 didFullUnloadThisCycle = false;
 
                 if (enableFrameTimeControl)
                 {
                     VastcoreLogger.Instance.LogDebug("RuntimeTerrain", "ProcessGenerationQueueWithFrameLimit start");
-                    // StartCoroutine を重ねずにそ�EままイチE��ーターを返す
+                    // StartCoroutine を重ねずにそのままイテレーターを返す
                     yield return ProcessGenerationQueueWithFrameLimit();
                 }
                 else
@@ -226,23 +235,23 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// フレーム時間制限付きで生�Eキューを�E琁E
+        /// フレーム時間制限付きで生成キューを処理
         /// </summary>
         private IEnumerator ProcessGenerationQueueWithFrameLimit()
         {
             float frameStartTime = Time.realtimeSinceStartup;
             int processedCount = 0;
             int safetyFrameYields = 0;
-            const int maxSafetyFrameYields = 300; // 紁E私E60FPS想宁Eの安�E弁E
+            const int maxSafetyFrameYields = 300; // 約5秒(60FPS想定)の安全弁
 
             while (generationQueue.Count > 0 && processedCount < maxTilesPerUpdate)
             {
-                // フレーム時間をチェチE��
+                // フレーム時間をチェック
                 float elapsedTime = (Time.realtimeSinceStartup - frameStartTime) * 1000f;
                 if (elapsedTime > maxFrameTimeMs && processedCount >= minTilesPerUpdate)
                 {
                     VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"GenQueue frame limit hit elapsed={elapsedTime:F2}ms processed={processedCount}/{maxTilesPerUpdate} q={generationQueue.Count}");
-                    yield return null; // 次のフレームに延朁E
+                    yield return null; // 次のフレームに延期
                     safetyFrameYields++;
                     if (!enableDynamicGeneration || !gameObject.activeInHierarchy)
                     {
@@ -267,7 +276,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// 生�Eキューを�E琁E
+        /// 生成キューを処理
         /// </summary>
         private void ProcessGenerationQueue()
         {
@@ -285,7 +294,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// 削除キューを�E琁E
+        /// 削除キューを処理
         /// </summary>
         private void ProcessDeletionQueue()
         {
@@ -303,7 +312,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// タイル生�Eリクエストを処琁E
+        /// タイル生成リクエストを処理
         /// </summary>
         private void ProcessTileGenerationRequest(TileGenerationRequest request)
         {
@@ -317,13 +326,13 @@ namespace Vastcore.Generation
 
             try
             {
-                // TileManagerが�E動でロードを行うため、ここではトリガのみ
+                // TileManagerが自動でロードを行うため、ここではトリガのみ
                 var tile = tileManager.GetTileAtWorldPosition(
                     tileManager.TileCoordinateToWorldPosition(request.coordinate));
 
                 if (tile == null)
                 {
-                    // 明示皁E��生�Eは行わず、TileManagerの更新に委譲
+                    // 明示的な生成は行わず、TileManagerの更新に委譲
                     GenerateNewTile(request.coordinate);
                 }
 
@@ -343,7 +352,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// タイル削除を�E琁E
+        /// タイル削除を処理
         /// </summary>
         private void ProcessTileDeletion(Vector2Int tileCoord)
         {
@@ -354,7 +363,7 @@ namespace Vastcore.Generation
 
                 if (tile != null)
                 {
-                    // 現状のフォールバック: 全削除。ただしサイクル冁E��一度だけ実衁E
+                    // 現状のフォールバック: 全削除。ただしサイクル内で一度だけ実行
                     if (!didFullUnloadThisCycle)
                     {
                         tileManager.UnloadAllTiles();
@@ -384,21 +393,21 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// 新しいタイルを生戁E
+        /// 新しいタイルを生成
         /// </summary>
         private void GenerateNewTile(Vector2Int tileCoord)
         {
-            // 個別生�Eの直接APIはなぁE��め、TileManager の自動�E琁E��委譲
-            // ここでは軽量ログのみを�E劁E
+            // 個別生成の直接APIはないため、TileManager の自動処理に委譲
+            // ここでは軽量ログのみを出力
             VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"GenerateNewTile requested coord={tileCoord} (delegated to TileManager)");
         }
 
         #endregion
         #endregion
 
-        #region メモリ管琁E
+        #region メモリ管理
         /// <summary>
-        /// メモリ管琁E��ルーチン
+        /// メモリ管理コルーチン
         /// </summary>
         private IEnumerator MemoryManagementCoroutine()
         {
@@ -418,7 +427,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// メモリ使用量をチェチE��
+        /// メモリ使用量をチェック
         /// </summary>
         private void CheckMemoryUsage()
         {
@@ -442,7 +451,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// 緊急クリーンアチE�Eをトリガー
+        /// 緊急クリーンアップをトリガー
         /// </summary>
         private void TriggerEmergencyCleanup()
         {
@@ -452,7 +461,7 @@ namespace Vastcore.Generation
             Vector2Int playerTile = tileManager.WorldToTileCoordinate(playerTransform.position);
             var activeTiles = GetActiveTileCoordinates();
 
-            // プレイヤーから遠ぁE��イルを強制削除�E�フォールバックとして全削除�E�E
+            // プレイヤーから遠いタイルを強制削除（フォールバックとして全削除）
             if (activeTiles.Count > 0)
             {
                 tileManager.UnloadAllTiles();
@@ -463,7 +472,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// 予防皁E��リーンアチE�Eをトリガー
+        /// 予防的クリーンアップをトリガー
         /// </summary>
         private void TriggerPreventiveCleanup()
         {
@@ -473,12 +482,12 @@ namespace Vastcore.Generation
             Vector2Int playerTile = tileManager.WorldToTileCoordinate(playerTransform.position);
             var activeTiles = GetActiveTileCoordinates();
 
-            // 最も遠ぁE��イルからの削除は TileManager 冁E��委譲。ここでは全削除を回避し、ログのみ、E
+            // 最も遠いタイルからの削除は TileManager 内に委譲。ここでは全削除を回避し、ログのみ。
             VastcoreLogger.Instance.LogInfo("RuntimeTerrain", $"PreventiveCleanup check active={activeTiles.Count} around tile={playerTile}");
         }
 
         /// <summary>
-        /// 積極皁E��リーンアチE�Eを実衁E
+        /// 積極的クリーンアップを実行
         /// </summary>
         private void PerformAggressiveCleanup()
         {
@@ -488,11 +497,11 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// 未使用リソースをクリーンアチE�E
+        /// 未使用リソースをクリーンアップ
         /// </summary>
         private void CleanupUnusedResources()
         {
-            // 古ぁE��先度エントリを削除
+            // 古い優先度エントリを削除
             var activeCoords = GetActiveTileCoordinates();
             var keysToRemove = tilePriorities.Keys.Where(key => !activeCoords.Contains(key)).ToList();
 
@@ -501,15 +510,15 @@ namespace Vastcore.Generation
                 tilePriorities.Remove(key);
             }
 
-            // 処琁E��タイルリストをクリーンアチE�E
+            // 処理中タイルリストをクリーンアップ
             processingTiles.RemoveWhere(coord => !activeCoords.Contains(coord));
             VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"CleanupUnusedResources removedPriorities={keysToRemove.Count}");
         }
         #endregion
 
-        #region ユーチE��リチE��
+        #region ユーティリティ
         /// <summary>
-        /// 持E��半征E�Eのタイル座標を取征E
+        /// 指定半径内のタイル座標を取得
         /// </summary>
         private List<Vector2Int> GetTilesInRadius(Vector2Int center, int radius)
         {
@@ -529,7 +538,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// アクチE��ブタイル座標一覧
+        /// アクティブタイル座標一覧
         /// </summary>
         private List<Vector2Int> GetActiveTileCoordinates()
         {
@@ -544,7 +553,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// タイルがアクチE��ブか
+        /// タイルがアクティブか
         /// </summary>
         private bool IsTileActive(Vector2Int coord)
         {
@@ -560,7 +569,7 @@ namespace Vastcore.Generation
             if (playerTransform == null || tileManager == null) return;
             var center = tileManager.WorldToTileCoordinate(playerTransform.position);
 
-            // 即晁Eプリロード要汁E
+            // 即時/プリロード要求
             foreach (var coord in GetTilesInRadius(center, immediateLoadRadius))
             {
                 RequestTileGeneration(coord, TilePriority.Immediate);
@@ -571,7 +580,7 @@ namespace Vastcore.Generation
                     RequestTileGeneration(coord, TilePriority.High);
             }
 
-            // 強制アンロード篁E��外を削除要汁E
+            // 強制アンロード範囲外を削除要求
             TriggerTileCleanup(playerTransform.position);
         }
 
@@ -600,11 +609,11 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// タイル生�EをリクエスチE
+        /// タイル生成をリクエスト
         /// </summary>
         private void RequestTileGeneration(Vector2Int tileCoord, TilePriority priority)
         {
-            // 既に存在するか�E琁E��の場合�EスキチE�E
+            // 既に存在するか処理中の場合はスキップ
             if (IsTileActive(tileCoord) || processingTiles.Contains(tileCoord))
             {
                 VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"RequestGen skip existing/processing coord={tileCoord}");
@@ -618,7 +627,7 @@ namespace Vastcore.Generation
                 requestTime = Time.time
             };
 
-            // 優先度に基づぁE��キューに挿入
+            // 優先度に基づいてキューに挿入
             InsertGenerationRequestByPriority(request);
             tilePriorities[tileCoord] = priority;
 
@@ -630,7 +639,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// タイル削除をリクエスチE
+        /// タイル削除をリクエスト
         /// </summary>
         private void RequestTileDeletion(Vector2Int tileCoord, TilePriority priority)
         {
@@ -640,7 +649,7 @@ namespace Vastcore.Generation
                 return;
             }
 
-            // 優先度に基づぁE��削除キューに追加
+            // 優先度に基づいて削除キューに追加
             if (priority == TilePriority.Immediate)
             {
                 // 即座に削除
@@ -660,14 +669,14 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// 優先度に基づぁE��生�Eリクエストを挿入
+        /// 優先度に基づいて生成リクエストを挿入
         /// </summary>
         private void InsertGenerationRequestByPriority(TileGenerationRequest request)
         {
-            // 簡易実裁E��優先度の高いも�Eを�E頭に追加
+            // 簡易実装：優先度の高いものを先頭に追加
             if (request.priority == TilePriority.Immediate)
             {
-                // 即座に処琁E��るため、キューの先頭に挿入する代わりに直接処琁E
+                // 即座に処理するため、キューの先頭に挿入する代わりに直接処理
                 VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"InsertReq immediate -> direct process coord={request.coordinate}");
                 ProcessTileGenerationRequest(request);
             }
@@ -686,11 +695,11 @@ namespace Vastcore.Generation
             performanceStats.frameCount++;
             performanceStats.averageFrameTime = Time.deltaTime;
 
-            // TileManager から統計を取り込み�E�生戁E削除の正確な反映に寁E��！E
+            // TileManager から統計を取り込み（生成/削除の正確な反映に寄与）
             if (tileManager != null)
             {
                 var stats = tileManager.GetStats();
-                // 合計値の下駁E��履かせなぁE��ぁE��最小限の同期�E�加算しなぁE��E
+                // 合計値の下駄を履かせないよう、最小限の同期（加算しない）
                 performanceStats.currentMemoryUsageMB = stats.currentMemoryUsageMB;
             }
 
@@ -703,9 +712,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region パブリチE��API
+        #region パブリックAPI
         /// <summary>
-        /// 動的生�Eを有効/無効匁E
+        /// 動的生成を有効/無効化
         /// </summary>
         public void SetDynamicGenerationEnabled(bool enabled)
         {
@@ -730,7 +739,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// パフォーマンス統計を取征E
+        /// パフォーマンス統計を取得
         /// </summary>
         public PerformanceStats GetPerformanceStats()
         {
@@ -752,7 +761,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// 強制クリーンアチE�Eを実衁E
+        /// 強制クリーンアップを実行
         /// </summary>
         public void ForceCleanup()
         {
@@ -761,7 +770,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// 持E��座標�Eタイルを取征E
+        /// 指定座標のタイルを取得
         /// </summary>
         public TerrainTile GetTerrainTile(Vector2Int coordinate)
         {
@@ -773,7 +782,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// アクチE��ブなタイルのリストを取征E
+        /// アクティブなタイルのリストを取得
         /// </summary>
         public List<TerrainTile> GetActiveTiles()
         {
@@ -785,7 +794,7 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region チE��チE��機�E
+        #region デバッグ機能
         private void OnDrawGizmos()
         {
             if (!showDebugInfo) return;
@@ -793,7 +802,7 @@ namespace Vastcore.Generation
             DrawDebugInfo();
         }
         /// <summary>
-        /// チE��チE��惁E��を描画
+        /// デバッグ情報を描画
         /// </summary>
         private void DrawDebugInfo()
         {
@@ -803,7 +812,7 @@ namespace Vastcore.Generation
             Vector2Int playerTile = tileManager.WorldToTileCoordinate(playerTransform.position);
             Vector3 playerWorldPos = tileManager.TileCoordinateToWorldPosition(playerTile);
 
-            // 吁E��征E��描画
+            // 各半径を描画
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(playerWorldPos, immediateLoadRadius * tileManager.tileSize);
 
@@ -826,7 +835,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// チE��チE��惁E��をログ出劁E
+        /// デバッグ情報をログ出力
         /// </summary>
         [ContextMenu("Log Performance Stats")]
         public void LogPerformanceStats()
@@ -845,9 +854,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region チE�Eタ構造
+        #region データ構造
         /// <summary>
-        /// タイル生�EリクエスチE
+        /// タイル生成リクエスト
         /// </summary>
         [System.Serializable]
         public struct TileGenerationRequest
@@ -869,7 +878,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// パフォーマンス統訁E
+        /// パフォーマンス統計
         /// </summary>
         [System.Serializable]
         public struct PerformanceStats
@@ -889,7 +898,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// ランタイム地形設宁E
+        /// ランタイム地形設定
         /// </summary>
         [System.Serializable]
         public struct RuntimeTerrainSettings

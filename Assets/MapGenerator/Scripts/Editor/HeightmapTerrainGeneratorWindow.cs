@@ -228,7 +228,8 @@ namespace Vastcore.Editor.Generation
             terrainData.size = new Vector3(terrainSize.x, terrainHeight, terrainSize.z);
             // using (LoadProfiler.Measure("TerrainData.SetHeights (EditorWindow)"))
             {
-                terrainData.SetHeights(0, 0, combinedHeightmap);
+                // 大規模Terrainをバッチ処理で設定（メモリスパイク軽減）
+                SetHeightsInBatches(terrainData, combinedHeightmap);
             }
             
             ApplySplatmap(terrainData);
@@ -404,7 +405,44 @@ namespace Vastcore.Editor.Generation
 
             // using (LoadProfiler.Measure("TerrainData.SetAlphamaps (EditorWindow)"))
             {
-                terrainData.SetAlphamaps(0, 0, alphaMap);
+                // 大規模Terrainをバッチ処理で設定（メモリスパイク軽減）
+                SetAlphamapsInBatches(terrainData, alphaMap);
+            }
+        }
+
+        /// <summary>
+        /// アルファマップをバッチ処理で設定（メモリスパイク軽減）
+        /// </summary>
+        private void SetAlphamapsInBatches(TerrainData terrainData, float[,,] alphaMap)
+        {
+            int height = alphaMap.GetLength(0);
+            int width = alphaMap.GetLength(1);
+            int layers = alphaMap.GetLength(2);
+            int batchSize = 256;
+
+            for (int yStart = 0; yStart < height; yStart += batchSize)
+            {
+                for (int xStart = 0; xStart < width; xStart += batchSize)
+                {
+                    int yEnd = Mathf.Min(yStart + batchSize, height);
+                    int xEnd = Mathf.Min(xStart + batchSize, width);
+                    int batchHeight = yEnd - yStart;
+                    int batchWidth = xEnd - xStart;
+
+                    float[,,] batchAlphaMap = new float[batchHeight, batchWidth, layers];
+                    for (int y = 0; y < batchHeight; y++)
+                    {
+                        for (int x = 0; x < batchWidth; x++)
+                        {
+                            for (int l = 0; l < layers; l++)
+                            {
+                                batchAlphaMap[y, x, l] = alphaMap[yStart + y, xStart + x, l];
+                            }
+                        }
+                    }
+
+                    terrainData.SetAlphamaps(yStart, xStart, batchAlphaMap);
+                }
             }
         }
     }
