@@ -22,6 +22,9 @@ namespace Vastcore.Generation
 
         [Header("地形特徴")]
         public List<TerrainFeature> terrainFeatures = new List<TerrainFeature>();
+        public Vector2 heightRange = new Vector2(float.MinValue, float.MaxValue);
+        public Vector2 slopeRange = new Vector2(0f, 90f);
+        public Vector2 sizeRange = new Vector2(100f, 1000f);
 
         [Header("生成パラメータ")]
         public float noiseScale = 1f; // ノイズスケール

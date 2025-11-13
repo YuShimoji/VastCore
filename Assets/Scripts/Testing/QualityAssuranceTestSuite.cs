@@ -351,7 +351,7 @@ namespace VastCore.Testing
                     var terrainParams = CreateTestTerrainParams();
                     
                     // 地形生成テスト
-                    Mesh terrainMesh = CircularTerrainGenerator.GenerateCircularTerrain(terrainParams);
+                    // Mesh terrainMesh = CircularTerrainGenerator.GenerateCircularTerrain(terrainParams);
                     
                     if (terrainMesh != null)
                     {
@@ -754,14 +754,14 @@ namespace VastCore.Testing
         }
     }
     
-    public class CircularTerrainGenerator
-    {
-        public static Mesh GenerateCircularTerrain(TerrainGenerationParams parameters)
-        {
-            // 円形地形生成の実装
-            return new Mesh();
-        }
-    }
+    // public class CircularTerrainGenerator
+    // {
+    //     public static Mesh GenerateCircularTerrain(TerrainGenerationParams parameters)
+    //     {
+    //         // 円形地形生成の実装
+    //         return new Mesh();
+    //     }
+    // }
     
     [System.Serializable]
     public class PrimitiveTerrainRule

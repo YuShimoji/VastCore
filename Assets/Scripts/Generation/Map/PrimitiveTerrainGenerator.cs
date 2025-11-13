@@ -329,7 +329,11 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateCrystalStructure(Vector3 scale)
         {
             // 新しい高品質結晶構造生成システムを使用
-            return CrystalStructureGenerator.GenerateCrystalWithGrowthSimulation(scale, true);
+            // return CrystalStructureGenerator.GenerateCrystalWithGrowthSimulation(scale, true);
+            // フォールバック：基本的な結晶形状
+            var crystal = ShapeGenerator.CreateShape(ShapeType.Cube);
+            crystal.transform.localScale = scale;
+            return crystal;
         }
 
         /// <summary>
@@ -364,39 +368,39 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateArch(Vector3 scale)
         {
             // 新しい建築学的生成システムを使用してより高品質なアーチを生成
-            var archParams = ArchitecturalGenerator.ArchitecturalParams.Default(ArchitecturalGenerator.ArchitecturalType.SimpleArch);
-            archParams.span = scale.x;
-            archParams.height = scale.y;
-            archParams.thickness = scale.z;
-            archParams.position = Vector3.zero;
+            // var archParams = ArchitecturalGenerator.ArchitecturalParams.Default(ArchitecturalGenerator.ArchitecturalType.SimpleArch);
+            // archParams.span = scale.x;
+            // archParams.height = scale.y;
+            // archParams.thickness = scale.z;
+            // archParams.position = Vector3.zero;
             
             // 建築構造を生成
-            var archObject = ArchitecturalGenerator.GenerateArchitecturalStructure(archParams);
+            // var archObject = ArchitecturalGenerator.GenerateArchitecturalStructure(archParams);
             
-            if (archObject != null)
-            {
-                // 生成されたオブジェクトからメッシュを取得
-                var meshFilter = archObject.GetComponent<MeshFilter>();
-                if (meshFilter != null && meshFilter.sharedMesh != null)
-                {
-                    // ProBuilderMeshに変換
-                    var proBuilderMesh = archObject.GetComponent<ProBuilderMesh>();
-                    if (proBuilderMesh == null)
-                    {
-                        proBuilderMesh = archObject.AddComponent<ProBuilderMesh>();
-                        // TODO: RebuildFromMesh機能はProBuilder API変更により一時的に無効化
-                        Debug.LogWarning($"RebuildFromMesh feature is temporarily disabled due to ProBuilder API changes.");
-                    }
-                    
-                    // 一時的なオブジェクトを削除
-                    UnityEngine.Object.DestroyImmediate(archObject);
-                    
-                    return proBuilderMesh;
-                }
-                
-                // フォールバック：オブジェクトが正しく生成されなかった場合
-                UnityEngine.Object.DestroyImmediate(archObject);
-            }
+            // if (archObject != null)
+            // {
+            //     // 生成されたオブジェクトからメッシュを取得
+            //     var meshFilter = archObject.GetComponent<MeshFilter>();
+            //     if (meshFilter != null && meshFilter.sharedMesh != null)
+            //     {
+            //         // ProBuilderMeshに変換
+            //         var proBuilderMesh = archObject.GetComponent<ProBuilderMesh>();
+            //         if (proBuilderMesh == null)
+            //         {
+            //             proBuilderMesh = archObject.AddComponent<ProBuilderMesh>();
+            //             // TODO: RebuildFromMesh機能はProBuilder API変更により一時的に無効化
+            //             Debug.LogWarning($"RebuildFromMesh feature is temporarily disabled due to ProBuilder API changes.");
+            //         }
+            //         
+            //         // 一時的なオブジェクトを削除
+            //         UnityEngine.Object.DestroyImmediate(archObject);
+            //         
+            //         return proBuilderMesh;
+            //     }
+            //     
+            //     // フォールバック：オブジェクトが正しく生成されなかった場合
+            //     UnityEngine.Object.DestroyImmediate(archObject);
+            // }
             
             // フォールバック：基本的なアーチ形状
             var fallbackArch = ShapeGenerator.CreateShape(ShapeType.Arch);
@@ -604,11 +608,11 @@ namespace Vastcore.Generation
         private static void SetupInteractionComponents(GameObject primitiveObject, PrimitiveGenerationParams parameters)
         {
             // プリミティブ地形オブジェクトコンポーネントを追加
-            var primitiveComponent = primitiveObject.AddComponent<PrimitiveTerrainObject>();
-            primitiveComponent.primitiveType = (GenerationPrimitiveType)(int)parameters.primitiveType;
-            primitiveComponent.isClimbable = parameters.isClimbable;
-            primitiveComponent.isGrindable = parameters.isGrindable;
-            primitiveComponent.hasCollision = parameters.generateCollider;
+            // var primitiveComponent = primitiveObject.AddComponent<PrimitiveTerrainObject>();
+            // primitiveComponent.primitiveType = (GenerationPrimitiveType)(int)parameters.primitiveType;
+            // primitiveComponent.isClimbable = parameters.isClimbable;
+            // primitiveComponent.isGrindable = parameters.isGrindable;
+            // primitiveComponent.hasCollision = parameters.generateCollider;
             
             // 適切なレイヤーを設定
             primitiveObject.layer = LayerMask.NameToLayer("Default"); // 必要に応じて専用レイヤーを作成

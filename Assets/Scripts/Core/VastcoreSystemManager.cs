@@ -1,11 +1,8 @@
 using System;
 using System.Reflection;
 using UnityEngine;
-<<<<<<< HEAD
-=======
 using Vastcore.Core;
 using Vastcore.Core.Interfaces;
->>>>>>> origin/develop
 using Vastcore.Utils;
 
 namespace Vastcore.Core

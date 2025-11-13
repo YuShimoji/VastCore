@@ -33,11 +33,7 @@ namespace Vastcore.Generation
         public GameObject terrainObject => tileObject;  // tileObjectのエイリアス
         public float[,] heightData => heightmap;        // heightmapのエイリアス
         public bool isActive => state == TileState.Active; // アクティブ状態
-<<<<<<< HEAD
-        public float lastAccessTime { get; set; } = 0f; // 最終アクセス時間のエイリアス
-=======
         public System.DateTime lastAccessTime => lastAccessedAt; // 最終アクセス時間のエイリアス
->>>>>>> origin/develop
         public string appliedBiome { get; set; } = "Default"; // 適用されたバイオーム
         
         [Header("生成情報")]
@@ -78,12 +74,11 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region コンストラクタ
-        /// <summary>
-        /// デフォルトコンストラクタ
-        /// </summary>
-        public TerrainTile()
+        #region Unity Lifecycle
+        
+        private void Awake()
         {
+            // MonoBehaviour の初期化
             coordinate = Vector2Int.zero;
             worldPosition = Vector3.zero;
             tileSize = 2000f;
@@ -97,42 +92,31 @@ namespace Vastcore.Generation
             currentLOD = LODLevel.High;
         }
         
+        #endregion
+
+        #region コンストラクタ
         /// <summary>
-        /// 座標指定コンストラクタ
+        /// デフォルトコンストラクタ（使用不可）
         /// </summary>
-        public TerrainTile(Vector2Int coord, float size)
+        private TerrainTile()
         {
-            coordinate = coord;
-            tileSize = size;
-            worldPosition = new Vector3(coord.x * size, 0f, coord.y * size);
-            state = TileState.Unloaded;
-            createdAt = System.DateTime.Now;
-            lastAccessedAt = createdAt;
-            accessCount = 0;
-            isVisible = false;
-            hasCollider = false;
-            distanceFromPlayer = float.MaxValue;
-            currentLOD = LODLevel.High;
+            // MonoBehaviour ではコンストラクタを使用しない
         }
         
         /// <summary>
-        /// 完全指定コンストラクタ
+        /// 座標指定コンストラクタ（使用不可）
         /// </summary>
-        public TerrainTile(Vector2Int coord, float size, MeshGenerator.TerrainGenerationParams terrainParams, CircularTerrainGenerator.CircularTerrainParams circularParams)
+        private TerrainTile(Vector2Int coord, float size)
         {
-            coordinate = coord;
-            tileSize = size;
-            worldPosition = new Vector3(coord.x * size, 0f, coord.y * size);
-            this.terrainParams = terrainParams;
-            this.circularParams = circularParams;
-            state = TileState.Unloaded;
-            createdAt = System.DateTime.Now;
-            lastAccessedAt = createdAt;
-            accessCount = 0;
-            isVisible = false;
-            hasCollider = false;
-            distanceFromPlayer = float.MaxValue;
-            currentLOD = LODLevel.High;
+            // MonoBehaviour ではコンストラクタを使用しない
+        }
+        
+        /// <summary>
+        /// 完全指定コンストラクタ（使用不可）
+        /// </summary>
+        private TerrainTile(Vector2Int coord, float size, MeshGenerator.TerrainGenerationParams terrainParams, CircularTerrainGenerator.CircularTerrainParams circularParams)
+        {
+            // MonoBehaviour ではコンストラクタを使用しない
         }
         #endregion
 
@@ -361,9 +345,10 @@ namespace Vastcore.Generation
                     float distance = Vector2.Distance(position, center);
                     
                     // 円形フォールオフを計算
-                    float falloff = CircularTerrainGenerator.CalculateDistanceFalloff(
-                        position, center, radiusInPixels, 
-                        circularParams.falloffCurve, circularParams.falloffStrength);
+                    // float falloff = CircularTerrainGenerator.CalculateDistanceFalloff(
+                    //     position, center, radiusInPixels, 
+                    //     circularParams.falloffCurve, circularParams.falloffStrength);
+                    float falloff = 1f; // 仮の値
                     
                     result[y, x] *= falloff;
                 }

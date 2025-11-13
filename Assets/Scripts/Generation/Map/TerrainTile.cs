@@ -1,237 +1,195 @@
 using UnityEngine;
 
-namespace Vastcore.Generation.Map
+namespace Vastcore.Generation
 {
     /// <summary>
-    /// 地形タイルコンポーネント
-    /// 個別の地形タイルを生成・管理
+    /// 最小構成の地形タイルコンポーネント
     /// </summary>
-    [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider))]
     public class TerrainTile : MonoBehaviour
     {
-        private Vector2Int tileCoord;
-        private int tileSize;
-        private int resolution;
-        private float heightScale;
+        #region Fields
+        [Header("タイル基本情報")]
+        [SerializeField] private Vector2Int _coordinate;
+        [SerializeField] private float _tileSize = 100f;
+        [SerializeField] private TileState _state = TileState.Unloaded;
 
-        private MeshFilter meshFilter;
-        private MeshRenderer meshRenderer;
-        private MeshCollider meshCollider;
-        private Mesh terrainMesh;
+        [Header("地形データ")]
+        [SerializeField] private float[,] _heightData;
+        [SerializeField] private int _heightResolution;
+        [SerializeField] private float _heightScale;
+        [SerializeField] private Mesh _terrainMesh;
+        [SerializeField] private Material _terrainMaterial;
 
-        private RuntimeTerrainManager.TerrainGenerationParams generationParams;
+        [Header("参照キャッシュ")]
+        private MeshFilter _meshFilter;
+        private MeshRenderer _meshRenderer;
+        private MeshCollider _meshCollider;
 
-        /// <summary>
-        /// 地形タイルを初期化
-        /// </summary>
-        public void Initialize(Vector2Int coord, int size, int res, float height, RuntimeTerrainManager.TerrainGenerationParams genParams)
+        private System.DateTime _lastAccessedAt = System.DateTime.Now;
+        private int _accessCount;
+        private string _appliedBiome = "Default";
+
+        public enum TileState
         {
-            tileCoord = coord;
-            tileSize = size;
-            resolution = res;
-            heightScale = height;
-            generationParams = genParams;
+            Unloaded,
+            Loading,
+            Loaded,
+            Active,
+            Inactive
+        }
 
-            // コンポーネント取得
-            meshFilter = GetComponent<MeshFilter>();
-            meshRenderer = GetComponent<MeshRenderer>();
-            meshCollider = GetComponent<MeshCollider>();
+        #endregion
 
-            // マテリアル設定
-            if (meshRenderer.sharedMaterial == null)
+        #region Properties
+        public Vector2Int Coordinate => _coordinate;
+        public Vector3 WorldPosition => transform.position;
+        public float TileSize => _tileSize;
+        public TileState State => _state;
+        public bool IsActive => _state == TileState.Active;
+        public float[,] HeightData => _heightData;
+        public Mesh TerrainMesh => _terrainMesh;
+        public Material TerrainMaterial => _terrainMaterial;
+        public int HeightResolution => _heightResolution;
+        public float HeightScale => _heightScale;
+        public System.DateTime LastAccessTime => _lastAccessedAt;
+        public int AccessCount => _accessCount;
+        public string AppliedBiome => _appliedBiome;
+
+        // 旧インターフェース互換用
+        public Vector2Int coordinate => _coordinate;
+        public float tileSize => _tileSize;
+        public TileState state => _state;
+        public float[,] heightData => _heightData;
+        public Mesh terrainMesh => _terrainMesh;
+        public Material terrainMaterial => _terrainMaterial;
+        public System.DateTime lastAccessTime => _lastAccessedAt;
+        public string appliedBiome
+        {
+            get => _appliedBiome;
+            set => _appliedBiome = value;
+        }
+        public GameObject terrainObject => gameObject;
+
+        #endregion
+
+        #region Unity Lifecycle
+        private void Awake()
+        {
+            _meshFilter = GetComponent<MeshFilter>();
+            _meshRenderer = GetComponent<MeshRenderer>();
+            _meshCollider = GetComponent<MeshCollider>();
+
+            if (_meshFilter == null) _meshFilter = gameObject.AddComponent<MeshFilter>();
+            if (_meshRenderer == null) _meshRenderer = gameObject.AddComponent<MeshRenderer>();
+            if (_meshCollider == null) _meshCollider = gameObject.AddComponent<MeshCollider>();
+        }
+
+        #endregion
+
+        #region Public API
+        public void Initialize(Vector2Int tileCoordinate, float size, float[,] heights, int resolution, float maxHeight, Mesh mesh, Material material)
+        {
+            _coordinate = tileCoordinate;
+            _tileSize = size;
+            transform.position = new Vector3(tileCoordinate.x * size, 0f, tileCoordinate.y * size);
+
+            _heightData = heights;
+            _heightResolution = resolution;
+            _heightScale = maxHeight;
+            _terrainMesh = mesh;
+            _terrainMaterial = material;
+
+            _meshFilter.sharedMesh = _terrainMesh;
+            _meshCollider.sharedMesh = _terrainMesh;
+            if (_terrainMaterial != null)
             {
-                meshRenderer.sharedMaterial = CreateTerrainMaterial();
+                _meshRenderer.sharedMaterial = _terrainMaterial;
             }
 
-            // 地形生成
-            GenerateTerrainMesh();
+            _state = TileState.Loaded;
+            _lastAccessedAt = System.DateTime.Now;
+            _accessCount = 0;
         }
 
-        /// <summary>
-        /// 地形メッシュを生成
-        /// </summary>
-        private void GenerateTerrainMesh()
+        public void SetActive(bool active)
         {
-            terrainMesh = new Mesh();
-            terrainMesh.name = $"TerrainMesh_{tileCoord.x}_{tileCoord.y}";
-
-            // 頂点生成
-            Vector3[] vertices = GenerateVertices();
-            int[] triangles = GenerateTriangles();
-            Vector2[] uvs = GenerateUVs();
-
-            // メッシュ設定
-            terrainMesh.vertices = vertices;
-            terrainMesh.triangles = triangles;
-            terrainMesh.uv = uvs;
-
-            // 法線と境界計算
-            terrainMesh.RecalculateNormals();
-            terrainMesh.RecalculateBounds();
-
-            // コンポーネントに設定
-            meshFilter.sharedMesh = terrainMesh;
-            meshCollider.sharedMesh = terrainMesh;
-        }
-
-        /// <summary>
-        /// 頂点を生成
-        /// </summary>
-        private Vector3[] GenerateVertices()
-        {
-            Vector3[] vertices = new Vector3[resolution * resolution];
-
-            for (int z = 0; z < resolution; z++)
+            gameObject.SetActive(active);
+            _state = active ? TileState.Active : TileState.Inactive;
+            if (active)
             {
-                for (int x = 0; x < resolution; x++)
-                {
-                    int index = z * resolution + x;
-
-                    // ローカル座標
-                    float xPos = (float)x / (resolution - 1) * tileSize;
-                    float zPos = (float)z / (resolution - 1) * tileSize;
-
-                    // ワールド座標（ノイズ計算用）
-                    float worldX = transform.position.x + xPos;
-                    float worldZ = transform.position.z + zPos;
-
-                    // 高さ計算
-                    float height = GenerateHeight(worldX, worldZ);
-
-                    vertices[index] = new Vector3(xPos, height, zPos);
-                }
+                _lastAccessedAt = System.DateTime.Now;
+                _accessCount++;
             }
-
-            return vertices;
         }
 
-        /// <summary>
-        /// 三角形を生成
-        /// </summary>
-        private int[] GenerateTriangles()
+        public void SetColliderEnabled(bool enabled)
         {
-            int[] triangles = new int[(resolution - 1) * (resolution - 1) * 6];
-
-            int triangleIndex = 0;
-            for (int z = 0; z < resolution - 1; z++)
+            if (_meshCollider != null)
             {
-                for (int x = 0; x < resolution - 1; x++)
-                {
-                    int vertexIndex = z * resolution + x;
-
-                    // 最初の三角形
-                    triangles[triangleIndex++] = vertexIndex;
-                    triangles[triangleIndex++] = vertexIndex + resolution;
-                    triangles[triangleIndex++] = vertexIndex + 1;
-
-                    // 2番目の三角形
-                    triangles[triangleIndex++] = vertexIndex + 1;
-                    triangles[triangleIndex++] = vertexIndex + resolution;
-                    triangles[triangleIndex++] = vertexIndex + resolution + 1;
-                }
+                _meshCollider.enabled = enabled;
             }
-
-            return triangles;
         }
 
-        /// <summary>
-        /// UV座標を生成
-        /// </summary>
-        private Vector2[] GenerateUVs()
+        public void Unload()
         {
-            Vector2[] uvs = new Vector2[resolution * resolution];
-
-            for (int z = 0; z < resolution; z++)
-            {
-                for (int x = 0; x < resolution; x++)
-                {
-                    int index = z * resolution + x;
-                    uvs[index] = new Vector2(
-                        (float)x / (resolution - 1),
-                        (float)z / (resolution - 1)
-                    );
-                }
-            }
-
-            return uvs;
+            _state = TileState.Unloaded;
+            _heightData = null;
+            _heightResolution = 0;
+            _heightScale = 0f;
+            if (_meshCollider != null) _meshCollider.sharedMesh = null;
+            if (_meshFilter != null) _meshFilter.sharedMesh = null;
+            _terrainMesh = null;
+            _terrainMaterial = null;
         }
 
-        /// <summary>
-        /// 高さを生成（Perlinノイズ使用）
-        /// </summary>
-        private float GenerateHeight(float worldX, float worldZ)
+        public bool ContainsWorldPosition(Vector3 worldPos)
         {
-            float height = 0f;
-            float amplitude = generationParams.amplitude;
-            float frequency = generationParams.frequency;
-
-            // 複数オクターブのPerlinノイズ
-            for (int i = 0; i < generationParams.octaves; i++)
-            {
-                float sampleX = (worldX + generationParams.offset.x) * frequency;
-                float sampleZ = (worldZ + generationParams.offset.y) * frequency;
-
-                float perlinValue = Mathf.PerlinNoise(sampleX, sampleZ) * 2f - 1f; // -1 to 1
-                height += perlinValue * amplitude;
-
-                amplitude *= generationParams.persistence;
-                frequency *= generationParams.lacunarity;
-            }
-
-            return height * heightScale;
+            Vector3 local = worldPos - transform.position;
+            return Mathf.Abs(local.x) <= _tileSize * 0.5f && Mathf.Abs(local.z) <= _tileSize * 0.5f;
         }
 
-        /// <summary>
-        /// 地形を更新
-        /// </summary>
-        public void UpdateTerrain(RuntimeTerrainManager.TerrainGenerationParams newParams)
+        public float GetHeightAtWorldPosition(Vector3 worldPos)
         {
-            generationParams = newParams;
-            GenerateTerrainMesh();
+            Vector3 local = worldPos - transform.position;
+            return GetHeightAtLocalPosition(local);
         }
 
-        /// <summary>
-        /// 指定ローカル座標の高さを取得
-        /// </summary>
         public float GetHeightAtLocalPosition(Vector3 localPos)
         {
-            if (terrainMesh == null || terrainMesh.vertices.Length == 0)
-                return 0f;
-
-            // 最も近い頂点の高さを返す（簡易実装）
-            float normalizedX = localPos.x / tileSize;
-            float normalizedZ = localPos.z / tileSize;
-
-            int x = Mathf.Clamp(Mathf.RoundToInt(normalizedX * (resolution - 1)), 0, resolution - 1);
-            int z = Mathf.Clamp(Mathf.RoundToInt(normalizedZ * (resolution - 1)), 0, resolution - 1);
-
-            int vertexIndex = z * resolution + x;
-            return terrainMesh.vertices[vertexIndex].y;
-        }
-
-        /// <summary>
-        /// 地形マテリアルを作成
-        /// </summary>
-        private Material CreateTerrainMaterial()
-        {
-            Material material = new Material(Shader.Find("Standard"));
-
-            // 基本的な地形色設定
-            material.color = new Color(0.4f, 0.6f, 0.2f); // 緑がかった茶色
-
-            // 物理ベースレンダリング設定
-            material.SetFloat("_Metallic", 0f);
-            material.SetFloat("_Glossiness", 0.1f);
-
-            return material;
-        }
-
-        private void OnDestroy()
-        {
-            if (terrainMesh != null)
+            if (_heightData == null || _heightResolution <= 1)
             {
-                Destroy(terrainMesh);
+                return transform.position.y;
             }
+
+            float normalizedX = Mathf.Clamp01((localPos.x / _tileSize) + 0.5f);
+            float normalizedZ = Mathf.Clamp01((localPos.z / _tileSize) + 0.5f);
+
+            float gridX = normalizedX * (_heightResolution - 1);
+            float gridZ = normalizedZ * (_heightResolution - 1);
+
+            int x0 = Mathf.FloorToInt(gridX);
+            int z0 = Mathf.FloorToInt(gridZ);
+            int x1 = Mathf.Min(x0 + 1, _heightResolution - 1);
+            int z1 = Mathf.Min(z0 + 1, _heightResolution - 1);
+
+            float tx = gridX - x0;
+            float tz = gridZ - z0;
+
+            float h00 = _heightData[z0, x0];
+            float h10 = _heightData[z0, x1];
+            float h01 = _heightData[z1, x0];
+            float h11 = _heightData[z1, x1];
+
+            float h0 = Mathf.Lerp(h00, h10, tx);
+            float h1 = Mathf.Lerp(h01, h11, tz);
+
+            return transform.position.y + Mathf.Lerp(h0, h1, tz) * _heightScale;
         }
+
+        public void SetAppliedBiome(string biomeId)
+        {
+            _appliedBiome = biomeId;
+        }
+        #endregion
     }
 }

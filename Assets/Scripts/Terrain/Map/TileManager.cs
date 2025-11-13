@@ -20,7 +20,7 @@ namespace Vastcore.Generation
         
         [Header("地形生成設定")]
         public MeshGenerator.TerrainGenerationParams defaultTerrainParams = MeshGenerator.TerrainGenerationParams.Default();
-        public CircularTerrainGenerator.CircularTerrainParams defaultCircularParams = CircularTerrainGenerator.CircularTerrainParams.Default();
+        // public CircularTerrainGenerator.CircularTerrainParams defaultCircularParams = CircularTerrainGenerator.CircularTerrainParams.Default();
         public Material defaultTerrainMaterial;
         
         [Header("最適化設定")]
@@ -106,7 +106,7 @@ namespace Vastcore.Generation
             
             // デフォルト設定を調整
             defaultTerrainParams.size = tileSize;
-            defaultCircularParams.radius = tileSize * 0.4f;
+            // defaultCircularParams.radius = tileSize * 0.4f;
             
             // 初期タイルを生成
             if (playerTransform != null)
@@ -341,8 +341,8 @@ namespace Vastcore.Generation
             var terrainParams = defaultTerrainParams;
             terrainParams.offset = new Vector2(tileCoordinate.x * 123.45f, tileCoordinate.y * 67.89f);
             
-            var circularParams = defaultCircularParams;
-            circularParams.center = new Vector2(tileCoordinate.x * tileSize, tileCoordinate.y * tileSize);
+            // var circularParams = defaultCircularParams;
+            // circularParams.center = new Vector2(tileCoordinate.x * tileSize, tileCoordinate.y * tileSize);
             
             // TerrainTileを作成
             var tile = new TerrainTile(tileCoordinate, tileSize, terrainParams, circularParams);
@@ -561,7 +561,7 @@ namespace Vastcore.Generation
             maxActiveTiles = newMaxTiles;
             
             defaultTerrainParams.size = tileSize;
-            defaultCircularParams.radius = tileSize * 0.4f;
+            // defaultCircularParams.radius = tileSize * 0.4f;
             
             if (needsReload)
             {

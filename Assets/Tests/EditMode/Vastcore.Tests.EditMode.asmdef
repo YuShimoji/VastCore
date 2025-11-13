@@ -7,7 +7,6 @@
     "Vastcore.Generation",
     "Vastcore.Terrain",
     "Vastcore.Player",
-    "Vastcore.UI",
     "Unity.ProBuilder",
     "Unity.TextMeshPro"
   ],

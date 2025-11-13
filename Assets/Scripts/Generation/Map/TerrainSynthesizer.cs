@@ -127,10 +127,10 @@ namespace Vastcore.Generation
 
                     if (mapX >= 0 && mapX < mapWidth && mapY >= 0 && mapY < mapHeight)
                     {
-                        float templateHeight = templateData[templateX, templateY];
+                        float templateHeightValue = templateData[templateX, templateY];
                         float blendStrength = CalculateBlendStrength(template, worldPosition, new Vector2Int(mapX, mapY));
 
-                        heightmap[mapX, mapY] = Mathf.Lerp(heightmap[mapX, mapY], templateHeight, blendStrength);
+                        heightmap[mapX, mapY] = Mathf.Lerp(heightmap[mapX, mapY], templateHeightValue, blendStrength);
                     }
                 }
             }

@@ -185,7 +185,7 @@ namespace Vastcore.Generation
             {
                 if (template != null)
                 {
-                    BiomeSpecificTerrainGenerator.RegisterTemplate(template);
+                    // BiomeSpecificTerrainGenerator.RegisterTemplate(template);
                 }
             }
         }
@@ -355,16 +355,16 @@ namespace Vastcore.Generation
             BiomeType biomeType = DetermineBiomeAtPosition(tile.worldPosition);
 
             // テンプレート適用
-            var template = BiomeSpecificTerrainGenerator.GetRandomTemplateForBiome(biomeType, tile.worldPosition);
-            if (template != null)
-            {
-                TerrainSynthesizer.SynthesizeTerrain(tile.heightData, template, tile.worldPosition);
-            }
-            else
-            {
+            // var template = BiomeSpecificTerrainGenerator.GetRandomTemplateForBiome(biomeType, tile.worldPosition);
+            // if (template != null)
+            // {
+            //     TerrainSynthesizer.SynthesizeTerrain(tile.heightData, template, tile.worldPosition);
+            // }
+            // else
+            // {
                 // フォールバック：ベース地形生成
                 GenerateBaseTerrain(tile);
-            }
+            // }
         }
 
         /// <summary>
@@ -379,7 +379,7 @@ namespace Vastcore.Generation
             if (biomeDefinition != null)
             {
                 // バイオーム定義に基づくプロシージャル生成
-                BiomeSpecificTerrainGenerator.GenerateProceduralTerrain(tile.heightData, biomeDefinition, tile.worldPosition);
+                // BiomeSpecificTerrainGenerator.GenerateProceduralTerrain(tile.heightData, biomeDefinition, tile.worldPosition);
             }
             else
             {
@@ -402,7 +402,7 @@ namespace Vastcore.Generation
 
             if (biomeDefinition != null && biomeDefinition.terrainModifiers != null)
             {
-                BiomeSpecificTerrainGenerator.ApplyTerrainModifiers(tile.heightData, biomeDefinition.terrainModifiers);
+                // BiomeSpecificTerrainGenerator.ApplyTerrainModifiers(tile.heightData, biomeDefinition.terrainModifiers);
             }
         }
 
@@ -443,6 +443,16 @@ namespace Vastcore.Generation
             tileObject.transform.position = worldPosition;
 
             TerrainTile tile = tileObject.AddComponent<TerrainTile>();
+            InitializeTerrainTile(tile, coordinate, worldPosition);
+
+            return tile;
+        }
+
+        /// <summary>
+        /// TerrainTile を初期化
+        /// </summary>
+        private void InitializeTerrainTile(TerrainTile tile, Vector2Int coordinate, Vector3 worldPosition)
+        {
             tile.coordinate = coordinate;
             tile.worldPosition = worldPosition;
 
@@ -469,8 +479,6 @@ namespace Vastcore.Generation
                     tile.heightData = new float[256, 256];
                     break;
             }
-
-            return tile;
         }
 
         /// <summary>
