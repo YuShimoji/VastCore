@@ -27,24 +27,4 @@ namespace Vastcore.Generation
             };
         }
     }
-    
-    // 簡易的なバイオーム定義クラス
-    public class BiomeDefinition
-    {
-        public BiomeType biomeType;
-        public string name;
-        public Vector2 temperatureRange;
-        public Vector2 moistureRange;
-        public Vector2 elevationRange;
-        public TerrainModificationData terrainModifiers;
-    }
-    
-    // 地形修正データクラス
-    public class TerrainModificationData
-    {
-        public float heightMultiplier = 1f;
-        public float roughnessMultiplier = 1f;
-        public float erosionStrength = 0f;
-        public float sedimentationRate = 0f;
-    }
 }

@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Generation;
+using Vastcore.Terrain.Map;
+using Vastcore.Core;
 
 namespace Vastcore.Generation
 {
@@ -20,7 +22,6 @@ namespace Vastcore.Generation
         
         [Header("地形生成設定")]
         public MeshGenerator.TerrainGenerationParams defaultTerrainParams = MeshGenerator.TerrainGenerationParams.Default();
-        // public CircularTerrainGenerator.CircularTerrainParams defaultCircularParams = CircularTerrainGenerator.CircularTerrainParams.Default();
         public Material defaultTerrainMaterial;
         
         [Header("最適化設定")]
@@ -106,7 +107,6 @@ namespace Vastcore.Generation
             
             // デフォルト設定を調整
             defaultTerrainParams.size = tileSize;
-            // defaultCircularParams.radius = tileSize * 0.4f;
             
             // 初期タイルを生成
             if (playerTransform != null)
@@ -128,25 +128,12 @@ namespace Vastcore.Generation
             {
                 return;
             }
-
-            // "Player"タグのオブジェクトを検索
-            var playerObject = GameObject.FindGameObjectWithTag("Player");
-            if (playerObject != null)
+            // 共通解決ロジックに統一
+            playerTransform = PlayerTransformResolver.Resolve(playerTransform);
+            if (playerTransform == null)
             {
-                playerTransform = playerObject.transform;
-                Debug.Log("Found Player by tag");
-                return;
+                Debug.LogWarning("Could not find player transform");
             }
-            
-            // メインカメラを使用
-            if (Camera.main != null)
-            {
-                playerTransform = Camera.main.transform;
-                Debug.Log("Using Main Camera as player");
-                return;
-            }
-            
-            Debug.LogWarning("Could not find player transform");
         }
         
         /// <summary>
@@ -341,11 +328,14 @@ namespace Vastcore.Generation
             var terrainParams = defaultTerrainParams;
             terrainParams.offset = new Vector2(tileCoordinate.x * 123.45f, tileCoordinate.y * 67.89f);
             
-            // var circularParams = defaultCircularParams;
-            // circularParams.center = new Vector2(tileCoordinate.x * tileSize, tileCoordinate.y * tileSize);
+            var circularParams = CircularTerrainGenerator.CircularTerrainParams.Default();
+            circularParams.center = new Vector2(
+                tileCoordinate.x * tileSize + tileSize * 0.5f,
+                tileCoordinate.y * tileSize + tileSize * 0.5f
+            );
             
             // TerrainTileを作成
-            var tile = new TerrainTile(tileCoordinate, tileSize, terrainParams, circularParams);
+            var tile = TerrainTile.Create(tileCoordinate, tileSize, terrainParams, circularParams);
             tile.terrainMaterial = defaultTerrainMaterial;
             
             loadingTiles[tileCoordinate] = tile;

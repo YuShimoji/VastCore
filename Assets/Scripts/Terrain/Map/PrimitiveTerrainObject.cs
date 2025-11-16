@@ -100,7 +100,7 @@ namespace Vastcore.Terrain.Map
             isPooled = true;
             
             // インタラクション設定の更新
-            UpdateInteractionSettings();
+            this.UpdateInteractionSettings();
             
             // LOD設定の初期化
             currentLODLevel = 0;

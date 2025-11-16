@@ -462,7 +462,7 @@ namespace Vastcore.Generation
         /// </summary>
         private TerrainTile CreateTestTile(string name, int x, int y)
         {
-            var tile = new TerrainTile(new Vector2Int(x, y), 1000f);
+            var tile = TerrainTile.Create(new Vector2Int(x, y), 1000f);
             
             // テスト用のハイトマップを作成
             int resolution = 64;

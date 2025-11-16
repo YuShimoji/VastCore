@@ -44,8 +44,8 @@ graph TD
     end
 
     subgraph テストシステム
-        N[VastcoreIntegrationTestManager] --> O[MemoryManagementTestCase]
-        N --> P[SystemIntegrationTestCase - TODO]
+        N[TestManager] --> O[ComprehensiveSystemTest]
+        N --> P[EditMode / PlayMode Tests]
     end
 ```
 
@@ -150,7 +150,7 @@ Vastcore Terrain Engineは、広大な3D空間での動的地形生成と管理�
 - macOS (Intel/Apple Silicon)
 
 ### 依存関係
-- Unity 2022.3+
+- Unity 6000.2.2f1 (Unity 6)
 - .NET Standard 2.1
 
 ### パフォーマンス要件

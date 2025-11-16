@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Generation;
 
 namespace Vastcore.Terrain.Map
 {
@@ -33,23 +34,7 @@ namespace Vastcore.Terrain.Map
         {
             if (playerTransform == null)
             {
-                // 複数の方法でPlayer Transformを検索
-                playerTransform = FindFirstObjectByType<AdvancedPlayerController>()?.transform;
-                
-                if (playerTransform == null)
-                {
-                    playerTransform = ResolvePlayerTransform();
-                }
-                
-                if (playerTransform == null)
-                {
-                    // Player tagを持つオブジェクトを探す
-                    var playerObj = GameObject.FindGameObjectWithTag("Player");
-                    if (playerObj != null)
-                    {
-                        playerTransform = playerObj.transform;
-                    }
-                }
+                playerTransform = PlayerTransformResolver.Resolve(playerTransform);
             }
             
             if (playerTransform != null)
@@ -193,27 +178,6 @@ namespace Vastcore.Terrain.Map
                 0f,
                 tileCoord.y * tileSize + tileSize * 0.5f
             );
-        }
-
-        private Transform ResolvePlayerTransform()
-        {
-            if (playerTransform != null)
-                return playerTransform;
-
-            GameObject taggedObject = null;
-            try
-            {
-                taggedObject = GameObject.FindGameObjectWithTag("Player");
-            }
-            catch (UnityException)
-            {
-            }
-
-            if (taggedObject != null)
-                return taggedObject.transform;
-
-            var mainCamera = Camera.main;
-            return mainCamera != null ? mainCamera.transform : null;
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using Vastcore.Terrain.Map;
 
 
 namespace Vastcore.Generation.Cache
@@ -109,12 +110,8 @@ namespace Vastcore.Generation.Cache
             
             statistics = new CacheStatistics();
             
-            // 繝励Ξ繧､繝､繝ｼ縺ｮ讀懃ｴ｢
-            var player = FindFirstObjectByType<AdvancedPlayerController>();
-            if (player != null)
-            {
-                playerTransform = player.transform;
-            }
+            // プレイヤー Transform の解決
+            playerTransform = PlayerTransformResolver.Resolve(playerTransform);
             
             // 繝・ぅ繧ｹ繧ｯ繧ｭ繝｣繝・す繝･繝・ぅ繝ｬ繧ｯ繝医Μ縺ｮ菴懈・
             if (enablePersistentCache)

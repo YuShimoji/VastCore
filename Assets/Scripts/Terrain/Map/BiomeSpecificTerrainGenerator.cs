@@ -75,6 +75,15 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
+        /// バイオーム共通の後処理（スタブ実装）。
+        /// 必要に応じてスムージングや境界ブレンド等を実装可能。
+        /// </summary>
+        private static void ApplyBiomePostProcessing(float[,] heightmap, BiomeDefinition biomeDefinition, Vector3 worldPosition)
+        {
+            // 現段階では何もしない（将来拡張用）。
+        }
+
+        /// <summary>
         /// デザイナーテンプレートの適用を試行
         /// </summary>
         private static bool TryApplyDesignerTemplates(float[,] heightmap, BiomeType biomeType, Vector3 worldPosition)

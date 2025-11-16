@@ -20,7 +20,7 @@ namespace Vastcore.Generation.Map
         [SerializeField] private float tileUnloadDistance = 200f;
 
         // 地形タイル管理
-        private Dictionary<Vector2Int, TerrainTile> activeTiles = new Dictionary<Vector2Int, TerrainTile>();
+        private Dictionary<Vector2Int, TerrainTileComponent> activeTiles = new Dictionary<Vector2Int, TerrainTileComponent>();
         private Queue<Vector2Int> tileLoadQueue = new Queue<Vector2Int>();
         private Transform playerTransform;
 
@@ -135,7 +135,7 @@ namespace Vastcore.Generation.Map
             tileObj.transform.parent = transform;
             tileObj.transform.position = TileCoordToWorld(tileCoord);
 
-            TerrainTile terrainTile = tileObj.AddComponent<TerrainTile>();
+            TerrainTileComponent terrainTile = tileObj.AddComponent<TerrainTileComponent>();
             float[,] heightData = GenerateHeightmap(tileCoord);
             Mesh mesh = BuildMesh(heightData);
 
@@ -185,7 +185,7 @@ namespace Vastcore.Generation.Map
         public float GetHeightAtPosition(Vector3 position)
         {
             Vector2Int tileCoord = WorldToTileCoord(position);
-            if (activeTiles.TryGetValue(tileCoord, out TerrainTile tile))
+            if (activeTiles.TryGetValue(tileCoord, out TerrainTileComponent tile))
             {
                 return tile.GetHeightAtWorldPosition(position);
             }
@@ -206,7 +206,7 @@ namespace Vastcore.Generation.Map
             }
         }
 
-        private void RegenerateTile(Vector2Int coord, TerrainTile tile)
+        private void RegenerateTile(Vector2Int coord, TerrainTileComponent tile)
         {
             float[,] heightData = GenerateHeightmap(coord);
             Mesh mesh = BuildMesh(heightData);

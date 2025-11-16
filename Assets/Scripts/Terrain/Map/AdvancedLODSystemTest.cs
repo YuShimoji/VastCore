@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 using NUnit.Framework;
+using Vastcore.Terrain;
+using Vastcore.Core;
 
 namespace Vastcore.Generation.Map
 {
@@ -350,14 +352,11 @@ namespace Vastcore.Generation.Map
                 tileObject.transform.position = new Vector3(i * 200f, 0, 0);
                 tileObject.transform.localScale = Vector3.one * 20f;
                 
-                var tile = new TerrainTile
-                {
-                    coordinate = new Vector2Int(i, 0),
-                    tileObject = tileObject,
-                    terrainMesh = tileObject.GetComponent<MeshFilter>().mesh,
-                    heightmap = GenerateTestHeightData(64),
-                    state = TerrainTile.TileState.Active
-                };
+                var tile = TerrainTile.Create(new Vector2Int(i, 0), 1000f);
+                tile.tileObject = tileObject;
+                tile.terrainMesh = tileObject.GetComponent<MeshFilter>().mesh;
+                tile.heightmap = GenerateTestHeightData(64);
+                tile.state = TerrainTile.TileState.Active;
                 
                 tiles.Add(tile);
                 testObjects.Add(tileObject);

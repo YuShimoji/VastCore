@@ -48,7 +48,7 @@ namespace Vastcore.Generation.Map
 
         // 参照コンポーネント
         private Transform playerTransform;
-        private RuntimeTerrainManager terrainManager;
+        private Vastcore.Generation.RuntimeTerrainManager terrainManager;
         private PrimitiveTerrainManager primitiveManager;
 
         // イベント
@@ -125,7 +125,7 @@ namespace Vastcore.Generation.Map
             }
 
             // 地形管理システムを取得
-            terrainManager = FindFirstObjectByType<RuntimeTerrainManager>();
+            terrainManager = FindFirstObjectByType<Vastcore.Generation.RuntimeTerrainManager>();
             primitiveManager = FindFirstObjectByType<PrimitiveTerrainManager>();
         }
 

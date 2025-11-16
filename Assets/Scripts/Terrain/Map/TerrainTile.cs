@@ -94,29 +94,48 @@ namespace Vastcore.Generation
         
         #endregion
 
-        #region コンストラクタ
+        #region Factory
         /// <summary>
-        /// デフォルトコンストラクタ（使用不可）
+        /// TerrainTile の生成ファクトリ
         /// </summary>
-        private TerrainTile()
+        public static TerrainTile Create(
+            Vector2Int coord,
+            float size,
+            MeshGenerator.TerrainGenerationParams terrainParams,
+            CircularTerrainGenerator.CircularTerrainParams circularParams)
         {
-            // MonoBehaviour ではコンストラクタを使用しない
+            // 内部コンストラクタは使用せず、必要フィールドを初期化
+            var tile = new TerrainTile();
+            tile.coordinate = coord;
+            tile.tileSize = size;
+            tile.worldPosition = new Vector3(
+                coord.x * size + size * 0.5f,
+                0f,
+                coord.y * size + size * 0.5f
+            );
+            tile.state = TileState.Unloaded;
+            tile.terrainParams = terrainParams;
+            tile.circularParams = circularParams;
+            tile.createdAt = System.DateTime.Now;
+            tile.lastAccessedAt = tile.createdAt;
+            tile.accessCount = 0;
+            tile.isVisible = false;
+            tile.hasCollider = false;
+            tile.distanceFromPlayer = float.MaxValue;
+            tile.currentLOD = LODLevel.High;
+            return tile;
         }
-        
+
         /// <summary>
-        /// 座標指定コンストラクタ（使用不可）
+        /// 既定パラメータで TerrainTile を生成する簡易オーバーロード（テスト用途など）
         /// </summary>
-        private TerrainTile(Vector2Int coord, float size)
+        public static TerrainTile Create(Vector2Int coord, float size)
         {
-            // MonoBehaviour ではコンストラクタを使用しない
-        }
-        
-        /// <summary>
-        /// 完全指定コンストラクタ（使用不可）
-        /// </summary>
-        private TerrainTile(Vector2Int coord, float size, MeshGenerator.TerrainGenerationParams terrainParams, CircularTerrainGenerator.CircularTerrainParams circularParams)
-        {
-            // MonoBehaviour ではコンストラクタを使用しない
+            var t = MeshGenerator.TerrainGenerationParams.Default();
+            var c = CircularTerrainGenerator.CircularTerrainParams.Default();
+            // 半径0にして円形マスクを無効化
+            c.radius = 0f;
+            return Create(coord, size, t, c);
         }
         #endregion
 

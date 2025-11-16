@@ -52,7 +52,7 @@ namespace Vastcore.Generation
         public bool useMultithreading = false;
 
         // 内部状態
-        private Dictionary<Vector2Int, TerrainTile> activeTiles = new Dictionary<Vector2Int, TerrainTile>();
+        private Dictionary<Vector2Int, TerrainTileComponent> activeTiles = new Dictionary<Vector2Int, TerrainTileComponent>();
         private Queue<TerrainGenerationTask> generationQueue = new Queue<TerrainGenerationTask>();
         private HashSet<Vector2Int> processingTiles = new HashSet<Vector2Int>();
         private bool isInitialized = false;
@@ -197,7 +197,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// 指定座標の地形タイルを生成
         /// </summary>
-        public TerrainTile GenerateTerrainTile(Vector2Int coordinate, Vector3 worldPosition)
+        public TerrainTileComponent GenerateTerrainTile(Vector2Int coordinate, Vector3 worldPosition)
         {
             if (!isInitialized)
             {
@@ -229,7 +229,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// 地形タイルを同期生成
         /// </summary>
-        public TerrainTile GenerateTerrainTileSync(Vector2Int coordinate, Vector3 worldPosition)
+        public TerrainTileComponent GenerateTerrainTileSync(Vector2Int coordinate, Vector3 worldPosition)
         {
             if (!isInitialized)
             {
@@ -244,7 +244,7 @@ namespace Vastcore.Generation
             }
 
             // 直接生成
-            TerrainTile tile = CreateTerrainTile(coordinate, worldPosition);
+            TerrainTileComponent tile = CreateTerrainTile(coordinate, worldPosition);
             GenerateTileContent(tile, generationMode);
 
             activeTiles[coordinate] = tile;
@@ -294,7 +294,7 @@ namespace Vastcore.Generation
         private System.Collections.IEnumerator GenerateTileAsync(TerrainGenerationTask task)
         {
             // タイル作成
-            TerrainTile tile = CreateTerrainTile(task.coordinate, task.worldPosition);
+            TerrainTileComponent tile = CreateTerrainTile(task.coordinate, task.worldPosition);
 
             // コンテンツ生成（重い処理なのでコルーチン内で）
             yield return StartCoroutine(GenerateTileContentAsync(tile, task.generationMode));
@@ -309,7 +309,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// タイルコンテンツを生成（同期）
         /// </summary>
-        private void GenerateTileContent(TerrainTile tile, TerrainGenerationMode mode)
+        private void GenerateTileContent(TerrainTileComponent tile, TerrainGenerationMode mode)
         {
             switch (mode)
             {
@@ -328,7 +328,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// タイルコンテンツを生成（非同期）
         /// </summary>
-        private System.Collections.IEnumerator GenerateTileContentAsync(TerrainTile tile, TerrainGenerationMode mode)
+        private System.Collections.IEnumerator GenerateTileContentAsync(TerrainTileComponent tile, TerrainGenerationMode mode)
         {
             switch (mode)
             {
@@ -349,7 +349,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// テンプレートベース生成
         /// </summary>
-        private void GenerateFromTemplates(TerrainTile tile)
+        private void GenerateFromTemplates(TerrainTileComponent tile)
         {
             // バイオーム判定
             BiomeType biomeType = DetermineBiomeAtPosition(tile.worldPosition);
@@ -370,7 +370,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// プロシージャル生成
         /// </summary>
-        private void GenerateProcedural(TerrainTile tile)
+        private void GenerateProcedural(TerrainTileComponent tile)
         {
             // バイオーム固有のプロシージャル生成
             BiomeType biomeType = DetermineBiomeAtPosition(tile.worldPosition);
@@ -391,7 +391,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// ハイブリッド生成
         /// </summary>
-        private void GenerateHybrid(TerrainTile tile)
+        private void GenerateHybrid(TerrainTileComponent tile)
         {
             // まずテンプレートを試行
             GenerateFromTemplates(tile);
@@ -409,7 +409,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// ベース地形生成
         /// </summary>
-        private void GenerateBaseTerrain(TerrainTile tile)
+        private void GenerateBaseTerrain(TerrainTileComponent tile)
         {
             // シンプルなノイズベース地形
             int width = tile.heightData.GetLength(0);
@@ -437,12 +437,12 @@ namespace Vastcore.Generation
         /// <summary>
         /// タイルオブジェクトを作成
         /// </summary>
-        private TerrainTile CreateTerrainTile(Vector2Int coordinate, Vector3 worldPosition)
+        private TerrainTileComponent CreateTerrainTile(Vector2Int coordinate, Vector3 worldPosition)
         {
             GameObject tileObject = new GameObject($"TerrainTile_{coordinate.x}_{coordinate.y}");
             tileObject.transform.position = worldPosition;
 
-            TerrainTile tile = tileObject.AddComponent<TerrainTile>();
+            TerrainTileComponent tile = tileObject.AddComponent<TerrainTileComponent>();
             InitializeTerrainTile(tile, coordinate, worldPosition);
 
             return tile;
@@ -451,7 +451,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// TerrainTile を初期化
         /// </summary>
-        private void InitializeTerrainTile(TerrainTile tile, Vector2Int coordinate, Vector3 worldPosition)
+        private void InitializeTerrainTile(TerrainTileComponent tile, Vector2Int coordinate, Vector3 worldPosition)
         {
             tile.coordinate = coordinate;
             tile.worldPosition = worldPosition;
@@ -505,15 +505,15 @@ namespace Vastcore.Generation
         /// <summary>
         /// アクティブなタイルを取得
         /// </summary>
-        public Dictionary<Vector2Int, TerrainTile> GetActiveTiles()
+        public Dictionary<Vector2Int, TerrainTileComponent> GetActiveTiles()
         {
-            return new Dictionary<Vector2Int, TerrainTile>(activeTiles);
+            return new Dictionary<Vector2Int, TerrainTileComponent>(activeTiles);
         }
 
         /// <summary>
         /// 指定座標のタイルを取得
         /// </summary>
-        public TerrainTile GetTileAt(Vector2Int coordinate)
+        public TerrainTileComponent GetTileAt(Vector2Int coordinate)
         {
             return activeTiles.ContainsKey(coordinate) ? activeTiles[coordinate] : null;
         }

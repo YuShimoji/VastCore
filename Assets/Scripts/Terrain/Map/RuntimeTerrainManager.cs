@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
-using Vastcore.Utilities;
+using Vastcore.Utils;
 using Vastcore.Generation;
 using Vastcore.Core;
 
@@ -102,7 +102,7 @@ namespace Vastcore.Generation
 
             if (playerTransform == null)
             {
-                playerTransform = ResolvePlayerTransform();
+                playerTransform = Vastcore.Core.PlayerTransformResolver.Resolve(playerTransform);
             }
 
             // TileManagerにプレイヤー参照を連携
