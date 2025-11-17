@@ -368,9 +368,9 @@ namespace Vastcore.Generation.Map
         /// <summary>
         /// テストプリミティブオブジェクトを作成
         /// </summary>
-        private List<PrimitiveTerrainObject> CreateTestPrimitiveObjects(int count)
+        private List<Vastcore.Terrain.PrimitiveTerrainObject> CreateTestPrimitiveObjects(int count)
         {
-            var primitives = new List<PrimitiveTerrainObject>();
+            var primitives = new List<Vastcore.Terrain.PrimitiveTerrainObject>();
             
             for (int i = 0; i < count; i++)
             {
@@ -379,7 +379,7 @@ namespace Vastcore.Generation.Map
                 primitiveObject.transform.position = new Vector3(i * 150f, 10f, Random.Range(-100f, 100f));
                 primitiveObject.transform.localScale = Vector3.one * Random.Range(5f, 20f);
                 
-                var primitive = primitiveObject.AddComponent<PrimitiveTerrainObject>();
+                var primitive = primitiveObject.AddComponent<Vastcore.Terrain.PrimitiveTerrainObject>();
                 primitive.primitiveType = (GenerationPrimitiveType)((PrimitiveTerrainGenerator.PrimitiveType)(i % 4));
                 primitive.scale = primitiveObject.transform.localScale.magnitude;
                 primitive.enableLOD = true;

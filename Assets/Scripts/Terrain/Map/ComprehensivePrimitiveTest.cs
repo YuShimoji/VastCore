@@ -390,7 +390,7 @@ namespace Vastcore.Generation
             if (!report.HasValue) return;
             var rep = report.Value;
             
-            var primitiveComponent = primitiveObject.GetComponent<PrimitiveTerrainObject>();
+            var primitiveComponent = primitiveObject.GetComponent<Vastcore.Terrain.Map.PrimitiveTerrainObject>();
             if (primitiveComponent != null)
             {
                 if (!primitiveComponent.enableLOD)
@@ -413,7 +413,7 @@ namespace Vastcore.Generation
             if (!report.HasValue) return;
             var rep = report.Value;
             
-            var primitiveComponent = primitiveObject.GetComponent<PrimitiveTerrainObject>();
+            var primitiveComponent = primitiveObject.GetComponent<Vastcore.Terrain.Map.PrimitiveTerrainObject>();
             if (primitiveComponent != null)
             {
                 // プリミティブタイプに応じた適切なインタラクション設定をチェック

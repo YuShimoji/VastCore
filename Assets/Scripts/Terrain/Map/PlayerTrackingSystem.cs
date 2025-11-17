@@ -34,7 +34,7 @@ namespace Vastcore.Terrain.Map
         {
             if (playerTransform == null)
             {
-                playerTransform = PlayerTransformResolver.Resolve(playerTransform);
+                playerTransform = Vastcore.Core.PlayerTransformResolver.Resolve(playerTransform);
             }
             
             if (playerTransform != null)

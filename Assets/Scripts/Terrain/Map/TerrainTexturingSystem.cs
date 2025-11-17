@@ -68,7 +68,7 @@ namespace Vastcore.Generation
             Debug.Log("Initializing TerrainTexturingSystem...");
             
             // プレイヤーTransformを取得
-            playerTransform = PlayerTransformResolver.Resolve(playerTransform);
+            playerTransform = Vastcore.Core.PlayerTransformResolver.Resolve(playerTransform);
             
             // MaterialPropertyBlockを初期化
             materialPropertyBlock = new MaterialPropertyBlock();
