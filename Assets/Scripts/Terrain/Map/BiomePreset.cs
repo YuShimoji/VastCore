@@ -3,30 +3,28 @@ using System.Collections.Generic;
 
 namespace Vastcore.Generation
 {
-    public class BiomePreset : ScriptableObject
+    [System.Serializable]
+    public class BiomeMaterialSettings
     {
-        public string presetName = "Default Biome";
+        public Color terrainTint = Color.white;
+        public Color ambientColor = Color.gray;
+    }
 
-        [Range(0f, 1f)] public float moisture = 0.5f;
-        [Range(0f, 1f)] public float temperature = 0.5f;
-        [Range(0f, 1f)] public float fertility = 0.5f;
-        [Range(0f, 1f)] public float rockiness = 0.5f;
+    [System.Serializable]
+    public class BiomePreset
+    {
+        public string biomeName = "Default";
+        public float moisture = 0.5f;
+        public float temperature = 0.5f;
 
-        [System.Serializable]
-        public class MaterialSettings
-        {
-            public Color terrainTint = Color.white;
-            public Color ambientColor = Color.gray;
-        }
+        public BiomeMaterialSettings materialSettings = new BiomeMaterialSettings();
+    }
 
-        public MaterialSettings materialSettings = new MaterialSettings();
-
-        public void InitializeDefault()
-        {
-            if (string.IsNullOrEmpty(presetName))
-            {
-                presetName = "Default Biome";
-            }
-        }
+    /// <summary>
+    /// シンプルなバイオームプリセット管理クラス（レガシー互換用の最小スタブ）
+    /// </summary>
+    public class BiomePresetManager : MonoBehaviour
+    {
+        public List<BiomePreset> availablePresets = new List<BiomePreset>();
     }
 }

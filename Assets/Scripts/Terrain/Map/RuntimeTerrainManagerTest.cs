@@ -75,6 +75,10 @@ namespace Vastcore.Generation.Tests
             
             LogTestResults();
             Debug.Log($"Test completion status: HasError={hasError}, Message={errorMessage}");
+<<<<<<< HEAD
+=======
+            
+>>>>>>> febae1c (chore: local terrain cleanup WIP (pre-merge origin/main))
             Debug.Log("=== RuntimeTerrainManager Test Suite Completed ===");
         }
         

@@ -195,16 +195,10 @@ namespace Vastcore.Player
             };
             
             // グラインド可能エッジを検出
-            var primitiveObject = primitive.GetComponent<PrimitiveTerrainObject>();
-            if (primitiveObject != null && primitiveObject.isGrindable)
-            {
-                DetectGrindableEdges(primitive, ref interactionData);
-            }
+            DetectGrindableEdges(primitive, ref interactionData);
             
-            // クライミング可能表面を検出 (PrimitiveTerrainObject削除により一時無効)
-            // if (primitiveObject != null && primitiveObject.isClimbable)
-            // {
-            //     DetectClimbableSurfaces(primitive, ref interactionData);
+            // クライミング可能表面を検出
+            DetectClimbableSurfaces(primitive, ref interactionData);
             // }
             
             // 物理コライダーを設定

@@ -5,7 +5,7 @@ namespace Vastcore.Generation
     /// <summary>
     /// 最小構成の地形タイルコンポーネント
     /// </summary>
-    public class TerrainTileComponent : MonoBehaviour
+    public class TerrainTile : MonoBehaviour
     {
         #region Fields
         [Header("タイル基本情報")]
@@ -61,18 +61,22 @@ namespace Vastcore.Generation
             get => _coordinate;
             set => _coordinate = value;
         }
+
         public Vector3 worldPosition
         {
             get => transform.position;
             set => transform.position = value;
         }
+
         public float tileSize => _tileSize;
         public TileState state => _state;
+
         public float[,] heightData
         {
             get => _heightData;
             set => _heightData = value;
         }
+
         public Mesh terrainMesh => _terrainMesh;
         public Material terrainMaterial => _terrainMaterial;
         public System.DateTime lastAccessTime => _lastAccessedAt;
@@ -122,44 +126,6 @@ namespace Vastcore.Generation
             _state = TileState.Loaded;
             _lastAccessedAt = System.DateTime.Now;
             _accessCount = 0;
-        }
-
-        public void Initialize(Vector2Int tileCoordinate, int size, int resolution, float maxHeight, Vastcore.Generation.Map.RuntimeTerrainManager.TerrainGenerationParams genParams)
-        {
-            _coordinate = tileCoordinate;
-            _tileSize = size;
-            transform.position = new Vector3(tileCoordinate.x * size, 0f, tileCoordinate.y * size);
-
-            _heightResolution = resolution;
-            _heightScale = maxHeight;
-            _heightData = GenerateHeightmapForInit(tileCoordinate, size, resolution, genParams);
-            _terrainMesh = BuildMeshForInit(_heightData, size, maxHeight);
-            _terrainMaterial = _terrainMaterial; // keep as is if already assigned
-
-            _meshFilter.sharedMesh = _terrainMesh;
-            _meshCollider.sharedMesh = _terrainMesh;
-            if (_terrainMaterial != null)
-            {
-                _meshRenderer.sharedMaterial = _terrainMaterial;
-            }
-
-            _state = TileState.Loaded;
-            _lastAccessedAt = System.DateTime.Now;
-            _accessCount = 0;
-        }
-
-        public void UpdateTerrain(Vastcore.Generation.Map.RuntimeTerrainManager.TerrainGenerationParams newParams)
-        {
-            if (_heightResolution <= 0)
-            {
-                return;
-            }
-            _heightData = GenerateHeightmapForInit(_coordinate, (int)_tileSize, _heightResolution, newParams);
-            _terrainMesh = BuildMeshForInit(_heightData, (int)_tileSize, _heightScale);
-            _meshFilter.sharedMesh = _terrainMesh;
-            _meshCollider.sharedMesh = _terrainMesh;
-            _lastAccessedAt = System.DateTime.Now;
-            _accessCount++;
         }
 
         public void SetActive(bool active)
@@ -240,88 +206,6 @@ namespace Vastcore.Generation
         public void SetAppliedBiome(string biomeId)
         {
             _appliedBiome = biomeId;
-        }
-
-        private float[,] GenerateHeightmapForInit(Vector2Int tileCoord, int size, int resolution, Vastcore.Generation.Map.RuntimeTerrainManager.TerrainGenerationParams p)
-        {
-            float[,] heights = new float[resolution, resolution];
-            for (int z = 0; z < resolution; z++)
-            {
-                for (int x = 0; x < resolution; x++)
-                {
-                    float amplitude = p.amplitude;
-                    float frequency = p.frequency;
-                    float noiseValue = 0f;
-                    float weight = 1f;
-
-                    for (int octave = 0; octave < Mathf.Max(1, p.octaves); octave++)
-                    {
-                        float sampleX = (tileCoord.x * size + (x / (float)(resolution - 1) * size)) * frequency + p.offset.x;
-                        float sampleZ = (tileCoord.y * size + (z / (float)(resolution - 1) * size)) * frequency + p.offset.y;
-                        float perlin = Mathf.PerlinNoise(sampleX, sampleZ);
-                        noiseValue += perlin * amplitude * weight;
-                        weight *= p.persistence;
-                        frequency *= p.lacunarity;
-                    }
-
-                    heights[z, x] = Mathf.Clamp01(noiseValue);
-                }
-            }
-            return heights;
-        }
-
-        private Mesh BuildMeshForInit(float[,] heights, int size, float maxHeight)
-        {
-            int resolution = heights.GetLength(0);
-            Vector3[] vertices = new Vector3[resolution * resolution];
-            Vector2[] uvs = new Vector2[resolution * resolution];
-            int[] triangles = new int[(resolution - 1) * (resolution - 1) * 6];
-
-            int v = 0;
-            for (int z = 0; z < resolution; z++)
-            {
-                for (int x = 0; x < resolution; x++)
-                {
-                    float nx = x / (float)(resolution - 1);
-                    float nz = z / (float)(resolution - 1);
-                    float px = (nx - 0.5f) * size;
-                    float pz = (nz - 0.5f) * size;
-                    float py = heights[z, x] * maxHeight;
-                    vertices[v] = new Vector3(px, py, pz);
-                    uvs[v] = new Vector2(nx, nz);
-                    v++;
-                }
-            }
-
-            int t = 0;
-            for (int z = 0; z < resolution - 1; z++)
-            {
-                for (int x = 0; x < resolution - 1; x++)
-                {
-                    int topLeft = z * resolution + x;
-                    int topRight = topLeft + 1;
-                    int bottomLeft = topLeft + resolution;
-                    int bottomRight = bottomLeft + 1;
-
-                    triangles[t++] = topLeft;
-                    triangles[t++] = bottomRight;
-                    triangles[t++] = bottomLeft;
-
-                    triangles[t++] = topLeft;
-                    triangles[t++] = topRight;
-                    triangles[t++] = bottomRight;
-                }
-            }
-
-            var mesh = new Mesh
-            {
-                vertices = vertices,
-                uv = uvs,
-                triangles = triangles
-            };
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            return mesh;
         }
         #endregion
     }

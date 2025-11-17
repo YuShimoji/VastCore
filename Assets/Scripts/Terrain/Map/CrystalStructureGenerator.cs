@@ -10,7 +10,6 @@ namespace Vastcore.Generation
     /// 結晶学的構造生成エンジン
     /// 実際の結晶学に基づいた6種類の結晶系を実装
     /// </summary>
-    [System.Obsolete("Experimental crystal structure generator. Not used in core terrain pipeline.")]
     public static class CrystalStructureGenerator
     {
         #region 結晶系定義
@@ -272,7 +271,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static ProBuilderMesh GenerateCubicCrystal(CrystalGenerationParams parameters)
         {
-            var crystal = ShapeGenerator.CreateShape(ShapeType.Cube);
+            var crystal = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center, Vector3.one);
             
             // 立方晶系の特徴的な形状に変形
             var vertices = crystal.positions.ToArray();
@@ -302,7 +301,7 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateHexagonalCrystal(CrystalGenerationParams parameters)
         {
             // 六角柱をベースに生成
-            var crystal = ShapeGenerator.CreateShape(ShapeType.Cylinder);
+            var crystal = ShapeGenerator.CreateShape(ShapeType.Cylinder, PivotLocation.Center, Vector3.one);
             
             // 六角形に変形
             var vertices = crystal.positions.ToArray();
@@ -346,7 +345,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static ProBuilderMesh GenerateTetragonalCrystal(CrystalGenerationParams parameters)
         {
-            var crystal = ShapeGenerator.CreateShape(ShapeType.Cube);
+            var crystal = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center, Vector3.one);
             
             // 正方晶系の特徴（c軸が異なる）を適用
             var vertices = crystal.positions.ToArray();
@@ -381,7 +380,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static ProBuilderMesh GenerateOrthorhombicCrystal(CrystalGenerationParams parameters)
         {
-            var crystal = ShapeGenerator.CreateShape(ShapeType.Cube);
+            var crystal = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center, Vector3.one);
             
             // 三つの軸がすべて異なる長さ
             var vertices = crystal.positions.ToArray();
@@ -407,7 +406,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static ProBuilderMesh GenerateMonoclinicCrystal(CrystalGenerationParams parameters)
         {
-            var crystal = ShapeGenerator.CreateShape(ShapeType.Cube);
+            var crystal = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center, Vector3.one);
             
             // β角が90度でない（斜軸）
             var vertices = crystal.positions.ToArray();
@@ -438,7 +437,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static ProBuilderMesh GenerateTriclinicCrystal(CrystalGenerationParams parameters)
         {
-            var crystal = ShapeGenerator.CreateShape(ShapeType.Cube);
+            var crystal = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center, Vector3.one);
             
             // すべての角度が90度でない（最も低い対称性）
             var vertices = crystal.positions.ToArray();

@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
-using Vastcore.Terrain;
+using Vastcore.Terrain.Map;
 
 namespace Vastcore.Generation.Map
 {
