@@ -111,7 +111,7 @@ namespace Vastcore.Generation.Cache
             statistics = new CacheStatistics();
             
             // プレイヤー Transform の解決
-            playerTransform = PlayerTransformResolver.Resolve(playerTransform);
+            playerTransform = Vastcore.Core.PlayerTransformResolver.Resolve(playerTransform);
             
             // 繝・ぅ繧ｹ繧ｯ繧ｭ繝｣繝・す繝･繝・ぅ繝ｬ繧ｯ繝医Μ縺ｮ菴懈・
             if (enablePersistentCache)

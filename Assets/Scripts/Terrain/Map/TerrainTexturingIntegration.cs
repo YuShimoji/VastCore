@@ -108,7 +108,7 @@ namespace Vastcore.Generation
             }
             
             // プレイヤーTransformを取得
-            playerTransform = PlayerTransformResolver.Resolve(playerTransform);
+            playerTransform = Vastcore.Core.PlayerTransformResolver.Resolve(playerTransform);
             
             // イベントハンドラーを登録
             RegisterEventHandlers();

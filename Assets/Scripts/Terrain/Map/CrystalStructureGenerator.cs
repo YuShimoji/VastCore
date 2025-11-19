@@ -10,7 +10,6 @@ namespace Vastcore.Generation
     /// 結晶学的構造生成エンジン
     /// 実際の結晶学に基づいた6種類の結晶系を実装
     /// </summary>
-    [System.Obsolete("Experimental crystal structure generator. Not used in core terrain pipeline.")]
     public static class CrystalStructureGenerator
     {
         #region 結晶系定義

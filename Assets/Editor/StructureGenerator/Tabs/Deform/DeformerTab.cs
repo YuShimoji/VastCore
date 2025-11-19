@@ -4,7 +4,6 @@ using Vastcore.Editor.Generation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Deform;
 
 namespace Vastcore.Editor.StructureGenerator.Tabs
 {
@@ -30,7 +29,22 @@ namespace Vastcore.Editor.StructureGenerator.Tabs
         {
             _availableDeformers = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => type.IsSubclassOf(typeof(Deformer)) && !type.IsAbstract)
+                .Where(type =>
+                {
+                    if (type.IsAbstract)
+                        return false;
+
+                    var baseType = type.BaseType;
+                    while (baseType != null)
+                    {
+                        if (baseType.FullName == "Deform.Deformer")
+                            return true;
+
+                        baseType = baseType.BaseType;
+                    }
+
+                    return false;
+                })
                 .ToList();
 
             _deformerNames = _availableDeformers.Select(t => t.Name).ToArray();
@@ -79,4 +93,3 @@ namespace Vastcore.Editor.StructureGenerator.Tabs
         }
     }
 }
- 

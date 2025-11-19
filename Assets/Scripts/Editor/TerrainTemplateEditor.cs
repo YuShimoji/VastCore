@@ -4,6 +4,8 @@ using UnityEditor;
 using System.Collections.Generic;
 using Vastcore.Generation;
 using Vastcore.Terrain.Map;
+using Vastcore.Generation.Map;
+using TemplateBlendSettings = Vastcore.Generation.Map.BlendSettings;
 
 namespace Vastcore.Editor
 {
@@ -308,15 +310,15 @@ namespace Vastcore.Editor
             {
                 if (GUILayout.Button("ブレンド設定を作成"))
                 {
-                    selectedTemplate.blendSettings = CreateInstance<BlendSettings>();
+                    selectedTemplate.blendSettings = CreateInstance<TemplateBlendSettings>();
                     AssetDatabase.CreateAsset(selectedTemplate.blendSettings, "Assets/Settings/BlendSettings_" + selectedTemplate.templateName + ".asset");
                 }
             }
             else
             {
-                EditorGUILayout.ObjectField("ブレンド設定", selectedTemplate.blendSettings, typeof(BlendSettings), false);
+                EditorGUILayout.ObjectField("ブレンド設定", selectedTemplate.blendSettings, typeof(TemplateBlendSettings), false);
                 // BlendSettingsのプロパティをインスペクター表示
-                DrawBlendSettingsInspector(selectedTemplate.blendSettings);
+                DrawBlendSettingsInspector((TemplateBlendSettings)selectedTemplate.blendSettings);
             }
 
             EditorGUI.indentLevel--;
@@ -325,11 +327,11 @@ namespace Vastcore.Editor
         /// <summary>
         /// ブレンド設定インスペクターを描画
         /// </summary>
-        private void DrawBlendSettingsInspector(BlendSettings settings)
+        private void DrawBlendSettingsInspector(TemplateBlendSettings settings)
         {
             if (settings == null) return;
 
-            settings.blendMode = (BlendMode)EditorGUILayout.EnumPopup("ブレンドモード", settings.blendMode);
+            settings.blendMode = (TemplateBlendMode)EditorGUILayout.EnumPopup("ブレンドモード", settings.blendMode);
 
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -744,3 +746,8 @@ namespace Vastcore.Editor
 #endif
             return null;
         }
+
+        #endregion
+    }
+}
+#endif

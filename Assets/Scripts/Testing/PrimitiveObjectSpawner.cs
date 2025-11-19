@@ -21,11 +21,11 @@ namespace Vastcore.Testing
         [SerializeField] private bool spawnClimbable = true;
         [SerializeField] private bool spawnGrindable = true;
 
-        private Terrain currentTerrain;
+        private UnityEngine.Terrain currentTerrain;
 
         void Start()
         {
-            currentTerrain = FindObjectOfType<Terrain>();
+            currentTerrain = FindObjectOfType<UnityEngine.Terrain>();
         }
 
         [ContextMenu("Spawn Primitive Objects")]
@@ -39,7 +39,7 @@ namespace Vastcore.Testing
 
             if (currentTerrain == null)
             {
-                currentTerrain = FindObjectOfType<Terrain>();
+                currentTerrain = FindObjectOfType<UnityEngine.Terrain>();
                 if (currentTerrain == null)
                 {
                     Debug.LogError("No terrain found! Generate terrain first.");

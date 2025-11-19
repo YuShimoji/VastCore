@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using Vastcore.Utils;
-using Vastcore.Terrain.Map;
 
 namespace Vastcore.Generation
 {
@@ -138,7 +137,7 @@ namespace Vastcore.Generation
             // プレイヤーTransformを取得
             if (playerTransform == null)
             {
-                playerTransform = PlayerTransformResolver.Resolve(playerTransform);
+                playerTransform = Vastcore.Core.PlayerTransformResolver.Resolve(playerTransform);
             }
             
             // 繧ｳ繝ｫ繝ｼ繝√Φ繧帝幕蟋・

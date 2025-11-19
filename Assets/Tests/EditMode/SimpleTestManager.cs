@@ -1,3 +1,4 @@
+#if VASTCORE_SIMPLE_TEST_ENABLED
 using UnityEngine;
 using Vastcore.Generation;
 
@@ -214,8 +215,9 @@ namespace Vastcore.Testing
             if (autoGenerate && Application.isPlaying)
             {
                 GenerateTerrain();
-        }
+            }
         }
         #endregion
     }
 }
+#endif
