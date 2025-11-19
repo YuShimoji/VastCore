@@ -129,7 +129,7 @@ namespace Vastcore.Generation
                 return;
             }
             // 共通解決ロジックに統一
-            playerTransform = PlayerTransformResolver.Resolve(playerTransform);
+            playerTransform = Vastcore.Core.PlayerTransformResolver.Resolve(playerTransform);
             if (playerTransform == null)
             {
                 Debug.LogWarning("Could not find player transform");

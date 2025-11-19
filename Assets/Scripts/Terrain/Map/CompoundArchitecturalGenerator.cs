@@ -4,6 +4,7 @@ using UnityEngine.ProBuilder.MeshOperations;
 using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Utils;
+using Vastcore.Terrain;
 
 namespace Vastcore.Generation
 {
@@ -1216,12 +1217,12 @@ namespace Vastcore.Generation
         private static void SetupCompoundInteractions(GameObject parent, CompoundArchitecturalParams parameters)
         {
             // プリミティブ地形オブジェクトコンポーネントを追加
-            var compoundComponent = parent.AddComponent<PrimitiveTerrainObject>();
-            compoundComponent.primitiveType = GenerationPrimitiveType.Arch;
+            var compoundComponent = parent.AddComponent<Vastcore.Terrain.PrimitiveTerrainObject>();
+            compoundComponent.primitiveType = Vastcore.Core.GenerationPrimitiveType.Arch;
             compoundComponent.isClimbable = true;
             compoundComponent.isGrindable = true;
             compoundComponent.hasCollision = true;
-            
+
             // 複合建築物専用のタグを設定
             try
             {
@@ -1232,6 +1233,7 @@ namespace Vastcore.Generation
                 Debug.LogWarning($"Tag 'CompoundArchitecture' is not defined. Skipping tag assignment. Details: {ex.Message}");
             }
         }
+
 
         #endregion
 

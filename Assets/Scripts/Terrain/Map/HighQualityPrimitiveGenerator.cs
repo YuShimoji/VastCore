@@ -163,11 +163,11 @@ namespace Vastcore.Generation
                 primitiveObject.transform.position = position;
 
                 // PrimitiveTerrainObjectコンポーネントを追加して初期化
-        var pto = primitiveObject.AddComponent<PrimitiveTerrainObject>();
-        pto.InitializeFromPool((GenerationPrimitiveType)(int)primitiveType, position, scale.magnitude);
+                var pto = primitiveObject.AddComponent<Vastcore.Terrain.PrimitiveTerrainObject>();
+                pto.InitializeFromPool((GenerationPrimitiveType)(int)primitiveType, position, scale.magnitude);
 
-        // 高品質処理を適用
-        ApplyHighQualityProcessing(highQualityMesh, quality);
+                // 高品質処理を適用
+                ApplyHighQualityProcessing(highQualityMesh, quality);
                 
                 // 詳細を追加
                 if (quality.enableProceduralDetails)

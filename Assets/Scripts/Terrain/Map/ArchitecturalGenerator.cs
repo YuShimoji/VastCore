@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Utils;
 using Vastcore.Terrain;
-using Vastcore.Core;
 
 namespace Vastcore.Generation
 {
@@ -1028,13 +1027,13 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// 建築インタラクションを設定
+        /// 建築物のインタラクションとプリミティブ連携を設定
         /// </summary>
         private static void SetupArchitecturalInteractions(GameObject parent, ArchitecturalParams parameters)
         {
             // プリミティブ地形オブジェクトコンポーネントを追加
             var architecturalComponent = parent.AddComponent<PrimitiveTerrainObject>();
-            architecturalComponent.primitiveType = GenerationPrimitiveType.Arch;
+            architecturalComponent.primitiveType = Vastcore.Core.GenerationPrimitiveType.Arch;
             architecturalComponent.isClimbable = true;
             architecturalComponent.isGrindable = true;
             architecturalComponent.hasCollision = true;

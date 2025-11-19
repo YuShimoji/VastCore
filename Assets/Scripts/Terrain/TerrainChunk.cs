@@ -22,41 +22,93 @@ namespace Vastcore.Terrain
         {
             _config = config;
             _worldOrigin = worldOrigin;
-            if (config == null) { Debug.LogError("TerrainChunk.Build: config is null"); return; }
-            if (provider == null) { Debug.LogError("TerrainChunk.Build: provider is null"); return; }
 
-            int res = Mathf.Max(2, config.resolution);
-            float size = Mathf.Max(1f, config.worldSize);
-            float heightScale = Mathf.Max(0.1f, config.heightScale);
+            if (!ValidateArguments(config, provider))
+            {
+                return;
+            }
+
+            ComputeDerivedParameters(config, out var resolution, out var size, out var heightScale);
 
             // Generate normalized heights [0,1]
-            var heights = new float[res * res];
-            var ctx = new HeightmapGenerationContext { Seed = 0 }; // seed は settings 側で適用済み
-            provider.Generate(heights, res, worldOrigin, size, ctx);
+            var heights = GenerateHeights1D(provider, resolution, worldOrigin, size);
 
             // Unity Terrain expects heights in [0,1] but with 2D array [res,res]
-            var heights2D = new float[res, res];
-            for (int y = 0; y < res; y++)
+            var heights2D = ConvertTo2D(heights, resolution);
+
+            TerrainData = CreateTerrainData(resolution, size, heightScale, heights2D);
+            UnityTerrain = EnsureTerrainComponent(TerrainData);
+        }
+
+        private static bool ValidateArguments(TerrainGenerationConfig config, IHeightmapProvider provider)
+        {
+            if (config == null)
             {
-                for (int x = 0; x < res; x++)
+                Debug.LogError("TerrainChunk.Build: config is null");
+                return false;
+            }
+
+            if (provider == null)
+            {
+                Debug.LogError("TerrainChunk.Build: provider is null");
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void ComputeDerivedParameters(TerrainGenerationConfig config, out int resolution, out float size, out float heightScale)
+        {
+            resolution = Mathf.Max(2, config.resolution);
+            size = Mathf.Max(1f, config.worldSize);
+            heightScale = Mathf.Max(0.1f, config.heightScale);
+        }
+
+        private static float[] GenerateHeights1D(IHeightmapProvider provider, int resolution, Vector2 worldOrigin, float size)
+        {
+            var heights = new float[resolution * resolution];
+            var ctx = new HeightmapGenerationContext { Seed = 0 }; // seed は settings 側で適用済み
+            provider.Generate(heights, resolution, worldOrigin, size, ctx);
+            return heights;
+        }
+
+        private static float[,] ConvertTo2D(float[] heights, int resolution)
+        {
+            var heights2D = new float[resolution, resolution];
+            for (int y = 0; y < resolution; y++)
+            {
+                for (int x = 0; x < resolution; x++)
                 {
-                    heights2D[y, x] = Mathf.Clamp01(heights[x + y * res]);
+                    heights2D[y, x] = Mathf.Clamp01(heights[x + y * resolution]);
                 }
             }
 
-            TerrainData = new TerrainData
-            {
-                heightmapResolution = res,
-            };
-            TerrainData.size = new Vector3(size, heightScale, size);
-            TerrainData.SetHeights(0, 0, heights2D);
+            return heights2D;
+        }
 
+        private static TerrainData CreateTerrainData(int resolution, float size, float heightScale, float[,] heights2D)
+        {
+            var data = new TerrainData
+            {
+                heightmapResolution = resolution,
+            };
+            data.size = new Vector3(size, heightScale, size);
+            data.SetHeights(0, 0, heights2D);
+            return data;
+        }
+
+        private UnityEngine.Terrain EnsureTerrainComponent(TerrainData data)
+        {
             var go = gameObject;
             var terrain = go.GetComponent<UnityEngine.Terrain>();
-            if (terrain == null) terrain = go.AddComponent<UnityEngine.Terrain>();
-            terrain.terrainData = TerrainData;
+            if (terrain == null)
+            {
+                terrain = go.AddComponent<UnityEngine.Terrain>();
+            }
+
+            terrain.terrainData = data;
             terrain.drawInstanced = true;
-            UnityTerrain = terrain;
+            return terrain;
         }
 
         public static TerrainChunk CreateAndBuild(TerrainGenerationConfig config, IHeightmapProvider provider, Vector2 worldOrigin)
