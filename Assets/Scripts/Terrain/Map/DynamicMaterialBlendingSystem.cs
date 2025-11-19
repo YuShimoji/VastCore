@@ -137,7 +137,7 @@ namespace Vastcore.Generation
             // プレイヤーTransformを取得
             if (playerTransform == null)
             {
-                playerTransform = ResolvePlayerTransform();
+                playerTransform = Vastcore.Core.PlayerTransformResolver.Resolve(playerTransform);
             }
             
             // 繧ｳ繝ｫ繝ｼ繝√Φ繧帝幕蟋・

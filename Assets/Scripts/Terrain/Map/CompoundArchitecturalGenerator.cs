@@ -4,6 +4,8 @@ using UnityEngine.ProBuilder.MeshOperations;
 using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Utils;
+using Vastcore.Terrain.Map;
+using Vastcore.Core;
 
 namespace Vastcore.Generation
 {
@@ -1216,7 +1218,7 @@ namespace Vastcore.Generation
         private static void SetupCompoundInteractions(GameObject parent, CompoundArchitecturalParams parameters)
         {
             // プリミティブ地形オブジェクトコンポーネントを追加
-            var compoundComponent = parent.AddComponent<PrimitiveTerrainObject>();
+            var compoundComponent = parent.AddComponent<Vastcore.Terrain.Map.PrimitiveTerrainObject>();
             compoundComponent.primitiveType = GenerationPrimitiveType.Arch;
             compoundComponent.isClimbable = true;
             compoundComponent.isGrindable = true;

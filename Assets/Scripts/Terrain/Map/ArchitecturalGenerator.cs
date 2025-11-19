@@ -1033,7 +1033,7 @@ namespace Vastcore.Generation
         private static void SetupArchitecturalInteractions(GameObject parent, ArchitecturalParams parameters)
         {
             // プリミティブ地形オブジェクトコンポーネントを追加
-            var architecturalComponent = parent.AddComponent<PrimitiveTerrainObject>();
+            var architecturalComponent = parent.AddComponent<Vastcore.Terrain.Map.PrimitiveTerrainObject>();
             architecturalComponent.primitiveType = GenerationPrimitiveType.Arch;
             architecturalComponent.isClimbable = true;
             architecturalComponent.isGrindable = true;

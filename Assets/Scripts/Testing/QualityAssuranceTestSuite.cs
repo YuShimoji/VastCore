@@ -38,7 +38,8 @@ namespace VastCore.Testing
         
         // テスト対象システム
         private PrimitiveTerrainGenerator primitiveGenerator;
-        private CircularTerrainGenerator terrainGenerator;
+        // CircularTerrainGenerator は static クラスのため、インスタンスフィールドは使用しない
+        // private CircularTerrainGenerator terrainGenerator;
         private BiomePresetManager biomeManager;
         
         private void Start()
@@ -350,7 +351,8 @@ namespace VastCore.Testing
                     // テスト用地形パラメータの生成
                     var terrainParams = CreateTestTerrainParams();
                     
-                    // 地形生成テスト
+                    // 地形生成テスト（現状はスタブとして null を使用）
+                    Mesh terrainMesh = null;
                     // Mesh terrainMesh = CircularTerrainGenerator.GenerateCircularTerrain(terrainParams);
                     
                     if (terrainMesh != null)

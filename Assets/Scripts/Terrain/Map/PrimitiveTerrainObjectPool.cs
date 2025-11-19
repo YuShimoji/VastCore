@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using Vastcore.Terrain.Map;
+using GenerationPrimitiveType = Vastcore.Core.GenerationPrimitiveType;
 
 namespace Vastcore.Generation
 {

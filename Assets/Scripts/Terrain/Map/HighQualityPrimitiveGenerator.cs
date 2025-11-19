@@ -272,7 +272,8 @@ namespace Vastcore.Generation
         /// </summary>
         private static ProBuilderMesh GenerateHighQualityCube(Vector3 scale, QualitySettings quality)
         {
-            var cube = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center, Vector3.one);
+            var cube = ShapeGenerator.CreateShape(ShapeType.Cube);
+            
             cube.transform.localScale = scale;
             
             // 高品質処理
@@ -301,7 +302,7 @@ namespace Vastcore.Generation
         {
             // より高解像度の球体を生成
             int subdivisions = Mathf.Max(2, quality.subdivisionLevel + 2);
-            var sphere = ShapeGenerator.CreateShape(ShapeType.Sphere, PivotLocation.Center, Vector3.one);
+            var sphere = ShapeGenerator.CreateShape(ShapeType.Sphere);
             sphere.transform.localScale = scale;
             
             if (quality.enableAdvancedDeformation)
@@ -321,7 +322,7 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateHighQualityCylinder(Vector3 scale, QualitySettings quality)
         {
             int sides = Mathf.Max(8, quality.subdivisionLevel * 4 + 8);
-            var cylinder = ShapeGenerator.CreateShape(ShapeType.Cylinder, PivotLocation.Center, Vector3.one);
+            var cylinder = ShapeGenerator.CreateShape(ShapeType.Cylinder);
             cylinder.transform.localScale = scale;
             
             if (quality.enableAdvancedDeformation)
@@ -340,7 +341,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static ProBuilderMesh GenerateHighQualityPyramid(Vector3 scale, QualitySettings quality)
         {
-            var pyramid = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center, Vector3.one);
+            var pyramid = ShapeGenerator.CreateShape(ShapeType.Cube);
             
             // ピラミッド形状に変形
             var vertices = pyramid.positions.ToArray();
@@ -380,7 +381,7 @@ namespace Vastcore.Generation
             int rows = Mathf.Max(8, quality.subdivisionLevel * 2 + 8);
             int columns = Mathf.Max(12, quality.subdivisionLevel * 3 + 12);
             
-            var torus = ShapeGenerator.CreateShape(ShapeType.Torus, PivotLocation.Center, Vector3.one);
+            var torus = ShapeGenerator.CreateShape(ShapeType.Torus);
             torus.transform.localScale = scale;
             
             if (quality.enableAdvancedDeformation)
@@ -400,7 +401,7 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateHighQualityPrism(Vector3 scale, QualitySettings quality)
         {
             int sides = Mathf.Max(6, quality.subdivisionLevel * 2 + 6);
-            var prism = ShapeGenerator.CreateShape(ShapeType.Prism, PivotLocation.Center, Vector3.one);
+            var prism = ShapeGenerator.CreateShape(ShapeType.Prism);
             prism.transform.localScale = scale;
             
             if (quality.enableAdvancedDeformation)
@@ -420,7 +421,7 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateHighQualityCone(Vector3 scale, QualitySettings quality)
         {
             int sides = Mathf.Max(8, quality.subdivisionLevel * 4 + 8);
-            var cone = ShapeGenerator.CreateShape(ShapeType.Cone, PivotLocation.Center, Vector3.one);
+            var cone = ShapeGenerator.CreateShape(ShapeType.Cone);
             cone.transform.localScale = scale;
             
             if (quality.enableAdvancedDeformation)
@@ -439,7 +440,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static ProBuilderMesh GenerateHighQualityOctahedron(Vector3 scale, QualitySettings quality)
         {
-            var octahedron = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center, Vector3.one);
+            var octahedron = ShapeGenerator.CreateShape(ShapeType.Cube);
             
             // 八面体形状に変形
             var vertices = octahedron.positions.ToArray();
@@ -495,7 +496,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static ProBuilderMesh GenerateHighQualityMonolith(Vector3 scale, QualitySettings quality)
         {
-            var monolith = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center, Vector3.one);
+            var monolith = ShapeGenerator.CreateShape(ShapeType.Cube);
             
             // 縦長に調整
             Vector3 monolithScale = new Vector3(scale.x * 0.3f, scale.y * 2f, scale.z * 0.3f);
@@ -571,7 +572,7 @@ namespace Vastcore.Generation
             }
             
             // フォールバック：基本的なアーチ形状
-            var fallbackArch = ShapeGenerator.CreateShape(ShapeType.Arch, PivotLocation.Center, Vector3.one);
+            var fallbackArch = ShapeGenerator.CreateShape(ShapeType.Arch);
             fallbackArch.transform.localScale = scale;
             
             return fallbackArch;
@@ -585,7 +586,7 @@ namespace Vastcore.Generation
             int rows = Mathf.Max(4, quality.subdivisionLevel + 4);
             int columns = Mathf.Max(16, quality.subdivisionLevel * 4 + 16);
             
-            var ring = ShapeGenerator.CreateShape(ShapeType.Torus, PivotLocation.Center, Vector3.one);
+            var ring = ShapeGenerator.CreateShape(ShapeType.Torus);
             
             // リング形状に調整（薄くて大きい）
             Vector3 ringScale = new Vector3(scale.x * 1.5f, scale.y * 0.2f, scale.z * 1.5f);
@@ -608,7 +609,7 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateHighQualityMesa(Vector3 scale, QualitySettings quality)
         {
             int sides = Mathf.Max(12, quality.subdivisionLevel * 4 + 12);
-            var mesa = ShapeGenerator.CreateShape(ShapeType.Cylinder, PivotLocation.Center, Vector3.one);
+            var mesa = ShapeGenerator.CreateShape(ShapeType.Cylinder);
             
             // 台地形状に調整（平たくて広い）
             Vector3 mesaScale = new Vector3(scale.x * 2f, scale.y * 0.3f, scale.z * 2f);
@@ -631,7 +632,7 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateHighQualitySpire(Vector3 scale, QualitySettings quality)
         {
             int sides = Mathf.Max(8, quality.subdivisionLevel * 2 + 8);
-            var spire = ShapeGenerator.CreateShape(ShapeType.Cone, PivotLocation.Center, Vector3.one);
+            var spire = ShapeGenerator.CreateShape(ShapeType.Cone);
             
             // 尖塔形状に調整（非常に高くて細い）
             Vector3 spireScale = new Vector3(scale.x * 0.4f, scale.y * 3f, scale.z * 0.4f);
@@ -654,7 +655,7 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateHighQualityBoulder(Vector3 scale, QualitySettings quality)
         {
             int subdivisions = Mathf.Max(2, quality.subdivisionLevel + 1);
-            var boulder = ShapeGenerator.CreateShape(ShapeType.Sphere, PivotLocation.Center, Vector3.one);
+            var boulder = ShapeGenerator.CreateShape(ShapeType.Sphere);
             boulder.transform.localScale = scale;
             
             // 不規則な岩石形状に変形
@@ -691,7 +692,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static ProBuilderMesh GenerateHighQualityFormation(Vector3 scale, QualitySettings quality)
         {
-            var formation = ShapeGenerator.CreateShape(ShapeType.Cube, PivotLocation.Center, Vector3.one);
+            var formation = ShapeGenerator.CreateShape(ShapeType.Cube);
             formation.transform.localScale = scale;
             
             // 高品質処理
@@ -1119,7 +1120,7 @@ namespace Vastcore.Generation
                 Vector3 surfacePoint = Random.onUnitSphere * boulder.transform.localScale.magnitude * 0.5f;
                 float fragmentSize = boulder.transform.localScale.magnitude * Random.Range(0.02f, 0.08f);
                 
-                var fragment = ShapeGenerator.CreateShape(ShapeType.Sphere, PivotLocation.Center, Vector3.one);
+                var fragment = ShapeGenerator.CreateShape(ShapeType.Sphere);
                 fragment.transform.SetParent(boulder.transform);
                 fragment.transform.localPosition = surfacePoint;
                 fragment.transform.localScale = Vector3.one * fragmentSize;
