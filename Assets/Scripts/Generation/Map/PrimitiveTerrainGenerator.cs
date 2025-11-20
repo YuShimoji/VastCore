@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.ProBuilder;
 using UnityEngine.ProBuilder.MeshOperations;
+using Vastcore.Generation.Map;
 
 namespace Vastcore.Generation
 {
@@ -90,7 +91,6 @@ namespace Vastcore.Generation
         }
         #endregion
 
-       #region メイン生成関数
         /// <summary>
         /// プリミティブ地形オブジェクトを生成
         /// </summary>
@@ -98,8 +98,11 @@ namespace Vastcore.Generation
         {
             try
             {
+                // プリミティブ生成器を取得
+                var generator = PrimitiveGeneratorFactory.CreateGenerator(parameters.primitiveType);
+                
                 // 基本プリミティブメッシュを生成
-                ProBuilderMesh proBuilderMesh = GenerateBasePrimitive(parameters.primitiveType, parameters.scale);
+                ProBuilderMesh proBuilderMesh = generator.GeneratePrimitive(parameters.scale);
                 
                 if (proBuilderMesh == null)
                 {
@@ -116,13 +119,13 @@ namespace Vastcore.Generation
                 // 形状変形を適用
                 if (parameters.enableDeformation)
                 {
-                    ApplyDeformation(proBuilderMesh, parameters);
+                    PrimitiveModifier.ApplyDeformation(proBuilderMesh, parameters.deformationRange, parameters.noiseIntensity);
                 }
 
                 // 細分化を適用
                 if (parameters.subdivisionLevel > 0)
                 {
-                    ApplySubdivision(proBuilderMesh, parameters.subdivisionLevel);
+                    PrimitiveModifier.ApplySubdivision(proBuilderMesh, parameters.subdivisionLevel);
                 }
 
                 // メッシュを最終化
@@ -130,16 +133,16 @@ namespace Vastcore.Generation
                 proBuilderMesh.Refresh();
 
                 // マテリアルを設定
-                SetupMaterial(primitiveObject, parameters);
+                PrimitiveConfigurator.SetupMaterial(primitiveObject, parameters);
 
                 // コライダーを生成
                 if (parameters.generateCollider)
                 {
-                    GenerateCollider(primitiveObject, parameters);
+                    PrimitiveConfigurator.GenerateCollider(primitiveObject, parameters);
                 }
 
                 // インタラクション設定を追加
-                SetupInteractionComponents(primitiveObject, parameters);
+                PrimitiveConfigurator.SetupInteractionComponents(primitiveObject, parameters);
 
                 Debug.Log($"Successfully generated primitive terrain: {parameters.primitiveType} at {parameters.position}");
                 return primitiveObject;
@@ -149,8 +152,7 @@ namespace Vastcore.Generation
                 Debug.LogError($"Error generating primitive terrain {parameters.primitiveType}: {e.Message}");
                 return null;
             }
-        }
-        #endregion   
+        }   
      #region 基本プリミティブ生成
         /// <summary>
         /// 基本プリミティブメッシュを生成
@@ -624,43 +626,7 @@ namespace Vastcore.Generation
         /// </summary>
         public static Vector3 GetDefaultScale(PrimitiveType type)
         {
-            switch (type)
-            {
-                case PrimitiveType.Cube:
-                    return new Vector3(100f, 100f, 100f);
-                case PrimitiveType.Sphere:
-                    return new Vector3(80f, 80f, 80f);
-                case PrimitiveType.Cylinder:
-                    return new Vector3(60f, 150f, 60f);
-                case PrimitiveType.Pyramid:
-                    return new Vector3(120f, 200f, 120f);
-                case PrimitiveType.Torus:
-                    return new Vector3(150f, 50f, 150f);
-                case PrimitiveType.Prism:
-                    return new Vector3(80f, 120f, 80f);
-                case PrimitiveType.Cone:
-                    return new Vector3(100f, 180f, 100f);
-                case PrimitiveType.Octahedron:
-                    return new Vector3(90f, 90f, 90f);
-                case PrimitiveType.Crystal:
-                    return new Vector3(70f, 140f, 70f);
-                case PrimitiveType.Monolith:
-                    return new Vector3(40f, 300f, 40f);
-                case PrimitiveType.Arch:
-                    return new Vector3(200f, 150f, 80f);
-                case PrimitiveType.Ring:
-                    return new Vector3(250f, 30f, 250f);
-                case PrimitiveType.Mesa:
-                    return new Vector3(300f, 60f, 300f);
-                case PrimitiveType.Spire:
-                    return new Vector3(30f, 400f, 30f);
-                case PrimitiveType.Boulder:
-                    return new Vector3(120f, 80f, 100f);
-                case PrimitiveType.Formation:
-                    return new Vector3(200f, 100f, 150f);
-                default:
-                    return new Vector3(100f, 100f, 100f);
-            }
+            return PrimitiveGeneratorFactory.GetDefaultScale(type);
         }
 
         /// <summary>

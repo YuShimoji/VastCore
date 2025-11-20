@@ -2,13 +2,9 @@ using UnityEngine;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Vastcore.Terrain;
-<<<<<<< HEAD
- 
-=======
 using Vastcore.Core;
 using Vastcore.Generation;
 
->>>>>>> ba8ddb30673bc48238c62aeb7e4f883fc50607bc
 namespace Vastcore.Generation.Map
 {
     /// <summary>
@@ -384,15 +380,9 @@ namespace Vastcore.Generation.Map
                 primitiveObject.transform.position = new Vector3(i * 150f, 10f, Random.Range(-100f, 100f));
                 primitiveObject.transform.localScale = Vector3.one * Random.Range(5f, 20f);
                 
-<<<<<<< HEAD
-                var primitive = primitiveObject.AddComponent<PrimitiveTerrainObject>();
-                primitive.primitiveType = (Vastcore.Core.GenerationPrimitiveType)((PrimitiveTerrainGenerator.PrimitiveType)(i % 4));
-                primitive.scale = primitiveObject.transform.localScale.magnitude;
-=======
                 var primitive = primitiveObject.AddComponent<Vastcore.Terrain.Map.PrimitiveTerrainObject>();
                 primitive.primitiveType = (GenerationPrimitiveType)(int)(PrimitiveTerrainGenerator.PrimitiveType)(i % 4);
                 primitive.scale = primitiveObject.transform.localScale;
->>>>>>> ba8ddb30673bc48238c62aeb7e4f883fc50607bc
                 primitive.enableLOD = true;
                 
                 primitives.Add(primitive);

@@ -1,19 +1,11 @@
 # Legacy UI Migration Report (Dry Run)
 
-<<<<<<< HEAD
-- Generated: 2025-11-16 00:39 (local)
-=======
-- Generated: 2025-11-14 13:52 (local)
->>>>>>> febae1c (chore: local terrain cleanup WIP (pre-merge origin/main))
+- Generated: 2025-11-20 15:54 (local)
 - Tool: UIMigrationScannerWindow.cs
 - Options: ExcludeExamples=True, ScanScripts=True, ScanScenes=True, ScanPrefabs=True
 
 ## Summary
-<<<<<<< HEAD
-- Scripts scanned: 261
-=======
-- Scripts scanned: 263
->>>>>>> febae1c (chore: local terrain cleanup WIP (pre-merge origin/main))
+- Scripts scanned: 288
 - Scenes scanned: 51
 - Prefabs scanned: 5
 - C# using UnityEngine.UI: 8

@@ -32,7 +32,7 @@ namespace VastCore.Testing
         [SerializeField] private float biomeConsistencyThreshold = 0.85f;
         
         // テスト結果
-        private List<TestResult> testResults;
+        private List<QualityTestResult> testResults;
         private StringBuilder testLog;
         private DateTime testStartTime;
         
@@ -54,7 +54,7 @@ namespace VastCore.Testing
         
         private void InitializeTestSuite()
         {
-            testResults = new List<TestResult>();
+            testResults = new List<QualityTestResult>();
             testLog = new StringBuilder();
             
             LogMessage("QualityAssuranceTestSuite initialized");
@@ -110,7 +110,7 @@ namespace VastCore.Testing
         {
             LogMessage($"Testing primitive: {primitiveType}");
             
-            var testResult = new TestResult
+            var testResult = new QualityTestResult
             {
                 testName = $"Primitive Quality - {primitiveType}",
                 testType = TestType.PrimitiveQuality,
@@ -334,7 +334,7 @@ namespace VastCore.Testing
         {
             LogMessage("Starting terrain accuracy tests...");
             
-            var testResult = new TestResult
+            var testResult = new QualityTestResult
             {
                 testName = "Terrain Generation Accuracy",
                 testType = TestType.TerrainAccuracy,
@@ -519,7 +519,7 @@ namespace VastCore.Testing
         {
             LogMessage("Starting biome consistency tests...");
             
-            var testResult = new TestResult
+            var testResult = new QualityTestResult
             {
                 testName = "Biome System Consistency",
                 testType = TestType.BiomeConsistency,
@@ -568,7 +568,7 @@ namespace VastCore.Testing
         {
             LogMessage("Starting system integration tests...");
             
-            var testResult = new TestResult
+            var testResult = new QualityTestResult
             {
                 testName = "System Integration",
                 testType = TestType.SystemIntegration,
@@ -608,7 +608,7 @@ namespace VastCore.Testing
         {
             LogMessage("Starting performance quality tests...");
             
-            var testResult = new TestResult
+            var testResult = new QualityTestResult
             {
                 testName = "Performance Quality",
                 testType = TestType.PerformanceQuality,
@@ -720,7 +720,7 @@ namespace VastCore.Testing
     }
     
     [System.Serializable]
-    public struct TestResult
+    public struct QualityTestResult
     {
         public string testName;
         public TestType testType;

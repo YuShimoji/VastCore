@@ -60,7 +60,7 @@ namespace Vastcore.Testing
         [ContextMenu("Clear Terrain")]
         public void ClearTerrain()
         {
-            UnityEngine.Terrain existingTerrain = FindObjectOfType<UnityEngine.Terrain>();
+            UnityEngine.Terrain existingTerrain = UnityEngine.Object.FindFirstObjectByType<UnityEngine.Terrain>();
             if (existingTerrain != null)
             {
                 DestroyImmediate(existingTerrain.gameObject);

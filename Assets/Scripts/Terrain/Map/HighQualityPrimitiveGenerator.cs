@@ -158,7 +158,7 @@ namespace Vastcore.Generation
                 primitiveObject.transform.position = position;
 
                 // PrimitiveTerrainObjectコンポーネントを追加して初期化
-                var pto = primitiveObject.AddComponent<Vastcore.Terrain.PrimitiveTerrainObject>();
+                var pto = primitiveObject.AddComponent<Vastcore.Terrain.Map.PrimitiveTerrainObject>();
                 pto.InitializeFromPool((GenerationPrimitiveType)(int)primitiveType, position, scale.magnitude);
 
                 // 高品質処理を適用

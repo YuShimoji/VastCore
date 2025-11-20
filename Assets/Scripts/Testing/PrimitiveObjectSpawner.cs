@@ -1,5 +1,6 @@
 using UnityEngine;
 using Vastcore.Generation;
+using Vastcore.Terrain.Map;
 
 namespace Vastcore.Testing
 {
@@ -25,7 +26,7 @@ namespace Vastcore.Testing
 
         void Start()
         {
-            currentTerrain = FindObjectOfType<UnityEngine.Terrain>();
+            currentTerrain = UnityEngine.Object.FindFirstObjectByType<UnityEngine.Terrain>();
         }
 
         [ContextMenu("Spawn Primitive Objects")]
@@ -39,7 +40,7 @@ namespace Vastcore.Testing
 
             if (currentTerrain == null)
             {
-                currentTerrain = FindObjectOfType<UnityEngine.Terrain>();
+                currentTerrain = UnityEngine.Object.FindFirstObjectByType<UnityEngine.Terrain>();
                 if (currentTerrain == null)
                 {
                     Debug.LogError("No terrain found! Generate terrain first.");
@@ -83,6 +84,14 @@ namespace Vastcore.Testing
             // スケールバリエーション
             float scale = Random.Range(0.8f, 1.5f);
             primitive.transform.localScale = Vector3.one * scale;
+
+            // テスト用フラグを PrimitiveTerrainObject に反映（存在する場合）
+            var terrainObject = primitive.GetComponent<PrimitiveTerrainObject>();
+            if (terrainObject != null)
+            {
+                terrainObject.isClimbable = spawnClimbable;
+                terrainObject.isGrindable = spawnGrindable;
+            }
         }
 
         [ContextMenu("Clear Primitive Objects")]
