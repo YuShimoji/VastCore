@@ -74,12 +74,12 @@ namespace Vastcore.Generation
                 {
                     primitiveType = type,
                     position = Vector3.zero,
-                    scale = Vector3.one * 100f, // デフォルト100mサイズ
+                    scale = Vector3.one * TerrainGenerationConstants.DefaultPrimitiveScale,
                     rotation = Quaternion.identity,
                     enableDeformation = true,
-                    deformationRange = Vector3.one * 0.1f,
-                    noiseIntensity = 0.05f,
-                    subdivisionLevel = 2,
+                    deformationRange = Vector3.one * TerrainGenerationConstants.DefaultDeformationRange,
+                    noiseIntensity = TerrainGenerationConstants.DefaultNoiseIntensity,
+                    subdivisionLevel = TerrainGenerationConstants.DefaultSubdivisionLevel,
                     material = null,
                     colorVariation = Color.white,
                     randomizeMaterial = false,

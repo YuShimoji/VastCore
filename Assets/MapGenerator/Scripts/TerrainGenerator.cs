@@ -46,10 +46,10 @@ namespace Vastcore.Generation
 
         #region Serialized Fields
         [Header("Terrain Settings")]
-        [SerializeField] private int m_Width = 2048;
-        [SerializeField] private int m_Height = 2048;
-        [SerializeField] private int m_Depth = 600;
-        [SerializeField] private int m_Resolution = 513;
+        [SerializeField] private int m_Width = TerrainGenerationConstants.DefaultTerrainWidth;
+        [SerializeField] private int m_Height = TerrainGenerationConstants.DefaultTerrainHeight;
+        [SerializeField] private int m_Depth = TerrainGenerationConstants.DefaultTerrainDepth;
+        [SerializeField] private int m_Resolution = TerrainGenerationConstants.DefaultHeightmapResolution;
         [SerializeField] private Material m_TerrainMaterial;
 
         [Header("Generation Mode")]
@@ -57,15 +57,15 @@ namespace Vastcore.Generation
 
         [Header("Height Map Settings")]
         [SerializeField] private Texture2D m_HeightMap;
-        [SerializeField] private float m_HeightMapScale = 1.0f;
-        [SerializeField] private float m_HeightMapOffset = 0.0f;
+        [SerializeField] private float m_HeightMapScale = TerrainGenerationConstants.DefaultHeightMapScale;
+        [SerializeField] private float m_HeightMapOffset = TerrainGenerationConstants.DefaultHeightMapOffset;
         [SerializeField] private bool m_FlipHeightMapVertically = false;
 
         [Header("Noise Settings")]
-        [SerializeField] private float m_Scale = 50f;
-        [SerializeField] private int m_Octaves = 8;
-        [SerializeField] [Range(0,1)] private float m_Persistence = 0.5f;
-        [SerializeField] private float m_Lacunarity = 2f;
+        [SerializeField] private float m_Scale = TerrainGenerationConstants.DefaultNoiseScale;
+        [SerializeField] private int m_Octaves = TerrainGenerationConstants.DefaultOctaves;
+        [SerializeField] [Range(0,1)] private float m_Persistence = TerrainGenerationConstants.DefaultPersistence;
+        [SerializeField] private float m_Lacunarity = TerrainGenerationConstants.DefaultLacunarity;
         [SerializeField] private Vector2 m_Offset;
 
         [Header("Texture Settings")]
@@ -75,17 +75,17 @@ namespace Vastcore.Generation
 
         [Header("Detail Settings")]
         [SerializeField] private DetailPrototype[] m_DetailPrototypes;
-        [SerializeField] private int m_DetailResolution = 1024;
-        [SerializeField] private int m_DetailResolutionPerPatch = 8;
-        [SerializeField] private float m_DetailDensity = 1.0f;
-        [SerializeField] private float m_DetailDistance = 200f;
+        [SerializeField] private int m_DetailResolution = TerrainGenerationConstants.DefaultDetailResolution;
+        [SerializeField] private int m_DetailResolutionPerPatch = TerrainGenerationConstants.DefaultDetailResolutionPerPatch;
+        [SerializeField] private float m_DetailDensity = TerrainGenerationConstants.DefaultDetailDensity;
+        [SerializeField] private float m_DetailDistance = TerrainGenerationConstants.DefaultDetailDistance;
 
         [Header("Tree Settings")]
         [SerializeField] private TreePrototype[] m_TreePrototypes;
-        [SerializeField] private int m_TreeDistance = 2000;
-        [SerializeField] private int m_TreeBillboardDistance = 300;
-        [SerializeField] private int m_TreeCrossFadeLength = 50;
-        [SerializeField] private int m_TreeMaximumFullLODCount = 50;
+        [SerializeField] private int m_TreeDistance = TerrainGenerationConstants.DefaultTreeDistance;
+        [SerializeField] private int m_TreeBillboardDistance = TerrainGenerationConstants.DefaultTreeBillboardDistance;
+        [SerializeField] private int m_TreeCrossFadeLength = TerrainGenerationConstants.DefaultTreeCrossFadeLength;
+        [SerializeField] private int m_TreeMaximumFullLODCount = TerrainGenerationConstants.DefaultTreeMaximumFullLODCount;
         #endregion
 
         public Vector3 terrainSize => new Vector3(m_Width, m_Depth, m_Height);
@@ -145,7 +145,7 @@ namespace Vastcore.Generation
             OptimizeTerrainSettings();
 
             // レイヤーの設定
-            int terrainLayer = LayerMask.NameToLayer("Terrain");
+            int terrainLayer = LayerMask.NameToLayer(TerrainGenerationConstants.TerrainLayerName);
             if (terrainLayer != -1)
             {
                 GeneratedTerrain.gameObject.layer = terrainLayer;
@@ -220,7 +220,7 @@ namespace Vastcore.Generation
         {
             int height = heights.GetLength(0);
             int width = heights.GetLength(1);
-            int batchSize = 256; // 256x256のバッチサイズ
+            int batchSize = TerrainGenerationConstants.HeightmapBatchSize;
 
             for (int yStart = 0; yStart < height; yStart += batchSize)
             {
