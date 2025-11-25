@@ -58,4 +58,37 @@
 ## 連絡先
 
 - AIアシスタント: Cascade
-- 最終更新: 2025-11-20 18:31 UTC+09:00
+- 最終更新: 2025-11-25 13:45 UTC+09:00
+
+---
+
+## 2025-11-25 更新
+
+### 完了した作業
+
+#### プロジェクト総点検とリファクタリング
+
+- 空ファイル（0バイト）28件を削除
+- 空フォルダ7件を削除
+- `TerrainGenerationConstants.cs` を新規作成し、ハードコーディングを定数化
+- `TerrainGenerator.cs`, `PrimitiveTerrainGenerator.cs` を定数参照に更新
+- 総点検レポート: `docs/progress/ProjectAudit_Nov25.md`
+
+#### Phase 0.5: TerrainGenerationProfile
+
+- `TerrainGenerationProfile.cs` ScriptableObject を新規作成
+- 生成モード、サイズ、HeightMap、Noise 設定を含む
+- `TerrainGenerator` との連携メソッド（LoadFromProfile/SaveToProfile）を追加
+
+#### Phase 1: TerrainGenerationWindow(v0)
+
+- `TerrainGenerationWindow.cs` Editor UI を新規作成
+- メニュー: `Tools/Vastcore/Terrain/Terrain Generation (v0)`
+- セクション: Context, Generation Mode, Size/Resolution, HeightMap, Noise, Profile, Actions
+- Profile との完全な連携（読み込み/保存/新規作成）
+
+### 次のステップ
+
+- **Phase 1.5**: TerrainGenerator の責務整理（Primitive/LOD 依存の除去）
+- **Phase 2**: DesignerTerrainTemplate のライト版実装
+- **継続**: レガシーコードの段階的削除
