@@ -32,7 +32,7 @@ namespace Vastcore.Generation
 
         [Header("エンジン設定")]
         public bool enableTerrainEngine = true;
-        public TerrainGenerationMode generationMode = TerrainGenerationMode.Hybrid;
+        public TerrainEngineMode generationMode = TerrainEngineMode.Hybrid;
 
         [Header("ジオメトリ設定")]
         public TerrainGeometryType geometryType = TerrainGeometryType.UnityTerrain;
@@ -309,17 +309,17 @@ namespace Vastcore.Generation
         /// <summary>
         /// タイルコンテンツを生成（同期）
         /// </summary>
-        private void GenerateTileContent(TerrainTileComponent tile, TerrainGenerationMode mode)
+        private void GenerateTileContent(TerrainTileComponent tile, TerrainEngineMode mode)
         {
             switch (mode)
             {
-                case TerrainGenerationMode.TemplateOnly:
+                case TerrainEngineMode.TemplateOnly:
                     GenerateFromTemplates(tile);
                     break;
-                case TerrainGenerationMode.ProceduralOnly:
+                case TerrainEngineMode.ProceduralOnly:
                     GenerateProcedural(tile);
                     break;
-                case TerrainGenerationMode.Hybrid:
+                case TerrainEngineMode.Hybrid:
                     GenerateHybrid(tile);
                     break;
             }
@@ -328,17 +328,17 @@ namespace Vastcore.Generation
         /// <summary>
         /// タイルコンテンツを生成（非同期）
         /// </summary>
-        private System.Collections.IEnumerator GenerateTileContentAsync(TerrainTileComponent tile, TerrainGenerationMode mode)
+        private System.Collections.IEnumerator GenerateTileContentAsync(TerrainTileComponent tile, TerrainEngineMode mode)
         {
             switch (mode)
             {
-                case TerrainGenerationMode.TemplateOnly:
+                case TerrainEngineMode.TemplateOnly:
                     GenerateFromTemplates(tile);
                     break;
-                case TerrainGenerationMode.ProceduralOnly:
+                case TerrainEngineMode.ProceduralOnly:
                     GenerateProcedural(tile);
                     break;
-                case TerrainGenerationMode.Hybrid:
+                case TerrainEngineMode.Hybrid:
                     GenerateHybrid(tile);
                     break;
             }
@@ -551,13 +551,14 @@ namespace Vastcore.Generation
     }
 
     /// <summary>
-    /// 地形生成モード
+    /// 高度な TerrainEngine 用の生成モード
+    /// テンプレート / プロシージャル / ハイブリッド
     /// </summary>
-    public enum TerrainGenerationMode
+    public enum TerrainEngineMode
     {
         TemplateOnly,       // デザイナーテンプレートのみ
         ProceduralOnly,     // プロシージャルのみ
-        Hybrid             // ハイブリッド（テンプレート優先＋プロシージャル修正）
+        Hybrid              // ハイブリッド（テンプレート優先＋プロシージュアル修正）
     }
 
     /// <summary>
@@ -568,7 +569,7 @@ namespace Vastcore.Generation
         public Vector2Int coordinate;
         public Vector3 worldPosition;
         public TerrainGenerationPriority priority;
-        public TerrainGenerationMode generationMode;
+        public TerrainEngineMode generationMode;
     }
 
     /// <summary>
