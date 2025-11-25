@@ -92,6 +92,84 @@ namespace Vastcore.Generation
 
         public UnityEngine.Terrain GeneratedTerrain { get; private set; }
 
+        #region Profile Integration
+        /// <summary>
+        /// TerrainGenerationProfile から設定を読み込む
+        /// </summary>
+        /// <param name="profile">読み込むプロファイル</param>
+        public void LoadFromProfile(TerrainGenerationProfile profile)
+        {
+            if (profile == null)
+            {
+                Debug.LogWarning("[TerrainGenerator] Cannot load from null profile.");
+                return;
+            }
+
+            // Generation Mode
+            m_GenerationMode = profile.GenerationMode;
+
+            // Terrain Size & Resolution
+            m_Width = (int)profile.TerrainWidth;
+            m_Height = (int)profile.TerrainLength;
+            m_Depth = (int)profile.TerrainHeight;
+            m_Resolution = profile.HeightmapResolution;
+
+            // HeightMap Settings
+            m_HeightMap = profile.HeightMapTexture;
+            m_HeightMapScale = profile.HeightScale;
+            // Note: HeightMapOffset と FlipHeightMapVertically は Profile に含まれていない場合はデフォルト維持
+            // UV設定は将来の HeightMapGenerator 拡張時に対応
+
+            // Noise Settings
+            m_Scale = profile.NoiseScale;
+            m_Octaves = profile.Octaves;
+            m_Persistence = profile.Persistence;
+            m_Lacunarity = profile.Lacunarity;
+            m_Offset = profile.NoiseOffset;
+
+            Debug.Log($"[TerrainGenerator] Loaded settings from profile: {profile.name}");
+        }
+
+        /// <summary>
+        /// 現在の設定を TerrainGenerationProfile に保存
+        /// </summary>
+        /// <param name="profile">保存先プロファイル</param>
+        public void SaveToProfile(TerrainGenerationProfile profile)
+        {
+            if (profile == null)
+            {
+                Debug.LogWarning("[TerrainGenerator] Cannot save to null profile.");
+                return;
+            }
+
+            // Generation Mode
+            profile.GenerationMode = m_GenerationMode;
+
+            // Terrain Size & Resolution
+            profile.TerrainWidth = m_Width;
+            profile.TerrainLength = m_Height;
+            profile.TerrainHeight = m_Depth;
+            profile.HeightmapResolution = m_Resolution;
+
+            // HeightMap Settings
+            profile.HeightMapTexture = m_HeightMap;
+            profile.HeightScale = m_HeightMapScale;
+
+            // Noise Settings
+            profile.NoiseScale = m_Scale;
+            profile.Octaves = m_Octaves;
+            profile.Persistence = m_Persistence;
+            profile.Lacunarity = m_Lacunarity;
+            profile.NoiseOffset = m_Offset;
+
+            #if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(profile);
+            #endif
+
+            Debug.Log($"[TerrainGenerator] Saved settings to profile: {profile.name}");
+        }
+        #endregion
+
         public IEnumerator GenerateTerrain()
         {
             Debug.Log("[TerrainGenerator] Starting terrain generation...");
