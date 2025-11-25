@@ -8,11 +8,11 @@ namespace Vastcore.Generation
         {
             switch (generator.GenerationMode)
             {
-                case TerrainGenerator.TerrainGenerationMode.HeightMap:
+                case TerrainGenerationMode.HeightMap:
                     return GenerateFromHeightMap(generator);
-                case TerrainGenerator.TerrainGenerationMode.NoiseAndHeightMap:
+                case TerrainGenerationMode.NoiseAndHeightMap:
                     return CombineNoiseAndHeightMap(generator);
-                case TerrainGenerator.TerrainGenerationMode.Noise:
+                case TerrainGenerationMode.Noise:
                 default:
                     return GenerateFromNoise(generator);
             }

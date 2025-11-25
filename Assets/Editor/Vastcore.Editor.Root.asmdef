@@ -1,0 +1,21 @@
+{
+    "name": "Vastcore.Editor.Root",
+    "rootNamespace": "Vastcore.Editor",
+    "references": [
+        "Vastcore.Core",
+        "Vastcore.Generation",
+        "Vastcore.MapGenerator",
+        "Vastcore.Terrain"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

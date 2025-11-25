@@ -42,7 +42,7 @@ namespace Vastcore.Testing
             terrainGenerator.Persistence = persistence;
             terrainGenerator.Lacunarity = lacunarity;
             terrainGenerator.TerrainMaterial = terrainMaterial;
-            terrainGenerator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
+            terrainGenerator.GenerationMode = TerrainGenerationMode.Noise;
         }
 
         [ContextMenu("Generate Terrain")]

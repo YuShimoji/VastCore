@@ -28,7 +28,7 @@ namespace Vastcore.Editor.Terrain
         #endregion
 
         #region Generation Mode
-        private TerrainGenerator.TerrainGenerationMode generationMode = TerrainGenerator.TerrainGenerationMode.Noise;
+        private TerrainGenerationMode generationMode = TerrainGenerationMode.Noise;
         #endregion
 
         #region Terrain Size & Resolution
@@ -131,15 +131,15 @@ namespace Vastcore.Editor.Terrain
             {
                 EditorGUI.indentLevel++;
                 
-                generationMode = (TerrainGenerator.TerrainGenerationMode)EditorGUILayout.EnumPopup(
+                generationMode = (TerrainGenerationMode)EditorGUILayout.EnumPopup(
                     "Mode", 
                     generationMode);
 
                 string modeDescription = generationMode switch
                 {
-                    TerrainGenerator.TerrainGenerationMode.Noise => "Perlin Noise のみで地形を生成",
-                    TerrainGenerator.TerrainGenerationMode.HeightMap => "HeightMap テクスチャのみで地形を生成",
-                    TerrainGenerator.TerrainGenerationMode.NoiseAndHeightMap => "HeightMap と Noise を組み合わせて生成",
+                    TerrainGenerationMode.Noise => "Perlin Noise のみで地形を生成",
+                    TerrainGenerationMode.HeightMap => "HeightMap テクスチャのみで地形を生成",
+                    TerrainGenerationMode.NoiseAndHeightMap => "HeightMap と Noise を組み合わせて生成",
                     _ => ""
                 };
                 EditorGUILayout.HelpBox(modeDescription, MessageType.None);
@@ -180,8 +180,8 @@ namespace Vastcore.Editor.Terrain
 
         private void DrawHeightMapSection()
         {
-            bool showSection = generationMode == TerrainGenerator.TerrainGenerationMode.HeightMap ||
-                               generationMode == TerrainGenerator.TerrainGenerationMode.NoiseAndHeightMap;
+            bool showSection = generationMode == TerrainGenerationMode.HeightMap ||
+                               generationMode == TerrainGenerationMode.NoiseAndHeightMap;
 
             GUI.enabled = showSection;
             showHeightMapSection = EditorGUILayout.BeginFoldoutHeaderGroup(showHeightMapSection, "HeightMap Settings");
@@ -213,8 +213,8 @@ namespace Vastcore.Editor.Terrain
 
         private void DrawNoiseSection()
         {
-            bool showSection = generationMode == TerrainGenerator.TerrainGenerationMode.Noise ||
-                               generationMode == TerrainGenerator.TerrainGenerationMode.NoiseAndHeightMap;
+            bool showSection = generationMode == TerrainGenerationMode.Noise ||
+                               generationMode == TerrainGenerationMode.NoiseAndHeightMap;
 
             GUI.enabled = showSection;
             showNoiseSection = EditorGUILayout.BeginFoldoutHeaderGroup(showNoiseSection, "Noise Settings");
@@ -353,7 +353,7 @@ namespace Vastcore.Editor.Terrain
                 return;
             }
 
-            if (generationMode != TerrainGenerator.TerrainGenerationMode.Noise && heightMapTexture == null)
+            if (generationMode != TerrainGenerationMode.Noise && heightMapTexture == null)
             {
                 EditorUtility.DisplayDialog("Error", "HeightMap Texture is required for this generation mode.", "OK");
                 return;

@@ -237,13 +237,6 @@ namespace Vastcore.Generation
             yield return null;
         }
 
-        public enum TerrainGenerationMode
-        {
-            Noise,
-            HeightMap,
-            NoiseAndHeightMap
-        }
-
 
 
         private void ConfigureTextureLayers(TerrainData terrainData, float[,] heights)

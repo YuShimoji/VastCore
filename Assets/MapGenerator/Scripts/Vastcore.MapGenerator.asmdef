@@ -1,0 +1,17 @@
+{
+    "name": "Vastcore.MapGenerator",
+    "rootNamespace": "Vastcore.Generation",
+    "references": [
+        "Vastcore.Generation",
+        "Vastcore.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

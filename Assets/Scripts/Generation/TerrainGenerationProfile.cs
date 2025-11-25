@@ -12,9 +12,9 @@ namespace Vastcore.Generation
         #region Generation Mode
         [Header("Generation Mode")]
         [Tooltip("地形生成モード: Noise のみ / HeightMap のみ / 両方の組み合わせ")]
-        [SerializeField] private TerrainGenerator.TerrainGenerationMode m_GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
+        [SerializeField] private TerrainGenerationMode m_GenerationMode = TerrainGenerationMode.Noise;
         
-        public TerrainGenerator.TerrainGenerationMode GenerationMode
+        public TerrainGenerationMode GenerationMode
         {
             get => m_GenerationMode;
             set => m_GenerationMode = value;
@@ -220,7 +220,7 @@ namespace Vastcore.Generation
         /// </summary>
         public void ResetToDefaults()
         {
-            m_GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
+            m_GenerationMode = TerrainGenerationMode.Noise;
             m_TerrainWidth = TerrainGenerationConstants.DefaultTerrainWidth;
             m_TerrainLength = TerrainGenerationConstants.DefaultTerrainHeight;
             m_TerrainHeight = TerrainGenerationConstants.DefaultTerrainDepth;
