@@ -147,5 +147,46 @@ Assets/Scripts/
 
 ---
 
-- **最終更新**: 2025-11-25
+- **最終更新**: 2025-11-26
 - **更新者**: Cascade (AI)
+
+---
+
+## 7. 2025-11-26 追加リファクタリング
+
+### 7.1 HeightMapGenerator マジックナンバー定数化
+
+`HeightMapGenerator.cs` 内の以下のマジックナンバーを `TerrainGenerationConstants` に抽出：
+
+| 元の値 | 定数名 | 説明 |
+|--------|--------|------|
+| 0.5f | HeightNormalizationFactor | 正規化係数 |
+| 0.5f | MaxNoiseInfluence | 最大ノイズ影響（平坦部） |
+| 0.1f | MinNoiseInfluence | 最小ノイズ影響（急勾配部） |
+| 10f | GradientMultiplier | グラデーション計算乗数 |
+| 1 | GradientSampleRadius | サンプル半径 |
+
+### 7.2 V01 テスト計画作成
+
+`docs/terrain/V01_TestPlan.md` を作成：
+
+- Window 起動テスト (3項目)
+- Noise 生成テスト (5項目)
+- HeightMap 生成テスト (3項目)
+- Combined 生成テスト (1項目)
+- Profile 操作テスト (5項目)
+- Context セクションテスト (3項目)
+- バリデーションテスト (3項目)
+- エラーハンドリング確認 (3項目)
+- パフォーマンス確認 (3項目)
+
+### 7.3 レガシーファイル削除
+
+- `TerrainGeneratorStub.cs` を削除（空ファイル、enum 衝突の原因）
+
+### 7.4 コード品質検証結果
+
+- **NotImplementedException**: 0件
+- **仮実装コメント (// temp, // stub)**: 0件
+- **空メソッド**: 1件（BiomeSystem.cs - Phase 3 以降）
+- **命名規則違反**: 検出なし
