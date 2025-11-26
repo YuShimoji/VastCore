@@ -95,5 +95,22 @@ namespace Vastcore.Generation
         /// <summary>地形レイヤー名</summary>
         public const string TerrainLayerName = "Terrain";
         #endregion
+
+        #region HeightMap Blending
+        /// <summary>ノイズと HeightMap 合成時の正規化係数</summary>
+        public const float HeightNormalizationFactor = 0.5f;
+        
+        /// <summary>最大ノイズ影響係数（平坦部）</summary>
+        public const float MaxNoiseInfluence = 0.5f;
+        
+        /// <summary>最小ノイズ影響係数（急勾配部）</summary>
+        public const float MinNoiseInfluence = 0.1f;
+        
+        /// <summary>グラデーション計算時の乗数</summary>
+        public const float GradientMultiplier = 10f;
+        
+        /// <summary>グラデーション計算時のサンプル半径</summary>
+        public const int GradientSampleRadius = 1;
+        #endregion
     }
 }
