@@ -108,4 +108,35 @@
 ## 連絡先
 
 - AIアシスタント: Cascade
-- 最終更新: 2025-11-25 18:00 UTC+09:00
+- 最終更新: 2025-11-26 13:30 UTC+09:00
+
+---
+
+## 2025-11-26 更新
+
+### 完了した作業
+
+#### プロジェクト総点検（継続）
+
+- HeightMapGenerator のマジックナンバーを `TerrainGenerationConstants` に抽出
+- コード品質検証: NotImplementedException 0件、仮実装コメント 0件、命名規則違反なし
+- `TerrainGeneratorStub.cs` を削除（空ファイル、レガシー）
+
+#### V01 テスト計画作成
+
+- `docs/terrain/V01_TestPlan.md` を新規作成
+- 手動テストシナリオ 26 項目を定義
+- テスト実行チェックリストを含む
+
+#### Phase 1.5 設計ドキュメント作成
+
+- `docs/design/Phase15_RuntimeRefactor_Design.md` を新規作成
+- V01 コンポーネントの責務分析を実施
+- 将来の拡張ポイント（Phase 2, 2.5）を設計
+- 結論: V01 コンポーネントは品質良好、リファクタリング不要
+
+### 次のステップ
+
+- **V01 動作確認**: テスト計画に基づく手動テスト実行
+- **Phase 2 準備**: DesignerTerrainTemplate ライト版の仕様整理
+- **テスト追加**: HeightMapGenerator / TerrainGenerator のユニットテスト
