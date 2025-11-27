@@ -108,7 +108,36 @@
 ## 連絡先
 
 - AIアシスタント: Cascade
-- 最終更新: 2025-11-26 17:10 UTC+09:00
+- 最終更新: 2025-11-27 17:00 UTC+09:00
+
+---
+
+## 2025-11-27 追加点検サマリー
+
+### 完了した作業
+
+- **Testing 領域点検**: 空ファイル `TerrainGeneratorStub.cs` を削除
+- **ハードコーディング追加確認**: V01 コア領域は問題なし、レガシー領域は Phase 3 以降で対応
+- **長いスクリプト確認**: ClimateSystem (827行), PrimitiveTerrainGenerator (634行) 等はレガシー分類で維持
+
+### プロジェクト品質状態
+
+- **V01 コア**: ✅ 品質良好、リファクタリング完了
+- **空ファイル**: ✅ 全削除完了
+- **ハードコーディング**: ⚠️ レガシー領域に残存（Phase 3 以降）
+- **BlendSettings 重複**: ⏳ 延期（影響範囲大のため段階移行予定）
+
+### 次の作業予定
+
+1. **V01 手動テスト**: `docs/terrain/V01_TestPlan.md` に基づくテスト実施
+2. **Phase 2 準備**: Profile-Template 連携実装
+3. **BlendSettings 統合**: 段階的移行
+
+### コミット
+
+```
+be8c211 chore: Remove empty TerrainGeneratorStub.cs
+```
 
 ---
 
