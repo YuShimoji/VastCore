@@ -21,6 +21,17 @@ namespace Vastcore.Generation
         }
         #endregion
 
+        #region Template Settings
+        [Header("Template Settings")]
+        [SerializeField] private DesignerTerrainTemplate m_Template;
+
+        public DesignerTerrainTemplate Template
+        {
+            get => m_Template;
+            set => m_Template = value;
+        }
+        #endregion
+
         #region Terrain Size & Resolution
         [Header("Terrain Size & Resolution")]
         [Tooltip("地形の幅（メートル）")]
@@ -220,6 +231,7 @@ namespace Vastcore.Generation
         /// </summary>
         public void ResetToDefaults()
         {
+            m_Template = null;
             m_GenerationMode = TerrainGenerationMode.Noise;
             m_TerrainWidth = TerrainGenerationConstants.DefaultTerrainWidth;
             m_TerrainLength = TerrainGenerationConstants.DefaultTerrainHeight;
@@ -248,6 +260,7 @@ namespace Vastcore.Generation
         {
             if (other == null) return;
 
+            m_Template = other.m_Template;
             m_GenerationMode = other.m_GenerationMode;
             m_TerrainWidth = other.m_TerrainWidth;
             m_TerrainLength = other.m_TerrainLength;

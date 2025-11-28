@@ -108,7 +108,27 @@
 ## 連絡先
 
 - AIアシスタント: Cascade
-- 最終更新: 2025-11-27 17:00 UTC+09:00
+- 最終更新: 2025-11-28 14:00 UTC+09:00
+
+---
+
+## 2025-11-28 Phase 2 準備サマリー
+
+### 完了した作業
+
+- **TerrainGenerationProfile 拡張**: `DesignerTerrainTemplate` へのオプション参照フィールド `Template` を追加
+- **リセット/コピー連携**: `ResetToDefaults` / `CopyFrom` に Template を連動させ、後方互換を維持
+
+### 影響範囲
+
+- V01 既存挙動には変更なし（Template 未設定時は従来通り）
+- EditMode テストは Template を参照していないため、テスト結果への影響なし
+
+### 次のステップ
+
+1. Template 関連の軽量テスト追加（任意）
+2. `TerrainGenerationWindow` から Template を選択・編集する UI 設計
+3. Template 設定時の HeightMap/Noise 連携ロジック検討
 
 ---
 
