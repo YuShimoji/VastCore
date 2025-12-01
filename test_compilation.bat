@@ -8,7 +8,7 @@ echo ===== Vastcore Compilation Test =====
 echo.
 
 rem 絶対パスを明示的に設定
-set "UNITY_EXE=C:\Program Files\Unity\Hub\Editor\2022.3.21f1\Editor\Unity.exe"
+set "UNITY_EXE=C:\Program Files\Unity\Hub\Editor\6000.2.2f1\Editor\Unity.exe"
 set "PROJECT_PATH=%~dp0"
 set "LOG_FILE=%~dp0compile_test.log"
 

@@ -210,6 +210,82 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
+        /// Creates default biome presets for common terrain types.
+        /// </summary>
+        public void CreateDefaultPresets()
+        {
+#if UNITY_EDITOR
+            // Create Forest biome preset
+            var forestPreset = ScriptableObject.CreateInstance<BiomePreset>();
+            forestPreset.presetName = "Forest";
+            forestPreset.description = "Dense forest biome with moderate terrain variation";
+            forestPreset.terrainParams = new MeshGenerator.TerrainGenerationParams
+            {
+                resolution = 256,
+                size = 1000f,
+                heightScale = 50f,
+                noiseScale = 0.02f,
+                octaves = 4,
+                persistence = 0.5f,
+                lacunarity = 2f,
+                seed = 12345
+            };
+            forestPreset.primitiveSpawnDensity = 0.15f;
+            forestPreset.moisture = 0.8f;
+            forestPreset.temperature = 0.6f;
+            forestPreset.fertility = 0.7f;
+            forestPreset.rockiness = 0.2f;
+            SavePreset(forestPreset);
+
+            // Create Desert biome preset
+            var desertPreset = ScriptableObject.CreateInstance<BiomePreset>();
+            desertPreset.presetName = "Desert";
+            desertPreset.description = "Arid desert biome with flat terrain and sand materials";
+            desertPreset.terrainParams = new MeshGenerator.TerrainGenerationParams
+            {
+                resolution = 256,
+                size = 1000f,
+                heightScale = 20f,
+                noiseScale = 0.01f,
+                octaves = 3,
+                persistence = 0.4f,
+                lacunarity = 2.2f,
+                seed = 54321
+            };
+            desertPreset.primitiveSpawnDensity = 0.05f;
+            desertPreset.moisture = 0.1f;
+            desertPreset.temperature = 0.9f;
+            desertPreset.fertility = 0.2f;
+            desertPreset.rockiness = 0.4f;
+            SavePreset(desertPreset);
+
+            // Create Mountain biome preset
+            var mountainPreset = ScriptableObject.CreateInstance<BiomePreset>();
+            mountainPreset.presetName = "Mountain";
+            mountainPreset.description = "Rugged mountain biome with extreme height variations";
+            mountainPreset.terrainParams = new MeshGenerator.TerrainGenerationParams
+            {
+                resolution = 256,
+                size = 1000f,
+                heightScale = 100f,
+                noiseScale = 0.03f,
+                octaves = 6,
+                persistence = 0.6f,
+                lacunarity = 1.8f,
+                seed = 98765
+            };
+            mountainPreset.primitiveSpawnDensity = 0.08f;
+            mountainPreset.moisture = 0.4f;
+            mountainPreset.temperature = 0.3f;
+            mountainPreset.fertility = 0.3f;
+            mountainPreset.rockiness = 0.9f;
+            SavePreset(mountainPreset);
+
+            Debug.Log("Created default biome presets: Forest, Desert, Mountain");
+#endif
+        }
+
+        /// <summary>
         /// Gets a list of names of all available presets.
         /// </summary>
         public List<string> GetAvailablePresetNames()
