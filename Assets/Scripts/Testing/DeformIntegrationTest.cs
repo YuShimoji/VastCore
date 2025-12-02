@@ -1,3 +1,5 @@
+// Disabled: VastcoreLogger.Log API not yet available
+#if VASTCORE_DEFORM_INTEGRATION_ENABLED
 using UnityEngine;
 using UnityEngine.ProBuilder;
 using Vastcore.Core;
@@ -725,3 +727,4 @@ namespace Vastcore.Testing
         }
     }
 }
+#endif

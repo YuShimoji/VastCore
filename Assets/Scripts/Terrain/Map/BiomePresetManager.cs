@@ -223,12 +223,11 @@ namespace Vastcore.Generation
             {
                 resolution = 256,
                 size = 1000f,
-                heightScale = 50f,
+                maxHeight = 50f,
                 noiseScale = 0.02f,
                 octaves = 4,
                 persistence = 0.5f,
-                lacunarity = 2f,
-                seed = 12345
+                lacunarity = 2f
             };
             forestPreset.primitiveSpawnDensity = 0.15f;
             forestPreset.moisture = 0.8f;
@@ -245,12 +244,11 @@ namespace Vastcore.Generation
             {
                 resolution = 256,
                 size = 1000f,
-                heightScale = 20f,
+                maxHeight = 20f,
                 noiseScale = 0.01f,
                 octaves = 3,
                 persistence = 0.4f,
-                lacunarity = 2.2f,
-                seed = 54321
+                lacunarity = 2.2f
             };
             desertPreset.primitiveSpawnDensity = 0.05f;
             desertPreset.moisture = 0.1f;
@@ -267,12 +265,11 @@ namespace Vastcore.Generation
             {
                 resolution = 256,
                 size = 1000f,
-                heightScale = 100f,
+                maxHeight = 100f,
                 noiseScale = 0.03f,
                 octaves = 6,
                 persistence = 0.6f,
-                lacunarity = 1.8f,
-                seed = 98765
+                lacunarity = 1.8f
             };
             mountainPreset.primitiveSpawnDensity = 0.08f;
             mountainPreset.moisture = 0.4f;

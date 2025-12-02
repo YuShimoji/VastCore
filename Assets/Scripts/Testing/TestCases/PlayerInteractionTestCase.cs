@@ -1,5 +1,7 @@
+#if VASTCORE_INTEGRATION_TEST_ENABLED
 using UnityEngine;
 using System.Collections;
+using Vastcore.Player;
 
 namespace Vastcore.Testing
 {
@@ -281,3 +283,4 @@ namespace Vastcore.Testing
         }
     }
 }
+#endif

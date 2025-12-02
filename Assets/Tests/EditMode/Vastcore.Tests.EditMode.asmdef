@@ -7,7 +7,11 @@
     "Vastcore.Generation",
     "Vastcore.Terrain",
     "Vastcore.Player",
-    "Vastcore.UI"
+    "Vastcore.UI",
+    "Unity.ProBuilder",
+    "Unity.ProBuilder.Editor",
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner"
   ],
   "includePlatforms": ["Editor"],
   "excludePlatforms": [],

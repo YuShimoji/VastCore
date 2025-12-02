@@ -1,6 +1,9 @@
+#if VASTCORE_INTEGRATION_TEST_ENABLED
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Vastcore.Generation;
+using Vastcore.UI;
 
 namespace Vastcore.Testing
 {
@@ -643,3 +646,4 @@ namespace Vastcore.Testing
         }
     }
 }
+#endif

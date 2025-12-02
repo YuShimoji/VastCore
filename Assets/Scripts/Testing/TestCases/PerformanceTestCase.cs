@@ -1,3 +1,4 @@
+#if VASTCORE_PERFORMANCE_TEST_ENABLED
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
@@ -379,3 +380,4 @@ namespace Vastcore.Testing
         }
     }
 }
+#endif

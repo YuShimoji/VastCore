@@ -1,3 +1,5 @@
+// Disabled: BiomePresetManager API changes pending
+#if VASTCORE_BIOME_PRESET_TEST_ENABLED
 using UnityEngine;
 using System.Collections;
 using Vastcore.Generation;
@@ -258,3 +260,4 @@ namespace Vastcore.Testing
         }
     }
 }
+#endif

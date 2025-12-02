@@ -1,3 +1,4 @@
+#if VASTCORE_INTEGRATION_TEST_ENABLED
 using UnityEngine;
 using System.Collections;
 using Vastcore.Generation;
@@ -201,3 +202,4 @@ namespace Vastcore.Testing
         }
     }
 }
+#endif

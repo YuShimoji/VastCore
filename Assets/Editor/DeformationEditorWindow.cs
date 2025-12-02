@@ -1,3 +1,5 @@
+// This file is disabled until Vastcore.Deform namespace is implemented (Phase 3)
+#if VASTCORE_DEFORM_ENABLED
 using UnityEngine;
 using UnityEditor;
 using Vastcore.Deform;
@@ -404,3 +406,4 @@ namespace Vastcore.Editor
         }
     }
 }
+#endif

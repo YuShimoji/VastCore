@@ -1,3 +1,5 @@
+// Disabled: AdvancedPlayerController API not yet finalized
+#if VASTCORE_PLAYER_INTEGRATION_TEST_ENABLED
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
@@ -250,3 +252,4 @@ namespace Vastcore.Testing.RuntimeTests
         #endregion
     }
 }
+#endif

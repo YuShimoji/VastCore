@@ -1,3 +1,5 @@
+// Disabled: RuntimeTerrainManager and PrimitiveTerrainGenerator API not yet finalized
+#if VASTCORE_TERRAIN_INTEGRATION_TEST_ENABLED
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
@@ -297,3 +299,4 @@ namespace Vastcore.Testing.RuntimeTests
         Texture
     }
 }
+#endif

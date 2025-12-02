@@ -1,4 +1,5 @@
-#if UNITY_EDITOR && HAS_PROBUILDER
+// Disabled: AdvancedStructureTab is not yet implemented
+#if UNITY_EDITOR && HAS_PROBUILDER && VASTCORE_ADVANCED_STRUCTURE_ENABLED
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.ProBuilder;

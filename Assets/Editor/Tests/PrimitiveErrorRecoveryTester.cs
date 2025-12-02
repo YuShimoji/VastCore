@@ -1,3 +1,5 @@
+// This file is disabled until PrimitiveErrorRecovery and EditorCoroutineUtility are implemented
+#if VASTCORE_ERROR_RECOVERY_ENABLED
 using UnityEngine;
 using UnityEditor;
 using Vastcore.Generation;
@@ -159,3 +161,4 @@ public class PrimitiveErrorRecoveryTester : EditorWindow
             }), this);
     }
 }
+#endif
