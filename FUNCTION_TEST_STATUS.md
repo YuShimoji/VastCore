@@ -433,20 +433,24 @@
 
 ## 📊 Composition Tab 機能テスト結果
 
+> ⚠️ **2025-12-03 更新**: CompositionTab.cs ファイルが存在しないことを確認。
+> StructureGeneratorWindow.cs で `_tabs.Add(new CompositionTab(this)); // 一時的にコメントアウト` となっている。
+> 以下の記載は過去の計画または別ブランチの内容を参照している可能性あり。
+
 | 機能名 | 期待動作 | 実際の結果 | 状態 | 備考 |
 |--------|----------|------------|------|------|
-| **Union** | 2つのオブジェクトを結合 | ✅ 正常動作 | 🟢 完了 | CSG演算が正常 |
-| **Intersection** | オブジェクトの交差部分を抽出 | ✅ 正常動作 | 🟢 完了 | CSG演算が正常 |
-| **Difference** | 最初のオブジェクトから2番目を減算 | ✅ 正常動作 | 🟢 完了 | CSG演算が正常 |
-| **Layered Blend** | 透明度による層状合成 | ✅ 正常動作 | 🟢 完了 | 材質ブレンドが動作 |
-| **Surface Blend** | 表面に沿った変形 | ✅ 変形確認 | 🟢 完了 | 表面変形が動作 |
-| **Adaptive Blend** | 幾何学的特徴に応じた変形 | ✅ 変形確認 | 🟢 完了 | 適応的変形が動作 |
-| **Noise Blend** | ノイズによる表面変形 | ✅ 変形確認 | 🟢 完了 | ノイズ変形が動作 |
-| **Morph** | オブジェクト間のモーフィング | 🔧 修正実装済み | 🟡 テスト要 | 改良版アルゴリズム実装 |
-| **Volumetric Blend** | 体積ベースブレンド | 🔧 修正実装済み | 🟡 テスト要 | 安定版アルゴリズム実装 |
-| **Distance Field** | 距離フィールド合成 | 🔧 修正実装済み | 🟡 テスト要 | 頂点変形ベース実装 |
+| **Union** | 2つのオブジェクトを結合 | ❓ 未確認 | 🔴 実装不在 | CompositionTab.cs が存在しない |
+| **Intersection** | オブジェクトの交差部分を抽出 | ❓ 未確認 | 🔴 実装不在 | CompositionTab.cs が存在しない |
+| **Difference** | 最初のオブジェクトから2番目を減算 | ❓ 未確認 | 🔴 実装不在 | CompositionTab.cs が存在しない |
+| **Layered Blend** | 透明度による層状合成 | ❓ 未確認 | 🔴 実装不在 | CompositionTab.cs が存在しない |
+| **Surface Blend** | 表面に沿った変形 | ❓ 未確認 | 🔴 実装不在 | CompositionTab.cs が存在しない |
+| **Adaptive Blend** | 幾何学的特徴に応じた変形 | ❓ 未確認 | 🔴 実装不在 | CompositionTab.cs が存在しない |
+| **Noise Blend** | ノイズによる表面変形 | ❓ 未確認 | 🔴 実装不在 | CompositionTab.cs が存在しない |
+| **Morph** | オブジェクト間のモーフィング | ❓ 未確認 | 🔴 実装不在 | CompositionTab.cs が存在しない |
+| **Volumetric Blend** | 体積ベースブレンド | ❓ 未確認 | 🔴 実装不在 | CompositionTab.cs が存在しない |
+| **Distance Field** | 距離フィールド合成 | ❓ 未確認 | 🔴 実装不在 | CompositionTab.cs が存在しない |
 
-### 📈 成功率: 7/10 (70%) → 🔧 修正版実装完了
+### 📈 成功率: 0/10 (0%) - 実装ファイル不在のため再評価が必要
 
 ---
 
