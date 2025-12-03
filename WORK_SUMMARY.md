@@ -40,6 +40,27 @@
 
 ---
 
+### SG-1: Composition/Random Tab 未テスト機能の検証準備 - 完了 ✅
+
+#### 1. RandomControlTab 実装確認
+- 機能: Position / Rotation / Scale のランダム化とプレビューモードを提供
+- メッシュ頂点レベルの変形は未実装（Transformレベルのランダム化のみ）
+
+#### 2. CompositionTab / OperationsTab の実装状況調査
+- `StructureGeneratorWindow.cs` 内で両タブがコメントアウトされていることを確認
+- `Assets` 以下を `*Composition*.cs`, `*Operations*.cs` で検索したが、実装ファイルは不在
+- `FUNCTION_TEST_STATUS.md` の Composition Tab 記載が、現状のコードベースと一致していないことを特定
+
+#### 3. ドキュメント更新とテスト計画作成
+- `docs/SG1_TEST_VERIFICATION_PLAN.md` を新規作成
+  - RandomControlTab の手動テスト手順（位置/回転/スケール/プレビュー）
+  - 未実装機能（CompositionTab, OperationsTab, Mesh Deformation）の対応方針
+- `FUNCTION_TEST_STATUS.md` の Composition Tab セクションを現状ベースに修正
+  - CompositionTab.cs 不在の注記を追記
+  - 成功率を 7/10 → 0/10 に変更し、「実装ファイル不在のため再評価が必要」と明記
+
+---
+
 ### T2: Unityテスト環境の健全化 - 完了 ✅ (前セッション)
 
 #### 1. コンパイルエラーの全解決
@@ -105,7 +126,7 @@ Unity 6000.2.2f1 でのコンパイルエラーをすべて解決し、エラー
 - **エラー**: 0件
 - **警告**: 許容範囲内（未使用変数等）
 - **Unityバージョン**: 6000.2.2f1
-- **最終確認**: 2025-12-02
+- **最終確認**: 2025-12-03（構造ジェネレータ関連ドキュメント更新まで実施）
 
 ### 制限事項 ⚠️
 - 一部のテストファイルは未実装API依存のため一時無効化
@@ -119,10 +140,15 @@ Unity 6000.2.2f1 でのコンパイルエラーをすべて解決し、エラー
 2. リアルタイムプレビュー機能
 3. プリセット保存・読み込み機能
 
-### SG-1: Composition/Random Tab 未テスト機能の検証準備
-1. Morph / Volumetric Blend / Distance Field のテストケース作成
-2. Mesh Deformation のテストケース作成
-3. Unity Editor でのテスト実行手順ドキュメント化
+### SG-1: Composition/Random Tab 未テスト機能の検証準備（完了済み）
+1. CompositionTab / OperationsTab の実装有無を調査し、実装ファイル不在であることをドキュメント化
+2. RandomControlTab の仕様と挙動をコードレベルで整理
+3. `docs/SG1_TEST_VERIFICATION_PLAN.md` にテスト手順と今後の対応方針を明文化
+
+### SG-2: RandomControlTab 手動テストと結果反映（新規）
+1. `docs/SG1_TEST_VERIFICATION_PLAN.md` に沿ってエディタ上で手動テストを実施
+2. 実測結果を `FUNCTION_TEST_STATUS.md` と SG1_PLAN に追記
+3. 必要であればランダム化アルゴリズムやUIの改善ポイントをIssue化
 
 ### T4: Terrain統合方針の実装
 1. `UnifiedTerrainParams` 構造体の実装
@@ -193,5 +219,5 @@ files: 21 files changed, XXX insertions(+), XXX deletions(-)
 ---
 
 **作成日:** 2025-12-02  
-**最終更新:** 2025-12-02  
-**ステータス:** ✅ T2完了、T3・T4準備完了
+**最終更新:** 2025-12-03  
+**ステータス:** ✅ T2 / T3 / P3-1 / SG-1 完了、P3-2・T4・SG-2 準備完了
