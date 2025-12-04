@@ -6,13 +6,13 @@
 
 ### P3-2: DeformerTab 動的パラメータUI実装
 
-- **Status**: In Progress
+- **Status**: Completed (2025-12-04)
 - **Description**: DeformIntegrationManager と連携した動的パラメータUIの実装
 - **Tasks**:
-  - [ ] DeformerTab を DeformIntegrationManager.DeformerSettings ベースに整理
-  - [ ] DeformerType 選択に応じた動的UIフィールド生成
-  - [ ] リアルタイムプレビュー機能の基盤設計
-  - [ ] プリセット保存・読み込み機能の設計
+  - [x] DeformerTab を DeformIntegrationManager.DeformerSettings ベースに整理
+  - [x] DeformerType 選択に応じた動的UIフィールド生成
+  - [x] アニメーション設定UIの基盤設計
+  - [ ] プリセット保存・読み込み機能の設計（将来タスク）
 
 ### SG-2: RandomControlTab 手動テストと結果反映
 
