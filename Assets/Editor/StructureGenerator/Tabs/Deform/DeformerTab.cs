@@ -150,8 +150,7 @@ namespace Vastcore.Editor.StructureGenerator.Tabs
             if (_showAdvancedSettings)
             {
                 EditorGUI.indentLevel++;
-                EditorGUILayout.HelpBox("Advanced deformer-specific parameters will be displayed here based on the selected deformer type.", MessageType.Info);
-                // TODO: Dynamic parameter UI based on selected deformer type
+                DrawDynamicDeformerParameters();
                 EditorGUI.indentLevel--;
             }
 
@@ -171,6 +170,86 @@ namespace Vastcore.Editor.StructureGenerator.Tabs
             }
         }
 #endif
+
+        /// <summary>
+        /// Draws dynamic parameters based on the selected deformer type.
+        /// </summary>
+        private void DrawDynamicDeformerParameters()
+        {
+            if (_deformerNames == null || _deformerNames.Length == 0 || 
+                _selectedDeformerIndex < 0 || _selectedDeformerIndex >= _deformerNames.Length)
+            {
+                return;
+            }
+            
+            string deformerName = _deformerNames[_selectedDeformerIndex];
+            
+            EditorGUILayout.LabelField($"{deformerName} Parameters", EditorStyles.boldLabel);
+            
+            // Draw type-specific parameters
+            switch (deformerName)
+            {
+                case "BendDeformer":
+                    _bendAngle = EditorGUILayout.Slider("Bend Angle", _bendAngle, -180f, 180f);
+                    EditorGUILayout.HelpBox("Bends the mesh along the specified axis.", MessageType.Info);
+                    break;
+                    
+                case "TwistDeformer":
+                    _twistAngle = EditorGUILayout.Slider("Twist Angle", _twistAngle, -360f, 360f);
+                    EditorGUILayout.HelpBox("Twists the mesh around the specified axis.", MessageType.Info);
+                    break;
+                    
+                case "TaperDeformer":
+                    _taperFactor = EditorGUILayout.Slider("Taper Factor", _taperFactor, -2f, 2f);
+                    EditorGUILayout.HelpBox("Tapers the mesh along the specified axis.", MessageType.Info);
+                    break;
+                    
+                case "NoiseDeformer":
+                    _noiseFrequency = EditorGUILayout.Slider("Noise Frequency", _noiseFrequency, 0.1f, 10f);
+                    EditorGUILayout.HelpBox("Applies noise-based deformation to vertex positions.", MessageType.Info);
+                    break;
+                    
+                case "WaveDeformer":
+                    _waveAmplitude = EditorGUILayout.Slider("Wave Amplitude", _waveAmplitude, 0f, 2f);
+                    _waveFrequency = EditorGUILayout.Slider("Wave Frequency", _waveFrequency, 0.1f, 10f);
+                    EditorGUILayout.HelpBox("Creates wave-like deformation patterns.", MessageType.Info);
+                    break;
+                    
+                case "SpherifyDeformer":
+                    _spherifyFactor = EditorGUILayout.Slider("Spherify Factor", _spherifyFactor, 0f, 1f);
+                    EditorGUILayout.HelpBox("Morphs the mesh towards a spherical shape.", MessageType.Info);
+                    break;
+                    
+                case "RippleDeformer":
+                    _waveAmplitude = EditorGUILayout.Slider("Ripple Amplitude", _waveAmplitude, 0f, 2f);
+                    _waveFrequency = EditorGUILayout.Slider("Ripple Frequency", _waveFrequency, 0.1f, 10f);
+                    EditorGUILayout.HelpBox("Creates ripple effects emanating from a center point.", MessageType.Info);
+                    break;
+                    
+                case "SineDeformer":
+                    _waveAmplitude = EditorGUILayout.Slider("Sine Amplitude", _waveAmplitude, 0f, 2f);
+                    _waveFrequency = EditorGUILayout.Slider("Sine Frequency", _waveFrequency, 0.1f, 10f);
+                    EditorGUILayout.HelpBox("Applies sinusoidal deformation along an axis.", MessageType.Info);
+                    break;
+                    
+                default:
+                    EditorGUILayout.HelpBox($"No specific parameters for {deformerName}. Use the basic Strength and Axis controls.", MessageType.Info);
+                    break;
+            }
+            
+            // Animation settings
+            _showAnimationSettings = EditorGUILayout.Foldout(_showAnimationSettings, "Animation Settings");
+            if (_showAnimationSettings)
+            {
+                EditorGUI.indentLevel++;
+                _currentSettings.animate = EditorGUILayout.Toggle("Enable Animation", _currentSettings.animate);
+                if (_currentSettings.animate)
+                {
+                    _currentSettings.animationSpeed = EditorGUILayout.Slider("Animation Speed", _currentSettings.animationSpeed, 0.1f, 5f);
+                }
+                EditorGUI.indentLevel--;
+            }
+        }
 
         /// <summary>
         /// Draws the UI when Deform package is not available.
