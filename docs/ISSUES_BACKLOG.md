@@ -1,27 +1,28 @@
 # Issues Backlog
 
-最終更新: 2025-12-01
+最終更新: 2025-12-04
 
 ## 優先度: 高（短期）
 
-### T2: Unity テスト環境の健全化
+### P3-2: DeformerTab 動的パラメータUI実装
+
+- **Status**: In Progress
+- **Description**: DeformIntegrationManager と連携した動的パラメータUIの実装
+- **Tasks**:
+  - [ ] DeformerTab を DeformIntegrationManager.DeformerSettings ベースに整理
+  - [ ] DeformerType 選択に応じた動的UIフィールド生成
+  - [ ] リアルタイムプレビュー機能の基盤設計
+  - [ ] プリセット保存・読み込み機能の設計
+
+### SG-2: RandomControlTab 手動テストと結果反映
 
 - **Status**: Pending
-- **Description**: `scripts/run-tests.ps1 -TestMode editmode` が非ゼロ終了コードを返す問題の特定と修正
+- **Description**: `docs/SG1_TEST_VERIFICATION_PLAN.md` に沿ったテスト実施と結果反映
 - **Tasks**:
-  - [ ] `artifacts/logs/editmode.log` の解析
-  - [ ] テスト失敗原因の特定（設定/環境/テストコード）
-  - [ ] 最小修正でグリーンに戻す
-  - [ ] `TEST_PLAN.md` に必要条件を明記
-
-### T3: PrimitiveTerrainGenerator vs Terrain V0 仕様のギャップ分析
-
-- **Status**: Pending
-- **Description**: `docs/terrain/TerrainGenerationV0_Spec.md` と現在の実装の対応表作成
-- **Tasks**:
-  - [ ] V0 仕様の要件整理
-  - [ ] 現在の `PrimitiveTerrainGenerator` の機能マッピング
-  - [ ] Deform 導入時の置き換え対象の特定
+  - [ ] Position/Rotation/Scale Randomization テスト
+  - [ ] Preview Mode テスト
+  - [ ] 実測結果を FUNCTION_TEST_STATUS.md に反映
+  - [ ] 改善ポイントのIssue化
 
 ## 優先度: 中（中期）
 
@@ -77,3 +78,37 @@
 - **Artifacts**:
   - `docs/UI_MIGRATION_NOTES.md` (A3-2 結果追記)
   - `Documentation/QA/LEGACY_UI_MIGRATION_REPORT.md` (スキャン結果)
+
+### T2: Unity テスト環境の健全化
+
+- **Status**: Completed (2025-12-02)
+- **Description**: Unity 6000.2.2f1 でのコンパイルエラー全解決
+- **Artifacts**:
+  - 条件付きコンパイルガード追加（18ファイル）
+  - BiomePresetManager API修正
+  - アセンブリ参照追加
+  - `COMPILATION_STATUS_REPORT.md`
+
+### T3: Terrain/Primitive 仕様ギャップ分析
+
+- **Status**: Completed (2025-12-03)
+- **Description**: 3系統の地形生成システム比較分析
+- **Artifacts**:
+  - `docs/T3_TERRAIN_GAP_ANALYSIS.md`
+  - UnifiedTerrainParams 統合方針案
+
+### P3-1: Deform統合スケルトン実装
+
+- **Status**: Completed (2025-12-03)
+- **Description**: DeformerTab/DeformIntegrationManager のスケルトン実装
+- **Artifacts**:
+  - `Assets/Editor/StructureGenerator/Tabs/Deform/DeformerTab.cs` (条件付きコンパイル対応)
+  - `Assets/_Scripts/Integrations/Deform/DeformIntegrationManager.cs` (API実装)
+
+### SG-1: Composition/Random Tab 未テスト機能の検証準備
+
+- **Status**: Completed (2025-12-03)
+- **Description**: CompositionTab実装状況調査とRandomControlTabテスト計画作成
+- **Artifacts**:
+  - `docs/SG1_TEST_VERIFICATION_PLAN.md`
+  - `FUNCTION_TEST_STATUS.md` 更新（Composition Tab実態反映）

@@ -11,7 +11,8 @@
         "Unity.ProBuilder.Stl",
         "Vastcore.Terrain",
         "Vastcore.Core",
-        "Vastcore.Utilities"
+        "Vastcore.Utilities",
+        "Vastcore.Generation"
     ],
     "includePlatforms": [
         "Editor"

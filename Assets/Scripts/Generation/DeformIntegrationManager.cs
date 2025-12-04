@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using Deform;
 #endif
 
-namespace Vastcore.Integration.Deform
+namespace Vastcore.Generation
 {
     /// <summary>
     /// Manages the application of Deform effects to generated meshes.

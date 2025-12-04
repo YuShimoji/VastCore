@@ -2,6 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 using Vastcore.Editor.Generation;
+using Vastcore.Generation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,7 @@ namespace Vastcore.Editor.StructureGenerator.Tabs
     /// <summary>
     /// Represents the "Deform" tab in the Structure Generator editor window.
     /// Provides UI for selecting and applying Deformers to generated structures.
+    /// Integrates with DeformIntegrationManager for unified deformer management.
     /// </summary>
     public class DeformerTab : BaseStructureTab
     {
@@ -22,18 +24,47 @@ namespace Vastcore.Editor.StructureGenerator.Tabs
         public override string DisplayName => "Deform";
         public override string Description => "Apply various deformations to the generated structures.";
 
+        // DeformIntegrationManager ベースの設定
+        private DeformIntegrationManager.DeformerSettings _currentSettings;
+        private string[] _deformerTypeNames;
+        
+        // UI State
+        private bool _showAdvancedSettings = false;
+        private bool _showAnimationSettings = false;
+        private Vector2 _scrollPosition;
+        
+        // Deformer-specific parameters (動的UI用)
+        private float _bendAngle = 45f;
+        private float _twistAngle = 180f;
+        private float _taperFactor = 0.5f;
+        private float _noiseFrequency = 1f;
+        private float _waveAmplitude = 0.5f;
+        private float _waveFrequency = 2f;
+        private float _spherifyFactor = 1f;
+        
+        // Basic deformer parameters (used for both modes)
+        private float _deformStrength = 1.0f;
+        private Vector3 _deformAxis = Vector3.up;
+        
+        // Legacy fields for Deform package discovery
         private List<Type> _availableDeformers = new List<Type>();
         private string[] _deformerNames = new string[0];
         private int _selectedDeformerIndex = 0;
         
-        // Deformer parameter settings
-        private float _deformStrength = 1.0f;
-        private Vector3 _deformAxis = Vector3.up;
-        private bool _showAdvancedSettings = false;
-
         public DeformerTab(StructureGeneratorWindow parent) : base(parent) 
         {
+            InitializeDeformerTypes();
             FindAvailableDeformers();
+        }
+        
+        /// <summary>
+        /// Initializes the DeformerType names array from DeformIntegrationManager.
+        /// </summary>
+        private void InitializeDeformerTypes()
+        {
+            _deformerTypeNames = Enum.GetNames(typeof(DeformIntegrationManager.DeformerType));
+            _currentSettings = DeformIntegrationManager.DeformerSettings.Default(
+                DeformIntegrationManager.DeformerType.Bend);
         }
 
         /// <summary>
