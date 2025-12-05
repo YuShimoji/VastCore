@@ -37,10 +37,11 @@
 
 ### CT-1: CompositionTab 実装
 
-- **Status**: Pending
-- **Description**: CSG演算・合成機能の実装（現在ファイル不在）
+- **Status**: In Progress (スケルトン完了)
+- **Description**: CSG演算・合成機能の実装
 - **Tasks**:
-  - [ ] CompositionTab.cs スケルトン作成
+  - [x] CompositionTab.cs スケルトン作成
+  - [x] StructureGeneratorWindowに登録
   - [ ] ProBuilder CSG機能との統合検討
   - [ ] Union/Intersection/Difference 実装
   - [ ] Blend機能（Layered/Surface/Adaptive/Noise）
