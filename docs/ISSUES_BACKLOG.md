@@ -6,13 +6,13 @@
 
 ### T4: Terrain統合パラメータ実装
 
-- **Status**: In Progress
+- **Status**: Completed (2025-12-05)
 - **Description**: `docs/T3_TERRAIN_GAP_ANALYSIS.md` に基づく3系統地形システムの統合
 - **Tasks**:
-  - [ ] UnifiedTerrainParams 構造体の実装
-  - [ ] 各ジェネレータへのアダプタ作成
-  - [ ] 高さパラメータの統一（scale.y / maxHeight / Depth）
-  - [ ] ノイズパラメータの統一
+  - [x] UnifiedTerrainParams 構造体の実装
+  - [x] 各ジェネレータへのアダプタ作成
+  - [x] 高さパラメータの統一（scale.y / maxHeight / Depth）
+  - [x] ノイズパラメータの統一
 
 ### SG-2: RandomControlTab 手動テストと結果反映
 
