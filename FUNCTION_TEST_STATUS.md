@@ -456,18 +456,22 @@
 
 ## 🎲 Random Control Tab 機能テスト結果
 
+**最終更新**: 2025-12-04  
+**実装ファイル**: `Assets/Editor/StructureGenerator/Tabs/Editing/RandomControlTab.cs` (723行)
+
 | 機能名 | 期待動作 | 実際の結果 | 状態 | 備考 |
 |--------|----------|------------|------|------|
-| **Position Random** | オブジェクトの位置をランダム化 | ✅ 正常動作 | 🟢 完了 | 位置分散が動作 |
-| **Rotation Random** | オブジェクトの回転をランダム化 | ✅ 正常動作 | 🟢 完了 | 回転制約が動作 |
-| **Scale Random** | オブジェクトのスケールをランダム化 | ✅ 正常動作 | 🟢 完了 | スケール制約が動作 |
-| **Controlled Random** | 制約内でのランダム化 | ✅ 正常動作 | 🟢 完了 | 基本モードが動作 |
-| **Adaptive Random** | 周囲環境を考慮したランダム化 | ✅ 正常動作 | 🟢 完了 | 密度計算が動作 |
-| **Preset Management** | プリセットの保存・読み込み | ✅ 正常動作 | 🟢 完了 | Gentleプリセット確認 |
-| **Parameter Constraints** | 最小・最大値制約 | ✅ 正常動作 | 🟢 完了 | 制約システム動作 |
-| **Mesh Deformation** | メッシュ頂点レベルの変形 | 🔧 実装済み | 🟡 テスト要 | ノイズ・適応的変形対応 |
+| **Position Random** | オブジェクトの位置をランダム化 | ✅ 実装済み | 🟡 要検証 | 相対/絶対モード対応、X/Y/Z軸個別制御 |
+| **Rotation Random** | オブジェクトの回転をランダム化 | ✅ 実装済み | 🟡 要検証 | Pitch/Yaw/Roll個別制御 |
+| **Scale Random** | オブジェクトのスケールをランダム化 | ✅ 実装済み | 🟡 要検証 | Uniform/Individual Axis モード |
+| **Preview Mode** | リアルタイムプレビュー | ✅ 実装済み | 🟡 要検証 | 復元・適用ボタン、状態保存 |
+| **Real-time Update** | スライダー操作で即時反映 | ✅ 実装済み | 🟡 要検証 | `TriggerPreviewUpdate()` 実装 |
+| **Parameter Constraints** | 最小・最大値制約 | ✅ 実装済み | 🟡 要検証 | MinMaxSlider UI |
+| ~~Adaptive Random~~ | ~~周囲環境を考慮~~ | ❌ 未実装 | 🔴 未実装 | コード確認で不在 |
+| ~~Preset Management~~ | ~~プリセット保存・読み込み~~ | ❌ 未実装 | 🔴 未実装 | コード確認で不在 |
+| ~~Mesh Deformation~~ | ~~メッシュ頂点変形~~ | ❌ 未実装 | 🔴 未実装 | Transform変形のみ対応 |
 
-### 📈 成功率: 8/8 (100%) ※メッシュ変形機能追加
+### 📈 実装率: 6/9 (67%) - Transform操作は実装完了、高度機能は未実装
 
 ---
 
