@@ -1,40 +1,58 @@
 # Issues Backlog
 
-最終更新: 2025-12-04
+最終更新: 2025-12-05
 
 ## 優先度: 高（短期）
 
-### P3-2: DeformerTab 動的パラメータUI実装
+### T4: Terrain統合パラメータ実装
 
-- **Status**: Completed (2025-12-04)
-- **Description**: DeformIntegrationManager と連携した動的パラメータUIの実装
+- **Status**: In Progress
+- **Description**: `docs/T3_TERRAIN_GAP_ANALYSIS.md` に基づく3系統地形システムの統合
 - **Tasks**:
-  - [x] DeformerTab を DeformIntegrationManager.DeformerSettings ベースに整理
-  - [x] DeformerType 選択に応じた動的UIフィールド生成
-  - [x] アニメーション設定UIの基盤設計
-  - [ ] プリセット保存・読み込み機能の設計（将来タスク）
+  - [ ] UnifiedTerrainParams 構造体の実装
+  - [ ] 各ジェネレータへのアダプタ作成
+  - [ ] 高さパラメータの統一（scale.y / maxHeight / Depth）
+  - [ ] ノイズパラメータの統一
 
 ### SG-2: RandomControlTab 手動テストと結果反映
 
-- **Status**: Pending
+- **Status**: In Progress (ドキュメント準備完了)
 - **Description**: `docs/SG1_TEST_VERIFICATION_PLAN.md` に沿ったテスト実施と結果反映
 - **Tasks**:
-  - [ ] Position/Rotation/Scale Randomization テスト
-  - [ ] Preview Mode テスト
-  - [ ] 実測結果を FUNCTION_TEST_STATUS.md に反映
+  - [x] 実装状況を FUNCTION_TEST_STATUS.md に反映
+  - [ ] Position/Rotation/Scale Randomization 手動テスト
+  - [ ] Preview Mode 手動テスト
   - [ ] 改善ポイントのIssue化
 
 ## 優先度: 中（中期）
 
-### T4: Phase 3（Deform 統合）設計ドキュメント整備
+### RC-1: RandomControlTab 高度機能実装
 
 - **Status**: Pending
-- **Description**: Deform パッケージ統合の実戦用ドキュメント作成
+- **Description**: RandomControlTab の未実装高度機能
 - **Tasks**:
-  - [ ] `PHASE3_DEFORM_TECHNICAL_INVESTIGATION.md` の整備
-  - [ ] Deformer 一覧と既存システムへのマッピング
-  - [ ] 適用箇所の優先度決定
-  - [ ] ランタイム負荷とエディタ操作性のバランス設計
+  - [ ] Adaptive Random（周囲環境を考慮したランダム化）
+  - [ ] Preset Management（プリセット保存・読み込み）
+  - [ ] Mesh Deformation（メッシュ頂点レベル変形）
+
+### CT-1: CompositionTab 実装
+
+- **Status**: Pending
+- **Description**: CSG演算・合成機能の実装（現在ファイル不在）
+- **Tasks**:
+  - [ ] CompositionTab.cs スケルトン作成
+  - [ ] ProBuilder CSG機能との統合検討
+  - [ ] Union/Intersection/Difference 実装
+  - [ ] Blend機能（Layered/Surface/Adaptive/Noise）
+
+### P3-3: Deformer プリセットシステム
+
+- **Status**: Pending
+- **Description**: DeformerTab のプリセット保存・読み込み機能
+- **Tasks**:
+  - [ ] プリセットデータ構造設計
+  - [ ] ScriptableObject ベースの保存機構
+  - [ ] プリセット選択UI
 
 ### T5: 自動テスト・可観測性の強化
 
@@ -104,6 +122,15 @@
 - **Artifacts**:
   - `Assets/Editor/StructureGenerator/Tabs/Deform/DeformerTab.cs` (条件付きコンパイル対応)
   - `Assets/_Scripts/Integrations/Deform/DeformIntegrationManager.cs` (API実装)
+
+### P3-2: DeformerTab 動的パラメータUI実装
+
+- **Status**: Completed (2025-12-04)
+- **Description**: DeformIntegrationManager と連携した動的パラメータUIの実装
+- **Artifacts**:
+  - `DrawDynamicDeformerParameters()` メソッド（8種Deformer対応）
+  - アニメーション設定UI基盤
+  - DeformIntegrationManager を Vastcore.Generation 名前空間に移動
 
 ### SG-1: Composition/Random Tab 未テスト機能の検証準備
 
