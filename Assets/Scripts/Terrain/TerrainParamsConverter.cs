@@ -12,13 +12,13 @@ namespace Vastcore.Generation
         #region To PrimitiveTerrainGenerator
         
         /// <summary>
-        /// UnifiedTerrainParams を PrimitiveGenerationParams に変換
+        /// UnifiedTerrainParams を PrimitiveTerrainGenerator.PrimitiveGenerationParams に変換
         /// </summary>
         /// <param name="unified">統一パラメータ</param>
-        /// <returns>PrimitiveGenerationParams</returns>
-        public static PrimitiveGenerationParams ToPrimitive(UnifiedTerrainParams unified)
+        /// <returns>PrimitiveTerrainGenerator.PrimitiveGenerationParams</returns>
+        public static PrimitiveTerrainGenerator.PrimitiveGenerationParams ToPrimitive(UnifiedTerrainParams unified)
         {
-            return new PrimitiveGenerationParams
+            return new PrimitiveTerrainGenerator.PrimitiveGenerationParams
             {
                 position = Vector3.zero,
                 scale = new Vector3(unified.worldSize, unified.maxElevation, unified.worldSize),
@@ -91,9 +91,9 @@ namespace Vastcore.Generation
         #region From Existing Params
         
         /// <summary>
-        /// PrimitiveGenerationParams から UnifiedTerrainParams に変換
+        /// PrimitiveTerrainGenerator.PrimitiveGenerationParams から UnifiedTerrainParams に変換
         /// </summary>
-        public static UnifiedTerrainParams FromPrimitive(PrimitiveGenerationParams primitive)
+        public static UnifiedTerrainParams FromPrimitive(PrimitiveTerrainGenerator.PrimitiveGenerationParams primitive)
         {
             return new UnifiedTerrainParams
             {
