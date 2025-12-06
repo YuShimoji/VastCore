@@ -1,3 +1,6 @@
+// LEGACY: Do not modify. See docs/design/LegacyIsolation_Design.md
+// Phase 3 以降で再設計予定
+
 using UnityEngine;
 using System.Collections.Generic;
 
