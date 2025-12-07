@@ -150,6 +150,69 @@ namespace Vastcore.Generation.Map
 
 ---
 
+## 実装マイルストーン
+
+### Milestone 2.1: Profile 拡張（推定: 1-2日）
+
+**前提条件**: V01 Core テストが Pass
+
+| Step | タスク | 成果物 |
+|------|--------|--------|
+| 2.1.1 | `TerrainGenerationProfile` に `templateReference` フィールド追加 | Profile.cs 更新 |
+| 2.1.2 | `LoadFromTemplate()` メソッド実装 | Template → Profile パラメータ変換 |
+| 2.1.3 | Inspector 拡張（Template 選択 UI） | Editor スクリプト |
+| 2.1.4 | 後方互換性テスト | テストケース追加 |
+
+**完了基準**:
+- Template を持つ Profile と持たない Profile が両方動作
+- 既存テストが Pass
+
+### Milestone 2.2: UI 拡張（推定: 2-3日）
+
+**前提条件**: Milestone 2.1 完了
+
+| Step | タスク | 成果物 |
+|------|--------|--------|
+| 2.2.1 | `TerrainGenerationWindow` にタブ構造導入 | Tab UI 実装 |
+| 2.2.2 | Template タブ実装（Template 選択・プレビュー） | Template 選択 UI |
+| 2.2.3 | プレビュー生成機能 | ミニマップ表示 |
+| 2.2.4 | Template パラメータ編集 UI | 基本編集機能 |
+
+**完了基準**:
+- Template タブで Template を選択・適用可能
+- Basic タブは従来通り動作
+
+### Milestone 2.3: 生成エンジン抽象化（推定: 3-4日）
+
+**前提条件**: Milestone 2.2 完了
+
+| Step | タスク | 成果物 |
+|------|--------|--------|
+| 2.3.1 | `ITerrainGenerator` インターフェース定義 | インターフェースファイル |
+| 2.3.2 | `TerrainGenerator` をインターフェース実装に変更 | V01 Generator 更新 |
+| 2.3.3 | `TemplateTerrainGenerator` 新規作成 | Template Generator |
+| 2.3.4 | `TerrainEngine` ファサード更新 | モード分岐実装 |
+| 2.3.5 | 統合テスト | テストケース追加 |
+
+**完了基準**:
+- V01 モードと Template モードの切り替えが可能
+- 両モードで地形生成が成功
+
+### 推奨着手順序
+
+```
+Week 1:
+  └─ Milestone 2.1 (Profile 拡張)
+
+Week 2:
+  └─ Milestone 2.2 (UI 拡張)
+
+Week 3-4:
+  └─ Milestone 2.3 (生成エンジン抽象化)
+```
+
+---
+
 ## 依存関係
 
 ```text
