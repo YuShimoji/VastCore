@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Vastcore.Generation;
 
 namespace Vastcore.Tests.EditMode
@@ -101,6 +102,9 @@ namespace Vastcore.Tests.EditMode
             generator.GenerationMode = TerrainGenerationMode.HeightMap;
             generator.HeightMap = null;
             
+            // HeightMap が null の場合、Debug.LogError が出力されることを期待
+            LogAssert.Expect(LogType.Error, "[TerrainGenerator] Height map is not assigned!");
+            
             float[,] heights = HeightMapGenerator.GenerateHeights(generator);
             
             // テクスチャがない場合、すべて0のはず
@@ -146,12 +150,25 @@ namespace Vastcore.Tests.EditMode
         public void GenerateHeights_CombinedMode_ReturnsCorrectDimensions()
         {
             generator.GenerationMode = TerrainGenerationMode.NoiseAndHeightMap;
-            generator.HeightMap = null; // HeightMap なしでも動作する
+            
+            // Combined モードでは HeightMap が必要なのでダミーテクスチャを設定
+            var texture = new Texture2D(16, 16);
+            for (int y = 0; y < 16; y++)
+            {
+                for (int x = 0; x < 16; x++)
+                {
+                    texture.SetPixel(x, y, new Color(0.5f, 0.5f, 0.5f));
+                }
+            }
+            texture.Apply();
+            generator.HeightMap = texture;
             
             float[,] heights = HeightMapGenerator.GenerateHeights(generator);
             
             Assert.AreEqual(generator.Resolution, heights.GetLength(0));
             Assert.AreEqual(generator.Resolution, heights.GetLength(1));
+            
+            Object.DestroyImmediate(texture);
         }
 
         [Test]
