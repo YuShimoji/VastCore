@@ -132,6 +132,58 @@ Unity バージョン: ____
 
 ---
 
+## 自動テスト計画 (EditMode)
+
+### 現状
+
+既存テスト34ファイル中、ほとんどがLegacy機能のテスト。V01 Core 専用テストが不足。
+
+### 追加予定テスト
+
+#### 1. TerrainGenerationProfileTests.cs
+
+**場所**: `Assets/Scripts/Tests/Editor/TerrainGenerationProfileTests.cs`
+
+| ID | テスト名 | 検証内容 |
+|----|----------|----------|
+| TP-01 | Profile_CanBeCreated | ScriptableObject.CreateInstance で作成可能 |
+| TP-02 | Profile_DefaultValues | デフォルト値が TerrainGenerationConstants と一致 |
+| TP-03 | Profile_ResetToDefaults | Reset 後にデフォルト値に復帰 |
+| TP-04 | Profile_Validate_ValidParams | 有効なパラメータで true 返却 |
+| TP-05 | Profile_Validate_InvalidWidth | 不正な Width で false 返却 |
+| TP-06 | Profile_Validate_InvalidResolution | 不正な Resolution で false 返却 |
+
+#### 2. HeightMapGeneratorTests.cs
+
+**場所**: `Assets/Scripts/Tests/Editor/HeightMapGeneratorTests.cs`
+
+| ID | テスト名 | 検証内容 |
+|----|----------|----------|
+| HM-01 | GenerateHeightMap_ReturnsCorrectSize | 指定サイズの配列が返る |
+| HM-02 | GenerateHeightMap_ValuesInRange | 値が 0-1 の範囲内 |
+| HM-03 | GenerateHeightMap_SeedReproducibility | 同一シードで同一結果 |
+| HM-04 | GenerateHeightMap_DifferentSeeds | 異なるシードで異なる結果 |
+
+#### 3. TerrainGeneratorIntegrationTests.cs
+
+**場所**: `Assets/Scripts/Tests/Editor/TerrainGeneratorIntegrationTests.cs`
+
+| ID | テスト名 | 検証内容 |
+|----|----------|----------|
+| TG-01 | GenerateTerrain_CreatesTerrainData | TerrainData が生成される |
+| TG-02 | GenerateTerrain_AppliesHeightMap | HeightMap が正しく適用 |
+| TG-03 | GenerateTerrain_AppliesTextures | テクスチャが適用される |
+| TG-04 | GenerateTerrain_NoiseMode | Noise モードで正常生成 |
+| TG-05 | GenerateTerrain_HeightMapMode | HeightMap モードで正常生成 |
+
+### 実装優先順位
+
+1. **High**: TerrainGenerationProfileTests (TP-01 ~ TP-06)
+2. **Medium**: HeightMapGeneratorTests (HM-01 ~ HM-04)
+3. **Low**: TerrainGeneratorIntegrationTests (TG-01 ~ TG-05)
+
+---
+
 ## 関連ドキュメント
 
 - [TerrainGenerationV0_Spec.md](./TerrainGenerationV0_Spec.md) - V0 仕様書
