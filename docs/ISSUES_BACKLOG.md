@@ -16,12 +16,12 @@
 
 ### SG-2: RandomControlTab 手動テストと結果反映
 
-- **Status**: In Progress (ドキュメント準備完了)
+- **Status**: In Progress (コード完了・暫定テスト済み／本格テスト・最終反映待ち)
 - **Description**: `docs/SG1_TEST_VERIFICATION_PLAN.md` に沿ったテスト実施と結果反映
 - **Tasks**:
   - [x] 実装状況を FUNCTION_TEST_STATUS.md に反映
-  - [ ] Position/Rotation/Scale Randomization 手動テスト
-  - [ ] Preview Mode 手動テスト
+  - [x] Position/Rotation/Scale／Preview の軽い手動テスト（基本動作確認）
+  - [ ] `docs/SG1_TEST_VERIFICATION_PLAN.md` に沿った網羅的な手動テスト
   - [ ] 改善ポイントのIssue化
 
 ## 優先度: 中（中期）

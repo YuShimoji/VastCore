@@ -110,7 +110,21 @@
 
 ---
 
-### T2: Unityテスト環境の健全化 - 完了 ✅ (前セッション)
+### CT-1 / SG-2 の現状補足 
+
+#### 1. CT-1: CompositionTab スケルトン実装
+- `Assets/Editor/StructureGenerator/Tabs/Editing/CompositionTab.cs` を新規追加
+- `StructureGeneratorWindow.cs` のタブリストに CompositionTab を登録
+- CSG / Blend / Advanced Operations 各セクションの UI スケルトンのみ実装（コアロジックは未実装）
+
+#### 2. SG-2: RandomControlTab 暫定テスト
+- Position / Rotation / Scale / Preview / Real-time について軽い手動テストを実施
+- Undo 対応を含め、概ね期待通りの挙動を確認（ただし網羅的なテストは未完）
+- 詳細なテスト計画と最終結果反映は、今後 SG-2 本格テストとして継続
+
+---
+
+### T2: Unityテスト環境の健全化 - 完了 (前セッション)
 
 #### 1. コンパイルエラーの全解決
 Unity 6000.2.2f1 でのコンパイルエラーをすべて解決し、エラー0件でのクリーンコンパイルを実現。
@@ -268,5 +282,5 @@ files: 21 files changed, XXX insertions(+), XXX deletions(-)
 ---
 
 **作成日:** 2025-12-02  
-**最終更新:** 2025-12-03  
-**ステータス:** ✅ T2 / T3 / P3-1 / SG-1 完了、P3-2・T4・SG-2 準備完了
+**最終更新:** 2025-12-09  
+**ステータス:** ✅ T2 / T3 / P3-1 / P3-2 / T4 / SG-1 完了、SG-2 部分完了（暫定テスト・ドキュメント整理済み）
