@@ -37,7 +37,7 @@
 
 ### CT-1: CompositionTab 実装
 
-- **Status**: In Progress (スケルトン完了)
+- **Status**: In Progress (UIスケルトン完了、CSGコード実装済み（Parabox.CSG待ち）)
 - **Description**: CSG演算・合成機能の実装
 - **Tasks**:
   - [x] CompositionTab.cs スケルトン作成

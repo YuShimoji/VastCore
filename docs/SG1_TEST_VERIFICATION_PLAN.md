@@ -1,7 +1,8 @@
 # SG-1: Structure Generator Tab テスト検証計画
 
 **作成日**: 2025-12-03  
-**ステータス**: 検証準備中  
+**最終更新**: 2025-12-11  
+**ステータス**: SG-2 網羅的テスト実施中  
 **目的**: Composition/Random Tab 未テスト機能の検証準備
 
 ---
@@ -18,18 +19,19 @@
 | RelationshipTab | ✅ 存在 | 有効 | 空間関係制御 |
 | ParticleDistributionTab | ✅ 存在 | 有効 | 配置パターン |
 | DeformerTab | ✅ 存在 | 有効 | Deform統合（条件付きコンパイル） |
-| RandomControlTab | ✅ 存在 | 有効 | ランダム化制御 |
+| RandomControlTab | ✅ 存在 | 有効 | ランダム化制御（Undo対応済み） |
 | OperationsTab | ❌ **不在** | コメントアウト | CSG演算 |
-| CompositionTab | ❌ **不在** | コメントアウト | 合成機能 |
+| CompositionTab | ✅ 存在 | 有効 | UIスケルトン実装済み（CT-1で実装中） |
 
-### 1.2 FUNCTION_TEST_STATUS.md との乖離
+### 1.2 FUNCTION_TEST_STATUS.md との乖離（2025-12-11 更新）
 
-**Composition Tab（FUNCTION_TEST_STATUS.mdに記載あり）:**
-- Union, Intersection, Difference → **実装ファイル不在**
-- Layered/Surface/Adaptive/Noise Blend → **実装ファイル不在**
-- Morph, Volumetric Blend, Distance Field → **実装ファイル不在**
+**Composition Tab:**
+- `CompositionTab.cs` が存在し、UIスケルトンは実装済み
+- Union, Intersection, Difference → **UIのみ、コアロジック未実装**
+- Layered/Surface/Adaptive/Noise Blend → **UIのみ、コアロジック未実装**
+- Morph, Volumetric Blend, Distance Field → **UIのみ、コアロジック未実装**
 
-**結論**: FUNCTION_TEST_STATUS.mdの記載は過去の計画または別ブランチの実装を参照している可能性あり。
+**結論**: FUNCTION_TEST_STATUS.md は 2025-12-05 に更新済みで、現状と整合している。
 
 ---
 
@@ -132,16 +134,35 @@
 
 ## 4. テスト実行チェックリスト
 
-### RandomControlTab
+### RandomControlTab（SG-2 網羅的テスト）
 
-- [ ] Position Randomization - 相対モード
-- [ ] Position Randomization - 絶対モード
-- [ ] Rotation Randomization - 全軸
-- [ ] Scale Randomization - Uniform モード
-- [ ] Scale Randomization - Individual Axis モード
-- [ ] Preview Mode - 復元機能
-- [ ] Preview Mode - 適用機能
-- [ ] Real-time Update - スライダー操作でのリアルタイム反映
+#### Position Randomization
+- [ ] **P-1**: 相対モード - 元位置からの相対移動が正しく機能する
+- [ ] **P-2**: 絶対モード - 指定範囲内の絶対位置に配置される
+- [ ] **P-3**: X/Y/Z 軸個別制御 - 各軸が独立して機能する
+
+#### Rotation Randomization
+- [ ] **R-1**: Pitch(X)/Yaw(Y)/Roll(Z) 個別制御が機能する
+- [ ] **R-2**: 指定範囲内で回転がランダム化される
+
+#### Scale Randomization
+- [ ] **S-1**: Uniform モード - 全軸が同一スケール値になる
+- [ ] **S-2**: Individual Axis モード - 各軸が独立してランダム化される
+- [ ] **S-3**: 最小・最大制約が正しく適用される
+
+#### Preview Mode
+- [ ] **PV-1**: プレビューON時に変更がリアルタイム反映される
+- [ ] **PV-2**: 「復元」ボタンで元の状態に戻る
+- [ ] **PV-3**: 「適用」ボタンで変更が確定される
+- [ ] **PV-4**: タブ切り替え時にプレビューが適切に処理される
+
+#### Real-time Update
+- [ ] **RT-1**: スライダー操作で即時にプレビューが更新される
+
+#### Undo/Redo 対応（2025-12-05 実装済み）
+- [ ] **U-1**: 適用後に Ctrl+Z で Undo が機能する
+- [ ] **U-2**: Undo 後に Ctrl+Y で Redo が機能する
+- [ ] **U-3**: 複数オブジェクト選択時も Undo/Redo が正常に動作する
 
 ### 合否基準
 
@@ -149,19 +170,46 @@
 - 指定範囲内でランダム化される
 - Preview/復元が正常に動作する
 - Undo/Redo が正常に動作する
+- 複数オブジェクト選択時も安定動作する
 
 ---
 
-## 5. 次のアクション
+## 5. 次のアクション（2025-12-11 更新）
 
-| 優先度 | アクション | 担当 | 期限 |
+| 優先度 | アクション | 担当 | 状態 |
 |--------|-----------|------|------|
-| **高** | RandomControlTab の手動テスト実行 | 手動 | 次セッション |
-| **高** | FUNCTION_TEST_STATUS.md の更新（実態との乖離修正） | 自動 | 今セッション |
-| **中** | CompositionTab スケルトン作成検討 | 要決定 | 1週間 |
-| **低** | Mesh Deformation 実装方針決定 | 要決定 | 2週間 |
+| **高** | RandomControlTab の網羅的手動テスト実行（SG-2） | ユーザー | 🟡 実施中 |
+| ~~高~~ | ~~FUNCTION_TEST_STATUS.md の更新~~ | - | ✅ 完了（2025-12-05） |
+| ~~中~~ | ~~CompositionTab スケルトン作成~~ | - | ✅ 完了（CT-1 UIスケルトン） |
+| **高** | CT-1: CSG コアロジック実装（Union/Intersection/Difference） | AI | 🟡 次フェーズ |
+| **中** | RC-1: 高度機能実装（Adaptive/Preset/MeshDeform） | AI | ⏳ 準備中 |
 
 ---
 
-**最終更新**: 2025-12-03  
+## 6. テスト結果記録（SG-2 実施時に記入）
+
+### テスト環境
+- **Unity バージョン**: 6000.2.2f1
+- **実施日**: ____-__-__
+- **テスター**: ________
+
+### 結果サマリ
+
+| カテゴリ | 合格 | 不合格 | 備考 |
+|----------|------|--------|------|
+| Position | /3 | | |
+| Rotation | /2 | | |
+| Scale | /3 | | |
+| Preview | /4 | | |
+| Real-time | /1 | | |
+| Undo/Redo | /3 | | |
+| **合計** | /16 | | |
+
+### 発見した問題
+
+1. （テスト時に記入）
+
+---
+
+**最終更新**: 2025-12-11  
 **作成者**: Cascade AI Assistant

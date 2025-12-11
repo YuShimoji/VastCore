@@ -1,6 +1,15 @@
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
+using System.Linq;
+
+#if HAS_PROBUILDER
+using UnityEngine.ProBuilder;
+#endif
+
+#if HAS_PARABOX_CSG
+using Parabox.CSG;
+#endif
 
 namespace Vastcore.Editor.Generation
 {
@@ -44,6 +53,13 @@ namespace Vastcore.Editor.Generation
         private bool _showAdvancedSection = false;
         private float _morphFactor = 0.5f;
         private int _resolution = 32;
+        
+        #endregion
+
+        #region CSG Options
+        
+        private bool _hideSourceObjects = true;
+        private bool _deleteSourceObjects = false;
         
         #endregion
 
@@ -186,6 +202,12 @@ namespace Vastcore.Editor.Generation
                 
                 EditorGUILayout.Space(5);
                 
+                // CSG オプション
+                _hideSourceObjects = EditorGUILayout.Toggle("元オブジェクトを非表示", _hideSourceObjects);
+                _deleteSourceObjects = EditorGUILayout.Toggle("元オブジェクトを削除", _deleteSourceObjects);
+                
+                EditorGUILayout.Space(5);
+                
                 EditorGUI.BeginDisabledGroup(_sourceObjects.Count < 2);
                 if (GUILayout.Button($"Execute {_compositionMode}", GUILayout.Height(25)))
                 {
@@ -197,6 +219,9 @@ namespace Vastcore.Editor.Generation
                 {
                     EditorGUILayout.HelpBox("CSG操作には2つ以上のオブジェクトが必要です", MessageType.Warning);
                 }
+#if !HAS_PROBUILDER
+                EditorGUILayout.HelpBox("ProBuilder がインストールされていないため、CSG 機能は利用できません", MessageType.Error);
+#endif
                 
                 EditorGUI.indentLevel--;
             }
@@ -335,15 +360,164 @@ namespace Vastcore.Editor.Generation
                 return;
             }
 
-            Debug.Log($"[CompositionTab] Executing {_compositionMode} on {_sourceObjects.Count} objects");
-            
-            // TODO: ProBuilder CSG または独自実装
-            // 現在はスケルトンのため、ログ出力のみ
+#if HAS_PARABOX_CSG
+            try
+            {
+                Debug.Log($"[CompositionTab] Executing {_compositionMode} on {_sourceObjects.Count} objects");
+                
+                // 最初の2オブジェクトで CSG を実行
+                var objA = _sourceObjects[0];
+                var objB = _sourceObjects[1];
+                
+                if (objA == null || objB == null)
+                {
+                    Debug.LogError("[CompositionTab] Source objects are null");
+                    return;
+                }
+                
+                // MeshFilter/MeshRenderer を確保
+                EnsureMeshComponents(objA);
+                EnsureMeshComponents(objB);
+                
+                // CSG 演算を実行
+                Model csgResult = _compositionMode switch
+                {
+                    CompositionMode.Union => CSG.Union(objA, objB),
+                    CompositionMode.Intersection => CSG.Intersect(objA, objB),
+                    CompositionMode.Difference => CSG.Subtract(objA, objB),
+                    _ => null
+                };
+                
+                if (csgResult == null)
+                {
+                    Debug.LogError($"[CompositionTab] CSG {_compositionMode} failed - result is null");
+                    EditorUtility.DisplayDialog("CSG Error", $"{_compositionMode} 操作が失敗しました。\n\nオブジェクトが交差しているか確認してください。", "OK");
+                    return;
+                }
+                
+                // 結果から GameObject を作成
+                GameObject resultObject = CreateResultObject(csgResult, $"CSG_{_compositionMode}_Result");
+                
+                // Undo 登録
+                Undo.RegisterCreatedObjectUndo(resultObject, $"CSG {_compositionMode}");
+                
+                // 3つ以上のオブジェクトがある場合、順次 CSG を適用
+                for (int i = 2; i < _sourceObjects.Count; i++)
+                {
+                    var nextObj = _sourceObjects[i];
+                    if (nextObj == null) continue;
+                    
+                    EnsureMeshComponents(nextObj);
+                    
+                    Model nextResult = _compositionMode switch
+                    {
+                        CompositionMode.Union => CSG.Union(resultObject, nextObj),
+                        CompositionMode.Intersection => CSG.Intersect(resultObject, nextObj),
+                        CompositionMode.Difference => CSG.Subtract(resultObject, nextObj),
+                        _ => null
+                    };
+                    
+                    if (nextResult != null)
+                    {
+                        // 古い結果を削除して新しい結果を作成
+                        Object.DestroyImmediate(resultObject);
+                        resultObject = CreateResultObject(nextResult, $"CSG_{_compositionMode}_Result");
+                        Undo.RegisterCreatedObjectUndo(resultObject, $"CSG {_compositionMode}");
+                    }
+                }
+                
+                // 元オブジェクトの処理
+                HandleSourceObjects();
+                
+                // 結果を選択
+                Selection.activeGameObject = resultObject;
+                
+                Debug.Log($"[CompositionTab] CSG {_compositionMode} completed successfully!");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[CompositionTab] CSG {_compositionMode} failed: {ex.Message}");
+                EditorUtility.DisplayDialog("CSG Error", $"CSG 操作中にエラーが発生しました。\n\n{ex.Message}", "OK");
+            }
+#else
+            // Parabox.CSG が利用できない場合のフォールバック
+            Debug.Log($"[CompositionTab] CSG {_compositionMode} requested but Parabox.CSG is not available");
             EditorUtility.DisplayDialog(
-                "CSG Operation",
-                $"{_compositionMode} operation is not yet implemented.\n\n" +
-                "This feature requires ProBuilder CSG integration or custom mesh boolean implementation.",
+                "CSG Not Available",
+                "Parabox.CSG パッケージがインストールされていないため、CSG 機能は利用できません。\n\n" +
+                "ProBuilder の CSG 拡張パッケージをインストールしてください。",
                 "OK");
+#endif
+        }
+
+#if HAS_PARABOX_CSG && HAS_PROBUILDER
+        private GameObject CreateResultObject(Model csgResult, string name)
+        {
+            var materials = csgResult.materials?.ToArray() ?? new Material[0];
+            
+            // ProBuilderMesh を作成
+            ProBuilderMesh pb = ProBuilderMesh.Create();
+            pb.GetComponent<MeshFilter>().sharedMesh = (Mesh)csgResult;
+            pb.GetComponent<MeshRenderer>().sharedMaterials = materials;
+            
+            // メッシュを更新
+            pb.ToMesh();
+            pb.Refresh();
+            
+            pb.gameObject.name = name;
+            
+            return pb.gameObject;
+        }
+#endif
+        
+        private void EnsureMeshComponents(GameObject go)
+        {
+            if (go == null) return;
+            
+            var meshFilter = go.GetComponent<MeshFilter>();
+            if (meshFilter == null)
+            {
+                meshFilter = go.AddComponent<MeshFilter>();
+            }
+            
+            var meshRenderer = go.GetComponent<MeshRenderer>();
+            if (meshRenderer == null)
+            {
+                meshRenderer = go.AddComponent<MeshRenderer>();
+                meshRenderer.material = AssetDatabase.GetBuiltinExtraResource<Material>("Default-Material.mat");
+            }
+            
+#if HAS_PROBUILDER
+            var pbMesh = go.GetComponent<ProBuilderMesh>();
+            if (pbMesh != null)
+            {
+                pbMesh.ToMesh();
+                pbMesh.Refresh();
+            }
+#endif
+        }
+        
+        private void HandleSourceObjects()
+        {
+            foreach (var obj in _sourceObjects)
+            {
+                if (obj == null) continue;
+                
+                if (_deleteSourceObjects)
+                {
+                    Undo.DestroyObjectImmediate(obj);
+                }
+                else if (_hideSourceObjects)
+                {
+                    Undo.RecordObject(obj, "Hide Source Object");
+                    obj.SetActive(false);
+                }
+            }
+            
+            if (_deleteSourceObjects)
+            {
+                _sourceObjects.Clear();
+            }
         }
 
         private void ExecuteBlendOperation()
