@@ -67,8 +67,22 @@ namespace Vastcore.EditorTools
 
         private void ScanAndWriteReport()
         {
+            WriteReport(_outputRelativePath, _typeNameFilter, _includeNonPublicMembers, showDialog: true);
+        }
+
+        public static void RunBatch()
+        {
+            WriteReport(DefaultOutputRelativePath, "Csg", includeNonPublicMembers: false, showDialog: false);
+        }
+
+        private static void WriteReport(string outputRelativePath, string typeNameFilter, bool includeNonPublicMembers, bool showDialog)
+        {
+            string safeOutputRelativePath = string.IsNullOrWhiteSpace(outputRelativePath)
+                ? DefaultOutputRelativePath
+                : outputRelativePath;
+
             string projectRoot = GetProjectRootPath();
-            string fullPath = GetFullPathFromProjectRoot(_outputRelativePath);
+            string fullPath = GetFullPathFromProjectRoot(safeOutputRelativePath);
 
             string directory = Path.GetDirectoryName(fullPath);
             if (!string.IsNullOrEmpty(directory))
@@ -155,7 +169,7 @@ namespace Vastcore.EditorTools
                     sb.AppendLine("```");
                 }
 
-                string filter = _typeNameFilter ?? string.Empty;
+                string filter = typeNameFilter ?? string.Empty;
 
                 var matched = types
                     .Where(t => t != null)
@@ -181,7 +195,7 @@ namespace Vastcore.EditorTools
                     sb.AppendLine($"- BaseType: `{t.BaseType?.FullName}`");
 
                     var flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
-                    if (_includeNonPublicMembers)
+                    if (includeNonPublicMembers)
                     {
                         flags |= BindingFlags.NonPublic;
                     }
@@ -265,7 +279,11 @@ namespace Vastcore.EditorTools
             AssetDatabase.Refresh();
 
             Debug.Log($"[ProBuilderCsgScannerWindow] Report written: {fullPath}");
-            EditorUtility.DisplayDialog("ProBuilder CSG Scan", $"Report written:\n{fullPath}", "OK");
+
+            if (showDialog && !Application.isBatchMode)
+            {
+                EditorUtility.DisplayDialog("ProBuilder CSG Scan", $"Report written:\n{fullPath}", "OK");
+            }
         }
 
         private static string GetProjectRootPath()
