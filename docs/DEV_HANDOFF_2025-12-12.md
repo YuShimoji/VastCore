@@ -1,4 +1,4 @@
-# 開発申し送りメモ - 2025-12-12
+# 開発申し送りメモ - 2025-12-12 (更新版)
 
 - **対象リポジトリ**: YuShimoji/VastCore  
 - **ブランチ**: `master`  
@@ -14,7 +14,8 @@
 - `master` は `origin/master` と同期済み
 - 作業ツリーはクリーン（未コミット変更なし）
 - 直近の主要コミット:
-  - `07c1412 feat(CT-1): CSG コア実装を CompositionTab に追加`
+  - `91becfa feat(CT-1): add ProBuilder CSG API scanner` (2025-12-12 18:30頃)
+  - `9db75e0 chore(CT-1): support batch scan entrypoint` (2025-12-12 18:45頃)
 
 ---
 
@@ -63,16 +64,63 @@
     - `CSG_INTEGRATION_LOG.md`
     - `CSG_INVESTIGATION_LOG.md`
     - `docs/DEV_HANDOFF_2025-12-05.md`
-    - `docs/DEV_HANDOFF_2025-12-09.md`
+### 2.3 ProBuilder CSG API スキャナ実装
+
+- 対象ファイル:
+  - `Assets/Editor/Tools/ProBuilderCsg/ProBuilderCsgScannerWindow.cs` （新規）
+  - `Assets/Editor/Tools/ProBuilderCsg.meta` （新規）
+  - `Assets/Editor/Tools/ProBuilderCsg/ProBuilderCsgScannerWindow.cs.meta` （新規）
+
+- 実装した内容:
+  - ProBuilder関連アセンブリの自動検出とリフレクション
+  - CSG関連型のメソッド/フィールド一覧生成
+  - Unity定義シンボル取得とレポート出力
+  - バッチモード実行対応（`RunBatch` メソッド）
+  - UI: カスタム出力パス、フィルタ、詳細度設定
+
+- 目的:
+  - CT-1の第一候補（ProBuilder内蔵CSG）の可用性を機械的に判定するための材料生成
+  - レポート出力: `docs/CT1_PROBUILDER_CSG_API_SCAN.md`
+
+### 2.4 .gitignore 更新
+
+- `artifacts/` ディレクトリを無視対象に追加（テスト結果ログのクリーン化）
 
 ---
 
-## 3. 調査結果（CT-1 / CSG 依存周り）
+## 3. 調査結果（CT-1 / CSG 依存周り + タブ実装状況）
+
+### 3.1 CSG 依存状況
 
 - `Packages/manifest.json` 上で `com.unity.probuilder` は導入済み（例: 6.0.6）
 - ただし、`Parabox.CSG` は manifest に存在せず、現状は利用できない
 - 既存の参考コード:
   - `Assets/Tests/EditMode/BooleanTest.cs` は `#if HAS_PROBUILDER && HAS_PARABOX_CSG` 前提で Parabox.CSG を使用
+
+### 3.2 StructureGenerator タブ実装状況（棚卸し中）
+
+- **Generation カテゴリ**:
+  - `BasicStructureTab.cs`: プリミティブ生成（Cube/Cylinder/Wall/Sphere/Torus/Pyramid）実装済み
+  - `AdvancedStructureTab.cs`: 高度形状生成（Monolith/TwistedTower/ProceduralColumn）実装済み
+  - `StructureGenerationTab.cs`: プリミティブ生成（同上）実装済み
+  - `ProceduralTab.cs`: 手続き生成（ContinuousWall/Stairs/Structure）実装済み
+
+- **Editing カテゴリ**:
+  - `CompositionTab.cs`: UIスケルトン + CSG演算（Union/Intersection/Difference）実装済み（依存ブロック中）
+  - `RandomControlTab.cs`: Transformランダム化 + Undo/Preview 実装済み
+  - `ParticleDistributionTab.cs`: 分布配置システム実装済み
+
+- **Settings カテゴリ**:
+  - `GlobalSettingsTab.cs`: グローバル設定（Material/Scale/Position）実装済み
+  - `RelationshipTab.cs`: 構造物関係性管理実装済み
+  - `SettingsTab.cs`: ユーティリティ機能（テスト環境作成等）実装済み
+  - `StructureRelationshipSystem.cs`: 関係性計算システム実装済み
+
+- **Deform カテゴリ**:
+  - `DeformerTab.cs`: Deform統合UI実装済み（`DEFORM_AVAILABLE` 条件付き）
+
+- **未実装/コメントアウト**:
+  - `OperationsTab.cs`: 完全未実装（コメントアウト）
 
 ---
 
@@ -115,10 +163,46 @@
 
 ## 6. 次の着手順（推奨）
 
-1. **CT-1: CSG 依存方針決定（A/B/C）**
-2. **CT-1: Union の最小動作確認まで到達**
-3.（任意）SG-2 のテスト結果反映（簡易版でも可）
+### 6.1 即時着手可能
+
+1. **CT-1: ProBuilder CSG API レポート生成**
+   - Unityバッチモードで `ProBuilderCsgScannerWindow.RunBatch()` を実行
+   - `docs/CT1_PROBUILDER_CSG_API_SCAN.md` を生成・確認
+   - これにより ProBuilder内蔵CSGの可用性が機械的に判定可能
+
+2. **CT-1: CSG 依存方針決定**
+   - レポート結果に基づき、以下のいずれかを決定:
+     - **方針B**: ProBuilder内蔵API使用（依存増なし）
+     - **方針A**: Parabox.CSG導入（外部ライブラリ依存追加）
+     - **方針C**: Mesh.CombineMeshes等へのスコープダウン
+
+3. **CT-1: Union 最小動作確認実装**
+   - 決定した方針に基づき、2つのCubeのUnionを実装・テスト
+
+### 6.2 中期作業
+
+4. **A: StructureGenerator タブ棚卸し完了**
+   - 残りのタブ実装詳細調査
+   - テストケース整備状況確認
+   - ドキュメントとの整合性確認
+
+5. **C: 次タスク提案の整理**
+   - ISSUES_BACKLOG.md / DEV_HANDOFF 更新
+   - 優先度付けとスケジューリング
+
+### 6.3 ブロック要因
+
+- **なし**: 次の作業は自律的に進め可能
+- CSG方針決定後はユーザー確認が必要になる可能性あり
 
 ---
 
-以上です。
+## 7. 技術的補足
+
+- Unity 6000.2.2f1 + ProBuilder 6.0.6 で動作確認済み
+- テスト環境: `scripts/run-tests.ps1` でバッチ実行可能
+- CSGスキャナ: `Tools/Vastcore/Diagnostics/ProBuilder CSG API Scanner` から実行
+
+---
+
+以上です。作業再開は上記 6.1 からの手順で進められます。
