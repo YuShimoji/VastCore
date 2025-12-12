@@ -1,7 +1,7 @@
 # SG-1: Structure Generator Tab テスト検証計画
 
 **作成日**: 2025-12-03  
-**最終更新**: 2025-12-11  
+**最終更新**: 2025-12-12  
 **ステータス**: SG-2 網羅的テスト実施中  
 **目的**: Composition/Random Tab 未テスト機能の検証準備
 
@@ -23,15 +23,16 @@
 | OperationsTab | ❌ **不在** | コメントアウト | CSG演算 |
 | CompositionTab | ✅ 存在 | 有効 | UIスケルトン実装済み（CT-1で実装中） |
 
-### 1.2 FUNCTION_TEST_STATUS.md との乖離（2025-12-11 更新）
+### 1.2 FUNCTION_TEST_STATUS.md との乖離（2025-12-12 更新）
 
 **Composition Tab:**
+
 - `CompositionTab.cs` が存在し、UIスケルトンは実装済み
-- Union, Intersection, Difference → **UIのみ、コアロジック未実装**
+- Union, Intersection, Difference → **コード実装済み**（ただし `#if HAS_PARABOX_CSG` により、Parabox.CSG 未導入環境では無効）
 - Layered/Surface/Adaptive/Noise Blend → **UIのみ、コアロジック未実装**
 - Morph, Volumetric Blend, Distance Field → **UIのみ、コアロジック未実装**
 
-**結論**: FUNCTION_TEST_STATUS.md は 2025-12-05 に更新済みで、現状と整合している。
+**結論**: FUNCTION_TEST_STATUS.md の「CSGコード実装済み（Parabox.CSG待ち）」という記載が現状と整合している。
 
 ---
 
@@ -51,7 +52,7 @@
 
 #### Position Randomization テスト
 
-```
+```text
 1. Unity Editor でシーンを開く
 2. Tools > Vastcore > Structure Generator を開く
 3. 「Random Control」タブを選択
@@ -68,7 +69,7 @@
 
 #### Rotation Randomization テスト
 
-```
+```text
 1. 上記と同様にセットアップ
 2. Rotation Randomization セクションを展開
 3. X(Pitch)/Y(Yaw)/Z(Roll) の範囲を設定
@@ -78,7 +79,7 @@
 
 #### Scale Randomization テスト
 
-```
+```text
 1. 上記と同様にセットアップ
 2. Scale Randomization セクションを展開
 3. Uniform Scale モードでテスト:
@@ -91,7 +92,7 @@
 
 #### Preview Mode テスト
 
-```
+```text
 1. オブジェクトを選択してプレビューモードをON
 2. 「復元」ボタンで元の状態に戻ることを確認
 3. 「適用」ボタンで変更が確定されることを確認
@@ -102,22 +103,32 @@
 
 ## 3. 未実装機能の対応計画
 
-### 3.1 CompositionTab（未実装）
+### 3.1 CompositionTab（CT-1）
 
 **FUNCTION_TEST_STATUS.mdに記載の機能:**
+
 - CSG演算: Union, Intersection, Difference
 - ブレンド: Layered, Surface, Adaptive, Noise
 - 高度: Morph, Volumetric Blend, Distance Field
 
+**現状（2025-12-12時点）:**
+
+- CSG演算（Union/Intersection/Difference）は **コード実装済み** だが、`#if HAS_PARABOX_CSG` により Parabox.CSG 未導入環境では無効
+- ブレンド/高度機能は **UIのみ（処理未実装）**
+
 **対応方針:**
-1. **短期**: FUNCTION_TEST_STATUS.mdを現状に合わせて更新（「未実装」と明記）
-2. **中期**: CompositionTabのスケルトン実装を検討
-3. **長期**: ProBuilder CSG機能との統合実装
+
+1. **最優先**: CSG依存方針の決定（ProBuilder内蔵CSGを第一候補 → 失敗理由を切り分け → フォールバック検討）
+2. **短期**: Union の最小動作確認（結果メッシュ/Undo/元オブジェクトの非表示・削除）
+3. **中期**: Intersection/Difference の動作確認、複数オブジェクト処理の検証
+4. **長期**: Blend/高度機能（Morph/Volumetric/Distance Field）の設計・実装
 
 ### 3.2 OperationsTab（未実装）
 
 **対応方針:**
-- CompositionTabと同様に処理
+
+- 現状は `StructureGeneratorWindow.cs` でコメントアウトされ、実装ファイルも不在
+- 原則として CompositionTab（CT-1）に統合する前提で整理し、必要が出た場合のみ復活を検討
 
 ### 3.3 Mesh Deformation（RandomControlTab）
 
@@ -127,6 +138,7 @@
 **現状**: RandomControlTab には Transform レベルの変形のみ実装。メッシュ頂点変形は未実装。
 
 **対応方針:**
+
 1. DeformerTab（Deformパッケージ）での対応を推奨
 2. または RandomControlTab に頂点変形機能を追加
 
@@ -174,14 +186,14 @@
 
 ---
 
-## 5. 次のアクション（2025-12-11 更新）
+## 5. 次のアクション（2025-12-12 更新）
 
 | 優先度 | アクション | 担当 | 状態 |
 |--------|-----------|------|------|
 | **高** | RandomControlTab の網羅的手動テスト実行（SG-2） | ユーザー | 🟡 実施中 |
 | ~~高~~ | ~~FUNCTION_TEST_STATUS.md の更新~~ | - | ✅ 完了（2025-12-05） |
 | ~~中~~ | ~~CompositionTab スケルトン作成~~ | - | ✅ 完了（CT-1 UIスケルトン） |
-| **高** | CT-1: CSG コアロジック実装（Union/Intersection/Difference） | AI | 🟡 次フェーズ |
+| **高** | CT-1: CSG 依存方針決定 + Union 最小動作確認 | AI | 🟡 次フェーズ |
 | **中** | RC-1: 高度機能実装（Adaptive/Preset/MeshDeform） | AI | ⏳ 準備中 |
 
 ---
@@ -211,5 +223,5 @@
 
 ---
 
-**最終更新**: 2025-12-11  
+**最終更新**: 2025-12-12  
 **作成者**: Cascade AI Assistant

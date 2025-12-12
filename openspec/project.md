@@ -4,7 +4,7 @@
 VastCore is a Unity-based terrain generation and exploration game engine. It provides procedural terrain generation, dynamic loading, and interactive gameplay features.
 
 ## Tech Stack
-- **Engine**: Unity 6000.3.0b2
+- **Engine**: Unity 6000.2.2f1
 - **Language**: C#
 - **Architecture**: Modular assembly structure (Vastcore.*.asmdef)
 - **UI Framework**: Custom UI system (Vastcore.UI)

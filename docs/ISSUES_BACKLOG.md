@@ -1,6 +1,6 @@
 # Issues Backlog
 
-最終更新: 2025-12-05
+最終更新: 2025-12-12
 
 ## 優先度: 高（短期）
 
@@ -42,8 +42,10 @@
 - **Tasks**:
   - [x] CompositionTab.cs スケルトン作成
   - [x] StructureGeneratorWindowに登録
-  - [ ] ProBuilder CSG機能との統合検討
-  - [ ] Union/Intersection/Difference 実装
+  - [ ] ProBuilder 内蔵 CSG 機能との統合検討（第一候補）
+  - [x] Union/Intersection/Difference（Parabox.CSG版・条件付き）実装
+  - [ ] CSG依存方針の決定（ProBuilder優先 → 失敗理由を切り分け → フォールバック検討）
+  - [ ] Union の最小動作確認（結果メッシュ/Undo/元オブジェクトの非表示・削除）
   - [ ] Blend機能（Layered/Surface/Adaptive/Noise）
 
 ### P3-3: Deformer プリセットシステム

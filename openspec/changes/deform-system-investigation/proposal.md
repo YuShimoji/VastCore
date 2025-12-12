@@ -10,9 +10,9 @@ Integrate the Deform package (v1.2.2) into VastCore for advanced mesh deformatio
 - Ensure compatibility with existing terrain generation pipeline
 
 ## Requirements
-- Unity 2018.3+ compatibility (current: 6000.3.0b2 ✅)
+- Unity 2018.3+ compatibility (current: 6000.2.2f1 ✅)
 - Burst 1.4.8+ (current: 1.8.24 ✅)
-- Mathematics 1.2.6+ (current: 1.3.1 ✅)
+- Mathematics 1.2.6+ (current: 1.3.2 ✅)
 - URP rendering pipeline compatibility
 
 ## Scope

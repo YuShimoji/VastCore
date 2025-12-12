@@ -50,10 +50,10 @@ public class DeformationPreset
 - LOD integration: Deformation detail scales with distance
 
 ## Compatibility
-- Unity version: 2018.3+ (current: 6000.3.0b2)
+- Unity version: 2018.3+ (current: 6000.2.2f1)
 - Render pipeline: URP (current)
 - Burst version: 1.4.8+ (current: 1.8.24)
-- Mathematics version: 1.2.6+ (current: 1.3.1)
+- Mathematics version: 1.2.6+ (current: 1.3.2)
 
 ## Error Handling
 - Graceful degradation when Deform package unavailable

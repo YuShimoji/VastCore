@@ -55,7 +55,15 @@
   - Random Tab は「実装済み・要検証」のまま（SG-2 の網羅テスト待ち）
 
 - `docs/SG1_TEST_VERIFICATION_PLAN.md`
-  - 最終更新を 2025-12-11 とし、SG-2（RandomControlTab）のチェックリストを詳細化
+  - 最終更新を 2025-12-12 とし、SG-2（RandomControlTab）のチェックリストを詳細化
+
+- 追加（ドキュメント整理）:
+  - レガシー/過去ログの混乱を避けるため、以下に「正本への参照」を追記
+    - `Documentation/QA/FUNCTION_TEST_STATUS.md`
+    - `CSG_INTEGRATION_LOG.md`
+    - `CSG_INVESTIGATION_LOG.md`
+    - `docs/DEV_HANDOFF_2025-12-05.md`
+    - `docs/DEV_HANDOFF_2025-12-09.md`
 
 ---
 

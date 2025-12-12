@@ -96,17 +96,18 @@
 - メッシュ頂点レベルの変形は未実装（Transformレベルのランダム化のみ）
 
 #### 2. CompositionTab / OperationsTab の実装状況調査
-- `StructureGeneratorWindow.cs` 内で両タブがコメントアウトされていることを確認
-- `Assets` 以下を `*Composition*.cs`, `*Operations*.cs` で検索したが、実装ファイルは不在
-- `FUNCTION_TEST_STATUS.md` の Composition Tab 記載が、現状のコードベースと一致していないことを特定
+- （SG-1 実施当時）`StructureGeneratorWindow.cs` 内で OperationsTab がコメントアウトされていることを確認
+- （SG-1 実施当時）`Assets` 以下を `*Composition*.cs`, `*Operations*.cs` で検索したが、OperationsTab の実装ファイルは不在
+- ※その後（CT-1）`Assets/Editor/StructureGenerator/Tabs/Editing/CompositionTab.cs` が追加され、CompositionTab は存在する状態へ更新された
+- （SG-1 実施当時）`FUNCTION_TEST_STATUS.md` の Composition Tab 記載が、当時のコードベースと一致していないことを特定
 
 #### 3. ドキュメント更新とテスト計画作成
 - `docs/SG1_TEST_VERIFICATION_PLAN.md` を新規作成
   - RandomControlTab の手動テスト手順（位置/回転/スケール/プレビュー）
   - 未実装機能（CompositionTab, OperationsTab, Mesh Deformation）の対応方針
 - `FUNCTION_TEST_STATUS.md` の Composition Tab セクションを現状ベースに修正
-  - CompositionTab.cs 不在の注記を追記
-  - 成功率を 7/10 → 0/10 に変更し、「実装ファイル不在のため再評価が必要」と明記
+  - （当時）CompositionTab.cs 不在の注記を追記
+  - （当時）成功率を 7/10 → 0/10 に変更し、「実装ファイル不在のため再評価が必要」と明記
 
 ---
 
