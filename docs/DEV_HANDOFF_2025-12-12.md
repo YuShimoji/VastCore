@@ -64,6 +64,7 @@
     - `CSG_INTEGRATION_LOG.md`
     - `CSG_INVESTIGATION_LOG.md`
     - `docs/DEV_HANDOFF_2025-12-05.md`
+
 ### 2.3 ProBuilder CSG API スキャナ実装
 
 - 対象ファイル:
@@ -181,12 +182,12 @@
 
 ### 6.2 中期作業
 
-4. **A: StructureGenerator タブ棚卸し完了**
+1. **A: StructureGenerator タブ棚卸し完了**
    - 残りのタブ実装詳細調査
    - テストケース整備状況確認
    - ドキュメントとの整合性確認
 
-5. **C: 次タスク提案の整理**
+2. **C: 次タスク提案の整理**
    - ISSUES_BACKLOG.md / DEV_HANDOFF 更新
    - 優先度付けとスケジューリング
 
