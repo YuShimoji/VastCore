@@ -113,7 +113,7 @@ namespace Vastcore.EditorTools
             sb.AppendLine();
             sb.AppendLine($"- Unity: `{Application.unityVersion}`");
             sb.AppendLine($"- Generated: `{DateTime.Now:yyyy-MM-dd HH:mm:ss}`");
-            sb.AppendLine($"- Project root: `{projectRoot}`");
+            sb.AppendLine("- Project root: `(omitted)`");
             sb.AppendLine();
 
             sb.AppendLine("## Scripting Define Symbols");
