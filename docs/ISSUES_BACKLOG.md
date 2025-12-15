@@ -1,6 +1,6 @@
 # Issues Backlog
 
-最終更新: 2025-12-12
+最終更新: 2025-12-15
 
 ## 優先度: 高（短期）
 
@@ -37,14 +37,17 @@
 
 ### CT-1: CompositionTab 実装
 
-- **Status**: In Progress (UIスケルトン完了、CSGコード実装済み（Parabox.CSG待ち）)
+- **Status**: In Progress (UIスケルトン完了、CSGコード実装済み（Parabox.CSG待ち）／ProBuilder内蔵CSGはinternal疑い)
 - **Description**: CSG演算・合成機能の実装
 - **Tasks**:
   - [x] CompositionTab.cs スケルトン作成
   - [x] StructureGeneratorWindowに登録
-  - [ ] ProBuilder 内蔵 CSG 機能との統合検討（第一候補）
+  - [x] ProBuilder 内蔵 CSG 機能の可用性調査（reflectionスキャンレポート作成）
   - [x] Union/Intersection/Difference（Parabox.CSG版・条件付き）実装
-  - [ ] CSG依存方針の決定（ProBuilder優先 → 失敗理由を切り分け → フォールバック検討）
+  - [ ] ProBuilder内蔵CSG（`Unity.ProBuilder.Csg`）の利用可否を最小PoCで確認
+    - 反射で `UnityEngine.ProBuilder.Csg.CSG.Union/Subtract/Intersect` 呼び出し
+    - `Model` から `Mesh` / `Material[]` を取り出せるか（reflection）
+  - [ ] CSG依存方針の決定（ProBuilder reflectionで成立 → 不成立なら Parabox.CSG導入を再検討）
   - [ ] Union の最小動作確認（結果メッシュ/Undo/元オブジェクトの非表示・削除）
   - [ ] Blend機能（Layered/Surface/Adaptive/Noise）
 

@@ -16,6 +16,7 @@
 - 直近の主要コミット:
   - `91becfa feat(CT-1): add ProBuilder CSG API scanner` (2025-12-12 18:30頃)
   - `9db75e0 chore(CT-1): support batch scan entrypoint` (2025-12-12 18:45頃)
+  - `25f0e47 chore(CT-1): add ProBuilder CSG scan script and sanitized report` (2025-12-15)
 
 ---
 
@@ -83,6 +84,10 @@
   - CT-1の第一候補（ProBuilder内蔵CSG）の可用性を機械的に判定するための材料生成
   - レポート出力: `docs/CT1_PROBUILDER_CSG_API_SCAN.md`
 
+- 追記（2025-12-15）:
+  - スキャン結果のレポートをリポジトリに追加: `docs/CT1_PROBUILDER_CSG_API_SCAN.md`
+  - バッチ実行スクリプトを追加: `scripts/run-csg-scan.ps1`
+
 ### 2.4 .gitignore 更新
 
 - `artifacts/` ディレクトリを無視対象に追加（テスト結果ログのクリーン化）
@@ -95,6 +100,8 @@
 
 - `Packages/manifest.json` 上で `com.unity.probuilder` は導入済み（例: 6.0.6）
 - ただし、`Parabox.CSG` は manifest に存在せず、現状は利用できない
+- `Unity.ProBuilder.Csg` アセンブリはロードされており、CSG関連型は存在する（スキャンレポート参照）
+- ただし、`UnityEngine.ProBuilder.Csg.CSG` / `Model` などが `Public: False` であり、現状は **外部からの直接参照ができない可能性が高い**
 - 既存の参考コード:
   - `Assets/Tests/EditMode/BooleanTest.cs` は `#if HAS_PROBUILDER && HAS_PARABOX_CSG` 前提で Parabox.CSG を使用
 
@@ -135,13 +142,14 @@
 次のいずれかを決める必要がある:
 
 - **方針A**: Parabox.CSG を明示導入して現行実装を有効化する
-- **方針B**: ProBuilder 内蔵（`Unity.ProBuilder.Csg`）の API へ寄せて実装を切り替える（依存を増やさない）
+- **方針B**: ProBuilder 内蔵（`Unity.ProBuilder.Csg`）を利用する（依存を増やさない）
+  - 注: 現状のスキャン結果からは `UnityEngine.ProBuilder.Csg.CSG` が internal の可能性があり、利用には **reflection ラッパ**が必要になる可能性がある
 - **方針C**: 暫定として `Mesh.CombineMeshes` 等の簡易結合にスコープダウン（Union 相当のみ）
 
 推奨（暫定案）:
 
 - **方針B を第一候補**（ProBuilder だけで完結させる）
-- うまくいかない場合のみ **方針A** を再検討
+- ただし、internal API の場合は reflection 前提となるため、Union の最小実験で成立確認できない場合は **方針A** を再検討
 
 ### 4.2 CT-1: 最小の動作確認（Union）
 
