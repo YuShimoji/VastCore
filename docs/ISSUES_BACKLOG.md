@@ -37,18 +37,19 @@
 
 ### CT-1: CompositionTab 実装
 
-- **Status**: In Progress (UIスケルトン完了、CSGコード実装済み（Parabox.CSG待ち）／ProBuilder内蔵CSGはinternal疑い)
+- **Status**: In Progress (UIスケルトン完了、CSGプロバイダ抽象導入、ProBuilder内蔵CSG(reflection)でUnion成立／CompositionTab側の実動作検証待ち)
 - **Description**: CSG演算・合成機能の実装
 - **Tasks**:
   - [x] CompositionTab.cs スケルトン作成
   - [x] StructureGeneratorWindowに登録
   - [x] ProBuilder 内蔵 CSG 機能の可用性調査（reflectionスキャンレポート作成）
   - [x] Union/Intersection/Difference（Parabox.CSG版・条件付き）実装
-  - [ ] ProBuilder内蔵CSG（`Unity.ProBuilder.Csg`）の利用可否を最小PoCで確認
+  - [x] ProBuilder内蔵CSG（`Unity.ProBuilder.Csg`）の利用可否を最小PoCで確認
     - 反射で `UnityEngine.ProBuilder.Csg.CSG.Union/Subtract/Intersect` 呼び出し
-    - `Model` から `Mesh` / `Material[]` を取り出せるか（reflection）
-  - [ ] CSG依存方針の決定（ProBuilder reflectionで成立 → 不成立なら Parabox.CSG導入を再検討）
-  - [ ] Union の最小動作確認（結果メッシュ/Undo/元オブジェクトの非表示・削除）
+    - `Model` から `Mesh` / `Material[]` を取り出せることを確認（reflection）
+  - [x] CSG依存方針の決定（ProBuilder reflection を第一候補）
+  - [x] CSGプロバイダ抽象（ProBuilder internal / Parabox.CSG を reflection で選択）を追加
+  - [ ] CompositionTab で Union/Intersection/Difference を実動作確認（結果メッシュ/Undo/元オブジェクトの非表示・削除/複数チェイン）
   - [ ] Blend機能（Layered/Surface/Adaptive/Noise）
 
 ### P3-3: Deformer プリセットシステム

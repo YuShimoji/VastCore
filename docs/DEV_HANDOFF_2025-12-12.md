@@ -18,6 +18,15 @@
   - `9db75e0 chore(CT-1): support batch scan entrypoint` (2025-12-12 18:45頃)
   - `25f0e47 chore(CT-1): add ProBuilder CSG scan script and sanitized report` (2025-12-15)
 
+## 1.1 2025-12-15 追加更新（今回の反映内容）
+
+- `Assets/Editor/StructureGenerator/Utils/*` を追加（CSGプロバイダ抽象 / reflection 実装）
+- `Assets/Editor/Tools/ProBuilderCsg/ProBuilderInternalCsgPoC.cs` を追加（手動検証用）
+- `Assets/Scripts/Terrain/Map/BiomePresetManager.cs` の MenuItem 重複を解消（起動時エラー除去）
+- `Assets/Editor/StructureGenerator/Tabs/Editing/CompositionTab.cs` を CSGプロバイダ経由に更新
+- 新規作成した `.cs.meta` を Unity 標準形式（`MonoImporter`）に整形
+- `scripts/run-tests.ps1` を改善（異常終了時に古いXMLを誤読しないため、実行前に結果XMLを削除）
+
 ---
 
 ## 2. 今回までの主な変更（12/09 以降）
@@ -38,11 +47,13 @@
 
 - 条件付きコンパイル:
   - ProBuilder は `HAS_PROBUILDER`
-  - CSG 実装は `HAS_PARABOX_CSG` を前提にガード
+  - 旧実装は `HAS_PARABOX_CSG` を前提にガード（Parabox.CSG 未導入時に無効化される）
 
-- 重要な現状:
-  - **Parabox.CSG パッケージがプロジェクトに導入されていないため、現状は CSG が実行できない**
-  - `#if HAS_PARABOX_CSG` のブロック外ではフォールバックダイアログを出すのみ
+- 重要な現状（2025-12-15 更新）:
+  - **ProBuilder 内蔵 CSG（`Unity.ProBuilder.Csg`）は internal だが、reflection 経由で Union が成立することを確認**
+  - `CompositionTab.cs` は CSG プロバイダ抽象（reflection）経由で実行するよう更新し、Parabox.CSG 未導入でも CSG を実行可能にした
+  - 追加ファイル: `Assets/Editor/StructureGenerator/Utils/*`（`ICsgProvider` / `CsgProviderResolver` / ProBuilder internal provider 等）
+  - 追加ツール: `Assets/Editor/Tools/ProBuilderCsg/ProBuilderInternalCsgPoC.cs`（手動検証用）
 
 - アセンブリ定義の調整:
   - `HAS_PARABOX_CSG` の自動定義は削除（誤検知でコンパイルエラーを誘発し得るため）
@@ -50,10 +61,10 @@
 ### 2.2 ドキュメント更新
 
 - `docs/ISSUES_BACKLOG.md`
-  - CT-1 を「CSGコード実装済み（Parabox.CSG待ち）」として反映
+  - CT-1 を「ProBuilder 内蔵 CSG（reflection）を第一候補として実行可能」に更新
 
 - `FUNCTION_TEST_STATUS.md`
-  - Composition Tab を「CSGコード実装済み（Parabox.CSG待ち）」として反映
+  - Composition Tab を「CSGコード実装済み（ProBuilder reflection 経由）・要検証」に更新
   - Random Tab は「実装済み・要検証」のまま（SG-2 の網羅テスト待ち）
 
 - `docs/SG1_TEST_VERIFICATION_PLAN.md`
@@ -92,6 +103,15 @@
 
 - `artifacts/` ディレクトリを無視対象に追加（テスト結果ログのクリーン化）
 
+### 2.5 テスト実行（バッチ）状況
+
+- `.\scripts\run-tests.ps1 -TestMode editmode` を実行したが、プロジェクトが別のUnityインスタンスで開かれている場合、Unityが
+  `It looks like another Unity instance is running with this project open.`
+  でクラッシュし、テスト結果が生成されない。
+- 再実行手順:
+  - 当該プロジェクトを開いている Unity Editor を閉じる
+  - `.\scripts\run-tests.ps1 -TestMode editmode` を実行
+
 ---
 
 ## 3. 調査結果（CT-1 / CSG 依存周り + タブ実装状況）
@@ -101,7 +121,7 @@
 - `Packages/manifest.json` 上で `com.unity.probuilder` は導入済み（例: 6.0.6）
 - ただし、`Parabox.CSG` は manifest に存在せず、現状は利用できない
 - `Unity.ProBuilder.Csg` アセンブリはロードされており、CSG関連型は存在する（スキャンレポート参照）
-- ただし、`UnityEngine.ProBuilder.Csg.CSG` / `Model` などが `Public: False` であり、現状は **外部からの直接参照ができない可能性が高い**
+- `UnityEngine.ProBuilder.Csg.CSG` / `Model` などは `Public: False` だが、reflection 経由で `CSG.Union/Subtract/Intersect` の呼び出しと `Model → Mesh` 抽出が成立することを確認（PoC 実施）
 - 既存の参考コード:
   - `Assets/Tests/EditMode/BooleanTest.cs` は `#if HAS_PROBUILDER && HAS_PARABOX_CSG` 前提で Parabox.CSG を使用
 
@@ -114,7 +134,7 @@
   - `ProceduralTab.cs`: 手続き生成（ContinuousWall/Stairs/Structure）実装済み
 
 - **Editing カテゴリ**:
-  - `CompositionTab.cs`: UIスケルトン + CSG演算（Union/Intersection/Difference）実装済み（依存ブロック中）
+  - `CompositionTab.cs`: UIスケルトン + CSG演算（Union/Intersection/Difference）実装済み（ProBuilder reflection 経由で実行可能・要検証）
   - `RandomControlTab.cs`: Transformランダム化 + Undo/Preview 実装済み
   - `ParticleDistributionTab.cs`: 分布配置システム実装済み
 
@@ -136,20 +156,13 @@
 
 ### 4.1 CT-1: CSG 依存方針の決定（最優先）
 
-現状の `CompositionTab.cs` は Parabox.CSG 前提で CSG 実行パスが実装されているが、
-**プロジェクトに Parabox.CSG が導入されていないため動作しない**。
+現状の `CompositionTab.cs` は、CSG プロバイダ抽象（reflection）経由で CSG を実行するよう更新し、
+**Parabox.CSG 未導入でも ProBuilder 内蔵 CSG（reflection）で実行できる状態**に移行した。
 
-次のいずれかを決める必要がある:
+採用方針:
 
-- **方針A**: Parabox.CSG を明示導入して現行実装を有効化する
-- **方針B**: ProBuilder 内蔵（`Unity.ProBuilder.Csg`）を利用する（依存を増やさない）
-  - 注: 現状のスキャン結果からは `UnityEngine.ProBuilder.Csg.CSG` が internal の可能性があり、利用には **reflection ラッパ**が必要になる可能性がある
-- **方針C**: 暫定として `Mesh.CombineMeshes` 等の簡易結合にスコープダウン（Union 相当のみ）
-
-推奨（暫定案）:
-
-- **方針B を第一候補**（ProBuilder だけで完結させる）
-- ただし、internal API の場合は reflection 前提となるため、Union の最小実験で成立確認できない場合は **方針A** を再検討
+- **方針B**: ProBuilder 内蔵（`Unity.ProBuilder.Csg`）を reflection で利用（依存を増やさない）
+- フォールバック: Parabox.CSG が将来導入された場合は、ロード検知（reflection）で自動的に利用候補に入る
 
 ### 4.2 CT-1: 最小の動作確認（Union）
 
@@ -159,6 +172,13 @@
 - 結果オブジェクトの Mesh / Material の妥当性
 - 元オブジェクト非表示/削除オプションの動作
 - Undo/Redo の動作
+
+### 4.3 CT-1: CompositionTab 実動作確認
+
+- Union / Intersection / Difference
+- 複数チェイン（3個以上）
+- 元オブジェクトの非表示/削除オプション
+- 結果オブジェクトの Mesh / Material の妥当性
 
 ---
 

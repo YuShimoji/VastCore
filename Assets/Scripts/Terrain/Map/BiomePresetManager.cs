@@ -336,7 +336,6 @@ namespace Vastcore.Generation
         /// <summary>
         /// Creates a new BiomePreset asset in the editor.
         /// </summary>
-        [MenuItem("Vastcore/Create New Biome Preset")]
         public static void CreateNewPresetInEditor()
         {
             var preset = ScriptableObject.CreateInstance<BiomePreset>();

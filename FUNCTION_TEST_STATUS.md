@@ -433,15 +433,15 @@
 
 ## 📊 Composition Tab 機能テスト結果
 
-> ⚠️ **2025-12-11 更新**: CompositionTab.cs は UI スケルトンとして存在。
-> CSG コード（Union/Intersection/Difference）は実装済みだが、Parabox.CSG パッケージが未インストールのため無効状態。
-> Blend/Morph などの高度機能は未実装。
+> ⚠️ **2025-12-15 更新**: CompositionTab.cs は UI スケルトンとして存在.
+> CSG は **ProBuilder 内蔵 CSG（`Unity.ProBuilder.Csg`）を reflection 経由で呼び出す**プロバイダ実装に切り替え、Parabox.CSG 未導入でも実行可能な状態へ移行.
+> Blend/Morph などの高度機能は未実装.
 
 | 機能名 | 期待動作 | 実際の結果 | 状態 | 備考 |
 |--------|----------|------------|------|------|
-| **Union** | 2つのオブジェクトを結合 | ❓ 未確認 | 🟡 コード実装済み（Parabox.CSG待ち） | `#if HAS_PARABOX_CSG` で保護、パッケージインストール待ち |
-| **Intersection** | オブジェクトの交差部分を抽出 | ❓ 未確認 | 🟡 コード実装済み（Parabox.CSG待ち） | 同上 |
-| **Difference** | 最初のオブジェクトから2番目を減算 | ❓ 未確認 | 🟡 コード実装済み（Parabox.CSG待ち） | 同上 |
+| **Union** | 2つのオブジェクトを結合 | ❓ 未確認 | 🟡 コード実装済み（ProBuilder reflection） | `CsgProviderResolver` 経由で ProBuilder internal CSG を第一候補として実行 |
+| **Intersection** | オブジェクトの交差部分を抽出 | ❓ 未確認 | 🟡 コード実装済み（ProBuilder reflection） | 同上 |
+| **Difference** | 最初のオブジェクトから2番目を減算 | ❓ 未確認 | 🟡 コード実装済み（ProBuilder reflection） | 同上 |
 | **Layered Blend** | 透明度による層状合成 | ❓ 未確認 | 🔴 未実装（UIのみ） | Blend 用 UI のみ定義、処理未実装 |
 | **Surface Blend** | 表面に沿った変形 | ❓ 未確認 | 🔴 未実装（UIのみ） | 同上 |
 | **Adaptive Blend** | 幾何学的特徴に応じた変形 | ❓ 未確認 | 🔴 未実装（UIのみ） | 同上 |
@@ -450,11 +450,8 @@
 | **Volumetric Blend** | 体積ベースブレンド | ❓ 未確認 | 🔴 未実装（UIのみ） | 同上 |
 | **Distance Field** | 距離フィールド合成 | ❓ 未確認 | 🔴 未実装（UIのみ） | 同上 |
 
-### 📈 成功率: 3/10 (30%) - CSGコード実装済み（Parabox.CSGパッケージ待ち）、Blend/高度機能は未実装
+### 📈 成功率: 3/10 (30%) - CSGコード実装済み（ProBuilder reflection 経由・要検証）、Blend/高度機能は未実装
 
----
-
-## 🎲 Random Control Tab 機能テスト結果
 
 **最終更新**: 2025-12-04  
 **実装ファイル**: `Assets/Editor/StructureGenerator/Tabs/Editing/RandomControlTab.cs` (723行)
@@ -483,15 +480,12 @@
 | **Operations** | ❌ 不在 | ❌ 不在 | 🔴 未提供 | `StructureGeneratorWindow.cs` でコメントアウト、実装ファイル不在 |
 | **Relationships** | ✅ 完了 | ✅ 完了 | 🟢 完了 | 空間関係制御が安定 |
 | **Distribution** | ✅ 完了 | ✅ 完了 | 🟢 完了 | 配置パターンが安定 |
-| **Composition** | 🟡 CSGコード実装済み | 🔴 Blend/高度機能未実装 | 🟡 CSG待機中 | CSGコードは実装済み、Parabox.CSGパッケージインストール待ち |
+| **Composition** | 🟡 CSGコード実装済み | 🔴 Blend/高度機能未実装 | 🟡 要検証 | ProBuilder 内蔵CSG（reflection）を第一候補として実行、Parabox.CSG は任意フォールバック |
 | **Random** | ✅ Transform ランダム化完了 | 🔴 高度機能未実装 | 🟡 暫定 OK・要追加検証 | Undo 対応済み。Adaptive/Preset/Mesh Deform は RC-1 で実装予定 |
 
 ---
-
-## 🎯 優先修正項目
-
-> ℹ️ **2025-12-05 メモ**: この節は旧仕様/別ブランチで想定していた高度機能（Volumetric Blend 等）に対する改善案です。現行 StructureGenerator にはまだ該当機能が存在せず、CT-1/RC-1 バックログの将来タスク候補としてのみ参照してください。
-
+最終確認日: 2025-08-18
+テスト環境: Unity 6.0.0.29f1, Vastcore Project 
 ### 🔴 緊急度: 高
 1. **Volumetric Blend**: オブジェクト消失問題
 2. **Distance Field**: SDF計算エラー

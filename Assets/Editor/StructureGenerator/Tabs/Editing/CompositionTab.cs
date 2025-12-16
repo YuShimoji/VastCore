@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.Linq;
+using Vastcore.Editor.Generation.Csg;
 
 #if HAS_PROBUILDER
 using UnityEngine.ProBuilder;
@@ -360,78 +361,94 @@ namespace Vastcore.Editor.Generation
                 return;
             }
 
-#if HAS_PARABOX_CSG
             try
             {
                 Debug.Log($"[CompositionTab] Executing {_compositionMode} on {_sourceObjects.Count} objects");
-                
+
                 // 最初の2オブジェクトで CSG を実行
                 var objA = _sourceObjects[0];
                 var objB = _sourceObjects[1];
-                
+
                 if (objA == null || objB == null)
                 {
                     Debug.LogError("[CompositionTab] Source objects are null");
                     return;
                 }
-                
+
                 // MeshFilter/MeshRenderer を確保
                 EnsureMeshComponents(objA);
                 EnsureMeshComponents(objB);
-                
-                // CSG 演算を実行
-                Model csgResult = _compositionMode switch
+
+                var operation = _compositionMode switch
                 {
-                    CompositionMode.Union => CSG.Union(objA, objB),
-                    CompositionMode.Intersection => CSG.Intersect(objA, objB),
-                    CompositionMode.Difference => CSG.Subtract(objA, objB),
-                    _ => null
+                    CompositionMode.Union => CsgOperation.Union,
+                    CompositionMode.Intersection => CsgOperation.Intersect,
+                    CompositionMode.Difference => CsgOperation.Subtract,
+                    _ => CsgOperation.Union
                 };
-                
-                if (csgResult == null)
+
+                if (!CsgProviderResolver.TryExecuteWithFallback(
+                        objA,
+                        objB,
+                        operation,
+                        out var resultMesh,
+                        out var resultMaterials,
+                        out var providerName,
+                        out var error))
                 {
-                    Debug.LogError($"[CompositionTab] CSG {_compositionMode} failed - result is null");
-                    EditorUtility.DisplayDialog("CSG Error", $"{_compositionMode} 操作が失敗しました。\n\nオブジェクトが交差しているか確認してください。", "OK");
+                    Debug.LogError($"[CompositionTab] CSG {_compositionMode} failed: {error}");
+                    EditorUtility.DisplayDialog("CSG Error", $"{_compositionMode} 操作が失敗しました。\n\n{error}", "OK");
                     return;
                 }
-                
+
                 // 結果から GameObject を作成
-                GameObject resultObject = CreateResultObject(csgResult, $"CSG_{_compositionMode}_Result");
-                
+                GameObject resultObject = CreateResultObjectFromMesh(
+                    resultMesh,
+                    resultMaterials,
+                    $"CSG_{_compositionMode}_Result ({providerName})",
+                    objA.transform);
+
                 // Undo 登録
                 Undo.RegisterCreatedObjectUndo(resultObject, $"CSG {_compositionMode}");
-                
+
                 // 3つ以上のオブジェクトがある場合、順次 CSG を適用
                 for (int i = 2; i < _sourceObjects.Count; i++)
                 {
                     var nextObj = _sourceObjects[i];
                     if (nextObj == null) continue;
-                    
+
                     EnsureMeshComponents(nextObj);
-                    
-                    Model nextResult = _compositionMode switch
+
+                    if (!CsgProviderResolver.TryExecuteWithFallback(
+                            resultObject,
+                            nextObj,
+                            operation,
+                            out var nextMesh,
+                            out var nextMaterials,
+                            out var nextProviderName,
+                            out var nextError))
                     {
-                        CompositionMode.Union => CSG.Union(resultObject, nextObj),
-                        CompositionMode.Intersection => CSG.Intersect(resultObject, nextObj),
-                        CompositionMode.Difference => CSG.Subtract(resultObject, nextObj),
-                        _ => null
-                    };
-                    
-                    if (nextResult != null)
-                    {
-                        // 古い結果を削除して新しい結果を作成
-                        Object.DestroyImmediate(resultObject);
-                        resultObject = CreateResultObject(nextResult, $"CSG_{_compositionMode}_Result");
-                        Undo.RegisterCreatedObjectUndo(resultObject, $"CSG {_compositionMode}");
+                        Debug.LogWarning($"[CompositionTab] CSG {_compositionMode} failed on chained object '{nextObj.name}': {nextError}");
+                        EditorUtility.DisplayDialog("CSG Error", $"{_compositionMode} 操作が途中で失敗しました。\n\n{nextError}", "OK");
+                        break;
                     }
+
+                    // 古い結果を削除して新しい結果を作成
+                    Undo.DestroyObjectImmediate(resultObject);
+                    resultObject = CreateResultObjectFromMesh(
+                        nextMesh,
+                        nextMaterials,
+                        $"CSG_{_compositionMode}_Result ({nextProviderName})",
+                        objA.transform);
+                    Undo.RegisterCreatedObjectUndo(resultObject, $"CSG {_compositionMode}");
                 }
-                
+
                 // 元オブジェクトの処理
                 HandleSourceObjects();
-                
+
                 // 結果を選択
                 Selection.activeGameObject = resultObject;
-                
+
                 Debug.Log($"[CompositionTab] CSG {_compositionMode} completed successfully!");
             }
             catch (System.Exception ex)
@@ -439,15 +456,28 @@ namespace Vastcore.Editor.Generation
                 Debug.LogError($"[CompositionTab] CSG {_compositionMode} failed: {ex.Message}");
                 EditorUtility.DisplayDialog("CSG Error", $"CSG 操作中にエラーが発生しました。\n\n{ex.Message}", "OK");
             }
-#else
-            // Parabox.CSG が利用できない場合のフォールバック
-            Debug.Log($"[CompositionTab] CSG {_compositionMode} requested but Parabox.CSG is not available");
-            EditorUtility.DisplayDialog(
-                "CSG Not Available",
-                "Parabox.CSG パッケージがインストールされていないため、CSG 機能は利用できません。\n\n" +
-                "ProBuilder の CSG 拡張パッケージをインストールしてください。",
-                "OK");
-#endif
+        }
+
+        private GameObject CreateResultObjectFromMesh(Mesh mesh, Material[] materials, string name, Transform referenceTransform)
+        {
+            var resultObject = new GameObject(name);
+            resultObject.transform.SetPositionAndRotation(referenceTransform.position, referenceTransform.rotation);
+            resultObject.transform.localScale = referenceTransform.localScale;
+
+            var mf = resultObject.AddComponent<MeshFilter>();
+            mf.sharedMesh = mesh != null ? UnityEngine.Object.Instantiate(mesh) : null;
+
+            var mr = resultObject.AddComponent<MeshRenderer>();
+            if (materials != null && materials.Length > 0)
+            {
+                mr.sharedMaterials = materials;
+            }
+            else
+            {
+                mr.sharedMaterial = AssetDatabase.GetBuiltinExtraResource<Material>("Default-Material.mat");
+            }
+
+            return resultObject;
         }
 
 #if HAS_PARABOX_CSG && HAS_PROBUILDER

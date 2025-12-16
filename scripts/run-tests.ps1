@@ -34,6 +34,10 @@ $LogFile = Join-Path $LogsDir "$TestMode.log"
 New-Item -ItemType Directory -Force -Path $TestResultsDir | Out-Null
 New-Item -ItemType Directory -Force -Path $LogsDir | Out-Null
 
+if (Test-Path $ResultFile) {
+    Remove-Item -Force $ResultFile
+}
+
 # Unity 実行ファイル確認
 if (-not (Test-Path $UnityPath)) {
     Write-Error "Unity Editor not found at: $UnityPath"
