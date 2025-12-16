@@ -44,6 +44,25 @@ if (-not (Test-Path $UnityPath)) {
     exit 1
 }
 
+$projectName = Split-Path -Leaf $ProjectPath
+$unityProcesses = Get-CimInstance Win32_Process -Filter "Name='Unity.exe'" -ErrorAction SilentlyContinue
+if ($unityProcesses) {
+    $sameProject = $unityProcesses | Where-Object { $_.CommandLine -and $_.CommandLine -like "*${ProjectPath}*" }
+    if ($sameProject) {
+        Write-Error "Unity is already running with this project open. Close Unity for project '$projectName' and re-run this script. ProjectPath: $ProjectPath"
+        exit 1
+    }
+}
+
+$unityWindows = Get-Process Unity -ErrorAction SilentlyContinue
+if ($unityWindows) {
+    $sameProjectWindow = $unityWindows | Where-Object { $_.MainWindowTitle -and $_.MainWindowTitle -like "*${projectName}*" }
+    if ($sameProjectWindow) {
+        Write-Error "Unity window suggests this project is open (title contains '$projectName'). Close Unity and re-run this script."
+        exit 1
+    }
+}
+
 Write-Host "===== Unity $TestMode Test Runner =====" -ForegroundColor Cyan
 Write-Host "Project: $ProjectPath"
 Write-Host "Unity: $UnityPath"
