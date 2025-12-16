@@ -564,7 +564,7 @@ namespace Vastcore.Editor.Generation
             EditorUtility.DisplayDialog(
                 "Blend Operation",
                 $"{_blendMode} blend is not yet implemented.\n\n" +
-                "Blend Factor: {_blendFactor}",
+                $"Blend Factor: {_blendFactor}",
                 "OK");
         }
 
