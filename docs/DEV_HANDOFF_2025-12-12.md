@@ -27,6 +27,17 @@
 - 新規作成した `.cs.meta` を Unity 標準形式（`MonoImporter`）に整形
 - `scripts/run-tests.ps1` を改善（異常終了時に古いXMLを誤読しないため、実行前に結果XMLを削除）
 
+## 1.2 2025-12-17 追加更新（EditMode テスト検出復旧）
+
+- EditMode バッチテストが `Total: 0` になる問題を解消（最小スモークテストを追加して検出を保証）
+  - 追加: `Assets/Tests/EditMode/CsgProviderResolverSmokeTests.cs`
+  - 修正: `Assets/Tests/EditMode/Vastcore.Tests.EditMode.asmdef`
+    - `optionalUnityReferences: ["TestAssemblies"]` を追加
+    - `Vastcore.Editor.StructureGenerator` 参照を追加（ただしテスト本体は internal 参照を避けるため reflection 呼び出し）
+- `scripts/run-tests.ps1 -TestMode editmode` 実行結果（2025-12-17）
+  - `Total: 1 / Passed: 1 / Failed: 0 / Skipped: 0`
+- `.gitignore` はデバッグのため一時的に `artifacts/` 配下のログ/XMLのみ unignore したが、解析完了後に元へ復帰（現在は `artifacts/` 全体を ignore）
+
 ---
 
 ## 2. 今回までの主な変更（12/09 以降）
@@ -111,6 +122,10 @@
 - 再実行手順:
   - 当該プロジェクトを開いている Unity Editor を閉じる
   - `.\scripts\run-tests.ps1 -TestMode editmode` を実行
+
+- 追記（2025-12-17）:
+  - 最小スモークテスト追加により、EditMode バッチでテストが検出される状態を復旧
+  - `artifacts/test-results/editmode-results.xml` が生成され、`Total: 1 / Passed: 1` を確認
 
 ---
 
