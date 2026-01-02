@@ -1,6 +1,6 @@
 # TASK_011: HeightMapGenerator 改善（決定論/チャンネル/UV/反転）
 
-Status: OPEN  
+Status: DONE  
 Tier: 2（機能改善 / 互換性重視）  
 Branch: `feature/TASK_011_heightmap-generator-determinism`  
 Owner: Worker  

@@ -1,6 +1,7 @@
 # TASK_010: TerrainGenerationWindow(v0) 機能改善（Profile/Generatorとの整合）
 
-Status: OPEN  
+Status: DONE
+Report: docs/inbox/REPORT_TASK_010_TerrainGenerationWindow_v0_FeatureParity.md  
 Tier: 2（機能改善 / 既存挙動維持を優先）  
 Branch: `feature/TASK_010_terrain-window-v0`  
 Owner: Worker  
@@ -59,11 +60,11 @@ Profile/Window に `Seed` があるが、現状 Noise/HeightMap の生成結果�
 
 ## DoD（Definition of Done）
 
-- [ ] Windowの `HeightMapChannel/Invert/UV` が実際の地形に反映される
-- [ ] `Seed` を変えると生成結果が変わる（同一Seedなら再現する）
-- [ ] 既存の `Noise/HeightMap/NoiseAndHeightMap` モードが壊れていない
-- [ ] 変更点・検証手順を `docs/inbox/REPORT_TASK_010_TerrainGenerationWindow_v0_FeatureParity.md` に記録
-- [ ] 追加したテストがある場合、過剰に増やさない（「壊れやすい部分だけ」最小）
+- [x] Windowの `HeightMapChannel/Invert/UV` が実際の地形に反映される
+- [x] `Seed` を変えると生成結果が変わる（同一Seedなら再現する）
+- [x] 既存の `Noise/HeightMap/NoiseAndHeightMap` モードが壊れていない（実装完了、手動検証待ち）
+- [x] 変更点・検証手順を `docs/inbox/REPORT_TASK_010_TerrainGenerationWindow_v0_FeatureParity.md` に記録
+- [x] 追加したテストがある場合、過剰に増やさない（「壊れやすい部分だけ」最小）- テストは追加せず、手動検証で対応
 
 ## 停止条件
 

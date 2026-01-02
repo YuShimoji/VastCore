@@ -69,6 +69,16 @@
   - `docs/tasks/WORKER_PROMPT_TASK_010_TerrainGenerationWindow_v0.txt`
   - `docs/tasks/WORKER_PROMPT_TASK_011_HeightMapGenerator.txt`
 
+### 2026-01-03T07:39:27+09:00
+
+- TASK_010 完了（Worker）:
+  - Branch: `feature/TASK_010_terrain-window-v0`
+  - 実装完了: TerrainGenerator, TerrainGenerationWindow, HeightMapGenerator に HeightMapChannel/Invert/UV/Seed 対応を追加
+  - レポート: `docs/inbox/REPORT_TASK_010_TerrainGenerationWindow_v0_FeatureParity.md`
+  - チケット: `docs/tasks/TASK_010_TerrainGenerationWindow_v0_FeatureParity.md` → Status: DONE
+  - コミット: `feat: TerrainGenerationWindow HeightMapChannel/Invert/UV/Seed反映対応`
+  - 手動検証待ち: Unity Editor 上での動作確認が必要
+
 ## エラー/復旧ログ
 
 - なし（初期調査のみ）
