@@ -22,6 +22,11 @@ namespace Vastcore.Generation
         public float HeightMapScale { get => m_HeightMapScale; set => m_HeightMapScale = value; }
         public float HeightMapOffset { get => m_HeightMapOffset; set => m_HeightMapOffset = value; }
         public bool FlipHeightMapVertically { get => m_FlipHeightMapVertically; set => m_FlipHeightMapVertically = value; }
+        public HeightMapChannel HeightMapChannel { get => m_HeightMapChannel; set => m_HeightMapChannel = value; }
+        public bool InvertHeight { get => m_InvertHeight; set => m_InvertHeight = value; }
+        public Vector2 UVOffset { get => m_UVOffset; set => m_UVOffset = value; }
+        public Vector2 UVTiling { get => m_UVTiling; set => m_UVTiling = value; }
+        public int Seed { get => m_Seed; set => m_Seed = value; }
         public float Scale { get => m_Scale; set => m_Scale = value; }
         public int Octaves { get => m_Octaves; set => m_Octaves = value; }
         public TerrainLayer[] TerrainLayers { get => m_TerrainLayers; set => m_TerrainLayers = value; }
@@ -60,8 +65,13 @@ namespace Vastcore.Generation
         [SerializeField] private float m_HeightMapScale = TerrainGenerationConstants.DefaultHeightMapScale;
         [SerializeField] private float m_HeightMapOffset = TerrainGenerationConstants.DefaultHeightMapOffset;
         [SerializeField] private bool m_FlipHeightMapVertically = false;
+        [SerializeField] private HeightMapChannel m_HeightMapChannel = HeightMapChannel.Luminance;
+        [SerializeField] private Vector2 m_UVOffset = Vector2.zero;
+        [SerializeField] private Vector2 m_UVTiling = Vector2.one;
+        [SerializeField] private bool m_InvertHeight = false;
 
         [Header("Noise Settings")]
+        [SerializeField] private int m_Seed = 0;
         [SerializeField] private float m_Scale = TerrainGenerationConstants.DefaultNoiseScale;
         [SerializeField] private int m_Octaves = TerrainGenerationConstants.DefaultOctaves;
         [SerializeField] [Range(0,1)] private float m_Persistence = TerrainGenerationConstants.DefaultPersistence;
@@ -117,10 +127,14 @@ namespace Vastcore.Generation
             // HeightMap Settings
             m_HeightMap = profile.HeightMapTexture;
             m_HeightMapScale = profile.HeightScale;
+            m_HeightMapChannel = profile.HeightMapChannel;
+            m_InvertHeight = profile.InvertHeight;
+            m_UVOffset = profile.UVOffset;
+            m_UVTiling = profile.UVTiling;
             // Note: HeightMapOffset と FlipHeightMapVertically は Profile に含まれていない場合はデフォルト維持
-            // UV設定は将来の HeightMapGenerator 拡張時に対応
 
             // Noise Settings
+            m_Seed = profile.Seed;
             m_Scale = profile.NoiseScale;
             m_Octaves = profile.Octaves;
             m_Persistence = profile.Persistence;
@@ -154,8 +168,13 @@ namespace Vastcore.Generation
             // HeightMap Settings
             profile.HeightMapTexture = m_HeightMap;
             profile.HeightScale = m_HeightMapScale;
+            profile.HeightMapChannel = m_HeightMapChannel;
+            profile.InvertHeight = m_InvertHeight;
+            profile.UVOffset = m_UVOffset;
+            profile.UVTiling = m_UVTiling;
 
             // Noise Settings
+            profile.Seed = m_Seed;
             profile.NoiseScale = m_Scale;
             profile.Octaves = m_Octaves;
             profile.Persistence = m_Persistence;

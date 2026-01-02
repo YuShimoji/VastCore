@@ -1,9 +1,39 @@
 using UnityEngine;
+using System;
 
 namespace Vastcore.Generation
 {
     public static class HeightMapGenerator
     {
+        /// <summary>
+        /// 指定されたチャンネルから高さ値を取得
+        /// </summary>
+        private static float GetChannelValue(Color color, HeightMapChannel channel)
+        {
+            return channel switch
+            {
+                HeightMapChannel.R => color.r,
+                HeightMapChannel.G => color.g,
+                HeightMapChannel.B => color.b,
+                HeightMapChannel.A => color.a,
+                HeightMapChannel.Luminance => color.grayscale,
+                _ => color.grayscale
+            };
+        }
+
+        /// <summary>
+        /// Seed から決定論的な Offset を生成する
+        /// 同一Seedは同一結果、異Seedは概ね異なる結果を返す
+        /// </summary>
+        private static Vector2 GetDeterministicOffsetFromSeed(int seed)
+        {
+            System.Random rng = new System.Random(seed);
+            // 0-1000 の範囲でランダムなオフセットを生成（決定論的）
+            float offsetX = (float)(rng.NextDouble() * 1000.0);
+            float offsetY = (float)(rng.NextDouble() * 1000.0);
+            return new Vector2(offsetX, offsetY);
+        }
+
         public static float[,] GenerateHeights(TerrainGenerator generator)
         {
             switch (generator.GenerationMode)
@@ -20,6 +50,10 @@ namespace Vastcore.Generation
 
         private static float[,] GenerateFromNoise(TerrainGenerator generator)
         {
+            // Seed から決定論的な Offset を生成し、既存の Offset に加算
+            Vector2 seedOffset = GetDeterministicOffsetFromSeed(generator.Seed);
+            Vector2 effectiveOffset = generator.Offset + seedOffset;
+
             float[,] heights = new float[generator.Resolution, generator.Resolution];
             float maxPossibleHeight = 0;
             float amplitude = 1;
@@ -41,8 +75,8 @@ namespace Vastcore.Generation
                     
                     for (int i = 0; i < generator.Octaves; i++)
                     {
-                        float sampleX = (x - generator.Resolution / 2f + generator.Offset.x) / generator.Scale * frequency;
-                        float sampleY = (y - generator.Resolution / 2f + generator.Offset.y) / generator.Scale * frequency;
+                        float sampleX = (x - generator.Resolution / 2f + effectiveOffset.x) / generator.Scale * frequency;
+                        float sampleY = (y - generator.Resolution / 2f + effectiveOffset.y) / generator.Scale * frequency;
                         
                         float perlinValue = Mathf.PerlinNoise(sampleX, sampleY) * 2 - 1;
                         
@@ -76,32 +110,53 @@ namespace Vastcore.Generation
             
             for (int y = 0; y < generator.Resolution; y++)
             {
+                // UV Tiling と UV Offset を適用
                 float v = (float)y / (generator.Resolution - 1);
+                v = v * generator.UVTiling.y + generator.UVOffset.y;
                 if (generator.FlipHeightMapVertically) v = 1 - v;
                 
-                float sourceY = v * (sourceHeight - 1);
+                // UV座標をテクスチャ座標に変換（繰り返しを考慮）
+                float sourceY = (v % 1f) * (sourceHeight - 1);
+                if (sourceY < 0) sourceY += sourceHeight - 1;
                 int y1 = Mathf.FloorToInt(sourceY);
                 int y2 = Mathf.Min(y1 + 1, sourceHeight - 1);
                 float fy = sourceY - y1;
                 
                 for (int x = 0; x < generator.Resolution; x++)
                 {
+                    // UV Tiling と UV Offset を適用
                     float u = (float)x / (generator.Resolution - 1);
-                    float sourceX = u * (sourceWidth - 1);
+                    u = u * generator.UVTiling.x + generator.UVOffset.x;
+                    
+                    // UV座標をテクスチャ座標に変換（繰り返しを考慮）
+                    float sourceX = (u % 1f) * (sourceWidth - 1);
+                    if (sourceX < 0) sourceX += sourceWidth - 1;
                     int x1 = Mathf.FloorToInt(sourceX);
                     int x2 = Mathf.Min(x1 + 1, sourceWidth - 1);
                     float fx = sourceX - x1;
                     
-                    float c00 = pixels[y1 * sourceWidth + x1].grayscale;
-                    float c10 = pixels[y1 * sourceWidth + x2].grayscale;
-                    float c01 = pixels[y2 * sourceWidth + x1].grayscale;
-                    float c11 = pixels[y2 * sourceWidth + x2].grayscale;
+                    // 指定されたチャンネルから値を取得
+                    Color c00 = pixels[y1 * sourceWidth + x1];
+                    Color c10 = pixels[y1 * sourceWidth + x2];
+                    Color c01 = pixels[y2 * sourceWidth + x1];
+                    Color c11 = pixels[y2 * sourceWidth + x2];
+                    
+                    float h00 = GetChannelValue(c00, generator.HeightMapChannel);
+                    float h10 = GetChannelValue(c10, generator.HeightMapChannel);
+                    float h01 = GetChannelValue(c01, generator.HeightMapChannel);
+                    float h11 = GetChannelValue(c11, generator.HeightMapChannel);
                     
                     float height = Mathf.Lerp(
-                        Mathf.Lerp(c00, c10, fx),
-                        Mathf.Lerp(c01, c11, fx),
+                        Mathf.Lerp(h00, h10, fx),
+                        Mathf.Lerp(h01, h11, fx),
                         fy
                     );
+                    
+                    // InvertHeight を適用
+                    if (generator.InvertHeight)
+                    {
+                        height = 1f - height;
+                    }
                     
                     heights[x, y] = Mathf.Clamp01(height * generator.HeightMapScale + generator.HeightMapOffset);
                 }

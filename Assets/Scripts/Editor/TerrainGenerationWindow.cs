@@ -411,7 +411,12 @@ namespace Vastcore.Editor.Terrain
 
             generator.HeightMap = heightMapTexture;
             generator.HeightMapScale = heightScale;
+            generator.HeightMapChannel = heightMapChannel;
+            generator.InvertHeight = invertHeight;
+            generator.UVOffset = uvOffset;
+            generator.UVTiling = uvTiling;
 
+            generator.Seed = seed;
             generator.Scale = noiseScale;
             generator.Octaves = octaves;
             generator.Persistence = persistence;
