@@ -1,0 +1,106 @@
+<instruction>
+あなたは分散開発チームの Worker です。割り当てられた 1 タスクだけを完遂し、証跡を残してください。
+</instruction>
+
+<context>
+<mission_log>
+作業開始時に `.cursor/MISSION_LOG.md` を読み込み、現在のフェーズと進捗を確認してください。
+作業完了時に MISSION_LOG.md を更新し、進捗を記録してください。
+</mission_log>
+
+<ssot_reference>
+Phase 0: 参照と整備
+- SSOT: .shared-workflows/docs/Windsurf_AI_Collab_Rules_latest.md（無ければ docs/ 配下を参照し、必ず `ensure-ssot.js` で取得を試す）
+- 進捗: docs/HANDOVER.md
+- チケット: docs/tasks/TASK_010_TerrainGenerationWindow_v0_FeatureParity.md
+- SSOT 未整備・ensure-ssot.js 不在で解決できない場合は停止条件
+</ssot_reference>
+
+<preconditions>
+Phase 1: 前提の固定
+- Tier: 2
+- Branch: feature/TASK_010_terrain-window-v0
+- Report Target: docs/inbox/REPORT_TASK_010_TerrainGenerationWindow_v0_FeatureParity.md
+- GitHubAutoApprove: docs/HANDOVER.md の記述を参照（未記載なら push 禁止）
+</preconditions>
+
+<boundaries>
+Phase 2: 境界
+- Focus Area:
+  - Assets/Scripts/Editor/TerrainGenerationWindow.cs
+  - Assets/Scripts/Generation/TerrainGenerationProfile.cs
+  - Assets/MapGenerator/Scripts/TerrainGenerator.cs
+  - Assets/MapGenerator/Scripts/HeightMapGenerator.cs
+  - Assets/Tests/EditMode/*（必要最小限）
+- Forbidden Area:
+  - .shared-workflows/
+  - ProjectSettings/, Packages/（必要が出たら停止）
+  - 大規模リファクタ（移動/削除を伴うもの）
+- DoD:
+  - [ ] Windowの HeightMapChannel/Invert/UV が実際の地形に反映される
+  - [ ] Seed を変えると生成結果が変わる（同一Seedなら再現する）
+  - [ ] 既存の Noise/HeightMap/NoiseAndHeightMap モードが壊れていない
+  - [ ] 変更点・検証手順を docs/inbox/REPORT_TASK_010_TerrainGenerationWindow_v0_FeatureParity.md に記録
+  - [ ] 追加したテストがある場合、過剰に増やさない（壊れやすい部分だけ）
+</boundaries>
+</context>
+
+<workflow>
+<phase name="Phase 0: 参照と整備">
+<step>
+1. `.cursor/MISSION_LOG.md` を読み込み、現在のフェーズと進捗を確認。
+2. SSOT: .shared-workflows/docs/Windsurf_AI_Collab_Rules_latest.md（無ければ docs/ 配下を参照し、必ず `ensure-ssot.js` で取得を試す）
+3. 進捗: docs/HANDOVER.md
+4. チケット: docs/tasks/TASK_010_TerrainGenerationWindow_v0_FeatureParity.md（存在確認してから読む）
+</step>
+</phase>
+
+<phase name="Phase 1: 前提の固定">
+<step>
+1. `git status -sb` で未コミットが無いことを確認。
+2. `git switch feature/TASK_010_terrain-window-v0`（無ければ `git switch -c ...`）。
+3. MISSION_LOG.md を更新（Phase 1 完了を記録）。
+</step>
+</phase>
+
+<phase name="Phase 2: 境界確認">
+<step>
+1. Focus/Forbidden/DoD を再確認（チケットに準拠）。
+2. 触る予定のファイルを `Test-Path` で存在確認してから参照。
+3. MISSION_LOG.md を更新（Phase 2 完了を記録）。
+</step>
+</phase>
+
+<phase name="Phase 3: 実行ルール">
+<step>
+1. DoD を満たす最小の変更計画を立てる（大規模リファクタ禁止）。
+2. 実装し、Unity Editor 上での手動確認手順を作る（docs/terrain/V01_TestPlan.md を参照）。
+3. 可能なら EditMode テストを 1 本だけ追加/更新（壊れやすい箇所の回帰防止）。
+4. MISSION_LOG.md を更新（Phase 3 完了を記録）。
+</step>
+</phase>
+
+<phase name="Phase 4: 納品 & 検証">
+<step>
+1. docs/inbox/REPORT_TASK_010_TerrainGenerationWindow_v0_FeatureParity.md を作成し、Changes/Verification/Risk を記録。
+2. `node .shared-workflows/scripts/report-validator.js docs/inbox/REPORT_TASK_010_TerrainGenerationWindow_v0_FeatureParity.md` を実行し、結果をレポートに記載。
+3. `git status -sb` → commit（必要なら push。GitHubAutoApprove 設定に従う）。
+4. MISSION_LOG.md を更新（Phase 4 完了を記録、納品物のパスを記録）。
+</step>
+</phase>
+
+<phase name="Phase 5: チャット出力">
+<step>
+完了時: `Done: docs/tasks/TASK_010_TerrainGenerationWindow_v0_FeatureParity.md. Report: docs/inbox/REPORT_TASK_010_TerrainGenerationWindow_v0_FeatureParity.md.`
+</step>
+</phase>
+</workflow>
+
+<stop_conditions>
+停止条件:
+- Forbidden Area に触れないと解決できない
+- 依存追加が必要
+- 破壊的・復旧困難操作（rebase/reset/force push 等）が必要
+</stop_conditions>
+
+
