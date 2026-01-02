@@ -1,0 +1,11 @@
+このファイルは **互換ラッパー（Deprecated）** です。
+
+目的: 過去の運用で `ORCHESTRATOR_METAPROMPT.txt` を貼っていた人が、そのまま貼っても新方式へ誘導されるようにする。
+
+今後は、チャットに貼るのは次の1つだけに統一する:
+- `prompts/every_time/ORCHESTRATOR_DRIVER.txt`
+
+### 指示
+
+1. 直ちに `prompts/every_time/ORCHESTRATOR_DRIVER.txt` を読み、その指示に従って進行すること。
+2. 以降、このファイルの内容を「巨大メタプロンプト」として展開・解釈してはならない（肥大化の原因になるため）。

@@ -1,0 +1,12 @@
+# Orchestrator Resume Driver（Deprecated）
+
+再開/通常を分けず、チャットに貼るプロンプトは **1つのDriver** に統一する。
+
+以降、チャットに貼るのは次の1つだけ:
+- `prompts/every_time/ORCHESTRATOR_DRIVER.txt`
+
+## 指示
+
+1. 直ちに `prompts/every_time/ORCHESTRATOR_DRIVER.txt` を読み、その指示に従って再開すること。
+2. 再開判定は `.cursor/MISSION_LOG.md` の `Current Phase` をSSOTとして行うこと。
+3. このファイルの内容を「長大な再開メタプロンプト」として展開してはならない（長大化/読み落としの原因になるため）。

@@ -44,6 +44,18 @@
   - commit: `7a8c5c1`（`chore: shared-workflows導入とOrchestratorブートストラップ`）
   - 状態: `main` が `origin/main` より 1 commit 先行（push は未実施）
 
+### 2026-01-03T05:07:57+09:00
+
+- 追加対応（推奨）: Worker 起動導線をプロジェクト側に固定化。
+  - `prompts/every_time/WORKER_METAPROMPT.txt`
+  - `prompts/every_time/WORKER_COMPLETION_DRIVER.txt`
+  - `prompts/every_time/ORCHESTRATOR_METAPROMPT.txt`
+  - `prompts/every_time/ORCHESTRATOR_RESUME.txt`（参考: Driver運用は `ORCHESTRATOR_DRIVER.txt` のみ）
+- 検証:
+  - `sw-doctor (shared-orch-bootstrap)` → No issues detected. System is healthy.
+- Git:
+  - `git push origin main` 実施済み（`main...origin/main`）
+
 ## エラー/復旧ログ
 
 - なし（初期調査のみ）
