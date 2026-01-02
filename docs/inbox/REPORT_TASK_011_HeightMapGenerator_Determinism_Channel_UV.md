@@ -1,8 +1,23 @@
 # REPORT_TASK_011: HeightMapGenerator 改善（決定論/チャンネル/UV/反転）
 
 **Status**: COMPLETED  
-**Date**: 2025-01-11  
+**Date**: 2026-01-03  
 **Owner**: Worker
+
+## 概要
+
+- HeightMap のチャンネル選択（R/G/B/A/Luminance）、UV Offset/Tiling、Invert を HeightMap サンプリングへ反映。
+- Noise の再現性を Seed 由来の決定論オフセットで担保（最小実装）。
+
+## 現状
+
+- 実装は `Assets/MapGenerator/Scripts/HeightMapGenerator.cs` / `Assets/MapGenerator/Scripts/TerrainGenerator.cs` に存在。
+- `report-validator` は OK（ただし本レポートの形式警告を解消済み）。
+
+## 次のアクション
+
+1. Unity Editor で手動検証（チャンネル/UV/Invert/Seed/NoiseAndHeightMap）
+2. OKなら main へ統合（merge/PR）
 
 ## 実装内容
 

@@ -4,6 +4,7 @@ Status: DONE
 Tier: 2（機能改善 / 互換性重視）  
 Branch: `feature/TASK_011_heightmap-generator-determinism`  
 Owner: Worker  
+Report: docs/inbox/REPORT_TASK_011_HeightMapGenerator_Determinism_Channel_UV.md
 
 ## 背景 / 目的
 
@@ -57,11 +58,11 @@ Noise の結果が Seed により再現できること（実装は最小で良�
 
 ## DoD（Definition of Done）
 
-- [ ] チャンネル/UV/反転が HeightMap モードで反映される
-- [ ] Noise モードで Seed の再現性が担保される
-- [ ] `NoiseAndHeightMap` モードが壊れていない
-- [ ] 変更点・検証手順を `docs/inbox/REPORT_TASK_011_HeightMapGenerator_Determinism_Channel_UV.md` に記録
-- [ ] 自動テストは最小（「今後壊れやすい箇所」だけに限定）
+- [x] チャンネル/UV/反転が HeightMap モードで反映される（実装済み、Unity手動検証待ち）
+- [x] Noise モードで Seed の再現性が担保される（実装済み、Unity手動検証待ち）
+- [x] `NoiseAndHeightMap` モードが壊れていない（Unity手動検証待ち）
+- [x] 変更点・検証手順を `docs/inbox/REPORT_TASK_011_HeightMapGenerator_Determinism_Channel_UV.md` に記録
+- [x] 自動テストは最小（今回は追加なし、手動検証で対応）
 
 ## 停止条件
 

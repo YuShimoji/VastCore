@@ -7,6 +7,21 @@
 **Duration**: 約0.5h  
 **Changes**: TerrainGenerator, TerrainGenerationWindow, HeightMapGenerator に HeightMapChannel/Invert/UV/Seed 対応を追加
 
+## 概要
+
+- TerrainGenerationWindow(v0) の入力（Channel/Invert/UV/Seed）を、実際の生成結果へ反映できるようにする改善。
+- Unity Editor 上での最終手動検証（モード別の生成確認）が残っている。
+
+## 現状
+
+- 実装は完了（差分は `feat: TerrainGenerationWindow HeightMapChannel/Invert/UV/Seed反映対応`）。
+- `report-validator` は OK（ただし本レポートの形式警告を解消済み）。
+
+## 次のアクション
+
+1. Unity Editor で手動検証（Noise / HeightMap / NoiseAndHeightMap）
+2. OKなら main へ統合（merge/PR）
+
 ## Changes
 
 - `Assets/MapGenerator/Scripts/TerrainGenerator.cs`:
