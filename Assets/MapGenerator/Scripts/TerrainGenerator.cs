@@ -330,7 +330,9 @@ namespace Vastcore.Generation
                         }
                     }
 
-                    terrainData.SetHeights(yStart, xStart, batchHeights);
+                    // TerrainData.SetHeights の引数は (xBase, yBase, heights)。
+                    // ここを入れ替えると端で out-of-bounds を起こす（例: yStart が末尾に近いときに xBase として扱われる）。
+                    terrainData.SetHeights(xStart, yStart, batchHeights);
                     // フレーム分散（必要に応じてyield return null;）
                 }
             }

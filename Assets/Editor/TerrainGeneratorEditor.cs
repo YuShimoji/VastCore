@@ -46,6 +46,25 @@ namespace Vastcore.Editor
         sp_TreeMaximumFullLODCount = serializedObject.FindProperty("m_TreeMaximumFullLODCount");
     }
 
+    private static void SafePropertyField(SerializedProperty property, GUIContent label, bool includeChildren = false)
+    {
+        if (property == null)
+        {
+            EditorGUILayout.HelpBox($"SerializedProperty が見つかりません: {label.text}", MessageType.Warning);
+            return;
+        }
+
+        try
+        {
+            EditorGUILayout.PropertyField(property, label, includeChildren);
+        }
+        catch (NullReferenceException ex)
+        {
+            // Unity内蔵のdrawerがNREを出すケースがあるため、Inspector全体を壊さないように防御する。
+            EditorGUILayout.HelpBox($"Inspector描画で例外が発生しました（{label.text}）。一時的に表示をスキップします。\n{ex.GetType().Name}: {ex.Message}", MessageType.Warning);
+        }
+    }
+
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
@@ -118,9 +137,9 @@ namespace Vastcore.Editor
         if (m_ShowTextureSettings)
         {
             EditorGUI.indentLevel++;
-            EditorGUILayout.PropertyField(sp_TerrainLayers, new GUIContent("Terrain Layers"), true);
-            EditorGUILayout.PropertyField(sp_TextureBlendFactors, new GUIContent("Texture Blend Factors"), true);
-            EditorGUILayout.PropertyField(sp_TextureTiling, new GUIContent("Texture Tiling"), true);
+            SafePropertyField(sp_TerrainLayers, new GUIContent("Terrain Layers"), true);
+            SafePropertyField(sp_TextureBlendFactors, new GUIContent("Texture Blend Factors"), true);
+            SafePropertyField(sp_TextureTiling, new GUIContent("Texture Tiling"), true);
             EditorGUI.indentLevel--;
         }
 
@@ -129,11 +148,12 @@ namespace Vastcore.Editor
         if (m_ShowDetailSettings)
         {
             EditorGUI.indentLevel++;
-            EditorGUILayout.PropertyField(sp_DetailPrototypes, new GUIContent("Detail Prototypes"), true);
-            EditorGUILayout.PropertyField(sp_DetailResolution, new GUIContent("Detail Resolution"));
-            EditorGUILayout.PropertyField(sp_DetailResolutionPerPatch, new GUIContent("Detail Resolution Per Patch"));
-            EditorGUILayout.PropertyField(sp_DetailDensity, new GUIContent("Detail Density"));
-            EditorGUILayout.PropertyField(sp_DetailDistance, new GUIContent("Detail Distance"));
+            // DetailPrototype の drawer はUnityバージョンにより不安定なことがあるため防御的に描画する
+            SafePropertyField(sp_DetailPrototypes, new GUIContent("Detail Prototypes"), true);
+            SafePropertyField(sp_DetailResolution, new GUIContent("Detail Resolution"));
+            SafePropertyField(sp_DetailResolutionPerPatch, new GUIContent("Detail Resolution Per Patch"));
+            SafePropertyField(sp_DetailDensity, new GUIContent("Detail Density"));
+            SafePropertyField(sp_DetailDistance, new GUIContent("Detail Distance"));
             EditorGUI.indentLevel--;
         }
 
@@ -142,11 +162,11 @@ namespace Vastcore.Editor
         if (m_ShowTreeSettings)
         {
             EditorGUI.indentLevel++;
-            EditorGUILayout.PropertyField(sp_TreePrototypes, new GUIContent("Tree Prototypes"), true);
-            EditorGUILayout.PropertyField(sp_TreeDistance, new GUIContent("Tree Distance"));
-            EditorGUILayout.PropertyField(sp_TreeBillboardDistance, new GUIContent("Tree Billboard Distance"));
-            EditorGUILayout.PropertyField(sp_TreeCrossFadeLength, new GUIContent("Tree Cross Fade Length"));
-            EditorGUILayout.PropertyField(sp_TreeMaximumFullLODCount, new GUIContent("Tree Maximum Full LOD Count"));
+            SafePropertyField(sp_TreePrototypes, new GUIContent("Tree Prototypes"), true);
+            SafePropertyField(sp_TreeDistance, new GUIContent("Tree Distance"));
+            SafePropertyField(sp_TreeBillboardDistance, new GUIContent("Tree Billboard Distance"));
+            SafePropertyField(sp_TreeCrossFadeLength, new GUIContent("Tree Cross Fade Length"));
+            SafePropertyField(sp_TreeMaximumFullLODCount, new GUIContent("Tree Maximum Full LOD Count"));
             EditorGUI.indentLevel--;
         }
 

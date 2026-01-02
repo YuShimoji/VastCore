@@ -1,5 +1,8 @@
 using UnityEngine;
 using System;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Vastcore.Generation
 {
@@ -33,6 +36,37 @@ namespace Vastcore.Generation
             float offsetY = (float)(rng.NextDouble() * 1000.0);
             return new Vector2(offsetX, offsetY);
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Editor実行時に、HeightMapテクスチャが GetPixels 可能（Read/Write enabled）な状態へ寄せる。
+        /// </summary>
+        private static void TryEnsureTextureReadable(Texture2D texture)
+        {
+            if (texture == null) return;
+            if (texture.isReadable) return;
+
+            string path = AssetDatabase.GetAssetPath(texture);
+            if (string.IsNullOrEmpty(path))
+            {
+                // ランタイム生成テクスチャなど、Importer経由で直せないケース
+                return;
+            }
+
+            if (AssetImporter.GetAtPath(path) is not TextureImporter importer)
+            {
+                return;
+            }
+
+            // 既に設定済みなら無駄に再importしない
+            if (importer.isReadable) return;
+
+            importer.isReadable = true;
+            // HeightMap用途なので圧縮で劣化/例外が出ないよう最低限の安全側へ
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.SaveAndReimport();
+        }
+#endif
 
         public static float[,] GenerateHeights(TerrainGenerator generator)
         {
@@ -99,6 +133,16 @@ namespace Vastcore.Generation
             if (generator.HeightMap == null)
             {
                 Debug.LogError("[TerrainGenerator] Height map is not assigned!");
+                return new float[generator.Resolution, generator.Resolution];
+            }
+
+#if UNITY_EDITOR
+            // エディタ上の手動検証で詰まりやすい「Read/Write disabled」を自動で解消を試みる
+            TryEnsureTextureReadable(generator.HeightMap);
+#endif
+            if (!generator.HeightMap.isReadable)
+            {
+                Debug.LogError("[TerrainGenerator] Height map texture is not readable. Enable Read/Write in the texture import settings.");
                 return new float[generator.Resolution, generator.Resolution];
             }
 
