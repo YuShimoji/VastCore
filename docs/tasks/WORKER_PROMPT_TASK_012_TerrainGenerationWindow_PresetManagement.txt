@@ -1,0 +1,192 @@
+<instruction>
+あなたは分散開発チームの Worker です。割り当てられた 1 タスクだけを完遂し、証跡を残してください。
+</instruction>
+
+<context>
+<mission_log>
+作業開始時に `.cursor/MISSION_LOG.md` を読み込み、現在のフェーズと進捗を確認してください。
+作業完了時に MISSION_LOG.md を更新し、進捗を記録してください。
+
+現在の状態:
+- Phase: P4（チケット発行）完了、P5（Worker起動用プロンプト生成）完了
+- TASK_010/011: 完了（全50テスト成功確認済み）
+- 次のタスク: TASK_012（TerrainGenerationWindow プリセット管理機能）
+</mission_log>
+
+<ssot_reference>
+Phase 0: 参照と整備
+- SSOT: .shared-workflows/docs/Windsurf_AI_Collab_Rules_latest.md（無ければ docs/ 配下を参照し、必ず `ensure-ssot.js` で取得を試す）
+- 進捗: docs/HANDOVER.md
+- チケット: docs/tasks/TASK_012_TerrainGenerationWindow_PresetManagement.md
+- SSOT 未整備・ensure-ssot.js 不在で解決できない場合は停止条件
+</ssot_reference>
+
+<preconditions>
+Phase 1: 前提の固定
+- Tier: 2（機能改善 / 既存挙動維持を優先）
+- Branch: feature/TASK_012_terrain-window-preset-management
+- Report Target: docs/inbox/REPORT_TASK_012_TerrainGenerationWindow_PresetManagement.md
+- GitHubAutoApprove: docs/HANDOVER.md の記述を参照（未記載なら push 禁止）
+- ブランチが異なる場合:
+  - `git status -sb` で未コミットが無いことを確認
+  - `git switch feature/TASK_012_terrain-window-preset-management` で切替を試す（存在しない場合は作成）
+  - 破壊的操作が必要なら停止条件
+</preconditions>
+
+<boundaries>
+Phase 2: 境界
+- Focus Area:
+  - Assets/Scripts/Editor/TerrainGenerationWindow.cs（プリセット管理UI追加）
+  - Assets/Scripts/Generation/TerrainGenerationProfile.cs（必要最小限の変更のみ）
+  - Assets/Scripts/Editor/TerrainPresetManager.cs（新規作成、プリセット保存/読み込みロジック）
+- Forbidden Area:
+  - Assets/MapGenerator/Scripts/TerrainGenerator.cs（ランタイムロジックは変更しない）
+  - Assets/MapGenerator/Scripts/HeightMapGenerator.cs（ランタイムロジックは変更しない）
+  - 既存のテストコード（新規テストは追加可）
+  - .shared-workflows/
+  - ProjectSettings/, Packages/（必要が出たら停止）
+- DoD:
+  - [ ] プリセット保存機能: 現在の設定を新しいプリセットとして保存できる
+  - [ ] プリセット読み込み機能: 保存済みプリセットを選択して即座に設定を適用できる
+  - [ ] プリセット管理UI: TerrainGenerationWindow に「Presets」セクションを追加
+  - [ ] プリセット保存先: Assets/TerrainPresets/ フォルダに保存（存在しない場合は自動作成）
+  - [ ] 既存の TerrainGenerationProfile 機能との互換性を維持
+  - [ ] エラーハンドリング: プリセット読み込み失敗時に適切なエラーメッセージを表示
+  - [ ] 手動検証: Unity Editor上でプリセット保存・読み込みが正常に動作することを確認
+  - [ ] 既存テストがすべて成功することを確認
+  - [ ] 変更点・検証手順を docs/inbox/REPORT_TASK_012_TerrainGenerationWindow_PresetManagement.md に記録
+</boundaries>
+</context>
+
+<workflow>
+<phase name="Phase 0: 参照と整備">
+<step>
+1. `.cursor/MISSION_LOG.md` を読み込み、現在のフェーズと進捗を確認。
+2. SSOT: .shared-workflows/docs/Windsurf_AI_Collab_Rules_latest.md（無ければ docs/ 配下を参照し、必ず `ensure-ssot.js` で取得を試す）
+3. 進捗: docs/HANDOVER.md
+4. チケット: docs/tasks/TASK_012_TerrainGenerationWindow_PresetManagement.md（**存在確認: `Test-Path docs/tasks/TASK_012_TerrainGenerationWindow_PresetManagement.md`**）
+5. SSOT 未整備・ensure-ssot.js 不在で解決できない場合は停止条件
+</step>
+</phase>
+
+<phase name="Phase 1: 前提の固定">
+<step>
+1. Tier: 2（機能改善 / 既存挙動維持を優先）
+2. Branch: feature/TASK_012_terrain-window-preset-management
+3. Report Target: docs/inbox/REPORT_TASK_012_TerrainGenerationWindow_PresetManagement.md
+4. GitHubAutoApprove: docs/HANDOVER.md の記述を参照（未記載なら push 禁止）
+5. ブランチが異なる場合:
+   - `git status -sb` で未コミットが無いことを確認
+   - `git switch feature/TASK_012_terrain-window-preset-management` で切替を試す（存在しない場合は作成）
+   - 破壊的操作が必要なら停止条件
+6. MISSION_LOG.md を更新（Phase 1 完了を記録）。
+</step>
+</phase>
+
+<phase name="Phase 2: 境界確認">
+<step>
+1. Focus Area:
+   - Assets/Scripts/Editor/TerrainGenerationWindow.cs（**存在確認してから参照**）
+   - Assets/Scripts/Generation/TerrainGenerationProfile.cs（**存在確認してから参照**）
+   - Assets/Scripts/Editor/TerrainPresetManager.cs（新規作成）
+2. Forbidden Area:
+   - Assets/MapGenerator/Scripts/TerrainGenerator.cs（触れる必要が出たら停止条件）
+   - Assets/MapGenerator/Scripts/HeightMapGenerator.cs（触れる必要が出たら停止条件）
+   - 既存のテストコード（新規テストは追加可）
+3. DoD: 上記DoDリストを確認し、各項目の実行可能性を判断
+4. MISSION_LOG.md を更新（Phase 2 完了を記録）。
+</step>
+</phase>
+
+<phase name="Phase 3: 実行ルール">
+<step>
+1. **DoD 各項目の実行可能性確認（必須）**:
+   - DoD 各項目を確認し、実行可能かどうかを判断する
+   - Unity Editor上での手動検証が必要な項目がある場合、実装後にUnity Editorで確認する
+   - 既存テストの実行確認が必要な場合、Unity Test Runnerまたはコマンドラインで実行する
+
+2. チャットで完結させない。成果はファイル（docs/tasks / docs/inbox / docs/HANDOVER / git）に残す。
+
+3. コマンドは実行して結果で判断。失敗は「失敗」と明記し、根拠と次手を出す。
+
+4. 指示コマンドが無い場合: `Get-Command <cmd>` 等で確認 → 代替案提示 → それでも依存追加/外部通信が必要なら停止。
+
+5. 「念のため」のテスト/フォールバック/リファクタは禁止（DoD 従属のみ）。
+
+6. ダブルチェック:
+   - テスト/Push/長時間待機は結果を確認し、未達なら完了扱いにしない。
+   - `git status -sb` で差分を常に把握。
+
+7. タイムアウトを宣言し、無限待機しない。
+
+8. MISSION_LOG.md を更新（Phase 3 完了を記録、実行内容を記録）。
+</step>
+</phase>
+
+<phase name="Phase 4: 納品 & 検証">
+<step>
+**必須: DoD の実際の達成確認（表面的な確認ではなく、実際に実施した内容を記録）**
+
+1. **DoD 各項目の達成確認（必須）**:
+   - DoD 各項目に対して、**実際に実施した内容**を記録する（「確認済み」などの表面的な記述は禁止）
+   - プリセット保存機能: 実装したコードのパスと動作確認結果を記録
+   - プリセット読み込み機能: 実装したコードのパスと動作確認結果を記録
+   - プリセット管理UI: 実装したUI要素のスクリーンショットまたは説明を記録
+   - プリセット保存先: フォルダ作成の確認と保存されたアセットのパスを記録
+   - 互換性維持: 既存機能が正常に動作することを確認した結果を記録
+   - エラーハンドリング: エラーケースのテスト結果を記録
+   - 手動検証: Unity Editor上での動作確認結果を記録
+   - 既存テスト: 実行結果を記録（`Select-String -Path "Assets/Tests/EditMode/*.cs" -Pattern "\[Test\]" | Measure-Object` 等）
+
+2. チケットを DONE に更新し、DoD 各項目に対して根拠（差分 or テスト結果 or 調査結果）を記入
+
+3. docs/inbox/ にレポート（以下テンプレ）を作成/更新し、`node .shared-workflows/scripts/report-validator.js docs/inbox/REPORT_TASK_012_TerrainGenerationWindow_PresetManagement.md`（無ければ `node scripts/report-validator.js docs/inbox/REPORT_TASK_012_TerrainGenerationWindow_PresetManagement.md REPORT_CONFIG.yml .`）を実行。結果をレポートに記載
+
+4. docs/HANDOVER.md の進捗セクションを更新し、次回 Orchestrator が把握できるよう記録
+
+5. 実行したテストを `<cmd>=<result>` 形式でレポートとチケットに残す
+
+6. `git status -sb` をクリーンにしてから commit（必要なら push）。push は GitHubAutoApprove=true の場合のみ
+
+7. MISSION_LOG.md を更新（Phase 4 完了を記録、納品物のパスを記録）。
+</step>
+</phase>
+
+<phase name="Phase 5: チャット出力">
+<step>
+1. 完了時: `Done: docs/tasks/TASK_012_TerrainGenerationWindow_PresetManagement.md. Report: docs/inbox/REPORT_TASK_012_TerrainGenerationWindow_PresetManagement.md. Tests: <cmd>=<result>.`
+2. ブロッカー継続時: `Blocked: docs/tasks/TASK_012_TerrainGenerationWindow_PresetManagement.md. Reason: <要点>. Next: <候補>. Report: docs/inbox/REPORT_TASK_012_TerrainGenerationWindow_PresetManagement.md.`
+3. MISSION_LOG.md を更新（Phase 5 完了を記録）。
+</step>
+</phase>
+</workflow>
+
+<stop_conditions>
+停止条件:
+- Forbidden Area に触れないと解決できない
+- 仕様仮定が3件以上
+- SSOT が取得できない / `ensure-ssot.js` でも解決不可
+- 依存追加 / 外部通信（fetch/pull/push 等）が必要で GitHubAutoApprove=true が未確認
+- 破壊的・復旧困難操作（rebase/reset/force push 等）が必要
+- 数分以上の待機が必須、またはタイムアウト超過が見込まれる
+- TerrainGenerationProfile の構造を変更する必要がある場合（互換性維持のため）
+- プリセット保存先フォルダの作成に失敗する場合（権限エラー等）
+</stop_conditions>
+
+<stop_output>
+停止時の必須アウトプット:
+1. チケット docs/tasks/TASK_012_TerrainGenerationWindow_PresetManagement.md を IN_PROGRESS/BLOCKED のまま更新  
+   - 事実 / 根拠ログ要点 / 次手 1-3 件 / Report パスを必ず追記
+2. docs/inbox/ に未完了レポートを作成し、調査結果・詰まり・次手を記録
+3. 変更は commit する（push は GitHubAutoApprove=true の場合のみ自律実行）。push 不要時は「push pending」を明記
+4. チャット 1 行: `Blocked: docs/tasks/TASK_012_TerrainGenerationWindow_PresetManagement.md. Reason: <要点>. Next: <候補>. Report: docs/inbox/REPORT_TASK_012_TerrainGenerationWindow_PresetManagement.md.`
+5. MISSION_LOG.md を更新（停止理由と次手を記録）。
+</stop_output>
+
+<self_correction>
+- ファイルパスは **動的に確認** すること（`ls`, `find`, `Test-Path` 等を使用）。ハードコード禁止。
+- エラーが発生した場合は、MISSION_LOG.md に記録し、復旧手順を試行する。
+- 3回試行しても解決しない場合のみ、状況と試行内容を整理してユーザーに判断を仰ぐ。
+- MISSION_LOG.md は常に最新状態を保つこと。各フェーズ完了時に必ず更新する。
+- Unity Editor上での手動検証が必要な場合、実装後に必ずUnity Editorで動作確認を行う。
+</self_correction>
