@@ -164,7 +164,8 @@
     - コンパイルエラー修正: `System.Collections.Generic` using追加、`ScriptableObject.CreateInstance` 修正
     - テスト: Unity Editor Test Runnerで全テストパス確認済み
     - 手動テストガイド作成: `docs/terrain/TASK_012_ManualTestGuide.md`
-    - 状態: push準備完了（手動テスト実施後、push可能）
+    - 手動テスト完了: プリセット保存・読み込み・削除・一覧更新・既存機能互換性を全て確認済み（2026-01-05）
+    - 状態: push準備完了、リモート反映実施予定
 
 ## エラー/復旧ログ
 

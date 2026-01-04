@@ -112,16 +112,23 @@
 
 ## Remaining
 
-- Unity Editor 上での手動検証（上記 Verification 参照）
-- 既存テストの実行確認（Unity Editor Test Runner）
-- 必要に応じて EditMode テストの追加（プリセット保存・読み込み機能のテスト）
+- ~~Unity Editor 上での手動検証（上記 Verification 参照）~~ ✅ 完了（2026-01-05）
+- ~~既存テストの実行確認（Unity Editor Test Runner）~~ ✅ 完了（全テストパス）
+- 必要に応じて EditMode テストの追加（プリセット保存・読み込み機能のテスト） - 将来の拡張として検討
 
 ## Handover
 
-- 実装は完了。Unity Editor 上での手動検証が必要。
-- `Assets/TerrainPresets/` フォルダが自動作成されることを確認すること。
-- 既存の `TerrainGenerationProfile` 機能が壊れていないことを確認すること。
-- プリセット保存・読み込み・削除が正常に動作することを確認すること。
+- ✅ 実装完了
+- ✅ Unity Editor 上での手動検証完了（2026-01-05）
+  - プリセット保存機能: 正常動作確認
+  - プリセット読み込み機能: 正常動作確認
+  - プリセット削除機能: 正常動作確認
+  - プリセット一覧更新機能: 正常動作確認
+  - 既存機能との互換性: 正常動作確認
+- ✅ `Assets/TerrainPresets/` フォルダが自動作成されることを確認済み
+- ✅ 既存の `TerrainGenerationProfile` 機能が正常に動作することを確認済み
+- ✅ プリセット保存・読み込み・削除が正常に動作することを確認済み
+- 状態: push準備完了、リモート反映待ち
 
 ## Proposals
 
