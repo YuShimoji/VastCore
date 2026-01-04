@@ -197,6 +197,34 @@ namespace Vastcore.Editor.Terrain
                     typeof(Texture2D),
                     false);
 
+                // HeightMap Read/Write自動化UI
+                if (heightMapTexture != null)
+                {
+                    string assetPath = AssetDatabase.GetAssetPath(heightMapTexture);
+                    if (!string.IsNullOrEmpty(assetPath))
+                    {
+                        TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+                        if (importer != null && !importer.isReadable)
+                        {
+                            EditorGUILayout.HelpBox(
+                                "HeightMap Texture is not readable. Click below to enable Read/Write.",
+                                MessageType.Warning);
+                            
+                            if (GUILayout.Button("Enable Read/Write for HeightMap", GUILayout.Height(25)))
+                            {
+                                importer.isReadable = true;
+                                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+                                EditorUtility.DisplayDialog("Success", 
+                                    "HeightMap Texture is now readable. You can generate terrain.", "OK");
+                            }
+                        }
+                        else if (importer != null && importer.isReadable)
+                        {
+                            EditorGUILayout.HelpBox("HeightMap Texture is readable.", MessageType.Info);
+                        }
+                    }
+                }
+
                 heightMapChannel = (HeightMapChannel)EditorGUILayout.EnumPopup("Channel", heightMapChannel);
                 heightScale = EditorGUILayout.Slider("Height Scale", heightScale, 0f, 5f);
                 
