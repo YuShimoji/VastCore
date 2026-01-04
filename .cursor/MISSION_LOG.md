@@ -165,7 +165,8 @@
     - テスト: Unity Editor Test Runnerで全テストパス確認済み
     - 手動テストガイド作成: `docs/terrain/TASK_012_ManualTestGuide.md`
     - 手動テスト完了: プリセット保存・読み込み・削除・一覧更新・既存機能互換性を全て確認済み（2026-01-05）
-    - 状態: push準備完了、リモート反映実施予定
+    - push完了: `feature/TASK_012_terrain-window-preset-management` ブランチをリモートに反映
+    - 状態: TASK_012完了、次のタスク選定待ち
 
 ## エラー/復旧ログ
 
