@@ -161,7 +161,10 @@
     - チケット更新: `docs/tasks/TASK_012_TerrainGenerationWindow_PresetManagement.md` → Status: DONE
     - DoD各項目の達成確認完了（実装コードのパスと動作確認結果を記録）
     - コミット: `feat: TerrainGenerationWindow プリセット管理機能追加`
-    - 状態: Unity Editor上での手動検証待ち（実装は完了）
+    - コンパイルエラー修正: `System.Collections.Generic` using追加、`ScriptableObject.CreateInstance` 修正
+    - テスト: Unity Editor Test Runnerで全テストパス確認済み
+    - 手動テストガイド作成: `docs/terrain/TASK_012_ManualTestGuide.md`
+    - 状態: push準備完了（手動テスト実施後、push可能）
 
 ## エラー/復旧ログ
 
