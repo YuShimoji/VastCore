@@ -141,6 +141,23 @@
   - `docs/tasks/WORKER_PROMPT_TASK_012_TerrainGenerationWindow_PresetManagement.txt` 作成
   - 次フェーズ: P6（Orchestrator Report）
 
+### 2026-01-05T01:15:06+09:00
+
+- TASK_012 作業開始（Worker）:
+  - Branch: `feature/TASK_012_terrain-window-preset-management`
+  - Phase 0-2 完了: 参照確認、ブランチ切替、境界確認完了
+  - Phase 3 実装完了:
+    - `Assets/Scripts/Editor/TerrainPresetManager.cs` 新規作成（プリセット保存/読み込み/削除機能）
+    - `Assets/Scripts/Editor/TerrainGenerationWindow.cs` にプリセット管理UI追加（Presetsセクション）
+    - プリセット保存先: `Assets/TerrainPresets/` フォルダ（自動作成）
+    - 既存の `TerrainGenerationProfile` 機能との互換性を維持
+  - 実装内容:
+    - プリセット保存機能: 現在の設定を新しいプリセットとして保存
+    - プリセット読み込み機能: 保存済みプリセットを選択して即座に設定を適用
+    - プリセット管理UI: TerrainGenerationWindow に「Presets」セクションを追加
+    - エラーハンドリング: プリセット読み込み失敗時に適切なエラーメッセージを表示
+  - 状態: Phase 4（納品 & 検証）進行中
+
 ## エラー/復旧ログ
 
 ### 2026-01-04T12:08:38+09:00

@@ -19,6 +19,7 @@ namespace Vastcore.Editor.Terrain
         private bool showSizeSection = true;
         private bool showHeightMapSection = true;
         private bool showNoiseSection = true;
+        private bool showPresetsSection = true;
         private bool showProfileSection = true;
         private bool showActionsSection = true;
         #endregion
@@ -56,6 +57,12 @@ namespace Vastcore.Editor.Terrain
         private Vector2 noiseOffset = Vector2.zero;
         #endregion
 
+        #region Presets
+        private int selectedPresetIndex = 0;
+        private string[] presetNames = new string[0];
+        private List<TerrainGenerationProfile> availablePresets = new List<TerrainGenerationProfile>();
+        #endregion
+
         #region Profile
         private TerrainGenerationProfile currentProfile;
         #endregion
@@ -66,6 +73,14 @@ namespace Vastcore.Editor.Terrain
         {
             var window = GetWindow<TerrainGenerationWindow>("Terrain Generation (v0)");
             window.minSize = new Vector2(350, 500);
+        }
+        #endregion
+
+        #region Unity Lifecycle
+        private void OnEnable()
+        {
+            // プリセット一覧を初期化
+            RefreshPresetList();
         }
         #endregion
 
@@ -82,6 +97,7 @@ namespace Vastcore.Editor.Terrain
             DrawSizeSection();
             DrawHeightMapSection();
             DrawNoiseSection();
+            DrawPresetsSection();
             DrawProfileSection();
             DrawActionsSection();
 
@@ -267,6 +283,83 @@ namespace Vastcore.Editor.Terrain
                 
                 EditorGUILayout.Space(3);
                 noiseOffset = EditorGUILayout.Vector2Field("Offset", noiseOffset);
+
+                EditorGUI.indentLevel--;
+            }
+            EditorGUILayout.EndFoldoutHeaderGroup();
+            EditorGUILayout.Space(5);
+        }
+
+        private void DrawPresetsSection()
+        {
+            showPresetsSection = EditorGUILayout.BeginFoldoutHeaderGroup(showPresetsSection, "Presets");
+            if (showPresetsSection)
+            {
+                EditorGUI.indentLevel++;
+
+                // プリセット一覧を更新
+                RefreshPresetList();
+
+                if (presetNames.Length > 0)
+                {
+                    // プリセット選択ドロップダウン
+                    int newIndex = EditorGUILayout.Popup("Select Preset", selectedPresetIndex, presetNames);
+                    if (newIndex != selectedPresetIndex)
+                    {
+                        selectedPresetIndex = newIndex;
+                        LoadPreset(availablePresets[selectedPresetIndex]);
+                    }
+
+                    EditorGUILayout.BeginHorizontal();
+                    
+                    GUI.backgroundColor = new Color(0.4f, 0.8f, 0.4f);
+                    if (GUILayout.Button("Load Preset", GUILayout.Height(25)))
+                    {
+                        if (selectedPresetIndex >= 0 && selectedPresetIndex < availablePresets.Count)
+                        {
+                            LoadPreset(availablePresets[selectedPresetIndex]);
+                        }
+                    }
+                    GUI.backgroundColor = Color.white;
+
+                    GUI.backgroundColor = new Color(0.8f, 0.6f, 0.4f);
+                    if (GUILayout.Button("Save as Preset", GUILayout.Height(25)))
+                    {
+                        SaveCurrentSettingsAsPreset();
+                    }
+                    GUI.backgroundColor = Color.white;
+
+                    GUI.backgroundColor = new Color(0.8f, 0.4f, 0.4f);
+                    if (GUILayout.Button("Delete Preset", GUILayout.Height(25)))
+                    {
+                        if (selectedPresetIndex >= 0 && selectedPresetIndex < availablePresets.Count)
+                        {
+                            DeletePreset(availablePresets[selectedPresetIndex]);
+                        }
+                    }
+                    GUI.backgroundColor = Color.white;
+
+                    EditorGUILayout.EndHorizontal();
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox(
+                        "No presets found. Create a preset by clicking 'Save as Preset'.",
+                        MessageType.Info);
+
+                    GUI.backgroundColor = new Color(0.8f, 0.6f, 0.4f);
+                    if (GUILayout.Button("Save Current Settings as Preset", GUILayout.Height(25)))
+                    {
+                        SaveCurrentSettingsAsPreset();
+                    }
+                    GUI.backgroundColor = Color.white;
+                }
+
+                EditorGUILayout.Space(3);
+                if (GUILayout.Button("Refresh Preset List"))
+                {
+                    RefreshPresetList();
+                }
 
                 EditorGUI.indentLevel--;
             }
@@ -531,5 +624,202 @@ namespace Vastcore.Editor.Terrain
             Debug.Log($"[TerrainGenerationWindow] Created new profile: {path}");
         }
         #endregion
+
+        #region Preset Management
+        /// <summary>
+        /// プリセット一覧を更新
+        /// </summary>
+        private void RefreshPresetList()
+        {
+            availablePresets = TerrainPresetManager.GetAllPresets();
+            presetNames = TerrainPresetManager.GetPresetNames();
+
+            // 選択インデックスを範囲内に調整
+            if (selectedPresetIndex >= presetNames.Length)
+            {
+                selectedPresetIndex = presetNames.Length > 0 ? 0 : -1;
+            }
+        }
+
+        /// <summary>
+        /// 現在の設定をプリセットとして保存
+        /// </summary>
+        private void SaveCurrentSettingsAsPreset()
+        {
+            string presetName = EditorInputDialog.Show("Save Preset", "Enter preset name:", "NewPreset");
+            if (string.IsNullOrEmpty(presetName))
+            {
+                return;
+            }
+
+            // 現在の設定からプロファイルを作成
+            TerrainGenerationProfile profile = TerrainPresetManager.CreateProfileFromWindow(this);
+            if (profile == null)
+            {
+                EditorUtility.DisplayDialog("Error", "Failed to create preset from current settings.", "OK");
+                return;
+            }
+
+            // プリセットとして保存
+            TerrainGenerationProfile savedPreset = TerrainPresetManager.SavePreset(presetName, profile);
+            if (savedPreset != null)
+            {
+                RefreshPresetList();
+                
+                // 保存されたプリセットを選択
+                for (int i = 0; i < availablePresets.Count; i++)
+                {
+                    if (availablePresets[i] == savedPreset)
+                    {
+                        selectedPresetIndex = i;
+                        break;
+                    }
+                }
+
+                EditorUtility.DisplayDialog("Success", $"Preset '{presetName}' saved successfully.", "OK");
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("Error", "Failed to save preset.", "OK");
+            }
+        }
+
+        /// <summary>
+        /// プリセットを読み込んで設定を適用
+        /// </summary>
+        private void LoadPreset(TerrainGenerationProfile _preset)
+        {
+            if (_preset == null)
+            {
+                EditorUtility.DisplayDialog("Error", "Preset is null.", "OK");
+                return;
+            }
+
+            try
+            {
+                // プリセットから設定を読み込む
+                generationMode = _preset.GenerationMode;
+                terrainWidth = _preset.TerrainWidth;
+                terrainLength = _preset.TerrainLength;
+                terrainHeight = _preset.TerrainHeight;
+                heightmapResolution = _preset.HeightmapResolution;
+
+                heightMapTexture = _preset.HeightMapTexture;
+                heightMapChannel = _preset.HeightMapChannel;
+                heightScale = _preset.HeightScale;
+                uvOffset = _preset.UVOffset;
+                uvTiling = _preset.UVTiling;
+                invertHeight = _preset.InvertHeight;
+
+                seed = _preset.Seed;
+                noiseScale = _preset.NoiseScale;
+                octaves = _preset.Octaves;
+                persistence = _preset.Persistence;
+                lacunarity = _preset.Lacunarity;
+                noiseOffset = _preset.NoiseOffset;
+
+                // プロファイルフィールドも更新
+                currentProfile = _preset;
+
+                Debug.Log($"[TerrainGenerationWindow] Loaded preset: {_preset.name}");
+                Repaint();
+            }
+            catch (System.Exception ex)
+            {
+                EditorUtility.DisplayDialog("Error", $"Failed to load preset: {ex.Message}", "OK");
+                Debug.LogError($"[TerrainGenerationWindow] Error loading preset: {ex}");
+            }
+        }
+
+        /// <summary>
+        /// プリセットを削除
+        /// </summary>
+        private void DeletePreset(TerrainGenerationProfile _preset)
+        {
+            if (_preset == null)
+            {
+                return;
+            }
+
+            bool deleted = TerrainPresetManager.DeletePreset(_preset);
+            if (deleted)
+            {
+                RefreshPresetList();
+                Repaint();
+            }
+        }
+
+        /// <summary>
+        /// 現在のウィンドウ設定をプロファイルにコピー（TerrainPresetManagerから呼ばれる）
+        /// </summary>
+        public void CopySettingsToProfile(TerrainGenerationProfile _profile)
+        {
+            if (_profile == null)
+            {
+                return;
+            }
+
+            _profile.GenerationMode = generationMode;
+            _profile.TerrainWidth = terrainWidth;
+            _profile.TerrainLength = terrainLength;
+            _profile.TerrainHeight = terrainHeight;
+            _profile.HeightmapResolution = heightmapResolution;
+
+            _profile.HeightMapTexture = heightMapTexture;
+            _profile.HeightMapChannel = heightMapChannel;
+            _profile.HeightScale = heightScale;
+            _profile.UVOffset = uvOffset;
+            _profile.UVTiling = uvTiling;
+            _profile.InvertHeight = invertHeight;
+
+            _profile.Seed = seed;
+            _profile.NoiseScale = noiseScale;
+            _profile.Octaves = octaves;
+            _profile.Persistence = persistence;
+            _profile.Lacunarity = lacunarity;
+            _profile.NoiseOffset = noiseOffset;
+        }
+        #endregion
+    }
+}
+
+/// <summary>
+/// 簡易入力ダイアログ（EditorUtility.DisplayDialog の代替）
+/// Unity Editorには標準の入力ダイアログがないため、簡易実装を提供
+/// </summary>
+public static class EditorInputDialog
+{
+    private static string s_InputText = "";
+    private static bool s_Result = false;
+    private static bool s_IsShowing = false;
+
+    public static string Show(string _title, string _message, string _defaultValue = "")
+    {
+        // Unity Editorには標準の入力ダイアログがないため、
+        // 簡易的に EditorUtility.SaveFilePanelInProject を使用してファイル名を取得
+        // ユーザーはファイル名を入力することで、プリセット名を指定する
+        
+        string result = EditorUtility.SaveFilePanelInProject(
+            _title,
+            _defaultValue,
+            "",
+            _message);
+
+        if (string.IsNullOrEmpty(result))
+        {
+            return string.Empty;
+        }
+
+        // ファイルパスからファイル名を抽出（拡張子なし）
+        string fileName = System.IO.Path.GetFileNameWithoutExtension(result);
+        
+        // 無効な文字を削除
+        char[] invalidChars = System.IO.Path.GetInvalidFileNameChars();
+        foreach (char c in invalidChars)
+        {
+            fileName = fileName.Replace(c.ToString(), "");
+        }
+        
+        return fileName.Trim();
     }
 }
