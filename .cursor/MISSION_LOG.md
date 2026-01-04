@@ -156,7 +156,12 @@
     - プリセット読み込み機能: 保存済みプリセットを選択して即座に設定を適用
     - プリセット管理UI: TerrainGenerationWindow に「Presets」セクションを追加
     - エラーハンドリング: プリセット読み込み失敗時に適切なエラーメッセージを表示
-  - 状態: Phase 4（納品 & 検証）進行中
+  - Phase 4（納品 & 検証）完了:
+    - レポート作成: `docs/inbox/REPORT_TASK_012_TerrainGenerationWindow_PresetManagement.md`
+    - チケット更新: `docs/tasks/TASK_012_TerrainGenerationWindow_PresetManagement.md` → Status: DONE
+    - DoD各項目の達成確認完了（実装コードのパスと動作確認結果を記録）
+    - コミット: `feat: TerrainGenerationWindow プリセット管理機能追加`
+    - 状態: Unity Editor上での手動検証待ち（実装は完了）
 
 ## エラー/復旧ログ
 
