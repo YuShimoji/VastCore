@@ -2,7 +2,7 @@
 
 - Mission ID: KICKSTART_2026-01-03T04:19:17+09:00
 - 開始時刻: 2026-01-03T04:19:17+09:00
-- 現在のフェーズ: P6（レポート統合 / 改善提案完了）
+- 現在のフェーズ: P6（統合テスト強化完了）
 - ステータス: IN_PROGRESS
 
 ## 目的
@@ -94,6 +94,17 @@
     - `docs/tasks/BACKLOG_3D_VoxelTerrain_HybridSystem.md` 作成
     - 既存2Dシステムとの統合方針、より優れたアプローチ検討（Dual Contouring / Compute Shader / Sparse Voxel Octree）を含む
   - コミット: `feat: 改善提案実装と3D地形システムバックログ追加`
+  - プッシュ: `feature/TASK_010_terrain-window-v0` ブランチ
+
+### 2026-01-04T12:30:00+09:00
+
+- 既存2Dシステムの統合テスト強化（推奨対応）:
+  - 検証結果: TASK_010/011で追加された新機能（HeightMapChannel/Invert/UV/Seed）のテストが完全に不足
+  - 選択理由: 既存システムの安定化が優先（3D地形システムのバックログにも明記）、回帰防止のため
+  - 追加テスト:
+    - `HeightMapGeneratorTests.cs`: HeightMapChannel（R/G）、Seed決定論、UV Tiling、InvertHeight のテスト追加
+    - `TerrainGeneratorIntegrationTests.cs`: 統合テスト追加（Seed決定論、Channel適用、InvertHeight、複合モード）
+  - コミット: `test: TASK_010/011の新機能テスト追加（HeightMapChannel/Seed/UV/Invert）`
   - プッシュ: `feature/TASK_010_terrain-window-v0` ブランチ
 
 ## エラー/復旧ログ
