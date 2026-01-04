@@ -46,6 +46,10 @@ GitHubAutoApprove: false
 - **TASK_002_OnboardingRefStandard**: DONE — 導入手順標準化、`finalize-phase.js` 実装、プロトコル改訂完了。
 - **SSOT フォールバック対応**: COMPLETED
 - **レポート検証/監査機能**: COMPLETED
+- **TASK_010_TerrainGenerationWindow_v0**: DONE — HeightMapChannel/Invert/UV/Seed対応完了、Unity Editor検証済み
+- **TASK_011_HeightMapGenerator**: DONE — 決定論/チャンネル/UV/反転対応完了
+- **改善提案実装**: COMPLETED — HeightMap Read/Write自動化UI、最短検証チェックリスト追加
+- **3D地形システムバックログ**: CREATED — `docs/tasks/BACKLOG_3D_VoxelTerrain_HybridSystem.md`
 
 ## ブロッカー
 
@@ -57,6 +61,10 @@ GitHubAutoApprove: false
 - worker-monitor.js 導入と AI_CONTEXT.md 初期化スクリプトの検討。
 - `finalize-phase.js` の HANDOVER 自動更新機能追加（現在は Task のみ）。
 - `orchestrator-audit.js` のアーカイブ対応（docs/reports も監査対象にする）。
+- **3D地形システム（ハイブリッド・ボクセル）**: `docs/tasks/BACKLOG_3D_VoxelTerrain_HybridSystem.md` 参照
+  - Phase 1-5の実装ロードマップ
+  - 既存2Dシステムとの統合方針
+  - より優れたアプローチ検討（Dual Contouring / Compute Shader / Sparse Voxel Octree）
 
 ## Verification
 

@@ -2,7 +2,7 @@
 
 - Mission ID: KICKSTART_2026-01-03T04:19:17+09:00
 - 開始時刻: 2026-01-03T04:19:17+09:00
-- 現在のフェーズ: P5
+- 現在のフェーズ: P6（レポート統合 / 改善提案完了）
 - ステータス: IN_PROGRESS
 
 ## 目的
@@ -79,9 +79,31 @@
   - コミット: `feat: TerrainGenerationWindow HeightMapChannel/Invert/UV/Seed反映対応`
   - 手動検証待ち: Unity Editor 上での動作確認が必要
 
+### 2026-01-04T12:08:38+09:00
+
+- TASK_010/011 統合対応:
+  - Unity Editor上での手動検証実施（ユーザー報告）
+  - エラー修正:
+    - `SetHeights` の引数順序修正（xBase/yBase の入れ替え）
+    - `HeightMap` の Read/Write 自動化（`HeightMapGenerator.GenerateFromHeightMap` で自動有効化）
+    - `TerrainGeneratorEditor` の NRE 修正（Detail Prototypes の防御的描画）
+  - 改善提案実装:
+    - `TerrainGenerationWindow` に HeightMap Read/Write 自動化UI追加
+    - `V01_TestPlan.md` に最短手動検証チェックリスト（10分）追加
+  - 3D地形システムバックログ作成:
+    - `docs/tasks/BACKLOG_3D_VoxelTerrain_HybridSystem.md` 作成
+    - 既存2Dシステムとの統合方針、より優れたアプローチ検討（Dual Contouring / Compute Shader / Sparse Voxel Octree）を含む
+  - コミット: `feat: 改善提案実装と3D地形システムバックログ追加`
+  - プッシュ: `feature/TASK_010_terrain-window-v0` ブランチ
+
 ## エラー/復旧ログ
 
-- なし（初期調査のみ）
+### 2026-01-04T12:08:38+09:00
+
+- Unity Editor検証時のエラー3件を修正:
+  1. `ArgumentException: X or Y base out of bounds` → `SetHeights` の引数順序修正
+  2. `ArgumentException: Texture2D.GetPixels: texture data is not readable` → Read/Write 自動有効化
+  3. `NullReferenceException` in `TerrainGeneratorEditor.OnInspectorGUI()` → Detail Prototypes の防御的描画
 
 ## 備考
 
