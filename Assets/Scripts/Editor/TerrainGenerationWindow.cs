@@ -790,10 +790,6 @@ namespace Vastcore.Editor.Terrain
 /// </summary>
 public static class EditorInputDialog
 {
-    private static string s_InputText = "";
-    private static bool s_Result = false;
-    private static bool s_IsShowing = false;
-
     public static string Show(string _title, string _message, string _defaultValue = "")
     {
         // Unity Editorには標準の入力ダイアログがないため、

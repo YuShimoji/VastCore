@@ -96,7 +96,7 @@ namespace Vastcore.Editor.Terrain
             // 新しいプロファイルを作成
             TerrainGenerationProfile newPreset = _sourceProfile != null
                 ? CreatePresetFromProfile(_sourceProfile)
-                : CreateInstance<TerrainGenerationProfile>();
+                : ScriptableObject.CreateInstance<TerrainGenerationProfile>();
 
             // アセットとして保存
             if (File.Exists(assetPath))
@@ -240,7 +240,7 @@ namespace Vastcore.Editor.Terrain
                 return null;
             }
 
-            TerrainGenerationProfile profile = CreateInstance<TerrainGenerationProfile>();
+            TerrainGenerationProfile profile = ScriptableObject.CreateInstance<TerrainGenerationProfile>();
             _window.CopySettingsToProfile(profile);
             return profile;
         }
@@ -297,10 +297,10 @@ namespace Vastcore.Editor.Terrain
         {
             if (_source == null)
             {
-                return CreateInstance<TerrainGenerationProfile>();
+                return ScriptableObject.CreateInstance<TerrainGenerationProfile>();
             }
 
-            TerrainGenerationProfile newPreset = CreateInstance<TerrainGenerationProfile>();
+            TerrainGenerationProfile newPreset = ScriptableObject.CreateInstance<TerrainGenerationProfile>();
             newPreset.CopyFrom(_source);
             return newPreset;
         }
