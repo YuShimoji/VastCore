@@ -168,6 +168,56 @@
     - push完了: `feature/TASK_012_terrain-window-preset-management` ブランチをリモートに反映
     - 状態: TASK_012完了、次のタスク選定待ち
 
+### 2026-01-05T13:00:00+09:00
+
+- 外部リポジトリ提案検討（Orchestrator）:
+  - 検討対象: Unityプロジェクト向けテンプレート追加提案（優先度: Low）
+  - 外部リポジトリ: https://github.com/YuShimoji/UnityChatNovelGame.git（内容はほぼ空）
+  - 検討結果:
+    - 既存のタスクチケット（TASK_010/011/012）を分析
+    - Unity固有の項目が多数存在（Unity Editor手動検証、Unity Test Runner、Assets/構造、ProjectSettings/Packages制約等）
+    - 既存テンプレートでも対応可能だが、Unity固有項目を事前に含めることで効率化可能
+  - 提案:
+    - Unity固有のタスクテンプレートとWorkerプロンプトテンプレートの作成を推奨
+    - 優先度: Low（既存テンプレートで対応可能だが、効率化の余地あり）
+    - 実装タイミング: 次回Unityプロジェクト向けタスク発行時、またはテンプレート整備フェーズで検討
+  - 状態: 検討完了、提案内容をまとめて出力
+
+### 2026-01-05T13:30:00+09:00
+
+- Unity固有テンプレート作成（Orchestrator）:
+  - 作成ファイル:
+    - `.shared-workflows/templates/TASK_TICKET_TEMPLATE_UNITY.md`: Unity固有のConstraints/DoD項目を追加
+    - `.shared-workflows/docs/windsurf_workflow/WORKER_PROMPT_TEMPLATE_UNITY.md`: Unity固有の停止条件、検証手順、Unity API使用時の注意点を追加
+  - 追加内容:
+    - Constraints: Unity Editor手動検証、Unity Test Runner、Assets/構造制約、EditorOnlyコード分離等
+    - DoD: Unity Editor動作確認、Unity Test Runnerテスト成功、コンパイルエラーなし等
+    - 停止条件: ProjectSettings/Packages変更、Unity Editor起動待機、Unity Test Runner実行不可能等
+    - 検証手順: Unity Editor手動検証、Unity Test Runner実行、コンパイルエラー確認等
+  - 状態: 作成完了、次回Unityプロジェクト向けタスク発行時に使用可能
+
+### 2026-01-05T14:00:00+09:00
+
+- Dual Grid Terrain System スペック整備とタスク化（Orchestrator）:
+  - Phase 2（状況把握）完了:
+    - `docs/Spec/DualGridTerrainSystem_Spec.md` を確認: 改行が不適切、提供プロンプトの内容が未統合
+    - 既存地形システムを確認: 2Dハイトマップシステムが基盤、新規アルゴリズム追加が必要
+  - Phase 3（分割と戦略）完了:
+    - 次の機能タスクを選定: TASK_013（Dual Grid Terrain System - Phase 1 実装）
+    - Tier: 2（新規機能 / 既存システムと並行運用）
+    - 並列化: 不要（単一Workerで完結可能）
+  - Phase 4（チケット発行）完了:
+    - `docs/Spec/DualGridTerrainSystem_Spec.md` を整備:
+      - 改行を修正し、読みやすく整理
+      - 提供プロンプトの内容を統合（座標系、グリッド管理、データ構造、実装ステップ等）
+      - より高精細なスペックに拡張（洞窟・オーバーハング対応、無限地形、Git Narrative Integration等）
+      - 実装チェックリストを追加
+    - `docs/tasks/TASK_013_DualGridTerrainSystem_Phase1.md` 作成
+    - Status: OPEN
+  - Phase 5（Worker起動用プロンプト生成）完了:
+    - `docs/tasks/WORKER_PROMPT_TASK_013_DualGridTerrainSystem_Phase1.txt` 作成
+    - 次フェーズ: P6（Orchestrator Report）
+
 ## エラー/復旧ログ
 
 ### 2026-01-04T12:08:38+09:00
