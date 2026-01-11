@@ -21,8 +21,9 @@ namespace Vastcore.Terrain.DualGrid
         
         /// <summary>
         /// 六角形の幅（水平方向の距離）
+        /// sqrt(3) ≈ 1.73205080757
         /// </summary>
-        private const float c_HexWidth = Mathf.Sqrt(3.0f) * c_HexSize;
+        private static readonly float c_HexWidth = Mathf.Sqrt(3.0f) * c_HexSize;
         #endregion
 
         #region Axial to World
