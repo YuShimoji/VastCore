@@ -52,6 +52,7 @@ GitHubAutoApprove: false
 - **3D地形システムバックログ**: CREATED — `docs/tasks/BACKLOG_3D_VoxelTerrain_HybridSystem.md`
 - **統合テスト強化**: COMPLETED — 新規10テスト追加、全50テスト成功確認済み（2026-01-04）
 - **TASK_012_TerrainGenerationWindow_PresetManagement**: DONE — プリセット管理機能追加完了、Unity Editor手動検証完了、push完了（2026-01-05）
+- **TASK_013_DualGridTerrainSystem_Phase1**: DONE — Dual Grid Terrain System基盤実装完了、8ファイル作成（約1,180行）、コンパイル成功、Unity Editor手動検証待ち（2026-01-11）
 
 ## ブロッカー
 
