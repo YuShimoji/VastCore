@@ -95,11 +95,6 @@ GitHubAutoApprove: false
 - REPORT_ORCH CLI: docs/inbox への生成・自動検証・HANDOVER 同期まで一括対応できるようになり、手動更新の抜け漏れを排除。
 - 最新テンプレを使ったレポート（0107/0119/0126）へ Duration/Changes/Risk を追記を開始し、監査警告の原因を解消中。
 
-## Latest Orchestrator Report
-
-- File: docs/inbox/REPORT_ORCH_20251229_0943.md
-- Summary: TASK_001/TASK_002完了。SSOT一本化、CLI拡張、監査ロジック是正を実施。
-
 ## Outlook
 
 - Short-term: 旧 REPORT の欄補完・validator/監査再実行・git push。
