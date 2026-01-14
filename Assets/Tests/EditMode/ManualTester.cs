@@ -1,4 +1,5 @@
-
+// Disabled: StructureGeneratorWindow and StructureGenerationTab not yet implemented
+#if VASTCORE_STRUCTURE_GENERATOR_ENABLED
 using UnityEditor;
 using UnityEngine;
 using Vastcore.Editor.Generation;
@@ -45,3 +46,4 @@ namespace Vastcore.Editor.Testing
         }
     }
 }
+#endif

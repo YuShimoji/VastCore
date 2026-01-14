@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Generation;
+using Vastcore.Core;
 
 namespace Vastcore.Generation
 {
@@ -33,11 +35,20 @@ namespace Vastcore.Generation
         {
             if (playerTransform == null)
             {
-<<<<<<< HEAD
-                playerTransform = FindFirstObjectByType<AdvancedPlayerController>()?.transform;
-=======
-                playerTransform = ResolvePlayerTransform();
->>>>>>> origin/develop
+                var player = FindFirstObjectByType<Vastcore.Player.AdvancedPlayerController>();
+                if (player != null)
+                {
+                    playerTransform = player.Transform;
+                }
+                else
+                {
+                    // フォールバック: 他の方法でプレイヤーを検索
+                    var playerObj = GameObject.FindGameObjectWithTag("Player");
+                    if (playerObj != null)
+                    {
+                        playerTransform = playerObj.transform;
+                    }
+                }
             }
             
             if (playerTransform != null)

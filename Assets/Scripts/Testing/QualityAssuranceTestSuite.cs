@@ -575,6 +575,23 @@ namespace VastCore.Testing
             
             List<string> issues = new List<string>();
             float integrationScore = 1f;
+            
+            // 地形とプリミティブの統合テスト
+            integrationScore *= SafeTestTerrainPrimitiveIntegration(issues);
+            yield return null;
+            
+            // プレイヤーシステムとの統合テスト
+            integrationScore *= SafeTestPlayerSystemIntegration(issues);
+            yield return null;
+            
+            // UIシステムとの統合テスト
+            integrationScore *= SafeTestUISystemIntegration(issues);
+            yield return null;
+            
+            testResult.endTime = DateTime.Now;
+            testResult.passed = integrationScore >= 0.8f;
+            testResult.score = integrationScore;
+            testResult.issues = issues;
             testResult.details = $"Integration score: {integrationScore:F3}";
             
             testResults.Add(testResult);
@@ -582,6 +599,24 @@ namespace VastCore.Testing
             LogMessage($"System integration tests completed. Score: {integrationScore:F3}, Passed: {testResult.passed}");
             
             yield return null;
+        }
+        
+        private float SafeTestTerrainPrimitiveIntegration(List<string> issues)
+        {
+            try { return TestTerrainPrimitiveIntegration(); }
+            catch (Exception e) { issues.Add($"Terrain-Primitive integration exception: {e.Message}"); return 0.5f; }
+        }
+        
+        private float SafeTestPlayerSystemIntegration(List<string> issues)
+        {
+            try { return TestPlayerSystemIntegration(); }
+            catch (Exception e) { issues.Add($"Player system integration exception: {e.Message}"); return 0.5f; }
+        }
+        
+        private float SafeTestUISystemIntegration(List<string> issues)
+        {
+            try { return TestUISystemIntegration(); }
+            catch (Exception e) { issues.Add($"UI system integration exception: {e.Message}"); return 0.5f; }
         }
         
         private float TestTerrainPrimitiveIntegration()

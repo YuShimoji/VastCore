@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Generation;
+using Vastcore.Core;
 
 namespace Vastcore.Generation
 {
@@ -101,7 +102,7 @@ namespace Vastcore.Generation
             // プレイヤーを自動検索
             if (autoFindPlayer && playerTransform == null)
             {
-                FindPlayerTransform();
+                playerTransform = FindPlayerTransform();
             }
             
             // デフォルト設定を調整
@@ -121,38 +122,39 @@ namespace Vastcore.Generation
         /// <summary>
         /// プレイヤーのTransformを検索
         /// </summary>
-        private void FindPlayerTransform()
+        private Transform FindPlayerTransform()
         {
-<<<<<<< HEAD
+            // 既存のTransformが設定されている場合はそれを返す
+            if (playerTransform != null)
+            {
+                return playerTransform;
+            }
+            
             // AdvancedPlayerControllerを検索
             var playerController = FindFirstObjectByType<Vastcore.Player.AdvancedPlayerController>();
             if (playerController != null)
-=======
-            // 既存のTransformが設定されている場合は何もしない
-            if (playerTransform != null)
->>>>>>> origin/develop
             {
-                return;
+                playerTransform = playerController.Transform;
+                Debug.Log("Found AdvancedPlayerController");
+                return playerTransform;
             }
 
             // "Player"タグのオブジェクトを検索
             var playerObject = GameObject.FindGameObjectWithTag("Player");
             if (playerObject != null)
             {
-                playerTransform = playerObject.transform;
                 Debug.Log("Found Player by tag");
-                return;
+                return playerObject.transform;
             }
-            
-            // メインカメラを使用
+
             if (Camera.main != null)
             {
-                playerTransform = Camera.main.transform;
                 Debug.Log("Using Main Camera as player");
-                return;
+                return Camera.main.transform;
             }
-            
+
             Debug.LogWarning("Could not find player transform");
+            return null;
         }
         
         /// <summary>

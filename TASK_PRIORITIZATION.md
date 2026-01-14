@@ -11,9 +11,9 @@
 
 | No. | タスク名 | 工数 | 期限 | 実行者 | 状況 |
 |-----|----------|------|------|--------|------|
-| 1 | **Phase 3 Deformシステム技術調査** | 2-3R | 即座 | Web | 🔴 最優先 |
-| 2 | **CompositionTab修正機能のUnityテスト** | 1R | Unity作業時 | Unity | 🟡 テスト待ち |
-| 3 | **RandomControlTab拡張機能のUnityテスト** | 1R | Unity作業時 | Unity | 🟡 テスト待ち |
+| 1 | **P3-2: DeformerTab動的パラメータUI実装** | 2-3R | 即座 | Web | 🔴 進行中 |
+| 2 | **SG-2: RandomControlTab手動テスト** | 1R | Unity作業時 | Unity | 🟡 次優先 |
+| 3 | ~~Phase 3 Deformシステム技術調査~~ | - | - | - | ✅ P3-1完了 |
 
 ### **第2象限：重要・非緊急（計画してやる）**
 

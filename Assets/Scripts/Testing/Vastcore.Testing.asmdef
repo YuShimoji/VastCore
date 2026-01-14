@@ -24,21 +24,20 @@
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
     "versionDefines": [],
     "noEngineReferences": false,
-<<<<<<< HEAD
     "burstSettings": {
         "enableBurstCompilation": false,
         "enableBurstSafetyChecks": false,
         "enableBurstDebug": false,
         "enableBurstTimings": false,
         "burstCompilationOptions": {}
-    }
-=======
+    },
     "optionalUnityReferences": [
         "TestAssemblies"
     ]
->>>>>>> origin/develop
 }

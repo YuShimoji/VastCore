@@ -49,7 +49,7 @@ namespace Vastcore.Editor.Generation
             _tabs.Add(new RelationshipTab(this));
             _tabs.Add(new ParticleDistributionTab(this));
             _tabs.Add(new DeformerTab(this)); // Deformタブを追加
-            // _tabs.Add(new CompositionTab(this)); // 一時的にコメントアウト
+            _tabs.Add(new CompositionTab(this)); // CT-1: スケルトン実装完了
             _tabs.Add(new RandomControlTab(this)); // Phase 1: 基本版を有効化
         
             // タブ名配列を動的に生成

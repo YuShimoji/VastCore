@@ -48,3 +48,30 @@
 
 - `MenuManager` の設計提案（`Vastcore.UI.Menus.MenuManager` へ移行 or `TitleScreenManager` へ機能委譲）
 - ドライランレポートに基づく対象洗い出しと限定適用（自動置換は使わず、まずは最小変更）
+
+---
+
+## A3-2: HUD-equivalent overlays 適用結果
+
+- **Scope**: `Assets/Scripts/UI/` 配下のHUD相当UI
+  - InGameDebugUI.cs
+  - SliderBasedUISystem.cs
+  - SliderUIElement.cs
+  - ModernUIStyleSystem.cs
+- **Date**: 2025-10-06
+- **Status**: 完了（変更不要）
+
+### 検証結果
+
+- Namespaces: 全て `Vastcore.UI` に統一済み
+- UI tech: uGUI (`UnityEngine.UI`) 使用あり、TextMeshProUGUI 使用あり
+- IMGUI (`OnGUI`) 未使用、UITK (`UIElements`/`UIDocument`) 未使用
+- `NarrativeGen.UI` の参照なし
+
+### 結論
+
+現時点の HUD 相当 UI は `Vastcore.UI` 命名に統一済み。uGUI 利用は許容範囲で、移行対象（NarrativeGen 系）も存在せず、変更は不要。
+
+### 関連レポート
+
+- スキャン結果: `Documentation/QA/LEGACY_UI_MIGRATION_REPORT.md`

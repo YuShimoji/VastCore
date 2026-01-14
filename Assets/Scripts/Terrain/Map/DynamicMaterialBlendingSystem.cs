@@ -2,11 +2,8 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
-using Vastcore.Utils;
-<<<<<<< HEAD
-using Vastcore.Player;
-=======
->>>>>>> origin/develop
+using Vastcore.Utilities;
+using Vastcore.Core;
 
 namespace Vastcore.Generation
 {
@@ -131,14 +128,22 @@ namespace Vastcore.Generation
             }
             
             // プレイヤーTransformを取得
-<<<<<<< HEAD
-            var playerController = FindFirstObjectByType<AdvancedPlayerController>();
-            if (playerController != null)
-=======
             if (playerTransform == null)
->>>>>>> origin/develop
             {
-                playerTransform = ResolvePlayerTransform();
+                var player = FindFirstObjectByType<Vastcore.Player.AdvancedPlayerController>();
+                if (player != null)
+                {
+                    playerTransform = player.Transform;
+                }
+                else
+                {
+                    // フォールバック: 他の方法でプレイヤーを検索
+                    var playerObj = GameObject.FindGameObjectWithTag("Player");
+                    if (playerObj != null)
+                    {
+                        playerTransform = playerObj.transform;
+                    }
+                }
             }
             
             // コルーチンを開始

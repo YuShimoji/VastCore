@@ -4,8 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
-using Vastcore.Utils;
-using Vastcore.Core;
+using Vastcore.Utilities;
 
 namespace Vastcore
 {
@@ -39,7 +38,7 @@ namespace Vastcore
             {
                 if (instance == null)
                 {
-                    var existingDiagnostics = FindFirstObjectByType<VastcoreDiagnostics>();
+                    instance = FindFirstObjectByType<VastcoreDiagnostics>();
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreDiagnostics");

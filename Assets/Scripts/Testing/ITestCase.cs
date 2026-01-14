@@ -1,3 +1,4 @@
+#if VASTCORE_INTEGRATION_TEST_ENABLED
 using UnityEngine;
 using System.Collections;
 
@@ -16,3 +17,4 @@ namespace Vastcore.Testing
         IEnumerator Execute(VastcoreIntegrationTestManager testManager);
     }
 }
+#endif

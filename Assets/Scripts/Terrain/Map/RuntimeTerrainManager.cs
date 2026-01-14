@@ -2,12 +2,8 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
-<<<<<<< HEAD
 using Vastcore.Player;
 using Vastcore.Utilities;
-=======
-using Vastcore.Utils;
->>>>>>> origin/develop
 using Vastcore.Generation;
 using Vastcore.Core;
 

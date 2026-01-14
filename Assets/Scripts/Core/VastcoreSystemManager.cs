@@ -1,12 +1,8 @@
 using System;
 using System.Reflection;
 using UnityEngine;
-<<<<<<< HEAD
-=======
-using Vastcore.Core;
 using Vastcore.Core.Interfaces;
->>>>>>> origin/develop
-using Vastcore.Utils;
+using Vastcore.Utilities;
 
 namespace Vastcore.Core
 {
@@ -26,10 +22,9 @@ namespace Vastcore.Core
         public bool enableDebugVisualizer = true;
         public bool enableDiagnostics = true;
         public bool enableTerrainErrorRecovery = true;
-        public bool enablePrimitiveErrorRecovery = true;
         
         [Header("システム設定")]
-        public Vastcore.Utils.VastcoreLogger.LogLevel systemLogLevel = Vastcore.Utils.VastcoreLogger.LogLevel.Info;
+        public VastcoreLogger.LogLevel systemLogLevel = VastcoreLogger.LogLevel.Info;
         public bool enableSystemHealthMonitoring = true;
         public float healthCheckInterval = 60f;
         
@@ -40,7 +35,7 @@ namespace Vastcore.Core
             {
                 if (instance == null)
                 {
-                    var existingManager = FindFirstObjectByType<VastcoreSystemManager>();
+                    instance = FindFirstObjectByType<VastcoreSystemManager>();
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreSystemManager");
@@ -141,12 +136,6 @@ namespace Vastcore.Core
                 if (enableTerrainErrorRecovery)
                 {
                     InitializeTerrainErrorRecovery();
-                }
-                
-                // 6. プリミティブエラー回復システムの初期化
-                if (enablePrimitiveErrorRecovery)
-                {
-                    InitializePrimitiveErrorRecovery();
                 }
                 
                 // システム初期化完了
@@ -352,29 +341,6 @@ namespace Vastcore.Core
             {
                 terrainRecoveryService = null;
                 Debug.LogError($"TerrainErrorRecovery初期化エラー: {error.Message}");
-            }
-        }
-        
-        private void InitializePrimitiveErrorRecovery()
-        {
-            try
-            {
-                primitiveErrorRecovery = PrimitiveErrorRecovery.Instance;
-                if (primitiveErrorRecovery != null)
-                {
-                    if (logger != null)
-                    {
-                        logger.LogInfo("SystemManager", "PrimitiveErrorRecovery初期化完了");
-                    }
-                    else
-                    {
-                        Debug.Log("PrimitiveErrorRecovery初期化完了");
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Debug.LogError($"PrimitiveErrorRecovery初期化エラー: {error.Message}");
             }
         }
         

@@ -2,6 +2,9 @@
     "name": "Vastcore.Player",
     "rootNamespace": "Vastcore.Player",
     "references": [
+        "Unity.ProBuilder",
+        "Unity.TextMeshPro",
+        "Unity.InputSystem",
         "Vastcore.Core",
         "Vastcore.Utilities",
         "Vastcore.Generation"

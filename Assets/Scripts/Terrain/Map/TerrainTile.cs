@@ -33,11 +33,7 @@ namespace Vastcore.Generation
         public GameObject terrainObject => tileObject;  // tileObjectのエイリアス
         public float[,] heightData => heightmap;        // heightmapのエイリアス
         public bool isActive => state == TileState.Active; // アクティブ状態
-<<<<<<< HEAD
-        public float lastAccessTime { get; set; } = 0f; // 最終アクセス時間のエイリアス
-=======
         public System.DateTime lastAccessTime => lastAccessedAt; // 最終アクセス時間のエイリアス
->>>>>>> origin/develop
         public string appliedBiome { get; set; } = "Default"; // 適用されたバイオーム
         
         [Header("生成情報")]

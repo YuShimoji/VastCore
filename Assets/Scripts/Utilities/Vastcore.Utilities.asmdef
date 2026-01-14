@@ -1,7 +1,9 @@
 {
     "name": "Vastcore.Utilities",
-    "rootNamespace": "Vastcore.Utils",
-    "references": [],
+    "rootNamespace": "Vastcore.Utilities",
+    "references": [
+        "Unity.InputSystem"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

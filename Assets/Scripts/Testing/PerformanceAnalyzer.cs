@@ -1,3 +1,5 @@
+// Disabled: depends on PerformanceTestingSystem
+#if VASTCORE_PERFORMANCE_TESTING_ENABLED
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
@@ -743,3 +745,4 @@ namespace Vastcore.Testing
         High
     }
 }
+#endif

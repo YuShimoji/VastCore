@@ -1,8 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
 using System.Linq;
 using Vastcore.Generation.Map;
+using Vastcore.Utilities;
+using Vastcore.Core;
 
 namespace Vastcore.Generation
 {
@@ -101,14 +102,22 @@ namespace Vastcore.Generation
             }
             
             // プレイヤーTransformを取得
-<<<<<<< HEAD
-            var playerController = FindFirstObjectByType<AdvancedPlayerController>();
-            if (playerController != null)
-=======
             if (playerTransform == null)
->>>>>>> origin/develop
             {
-                playerTransform = ResolvePlayerTransform();
+                var player = FindFirstObjectByType<Vastcore.Player.AdvancedPlayerController>();
+                if (player != null)
+                {
+                    playerTransform = player.Transform;
+                }
+                else
+                {
+                    // フォールバック: 他の方法でプレイヤーを検索
+                    var playerObj = GameObject.FindGameObjectWithTag("Player");
+                    if (playerObj != null)
+                    {
+                        playerTransform = playerObj.transform;
+                    }
+                }
             }
             
             // イベントハンドラーを登録
@@ -132,7 +141,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// 新しいタイルを監視
         /// </summary>
-        private IEnumerator MonitorNewTiles()
+        private System.Collections.IEnumerator MonitorNewTiles()
         {
             while (true)
             {

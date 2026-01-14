@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
-using Vastcore.Player;
+using Vastcore.Generation;
 
 namespace Vastcore.Generation.Cache
 {
@@ -91,7 +91,6 @@ namespace Vastcore.Generation.Cache
         private void Awake()
         {
             InitializeCache();
-            playerPositionHistory = new List<Vector3>();
         }
         
         private void InitializeCache()
@@ -104,10 +103,24 @@ namespace Vastcore.Generation.Cache
             statistics = new CacheStatistics();
             
             // プレイヤーの検索
-            var player = FindFirstObjectByType<AdvancedPlayerController>();
+            var player = FindFirstObjectByType<Vastcore.Player.AdvancedPlayerController>();
             if (player != null)
             {
                 playerTransform = player.transform;
+                lastPlayerPosition = playerTransform.position;
+                playerPositionHistory = new List<Vector3> { playerTransform.position };
+            }
+            else if (Camera.main != null)
+            {
+                playerTransform = Camera.main.transform;
+                lastPlayerPosition = playerTransform.position;
+                playerPositionHistory = new List<Vector3> { playerTransform.position };
+                Debug.LogWarning("Player object not found. Using Main Camera for predictive preload.");
+            }
+            else
+            {
+                Debug.LogWarning("Player transform could not be determined. Predictive preload disabled.");
+                enablePredictivePreload = false;
             }
             
             // ディスクキャッシュディレクトリの作成

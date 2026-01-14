@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using NUnit.Framework;
+using Vastcore.Generation;
 
 namespace Vastcore.Generation.Map
 {

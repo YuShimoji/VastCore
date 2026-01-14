@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 using UnityEngine;
 using System.Collections.Generic;
 using System.IO;
@@ -84,6 +82,79 @@ namespace Vastcore.Generation.Map
         }
 
         /// <summary>
+        /// Creates default biome presets for common terrain types.
+        /// </summary>
+        public void CreateDefaultPresets()
+        {
+#if UNITY_EDITOR
+            // Create Forest biome preset
+            var forestPreset = ScriptableObject.CreateInstance<BiomePreset>();
+            forestPreset.presetName = "Forest";
+            forestPreset.description = "Dense forest biome with moderate terrain variation";
+            forestPreset.terrainParams = new MeshGenerator.TerrainGenerationParams
+            {
+                resolution = 256,
+                size = 1000f,
+                maxHeight = 50f,
+                noiseScale = 0.02f,
+                octaves = 4,
+                persistence = 0.5f,
+                lacunarity = 2f
+            };
+            forestPreset.primitiveSpawnDensity = 0.15f;
+            forestPreset.moisture = 0.8f;
+            forestPreset.temperature = 0.6f;
+            forestPreset.fertility = 0.7f;
+            forestPreset.rockiness = 0.2f;
+            SavePreset(forestPreset);
+
+            // Create Desert biome preset
+            var desertPreset = ScriptableObject.CreateInstance<BiomePreset>();
+            desertPreset.presetName = "Desert";
+            desertPreset.description = "Arid desert biome with flat terrain and sand materials";
+            desertPreset.terrainParams = new MeshGenerator.TerrainGenerationParams
+            {
+                resolution = 256,
+                size = 1000f,
+                maxHeight = 20f,
+                noiseScale = 0.01f,
+                octaves = 3,
+                persistence = 0.4f,
+                lacunarity = 2.2f
+            };
+            desertPreset.primitiveSpawnDensity = 0.05f;
+            desertPreset.moisture = 0.1f;
+            desertPreset.temperature = 0.9f;
+            desertPreset.fertility = 0.2f;
+            desertPreset.rockiness = 0.4f;
+            SavePreset(desertPreset);
+
+            // Create Mountain biome preset
+            var mountainPreset = ScriptableObject.CreateInstance<BiomePreset>();
+            mountainPreset.presetName = "Mountain";
+            mountainPreset.description = "Rugged mountain biome with extreme height variations";
+            mountainPreset.terrainParams = new MeshGenerator.TerrainGenerationParams
+            {
+                resolution = 256,
+                size = 1000f,
+                maxHeight = 100f,
+                noiseScale = 0.03f,
+                octaves = 6,
+                persistence = 0.6f,
+                lacunarity = 1.8f
+            };
+            mountainPreset.primitiveSpawnDensity = 0.08f;
+            mountainPreset.moisture = 0.4f;
+            mountainPreset.temperature = 0.3f;
+            mountainPreset.fertility = 0.3f;
+            mountainPreset.rockiness = 0.9f;
+            SavePreset(mountainPreset);
+
+            Debug.Log("Created default biome presets: Forest, Desert, Mountain");
+#endif
+        }
+
+        /// <summary>
         /// Gets a list of names of all available presets.
         /// </summary>
         public List<string> GetAvailablePresetNames()
@@ -103,7 +174,6 @@ namespace Vastcore.Generation.Map
         /// <summary>
         /// Creates a new BiomePreset asset in the editor.
         /// </summary>
-        [MenuItem("Vastcore/Create New Biome Preset")]
         public static void CreateNewPresetInEditor()
         {
             var preset = ScriptableObject.CreateInstance<BiomePreset>();
@@ -129,6 +199,30 @@ namespace Vastcore.Generation.Map
             Debug.Log($"Created a new biome preset at: {path}");
         }
 #endif
+        
+        /// <summary>
+        /// Saves a preset to disk.
+        /// </summary>
+        public void SavePreset(BiomePreset preset)
+        {
+#if UNITY_EDITOR
+            if (preset == null) return;
+            
+            if (!Directory.Exists(presetSavePath))
+            {
+                Directory.CreateDirectory(presetSavePath);
+            }
+            
+            string fileName = $"{preset.presetName}.asset";
+            string path = $"{presetSavePath}/{fileName}";
+            path = AssetDatabase.GenerateUniqueAssetPath(path);
+            
+            AssetDatabase.CreateAsset(preset, path);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            
+            RefreshAvailablePresets();
+#endif
+        }
     }
 }
->>>>>>> origin/develop

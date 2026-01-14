@@ -1,9 +1,10 @@
 using UnityEngine;
+using Vastcore.Core;
 
 namespace Vastcore.Player
 {
     [RequireComponent(typeof(CharacterController))]
-    public class AdvancedPlayerController : MonoBehaviour
+    public class AdvancedPlayerController : MonoBehaviour, IPlayerController
     {
         #region 基本移動パラメータ
         [Header("Movement")]
@@ -106,6 +107,17 @@ namespace Vastcore.Player
         }
         
         private PlayerControlState m_ControlState = PlayerControlState.Disabled;
+        #endregion
+
+        #region IPlayerController Implementation
+        public Transform Transform => transform;
+        public Vector3 Position => transform.position;
+        public Vector3 Forward => transform.forward;
+        public Camera PlayerCamera => cameraTransform?.GetComponent<Camera>();
+        public float MoveSpeed => moveSpeed;
+        public bool CanJump => characterController != null && characterController.isGrounded;
+        public bool IsGrounded => characterController != null && characterController.isGrounded;
+        public bool IsActive => enabled && m_ControlState != PlayerControlState.Disabled;
         #endregion
 
         #region Unity生命周期
