@@ -11,8 +11,6 @@
     "Vastcore.UI",
     "Unity.ProBuilder",
     "Unity.ProBuilder.Editor",
-    "UnityEngine.TestRunner",
-    "UnityEditor.TestRunner",
     "Vastcore.Testing"
   ],
   "includePlatforms": ["Editor"],
