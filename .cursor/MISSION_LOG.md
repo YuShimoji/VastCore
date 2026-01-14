@@ -189,9 +189,14 @@
 
 ### `2025-01-12T16:30:00Z` - `Orchestrator` - `Compilation Error Fix`
 - `Packages/manifest.json`のマージコンフリクトマーカー削除（両方のブランチの変更を統合）
+- `Packages/packages-lock.json`のマージコンフリクトマーカー削除（両方のブランチの変更を統合）
 - `Vastcore.Testing.asmdef`の重複参照削除（UnityEngine.TestRunner, UnityEditor.TestRunner）
 - `Vastcore.Tests.EditMode.asmdef`の重複参照削除（UnityEngine.TestRunner, UnityEditor.TestRunner）
 - コンパイルエラー修正完了
+- コミット・プッシュ完了
+
+### 残存課題
+- アセンブリ間の循環依存（Assembly-CSharp-Editor, Assembly-CSharp等）: 後続タスクで対応
 
 ---
 
