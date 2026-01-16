@@ -14,3 +14,9 @@
 ## Backlog（将来提案）
 - Unity Editor 用の headless smoke（起動/アセンブリスキャン）を Actions に追加。
 - Deform パッケージの asmdef 参照検証ジョブ追加。
+
+## タスク管理（短期/中期/長期）
+
+### 短期（Next）
+
+- [done] 未完了タスクなし（docs/tasks/ に OPEN / IN_PROGRESS なし）
