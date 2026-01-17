@@ -103,10 +103,10 @@ namespace Vastcore.Generation.Cache
             statistics = new CacheStatistics();
             
             // プレイヤーの検索
-            var player = FindFirstObjectByType<Vastcore.Player.AdvancedPlayerController>();
+            var player = FindFirstObjectByType<IPlayerController>();
             if (player != null)
             {
-                playerTransform = player.transform;
+                playerTransform = player.Transform;
                 lastPlayerPosition = playerTransform.position;
                 playerPositionHistory = new List<Vector3> { playerTransform.position };
             }

@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
-using Vastcore.Player;
 using Vastcore.Utilities;
 using Vastcore.Generation;
 using Vastcore.Core;
@@ -139,6 +138,25 @@ namespace Vastcore.Generation
                 StopCoroutine(memoryManagementCoroutine);
                 memoryManagementCoroutine = null;
             }
+        }
+
+        private Transform ResolvePlayerTransform()
+        {
+            if (playerTransform != null) return playerTransform;
+
+            var playerController = FindFirstObjectByType<IPlayerController>();
+            if (playerController != null)
+            {
+                return playerController.Transform;
+            }
+
+            var playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
+            {
+                return playerObj.transform;
+            }
+            
+            return Camera.main?.transform;
         }
 
         /// <summary>

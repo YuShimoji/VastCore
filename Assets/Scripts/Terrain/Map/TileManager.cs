@@ -131,11 +131,11 @@ namespace Vastcore.Generation
             }
             
             // AdvancedPlayerControllerを検索
-            var playerController = FindFirstObjectByType<Vastcore.Player.AdvancedPlayerController>();
+            var playerController = FindFirstObjectByType<IPlayerController>();
             if (playerController != null)
             {
                 playerTransform = playerController.Transform;
-                Debug.Log("Found AdvancedPlayerController");
+                Debug.Log("Found IPlayerController");
                 return playerTransform;
             }
 
