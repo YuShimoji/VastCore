@@ -11,7 +11,7 @@
 - **Mission ID**: ORCH_20260117_SYNC_TICKET
 - **開始日時**: 2026-01-17T13:21:00+09:00
 - **最終更新**: 2026-01-17T13:35:00+09:00
-- **現在のフェーズ**: Phase 4: チケット発行
+- **現在のフェーズ**: Phase 6: Report
 - **ステータス**: IN_PROGRESS
 
 ---
@@ -22,11 +22,13 @@
 - プロジェクト内の未解決課題の洗い出し
 - `sw-doctor` 指摘事項の確認と是正
 - `HANDOVER.md` に記載された懸念点のチケット化
+- 循環依存エラーのチケット化 (New)
 
 ### 完了済み
 - [x] `sw-doctor` 実行 (Critical Issue detected)
 - [x] `HANDOVER.md` の確認
 - [x] 課題のチケット化 (TASK_019, TASK_020, TASK_021)
+- [x] 循環依存のチケット化 (TASK_022)
 
 ### 未完了
 - [ ] 各タスクの実行 (Workerへの委譲)
@@ -42,6 +44,7 @@
 - [x] `docs/tasks/TASK_019_FixSwDoctorRulesConfig.md` 作成
 - [x] `docs/tasks/TASK_020_NamespaceConsistency.md` 作成
 - [x] `docs/tasks/TASK_021_MergeIntegrationCheck.md` 作成
+- [x] `docs/tasks/TASK_022_FixCyclicDependencies.md` 作成
 - [x] DoD 定義済み
 
 **完了条件**: タスクがチケット化され、DoD が定義済み
@@ -55,6 +58,7 @@
 |-----------|---------|------|--------|--------|------|
 | TASK_019 | SW Doctor Rules Configuration Fix | 3 | OPEN | - | 未着手 |
 | TASK_021 | Merge Integration & Verification | 2 | BLOCKED | - | テスト実行インフラ問題 |
+| TASK_022 | Fix Cyclic Dependencies | 1 | OPEN | - | 未着手 |
 
 ### 候補タスク (Backlog)
 - なし
