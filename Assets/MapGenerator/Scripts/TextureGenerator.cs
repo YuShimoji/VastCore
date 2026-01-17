@@ -1,5 +1,5 @@
 using UnityEngine;
-using Vastcore.Utils;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {

@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.IO;
-using Vastcore.Utils;
+using Vastcore.Utilities;
 using Vastcore.Generation.GPU;
 
 namespace Vastcore.Generation.Cache

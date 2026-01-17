@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using Vastcore.Utils;
+using Vastcore.Utilities;
 
 #if DEFORM_AVAILABLE
 using Deform;

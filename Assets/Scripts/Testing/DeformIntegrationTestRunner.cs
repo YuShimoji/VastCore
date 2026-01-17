@@ -1,7 +1,7 @@
 // Disabled: DeformIntegrationTest is disabled
 #if VASTCORE_DEFORM_INTEGRATION_ENABLED
 using UnityEngine;
-using Vastcore.Utils;
+using Vastcore.Utilities;
 
 namespace Vastcore.Testing
 {

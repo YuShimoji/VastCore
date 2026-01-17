@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 
-namespace Vastcore.Utils
+namespace Vastcore.Utilities
 {
     /// <summary>
     /// Vastcore専用の強化されたログシステム

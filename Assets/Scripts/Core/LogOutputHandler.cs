@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using UnityEngine;
-using Vastcore.Utils;
+using Vastcore.Utilities;
 
 namespace Vastcore.Core
 {
@@ -103,15 +103,15 @@ namespace Vastcore.Core
             
             switch (entry.level)
             {
-                case Vastcore.Utils.VastcoreLogger.LogLevel.Debug:
-                case Vastcore.Utils.VastcoreLogger.LogLevel.Info:
+                case Vastcore.Utilities.VastcoreLogger.LogLevel.Debug:
+                case Vastcore.Utilities.VastcoreLogger.LogLevel.Info:
                     Debug.Log(logMessage);
                     break;
-                case Vastcore.Utils.VastcoreLogger.LogLevel.Warning:
+                case Vastcore.Utilities.VastcoreLogger.LogLevel.Warning:
                     Debug.LogWarning(logMessage);
                     break;
-                case Vastcore.Utils.VastcoreLogger.LogLevel.Error:
-                case Vastcore.Utils.VastcoreLogger.LogLevel.Critical:
+                case Vastcore.Utilities.VastcoreLogger.LogLevel.Error:
+                case Vastcore.Utilities.VastcoreLogger.LogLevel.Critical:
                     if (exception != null)
                     {
                         Debug.LogException(exception);
