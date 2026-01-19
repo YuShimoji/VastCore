@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
+using Vastcore.Generation;
 
 namespace Vastcore.Generation.Map
 {
@@ -17,13 +18,14 @@ namespace Vastcore.Generation.Map
         [SerializeField] private int renderDistance = 3;
 
         [Header("パフォーマンス設定")]
-        [SerializeField] private int maxActiveTiles = 9;
         [SerializeField] private float tileUnloadDistance = 200f;
 
         // 地形タイル管理
-        private Dictionary<Vector2Int, TerrainTile> activeTiles = new Dictionary<Vector2Int, TerrainTile>();
+        private Dictionary<Vector2Int, TerrainTileComponent> activeTiles = new Dictionary<Vector2Int, TerrainTileComponent>();
         private Queue<Vector2Int> tileLoadQueue = new Queue<Vector2Int>();
         private Transform playerTransform;
+
+        private Material sharedTerrainMaterial;
 
         // 地形生成パラメータ
         [System.Serializable]
@@ -43,6 +45,14 @@ namespace Vastcore.Generation.Map
         {
             // プレイヤーTransformを取得（仮定）
             playerTransform = Camera.main.transform;
+
+            if (sharedTerrainMaterial == null)
+            {
+                sharedTerrainMaterial = new Material(Shader.Find("Standard"))
+                {
+                    color = Color.Lerp(Color.gray, Color.green, 0.4f)
+                };
+            }
 
             // 初期地形生成
             GenerateInitialTerrain();
@@ -126,8 +136,12 @@ namespace Vastcore.Generation.Map
             tileObj.transform.parent = transform;
             tileObj.transform.position = TileCoordToWorld(tileCoord);
 
-            TerrainTile terrainTile = tileObj.AddComponent<TerrainTile>();
-            terrainTile.Initialize(tileCoord, tileSize, tileResolution, heightScale, generationParams);
+            TerrainTileComponent terrainTile = tileObj.AddComponent<TerrainTileComponent>();
+            float[,] heightData = GenerateHeightmap(tileCoord);
+            Mesh mesh = BuildMesh(heightData);
+
+            terrainTile.Initialize(tileCoord, tileSize, heightData, tileResolution, heightScale, mesh, sharedTerrainMaterial);
+            terrainTile.SetActive(true);
 
             activeTiles[tileCoord] = terrainTile;
         }
@@ -172,9 +186,9 @@ namespace Vastcore.Generation.Map
         public float GetHeightAtPosition(Vector3 position)
         {
             Vector2Int tileCoord = WorldToTileCoord(position);
-            if (activeTiles.TryGetValue(tileCoord, out TerrainTile tile))
+            if (activeTiles.TryGetValue(tileCoord, out TerrainTileComponent tile))
             {
-                return tile.GetHeightAtLocalPosition(position - tile.transform.position);
+                return tile.GetHeightAtWorldPosition(position);
             }
             return 0f;
         }
@@ -187,10 +201,108 @@ namespace Vastcore.Generation.Map
             generationParams = newParams;
 
             // 全タイルを再生成
-            foreach (var tile in activeTiles.Values)
+            foreach (var pair in activeTiles)
             {
-                tile.UpdateTerrain(generationParams);
+                RegenerateTile(pair.Key, pair.Value);
             }
+        }
+
+        private void RegenerateTile(Vector2Int coord, TerrainTileComponent tile)
+        {
+            float[,] heightData = GenerateHeightmap(coord);
+            Mesh mesh = BuildMesh(heightData);
+            tile.Initialize(coord, tileSize, heightData, tileResolution, heightScale, mesh, sharedTerrainMaterial);
+            tile.SetActive(true);
+        }
+
+        private float[,] GenerateHeightmap(Vector2Int tileCoord)
+        {
+            float[,] heights = new float[tileResolution, tileResolution];
+
+            for (int z = 0; z < tileResolution; z++)
+            {
+                for (int x = 0; x < tileResolution; x++)
+                {
+                    float amplitude = generationParams.amplitude;
+                    float frequency = generationParams.frequency;
+                    float noiseValue = 0f;
+                    float weight = 1f;
+
+                    for (int octave = 0; octave < Mathf.Max(1, generationParams.octaves); octave++)
+                    {
+                        float sampleX = (tileCoord.x * tileSize + (x / (float)(tileResolution - 1) * tileSize)) * frequency + generationParams.offset.x;
+                        float sampleZ = (tileCoord.y * tileSize + (z / (float)(tileResolution - 1) * tileSize)) * frequency + generationParams.offset.y;
+
+                        float perlin = Mathf.PerlinNoise(sampleX, sampleZ);
+                        noiseValue += perlin * amplitude * weight;
+
+                        weight *= generationParams.persistence;
+                        frequency *= generationParams.lacunarity;
+                    }
+
+                    heights[z, x] = Mathf.Clamp01(noiseValue);
+                }
+            }
+
+            return heights;
+        }
+
+        private Mesh BuildMesh(float[,] heights)
+        {
+            int resolution = heights.GetLength(0);
+            Vector3[] vertices = new Vector3[resolution * resolution];
+            Vector2[] uvs = new Vector2[resolution * resolution];
+            int[] triangles = new int[(resolution - 1) * (resolution - 1) * 6];
+
+            int vertexIndex = 0;
+            for (int z = 0; z < resolution; z++)
+            {
+                for (int x = 0; x < resolution; x++)
+                {
+                    float normalizedX = x / (float)(resolution - 1);
+                    float normalizedZ = z / (float)(resolution - 1);
+
+                    float posX = (normalizedX - 0.5f) * tileSize;
+                    float posZ = (normalizedZ - 0.5f) * tileSize;
+                    float posY = heights[z, x] * heightScale;
+
+                    vertices[vertexIndex] = new Vector3(posX, posY, posZ);
+                    uvs[vertexIndex] = new Vector2(normalizedX, normalizedZ);
+                    vertexIndex++;
+                }
+            }
+
+            int triangleIndex = 0;
+            for (int z = 0; z < resolution - 1; z++)
+            {
+                for (int x = 0; x < resolution - 1; x++)
+                {
+                    int topLeft = z * resolution + x;
+                    int topRight = topLeft + 1;
+                    int bottomLeft = topLeft + resolution;
+                    int bottomRight = bottomLeft + 1;
+
+                    triangles[triangleIndex++] = topLeft;
+                    triangles[triangleIndex++] = bottomRight;
+                    triangles[triangleIndex++] = bottomLeft;
+
+                    triangles[triangleIndex++] = topLeft;
+                    triangles[triangleIndex++] = topRight;
+                    triangles[triangleIndex++] = bottomRight;
+                }
+            }
+
+            var mesh = new Mesh
+            {
+                vertices = vertices,
+                triangles = triangles,
+                uv = uvs
+            };
+
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+
+            return mesh;
         }
     }
 }

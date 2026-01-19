@@ -243,6 +243,38 @@ namespace Vastcore.Editor.Generation
             EditorUtility.DisplayDialog("Success", "Terrain generation complete.", "OK");
         }
 
+        /// <summary>
+        /// 高さマップをバッチ処理で設定（メモリスパイク軽減）
+        /// </summary>
+        private void SetHeightsInBatches(TerrainData terrainData, float[,] heights)
+        {
+            int height = heights.GetLength(0);
+            int width = heights.GetLength(1);
+            int batchSize = 256; // 256x256 のバッチサイズ
+
+            for (int yStart = 0; yStart < height; yStart += batchSize)
+            {
+                for (int xStart = 0; xStart < width; xStart += batchSize)
+                {
+                    int yEnd = Mathf.Min(yStart + batchSize, height);
+                    int xEnd = Mathf.Min(xStart + batchSize, width);
+                    int batchHeight = yEnd - yStart;
+                    int batchWidth = xEnd - xStart;
+
+                    float[,] batchHeights = new float[batchHeight, batchWidth];
+                    for (int y = 0; y < batchHeight; y++)
+                    {
+                        for (int x = 0; x < batchWidth; x++)
+                        {
+                            batchHeights[y, x] = heights[yStart + y, xStart + x];
+                        }
+                    }
+
+                    terrainData.SetHeights(yStart, xStart, batchHeights);
+                }
+            }
+        }
+
         private void SimulateHydraulicErosion()
         {
             int width = combinedHeightmap.GetLength(1);

@@ -30,7 +30,7 @@ namespace VastCore.Testing
             }
 
             // シーン内の地形タイルをクリーンアップ
-            TerrainTile[] tiles = Object.FindObjectsByType<TerrainTile>(FindObjectsSortMode.None);
+            Vastcore.Generation.TerrainTileComponent[] tiles = Object.FindObjectsByType<Vastcore.Generation.TerrainTileComponent>(FindObjectsSortMode.None);
             foreach (var tile in tiles)
             {
                 Object.DestroyImmediate(tile.gameObject);
@@ -67,7 +67,7 @@ namespace VastCore.Testing
 
             // Act
             GameObject tileObj = new GameObject("TestTile");
-            TerrainTile terrainTile = tileObj.AddComponent<TerrainTile>();
+            var terrainTile = tileObj.AddComponent<Vastcore.Generation.TerrainTileComponent>();
             terrainTile.Initialize(tileCoord, tileSize, resolution, heightScale, genParams);
 
             // Assert
@@ -105,7 +105,7 @@ namespace VastCore.Testing
 
             // Act
             GameObject tileObj = new GameObject("TestTile");
-            TerrainTile terrainTile = tileObj.AddComponent<TerrainTile>();
+            var terrainTile = tileObj.AddComponent<Vastcore.Generation.TerrainTileComponent>();
             terrainTile.Initialize(tileCoord, tileSize, resolution, heightScale, genParams);
 
             MeshFilter meshFilter = tileObj.GetComponent<MeshFilter>();
@@ -152,7 +152,7 @@ namespace VastCore.Testing
             };
 
             GameObject tileObj = new GameObject("TestTile");
-            TerrainTile terrainTile = tileObj.AddComponent<TerrainTile>();
+            var terrainTile = tileObj.AddComponent<Vastcore.Generation.TerrainTileComponent>();
             terrainTile.Initialize(tileCoord, tileSize, resolution, heightScale, genParams);
 
             // Act
@@ -188,7 +188,7 @@ namespace VastCore.Testing
             };
 
             GameObject tileObj = new GameObject("TestTile");
-            TerrainTile terrainTile = tileObj.AddComponent<TerrainTile>();
+            var terrainTile = tileObj.AddComponent<Vastcore.Generation.TerrainTileComponent>();
             terrainTile.Initialize(tileCoord, tileSize, resolution, heightScale, initialParams);
 
             MeshFilter meshFilter = tileObj.GetComponent<MeshFilter>();

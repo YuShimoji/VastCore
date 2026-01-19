@@ -1,3 +1,6 @@
+// LEGACY: Do not modify. See docs/design/LegacyIsolation_Design.md
+// Phase 3 以降で再設計予定
+
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -72,6 +75,15 @@ namespace Vastcore.Generation
 
             // 共通の後処理
             ApplyBiomePostProcessing(heightmap, biomeDefinition, worldPosition);
+        }
+
+        /// <summary>
+        /// バイオーム共通の後処理（スタブ実装）。
+        /// 必要に応じてスムージングや境界ブレンド等を実装可能。
+        /// </summary>
+        private static void ApplyBiomePostProcessing(float[,] heightmap, BiomeDefinition biomeDefinition, Vector3 worldPosition)
+        {
+            // 現段階では何もしない（将来拡張用）。
         }
 
         /// <summary>
@@ -219,6 +231,7 @@ namespace Vastcore.Generation
                 }
             }
         }
+        #endregion
 
         #region ユーティリティメソッド
 

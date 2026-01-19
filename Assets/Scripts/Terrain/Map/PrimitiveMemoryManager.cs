@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
+using Vastcore.Terrain.Map;
 
 namespace Vastcore.Generation
 {
@@ -9,39 +10,38 @@ namespace Vastcore.Generation
     /// </summary>
     public class PrimitiveMemoryManager : MonoBehaviour
     {
-        [Header("メモリ管理設定")]
-        public bool enableMemoryOptimization = true;
-        public float memoryCheckInterval = 5f; // メモリチェック間隔（秒）
-        public long maxMemoryUsageMB = 512; // 最大メモリ使用量（MB）
-        public float gcTriggerThreshold = 0.8f; // GC実行閾値（メモリ使用率）
-        
-        [Header("オブジェクト管理")]
-        public int maxActiveObjects = 100;
-        public float objectCullingDistance = 2000f;
-        public bool enableAutomaticCulling = true;
-        
-        [Header("パフォーマンス監視")]
-        public bool enablePerformanceMonitoring = true;
-        public bool logMemoryUsage = false;
-        public float performanceLogInterval = 10f;
-        
-        // メモリ統計
-        private long lastMemoryUsage = 0;
-        private int lastActiveObjectCount = 0;
-        private float lastGCTime = 0;
-        private int gcCallCount = 0;
-        
+        [Header("設定")]
+        [SerializeField] private MemoryManagerConfig config;
+
+        private bool logMemoryUsage => config != null && config.logMemoryUsage;
+        private float memoryCheckInterval => config != null ? config.memoryCheckInterval : 5f;
+        private long maxMemoryUsageMB => config != null ? config.maxMemoryUsageMB : 512;
+        private float gcTriggerThreshold => config != null ? config.gcTriggerThreshold : 0.8f;
+        private int maxActiveObjects => config != null ? config.maxActiveObjects : 100;
+        private float objectCullingDistance => config != null ? config.objectCullingDistance : 2000f;
+        private bool enableAutomaticCulling => config != null && config.enableAutomaticCulling;
+        private float performanceLogInterval => config != null ? config.performanceLogInterval : 10f;
+
+        private long lastMemoryUsage;
+        private float lastGCTime;
+        private int gcCallCount;
+        private int lastActiveObjectCount;
+
         // 管理対象オブジェクト
         private List<PrimitiveTerrainObject> managedObjects;
         private Dictionary<int, float> objectLastAccessTime;
-        
+
+        // 監視・追跡クラス
+        private MemoryMonitor memoryMonitor;
+        private PerformanceTracker performanceTracker;
+
         // コルーチン参照
         private Coroutine memoryMonitorCoroutine;
         private Coroutine performanceMonitorCoroutine;
-        
+
         // シングルトンインスタンス
         private static PrimitiveMemoryManager instance;
-        
+
         public static PrimitiveMemoryManager Instance
         {
             get
@@ -65,6 +65,13 @@ namespace Vastcore.Generation
             {
                 instance = this;
                 DontDestroyOnLoad(gameObject);
+
+                // デフォルト設定を作成
+                if (config == null)
+                {
+                    config = ScriptableObject.CreateInstance<MemoryManagerConfig>();
+                }
+
                 InitializeMemoryManager();
             }
             else if (instance != this)
@@ -75,14 +82,16 @@ namespace Vastcore.Generation
 
         void Start()
         {
-            if (enableMemoryOptimization)
+            if (config.enableMemoryOptimization)
             {
-                memoryMonitorCoroutine = StartCoroutine(MemoryMonitorLoop());
+                memoryMonitor = new MemoryMonitor(config, OnMemoryThresholdExceeded);
+                memoryMonitorCoroutine = StartCoroutine(memoryMonitor.StartMonitoring());
             }
-            
-            if (enablePerformanceMonitoring)
+
+            if (config.enablePerformanceMonitoring)
             {
-                performanceMonitorCoroutine = StartCoroutine(PerformanceMonitorLoop());
+                performanceTracker = new PerformanceTracker(config);
+                performanceMonitorCoroutine = StartCoroutine(performanceTracker.StartTracking());
             }
         }
 
@@ -92,25 +101,28 @@ namespace Vastcore.Generation
             {
                 StopCoroutine(memoryMonitorCoroutine);
             }
-            
+
             if (performanceMonitorCoroutine != null)
             {
                 StopCoroutine(performanceMonitorCoroutine);
             }
         }
 
-        /// <summary>
-        /// メモリマネージャーを初期化
-        /// </summary>
         private void InitializeMemoryManager()
         {
             managedObjects = new List<PrimitiveTerrainObject>();
             objectLastAccessTime = new Dictionary<int, float>();
-            
+
             // 初期メモリ使用量を記録
             lastMemoryUsage = System.GC.GetTotalMemory(false);
-            
+
             Debug.Log("PrimitiveMemoryManager initialized");
+        }
+
+        private void OnMemoryThresholdExceeded()
+        {
+            PerformMemoryOptimization();
+            TriggerGarbageCollection();
         }
 
         /// <summary>

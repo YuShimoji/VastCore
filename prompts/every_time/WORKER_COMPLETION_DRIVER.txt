@@ -1,0 +1,56 @@
+# Worker Completion Driver（毎回コピペ）
+
+```text
+あなたは分散開発チームの Worker です。DoD / Report / テストを未完のまま残さず、以下の残タスクを完了させてください。
+
+## Phase 0: 状況
+- Ticket: <TICKET_PATH>
+- Branch: <BRANCH>
+- Focus Area: <FOCUS_AREA>
+- Forbidden Area: <FORBIDDEN_AREA>
+- Pending Items: <PENDING_ITEMS>
+- Report Target: <REPORT_PATH_TARGET>
+- HANDOVER Sections: <HANDOVER_SECTIONS>
+
+## Phase 1: ミッション
+1. docs/tasks/TASK を最新化（Status / Report パス / 事実追記）
+2. DoD を 1 項目ずつ検証し、差分 or テスト結果の根拠を残す
+   - **重要**: 各DoD項目に対して、実際に実施した内容を具体的に記録すること。「確認済み」「実施済み」などの表面的な記述は禁止。
+   - 環境依存で実行不可能な項目（例: gitリポジトリではない環境でのgit history調査）がある場合:
+     - 停止条件として扱うか、代替手段を取るかを判断する
+     - 判断結果と理由をレポートに記録する
+     - 代替手段を取る場合は、その内容と根拠を具体的に記録する
+3. docs/inbox/REPORT を更新し、`report-validator.js` の実行結果を記録
+   - 正しい引数順で実行: `node .shared-workflows/scripts/report-validator.js <REPORT_PATH> --profile <PROFILE> <CONFIG_PATH>`
+   - 実行結果（成功/失敗、警告内容）をレポートに記録する
+4. 必須テストを実行し、`<cmd>=<result>` 形式で残す
+5. docs/HANDOVER.md の <HANDOVER_SECTIONS> を更新
+6. `git status -sb` をクリーンにし、必要なら commit / push（push は GitHubAutoApprove=true の場合のみ自律実行）
+
+## Phase 2: 停止条件（該当時は即報告）
+- Forbidden Area に触れないと DoD を満たせない
+- 仕様仮定が3件以上必要
+- 依存追加 / 外部通信 / 破壊的操作 / 長時間待機が必須
+- SSOT やテンプレが obtain できない（`ensure-ssot.js` でも不可）
+- **環境依存で実行不可能なDoD項目がある場合**:
+  - 代替手段が取れない、または代替手段を取ることで仕様仮定が3件以上必要になる
+  - 停止時は、環境依存の理由と代替手段の検討結果をレポートに記録する
+
+## Phase 3: 必須アウトプット
+- Report パス
+- 実行テストログ（`<cmd>=<result>`）
+- DoD 各項目の充足状況（各項目に対して、実際に実施した内容を具体的に記録。環境依存で実行不可能な項目がある場合は、停止条件として扱うか、代替手段を取るかの判断結果と理由を記録）
+- `git status -sb` の結果（差分が残る場合は理由と次手）
+
+## Phase 4: チャット1行
+- Done: `Done: <TICKET_PATH>. Report: <REPORT_PATH_TARGET>. Tests: <cmd>=<result>.`
+- Blocked: `Blocked: <TICKET_PATH>. Reason: <要点>. Next: <候補>. Report: <REPORT_PATH_TARGET>.`
+```
+
+---
+
+## Orchestratorメモ（送信しない）
+- 用途: DoD / Report / テストが未完の Worker を短時間で再駆動させるプロンプト
+- 事前に埋める変数: `<TICKET_PATH>`, `<BRANCH>`, `<FOCUS_AREA>`, `<FORBIDDEN_AREA>`, `<PENDING_ITEMS>`, `<REPORT_PATH_TARGET>`, `<HANDOVER_SECTIONS>`
+- 誘導: Blocked 解除後も同プロンプトで再開させ、納品物の整合（docs/tasks / docs/inbox / docs/HANDOVER / git）を確認させる
+- 受領後チェック: Report Validator の実行ログ、HANDOVER 更新、git 差分、docs/tasks の Status / Report 記入を必ず確認

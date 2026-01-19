@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
+using Vastcore.Terrain.Map;
 
 namespace Vastcore.Generation
 {
@@ -25,9 +26,9 @@ namespace Vastcore.Generation
         public bool logPoolOperations = false;
         
         // プールデータ構造
-        private Queue<PrimitiveTerrainObject> availableObjects;
-        private HashSet<PrimitiveTerrainObject> activeObjects;
-        private Dictionary<PrimitiveTerrainGenerator.PrimitiveType, Queue<PrimitiveTerrainObject>> typeSpecificPools;
+        private Queue<Vastcore.Terrain.Map.PrimitiveTerrainObject> availableObjects;
+        private HashSet<Vastcore.Terrain.Map.PrimitiveTerrainObject> activeObjects;
+        private Dictionary<PrimitiveTerrainGenerator.PrimitiveType, Queue<Vastcore.Terrain.Map.PrimitiveTerrainObject>> typeSpecificPools;
         
         // パフォーマンス統計
         private int totalCreated = 0;
@@ -94,15 +95,15 @@ namespace Vastcore.Generation
         /// </summary>
         private void InitializePool()
         {
-            availableObjects = new Queue<PrimitiveTerrainObject>();
-            activeObjects = new HashSet<PrimitiveTerrainObject>();
-            typeSpecificPools = new Dictionary<PrimitiveTerrainGenerator.PrimitiveType, Queue<PrimitiveTerrainObject>>();
+            availableObjects = new Queue<Vastcore.Terrain.Map.PrimitiveTerrainObject>();
+            activeObjects = new HashSet<Vastcore.Terrain.Map.PrimitiveTerrainObject>();
+            typeSpecificPools = new Dictionary<PrimitiveTerrainGenerator.PrimitiveType, Queue<Vastcore.Terrain.Map.PrimitiveTerrainObject>>();
             
             // 各プリミティブタイプ用のプールを初期化
             var primitiveTypes = System.Enum.GetValues(typeof(PrimitiveTerrainGenerator.PrimitiveType));
             foreach (PrimitiveTerrainGenerator.PrimitiveType type in primitiveTypes)
             {
-                typeSpecificPools[type] = new Queue<PrimitiveTerrainObject>();
+                typeSpecificPools[type] = new Queue<Vastcore.Terrain.Map.PrimitiveTerrainObject>();
             }
             
             // プール親オブジェクトの設定
@@ -140,7 +141,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// 新しいプールオブジェクトを作成
         /// </summary>
-        private PrimitiveTerrainObject CreateNewPoolObject()
+        private Vastcore.Terrain.Map.PrimitiveTerrainObject CreateNewPoolObject()
         {
             if (primitiveTerrainPrefab == null)
             {
@@ -151,10 +152,10 @@ namespace Vastcore.Generation
             var go = Instantiate(primitiveTerrainPrefab, poolParent);
             go.SetActive(false);
             
-            var primitiveObj = go.GetComponent<PrimitiveTerrainObject>();
+            var primitiveObj = go.GetComponent<Vastcore.Terrain.Map.PrimitiveTerrainObject>();
             if (primitiveObj == null)
             {
-                primitiveObj = go.AddComponent<PrimitiveTerrainObject>();
+                primitiveObj = go.AddComponent<Vastcore.Terrain.Map.PrimitiveTerrainObject>();
             }
             
             totalCreated++;
@@ -169,9 +170,9 @@ namespace Vastcore.Generation
         /// <summary>
         /// プールからオブジェクトを取得
         /// </summary>
-        public PrimitiveTerrainObject GetFromPool(PrimitiveTerrainGenerator.PrimitiveType primitiveType, Vector3 position, float scale)
+        public Vastcore.Terrain.Map.PrimitiveTerrainObject GetFromPool(PrimitiveTerrainGenerator.PrimitiveType primitiveType, Vector3 position, float scale)
         {
-            PrimitiveTerrainObject obj = null;
+            Vastcore.Terrain.Map.PrimitiveTerrainObject obj = null;
             
             // タイプ固有のプールから取得を試行
             if (typeSpecificPools.ContainsKey(primitiveType) && typeSpecificPools[primitiveType].Count > 0)
@@ -194,7 +195,7 @@ namespace Vastcore.Generation
             if (obj != null)
             {
                 // オブジェクトを初期化してアクティブリストに追加
-                obj.InitializeFromPool((GenerationPrimitiveType)(int)primitiveType, position, scale);
+                obj.InitializeFromPool((Vastcore.Core.GenerationPrimitiveType)(int)primitiveType, position, scale);
                 activeObjects.Add(obj);
                 
                 // ピーク使用数を更新

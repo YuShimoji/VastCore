@@ -9,6 +9,7 @@ namespace Vastcore.Generation
     /// 自然な結晶成長シミュレーションシステム
     /// 結晶成長アルゴリズム、不完全性、自然な欠陥の生成を実装
     /// </summary>
+    [System.Obsolete("Experimental crystal growth simulator. Not used in core terrain pipeline.")]
     public static class CrystalGrowthSimulator
     {
         #region 成長パラメータ定義

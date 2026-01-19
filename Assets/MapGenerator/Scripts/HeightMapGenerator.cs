@@ -8,11 +8,11 @@ namespace Vastcore.Generation
         {
             switch (generator.GenerationMode)
             {
-                case TerrainGenerator.TerrainGenerationMode.HeightMap:
+                case TerrainGenerationMode.HeightMap:
                     return GenerateFromHeightMap(generator);
-                case TerrainGenerator.TerrainGenerationMode.NoiseAndHeightMap:
+                case TerrainGenerationMode.NoiseAndHeightMap:
                     return CombineNoiseAndHeightMap(generator);
-                case TerrainGenerator.TerrainGenerationMode.Noise:
+                case TerrainGenerationMode.Noise:
                 default:
                     return GenerateFromNoise(generator);
             }
@@ -53,7 +53,7 @@ namespace Vastcore.Generation
                         frequency *= generator.Lacunarity;
                     }
                     
-                    heights[x, y] = Mathf.Clamp01((noiseHeight / maxPossibleHeight + 1f) * 0.5f);
+                    heights[x, y] = Mathf.Clamp01((noiseHeight / maxPossibleHeight + 1f) * TerrainGenerationConstants.HeightNormalizationFactor);
                 }
             }
             
@@ -122,7 +122,7 @@ namespace Vastcore.Generation
                 {
                     float gradient = 0;
                     int samples = 0;
-                    int radius = 1;
+                    int radius = TerrainGenerationConstants.GradientSampleRadius;
                     
                     for (int dy = -radius; dy <= radius; dy++)
                     {
@@ -137,7 +137,11 @@ namespace Vastcore.Generation
                     
                     gradient /= samples;
                     
-                    float noiseInfluence = Mathf.Lerp(0.5f, 0.1f, Mathf.Clamp01(gradient * 10f));
+                    float noiseInfluence = Mathf.Lerp(
+                        TerrainGenerationConstants.MaxNoiseInfluence, 
+                        TerrainGenerationConstants.MinNoiseInfluence, 
+                        Mathf.Clamp01(gradient * TerrainGenerationConstants.GradientMultiplier)
+                    );
                     
                     combinedHeights[x, y] = Mathf.Lerp(
                         heightMapHeights[x, y],

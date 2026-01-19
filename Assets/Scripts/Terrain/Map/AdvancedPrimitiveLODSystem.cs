@@ -1,6 +1,10 @@
+// LEGACY: Do not modify. See docs/design/LegacyIsolation_Design.md
+// V01 では不要。将来的に削除または完全再実装予定。
+
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
+using Vastcore.Terrain.Map;
 
 namespace Vastcore.Generation.Map
 {

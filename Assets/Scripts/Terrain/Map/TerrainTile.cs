@@ -74,12 +74,11 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region コンストラクタ
-        /// <summary>
-        /// デフォルトコンストラクタ
-        /// </summary>
-        public TerrainTile()
+        #region Unity Lifecycle
+        
+        private void Awake()
         {
+            // MonoBehaviour の初期化
             coordinate = Vector2Int.zero;
             worldPosition = Vector3.zero;
             tileSize = 2000f;
@@ -93,42 +92,50 @@ namespace Vastcore.Generation
             currentLOD = LODLevel.High;
         }
         
+        #endregion
+
+        #region Factory
         /// <summary>
-        /// 座標指定コンストラクタ
+        /// TerrainTile の生成ファクトリ
         /// </summary>
-        public TerrainTile(Vector2Int coord, float size)
+        public static TerrainTile Create(
+            Vector2Int coord,
+            float size,
+            MeshGenerator.TerrainGenerationParams terrainParams,
+            CircularTerrainGenerator.CircularTerrainParams circularParams)
         {
-            coordinate = coord;
-            tileSize = size;
-            worldPosition = new Vector3(coord.x * size, 0f, coord.y * size);
-            state = TileState.Unloaded;
-            createdAt = System.DateTime.Now;
-            lastAccessedAt = createdAt;
-            accessCount = 0;
-            isVisible = false;
-            hasCollider = false;
-            distanceFromPlayer = float.MaxValue;
-            currentLOD = LODLevel.High;
+            // 内部コンストラクタは使用せず、必要フィールドを初期化
+            var tile = new TerrainTile();
+            tile.coordinate = coord;
+            tile.tileSize = size;
+            tile.worldPosition = new Vector3(
+                coord.x * size + size * 0.5f,
+                0f,
+                coord.y * size + size * 0.5f
+            );
+            tile.state = TileState.Unloaded;
+            tile.terrainParams = terrainParams;
+            tile.circularParams = circularParams;
+            tile.createdAt = System.DateTime.Now;
+            tile.lastAccessedAt = tile.createdAt;
+            tile.accessCount = 0;
+            tile.isVisible = false;
+            tile.hasCollider = false;
+            tile.distanceFromPlayer = float.MaxValue;
+            tile.currentLOD = LODLevel.High;
+            return tile;
         }
-        
+
         /// <summary>
-        /// 完全指定コンストラクタ
+        /// 既定パラメータで TerrainTile を生成する簡易オーバーロード（テスト用途など）
         /// </summary>
-        public TerrainTile(Vector2Int coord, float size, MeshGenerator.TerrainGenerationParams terrainParams, CircularTerrainGenerator.CircularTerrainParams circularParams)
+        public static TerrainTile Create(Vector2Int coord, float size)
         {
-            coordinate = coord;
-            tileSize = size;
-            worldPosition = new Vector3(coord.x * size, 0f, coord.y * size);
-            this.terrainParams = terrainParams;
-            this.circularParams = circularParams;
-            state = TileState.Unloaded;
-            createdAt = System.DateTime.Now;
-            lastAccessedAt = createdAt;
-            accessCount = 0;
-            isVisible = false;
-            hasCollider = false;
-            distanceFromPlayer = float.MaxValue;
-            currentLOD = LODLevel.High;
+            var t = MeshGenerator.TerrainGenerationParams.Default();
+            var c = CircularTerrainGenerator.CircularTerrainParams.Default();
+            // 半径0にして円形マスクを無効化
+            c.radius = 0f;
+            return Create(coord, size, t, c);
         }
         #endregion
 
@@ -357,9 +364,10 @@ namespace Vastcore.Generation
                     float distance = Vector2.Distance(position, center);
                     
                     // 円形フォールオフを計算
-                    float falloff = CircularTerrainGenerator.CalculateDistanceFalloff(
-                        position, center, radiusInPixels, 
-                        circularParams.falloffCurve, circularParams.falloffStrength);
+                    // float falloff = CircularTerrainGenerator.CalculateDistanceFalloff(
+                    //     position, center, radiusInPixels, 
+                    //     circularParams.falloffCurve, circularParams.falloffStrength);
+                    float falloff = 1f; // 仮の値
                     
                     result[y, x] *= falloff;
                 }

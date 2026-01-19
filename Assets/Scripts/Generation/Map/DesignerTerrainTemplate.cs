@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Generation.Map;
 
 namespace Vastcore.Generation
 {
@@ -13,7 +14,15 @@ namespace Vastcore.Generation
         [Header("基本設定")]
         public string templateName = "New Terrain Template";
         public TerrainTemplateType templateType = TerrainTemplateType.Heightmap;
+        // 既存フィールド: 実際のバイオーム情報
         public BiomeType associatedBiome = BiomeType.Grassland;
+        
+        // Editor 側から参照されるエイリアスプロパティ
+        public BiomeType targetBiome
+        {
+            get => associatedBiome;
+            set => associatedBiome = value;
+        }
 
         [Header("地形データ")]
         public Texture2D heightmapTexture; // ハイトマップ画像
@@ -22,6 +31,9 @@ namespace Vastcore.Generation
 
         [Header("地形特徴")]
         public List<TerrainFeature> terrainFeatures = new List<TerrainFeature>();
+        public Vector2 heightRange = new Vector2(float.MinValue, float.MaxValue);
+        public Vector2 slopeRange = new Vector2(0f, 90f);
+        public Vector2 sizeRange = new Vector2(100f, 1000f);
 
         [Header("生成パラメータ")]
         public float noiseScale = 1f; // ノイズスケール
@@ -29,10 +41,32 @@ namespace Vastcore.Generation
         public bool allowVerticalFlip = true; // 垂直反転許可
         public bool allowHorizontalFlip = true; // 水平反転許可
 
-        [Header("適応範囲")]
-        public Vector2 sizeRange = new Vector2(50f, 200f); // 適用サイズ範囲
-        public Vector2 heightRange = new Vector2(-50f, 200f); // 高度範囲
-        public Vector2 slopeRange = new Vector2(0f, 45f); // 斜面範囲
+        // TerrainTemplateEditor から参照されるバリエーション設定
+        public bool enableVariations = false;
+        public Vector2 scaleRange = new Vector2(1f, 1f);
+        public Vector2 rotationRange = new Vector2(-180f, 180f);
+
+        // Editor 互換用プロパティ（フィールド名の違いを吸収）
+        public bool allowFlipHorizontal
+        {
+            get => allowHorizontalFlip;
+            set => allowHorizontalFlip = value;
+        }
+
+        public bool allowFlipVertical
+        {
+            get => allowVerticalFlip;
+            set => allowVerticalFlip = value;
+        }
+
+        [Header("Deform統合")]
+        public bool enableDeformIntegration = false;
+        public Vastcore.Core.DeformPresetLibrary deformPresetLibrary;
+        public bool autoApplyDeform = true;
+        public Vastcore.Core.VastcoreDeformManager.DeformQualityLevel deformQuality = Vastcore.Core.VastcoreDeformManager.DeformQualityLevel.High;
+
+        // ブレンド設定（TerrainTemplateEditor から ScriptableObject として参照）
+        public BlendSettings blendSettings;
 
         // キャッシュされたデータ
         private float[,] cachedHeightmap;

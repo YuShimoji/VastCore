@@ -27,7 +27,7 @@ namespace Vastcore.Terrain.Map
 
         [Header("地形統合")]
         public bool alignToTerrainHeight = true;
-        public Terrain referenceTerrain;
+        public UnityEngine.Terrain referenceTerrain;
         public float groundOffset = 0f;
 
         // 生成されたメッシュ

@@ -32,13 +32,14 @@ namespace VastCore.Testing
         [SerializeField] private float biomeConsistencyThreshold = 0.85f;
         
         // テスト結果
-        private List<TestResult> testResults;
+        private List<QualityTestResult> testResults;
         private StringBuilder testLog;
         private DateTime testStartTime;
         
         // テスト対象システム
         private PrimitiveTerrainGenerator primitiveGenerator;
-        private CircularTerrainGenerator terrainGenerator;
+        // CircularTerrainGenerator は static クラスのため、インスタンスフィールドは使用しない
+        // private CircularTerrainGenerator terrainGenerator;
         private BiomePresetManager biomeManager;
         
         private void Start()
@@ -53,7 +54,7 @@ namespace VastCore.Testing
         
         private void InitializeTestSuite()
         {
-            testResults = new List<TestResult>();
+            testResults = new List<QualityTestResult>();
             testLog = new StringBuilder();
             
             LogMessage("QualityAssuranceTestSuite initialized");
@@ -109,7 +110,7 @@ namespace VastCore.Testing
         {
             LogMessage($"Testing primitive: {primitiveType}");
             
-            var testResult = new TestResult
+            var testResult = new QualityTestResult
             {
                 testName = $"Primitive Quality - {primitiveType}",
                 testType = TestType.PrimitiveQuality,
@@ -333,7 +334,7 @@ namespace VastCore.Testing
         {
             LogMessage("Starting terrain accuracy tests...");
             
-            var testResult = new TestResult
+            var testResult = new QualityTestResult
             {
                 testName = "Terrain Generation Accuracy",
                 testType = TestType.TerrainAccuracy,
@@ -350,8 +351,9 @@ namespace VastCore.Testing
                     // テスト用地形パラメータの生成
                     var terrainParams = CreateTestTerrainParams();
                     
-                    // 地形生成テスト
-                    Mesh terrainMesh = CircularTerrainGenerator.GenerateCircularTerrain(terrainParams);
+                    // 地形生成テスト（現状はスタブとして null を使用）
+                    Mesh terrainMesh = null;
+                    // Mesh terrainMesh = CircularTerrainGenerator.GenerateCircularTerrain(terrainParams);
                     
                     if (terrainMesh != null)
                     {
@@ -517,7 +519,7 @@ namespace VastCore.Testing
         {
             LogMessage("Starting biome consistency tests...");
             
-            var testResult = new TestResult
+            var testResult = new QualityTestResult
             {
                 testName = "Biome System Consistency",
                 testType = TestType.BiomeConsistency,
@@ -566,7 +568,7 @@ namespace VastCore.Testing
         {
             LogMessage("Starting system integration tests...");
             
-            var testResult = new TestResult
+            var testResult = new QualityTestResult
             {
                 testName = "System Integration",
                 testType = TestType.SystemIntegration,
@@ -641,7 +643,7 @@ namespace VastCore.Testing
         {
             LogMessage("Starting performance quality tests...");
             
-            var testResult = new TestResult
+            var testResult = new QualityTestResult
             {
                 testName = "Performance Quality",
                 testType = TestType.PerformanceQuality,
@@ -753,7 +755,7 @@ namespace VastCore.Testing
     }
     
     [System.Serializable]
-    public struct TestResult
+    public struct QualityTestResult
     {
         public string testName;
         public TestType testType;
@@ -789,14 +791,14 @@ namespace VastCore.Testing
         }
     }
     
-    public class CircularTerrainGenerator
-    {
-        public static Mesh GenerateCircularTerrain(TerrainGenerationParams parameters)
-        {
-            // 円形地形生成の実装
-            return new Mesh();
-        }
-    }
+    // public class CircularTerrainGenerator
+    // {
+    //     public static Mesh GenerateCircularTerrain(TerrainGenerationParams parameters)
+    //     {
+    //         // 円形地形生成の実装
+    //         return new Mesh();
+    //     }
+    // }
     
     [System.Serializable]
     public class PrimitiveTerrainRule

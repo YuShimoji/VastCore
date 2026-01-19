@@ -6,6 +6,7 @@ namespace Vastcore.Generation
     /// <summary>
     /// 結晶構造生成システムのテストクラス
     /// </summary>
+    [System.Obsolete("Experimental crystal test harness. Not used in core terrain pipeline.")]
     public class CrystalStructureGeneratorTest : MonoBehaviour
     {
         [Header("テスト設定")]

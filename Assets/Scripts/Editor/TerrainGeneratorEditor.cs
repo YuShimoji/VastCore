@@ -53,7 +53,7 @@ namespace Vastcore.Editor
 
         // 生成モードの選択
         EditorGUILayout.Space();
-        var generationMode = (TerrainGenerator.TerrainGenerationMode)EditorGUILayout.EnumPopup("Generation Mode", generator.GenerationMode);
+        var generationMode = (TerrainGenerationMode)EditorGUILayout.EnumPopup("Generation Mode", generator.GenerationMode);
         if (generationMode != generator.GenerationMode)
         {
             generator.GenerationMode = generationMode;
@@ -74,7 +74,7 @@ namespace Vastcore.Editor
         }
 
         // ハイトマップ設定
-        if (generator.GenerationMode != TerrainGenerator.TerrainGenerationMode.Noise)
+        if (generator.GenerationMode != TerrainGenerationMode.Noise)
         {
             m_ShowHeightMapSettings = EditorGUILayout.Foldout(m_ShowHeightMapSettings, "Height Map Settings", true);
             if (m_ShowHeightMapSettings)
@@ -98,7 +98,7 @@ namespace Vastcore.Editor
         }
 
         // ノイズ設定
-        if (generator.GenerationMode != TerrainGenerator.TerrainGenerationMode.HeightMap)
+        if (generator.GenerationMode != TerrainGenerationMode.HeightMap)
         {
             m_ShowNoiseSettings = EditorGUILayout.Foldout(m_ShowNoiseSettings, "Noise Settings", true);
             if (m_ShowNoiseSettings)

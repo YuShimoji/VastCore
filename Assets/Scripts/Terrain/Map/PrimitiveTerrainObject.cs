@@ -99,6 +99,9 @@ namespace Vastcore.Generation
             lastAccessTime = Time.time;
             isPooled = true;
             
+            // インタラクション設定の更新
+            this.UpdateInteractionSettings();
+            
             // LOD設定の初期化
             currentLODLevel = 0;
             UpdateLODLevel(0);
@@ -301,6 +304,34 @@ namespace Vastcore.Generation
         public override string ToString()
         {
             return $"Total: {totalActiveObjects}, LOD0: {lod0Count}, LOD1: {lod1Count}, LOD2: {lod2Count}, LOD3: {lod3Count}";
+        }
+    }
+    
+    // 拡張メソッドヘルパー
+    public static class PrimitiveTerrainObjectExtensions
+    {
+        /// <summary>
+        /// プリミティブタイプに基づいてインタラクション設定を更新
+        /// </summary>
+        public static void UpdateInteractionSettings(this PrimitiveTerrainObject obj)
+        {
+            switch (obj.primitiveType)
+            {
+                case GenerationPrimitiveType.Sphere:
+                case GenerationPrimitiveType.Boulder:
+                    obj.isClimbable = true;
+                    obj.isGrindable = false;
+                    break;
+                case GenerationPrimitiveType.Ring:
+                case GenerationPrimitiveType.Torus:
+                    obj.isClimbable = false;
+                    obj.isGrindable = true;
+                    break;
+                default:
+                    obj.isClimbable = true;
+                    obj.isGrindable = false;
+                    break;
+            }
         }
     }
 }
