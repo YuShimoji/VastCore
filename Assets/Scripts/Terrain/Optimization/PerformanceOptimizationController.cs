@@ -2,9 +2,7 @@ using UnityEngine;
 using Vastcore.Generation.GPU;
 using Vastcore.Generation.Cache;
 using System.Collections;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
+
 
 namespace Vastcore.Generation.Optimization
 {
@@ -399,62 +397,7 @@ namespace Vastcore.Generation.Optimization
         {
             return currentState;
         }
-        
-        private void OnGUI()
-        {
-#if UNITY_EDITOR
-            if (!enableAutoOptimization) return;
-            
-            GUILayout.BeginArea(new Rect(Screen.width - 320, 10, 300, 250));
-            GUILayout.BeginVertical("box");
-            
-            GUILayout.Label("Performance Optimization", EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).label);
-            GUILayout.Space(5);
-            
-            // 状態表示
-            Color originalColor = GUI.color;
-            switch (currentState)
-            {
-                case OptimizationState.Optimal:
-                    GUI.color = Color.green;
-                    break;
-                case OptimizationState.Degraded:
-                    GUI.color = Color.yellow;
-                    break;
-                case OptimizationState.Critical:
-                    GUI.color = Color.red;
-                    break;
-                case OptimizationState.Recovery:
-                    GUI.color = Color.cyan;
-                    break;
-            }
-            GUILayout.Label($"State: {currentState}");
-            GUI.color = originalColor;
-            
-            GUILayout.Space(5);
-            
-            // メトリクス表示
-            GUILayout.Label($"FPS: {currentMetrics.frameRate:F1} / {targetFrameRate:F1}");
-            GUILayout.Label($"Frame Time: {currentMetrics.frameTime:F2} ms");
-            GUILayout.Label($"GPU Memory: {currentMetrics.gpuMemoryUsage:F1} MB");
-            GUILayout.Label($"Cache Hit: {currentMetrics.cacheHitRatio:F2}");
-            GUILayout.Label($"Active Gen: {currentMetrics.activeGenerations}");
-            
-            GUILayout.Space(5);
-            
-            if (GUILayout.Button("Force Optimization"))
-            {
-                ForceOptimization();
-            }
-            
-            if (GUILayout.Button("Reset Settings"))
-            {
-                ResetOptimizationSettings();
-            }
-            
-            GUILayout.EndVertical();
-            GUILayout.EndArea();
-#endif
-        }
+
+        // OnGUI removed - moved to CustomEditor in Vastcore.Editor
     }
 }
