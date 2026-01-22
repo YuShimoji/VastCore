@@ -28,7 +28,7 @@
 - [x] Worker 割り当て (TASK_023)
 
 ### 未完了
-- [ ] TASK_023: Merge Conflict Resolution (Worker実行)
+- [x] TASK_023: Merge Conflict Resolution (Verified)
 - [ ] TASK_022: Fix Cyclic Dependencies (待機)
 
 ### 進行中の最適化
@@ -49,8 +49,8 @@
 ### アクティブタスク
 | タスクID | 説明 | Tier | Status | Worker | 進捗 |
 |-----------|---------|------|--------|--------|------|
-| TASK_023 | Merge Conflict Resolution | 1 | IN_PROGRESS | Assigned | Worker起動待機 |
-| TASK_022 | Fix Cyclic Dependencies | 1 | OPEN | - | InboxにPromptあり |
+| TASK_023 | Merge Conflict Resolution | 1 | DONE | Assigned | Report Created | Verification Complete |
+| TASK_022 | Fix Cyclic Dependencies | 1 | DONE | - | Verification Pending |
 | TASK_019 | SW Doctor Rules Configuration Fix | 3 | OPEN | - | 未着手 |
 | TASK_021 | Merge Integration & Verification | 2 | BLOCKED | - | テスト実行インフラ問題 |
 
