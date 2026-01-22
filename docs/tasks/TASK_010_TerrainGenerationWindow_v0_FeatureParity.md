@@ -1,7 +1,7 @@
 # TASK_010: TerrainGenerationWindow(v0) 機能改善（Profile/Generatorとの整合）
 
 Status: DONE
-Report: docs/inbox/REPORT_TASK_010_TerrainGenerationWindow_v0_FeatureParity.md  
+Report: docs/reports/REPORT_TASK_010_TerrainGenerationWindow_v0_FeatureParity.md  
 Tier: 2（機能改善 / 既存挙動維持を優先）  
 Branch: `feature/TASK_010_terrain-window-v0`  
 Owner: Worker  

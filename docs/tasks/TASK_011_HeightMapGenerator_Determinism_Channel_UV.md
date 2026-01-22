@@ -4,7 +4,7 @@ Status: DONE
 Tier: 2（機能改善 / 互換性重視）  
 Branch: `feature/TASK_011_heightmap-generator-determinism`  
 Owner: Worker  
-Report: docs/inbox/REPORT_TASK_011_HeightMapGenerator_Determinism_Channel_UV.md
+Report: docs/reports/REPORT_TASK_011_HeightMapGenerator_Determinism_Channel_UV.md
 
 ## 背景 / 目的
 

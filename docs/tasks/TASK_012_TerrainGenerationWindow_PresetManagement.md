@@ -1,6 +1,7 @@
 # TASK_012: TerrainGenerationWindow プリセット管理機能
 
 Status: DONE  
+Report: docs/reports/REPORT_TASK_012_TerrainGenerationWindow_PresetManagement.md
 Tier: 2（機能改善 / 既存挙動維持を優先）  
 Branch: `feature/TASK_012_terrain-window-preset-management`  
 Owner: Worker  
@@ -104,7 +105,7 @@ Owner: Worker
 
 - 手動検証: Unity Editor上でプリセット保存・読み込みが正常に動作することを確認 ⏳
   - 状態: 実装完了、Unity Editor上での手動検証待ち
-  - 根拠: レポート `docs/inbox/REPORT_TASK_012_TerrainGenerationWindow_PresetManagement.md` の Verification セクション参照
+  - 根拠: レポート `docs/reports/REPORT_TASK_012_TerrainGenerationWindow_PresetManagement.md` の Verification セクション参照
 - 既存テストがすべて成功することを確認 ⏳
   - 状態: 実装完了、Unity Editor Test Runnerでの実行確認待ち
   - 根拠: 既存テストコードは変更していないため、コンパイルエラーがなければ既存テストは成功する見込み
