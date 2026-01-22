@@ -49,7 +49,7 @@
 ### アクティブタスク
 | タスクID | 説明 | Tier | Status | Worker | 進捗 |
 |-----------|---------|------|--------|--------|------|
-| TASK_023 | Merge Conflict Resolution | 1 | DONE | Assigned | Report Created | Verification Complete |
+| TASK_023 | Merge Conflict Resolution | 1 | DONE | Driver | Verification Complete |
 | TASK_022 | Fix Cyclic Dependencies | 1 | DONE | - | Verification Pending |
 | TASK_019 | SW Doctor Rules Configuration Fix | 3 | OPEN | - | 未着手 |
 | TASK_021 | Merge Integration & Verification | 2 | BLOCKED | - | テスト実行インフラ問題 |
