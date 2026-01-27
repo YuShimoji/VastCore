@@ -53,6 +53,9 @@ GitHubAutoApprove: false
 - **統合テスト強化**: COMPLETED — 新規10テスト追加、全50テスト成功確認済み（2026-01-04）
 - **TASK_012_TerrainGenerationWindow_PresetManagement**: DONE — プリセット管理機能追加完了、Unity Editor手動検証完了、push完了（2026-01-05）
 - **TASK_013_DualGridTerrainSystem_Phase1**: DONE — Dual Grid Terrain System基盤実装完了、8ファイル作成（約1,180行）、コンパイル成功、Unity Editor手動検証待ち（2026-01-11）
+- **TASK_014_MarchingSquaresTerrainSystem_Phase1**: DONE — Dual Grid + Marching Squares基盤実装完了。16種プレハブ配置・デバッグ可視化対応。
+- **TASK_015_MarchingSquaresTerrainSystem_Phase2**: DONE — Spline入力対応完了。Unity Spline Package統合、ラスタライズ実装。実動作確認中にAI Toolkitとの競合判明（解決策提示済み）。
+- **TASK_016_MarchingSquaresTerrainSystem_Phase3**: DONE — レイヤー構造（Height/Biome/Road/Building）対応完了。バイオーム遷移・高さマップ対応実装。
 
 ## ブロッカー
 
@@ -77,9 +80,9 @@ GitHubAutoApprove: false
 
 ## Latest Orchestrator Report
 
-- File: docs/inbox/REPORT_ORCH_20260112_025506.md
-- Summary: TASK_013完了後の改善提案実装完了（スペック更新、統合設計書作成、最適化方針追加）
-- Dual Grid Terrain SystemのPhase 2以降の実装方針が明確化され、既存システムとの統合ポイントが定義された
+- File: docs/inbox/REPORT_ORCH_20260123_025500.md
+- Summary: `docs/reports` ファイル競合修正とレポート復元・リンク修正完了。全タスク DONE。
+- Outlook: 現行サイクルのタスクは全て完了。次フェーズ検討へ。
 
 ## Integration Notes
 

@@ -1,0 +1,111 @@
+開発仕様書プロンプト：Hybrid Voxel Terrain System
+以下のテキストをコピーして、AI開発パートナーに渡してください。
+
+役割: あなたはUnityとC#のパフォーマンスチューニング（DOTS, Compute Shader）に精通したグラフィックスエンジニアです。以下の仕様に基づき、破壊・編集が可能なボクセルベースの地形生成システムのプロトタイプを実装してください。
+
+プロジェクトのゴール: 従来のTerrain（ハイトマップ）の操作感を維持しつつ、3次元的な洞窟やオーバーハング（浮遊島など）を表現可能な、Marching Cubesを用いた地形システムを構築する。
+
+1. システムアーキテクチャ概要
+基本アルゴリズム: Marching Cubes（または標準的なDual Contouring）
+
+データ構造: Chunkベース（例: 16x16x16 または 32x32x32）の無限地形
+
+処理パイプライン:
+
+Density Calculation: 座標(x,y,z)における密度を計算（Job System + Burst）
+
+Meshing: 密度データを元にメッシュ生成（Job System + Burst）
+
+Rendering: 生成されたメッシュを描画（Standard Material / Triplanar Shader）
+
+2. Density Function（密度計算ロジック）の仕様
+地形の形状を決定するGetDensity(float3 position)関数は、以下の要素の合成（Blend）で実装すること。
+
+A. Base Terrain (2D Heightmap):
+
+入力: 2D Perlin Noise、または外部ハイトマップテクスチャ。
+
+計算: density = BaseHeight(x, z) - y
+
+役割: 基本的な地面の起伏を作る。
+
+B. Caves & Overhangs (3D Noise):
+
+入力: 3D Perlin Noise (Simplex Noise推奨)。
+
+計算: density -= (Noise3D(x, y, z) * caveStrength)
+
+役割: しきい値を超えた部分を空洞化（引き算）して洞窟を作る。
+
+C. Structural Stamps (SDF / 3D Texture):
+
+入力: Texture3D（SDFデータとしてベイクされた岩や地形パーツ）。
+
+処理: 指定されたワールド座標にスタンプが存在する場合、そのSDF値を加算/減算（Smooth Min/Max）して融合させる。
+
+役割: 意図的な地形（ボス部屋、アーチ、特定の岩）の配置。
+
+3. 実装要件（Technical Constraints）
+パフォーマンスを最優先するため、以下の技術スタックを厳守すること。
+
+Unity Job System & Burst Compiler:
+
+IJobParallelFor を使用し、密度計算とメッシュ生成（頂点・インデックス計算）をマルチスレッド化すること。
+
+[BurstCompile] 属性を必ず使用すること。
+
+メモリ管理には NativeArray を使用し、GC（ガベージコレクション）の発生を防ぐこと。
+
+Look-Up Tables (LUT):
+
+Marching Cubesのエッジテーブルやトライアングルテーブルは、静的な readonly 配列として持ち、Job内から参照できるようにすること。
+
+SDF Stampの実装（簡易版でOK）:
+
+今回はプロトタイプとして、Texture3Dのサンプリングまでは実装せず、コード内で簡易的な「球体SDF (SphereSDF)」関数を定義し、それをスタンプとして配置できる仕組みを作ること。
+
+4. 出力成果物（Deliverables）
+以下の機能を持つC#スクリプトを作成してください。
+
+VoxelTerrainGenerator.cs:
+
+インスペクタで「Chunk Size」「IsoLevel（表面のしきい値）」「Noise Scale」を設定可能。
+
+Start時に指定範囲（例: 3x3x3チャンク）の地形を生成する。
+
+DensityFunctions.cs:
+
+Burst対応の静的メソッドとして、前述の「A: Base Terrain」「B: Caves」を合成する計算ロジック。
+
+MarchingCubesJob.cs:
+
+密度配列を受け取り、頂点バッファとインデックスバッファを返すJob構造体。
+
+補足：この仕様書の意図（ユーザー様向け解説）
+AIへの指示の中に、いくつか重要な「意図」を仕込んでいます。
+
+1. なぜ Texture3D を後回しにしたか？（要件3-3）
+いきなり「3Dテクスチャ読み込み」まで実装させるとコードが複雑になりすぎて、AIがエラーを出しやすくなります。 まずは**「数式の球体（Sphere SDF）」で、「スタンプを押せば地形がへこむ・盛り上がる」というシステム自体を完成させること**を優先させました。 これが動けば、SphereSDF の部分を Texture3D.Sample に書き換えるのは一瞬です。
+
+2. Job System & Burst の強制
+これを最初から指定しないと、AIは遅い標準C#でコードを書いてしまい、後から「重くて動かないから高速化して」と頼むと構造を全部作り直す羽目になります。最初から**「並列処理前提」**で書かせることが、実用的なプロトタイプへの近道です。
+
+3. 合成ロジックの明確化（要件2）
+「ハイトマップ（基本）ー 3Dノイズ（洞窟）」という計算式を明示しました。これにより、「今のハイトマップの地形生成ノウハウ」を捨てずに、洞窟機能だけを追加する形になります。
+
+次のアクション
+Unityプロジェクトの準備:
+
+新規Unityプロジェクトを作成（3D Core）。
+
+Package Managerで "Burst" と "Mathematics" パッケージをインストールしてください（これがないと動きません）。
+
+AIへの依頼:
+
+上記の仕様書プロンプトを、AI（Cursor推奨、またはChatGPT-4o）に貼り付けて実行してください。
+
+動作確認:
+
+生成されたコードを貼り付け、Playボタンを押して、「穴の空いた地面」が表示されれば成功です。
+
+これが動いたら、次は「この球体スタンプを、外部のTexture3Dデータから読み込むように改造して」と依頼するステップに進みましょう。

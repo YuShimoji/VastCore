@@ -1,0 +1,26 @@
+ハイブリッド・ボクセル地形生成システム 統合開発仕様書 (v1.0)1. プロジェクト概要従来の「2Dハイトマップ地形」の制御しやすさと、「3Dボクセル地形」の表現力（洞窟、オーバーハング、浮遊島）を両立するハイブリッドな地形システムを構築する。Marching Cubesアルゴリズムを採用し、Unity Job System + Burst Compilerによる徹底的な並列化を行うことで、ランタイムでの高速な地形生成と破壊・編集を実現する。2. 技術スタック & 必須要件Engine: Unity 2022.3 LTS 以降Language: C#Core Algorithm: Marching Cubes (Look-up Table方式)Optimization:Unity Job System: IJobParallelFor によるマルチスレッド処理Burst Compiler: 必須（SIMD最適化）Unity.Mathematics: float3, int3, math.lerp 等の高速演算Native Collections: NativeArray, NativeHashMap によるGC回避Rendering: Standard Surface / URP / HDRP 対応 (Triplanar Mapping シェーダー必須)3. コア・アーキテクチャ3.1 データフローシステムは以下の3層の入力を合成し、単一の密度場（Density Field）を形成する。Base Layer (2D): ハイトマップまたは2Dノイズ。基本の地面高さを定義。Cave Layer (3D): 3Dノイズ。地下の空洞ネットワークを定義（マスク処理）。Feature Layer (SDF): 3Dテクスチャ（SDF）または数式プリミティブ。特定の地形（岩、遺跡、柱）をスタンプとして配置。3.2 密度関数 (Density Calculation Logic)空間上の座標 $P(x, y, z)$ における密度 $D$ を計算する。定義：$D > 0$ を「土（Solid）」、$D < 0$ を「空気（Air）」とする。基本式:$$D_{final} = \text{SmoothSubtract}(\text{SmoothUnion}(D_{base}, D_{stamp}), D_{cave})$$各項の詳細:ベース地形 ($D_{base}$):$$D_{base} = \text{HeightMap}(x, z) - y$$※ $y$ がハイトマップより低い場所ほど正の値（土）となる。洞窟ノイズ ($D_{cave}$):$$D_{cave} = \text{PerlinNoise3D}(x \cdot s, y \cdot s, z \cdot s) - \text{Threshold}$$※ しきい値を超えたノイズの塊を「空気」として引き算する。SDFスタンプ ($D_{stamp}$):ワールド座標をスタンプのローカル空間へ変換し、SDF値（3Dテクスチャサンプリング or 数式）を取得。合成: SmoothUnion (Min/Maxの多項式近似) を使用し、地形とスタンプの境界を滑らかに溶接する。3.3 法線計算 (Normal Calculation)フラットシェーディングを回避するため、密度場の勾配（Gradient）から法線を算出する。$$N = \text{normalize}(\nabla D(x, y, z))$$具体的な実装は、近傍点（$\epsilon$）との差分（Central Difference）を用いる。$$N_x = D(x+\epsilon, y, z) - D(x-\epsilon, y, z)$$（$y, z$ 成分も同様に計算）4. システムコンポーネント設計A. VoxelWorld (Manager)無限地形管理クラス。プレイヤー座標を監視し、描画範囲内のチャンク生成・範囲外の破棄を行う。Object Pooling: 生成済みのチャンク（GameObject & Mesh）を再利用し、Instantiate/Destroyのスパイクを防ぐ。B. VoxelChunk (Unit)ChunkSize (例: 16x16x16 または 32x32x32) 単位の管理。LOD (Level of Detail) 制御：プレイヤーからの距離に応じて、サンプリング解像度（Step Size）を可変させる機能を持つ。非同期メッシュ生成: MeshCollider のBake処理もJob化、または Mesh.BakePhysicsMeshes を使用してメインスレッドを停止させない。C. SDFStampData (ScriptableObject)Texture3D (SDFデータ)Size (スケール)BlendFactor (地形との融合の滑らかさ)OperationType (Union / Subtract / Replace)5. 実装フェーズ (Roadmap)AIまたはエンジニアに指示を出す際は、以下の順序で実装させることを推奨する。Phase 1: 高速化基盤の確立 (Core Foundation)目標: Job System + Burstを用いたMarching Cubesの最小実装。検証: 単純な「球体」が1つのチャンク内に描画されること。重要: Lookup Table（Edge/Tri）は static readonly 配列として定義し、Jobから参照可能にすること。Phase 2: ハイブリッド密度関数の実装 (Density Logic)目標: 2Dハイトマップと3Dノイズの合成。検証:pos.y - noise(x, z) で波打つ地面ができる。そこから noise3d(x, y, z) を引き算し、チーズのような穴空き地形ができる。Phase 3: 法線とシェーディング (Rendering)目標: 見た目の品質向上。実装:密度勾配によるスムーズな法線計算の実装。Triplanar Shaderの作成（Shader Graph可）。Top: 草Side: 岩Bottom: 暗い土これらを法線方向（World Normal）に基づいてブレンド。Phase 4: SDFスタンプシステム (Features)目標: 任意の形状の配置。実装:まずは数式（Sphere/Box）でのスタンプ配置機能。Texture3D のサンプリング処理への置き換え。SmoothMin 関数による滑らかな結合の実装。Phase 5: 最適化と物理 (Polish)目標: ゲームとしての実用化。実装:無限地形ローディング（チャンク管理）。MeshCollider の非同期生成。LODの実装（遠景のチャンクは頂点数を減らす）。開発開始用プロンプト（AIへの指示用）以下のテキストをコピーし、Phase 1の開発を開始してください。Markdown# Role
+あなたはUnity (C#) のエキスパートエンジニアです。
+特にDOTS (Data-Oriented Technology Stack)、Job System、Compute Shader、Procedural Generationに精通しています。
+
+# Project Goal
+Unity 2022 LTS以降をターゲットとし、**「Marching Cubesアルゴリズムを用いたハイブリッド・ボクセル地形生成システム」**の基盤を構築します。
+最終的にはハイトマップと3Dノイズ、SDFスタンプを合成しますが、まずは**Phase 1**として以下の要件を満たすミニマムな実装を行ってください。
+
+# Phase 1 Requirements
+1.  **Algorithm:** Marching Cubes (Lookup Table方式)
+2.  **Optimization (Critical):**
+    * 計算負荷が高いため、必ず **Unity Job System (`IJobParallelFor`)** と **Burst Compiler** を使用すること。
+    * メインスレッドでの計算は禁止。
+    * 数学ライブラリは `Unity.Mathematics` (`float3`, `int3`) を使用。
+3.  **Density Function (Test):**
+    * 今回はテスト用として、チャンク中心に配置された「球体 (Sphere SDF)」を表示するロジックにすること。
+    * `density = radius - distance(pos, center)`
+4.  **Output:**
+    * `VoxelChunk` (MonoBehaviour): チャンク管理とメッシュ生成のトリガー。
+    * `MarchingCubesJob` (struct): メッシュ生成ロジック。
+    * `DensityCalculationJob` (struct): 密度計算ロジック。
+    * `MarchingCubesTables` (class): トライアングル・エッジテーブルの定義。
+
+# Constraints
+* ガベージコレクション（GC）を発生させないよう、`NativeArray` を適切に使用・Disposeすること。
+* コードは省略せず、コンパイル可能な状態で記述すること。
