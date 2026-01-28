@@ -6,7 +6,7 @@ Branch: `feature/TASK_013_dual-grid-terrain-phase1`
 Owner: Worker  
 Created: 2026-01-05T13:30:00+09:00  
 Completed: 2026-01-11T23:56:00+09:00  
-Report: `docs/reports/REPORT_TASK_013_DualGridTerrainSystem_Phase1.md` 
+Report: `docs/reports/REPORT_TASK_013_DualGridTerrainSystem_Phase1.md`
 
 ## Objective
 
