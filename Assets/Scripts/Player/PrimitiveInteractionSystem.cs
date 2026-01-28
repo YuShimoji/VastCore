@@ -194,21 +194,12 @@ namespace Vastcore.Player
                 isProcessed = false
             };
             
-<<<<<<< HEAD
             // グラインド可能エッジを検出
             var primitiveObject = primitive.GetComponent<Vastcore.Generation.PrimitiveTerrainObject>();
             if (primitiveObject != null && primitiveObject.isGrindable)
             {
                 DetectGrindableEdges(primitive, ref interactionData);
             }
-=======
-            // グラインド可能エッジを検出 (PrimitiveTerrainObject削除により一時無効)
-            // var primitiveObject = primitive.GetComponent<Vastcore.Generation.PrimitiveTerrainObject>();
-            // if (primitiveObject != null && primitiveObject.isGrindable)
-            // {
-            //     DetectGrindableEdges(primitive, ref interactionData);
-            // }
->>>>>>> origin/develop
             
             // クライミング可能表面を検出 (PrimitiveTerrainObject削除により一時無効)
             // if (primitiveObject != null && primitiveObject.isClimbable)

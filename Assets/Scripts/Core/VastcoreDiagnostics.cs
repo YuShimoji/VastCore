@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using Vastcore.Utilities;
+using Vastcore.Core;
 
 namespace Vastcore
 {

@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using Vastcore.Utilities;
 using Vastcore.Generation;
+using Vastcore.Core;
 using UnityEngine.ProBuilder;
 using UnityEngine.ProBuilder.MeshOperations;
 using System.Linq;
