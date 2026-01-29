@@ -4,7 +4,7 @@
 Target Phase: Refactoring / Bugfix
 
 ## Status
-Status: OPEN
+Status: IN_PROGRESS
 
 ## Goal
 Resolve cyclic dependencies between `Assembly-CSharp`, `Assembly-CSharp-Editor`, and multiple `Vastcore.*` assemblies to fix compilation errors.

@@ -19,3 +19,11 @@
 - **Method**: Verified merge commit `a9e1445`.
 - **Status**: DONE.
 
+## In Progress
+### TASK_022: Fix Cyclic Dependencies (2026-01-29)
+- **Progress**:
+  - Fixed `Vastcore.Editor.Root.asmdef`: Removed non-existent `Vastcore.MapGenerator` reference, set `autoReferenced: false`.
+  - Fixed `Vastcore.Tests.PlayMode.asmdef`: Set `autoReferenced: false`.
+- **Remaining**:
+  - Verify compilation in Unity Editor.
+  - Address additional type conflicts if present.
