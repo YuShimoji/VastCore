@@ -1,0 +1,25 @@
+# Worker Prompt: TASK_020_3DVoxelTerrain_Phase1
+
+## 参照
+- チケット: docs/tasks/TASK_020_3DVoxelTerrain_Phase1.md
+- 計画書: implementation_plan.md
+- バックログ: docs/tasks/BACKLOG_3D_VoxelTerrain_HybridSystem.md
+- SSOT: docs/Windsurf_AI_Collab_Rules_latest.md
+- HANDOVER: docs/HANDOVER.md
+
+## 境界
+- Focus Area: Assets/Scripts/Terrain/Voxel/, Scenes/Development/VoxelDev.unity
+- Forbidden Area: .shared-workflows/, ProjectSettings/, Existing 2D Terrain Code
+
+## DoD
+- [ ] 目的が達成されている（Job SystemによるMarching Cubes描画）
+- [ ] `VoxelChunk` を配置したシーンで、球体のメッシュが生成・描画される
+- [ ] Unity Profilerで確認し、メインスレッドがブロックされていない
+- [ ] コンパイルエラーおよびRuntimeエラーがない
+
+## 停止条件
+- Unity Job System / Burst Compiler が環境依存で動作しない場合
+- 既存システムへの破壊的変更が不可避と判明した場合
+
+## 納品先
+- docs/inbox/REPORT_TASK_020_3DVoxelTerrain_Phase1.md
