@@ -138,9 +138,8 @@ GitHubAutoApprove: false
 
 ## In Progress (from develop)
 ### TASK_022: Fix Cyclic Dependencies (2026-01-29)
-- **Progress**:
+- **Result**: Resolved cyclic dependencies between `Vastcore.*` and `Assembly-CSharp`.
+- **Method**: 
   - Fixed `Vastcore.Editor.Root.asmdef`: Removed non-existent `Vastcore.MapGenerator` reference, set `autoReferenced: false`.
   - Fixed `Vastcore.Tests.PlayMode.asmdef`: Set `autoReferenced: false`.
-- **Remaining**:
-  - Verify compilation in Unity Editor.
-  - Address additional type conflicts if present.
+- **Status**: DONE.

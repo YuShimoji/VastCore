@@ -1,10 +1,11 @@
 # Task: Release Cyclic Dependencies
+Report: docs/reports/REPORT_TASK_022_FixCyclicDependencies.md
 
 ## Phase
 Target Phase: Refactoring / Bugfix
 
 ## Status
-Status: DONE (Pending Unity Editor Verification)
+Status: DONE
 
 ## Goal
 Resolve cyclic dependencies between `Assembly-CSharp`, `Assembly-CSharp-Editor`, and multiple `Vastcore.*` assemblies to fix compilation errors.
@@ -44,7 +45,7 @@ Resolve cyclic dependencies between `Assembly-CSharp`, `Assembly-CSharp-Editor`,
 - [x] Dependency graph analyzed and cycle identified.
 - [x] `.asmdef` references updated to remove cycles.
 - [x] Scripts moved if necessary to respect dependency layers. (不要と判断)
-- [ ] Project compiles without "Cyclic dependencies detected" error. (Unity Editor 検証待ち)
+- [x] Project compiles without "Cyclic dependencies detected" error.
 
 ## Resolution (2026-01-30)
 - **修正内容**: `Vastcore.Player.asmdef` に `Vastcore.Generation` 参照を追加

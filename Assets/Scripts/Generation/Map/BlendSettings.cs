@@ -1,19 +1,16 @@
 using UnityEngine;
 
-namespace Vastcore.Generation.Map
+namespace Vastcore.Generation
 {
-    public enum TemplateBlendMode
+    public enum BlendMode
     {
         Additive,
         Multiplicative,
     }
 
-    /// <summary>
-    /// 地形テンプレート用の簡易ブレンド設定（Editor から ScriptableObject として扱う）
-    /// </summary>
     public class BlendSettings : ScriptableObject
     {
-        public TemplateBlendMode blendMode = TemplateBlendMode.Additive;
+        public BlendMode blendMode = BlendMode.Additive;
         [Range(0f, 1f)] public float blendStrength = 1f;
         public float fadeDistance = 100f;
         public bool enableEdgeBlending = true;

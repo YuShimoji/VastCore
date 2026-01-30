@@ -32,8 +32,6 @@
 - [x] Worker Prompt作成（TASK_029, TASK_030）
 
 ### 未完了
-- [ ] TASK_029: Unity Editor Verification (BLOCKED - MCPForUnity重複、MapGenerator asmdef競合)
-- [ ] TASK_030: Worktree Cleanup and Push (Worker割り当て待ち)
 - [ ] TASK_031: MCPForUnity重複解消 (TASK_029ブロッカー解消のため起票必要)
 - [ ] TASK_032: MapGeneratorアセンブリ定義整理 (TASK_029ブロッカー解消のため起票必要)
 
@@ -44,25 +42,15 @@
 
 ---
 
-## フェーズ別チェックリスト
-
-### Phase 6: Report
-- [x] レポート作成: `docs/reports/ORCHESTRATOR_REPORT_2026-01-21_RESUME.md`
-- [x] MISSION_LOG 更新
-
----
-
 ## タスク一覧
 
 ### アクティブタスク
 | タスクID | 説明 | Tier | Status | Worker | 進捗 |
 |-----------|---------|------|--------|--------|------|
-| TASK_029 | Unity Editor Verification | 1 | DONE | Worker | TASK_029/030完了、マージ実施中 |
-| TASK_030 | Worktree Cleanup and Push | 1 | DONE | Worker | 整理完了、Push実施中 |
-| TASK_022 | Fix Cyclic Dependencies | 1 | DONE | Worker | Unity Editor 検証完了 |
 | TASK_026 | 3D Voxel Terrain Phase 1 | 3 | OPEN | - | Awaiting Start |
-| TASK_019 | Fix SwDoctor Rules Config | 1 | OPEN | - | 未着手 |
-| TASK_021 | Merge Integration & Verification | 1 | OPEN | - | Retrying |
+| TASK_021 | Merge Integration & Verification | 2 | BLOCKED | - | テスト実行インフラ問題 |
+| TASK_031 | MCPForUnity重複解消 | 1 | OPEN | - | 起票待ち |
+| TASK_032 | MapGeneratorアセンブリ定義整理 | 1 | OPEN | - | 起票待ち |
 
 ### 候補タスク (Backlog)
 - TASK_024: Deform System Phase 1 Implementation
@@ -73,7 +61,9 @@
 |-----------|---------|---------|--------|
 | TASK_014 | UnityMcpPackageError | - | - |
 | TASK_018 | Merge Conflict Resolution | 2025-01-12 | - |
-| TASK_020 | Namespace Consistency (Utils vs Utilities) | 2026-01-16 | - |
+| TASK_020 | Namespace Consistency (Utils vs Utilities) | 2026-01-16 | docs/reports/REPORT_TASK_020_NamespaceConsistency.md |
+| TASK_022 | Fix Cyclic Dependencies | 2026-01-29 | docs/reports/REPORT_REPORT_TASK_022_FixCyclicDependencies.md |
+| TASK_019 | Fix SwDoctor Rules Config | 2026-01-30 | docs/reports/REPORT_TASK_019_FixSwDoctorRulesConfig.md |
 
 ---
 

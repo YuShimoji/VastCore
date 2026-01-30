@@ -1,4 +1,5 @@
 # Task: Namespace Consistency (Utils vs Utilities)
+Report: docs/reports/REPORT_TASK_020_NamespaceConsistency.md
 
 ## Phase
 Target Phase: Refactoring

@@ -1,10 +1,11 @@
 # Task: SW Doctor Rules Configuration Fix
+Report: docs/reports/REPORT_TASK_019_FixSwDoctorRulesConfig.md
 
 ## Phase
 Target Phase: Maintenance / Process Improvement
 
 ## Status
-Status: OPEN
+Status: DONE
 
 ## Goal
 Resolve the `sw-doctor` error reporting `docs/Windsurf_AI_Collab_Rules_v1.1.md` as missing by ensuring the configuration points to the correct SSOT file (`docs/Windsurf_AI_Collab_Rules_latest.md` or similar) or restoring the missing file.
