@@ -28,4 +28,6 @@
 
 ### 短期（Next）
 
-- [done] 未完了タスクなし（docs/tasks/ に OPEN / IN_PROGRESS なし）
+- [pending] SW Doctor Rules Configuration Fix (ref: docs/tasks/TASK_019_FixSwDoctorRulesConfig.md, Status: OPEN)
+- [pending] Namespace Consistency (Utils vs Utilities) (ref: docs/tasks/TASK_020_NamespaceConsistency.md, Status: OPEN)
+- [pending] Merge Integration & Verification (ref: docs/tasks/TASK_021_MergeIntegrationCheck.md, Status: OPEN)

@@ -1,5 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
+#if DEFORM_AVAILABLE
+using Deform;
+#endif
 using Vastcore.Core;
 
 namespace Vastcore.Terrain
@@ -51,6 +54,17 @@ namespace Vastcore.Terrain
         private bool enableInteractionLOD;
         private bool showLODInfo;
         private float lodBias = 1f;
+        
+        [Header("Deform設定")]
+        [SerializeField] private bool enableDeform = true;
+        [SerializeField] private VastcoreDeformManager.DeformQualityLevel deformQualityLevel = VastcoreDeformManager.DeformQualityLevel.High;
+        [SerializeField] private bool autoAddDeformableComponent = true;
+        
+        // Deformコンポーネント参照
+#if DEFORM_AVAILABLE
+        private Deformable deformableComponent;
+        private List<Deformer> activeDeformers = new List<Deformer>();
+#endif
         
         // プレイヤー参照
         private Transform playerTransform;
@@ -128,6 +142,13 @@ namespace Vastcore.Terrain
             meshCollider = GetComponent<MeshCollider>();
             meshFilter = GetComponent<MeshFilter>();
             
+#if DEFORM_AVAILABLE
+            if (enableDeform)
+            {
+                SetupDeformComponents();
+            }
+#endif
+            
             if (meshRenderer == null)
             {
                 Debug.LogWarning($"MeshRenderer not found on {gameObject.name}");
@@ -141,6 +162,408 @@ namespace Vastcore.Terrain
             if (meshCollider == null && hasCollision)
             {
                 Debug.LogWarning($"MeshCollider not found on {gameObject.name}");
+            }
+        }
+
+#if DEFORM_AVAILABLE
+        /// <summary>
+        /// Deform関連コンポーネントを設定
+        /// </summary>
+        private void SetupDeformComponents()
+        {
+            // Deformableコンポーネントを取得または追加
+            deformableComponent = GetComponent<Deformable>();
+            if (deformableComponent == null && autoAddDeformableComponent)
+            {
+                deformableComponent = gameObject.AddComponent<Deformable>();
+                deformableComponent.Quality = deformQualityLevel;
+                
+                // VastcoreDeformManagerに登録
+                if (VastcoreDeformManager.Instance != null)
+                {
+                    VastcoreDeformManager.Instance.RegisterDeformable(this);
+                }
+            }
+            else if (deformableComponent != null)
+            {
+                deformableComponent.Quality = deformQualityLevel;
+            }
+        }
+#endif
+
+        /// <summary>
+        /// 基本的なノイズ変形を適用
+        /// </summary>
+        public void ApplyNoiseDeformation(float intensity = 0.1f, float frequency = 1f)
+        {
+#if DEFORM_AVAILABLE
+            if (!enableDeform || deformableComponent == null) return;
+
+            // Undo記録
+            Undo.RecordObject(this, "Apply Noise Deformation");
+
+            // 既存のNoiseDeformerを削除
+            RemoveDeformer<NoiseDeformer>();
+
+            // 新しいNoiseDeformerを追加
+            var noiseDeformer = gameObject.AddComponent<NoiseDeformer>();
+            noiseDeformer.Intensity = intensity;
+            noiseDeformer.Frequency = frequency;
+            activeDeformers.Add(noiseDeformer);
+
+            // Deformシステムに通知
+            if (VastcoreDeformManager.Instance != null)
+            {
+                VastcoreDeformManager.Instance.QueueDeformation(this, deformQualityLevel, 1);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// 基本的なディスプレイス変形を適用
+        /// </summary>
+        public void ApplyDisplaceDeformation(float strength = 0.5f, Texture2D displaceMap = null)
+        {
+#if DEFORM_AVAILABLE
+            if (!enableDeform || deformableComponent == null) return;
+
+            // Undo記録
+            Undo.RecordObject(this, "Apply Displace Deformation");
+
+            // 既存のDisplaceDeformerを削除
+            RemoveDeformer<DisplaceDeformer>();
+
+            // 新しいDisplaceDeformerを追加
+            var displaceDeformer = gameObject.AddComponent<DisplaceDeformer>();
+            displaceDeformer.Strength = strength;
+            if (displaceMap != null)
+            {
+                displaceDeformer.Texture = displaceMap;
+            }
+            activeDeformers.Add(displaceDeformer);
+
+            // Deformシステムに通知
+            if (VastcoreDeformManager.Instance != null)
+            {
+                VastcoreDeformManager.Instance.QueueDeformation(this, deformQualityLevel, 1);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// 指定されたタイプのDeformerを削除
+        /// </summary>
+        private void RemoveDeformer<T>() where T : class
+        {
+#if DEFORM_AVAILABLE
+            var existingDeformer = GetComponent<T>();
+            if (existingDeformer != null)
+            {
+                activeDeformers.Remove(existingDeformer as Deformer);
+                Destroy(existingDeformer as UnityEngine.Object);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// すべてのアクティブなDeformerをクリア
+        /// </summary>
+        public void ClearAllDeformers()
+        {
+#if DEFORM_AVAILABLE
+            // Undo記録
+            Undo.RecordObject(this, "Clear All Deformers");
+
+            foreach (var deformer in activeDeformers.ToArray())
+            {
+                if (deformer != null)
+                {
+                    Destroy(deformer);
+                }
+            }
+            activeDeformers.Clear();
+
+            // Deformシステムに通知
+            if (VastcoreDeformManager.Instance != null)
+            {
+                VastcoreDeformManager.Instance.QueueDeformation(this, deformQualityLevel, 1);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Deform設定を動的に更新
+        /// </summary>
+        public void UpdateDeformSettings(bool enable, VastcoreDeformManager.DeformQualityLevel quality = VastcoreDeformManager.DeformQualityLevel.High)
+        {
+            enableDeform = enable;
+            deformQualityLevel = quality;
+
+#if DEFORM_AVAILABLE
+            if (deformableComponent != null)
+            {
+                deformableComponent.Quality = (Deform.DeformQualityLevel)(int)quality;
+            }
+
+            // Deformシステムに通知
+            if (VastcoreDeformManager.Instance != null)
+            {
+                if (enable)
+                {
+                    VastcoreDeformManager.Instance.RegisterDeformable(this, quality);
+                }
+                else
+                {
+                    VastcoreDeformManager.Instance.UnregisterDeformable(this);
+                }
+            }
+#endif
+        }
+
+        /// <summary>
+        /// 地形タイプに応じた固有の変形エフェクトを適用
+        /// </summary>
+        public void ApplyTerrainSpecificDeformation()
+        {
+#if DEFORM_AVAILABLE
+            if (!enableDeform || deformableComponent == null) return;
+
+            // 既存のDeformerをクリア
+            ClearAllDeformers();
+
+            // 地形タイプに応じた変形を適用
+            switch (primitiveType)
+            {
+                case GenerationPrimitiveType.Crystal:
+                    ApplyCrystalDeformation();
+                    break;
+                case GenerationPrimitiveType.Boulder:
+                    ApplyBoulderDeformation();
+                    break;
+                case GenerationPrimitiveType.Mesa:
+                    ApplyMesaDeformation();
+                    break;
+                case GenerationPrimitiveType.Spire:
+                    ApplySpireDeformation();
+                    break;
+                case GenerationPrimitiveType.Formation:
+                    ApplyFormationDeformation();
+                    break;
+                case GenerationPrimitiveType.Mountain:
+                case GenerationPrimitiveType.Canyon:
+                    ApplyGeologicalDeformation();
+                    break;
+                default:
+                    // デフォルトの軽いノイズ変形
+                    ApplyNoiseDeformation(0.05f, 0.5f);
+                    break;
+            }
+#endif
+        }
+
+        /// <summary>
+        /// 結晶構造の変形を適用
+        /// </summary>
+        private void ApplyCrystalDeformation()
+        {
+#if DEFORM_AVAILABLE
+            // 結晶特有の鋭いエッジとファセット
+            ApplyNoiseDeformation(0.15f, 2.0f);
+#endif
+        }
+
+        /// <summary>
+        /// 巨石の変形を適用
+        /// </summary>
+        private void ApplyBoulderDeformation()
+        {
+#if DEFORM_AVAILABLE
+            // 岩石の不規則な表面
+            ApplyNoiseDeformation(0.2f, 1.5f);
+#endif
+        }
+
+        /// <summary>
+        /// メサ（台地）の変形を適用
+        /// </summary>
+        private void ApplyMesaDeformation()
+        {
+#if DEFORM_AVAILABLE
+            // 台地の平らな頂上部を保ちつつ、エッジを強調
+            ApplyNoiseDeformation(0.08f, 0.8f);
+#endif
+        }
+
+        /// <summary>
+        /// 尖塔の変形を適用
+        /// </summary>
+        private void ApplySpireDeformation()
+        {
+#if DEFORM_AVAILABLE
+            // 尖塔の細かい表面ディテール
+            ApplyNoiseDeformation(0.1f, 1.2f);
+#endif
+        }
+
+        /// <summary>
+        /// 岩石層の変形を適用
+        /// </summary>
+        private void ApplyFormationDeformation()
+        {
+#if DEFORM_AVAILABLE
+            // 層状構造の変形
+            ApplyNoiseDeformation(0.12f, 0.7f);
+#endif
+        }
+
+        /// <summary>
+        /// 地質学的変形を適用（山岳・峡谷）
+        /// </summary>
+        private void ApplyGeologicalDeformation()
+        {
+#if DEFORM_AVAILABLE
+            // 大規模な地質変動をシミュレート
+            ApplyNoiseDeformation(0.25f, 0.3f);
+#endif
+        }
+
+        /// <summary>
+        /// アニメーション付きノイズ変形を適用
+        /// </summary>
+        public void ApplyNoiseDeformationAnimated(float targetIntensity, float targetFrequency, float duration = 1f)
+        {
+#if DEFORM_AVAILABLE
+            if (!enableDeform || deformableComponent == null) return;
+
+            StartCoroutine(AnimateNoiseDeformation(targetIntensity, targetFrequency, duration));
+#endif
+        }
+
+        /// <summary>
+        /// アニメーション付きディスプレイス変形を適用
+        /// </summary>
+        public void ApplyDisplaceDeformationAnimated(float targetStrength, Texture2D displaceMap, float duration = 1f)
+        {
+#if DEFORM_AVAILABLE
+            if (!enableDeform || deformableComponent == null) return;
+
+            StartCoroutine(AnimateDisplaceDeformation(targetStrength, displaceMap, duration));
+#endif
+        }
+
+        /// <summary>
+        /// ノイズ変形アニメーションのコルーチン
+        /// </summary>
+        private System.Collections.IEnumerator AnimateNoiseDeformation(float targetIntensity, float targetFrequency, float duration)
+        {
+#if DEFORM_AVAILABLE
+            var noiseDeformer = GetComponent<NoiseDeformer>();
+            if (noiseDeformer == null)
+            {
+                noiseDeformer = gameObject.AddComponent<NoiseDeformer>();
+                activeDeformers.Add(noiseDeformer);
+            }
+
+            float startIntensity = noiseDeformer.Intensity;
+            float startFrequency = noiseDeformer.Frequency;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                
+                // イーズイン・イーズアウト補間
+                t = t * t * (3f - 2f * t);
+                
+                noiseDeformer.Intensity = Mathf.Lerp(startIntensity, targetIntensity, t);
+                noiseDeformer.Frequency = Mathf.Lerp(startFrequency, targetFrequency, t);
+                
+                // Deformシステムに通知
+                if (VastcoreDeformManager.Instance != null)
+                {
+                    VastcoreDeformManager.Instance.QueueDeformation(this, deformQualityLevel, 0.5f);
+                }
+                
+                yield return null;
+            }
+
+            // 最終値を設定
+            noiseDeformer.Intensity = targetIntensity;
+            noiseDeformer.Frequency = targetFrequency;
+
+            // 最終通知
+            if (VastcoreDeformManager.Instance != null)
+            {
+                VastcoreDeformManager.Instance.QueueDeformation(this, deformQualityLevel, 1);
+            }
+#endif
+            yield break;
+        }
+
+        /// <summary>
+        /// ディスプレイス変形アニメーションのコルーチン
+        /// </summary>
+        private System.Collections.IEnumerator AnimateDisplaceDeformation(float targetStrength, Texture2D displaceMap, float duration)
+        {
+#if DEFORM_AVAILABLE
+            var displaceDeformer = GetComponent<DisplaceDeformer>();
+            if (displaceDeformer == null)
+            {
+                displaceDeformer = gameObject.AddComponent<DisplaceDeformer>();
+                activeDeformers.Add(displaceDeformer);
+            }
+
+            float startStrength = displaceDeformer.Strength;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                
+                // イーズイン・イーズアウト補間
+                t = t * t * (3f - 2f * t);
+                
+                displaceDeformer.Strength = Mathf.Lerp(startStrength, targetStrength, t);
+                if (displaceMap != null)
+                {
+                    displaceDeformer.Texture = displaceMap;
+                }
+                
+                // Deformシステムに通知
+                if (VastcoreDeformManager.Instance != null)
+                {
+                    VastcoreDeformManager.Instance.QueueDeformation(this, deformQualityLevel, 0.5f);
+                }
+                
+                yield return null;
+            }
+
+            // 最終値を設定
+            displaceDeformer.Strength = targetStrength;
+            if (displaceMap != null)
+            {
+                displaceDeformer.Texture = displaceMap;
+            }
+
+            // 最終通知
+            if (VastcoreDeformManager.Instance != null)
+            {
+                VastcoreDeformManager.Instance.QueueDeformation(this, deformQualityLevel, 1);
+            }
+#endif
+            yield break;
+        }
+
+        /// <summary>
+        /// Deformプリセットを適用
+        /// </summary>
+        public void ApplyDeformationPreset(Vastcore.Generation.DeformationPreset preset)
+        {
+            if (preset != null)
+            {
+                preset.ApplyToTerrainObject(this);
             }
         }
 

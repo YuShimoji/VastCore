@@ -96,7 +96,7 @@ namespace Vastcore.Testing
         private void AutoSetup()
         {
             // TerrainSpawnerを探すか作成
-            terrainSpawner = UnityEngine.Object.FindFirstObjectByType<TerrainSpawner>();
+            terrainSpawner = FindObjectOfType<TerrainSpawner>();
             if (terrainSpawner == null)
             {
                 GameObject spawnerObj = new GameObject("TerrainSpawner");
@@ -104,7 +104,7 @@ namespace Vastcore.Testing
             }
 
             // PrimitiveObjectSpawnerを探すか作成
-            primitiveSpawner = UnityEngine.Object.FindFirstObjectByType<PrimitiveObjectSpawner>();
+            primitiveSpawner = FindObjectOfType<PrimitiveObjectSpawner>();
             if (primitiveSpawner == null)
             {
                 GameObject spawnerObj = new GameObject("PrimitiveObjectSpawner");

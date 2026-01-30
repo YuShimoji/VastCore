@@ -5,6 +5,8 @@ using UnityEngine;
 using UnityEngine.Profiling;
 using System.IO;
 using System.Text;
+using Vastcore.Generation;
+using Vastcore.Generation.Map;
 
 namespace VastCore.Testing
 {

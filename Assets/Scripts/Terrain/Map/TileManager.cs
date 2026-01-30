@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Generation;
-using Vastcore.Terrain.Map;
 using Vastcore.Core;
 
 namespace Vastcore.Generation
@@ -22,6 +21,7 @@ namespace Vastcore.Generation
         
         [Header("地形生成設定")]
         public MeshGenerator.TerrainGenerationParams defaultTerrainParams = MeshGenerator.TerrainGenerationParams.Default();
+        public CircularTerrainGenerator.CircularTerrainParams defaultCircularParams = CircularTerrainGenerator.CircularTerrainParams.Default();
         public Material defaultTerrainMaterial;
         
         [Header("最適化設定")]
@@ -102,11 +102,12 @@ namespace Vastcore.Generation
             // プレイヤーを自動検索
             if (autoFindPlayer && playerTransform == null)
             {
-                FindPlayerTransform();
+                playerTransform = FindPlayerTransform();
             }
             
             // デフォルト設定を調整
             defaultTerrainParams.size = tileSize;
+            defaultCircularParams.radius = tileSize * 0.4f;
             
             // 初期タイルを生成
             if (playerTransform != null)
@@ -121,19 +122,39 @@ namespace Vastcore.Generation
         /// <summary>
         /// プレイヤーのTransformを検索
         /// </summary>
-        private void FindPlayerTransform()
+        private Transform FindPlayerTransform()
         {
-            // 既存のTransformが設定されている場合は何もしない
+            // 既存のTransformが設定されている場合はそれを返す
             if (playerTransform != null)
             {
-                return;
+                return playerTransform;
             }
-            // 共通解決ロジックに統一
-            playerTransform = Vastcore.Core.PlayerTransformResolver.Resolve(playerTransform);
-            if (playerTransform == null)
+            
+            // AdvancedPlayerControllerを検索
+            var playerController = FindFirstObjectByType<IPlayerController>();
+            if (playerController != null)
             {
-                Debug.LogWarning("Could not find player transform");
+                playerTransform = playerController.Transform;
+                Debug.Log("Found IPlayerController");
+                return playerTransform;
             }
+
+            // "Player"タグのオブジェクトを検索
+            var playerObject = GameObject.FindGameObjectWithTag("Player");
+            if (playerObject != null)
+            {
+                Debug.Log("Found Player by tag");
+                return playerObject.transform;
+            }
+
+            if (Camera.main != null)
+            {
+                Debug.Log("Using Main Camera as player");
+                return Camera.main.transform;
+            }
+
+            Debug.LogWarning("Could not find player transform");
+            return null;
         }
         
         /// <summary>
@@ -328,14 +349,11 @@ namespace Vastcore.Generation
             var terrainParams = defaultTerrainParams;
             terrainParams.offset = new Vector2(tileCoordinate.x * 123.45f, tileCoordinate.y * 67.89f);
             
-            var circularParams = CircularTerrainGenerator.CircularTerrainParams.Default();
-            circularParams.center = new Vector2(
-                tileCoordinate.x * tileSize + tileSize * 0.5f,
-                tileCoordinate.y * tileSize + tileSize * 0.5f
-            );
+            var circularParams = defaultCircularParams;
+            circularParams.center = new Vector2(tileCoordinate.x * tileSize, tileCoordinate.y * tileSize);
             
             // TerrainTileを作成
-            var tile = TerrainTile.Create(tileCoordinate, tileSize, terrainParams, circularParams);
+            var tile = new TerrainTile(tileCoordinate, tileSize, terrainParams, circularParams);
             tile.terrainMaterial = defaultTerrainMaterial;
             
             loadingTiles[tileCoordinate] = tile;
@@ -551,7 +569,7 @@ namespace Vastcore.Generation
             maxActiveTiles = newMaxTiles;
             
             defaultTerrainParams.size = tileSize;
-            // defaultCircularParams.radius = tileSize * 0.4f;
+            defaultCircularParams.radius = tileSize * 0.4f;
             
             if (needsReload)
             {

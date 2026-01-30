@@ -3,8 +3,9 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections;
 using Vastcore.Core;
+using CoreSceneManager = Vastcore.Core.SceneManager;
 
-namespace Vastcore.UI.Menus
+namespace Vastcore.UI
 {
     public class MenuManager : MonoBehaviour
     {
@@ -106,12 +107,16 @@ namespace Vastcore.UI.Menus
         {
             if (buttonsGroup != null)
                 buttonsGroup.interactable = false;
-            SceneNavigator.Current.LoadGameScene();
+            var sceneManager = CoreSceneManager.Instance;
+            if (sceneManager != null)
+                sceneManager.LoadGameScene();
         }
 
         private void OnQuitButtonClicked()
         {
-            SceneNavigator.Current.QuitApplication();
+            var sceneManager = CoreSceneManager.Instance;
+            if (sceneManager != null)
+                sceneManager.QuitApplication();
         }
     }
 }

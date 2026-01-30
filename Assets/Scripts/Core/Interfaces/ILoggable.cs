@@ -1,4 +1,4 @@
-namespace Vastcore.Utils
+namespace Vastcore.Utilities
 {
     /// <summary>
     /// ログ出力機能を備えたコンポーネントのインターフェース

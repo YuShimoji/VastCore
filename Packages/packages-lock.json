@@ -9,6 +9,15 @@
       },
       "hash": "9e57dd3864ea6c742d819959724c99ca574a2f76"
     },
+    "com.coplaydev.unity-mcp": {
+      "version": "https://github.com/justinpbarnett/unity-mcp.git?path=/MCPForUnity",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.0.2"
+      },
+      "hash": "aaf6308b331f6cbcc2a41f11d90ac2109154343e"
+    },
     "com.unity.adaptiveperformance": {
       "version": "6.0.0",
       "depth": 1,

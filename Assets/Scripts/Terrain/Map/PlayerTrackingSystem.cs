@@ -1,8 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
 using Vastcore.Generation;
+using Vastcore.Core;
 
-namespace Vastcore.Terrain.Map
+namespace Vastcore.Generation
 {
     /// <summary>
     /// プレイヤー追跡システム
@@ -34,7 +35,20 @@ namespace Vastcore.Terrain.Map
         {
             if (playerTransform == null)
             {
-                playerTransform = Vastcore.Core.PlayerTransformResolver.Resolve(playerTransform);
+                var player = FindFirstObjectByType<IPlayerController>();
+                if (player != null)
+                {
+                    playerTransform = player.Transform;
+                }
+                else
+                {
+                    // フォールバック: 他の方法でプレイヤーを検索
+                    var playerObj = GameObject.FindGameObjectWithTag("Player");
+                    if (playerObj != null)
+                    {
+                        playerTransform = playerObj.transform;
+                    }
+                }
             }
             
             if (playerTransform != null)
@@ -178,6 +192,27 @@ namespace Vastcore.Terrain.Map
                 0f,
                 tileCoord.y * tileSize + tileSize * 0.5f
             );
+        }
+
+        private Transform ResolvePlayerTransform()
+        {
+            if (playerTransform != null)
+                return playerTransform;
+
+            GameObject taggedObject = null;
+            try
+            {
+                taggedObject = GameObject.FindGameObjectWithTag("Player");
+            }
+            catch (UnityException)
+            {
+            }
+
+            if (taggedObject != null)
+                return taggedObject.transform;
+
+            var mainCamera = Camera.main;
+            return mainCamera != null ? mainCamera.transform : null;
         }
     }
 }

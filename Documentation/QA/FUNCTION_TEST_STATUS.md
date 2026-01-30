@@ -1,4 +1,15 @@
-# Vastcore 機能テスト状況表
+# Vastcore 機能テスト状況表（レガシー）
+
+> ⚠️ **注意**: このファイルは過去の作業メモであり、現行 `master` のコード/実装状態とは一致しません。現行の正本はリポジトリ直下の `FUNCTION_TEST_STATUS.md` です。
+
+## 参照（正本）
+
+- `FUNCTION_TEST_STATUS.md`
+- `docs/ISSUES_BACKLOG.md`
+- `docs/SG1_TEST_VERIFICATION_PLAN.md`
+- `docs/DEV_HANDOFF_2025-12-12.md`
+
+---
 
 ## 📊 Composition Tab 機能テスト結果
 

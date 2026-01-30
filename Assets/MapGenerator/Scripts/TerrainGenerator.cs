@@ -22,11 +22,6 @@ namespace Vastcore.Generation
         public float HeightMapScale { get => m_HeightMapScale; set => m_HeightMapScale = value; }
         public float HeightMapOffset { get => m_HeightMapOffset; set => m_HeightMapOffset = value; }
         public bool FlipHeightMapVertically { get => m_FlipHeightMapVertically; set => m_FlipHeightMapVertically = value; }
-        public HeightMapChannel HeightMapChannel { get => m_HeightMapChannel; set => m_HeightMapChannel = value; }
-        public bool InvertHeight { get => m_InvertHeight; set => m_InvertHeight = value; }
-        public Vector2 UVOffset { get => m_UVOffset; set => m_UVOffset = value; }
-        public Vector2 UVTiling { get => m_UVTiling; set => m_UVTiling = value; }
-        public int Seed { get => m_Seed; set => m_Seed = value; }
         public float Scale { get => m_Scale; set => m_Scale = value; }
         public int Octaves { get => m_Octaves; set => m_Octaves = value; }
         public TerrainLayer[] TerrainLayers { get => m_TerrainLayers; set => m_TerrainLayers = value; }
@@ -51,10 +46,10 @@ namespace Vastcore.Generation
 
         #region Serialized Fields
         [Header("Terrain Settings")]
-        [SerializeField] private int m_Width = TerrainGenerationConstants.DefaultTerrainWidth;
-        [SerializeField] private int m_Height = TerrainGenerationConstants.DefaultTerrainHeight;
-        [SerializeField] private int m_Depth = TerrainGenerationConstants.DefaultTerrainDepth;
-        [SerializeField] private int m_Resolution = TerrainGenerationConstants.DefaultHeightmapResolution;
+        [SerializeField] private int m_Width = 2048;
+        [SerializeField] private int m_Height = 2048;
+        [SerializeField] private int m_Depth = 600;
+        [SerializeField] private int m_Resolution = 513;
         [SerializeField] private Material m_TerrainMaterial;
 
         [Header("Generation Mode")]
@@ -62,20 +57,15 @@ namespace Vastcore.Generation
 
         [Header("Height Map Settings")]
         [SerializeField] private Texture2D m_HeightMap;
-        [SerializeField] private float m_HeightMapScale = TerrainGenerationConstants.DefaultHeightMapScale;
-        [SerializeField] private float m_HeightMapOffset = TerrainGenerationConstants.DefaultHeightMapOffset;
+        [SerializeField] private float m_HeightMapScale = 1.0f;
+        [SerializeField] private float m_HeightMapOffset = 0.0f;
         [SerializeField] private bool m_FlipHeightMapVertically = false;
-        [SerializeField] private HeightMapChannel m_HeightMapChannel = HeightMapChannel.Luminance;
-        [SerializeField] private Vector2 m_UVOffset = Vector2.zero;
-        [SerializeField] private Vector2 m_UVTiling = Vector2.one;
-        [SerializeField] private bool m_InvertHeight = false;
 
         [Header("Noise Settings")]
-        [SerializeField] private int m_Seed = 0;
-        [SerializeField] private float m_Scale = TerrainGenerationConstants.DefaultNoiseScale;
-        [SerializeField] private int m_Octaves = TerrainGenerationConstants.DefaultOctaves;
-        [SerializeField] [Range(0,1)] private float m_Persistence = TerrainGenerationConstants.DefaultPersistence;
-        [SerializeField] private float m_Lacunarity = TerrainGenerationConstants.DefaultLacunarity;
+        [SerializeField] private float m_Scale = 50f;
+        [SerializeField] private int m_Octaves = 8;
+        [SerializeField] [Range(0,1)] private float m_Persistence = 0.5f;
+        [SerializeField] private float m_Lacunarity = 2f;
         [SerializeField] private Vector2 m_Offset;
 
         [Header("Texture Settings")]
@@ -85,109 +75,22 @@ namespace Vastcore.Generation
 
         [Header("Detail Settings")]
         [SerializeField] private DetailPrototype[] m_DetailPrototypes;
-        [SerializeField] private int m_DetailResolution = TerrainGenerationConstants.DefaultDetailResolution;
-        [SerializeField] private int m_DetailResolutionPerPatch = TerrainGenerationConstants.DefaultDetailResolutionPerPatch;
-        [SerializeField] private float m_DetailDensity = TerrainGenerationConstants.DefaultDetailDensity;
-        [SerializeField] private float m_DetailDistance = TerrainGenerationConstants.DefaultDetailDistance;
+        [SerializeField] private int m_DetailResolution = 1024;
+        [SerializeField] private int m_DetailResolutionPerPatch = 8;
+        [SerializeField] private float m_DetailDensity = 1.0f;
+        [SerializeField] private float m_DetailDistance = 200f;
 
         [Header("Tree Settings")]
         [SerializeField] private TreePrototype[] m_TreePrototypes;
-        [SerializeField] private int m_TreeDistance = TerrainGenerationConstants.DefaultTreeDistance;
-        [SerializeField] private int m_TreeBillboardDistance = TerrainGenerationConstants.DefaultTreeBillboardDistance;
-        [SerializeField] private int m_TreeCrossFadeLength = TerrainGenerationConstants.DefaultTreeCrossFadeLength;
-        [SerializeField] private int m_TreeMaximumFullLODCount = TerrainGenerationConstants.DefaultTreeMaximumFullLODCount;
+        [SerializeField] private int m_TreeDistance = 2000;
+        [SerializeField] private int m_TreeBillboardDistance = 300;
+        [SerializeField] private int m_TreeCrossFadeLength = 50;
+        [SerializeField] private int m_TreeMaximumFullLODCount = 50;
         #endregion
 
         public Vector3 terrainSize => new Vector3(m_Width, m_Depth, m_Height);
 
         public UnityEngine.Terrain GeneratedTerrain { get; private set; }
-
-        #region Profile Integration
-        /// <summary>
-        /// TerrainGenerationProfile から設定を読み込む
-        /// </summary>
-        /// <param name="profile">読み込むプロファイル</param>
-        public void LoadFromProfile(TerrainGenerationProfile profile)
-        {
-            if (profile == null)
-            {
-                Debug.LogWarning("[TerrainGenerator] Cannot load from null profile.");
-                return;
-            }
-
-            // Generation Mode
-            m_GenerationMode = profile.GenerationMode;
-
-            // Terrain Size & Resolution
-            m_Width = (int)profile.TerrainWidth;
-            m_Height = (int)profile.TerrainLength;
-            m_Depth = (int)profile.TerrainHeight;
-            m_Resolution = profile.HeightmapResolution;
-
-            // HeightMap Settings
-            m_HeightMap = profile.HeightMapTexture;
-            m_HeightMapScale = profile.HeightScale;
-            m_HeightMapChannel = profile.HeightMapChannel;
-            m_InvertHeight = profile.InvertHeight;
-            m_UVOffset = profile.UVOffset;
-            m_UVTiling = profile.UVTiling;
-            // Note: HeightMapOffset と FlipHeightMapVertically は Profile に含まれていない場合はデフォルト維持
-
-            // Noise Settings
-            m_Seed = profile.Seed;
-            m_Scale = profile.NoiseScale;
-            m_Octaves = profile.Octaves;
-            m_Persistence = profile.Persistence;
-            m_Lacunarity = profile.Lacunarity;
-            m_Offset = profile.NoiseOffset;
-
-            Debug.Log($"[TerrainGenerator] Loaded settings from profile: {profile.name}");
-        }
-
-        /// <summary>
-        /// 現在の設定を TerrainGenerationProfile に保存
-        /// </summary>
-        /// <param name="profile">保存先プロファイル</param>
-        public void SaveToProfile(TerrainGenerationProfile profile)
-        {
-            if (profile == null)
-            {
-                Debug.LogWarning("[TerrainGenerator] Cannot save to null profile.");
-                return;
-            }
-
-            // Generation Mode
-            profile.GenerationMode = m_GenerationMode;
-
-            // Terrain Size & Resolution
-            profile.TerrainWidth = m_Width;
-            profile.TerrainLength = m_Height;
-            profile.TerrainHeight = m_Depth;
-            profile.HeightmapResolution = m_Resolution;
-
-            // HeightMap Settings
-            profile.HeightMapTexture = m_HeightMap;
-            profile.HeightScale = m_HeightMapScale;
-            profile.HeightMapChannel = m_HeightMapChannel;
-            profile.InvertHeight = m_InvertHeight;
-            profile.UVOffset = m_UVOffset;
-            profile.UVTiling = m_UVTiling;
-
-            // Noise Settings
-            profile.Seed = m_Seed;
-            profile.NoiseScale = m_Scale;
-            profile.Octaves = m_Octaves;
-            profile.Persistence = m_Persistence;
-            profile.Lacunarity = m_Lacunarity;
-            profile.NoiseOffset = m_Offset;
-
-            #if UNITY_EDITOR
-            UnityEditor.EditorUtility.SetDirty(profile);
-            #endif
-
-            Debug.Log($"[TerrainGenerator] Saved settings to profile: {profile.name}");
-        }
-        #endregion
 
         public IEnumerator GenerateTerrain()
         {
@@ -242,7 +145,7 @@ namespace Vastcore.Generation
             OptimizeTerrainSettings();
 
             // レイヤーの設定
-            int terrainLayer = LayerMask.NameToLayer(TerrainGenerationConstants.TerrainLayerName);
+            int terrainLayer = LayerMask.NameToLayer("Terrain");
             if (terrainLayer != -1)
             {
                 GeneratedTerrain.gameObject.layer = terrainLayer;
@@ -254,6 +157,13 @@ namespace Vastcore.Generation
 
             Debug.Log("[TerrainGenerator] Terrain generation completed.");
             yield return null;
+        }
+
+        public enum TerrainGenerationMode
+        {
+            Noise,
+            HeightMap,
+            NoiseAndHeightMap
         }
 
 
@@ -310,7 +220,7 @@ namespace Vastcore.Generation
         {
             int height = heights.GetLength(0);
             int width = heights.GetLength(1);
-            int batchSize = TerrainGenerationConstants.HeightmapBatchSize;
+            int batchSize = 256; // 256x256のバッチサイズ
 
             for (int yStart = 0; yStart < height; yStart += batchSize)
             {
@@ -330,9 +240,7 @@ namespace Vastcore.Generation
                         }
                     }
 
-                    // TerrainData.SetHeights の引数は (xBase, yBase, heights)。
-                    // ここを入れ替えると端で out-of-bounds を起こす（例: yStart が末尾に近いときに xBase として扱われる）。
-                    terrainData.SetHeights(xStart, yStart, batchHeights);
+                    terrainData.SetHeights(yStart, xStart, batchHeights);
                     // フレーム分散（必要に応じてyield return null;）
                 }
             }

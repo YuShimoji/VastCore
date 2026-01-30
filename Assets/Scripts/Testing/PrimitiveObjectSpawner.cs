@@ -1,6 +1,5 @@
 using UnityEngine;
 using Vastcore.Generation;
-using Vastcore.Terrain.Map;
 
 namespace Vastcore.Testing
 {
@@ -22,11 +21,11 @@ namespace Vastcore.Testing
         [SerializeField] private bool spawnClimbable = true;
         [SerializeField] private bool spawnGrindable = true;
 
-        private UnityEngine.Terrain currentTerrain;
+        private Terrain currentTerrain;
 
         void Start()
         {
-            currentTerrain = UnityEngine.Object.FindFirstObjectByType<UnityEngine.Terrain>();
+            currentTerrain = FindObjectOfType<Terrain>();
         }
 
         [ContextMenu("Spawn Primitive Objects")]
@@ -40,7 +39,7 @@ namespace Vastcore.Testing
 
             if (currentTerrain == null)
             {
-                currentTerrain = UnityEngine.Object.FindFirstObjectByType<UnityEngine.Terrain>();
+                currentTerrain = FindObjectOfType<Terrain>();
                 if (currentTerrain == null)
                 {
                     Debug.LogError("No terrain found! Generate terrain first.");
@@ -84,14 +83,6 @@ namespace Vastcore.Testing
             // スケールバリエーション
             float scale = Random.Range(0.8f, 1.5f);
             primitive.transform.localScale = Vector3.one * scale;
-
-            // テスト用フラグを PrimitiveTerrainObject に反映（存在する場合）
-            var terrainObject = primitive.GetComponent<PrimitiveTerrainObject>();
-            if (terrainObject != null)
-            {
-                terrainObject.isClimbable = spawnClimbable;
-                terrainObject.isGrindable = spawnGrindable;
-            }
         }
 
         [ContextMenu("Clear Primitive Objects")]

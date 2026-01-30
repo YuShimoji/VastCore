@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Vastcore.Utils;
+using Vastcore.Utilities;
 
 namespace Vastcore.Core
 {
@@ -32,7 +32,7 @@ namespace Vastcore.Core
             {
                 if (instance == null)
                 {
-                    var existingHandler = FindFirstObjectByType<VastcoreErrorHandler>();
+                    instance = FindFirstObjectByType<VastcoreErrorHandler>();
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreErrorHandler");
@@ -141,43 +141,6 @@ namespace Vastcore.Core
         }
         
         /// <summary>
-        /// プリミティブ配置エラーのハンドリング
-        /// </summary>
-        public bool HandlePrimitiveSpawnError(Exception error, Vector3 position, PrimitiveType primitiveType, out GameObject fallbackPrimitive)
-        {
-            fallbackPrimitive = null;
-            
-            try
-            {
-                VastcoreLogger.Instance.LogError("PrimitiveSpawn", 
-                    $"プリミティブ配置エラー at {position}: {error.Message}", error);
-                RecordError(error, ErrorSeverity.Medium);
-                
-                if (!enableFallbackGeneration)
-                {
-                    return false;
-                }
-                
-                // 簡単なフォールバックプリミティブを生成
-                fallbackPrimitive = GenerateFallbackPrimitive(position, primitiveType);
-                
-                if (fallbackPrimitive != null)
-                {
-                    VastcoreLogger.Instance.LogWarning("PrimitiveSpawn", 
-                        $"フォールバックプリミティブを生成しました: {primitiveType} at {position}");
-                    return true;
-                }
-                
-                return false;
-            }
-            catch (Exception handlerError)
-            {
-                Debug.LogError($"プリミティブエラーハンドラーでエラーが発生: {handlerError.Message}");
-                return false;
-            }
-        }
-        
-        /// <summary>
         /// メモリ不足時の自動調整
         /// </summary>
         public void HandleMemoryPressure()
@@ -224,51 +187,67 @@ namespace Vastcore.Core
             }
         }
         
+        /// <summary>
+        /// フォールバック地形を生成
+        /// </summary>
         private GameObject GenerateFallbackTerrain(TerrainGenerationParams parameters, int attempt)
+        {
+            try
+            {
+                // 試行回数に応じて品質を下げる
+                float qualityReduction = 1f - (attempt * 0.2f);
+                qualityReduction = Mathf.Max(qualityReduction, 0.2f);
+
+                // 基本的な平面地形を生成
+                GameObject fallbackTerrain = GameObject.CreatePrimitive(PrimitiveType.Plane);
+                fallbackTerrain.name = $"FallbackTerrain_{attempt}";
+
+                // パラメータに基づいてスケールを設定
+                float scale = parameters.terrainSize * qualityReduction;
+                fallbackTerrain.transform.localScale = new Vector3(scale, 1f, scale);
+
+                // 基本的なマテリアルを適用
+                var renderer = fallbackTerrain.GetComponent<MeshRenderer>();
+                if (renderer != null)
+                {
+                    renderer.material = Resources.Load<Material>("Materials/DefaultMaterial");
+                }
+
+                // 高さ調整
+                fallbackTerrain.transform.position = new Vector3(0f, parameters.heightScale * 0.1f, 0f);
+
+                return fallbackTerrain;
+            }
+            catch (Exception error)
+            {
+                VastcoreLogger.Instance.LogError("FallbackTerrain", 
+                    $"フォールバック地形生成エラー: {error.Message}");
+                return null;
+            }
+        }
+        
+        private GameObject GenerateFallbackObject(int attempt)
         {
             // 試行回数に応じて品質を下げる
             float qualityReduction = 1f - (attempt * 0.2f);
             qualityReduction = Mathf.Max(qualityReduction, 0.2f);
             
-            // 簡単な平面地形を生成
-            GameObject fallbackTerrain = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            fallbackTerrain.name = $"FallbackTerrain_{attempt}";
+            // 簡単な平面オブジェクトを生成
+            GameObject fallbackObject = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            fallbackObject.name = $"FallbackObject_{attempt}";
             
             // スケールを調整
-            float scale = parameters.terrainSize * qualityReduction;
-            fallbackTerrain.transform.localScale = new Vector3(scale / 10f, 1f, scale / 10f);
+            float scale = 10f * qualityReduction;
+            fallbackObject.transform.localScale = new Vector3(scale, 1f, scale);
             
             // 基本的なマテリアルを適用
-            var renderer = fallbackTerrain.GetComponent<MeshRenderer>();
+            var renderer = fallbackObject.GetComponent<MeshRenderer>();
             if (renderer != null)
             {
-                renderer.material = Resources.Load<Material>("Materials/DefaultTerrain");
+                renderer.material = Resources.Load<Material>("Materials/DefaultMaterial");
             }
             
-            return fallbackTerrain;
-        }
-        
-        private GameObject GenerateFallbackPrimitive(Vector3 position, PrimitiveType primitiveType)
-        {
-            try
-            {
-                // Unity標準のプリミティブを使用
-                GameObject fallbackPrimitive = GameObject.CreatePrimitive(primitiveType);
-                fallbackPrimitive.transform.position = position;
-                fallbackPrimitive.name = $"FallbackPrimitive_{primitiveType}";
-                
-                // 基本的なスケール設定
-                float scale = UnityEngine.Random.Range(10f, 50f);
-                fallbackPrimitive.transform.localScale = Vector3.one * scale;
-                
-                return fallbackPrimitive;
-            }
-            catch (Exception error)
-            {
-                VastcoreLogger.Instance.LogError("FallbackGeneration", 
-                    $"フォールバックプリミティブ生成失敗: {error.Message}");
-                return null;
-            }
+            return fallbackObject;
         }
         
         private void CleanupUnusedObjects()
@@ -280,16 +259,6 @@ namespace Vastcore.Core
                 if (!tile.isActive && Time.time - tile.lastAccessTime > 60f)
                 {
                     DestroyImmediate(tile.gameObject);
-                }
-            }
-            
-            // 使用されていないプリミティブオブジェクトを削除
-            var primitiveObjects = FindObjectsByType<PrimitiveTerrainObject>(FindObjectsSortMode.None);
-            foreach (var primitive in primitiveObjects)
-            {
-                if (Vector3.Distance(primitive.transform.position, Camera.main.transform.position) > 3000f)
-                {
-                    DestroyImmediate(primitive.gameObject);
                 }
             }
             

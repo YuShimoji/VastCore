@@ -461,23 +461,30 @@ namespace Vastcore.Editor.Generation
 
         private void ApplyRandomization()
         {
-            if (Selection.gameObjects.Length == 0)
+            var selectedObjects = Selection.gameObjects
+                .Where(go => go != null)
+                .ToArray();
+
+            if (selectedObjects.Length == 0)
             {
                 Debug.LogWarning("No objects selected for randomization.");
                 return;
             }
 
-            foreach (GameObject obj in Selection.gameObjects)
+            // Undo対応: 選択オブジェクトのTransform状態を記録
+            var transforms = selectedObjects
+                .Select(go => go.transform)
+                .ToArray();
+            Undo.RecordObjects(transforms, "Randomize Transform");
+
+            foreach (GameObject obj in selectedObjects)
             {
-                if (obj != null)
-                {
-                    if (_showPositionSection) ApplyPositionRandomization(obj);
-                    if (_showRotationSection) ApplyRotationRandomization(obj);
-                    if (_showScaleSection) ApplyScaleRandomization(obj);
-                }
+                if (_showPositionSection) ApplyPositionRandomization(obj);
+                if (_showRotationSection) ApplyRotationRandomization(obj);
+                if (_showScaleSection) ApplyScaleRandomization(obj);
             }
             
-            Debug.Log($"Applied randomization to {Selection.gameObjects.Length} objects.");
+            Debug.Log($"Applied randomization to {selectedObjects.Length} objects.");
         }
 
         private void ApplyPositionRandomization(GameObject obj)

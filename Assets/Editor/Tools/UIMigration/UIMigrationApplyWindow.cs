@@ -177,7 +177,7 @@ namespace Vastcore.EditorTools.UIMigration
                 if (mNs.Success)
                 {
                     var body = mNs.Groups[1].Value;
-                    var itemRx = new Regex("\\{\\s*\"from\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"to\"\\s*:\\s*\"([^\"]+)\"\\s*\\}");
+                    var itemRx = new Regex("\\{\\s*\"from\"\\s*:\\s*\"([^\"]+)\",\\s*\"to\"\\s*:\\s*\"([^\"]+)\"\\s*\\}");
                     foreach (Match m in itemRx.Matches(body))
                         rs.namespaceMappings.Add(new NamespaceMapping { from = m.Groups[1].Value, to = m.Groups[2].Value });
                 }
@@ -379,9 +379,8 @@ namespace Vastcore.EditorTools.UIMigration
                 foreach (var nm in rules.namespaceMappings)
                 {
                     if (string.IsNullOrEmpty(nm.from) || string.IsNullOrEmpty(nm.to)) continue;
-                    if (txt.Contains(nm.from + ".") ||
-                        Regex.IsMatch(txt, @"^\s*using\s+" + Regex.Escape(nm.from) + @"\s*;", RegexOptions.Multiline) ||
-                        Regex.IsMatch(txt, @"\bnamespace\s+" + Regex.Escape(nm.from) + @"(\b|\s|\{)", RegexOptions.Multiline))
+                    if (txt.Contains(nm.from + ".") || Regex.IsMatch(txt, @"^\s*using\s+" + Regex.Escape(nm.from) + @"\s*;", RegexOptions.Multiline) ||
+                        Regex.IsMatch(txt, @"\bnamespace\s+" + Regex.Escape(nm.from) + @"(\b|\s|\{)"))
                     {
                         desc.Add($"Namespace: {nm.from} -> {nm.to}");
                     }
@@ -399,7 +398,7 @@ namespace Vastcore.EditorTools.UIMigration
 
             if (_applyCreateAssetMenu && rules.menuNameRule != null)
             {
-                var m = Regex.Match(txt, "menuName\\s*=\\s*\"([^\"]+)\"", RegexOptions.Multiline);
+                var m = Regex.Match(txt, "menuName\\s*=\\s*\"([^\\\"]+)\"");
                 if (m.Success)
                 {
                     try
@@ -428,9 +427,9 @@ namespace Vastcore.EditorTools.UIMigration
                     // Qualifiers first (from. -> to.)
                     newTxt = newTxt.Replace(nm.from + ".", nm.to + ".");
                     // using from; -> using to;
-                    newTxt = Regex.Replace(newTxt, "(^\\s*using\\s+)" + Regex.Escape(nm.from) + "(\\s*;)$", m => m.Groups[1].Value + nm.to + m.Groups[2].Value, RegexOptions.Multiline);
+                    newTxt = Regex.Replace(newTxt, @"(^\s*using\s+)" + Regex.Escape(nm.from) + @"(\s*;)", m => m.Groups[1].Value + nm.to + m.Groups[2].Value, RegexOptions.Multiline);
                     // namespace from -> namespace to
-                    newTxt = Regex.Replace(newTxt, "(\\bnamespace\\s+)" + Regex.Escape(nm.from) + "(\\b|\\s|\\{)", m => m.Groups[1].Value + nm.to + " ", RegexOptions.Multiline);
+                    newTxt = Regex.Replace(newTxt, @"(\bnamespace\s+)" + Regex.Escape(nm.from) + @"(\b|\s|\{)", m => m.Groups[1].Value + nm.to + " ", RegexOptions.Multiline);
                 }
             }
 
@@ -445,7 +444,7 @@ namespace Vastcore.EditorTools.UIMigration
 
             if (_applyCreateAssetMenu && rules.menuNameRule != null)
             {
-                newTxt = Regex.Replace(newTxt, "(menuName\\s*=\\s*)\"([^\"]+)\"", m =>
+                newTxt = Regex.Replace(newTxt, "(menuName\\s*=\\s*)\"([^\\\"]+)\"", m =>
                 {
                     try
                     {
@@ -454,7 +453,7 @@ namespace Vastcore.EditorTools.UIMigration
                         return m.Groups[1].Value + "\"" + rep + "\"";
                     }
                     catch { return m.Value; }
-                }, RegexOptions.Multiline);
+                });
             }
 
             return newTxt;
@@ -480,3 +479,4 @@ namespace Vastcore.EditorTools.UIMigration
         }
     }
 }
+

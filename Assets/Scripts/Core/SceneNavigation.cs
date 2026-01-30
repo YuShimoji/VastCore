@@ -34,9 +34,9 @@ namespace Vastcore.Core
 #endif
         }
 
-        private static void TrySceneManager(System.Action<NarrativeGen.Core.SceneManager> viaSM, System.Action fallback)
+        private static void TrySceneManager(System.Action<Vastcore.Core.SceneManager> viaSM, System.Action fallback)
         {
-            var sm = NarrativeGen.Core.SceneManager.Instance;
+            var sm = Vastcore.Core.SceneManager.Instance;
             if (sm != null)
             {
                 viaSM?.Invoke(sm);

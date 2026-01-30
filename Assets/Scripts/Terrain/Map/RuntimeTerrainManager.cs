@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
-using Vastcore.Utils;
+using Vastcore.Utilities;
 using Vastcore.Generation;
 using Vastcore.Core;
 
@@ -15,8 +15,8 @@ namespace Vastcore.Generation
     /// </summary>
     public class RuntimeTerrainManager : MonoBehaviour
     {
-        #region Dynamic Generation Settings
-        [Header("Dynamic Generation Settings")]
+        #region 設定/参照
+        [Header("動的生成設定")]
         public bool enableDynamicGeneration = true;
         public bool enableFrameTimeControl = true;
         public int maxGenerationsPerFrame = 4;
@@ -25,33 +25,25 @@ namespace Vastcore.Generation
         public int minTilesPerUpdate = 1;   // フレーム制御時の最低処理数
         public float maxFrameTimeMs = 4f;   // 1フレームで許容する処理時間(ms)
         public float updateInterval = 0.1f; // 動的生成の更新間隔
-        #endregion
 
-        #region Radius Settings (Tile Units)
-        [Header("Radius Settings (Tile Units)")]
+        [Header("半径設定(タイル単位)")]
         public int immediateLoadRadius = 1;
         public int preloadRadius = 3;
         public int keepAliveRadius = 5;
         public int forceUnloadRadius = 7;
-        #endregion
 
-        #region Memory Management
-        [Header("Memory Management")]
+        [Header("メモリ管理")]
         public float memoryLimitMB = 1024f;
         public float memoryWarningThresholdMB = 768f; // 警告しきい値
         public float cleanupInterval = 2f;
         public bool enableAggressiveCleanup = false;
-        #endregion
 
-        #region Debug
-        [Header("Debug")]
+        [Header("デバッグ")]
         public bool showDebugInfo = false;
         public bool logTileOperations = false;
         public bool predictPlayerMovement = true;
-        #endregion
 
-        #region References
-        [Header("References")]
+        [Header("参照")]
         public Transform playerTransform;
         private TileManager tileManager;
         #endregion
@@ -102,7 +94,7 @@ namespace Vastcore.Generation
 
             if (playerTransform == null)
             {
-                playerTransform = Vastcore.Core.PlayerTransformResolver.Resolve(playerTransform);
+                playerTransform = ResolvePlayerTransform();
             }
 
             // TileManagerにプレイヤー参照を連携
@@ -146,6 +138,25 @@ namespace Vastcore.Generation
                 StopCoroutine(memoryManagementCoroutine);
                 memoryManagementCoroutine = null;
             }
+        }
+
+        private Transform ResolvePlayerTransform()
+        {
+            if (playerTransform != null) return playerTransform;
+
+            var playerController = FindFirstObjectByType<IPlayerController>();
+            if (playerController != null)
+            {
+                return playerController.Transform;
+            }
+
+            var playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
+            {
+                return playerObj.transform;
+            }
+            
+            return Camera.main?.transform;
         }
 
         /// <summary>

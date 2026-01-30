@@ -1,9 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
 using System.Linq;
 using Vastcore.Generation.Map;
-using Vastcore.Terrain.Map;
+using Vastcore.Utilities;
+using Vastcore.Core;
 
 namespace Vastcore.Generation
 {
@@ -14,31 +14,25 @@ namespace Vastcore.Generation
     /// </summary>
     public class TerrainTexturingIntegration : MonoBehaviour
     {
-        #region Integration Settings
-        [Header("Integration Settings")]
+        #region 設定パラメータ
+        [Header("統合設定")]
         public bool enableAutoIntegration = true;
         public float integrationUpdateInterval = 0.5f;
         public float textureUpdateRadius = 2000f;
-        #endregion
-
-        #region System References
-        [Header("System References")]
+        
+        [Header("システム参照")]
         public RuntimeTerrainManager terrainManager;
         public BiomePresetManager biomePresetManager;
         public TerrainTexturingSystem texturingSystem;
         public DynamicMaterialBlendingSystem blendingSystem;
-        #endregion
-
-        #region Auto Texture Application
-        [Header("Auto Texture Application")]
+        
+        [Header("自動テクスチャ適用")]
         public bool autoApplyTexturesOnTileGeneration = true;
         public bool autoApplyBiomeTextures = true;
         public bool autoUpdateEnvironmentalTextures = true;
         public bool autoUpdateLODTextures = true;
-        #endregion
-
-        #region Performance Control
-        [Header("Performance Control")]
+        
+        [Header("パフォーマンス制御")]
         public int maxTextureUpdatesPerFrame = 3;
         public float maxFrameTimeMs = 10f;
         public bool enableFrameTimeControl = true;
@@ -108,7 +102,23 @@ namespace Vastcore.Generation
             }
             
             // プレイヤーTransformを取得
-            playerTransform = Vastcore.Core.PlayerTransformResolver.Resolve(playerTransform);
+            if (playerTransform == null)
+            {
+                var player = FindFirstObjectByType<IPlayerController>();
+                if (player != null)
+                {
+                    playerTransform = player.Transform;
+                }
+                else
+                {
+                    // フォールバック: 他の方法でプレイヤーを検索
+                    var playerObj = GameObject.FindGameObjectWithTag("Player");
+                    if (playerObj != null)
+                    {
+                        playerTransform = playerObj.transform;
+                    }
+                }
+            }
             
             // イベントハンドラーを登録
             RegisterEventHandlers();
@@ -131,7 +141,7 @@ namespace Vastcore.Generation
         /// <summary>
         /// 新しいタイルを監視
         /// </summary>
-        private IEnumerator MonitorNewTiles()
+        private System.Collections.IEnumerator MonitorNewTiles()
         {
             while (true)
             {
