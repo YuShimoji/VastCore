@@ -29,5 +29,6 @@
 ### 短期（Next）
 
 - [pending] SW Doctor Rules Configuration Fix (ref: docs/tasks/TASK_019_FixSwDoctorRulesConfig.md, Status: OPEN)
-- [pending] Namespace Consistency (Utils vs Utilities) (ref: docs/tasks/TASK_020_NamespaceConsistency.md, Status: OPEN)
-- [pending] Merge Integration & Verification (ref: docs/tasks/TASK_021_MergeIntegrationCheck.md, Status: OPEN)
+- [pending] 3D Voxel Terrain Hybrid System - Phase 1 実装 (ref: docs/tasks/TASK_020_3DVoxelTerrain_Phase1.md, Status: OPEN)
+- [pending] Merge Integration & Verification (ref: docs/tasks/TASK_021_MergeIntegrationCheck.md, Status: BLOCKED (Tests failing to run in batchmode))
+- [in_progress] Release Cyclic Dependencies (ref: docs/tasks/TASK_022_FixCyclicDependencies.md, Status: IN_PROGRESS)
