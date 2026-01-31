@@ -4,7 +4,7 @@
 Target Phase: Refactoring / Bugfix
 
 ## Status
-Status: IN_PROGRESS
+Status: DONE (Pending Unity Editor Verification)
 
 ## Goal
 Resolve cyclic dependencies between `Assembly-CSharp`, `Assembly-CSharp-Editor`, and multiple `Vastcore.*` assemblies to fix compilation errors.
@@ -41,10 +41,16 @@ Resolve cyclic dependencies between `Assembly-CSharp`, `Assembly-CSharp-Editor`,
    - Ensure no new runtime errors are introduced.
 
 ## DoD (Definition of Done)
-- [ ] Dependency graph analyzed and cycle identified.
-- [ ] `.asmdef` references updated to remove cycles.
-- [ ] Scripts moved if necessary to respect dependency layers.
-- [ ] Project compiles without "Cyclic dependencies detected" error.
+- [x] Dependency graph analyzed and cycle identified.
+- [x] `.asmdef` references updated to remove cycles.
+- [x] Scripts moved if necessary to respect dependency layers. (不要と判断)
+- [ ] Project compiles without "Cyclic dependencies detected" error. (Unity Editor 検証待ち)
+
+## Resolution (2026-01-30)
+- **修正内容**: `Vastcore.Player.asmdef` に `Vastcore.Generation` 参照を追加
+- **理由**: `PrimitiveInteractionSystem.cs` が `Vastcore.Generation.PrimitiveTerrainObject` を使用
+- **循環依存**: 発生しない（Generation は Player/Terrain を参照しない）
+- **レポート**: `docs/inbox/REPORT_TASK_022_20260130.md`
 
 ## Constraints
 - Minimize moving files if simple `.asmdef` configuration changes can fix it.
