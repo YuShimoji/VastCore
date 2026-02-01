@@ -32,7 +32,7 @@ namespace Vastcore.Generation
         private void UpdateStatistics()
         {
             lastMemoryUsage = System.GC.GetTotalMemory(false) / (1024 * 1024);
-            lastActiveObjectCount = Object.FindObjectsOfType<GameObject>().Length;
+            lastActiveObjectCount = Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None).Length;
             lastGCTime = Time.realtimeSinceStartup;
             gcCallCount++;
         }

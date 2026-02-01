@@ -30,6 +30,11 @@ namespace Vastcore.Generation
         public float Persistence { get => m_Persistence; set => m_Persistence = value; }
         public float Lacunarity { get => m_Lacunarity; set => m_Lacunarity = value; }
         public Vector2 Offset { get => m_Offset; set => m_Offset = value; }
+        public int Seed { get => m_Seed; set => m_Seed = value; }
+        public Vector2 UVTiling { get => m_UVTiling; set => m_UVTiling = value; }
+        public Vector2 UVOffset { get => m_UVOffset; set => m_UVOffset = value; }
+        public HeightMapChannel HeightMapChannel { get => m_HeightMapChannel; set => m_HeightMapChannel = value; }
+        public bool InvertHeight { get => m_InvertHeight; set => m_InvertHeight = value; }
 
         public DetailPrototype[] DetailPrototypes { get => m_DetailPrototypes; set => m_DetailPrototypes = value; }
         public int DetailResolution { get => m_DetailResolution; set => m_DetailResolution = value; }
@@ -62,11 +67,16 @@ namespace Vastcore.Generation
         [SerializeField] private bool m_FlipHeightMapVertically = false;
 
         [Header("Noise Settings")]
+        [SerializeField] private int m_Seed = 0;
         [SerializeField] private float m_Scale = 50f;
         [SerializeField] private int m_Octaves = 8;
         [SerializeField] [Range(0,1)] private float m_Persistence = 0.5f;
         [SerializeField] private float m_Lacunarity = 2f;
         [SerializeField] private Vector2 m_Offset;
+        [SerializeField] private Vector2 m_UVTiling = Vector2.one;
+        [SerializeField] private Vector2 m_UVOffset = Vector2.zero;
+        [SerializeField] private HeightMapChannel m_HeightMapChannel = HeightMapChannel.Luminance;
+        [SerializeField] private bool m_InvertHeight = false;
 
         [Header("Texture Settings")]
         [SerializeField] private TerrainLayer[] m_TerrainLayers;
