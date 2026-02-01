@@ -32,8 +32,10 @@
 - [x] Worker Prompt作成（TASK_029, TASK_030）
 
 ### 未完了
-- [ ] TASK_029: Unity Editor Verification (Worker割り当て待ち)
+- [ ] TASK_029: Unity Editor Verification (BLOCKED - MCPForUnity重複、MapGenerator asmdef競合)
 - [ ] TASK_030: Worktree Cleanup and Push (Worker割り当て待ち)
+- [ ] TASK_031: MCPForUnity重複解消 (TASK_029ブロッカー解消のため起票必要)
+- [ ] TASK_032: MapGeneratorアセンブリ定義整理 (TASK_029ブロッカー解消のため起票必要)
 
 ### 背景情報
 - developブランチでコンパイルエラー修正3件が実施済み（`17d4b1b`~`c841a4e`）
@@ -55,8 +57,8 @@
 ### アクティブタスク
 | タスクID | 説明 | Tier | Status | Worker | 進捗 |
 |-----------|---------|------|--------|--------|------|
-| TASK_029 | Unity Editor Verification | 1 | OPEN | - | Worker Prompt Ready |
-| TASK_030 | Worktree Cleanup and Push | 1 | BLOCKED | Cascade | Investigation Complete, Push承認待ち |
+| TASK_029 | Unity Editor Verification | 1 | BLOCKED | Worker | MCPForUnity重複、MapGenerator asmdef競合により検証不可 |
+| TASK_030 | Worktree Cleanup and Push | 1 | OPEN | - | Worker Prompt Ready |
 | TASK_022 | Fix Cyclic Dependencies | 1 | OPEN | - | Worker Prompt Ready |
 | TASK_019 | Fix SwDoctor Rules Config | 1 | OPEN | - | 未着手 |
 | TASK_021 | Merge Integration & Verification | 2 | BLOCKED | - | テスト実行インフラ問題 |
@@ -270,6 +272,26 @@
   - `WORKER_PROMPT_TASK_030.md` 作成
 - **次フェーズ**: Phase 5 (Worker Execution) - User to start Worker.
 - **次のアクション**: ユーザーが Worker に `WORKER_PROMPT_TASK_029.md` または `WORKER_PROMPT_TASK_030.md` を投入する。
+
+### `2026-02-02T03:00:00+09:00` - `Worker` - `TASK_029 Verification Complete (BLOCKED)`
+- Mission ID: TASK_029_UnityEditorVerification
+- **Phase 0-2 (準備・検証)**: 完了
+  - develop worktree (`VastCore-d51091ed`, commit: `17d4b1b`) で検証実施
+  - 対象ファイル確認: Vastcore.MapGenerator.asmdef, Vastcore.Generation.asmdef, TerrainGenerator.cs, PerformanceTracker.cs
+  - TASK_029の3つのコミット（1edb8b5, 0f3f290, c841a4e）の修正内容は正しいことを確認
+- **Unity Editorコンパイル検証**: 失敗
+  - バッチモード実行: `Unity.exe -batchmode -projectPath ... -quit -logFile compile_check.log`
+  - 結果: `Scripts have compiler errors. Exit code 1`
+- **検出されたブロッカー**:
+  1. **MCPForUnity重複アセンブリ** (Critical): Assets/MCPForUnity と Packages/com.coplaydev.unity-mcp の両方に同名アセンブリ定義が存在
+  2. **MapGeneratorアセンブリ定義競合** (High): Assets/MapGenerator/Scripts に .asmref と .asmdef が共存（Unityでは禁止）
+  3. **GUID競合** (Medium): MCPForUnity関連で約390ファイルのGUID競合を検出
+- **Phase 4 (レポート作成)**: 完了
+  - `docs/inbox/REPORT_TASK_029_UnityEditorVerification.md` 作成
+  - チケット `TASK_029_UnityEditorVerification.md` を BLOCKED に更新
+  - 推奨対応: TASK_030完了後、cascade/TASK_028をdevelopにマージ、MapGenerator .asmref削除
+- **次フェーズ**: TASK_029は BLOCKED。TASK_031/032の起票が必要。
+- **次のアクション**: TASK_030（Worktree整理）を実施し、その後ブロッカーを解消する。
 
 ### `2026-02-02T03:20:00+09:00` - `Worker` - `TASK_030 Investigation Complete`
 - Mission ID: ORCH_20260202_VERIFY_AND_TICKET
