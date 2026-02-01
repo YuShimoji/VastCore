@@ -28,6 +28,7 @@
 
 ### 短期（Next）
 
+- [done] TerrainGenerator/HeightMapGenerator Compilation Errors Fix (2026-02-01) - 10件のコンパイルエラー解消、アセンブリ定義整備
 - [pending] SW Doctor Rules Configuration Fix (ref: docs/tasks/TASK_019_FixSwDoctorRulesConfig.md, Status: OPEN)
 - [pending] 3D Voxel Terrain Hybrid System - Phase 1 実装 (ref: docs/tasks/TASK_020_3DVoxelTerrain_Phase1.md, Status: OPEN)
 - [pending] Merge Integration & Verification (ref: docs/tasks/TASK_021_MergeIntegrationCheck.md, Status: BLOCKED (Tests failing to run in batchmode))
