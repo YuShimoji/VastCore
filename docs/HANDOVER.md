@@ -125,8 +125,9 @@ GitHubAutoApprove: false
 
 ## リスク
 
-- `Assets/MCPForUnity/` が未コミット。
-- Git working tree が dirty な状態でフェーズ移行しようとしている。
+- **未Pushコミット164件**（develop: 40件、feature/TASK_013: 125件）が残存。Push戦略の決定が必要。
+- `Assets/MCPForUnity/` 削除が未完了（TASK_028は"DONE"だが実際は未削除）。
+- 未追跡ファイル7件が未コミット（TASK_026-028チケット、Legacy asmdef等）。
 - AI_CONTEXT.md 欠落で Worker 監査が盲点となり、BLOCKED 検知が遅れる恐れ。
 
 
