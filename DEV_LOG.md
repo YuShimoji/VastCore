@@ -1444,4 +1444,50 @@ using UnityEngine;
     -   選択されたDeformerの種類に応じて、必要なパラメータ（角度、強度など）のスライダーやフィールドを動的に表示するUIを実装する。
 3.  **基本適用ロジックの実装**:
     -   `DeformIntegrationManager.cs`に、選択されたGameObjectにDeformerコンポーネントを追加し、UIの値を適用する基本機能を実装する。
->>>>>>> origin/master
+---
+
+## 2026-02-03: TASK_022 循環依存修正検証
+
+### 検証対象
+Terrain ⇄ Player 間の循環依存（CYCLIC_DEPENDENCY_REPORT.md 記載）の解消確認
+
+### 現在の依存関係構造
+
+```
+Layer 0: Vastcore.Utilities
+Layer 1: Vastcore.Core → Utilities
+Layer 2: Vastcore.Generation → Core, Utilities
+Layer 3: Vastcore.Terrain → Core, Utilities, Generation
+Layer 4: Vastcore.Player → Core, Utilities, Terrain, Generation
+```
+
+### ASMdef 検証結果
+
+| アセンブリ | Player参照 | Terrain参照 | 状態 |
+|-----------|-----------|-------------|------|
+| Vastcore.Terrain | ❌ なし | N/A | ✅ OK |
+| Vastcore.Generation | ❌ なし | ❌ なし | ✅ OK |
+| Vastcore.Player | N/A | ✅ あり | ✅ OK（一方向） |
+
+### コード検証結果
+
+```bash
+# Terrain内でPlayerを参照するusing文検索
+grep "using Vastcore.Player" Assets/Scripts/Terrain/**/*.cs
+→ No results
+
+# Generation内でPlayer/Terrainを参照するusing文検索
+grep "using Vastcore.(Player|Terrain)" Assets/Scripts/Generation/**/*.cs
+→ No results
+```
+
+### 結論
+
+- **循環依存**: 解消済み ✅
+- **依存方向**: Generation → Terrain → Player の一方向のみ
+- **Unity検証**: Editor未起動のため手動検証推奨
+
+### 次のアクション
+
+1. Unity Editor起動時にConsoleで「Cyclic dependencies detected」エラーが出ないか確認
+2. エラーが出る場合は Library/Bee フォルダ削除後にReimport All

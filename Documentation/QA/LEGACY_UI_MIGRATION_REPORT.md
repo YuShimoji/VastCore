@@ -1,31 +1,24 @@
 # Legacy UI Migration Report (Dry Run)
 
-- Generated: 2026-02-02 14:17 (local)
+- Generated: 2026-02-04 03:41 (local)
 - Tool: UIMigrationScannerWindow.cs
 - Options: ExcludeExamples=True, ScanScripts=True, ScanScenes=True, ScanPrefabs=True
 
 ## Summary
-- Scripts scanned: 470
-- Scenes scanned: 52
+- Scripts scanned: 296
+- Scenes scanned: 51
 - Prefabs scanned: 5
-- C# using UnityEngine.UI: 15
-- C# OnGUI occurrences: 27
+- C# using UnityEngine.UI: 8
+- C# OnGUI occurrences: 26
 - C# TMPro references: 10
-- C# UI Toolkit references: 8
+- C# UI Toolkit references: 1
 - Scenes with uGUI markers: 3
 - Scenes with UI Toolkit: 0
 - Prefabs with uGUI markers: 0
 - Prefabs with UI Toolkit: 0
 
-### C# files using UnityEngine.UI (15)
+### C# files using UnityEngine.UI (8)
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs
-- Assets/MCPForUnity/Editor/Windows/Components/ClientConfig/McpClientConfigSection.cs
-- Assets/MCPForUnity/Editor/Windows/Components/Connection/McpConnectionSection.cs
-- Assets/MCPForUnity/Editor/Windows/Components/Settings/McpSettingsSection.cs
-- Assets/MCPForUnity/Editor/Windows/Components/Tools/McpToolsSection.cs
-- Assets/MCPForUnity/Editor/Windows/EditorPrefs/EditorPrefsWindow.cs
-- Assets/MCPForUnity/Editor/Windows/MCPForUnityEditorWindow.cs
-- Assets/MCPForUnity/Editor/Windows/MCPSetupWindow.cs
 - Assets/Scripts/Camera/Cinematic/CinematicCameraController.cs
 - Assets/Scripts/Testing/TestManager.cs
 - Assets/Scripts/UI/InGameDebugUI.cs
@@ -34,11 +27,7 @@
 - Assets/Scripts/UI/SliderBasedUISystem.cs
 - Assets/Scripts/UI/SliderUIElement.cs
 
-<<<<<<< Updated upstream
-### C# files with OnGUI (27)
-=======
 ### C# files with OnGUI (26)
->>>>>>> Stashed changes
 - Assets/Editor/StructureGenerator/Core/StructureGeneratorWindow.cs
 - Assets/Editor/Tools/ProBuilderCsg/ProBuilderCsgScannerWindow.cs
 - Assets/Editor/Tools/UIMigration/UIMigrationApplyWindow.cs
@@ -61,10 +50,6 @@
 - Assets/Scripts/Terrain/Map/RuntimeGenerationManagerTest.cs
 - Assets/Scripts/Terrain/Map/RuntimeTerrainManagerTest.cs
 - Assets/Scripts/Terrain/Map/TerrainTexturingSystemTest.cs
-<<<<<<< Updated upstream
-- Assets/Scripts/Terrain/PrimitiveTerrainObject.cs
-=======
->>>>>>> Stashed changes
 - Assets/Scripts/Testing/PerformanceTestingSystem.cs
 - Assets/Scripts/Testing/TestSceneManager.cs
 - Assets/Scripts/Utilities/Utils/VastcoreLogger.cs
@@ -82,15 +67,8 @@
 - Assets/Scripts/UI/SliderUIElement.cs
 - Assets/Scripts/UI/TextClickHandler.cs
 
-### C# files referencing UI Toolkit (8)
+### C# files referencing UI Toolkit (1)
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs
-- Assets/MCPForUnity/Editor/Windows/Components/ClientConfig/McpClientConfigSection.cs
-- Assets/MCPForUnity/Editor/Windows/Components/Connection/McpConnectionSection.cs
-- Assets/MCPForUnity/Editor/Windows/Components/Settings/McpSettingsSection.cs
-- Assets/MCPForUnity/Editor/Windows/Components/Tools/McpToolsSection.cs
-- Assets/MCPForUnity/Editor/Windows/EditorPrefs/EditorPrefsWindow.cs
-- Assets/MCPForUnity/Editor/Windows/MCPForUnityEditorWindow.cs
-- Assets/MCPForUnity/Editor/Windows/MCPSetupWindow.cs
 
 ### Scenes with uGUI markers (3)
 - Assets/_Scenes/2d/DestructibleTerrain2d.unity

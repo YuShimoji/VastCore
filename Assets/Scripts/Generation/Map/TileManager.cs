@@ -131,7 +131,8 @@ namespace Vastcore.Generation
             }
             
             // AdvancedPlayerControllerを検索
-            var playerController = FindFirstObjectByType<IPlayerController>();
+            var playerController = FindAnyObjectByType<MonoBehaviour>()
+                ?.GetComponent<IPlayerController>();
             if (playerController != null)
             {
                 playerTransform = playerController.Transform;
@@ -353,7 +354,7 @@ namespace Vastcore.Generation
             circularParams.center = new Vector2(tileCoordinate.x * tileSize, tileCoordinate.y * tileSize);
             
             // TerrainTileを作成
-            var tile = new TerrainTile(tileCoordinate, tileSize, terrainParams, circularParams);
+            var tile = TerrainTile.Create(tileCoordinate, tileSize, terrainParams, circularParams);
             tile.terrainMaterial = defaultTerrainMaterial;
             
             loadingTiles[tileCoordinate] = tile;
