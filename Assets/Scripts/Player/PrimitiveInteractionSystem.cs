@@ -2,8 +2,8 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Core;
-using Vastcore.Utils;
-using Vastcore.Terrain.Map;
+using Vastcore.Utilities;
+using Vastcore.Generation;
 
 namespace Vastcore.Player
 {
@@ -195,10 +195,16 @@ namespace Vastcore.Player
             };
             
             // グラインド可能エッジを検出
-            DetectGrindableEdges(primitive, ref interactionData);
+            var primitiveObject = primitive.GetComponent<Vastcore.Generation.PrimitiveTerrainObject>();
+            if (primitiveObject != null && primitiveObject.isGrindable)
+            {
+                DetectGrindableEdges(primitive, ref interactionData);
+            }
             
-            // クライミング可能表面を検出
-            DetectClimbableSurfaces(primitive, ref interactionData);
+            // クライミング可能表面を検出 (PrimitiveTerrainObject削除により一時無効)
+            // if (primitiveObject != null && primitiveObject.isClimbable)
+            // {
+            //     DetectClimbableSurfaces(primitive, ref interactionData);
             // }
             
             // 物理コライダーを設定

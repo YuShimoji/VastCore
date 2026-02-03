@@ -1,0 +1,26 @@
+仕様書：ハイブリッド・ボクセル地形生成システム1. プロジェクト概要Unity（C#）において、従来のハイトマップ地形の操作性を維持しつつ、洞窟・オーバーハング・浮遊島などの3次元形状を表現可能な「ハイブリッド・ボクセル地形生成システム」を構築する。メッシュ生成アルゴリズムには Marching Cubes を採用し、Unity Job System + Burst Compiler による高速化を必須とする。2. コア・アーキテクチャ2.1 データフローInput:Base Heightmap (Texture2D): 地面の基本形状。Cave Noise (3D Noise): 地下の空洞を定義。SDF Stamps (List): 「部屋」や「特徴的な岩」などの局所的な形状データ。Density Calculation (SDF):各座標 $(x, y, z)$ における「密度（Density）」を計算する。密度 $> 0$ を「土（Solid）」、密度 $< 0$ を「空（Air）」と定義する。Meshing:密度データを元に、Marching Cubes アルゴリズムでメッシュ（頂点・三角形）を生成する。Rendering:Triplanar Shaderを用いて、UV展開不要でテクスチャを適用する。2.2 密度計算式 (Density Formula)最終的な密度 $D_{final}$ は以下のロジックで算出する。$$D_{base} = \text{Heightmap}(x, z) - y$$$$D_{cave} = \text{PerlinNoise3D}(x \cdot scale, y \cdot scale, z \cdot scale)$$$$D_{final} = \text{BooleanSubtract}(D_{base}, D_{cave})$$※ さらに、任意の座標にSDFスタンプがある場合、SmoothUnion や SmoothSubtract で合成する。3. 技術要件・機能詳細3.1 Voxel / Mesh Generationアルゴリズム: Standard Marching Cubes (Look-up Table方式)。最適化:計算負荷が高いため、IJobParallelFor (Unity Job System) と [BurstCompile] を使用して並列化・高速化すること。メインスレッドをブロックしない非同期生成。チャンクシステム:無限地形に対応するため、世界を 16x16x16 (または 32x32x32) のチャンクに分割して管理する。プレイヤー位置に応じて動的に生成・破棄（オブジェクトプーリング）を行う。3.2 SDF Stamp System (スタンプ機能)目的: 意図的な地形（ボス部屋、アーチ、柱）を配置する。データ構造:SDFStamp クラスを定義。プロパティ: Position, Rotation, Scale, Type (Sphere/Box/Custom3DTexture), Operation (Add/Subtract).カスタム形状:数式プリミティブだけでなく、3D Texture (Volume Texture) を読み込み、その値を密度として加算できる機能を実装する。（※初期段階では球体などのプリミティブのみで可）3.3 Shading (マテリアル)Triplanar Mapping:垂直な壁、天井、床に対してテクスチャが伸びずに表示されるシェーダーを作成（Shader Graph または HLSL）。法線（Normal）に基づいて、Top（草/土）、Side（岩）、Bottom（暗い岩）のテクスチャをブレンドする。4. 実装ステップ（AIへの指示順序）Step 1: 基本実装 (Basic Implementation)Job Systemを使用した基本的なMarching Cubesの実装。単純な3D Perlin Noiseだけで「チーズのような穴あき地形」が生成されることを確認する。Step 2: ハイトマップ統合 (Heightmap Integration)Texture2Dを読み込み、その輝度値をY軸の高さとして密度計算に組み込む。「ハイトマップの地面」が表示され、かつStep 1のノイズによって「地下に空洞」ができている状態を作る。Step 3: スタンプシステム (Stamp System)座標と半径を指定すると、地形に「球状の穴」が開く（引き算）、または「球状の岩」が融合する（足し算）機能を実装する。SmoothMin 関数を用いて、地形とスタンプの結合部が滑らかになるようにする。Step 4: 最適化と調整 (Optimization)法線（Normal）の再計算処理（スムージング）。チャンクのLOD（Level of Detail）対応（遠くは粗く、近くは細かく）の検討。5. AIプロンプトテンプレート（以下のテキストをそのままAI開発アシスタントに貼り付けてください）Markdown# Role
+あなたはUnity (C#) のエキスパートエンジニアです。
+特にCompute ShaderやJob System、Procedural Generationに精通しています。
+
+# Goal
+以下の仕様に基づき、Unity上で動作する「ハイブリッド・ボクセル地形生成システム」のプロトタイプを作成してください。
+
+# Specifications
+1. **Core Algorithm**: Marching Cubesを使用。
+2. **Performance**: 必ずUnity Job SystemとBurst Compilerを使用して、計算を並列化・高速化してください。
+3. **Density Function**:
+   - ベース地形: 2Dハイトマップ画像(Texture2D)から高さを取得 (y < height ? solid : air)。
+   - 洞窟生成: 3D Perlin Noiseを使用し、しきい値を超えた部分を「空洞」としてくり抜く。
+   - スタンプ: List<SDFObject> を受け取り、指定座標に球体(Sphere)を追加・削除できる。
+4. **Structure**:
+   - `VoxelChunk`: 1つのチャンクを管理・描画。
+   - `VoxelGenerator`: 全体を管理。
+   - `DensityJob`: 密度計算を行うJob。
+   - `MeshJob`: メッシュ生成を行うJob。
+
+# Deliverables
+- 必要なC#スクリプト（MonoBehaviourおよびJob struct）。
+- Marching Cubesのテーブル配列（長いため省略せず、あるいは参照先を示して実装すること）。
+- テクスチャを表示するための基本的なTriplanar Shader (Shader Graph可)。
+
+まずは **Step 1 & Step 2** として、「ハイトマップをベースに、3Dノイズで洞窟が空いた地形」を生成するスクリプトを作成してください。

@@ -1,22 +1,35 @@
 # AI Context
-- 最終更新: 2025-10-08T21:21:32+09:00
-- 現在のミッション: フェーズ2: Sprint 02 [A3] 段階適用と検証（限定適用→ビルド/シーン動作確認→レポート反映）
-- ブランチ: feat/ui-migration-a3-apply-menus
-- 関連: Issue https://github.com/YuShimoji/VastCore/issues/17
-- 進捗: 30% / ステータス: 着手（Menusスコープでプレビュー/適用確認、レポート更新）
-- 次の中断可能点: PR 作成後、CI 成功待ち
-## 決定事項
-- 共有ワークフロー `ci-smoke.yml`/`sync-issues.yml` を再利用する。
-- Node の簡易 dev server / smoke check を本リポジトリに追加して CI 成功を保証。
-- 本プロジェクトの開発規約は中央ルールに準拠し、差分は `DEVELOPMENT_PROTOCOL.md` に記載。
-- gh CLI 非導入環境の場合の PR 自動化が難しい → 存在すれば自動、なければ手動 PR 案内。
+- 最終更新: 2026-01-23
+- 現在のミッション: Phase 1.5: Audit (Cleaning up & Syncing)
+- ブランチ: feature/TASK_013_dual-grid-terrain-phase1 (merged into main locally)
+- 関連: https://github.com/YuShimoji/VastCore
+- 進捗: TASK_016 (Marching Squares Phase 3) 完了
+- 次の中断可能点: P1.75 Complete Gate
 
-## Backlog（将来提案）
-- Unity Editor 用の headless smoke（起動/アセンブリスキャン）を Actions に追加。
-- Deform パッケージの asmdef 参照検証ジョブ追加。
+## 決定事項
+- Orchestrator Protocol (P0-P6) を厳格に運用中。
+- `MISSION_LOG.md` が進行の SSOT。
+- `HANDOVER.md` が成果物の SSOT。
+
+## Backlog
+- 3D Terrain System (Dual Grid / Voxel) の統合推進。
+
+## タスク管理
+### 直近の完了タスク
+- [done] TASK_013_DualGridTerrainSystem_Phase1 (2026-01-11)
+- [done] TASK_014_MarchingSquaresTerrainSystem_Phase1
+- [done] TASK_015_MarchingSquaresTerrainSystem_Phase2
+- [done] TASK_016_MarchingSquaresTerrainSystem_Phase3
+
+### 次のタスク
+- 統合テストとクリーンアップ (Audit/Gate)
 
 ## タスク管理（短期/中期/長期）
 
 ### 短期（Next）
 
-- [done] 未完了タスクなし（docs/tasks/ に OPEN / IN_PROGRESS なし）
+- [done] TerrainGenerator/HeightMapGenerator Compilation Errors Fix (2026-02-01) - 10件のコンパイルエラー解消、アセンブリ定義整備
+- [pending] SW Doctor Rules Configuration Fix (ref: docs/tasks/TASK_019_FixSwDoctorRulesConfig.md, Status: OPEN)
+- [pending] 3D Voxel Terrain Hybrid System - Phase 1 実装 (ref: docs/tasks/TASK_020_3DVoxelTerrain_Phase1.md, Status: OPEN)
+- [pending] Merge Integration & Verification (ref: docs/tasks/TASK_021_MergeIntegrationCheck.md, Status: BLOCKED (Tests failing to run in batchmode))
+- [in_progress] Release Cyclic Dependencies (ref: docs/tasks/TASK_022_FixCyclicDependencies.md, Status: IN_PROGRESS)

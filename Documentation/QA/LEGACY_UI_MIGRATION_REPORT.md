@@ -1,24 +1,31 @@
 # Legacy UI Migration Report (Dry Run)
 
-- Generated: 2025-12-08 00:40 (local)
+- Generated: 2026-02-02 14:17 (local)
 - Tool: UIMigrationScannerWindow.cs
 - Options: ExcludeExamples=True, ScanScripts=True, ScanScenes=True, ScanPrefabs=True
 
 ## Summary
-- Scripts scanned: 266
-- Scenes scanned: 51
+- Scripts scanned: 470
+- Scenes scanned: 52
 - Prefabs scanned: 5
-- C# using UnityEngine.UI: 8
-- C# OnGUI occurrences: 24
+- C# using UnityEngine.UI: 15
+- C# OnGUI occurrences: 27
 - C# TMPro references: 10
-- C# UI Toolkit references: 1
+- C# UI Toolkit references: 8
 - Scenes with uGUI markers: 3
 - Scenes with UI Toolkit: 0
 - Prefabs with uGUI markers: 0
 - Prefabs with UI Toolkit: 0
 
-### C# files using UnityEngine.UI (8)
+### C# files using UnityEngine.UI (15)
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs
+- Assets/MCPForUnity/Editor/Windows/Components/ClientConfig/McpClientConfigSection.cs
+- Assets/MCPForUnity/Editor/Windows/Components/Connection/McpConnectionSection.cs
+- Assets/MCPForUnity/Editor/Windows/Components/Settings/McpSettingsSection.cs
+- Assets/MCPForUnity/Editor/Windows/Components/Tools/McpToolsSection.cs
+- Assets/MCPForUnity/Editor/Windows/EditorPrefs/EditorPrefsWindow.cs
+- Assets/MCPForUnity/Editor/Windows/MCPForUnityEditorWindow.cs
+- Assets/MCPForUnity/Editor/Windows/MCPSetupWindow.cs
 - Assets/Scripts/Camera/Cinematic/CinematicCameraController.cs
 - Assets/Scripts/Testing/TestManager.cs
 - Assets/Scripts/UI/InGameDebugUI.cs
@@ -27,17 +34,24 @@
 - Assets/Scripts/UI/SliderBasedUISystem.cs
 - Assets/Scripts/UI/SliderUIElement.cs
 
-### C# files with OnGUI (24)
+<<<<<<< Updated upstream
+### C# files with OnGUI (27)
+=======
+### C# files with OnGUI (26)
+>>>>>>> Stashed changes
 - Assets/Editor/StructureGenerator/Core/StructureGeneratorWindow.cs
-- Assets/Editor/Tests/PrimitiveErrorRecoveryTester.cs
+- Assets/Editor/Tools/ProBuilderCsg/ProBuilderCsgScannerWindow.cs
 - Assets/Editor/Tools/UIMigration/UIMigrationApplyWindow.cs
 - Assets/Editor/Tools/UIMigration/UIMigrationRulesDryRunWindow.cs
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs
 - Assets/MapGenerator/Scripts/Editor/HeightmapTerrainGeneratorWindow.cs
 - Assets/Scripts/Core/VastcoreDebugVisualizer.cs
+- Assets/Scripts/Editor/DeformationBrushTool.cs
+- Assets/Scripts/Editor/DeformationEditorWindow.cs
 - Assets/Scripts/Editor/TerrainAssetBrowser.cs
 - Assets/Scripts/Editor/TerrainGenerationWindow.cs
 - Assets/Scripts/Editor/TerrainTemplateEditor.cs
+- Assets/Scripts/Editor/Tests/PrimitiveErrorRecoveryTester.cs
 - Assets/Scripts/Player/AdvancedPlayerController.cs
 - Assets/Scripts/Player/EnhancedGrindSystem.cs
 - Assets/Scripts/Player/Movement/EnhancedClimbingSystem.cs
@@ -47,11 +61,14 @@
 - Assets/Scripts/Terrain/Map/RuntimeGenerationManagerTest.cs
 - Assets/Scripts/Terrain/Map/RuntimeTerrainManagerTest.cs
 - Assets/Scripts/Terrain/Map/TerrainTexturingSystemTest.cs
-- Assets/Scripts/Terrain/Optimization/PerformanceOptimizationController.cs
+<<<<<<< Updated upstream
 - Assets/Scripts/Terrain/PrimitiveTerrainObject.cs
+=======
+>>>>>>> Stashed changes
 - Assets/Scripts/Testing/PerformanceTestingSystem.cs
 - Assets/Scripts/Testing/TestSceneManager.cs
 - Assets/Scripts/Utilities/Utils/VastcoreLogger.cs
+- Assets/Tests/EditMode/AdvancedStructureTestRunner.cs
 
 ### C# files referencing TMPro (10)
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs
@@ -65,8 +82,15 @@
 - Assets/Scripts/UI/SliderUIElement.cs
 - Assets/Scripts/UI/TextClickHandler.cs
 
-### C# files referencing UI Toolkit (1)
+### C# files referencing UI Toolkit (8)
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs
+- Assets/MCPForUnity/Editor/Windows/Components/ClientConfig/McpClientConfigSection.cs
+- Assets/MCPForUnity/Editor/Windows/Components/Connection/McpConnectionSection.cs
+- Assets/MCPForUnity/Editor/Windows/Components/Settings/McpSettingsSection.cs
+- Assets/MCPForUnity/Editor/Windows/Components/Tools/McpToolsSection.cs
+- Assets/MCPForUnity/Editor/Windows/EditorPrefs/EditorPrefsWindow.cs
+- Assets/MCPForUnity/Editor/Windows/MCPForUnityEditorWindow.cs
+- Assets/MCPForUnity/Editor/Windows/MCPSetupWindow.cs
 
 ### Scenes with uGUI markers (3)
 - Assets/_Scenes/2d/DestructibleTerrain2d.unity

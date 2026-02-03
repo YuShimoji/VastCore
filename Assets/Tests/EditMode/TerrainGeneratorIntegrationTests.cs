@@ -134,5 +134,190 @@ namespace Vastcore.Tests.EditMode
             // Assert
             Assert.AreNotEqual(Vector3.zero, highestPoint, "Highest point should not be the zero vector after terrain generation.");
         }
+
+        #region TASK_010/011: Integration Tests for New Features
+
+        [Test]
+        public void GenerateTerrain_NoiseMode_WithSeed_ProducesDeterministicResult()
+        {
+            // Arrange
+            _generator.GenerationMode = TerrainGenerationMode.Noise;
+            _generator.Seed = 12345;
+
+            // Act - First generation
+            IEnumerator routine1 = _generator.GenerateTerrain();
+            while (routine1.MoveNext()) { }
+            var terrain1 = _generator.GeneratedTerrain;
+            var data1 = terrain1.terrainData;
+            float[,] heights1 = data1.GetHeights(0, 0, data1.heightmapResolution, data1.heightmapResolution);
+
+            // Clear and regenerate with same seed
+            if (terrain1 != null)
+            {
+                Object.DestroyImmediate(terrain1.gameObject);
+            }
+            _generator.Seed = 12345; // Same seed
+            IEnumerator routine2 = _generator.GenerateTerrain();
+            while (routine2.MoveNext()) { }
+            var terrain2 = _generator.GeneratedTerrain;
+            var data2 = terrain2.terrainData;
+            float[,] heights2 = data2.GetHeights(0, 0, data2.heightmapResolution, data2.heightmapResolution);
+
+            // Assert - Same seed should produce same result
+            Assert.AreEqual(heights1.GetLength(0), heights2.GetLength(0));
+            Assert.AreEqual(heights1.GetLength(1), heights2.GetLength(1));
+
+            for (int y = 0; y < heights1.GetLength(0); y++)
+            {
+                for (int x = 0; x < heights1.GetLength(1); x++)
+                {
+                    Assert.AreEqual(heights1[y, x], heights2[y, x], 
+                        $"Height at [{y},{x}] should be identical for same seed");
+                }
+            }
+        }
+
+        [Test]
+        public void GenerateTerrain_HeightMapMode_WithChannel_AppliesChannelSelection()
+        {
+            // Arrange: R=1.0, G=0.0, B=0.0 のテクスチャ
+            var texture = new Texture2D(8, 8, TextureFormat.RGBA32, false);
+            var colors = new Color[64];
+            for (int i = 0; i < colors.Length; i++)
+            {
+                colors[i] = new Color(1.0f, 0.0f, 0.0f, 0.0f); // R=1.0, 他=0.0
+            }
+            texture.SetPixels(colors);
+            texture.Apply();
+
+            _generator.GenerationMode = TerrainGenerationMode.HeightMap;
+            _generator.HeightMap = texture;
+            _generator.HeightMapChannel = HeightMapChannel.R;
+
+            // Act
+            IEnumerator routine = _generator.GenerateTerrain();
+            while (routine.MoveNext()) { }
+
+            // Assert
+            Assert.IsNotNull(_generator.GeneratedTerrain, "Terrain should be generated");
+            var data = _generator.GeneratedTerrain.terrainData;
+            
+            // Rチャンネルが使用されているため、高さ値は高いはず
+            bool hasHighValue = false;
+            int res = data.heightmapResolution;
+            for (int y = 0; y < res && !hasHighValue; y++)
+            {
+                for (int x = 0; x < res && !hasHighValue; x++)
+                {
+                    if (data.GetHeight(x, y) > data.size.y * 0.5f) // 高さの50%以上
+                    {
+                        hasHighValue = true;
+                    }
+                }
+            }
+
+            Assert.IsTrue(hasHighValue, "Red channel should produce high terrain when used");
+            
+            Object.DestroyImmediate(texture);
+        }
+
+        [Test]
+        public void GenerateTerrain_HeightMapMode_WithInvertHeight_InvertsTerrain()
+        {
+            // Arrange: グラデーションテクスチャ
+            var texture = new Texture2D(8, 8, TextureFormat.RGBA32, false);
+            for (int y = 0; y < 8; y++)
+            {
+                for (int x = 0; x < 8; x++)
+                {
+                    float value = (float)(x + y) / 14.0f; // 0.0 ~ 1.0 のグラデーション
+                    texture.SetPixel(x, y, new Color(value, value, value));
+                }
+            }
+            texture.Apply();
+
+            _generator.GenerationMode = TerrainGenerationMode.HeightMap;
+            _generator.HeightMap = texture;
+            _generator.InvertHeight = false;
+
+            // Act - Normal generation
+            IEnumerator routine1 = _generator.GenerateTerrain();
+            while (routine1.MoveNext()) { }
+            var terrain1 = _generator.GeneratedTerrain;
+            var data1 = terrain1.terrainData;
+            float maxHeight1 = 0f;
+            int res = data1.heightmapResolution;
+            for (int y = 0; y < res; y++)
+            {
+                for (int x = 0; x < res; x++)
+                {
+                    float h = data1.GetHeight(x, y);
+                    if (h > maxHeight1) maxHeight1 = h;
+                }
+            }
+
+            // Clear and regenerate with InvertHeight = true
+            if (terrain1 != null)
+            {
+                Object.DestroyImmediate(terrain1.gameObject);
+            }
+            _generator.InvertHeight = true;
+            IEnumerator routine2 = _generator.GenerateTerrain();
+            while (routine2.MoveNext()) { }
+            var terrain2 = _generator.GeneratedTerrain;
+            var data2 = terrain2.terrainData;
+            float maxHeight2 = 0f;
+            for (int y = 0; y < res; y++)
+            {
+                for (int x = 0; x < res; x++)
+                {
+                    float h = data2.GetHeight(x, y);
+                    if (h > maxHeight2) maxHeight2 = h;
+                }
+            }
+
+            // Assert - Inverted should have different height distribution
+            // (完全に反転するわけではないが、分布は変化する)
+            Assert.AreNotEqual(maxHeight1, maxHeight2, 
+                "InvertHeight should change the height distribution");
+
+            Object.DestroyImmediate(texture);
+        }
+
+        [Test]
+        public void GenerateTerrain_CombinedMode_WithNewFeatures_WorksCorrectly()
+        {
+            // Arrange: Combined mode with new features
+            var texture = new Texture2D(8, 8, TextureFormat.RGBA32, false);
+            for (int y = 0; y < 8; y++)
+            {
+                for (int x = 0; x < 8; x++)
+                {
+                    texture.SetPixel(x, y, new Color(0.5f, 0.5f, 0.5f));
+                }
+            }
+            texture.Apply();
+
+            _generator.GenerationMode = TerrainGenerationMode.NoiseAndHeightMap;
+            _generator.HeightMap = texture;
+            _generator.HeightMapChannel = HeightMapChannel.Luminance;
+            _generator.Seed = 54321;
+            _generator.UVTiling = new Vector2(2.0f, 2.0f);
+            _generator.InvertHeight = false;
+
+            // Act
+            IEnumerator routine = _generator.GenerateTerrain();
+            while (routine.MoveNext()) { }
+
+            // Assert
+            Assert.IsNotNull(_generator.GeneratedTerrain, 
+                "Combined mode with new features should generate terrain successfully");
+            var data = _generator.GeneratedTerrain.terrainData;
+            Assert.AreEqual(_generator.Resolution, data.heightmapResolution);
+
+            Object.DestroyImmediate(texture);
+        }
+
+        #endregion
     }
 }

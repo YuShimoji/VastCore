@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Profiling;
 using System.Diagnostics;
 
-namespace Vastcore.Utils
+namespace Vastcore.Utilities
 {
     public static class LoadProfiler
     {

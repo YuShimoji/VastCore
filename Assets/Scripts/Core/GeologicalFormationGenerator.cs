@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Vastcore.Core;
-using Vastcore.Utils;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation.Map
 {

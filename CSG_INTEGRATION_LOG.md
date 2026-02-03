@@ -1,8 +1,20 @@
-# 【開発ログ】CSG機能統合プロジェクト完了報告書
+# 【開発ログ】CSG機能統合プロジェクト完了報告書（レガシー）
 
 **作成日:** 2024年12月現在  
 **作成者:** AIアシスタント  
 **プロジェクト:** Vastcore - 巨大構造物プロシージャル生成システム
+
+> ⚠️ **注意**: 本ドキュメントは 2024年当時の統合ログです。現行 `master` のコード/依存関係とは一致しません。
+>
+> - 現行 `master` では `Parabox.CSG` は未導入（`Packages/manifest.json` に依存が無い）
+> - Structure Generator の **OperationsTab は不在**（`StructureGeneratorWindow.cs` でコメントアウト、実装ファイルも不在）
+> - CompositionTab は存在し、CSG実行パスのコードはあるが **条件付き（`#if HAS_PARABOX_CSG`）で無効**
+>
+> 最新状況（正本）は以下を参照してください:
+> - `docs/DEV_HANDOFF_2025-12-12.md`
+> - `docs/ISSUES_BACKLOG.md`
+> - `FUNCTION_TEST_STATUS.md`
+> - `docs/SG1_TEST_VERIFICATION_PLAN.md`
 
 ---
 

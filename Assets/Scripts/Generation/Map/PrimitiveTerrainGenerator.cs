@@ -1,9 +1,11 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
+using Vastcore.Utilities;
+using Vastcore.Generation;
+using Vastcore.Core;
 using UnityEngine.ProBuilder;
 using UnityEngine.ProBuilder.MeshOperations;
-using Vastcore.Generation.Map;
+using System.Linq;
 
 namespace Vastcore.Generation
 {
@@ -74,12 +76,12 @@ namespace Vastcore.Generation
                 {
                     primitiveType = type,
                     position = Vector3.zero,
-                    scale = Vector3.one * TerrainGenerationConstants.DefaultPrimitiveScale,
+                    scale = Vector3.one * 100f, // デフォルト100mサイズ
                     rotation = Quaternion.identity,
                     enableDeformation = true,
-                    deformationRange = Vector3.one * TerrainGenerationConstants.DefaultDeformationRange,
-                    noiseIntensity = TerrainGenerationConstants.DefaultNoiseIntensity,
-                    subdivisionLevel = TerrainGenerationConstants.DefaultSubdivisionLevel,
+                    deformationRange = Vector3.one * 0.1f,
+                    noiseIntensity = 0.05f,
+                    subdivisionLevel = 2,
                     material = null,
                     colorVariation = Color.white,
                     randomizeMaterial = false,
@@ -91,6 +93,7 @@ namespace Vastcore.Generation
         }
         #endregion
 
+       #region メイン生成関数
         /// <summary>
         /// プリミティブ地形オブジェクトを生成
         /// </summary>
@@ -98,11 +101,8 @@ namespace Vastcore.Generation
         {
             try
             {
-                // プリミティブ生成器を取得
-                var generator = PrimitiveGeneratorFactory.CreateGenerator(parameters.primitiveType);
-                
                 // 基本プリミティブメッシュを生成
-                ProBuilderMesh proBuilderMesh = generator.GeneratePrimitive(parameters.scale);
+                ProBuilderMesh proBuilderMesh = GenerateBasePrimitive(parameters.primitiveType, parameters.scale);
                 
                 if (proBuilderMesh == null)
                 {
@@ -119,13 +119,13 @@ namespace Vastcore.Generation
                 // 形状変形を適用
                 if (parameters.enableDeformation)
                 {
-                    PrimitiveModifier.ApplyDeformation(proBuilderMesh, parameters.deformationRange, parameters.noiseIntensity);
+                    ApplyDeformation(proBuilderMesh, parameters);
                 }
 
                 // 細分化を適用
                 if (parameters.subdivisionLevel > 0)
                 {
-                    PrimitiveModifier.ApplySubdivision(proBuilderMesh, parameters.subdivisionLevel);
+                    ApplySubdivision(proBuilderMesh, parameters.subdivisionLevel);
                 }
 
                 // メッシュを最終化
@@ -133,16 +133,16 @@ namespace Vastcore.Generation
                 proBuilderMesh.Refresh();
 
                 // マテリアルを設定
-                PrimitiveConfigurator.SetupMaterial(primitiveObject, parameters);
+                SetupMaterial(primitiveObject, parameters);
 
                 // コライダーを生成
                 if (parameters.generateCollider)
                 {
-                    PrimitiveConfigurator.GenerateCollider(primitiveObject, parameters);
+                    GenerateCollider(primitiveObject, parameters);
                 }
 
                 // インタラクション設定を追加
-                PrimitiveConfigurator.SetupInteractionComponents(primitiveObject, parameters);
+                SetupInteractionComponents(primitiveObject, parameters);
 
                 Debug.Log($"Successfully generated primitive terrain: {parameters.primitiveType} at {parameters.position}");
                 return primitiveObject;
@@ -152,7 +152,8 @@ namespace Vastcore.Generation
                 Debug.LogError($"Error generating primitive terrain {parameters.primitiveType}: {e.Message}");
                 return null;
             }
-        }   
+        }
+        #endregion   
      #region 基本プリミティブ生成
         /// <summary>
         /// 基本プリミティブメッシュを生成
@@ -331,11 +332,7 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateCrystalStructure(Vector3 scale)
         {
             // 新しい高品質結晶構造生成システムを使用
-            // return CrystalStructureGenerator.GenerateCrystalWithGrowthSimulation(scale, true);
-            // フォールバック：基本的な結晶形状
-            var crystal = ShapeGenerator.CreateShape(ShapeType.Cube);
-            crystal.transform.localScale = scale;
-            return crystal;
+            return CrystalStructureGenerator.GenerateCrystalWithGrowthSimulation(scale, true);
         }
 
         /// <summary>
@@ -370,39 +367,39 @@ namespace Vastcore.Generation
         private static ProBuilderMesh GenerateArch(Vector3 scale)
         {
             // 新しい建築学的生成システムを使用してより高品質なアーチを生成
-            // var archParams = ArchitecturalGenerator.ArchitecturalParams.Default(ArchitecturalGenerator.ArchitecturalType.SimpleArch);
-            // archParams.span = scale.x;
-            // archParams.height = scale.y;
-            // archParams.thickness = scale.z;
-            // archParams.position = Vector3.zero;
+            var archParams = ArchitecturalGenerator.ArchitecturalParams.Default(ArchitecturalGenerator.ArchitecturalType.SimpleArch);
+            archParams.span = scale.x;
+            archParams.height = scale.y;
+            archParams.thickness = scale.z;
+            archParams.position = Vector3.zero;
             
             // 建築構造を生成
-            // var archObject = ArchitecturalGenerator.GenerateArchitecturalStructure(archParams);
+            var archObject = ArchitecturalGenerator.GenerateArchitecturalStructure(archParams);
             
-            // if (archObject != null)
-            // {
-            //     // 生成されたオブジェクトからメッシュを取得
-            //     var meshFilter = archObject.GetComponent<MeshFilter>();
-            //     if (meshFilter != null && meshFilter.sharedMesh != null)
-            //     {
-            //         // ProBuilderMeshに変換
-            //         var proBuilderMesh = archObject.GetComponent<ProBuilderMesh>();
-            //         if (proBuilderMesh == null)
-            //         {
-            //             proBuilderMesh = archObject.AddComponent<ProBuilderMesh>();
-            //             // TODO: RebuildFromMesh機能はProBuilder API変更により一時的に無効化
-            //             Debug.LogWarning($"RebuildFromMesh feature is temporarily disabled due to ProBuilder API changes.");
-            //         }
-            //         
-            //         // 一時的なオブジェクトを削除
-            //         UnityEngine.Object.DestroyImmediate(archObject);
-            //         
-            //         return proBuilderMesh;
-            //     }
-            //     
-            //     // フォールバック：オブジェクトが正しく生成されなかった場合
-            //     UnityEngine.Object.DestroyImmediate(archObject);
-            // }
+            if (archObject != null)
+            {
+                // 生成されたオブジェクトからメッシュを取得
+                var meshFilter = archObject.GetComponent<MeshFilter>();
+                if (meshFilter != null && meshFilter.sharedMesh != null)
+                {
+                    // ProBuilderMeshに変換
+                    var proBuilderMesh = archObject.GetComponent<ProBuilderMesh>();
+                    if (proBuilderMesh == null)
+                    {
+                        proBuilderMesh = archObject.AddComponent<ProBuilderMesh>();
+                        // TODO: RebuildFromMesh機能はProBuilder API変更により一時的に無効化
+                        Debug.LogWarning($"RebuildFromMesh feature is temporarily disabled due to ProBuilder API changes.");
+                    }
+                    
+                    // 一時的なオブジェクトを削除
+                    UnityEngine.Object.DestroyImmediate(archObject);
+                    
+                    return proBuilderMesh;
+                }
+                
+                // フォールバック：オブジェクトが正しく生成されなかった場合
+                UnityEngine.Object.DestroyImmediate(archObject);
+            }
             
             // フォールバック：基本的なアーチ形状
             var fallbackArch = ShapeGenerator.CreateShape(ShapeType.Arch);
@@ -610,11 +607,11 @@ namespace Vastcore.Generation
         private static void SetupInteractionComponents(GameObject primitiveObject, PrimitiveGenerationParams parameters)
         {
             // プリミティブ地形オブジェクトコンポーネントを追加
-            // var primitiveComponent = primitiveObject.AddComponent<PrimitiveTerrainObject>();
-            // primitiveComponent.primitiveType = (GenerationPrimitiveType)(int)parameters.primitiveType;
-            // primitiveComponent.isClimbable = parameters.isClimbable;
-            // primitiveComponent.isGrindable = parameters.isGrindable;
-            // primitiveComponent.hasCollision = parameters.generateCollider;
+            var primitiveComponent = primitiveObject.AddComponent<PrimitiveTerrainObject>();
+            primitiveComponent.primitiveType = (GenerationPrimitiveType)(int)parameters.primitiveType;
+            primitiveComponent.isClimbable = parameters.isClimbable;
+            primitiveComponent.isGrindable = parameters.isGrindable;
+            primitiveComponent.hasCollision = parameters.generateCollider;
             
             // 適切なレイヤーを設定
             primitiveObject.layer = LayerMask.NameToLayer("Default"); // 必要に応じて専用レイヤーを作成
@@ -626,7 +623,43 @@ namespace Vastcore.Generation
         /// </summary>
         public static Vector3 GetDefaultScale(PrimitiveType type)
         {
-            return PrimitiveGeneratorFactory.GetDefaultScale(type);
+            switch (type)
+            {
+                case PrimitiveType.Cube:
+                    return new Vector3(100f, 100f, 100f);
+                case PrimitiveType.Sphere:
+                    return new Vector3(80f, 80f, 80f);
+                case PrimitiveType.Cylinder:
+                    return new Vector3(60f, 150f, 60f);
+                case PrimitiveType.Pyramid:
+                    return new Vector3(120f, 200f, 120f);
+                case PrimitiveType.Torus:
+                    return new Vector3(150f, 50f, 150f);
+                case PrimitiveType.Prism:
+                    return new Vector3(80f, 120f, 80f);
+                case PrimitiveType.Cone:
+                    return new Vector3(100f, 180f, 100f);
+                case PrimitiveType.Octahedron:
+                    return new Vector3(90f, 90f, 90f);
+                case PrimitiveType.Crystal:
+                    return new Vector3(70f, 140f, 70f);
+                case PrimitiveType.Monolith:
+                    return new Vector3(40f, 300f, 40f);
+                case PrimitiveType.Arch:
+                    return new Vector3(200f, 150f, 80f);
+                case PrimitiveType.Ring:
+                    return new Vector3(250f, 30f, 250f);
+                case PrimitiveType.Mesa:
+                    return new Vector3(300f, 60f, 300f);
+                case PrimitiveType.Spire:
+                    return new Vector3(30f, 400f, 30f);
+                case PrimitiveType.Boulder:
+                    return new Vector3(120f, 80f, 100f);
+                case PrimitiveType.Formation:
+                    return new Vector3(200f, 100f, 150f);
+                default:
+                    return new Vector3(100f, 100f, 100f);
+            }
         }
 
         /// <summary>

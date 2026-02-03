@@ -5,34 +5,37 @@
         "Vastcore.Core",
         "Vastcore.Utilities",
         "Vastcore.Generation",
-        "Vastcore.MapGenerator",
         "Vastcore.Terrain",
         "Vastcore.Player",
+        "Vastcore.UI",
         "Unity.ProBuilder",
         "Unity.ProBuilder.Editor",
         "Unity.ProBuilder.Csg",
         "Unity.ProBuilder.KdTree",
         "Unity.ProBuilder.Poly2Tri",
         "Unity.ProBuilder.Stl",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "Unity.TestFramework"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
     "versionDefines": [],
     "noEngineReferences": false,
-    "optionalUnityReferences": [
-        "TestAssemblies"
-    ],
     "burstSettings": {
         "enableBurstCompilation": false,
         "enableBurstSafetyChecks": false,
         "enableBurstDebug": false,
         "enableBurstTimings": false,
         "burstCompilationOptions": {}
-    }
+    },
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
 }

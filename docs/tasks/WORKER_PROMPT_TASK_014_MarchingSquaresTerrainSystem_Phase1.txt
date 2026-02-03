@@ -1,0 +1,118 @@
+# Worker Prompt: TASK_014_MarchingSquaresTerrainSystem_Phase1
+
+## 参照
+- チケット: docs/tasks/TASK_014_MarchingSquaresTerrainSystem_Phase1.md
+- スペック: docs/Spec/MarchingSquaresTerrainSystem_Spec.md
+- SSOT: docs/Windsurf_AI_Collab_Rules_latest.md
+- HANDOVER: docs/HANDOVER.md
+- MISSION_LOG: .cursor/MISSION_LOG.md
+
+## 境界
+- Focus Area: 
+  - `Assets/Scripts/Terrain/MarchingSquares/` フォルダ（新規作成）
+    - `MarchingSquaresGrid.cs`: グリッドデータ管理クラス
+    - `MarchingSquaresCalculator.cs`: ビットマスク計算ロジック
+    - `MarchingSquaresGenerator.cs`: メッシュ生成・配置ロジック
+    - `MarchingSquaresDebugVisualizer.cs`: Gizmos描画（MonoBehaviour）
+
+- Forbidden Area:
+  - `.shared-workflows/` 配下（submodule）
+  - `ProjectSettings/`, `Packages/`（必要が出たら必ず相談）
+  - 既存の2Dハイトマップシステム（`Assets/MapGenerator/Scripts/TerrainGenerator.cs` 等）
+  - 既存の六角形グリッドシステム（`Assets/Scripts/Terrain/DualGrid/` 等）
+  - 既存のテストコード（新規テストは追加可）
+
+## DoD
+
+### 必須要件
+
+1. **データ構造とグリッド管理** ✅
+   - `MarchingSquaresGrid.cs`: グリッドデータ管理クラス
+     - `bool[,] mapData`: 各頂点が「埋まっている(True)」か「空(False)」かを保持
+     - `int width, int height`: グリッドサイズ
+     - `float cellSize`: セルサイズ
+     - `SetVertex(int x, int y, bool value)`: 頂点データを設定
+     - `GetVertex(int x, int y)`: 頂点データを取得
+
+2. **Marching Squares アルゴリズム** ✅
+   - `MarchingSquaresCalculator.cs`: ビットマスク計算ロジック
+     - `CalculateIndex(int x, int y)`: セルの4頂点からインデックス（0～15）を算出
+     - `GetCellCorners(int x, int y)`: セルの4頂点の状態を取得
+     - ビット演算: `int index = (tl << 3) | (tr << 2) | (br << 1) | bl;`
+
+3. **プレハブ配置** ✅
+   - `MarchingSquaresGenerator.cs`: メッシュ生成・配置ロジック
+     - `GameObject[] prefabs`: 16種類のプレハブ配列（Inspectorで設定可能）
+     - `GenerateMap()`: 全セルを走査してプレハブを配置
+     - セル位置の計算: `new Vector3(x * cellSize, 0, y * cellSize)`
+     - 既存のプレハブを破棄してから再生成する機能
+
+4. **デバッグ可視化** ✅
+   - `MarchingSquaresDebugVisualizer.cs` (MonoBehaviour): Gizmos描画
+     - `OnDrawGizmos`: グリッド、頂点、セルを可視化
+     - Inspectorで各種設定（Grid Size, Cell Size等）を調整可能
+     - 頂点の状態（True/False）を色分けして表示
+
+### 非機能要件
+
+- **Modularity**: グリッド生成ロジックと、描画ロジックは分離する
+- **Determinism**: 同じグリッドデータに対して常に同じ結果が得られること
+- **Inspector設定**: グリッドサイズ、セルサイズ、プレハブ配列をInspectorで設定可能にする
+
+### テスト要件
+
+- 手動検証: Unity Editor上でグリッドデータを設定し、16種類のパターンが正しく配置されることを確認
+- 手動検証: プリミティブ形状（Cube/Plane）で動作確認
+- 既存テストがすべて成功することを確認
+
+## 停止条件
+
+- 既存の2Dハイトマップシステム、六角形グリッドシステムに破壊的変更が必要になる
+- Marching Squaresアルゴリズムの実装が複雑になりすぎる場合（仕様の見直しが必要）
+- グリッド生成に必要な計算リソースが過大になる場合（最適化が必要）
+
+## 納品先
+- レポート: `docs/inbox/REPORT_TASK_014_MarchingSquaresTerrainSystem_Phase1.md`
+- チケット更新: `docs/tasks/TASK_014_MarchingSquaresTerrainSystem_Phase1.md` → Status: DONE
+
+## 実装方針
+
+### Phase 1.1: データ構造とグリッド管理
+
+1. `MarchingSquaresGrid.cs`: グリッドデータ管理クラス
+   - `bool[,] mapData` の初期化
+   - `SetVertex`, `GetVertex` メソッドの実装
+   - `Clear()` メソッドの実装
+
+### Phase 1.2: Marching Squares アルゴリズム
+
+1. `MarchingSquaresCalculator.cs`: ビットマスク計算ロジック
+   - `CalculateIndex(int x, int y)`: セルの4頂点からインデックス（0～15）を算出
+   - `GetCellCorners(int x, int y)`: セルの4頂点の状態を取得
+   - ビット演算の実装
+
+### Phase 1.3: プレハブ配置
+
+1. `MarchingSquaresGenerator.cs`: メッシュ生成・配置ロジック
+   - `GameObject[] prefabs` のInspector設定
+   - `GenerateMap()`: 全セルを走査してプレハブを配置
+   - 既存のプレハブを破棄してから再生成する機能
+
+### Phase 1.4: デバッグ可視化
+
+1. `MarchingSquaresDebugVisualizer.cs`: Gizmos描画
+   - `OnDrawGizmos`: グリッド、頂点、セルを可視化
+   - Inspectorで各種設定を調整可能
+
+### Phase 1.5: 動作確認
+
+1. Unity Editor上での動作確認
+   - プリミティブ形状（Cube/Plane）で16種類のパターンをテスト
+   - グリッドデータを手動で設定して動作確認
+
+## 注意事項
+
+- 既存の六角形グリッドシステム（`Assets/Scripts/Terrain/DualGrid/`）とは別のフォルダ（`Assets/Scripts/Terrain/MarchingSquares/`）に実装すること
+- プレハブはPhase 1ではプリミティブ形状（Cube/Plane）で代用し、Phase 2以降で本格的なアセットを用意する
+- ビットマスク計算は仕様書の通りに実装すること（TL << 3 | TR << 2 | BR << 1 | BL）
+- Unity Editor上での手動検証が必要（プレハブ配置の確認）

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Generation;
 
 namespace Vastcore.Generation
 {
@@ -26,7 +27,7 @@ namespace Vastcore.Generation
 
         [Header("地形統合")]
         public bool alignToTerrainHeight = true;
-        public Terrain referenceTerrain;
+        public UnityEngine.Terrain referenceTerrain;
         public float groundOffset = 0f;
 
         // 生成されたメッシュ
@@ -81,10 +82,10 @@ namespace Vastcore.Generation
             meshRenderer.material = GetFaceMaterial(face);
 
             // LOD設定
-            // if (faceObject.GetComponent<PrimitiveTerrainObject>() == null)
-            // {
-            //     faceObject.AddComponent<PrimitiveTerrainObject>();
-            // }
+            if (faceObject.GetComponent<PrimitiveTerrainObject>() == null)
+            {
+                faceObject.AddComponent<PrimitiveTerrainObject>();
+            }
 
             generatedMeshes[face] = mesh;
             faceObjects[face] = faceObject;
@@ -249,7 +250,7 @@ namespace Vastcore.Generation
         private Material GetDefaultMaterial()
         {
             // TerrainEngineからマテリアルを取得するか、デフォルトを作成
-            TerrainEngine engine = FindFirstObjectByType<TerrainEngine>();
+            TerrainEngine engine = FindObjectOfType<TerrainEngine>();
             if (engine != null && engine.boxTerrainMaterial != null)
             {
                 return engine.boxTerrainMaterial;

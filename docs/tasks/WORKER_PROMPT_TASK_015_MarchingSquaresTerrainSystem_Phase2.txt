@@ -1,0 +1,113 @@
+# Worker Prompt: TASK_015_MarchingSquaresTerrainSystem_Phase2
+
+## 参照
+- チケット: docs/tasks/TASK_015_MarchingSquaresTerrainSystem_Phase2.md
+- スペック: docs/Spec/MarchingSquaresTerrainSystem_Spec.md（Phase 2セクション）
+- Phase 1実装: Assets/Scripts/Terrain/MarchingSquares/（TASK_014完了）
+- SSOT: docs/Windsurf_AI_Collab_Rules_latest.md
+- HANDOVER: docs/HANDOVER.md
+- MISSION_LOG: .cursor/MISSION_LOG.md
+
+## 境界
+- Focus Area: 
+  - `Assets/Scripts/Terrain/MarchingSquares/` フォルダ（既存フォルダに追加）
+    - `SplineRasterizer.cs`: スプラインラスタライズロジック（新規作成）
+    - `MarchingSquaresGenerator.cs`: スプライン入力対応の拡張（既存ファイルを拡張）
+    - `MarchingSquaresDebugVisualizer.cs`: スプライン可視化の追加（既存ファイルを拡張、オプション）
+
+- Forbidden Area:
+  - `.shared-workflows/` 配下（submodule）
+  - `ProjectSettings/`, `Packages/`（Unity Spline Packageの追加は許可、その他の変更は相談）
+  - 既存の2Dハイトマップシステム（`Assets/MapGenerator/Scripts/TerrainGenerator.cs` 等）
+  - 既存の六角形グリッドシステム（`Assets/Scripts/Terrain/DualGrid/` 等）
+  - Phase 1で実装した既存のMarching Squaresクラス（`MarchingSquaresGrid.cs`, `MarchingSquaresCalculator.cs`）の破壊的変更
+
+## DoD
+
+### 必須要件
+
+1. **スプラインラスタライズ** ✅
+   - `SplineRasterizer.cs`: スプラインをグリッドに焼き込むクラス
+     - `RasterizeSpline(Spline spline, float brushRadius, MarchingSquaresGrid grid)`: スプラインをグリッド座標に変換
+     - `SetGridDataInRange(int gridX, int gridY, float radius, bool value, MarchingSquaresGrid grid)`: ブラシ範囲内の頂点を設定
+     - スプライン上の点を一定間隔でサンプリング（`samplingInterval` パラメータ）
+     - ブラシ半径内の頂点を `true` に設定（埋める）または `false` に設定（削除）
+
+2. **Unity Spline Package 統合** ✅
+   - Unity Spline Packageを使用してスプラインを取得
+   - `Unity.Splines` 名前空間を使用
+   - `SplineContainer` コンポーネントからスプラインを取得
+   - スプライン上の点を `SplineUtility.GetPointAt` 等でサンプリング
+
+3. **MarchingSquaresGenerator の拡張** ✅
+   - `SplineContainer` への参照を追加（Inspectorで設定可能）
+   - `RasterizeFromSpline()` メソッドを追加
+   - スプラインラスタライズ後に `GenerateMap()` を自動実行するオプション
+
+4. **エラーハンドリング** ✅
+   - Unity Spline Packageがインストールされていない場合のエラーメッセージ
+   - スプラインが null の場合のエラーハンドリング
+   - グリッド範囲外アクセスのチェック
+
+### 非機能要件
+
+- **Modularity**: スプラインラスタライズロジックは独立したクラスとして実装
+- **Inspector設定**: ブラシ半径、サンプリング間隔をInspectorで調整可能
+- **パフォーマンス**: 大規模スプラインでも許容可能な処理時間（最適化はPhase 4で実施）
+
+### テスト要件
+
+- 手動検証: Unity Editor上でスプラインを描き、グリッドデータに正しく反映されることを確認
+- 手動検証: スプラインラスタライズ後に地形が正しく生成されることを確認
+- 既存テストがすべて成功することを確認
+
+### Unity固有の制約
+
+- Unity Editor上での手動検証が必要（スプライン描画と地形生成の確認）
+- Unity Spline Packageのインストールが必要（Package Managerから追加）
+- EditorOnlyコード（`#if UNITY_EDITOR`）の適切な分離を考慮する
+- `SplineContainer` コンポーネントの参照はInspectorで設定可能にする
+
+## 停止条件
+
+- Unity Spline Packageがインストールできない、または互換性の問題がある
+- スプラインラスタライズの実装が複雑になりすぎる場合（仕様の見直しが必要）
+- 既存のMarching Squaresシステムに破壊的変更が必要になる
+
+## 納品先
+- レポート: `docs/inbox/REPORT_TASK_015_MarchingSquaresTerrainSystem_Phase2.md`
+- チケット更新: `docs/tasks/TASK_015_MarchingSquaresTerrainSystem_Phase2.md` → Status: DONE
+
+## 実装方針
+
+### Phase 2.1: スプラインラスタライズロジック
+
+1. `SplineRasterizer.cs`: スプラインラスタライズクラス
+   - `RasterizeSpline` メソッドの実装
+   - スプライン上の点を一定間隔でサンプリング
+   - ブラシ範囲内の頂点を設定
+
+### Phase 2.2: Unity Spline Package 統合
+
+1. Unity Spline Packageのインストール確認
+2. `SplineContainer` コンポーネントからスプラインを取得
+3. `SplineUtility` を使用してスプライン上の点をサンプリング
+
+### Phase 2.3: MarchingSquaresGenerator の拡張
+
+1. `SplineContainer` への参照を追加
+2. `RasterizeFromSpline()` メソッドを実装
+3. Inspectorで設定可能にする
+
+### Phase 2.4: 動作確認
+
+1. Unity Editor上での動作確認
+   - スプラインを描いてグリッドデータに反映
+   - 地形が正しく生成されることを確認
+
+## 注意事項
+
+- Unity Spline Packageは Package Manager から追加する必要がある（`com.unity.splines`）
+- スプラインラスタライズは既存の `MarchingSquaresGrid` クラスを使用し、破壊的変更は行わない
+- 既存のPhase 1実装（`MarchingSquaresGrid.cs`, `MarchingSquaresCalculator.cs`）は変更しない
+- スプライン可視化機能はオプション（実装可能であれば追加）

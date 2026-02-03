@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using Vastcore.Terrain.Map;
+using Vastcore.Core;
 
 namespace Vastcore.Generation
 {
@@ -11,29 +11,23 @@ namespace Vastcore.Generation
     /// </summary>
     public class TerrainTexturingSystem : MonoBehaviour
     {
-        #region Altitude-based Texturing
-        [Header("Altitude-based Texturing")]
+        #region 設定パラメータ
+        [Header("高度ベーステクスチャリング")]
         public List<AltitudeTextureLayer> altitudeLayers = new List<AltitudeTextureLayer>();
         public AnimationCurve altitudeBlendCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
         public float altitudeBlendSmoothness = 0.1f;
-        #endregion
-
-        #region Slope-based Texturing
-        [Header("Slope-based Texturing")]
+        
+        [Header("傾斜ベーステクスチャリング")]
         public List<SlopeTextureLayer> slopeLayers = new List<SlopeTextureLayer>();
         public AnimationCurve slopeBlendCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
         public float slopeBlendSmoothness = 5f;
-        #endregion
-
-        #region Dynamic Material Blending
-        [Header("Dynamic Material Blending")]
+        
+        [Header("動的マテリアルブレンディング")]
         public bool enableDynamicBlending = true;
         public float blendTransitionSpeed = 2f;
         public int maxTextureBlends = 4;
-        #endregion
-
-        #region LOD Texture System
-        [Header("LOD Texture System")]
+        
+        [Header("LODテクスチャシステム")]
         public bool enableLODTextures = true;
         public float[] lodDistances = { 500f, 1000f, 2000f };
         public List<LODTextureSet> lodTextureSets = new List<LODTextureSet>();
@@ -68,7 +62,23 @@ namespace Vastcore.Generation
             Debug.Log("Initializing TerrainTexturingSystem...");
             
             // プレイヤーTransformを取得
-            playerTransform = Vastcore.Core.PlayerTransformResolver.Resolve(playerTransform);
+            if (playerTransform == null)
+            {
+                var player = FindFirstObjectByType<IPlayerController>();
+                if (player != null)
+                {
+                    playerTransform = player.Transform;
+                }
+                else
+                {
+                    // フォールバック: 他の方法でプレイヤーを検索
+                    var playerObj = GameObject.FindGameObjectWithTag("Player");
+                    if (playerObj != null)
+                    {
+                        playerTransform = playerObj.transform;
+                    }
+                }
+            }
             
             // MaterialPropertyBlockを初期化
             materialPropertyBlock = new MaterialPropertyBlock();

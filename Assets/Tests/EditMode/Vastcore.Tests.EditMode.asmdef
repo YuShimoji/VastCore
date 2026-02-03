@@ -2,30 +2,33 @@
   "name": "Vastcore.Tests.EditMode",
   "rootNamespace": "Vastcore.Tests.EditMode",
   "references": [
+    "Vastcore.Editor.StructureGenerator",
     "Vastcore.Core",
     "Vastcore.Utilities",
     "Vastcore.Generation",
-    "Vastcore.MapGenerator",
     "Vastcore.Terrain",
     "Vastcore.Player",
+    "Vastcore.UI",
     "Unity.ProBuilder",
-    "Unity.TextMeshPro",
-    "UnityEngine.TestRunner",
-    "UnityEditor.TestRunner"
+    "Unity.ProBuilder.Editor",
+    "Vastcore.Testing"
   ],
-  "includePlatforms": [
-    "Editor"
-  ],
+  "includePlatforms": ["Editor"],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
-  "overrideReferences": true,
-  "precompiledReferences": [
-    "nunit.framework.dll"
-  ],
+  "overrideReferences": false,
+  "precompiledReferences": [],
   "autoReferenced": false,
-  "defineConstraints": [
-    "UNITY_INCLUDE_TESTS"
+  "optionalUnityReferences": [
+    "TestAssemblies"
   ],
-  "versionDefines": [],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "versionDefines": [
+    {
+      "name": "com.unity.probuilder",
+      "expression": "6.0.0",
+      "define": "HAS_PROBUILDER"
+    }
+  ],
   "noEngineReferences": false
 }

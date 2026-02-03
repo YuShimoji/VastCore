@@ -1,0 +1,22 @@
+{
+    "name": "Vastcore.Editor.MapGenerator",
+    "rootNamespace": "Vastcore.Editor.Generation",
+    "references": [
+        "Vastcore.Generation",
+        "Vastcore.Utilities",
+        "Vastcore.Core",
+        "Unity.ProBuilder",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,15 +1,30 @@
-# Project Handover & Status
+# Handover
 
-**Timestamp**: 2026-01-03T04:26:03+09:00
-**Actor**: SetupAgent (Cursor)
-**Type**: Handover
-**Mode**: orchestration
+## Summary of Completed Tasks
 
-## 基本情報
+### TASK_018: Merge Conflict Resolution (2025-01-12)
 
-- **最終更新**: 2026-01-03T04:26:03+09:00
-- **更新者**: SetupAgent (Cursor)
+- **Result**: Resolved 28 merge conflicts from `origin/master`.
+- **Method**: Mostly used `develop` branch versions (`git checkout --ours`).
+- **Issues**: Potential namespace issues (`Vastcore.Utils` vs `Vastcore.Utilities`).
+- **Next Steps**:
+  - Run compilation in Unity Editor.
+  - Verify integration.
 
+## Current State
+
+- **Branch**: `develop` (synced with `origin/develop` and merged `origin/master`)
+- **Blockers**: None immediately visible.
+
+## Recent Completions
+
+### TASK_023: Merge Conflict Resolution (2026-01-22)
+
+- **Result**: Confirmed `origin/main` is merged into `develop`.
+- **Method**: Verified merge commit `a9e1445`.
+- **Status**: DONE.
+
+<<<<<<< Updated upstream
 ## GitHubAutoApprove
 
 GitHubAutoApprove: false
@@ -46,6 +61,16 @@ GitHubAutoApprove: false
 - **TASK_002_OnboardingRefStandard**: DONE — 導入手順標準化、`finalize-phase.js` 実装、プロトコル改訂完了。
 - **SSOT フォールバック対応**: COMPLETED
 - **レポート検証/監査機能**: COMPLETED
+- **TASK_010_TerrainGenerationWindow_v0**: DONE — HeightMapChannel/Invert/UV/Seed対応完了、Unity Editor検証済み
+- **TASK_011_HeightMapGenerator**: DONE — 決定論/チャンネル/UV/反転対応完了
+- **改善提案実装**: COMPLETED — HeightMap Read/Write自動化UI、最短検証チェックリスト追加
+- **3D地形システムバックログ**: CREATED — `docs/tasks/BACKLOG_3D_VoxelTerrain_HybridSystem.md`
+- **統合テスト強化**: COMPLETED — 新規10テスト追加、全50テスト成功確認済み（2026-01-04）
+- **TASK_012_TerrainGenerationWindow_PresetManagement**: DONE — プリセット管理機能追加完了、Unity Editor手動検証完了、push完了（2026-01-05）
+- **TASK_013_DualGridTerrainSystem_Phase1**: DONE — Dual Grid Terrain System基盤実装完了、8ファイル作成（約1,180行）、コンパイル成功、Unity Editor手動検証待ち（2026-01-11）
+- **TASK_014_MarchingSquaresTerrainSystem_Phase1**: DONE — Dual Grid + Marching Squares基盤実装完了。16種プレハブ配置・デバッグ可視化対応。
+- **TASK_015_MarchingSquaresTerrainSystem_Phase2**: DONE — Spline入力対応完了。Unity Spline Package統合、ラスタライズ実装。実動作確認中にAI Toolkitとの競合判明（解決策提示済み）。
+- **TASK_016_MarchingSquaresTerrainSystem_Phase3**: DONE — レイヤー構造（Height/Biome/Road/Building）対応完了。バイオーム遷移・高さマップ対応実装。
 
 ## ブロッカー
 
@@ -57,6 +82,10 @@ GitHubAutoApprove: false
 - worker-monitor.js 導入と AI_CONTEXT.md 初期化スクリプトの検討。
 - `finalize-phase.js` の HANDOVER 自動更新機能追加（現在は Task のみ）。
 - `orchestrator-audit.js` のアーカイブ対応（docs/reports も監査対象にする）。
+- **3D地形システム（ハイブリッド・ボクセル）**: `docs/tasks/BACKLOG_3D_VoxelTerrain_HybridSystem.md` 参照
+  - Phase 1-5の実装ロードマップ
+  - 既存2Dシステムとの統合方針
+  - より優れたアプローチ検討（Dual Contouring / Compute Shader / Sparse Voxel Octree）
 
 ## Verification
 
@@ -66,9 +95,10 @@ GitHubAutoApprove: false
 
 ## Latest Orchestrator Report
 
-- File: docs/inbox/REPORT_ORCH_20251230_0528.md
-- Summary: SSOT Entrypoint Unification & Workflow Stabilization Complete
-- REPORT テンプレへ Duration/Changes/Risk を追記し、docs/windsurf_workflow/ORCHESTRATOR_PROTOCOL.md に Phase 4.1 を追加済み。
+- File: docs/reports/REPORT_ORCH_2026-01-27.md
+- Summary: Project Audit & Shared Workflows Check. Task 010-016 (2D Terrain) verified DONE. Screenshot reporting rule added.
+- Outlook: Finalize Report, Git Commit, 3D Voxel Plan.
+
 
 ## Integration Notes
 
@@ -84,16 +114,12 @@ GitHubAutoApprove: false
 - REPORT_ORCH CLI: docs/inbox への生成・自動検証・HANDOVER 同期まで一括対応できるようになり、手動更新の抜け漏れを排除。
 - 最新テンプレを使ったレポート（0107/0119/0126）へ Duration/Changes/Risk を追記を開始し、監査警告の原因を解消中。
 
-## Latest Orchestrator Report
-
-- File: docs/inbox/REPORT_ORCH_20251229_0943.md
-- Summary: TASK_001/TASK_002完了。SSOT一本化、CLI拡張、監査ロジック是正を実施。
-
 ## Outlook
 
-- Short-term: 旧 REPORT の欄補完・validator/監査再実行・git push。
-- Mid-term: dev-check に REPORT_ORCH CLI の smoke テストと AI_CONTEXT 検証を組み込み、逸脱を自動検出。
-- Long-term: CLI/監査フローを他リポジトリへ展開し、False Completion 防止の仕組みを共通運用に昇華。
+- Short-term: レポート確定、Gitコミット、3D Voxel計画。
+- Mid-term: 3D Voxel Terrain Hybrid System (Phase 1-5)。
+- Long-term: 2D/3D統合、パフォーマンス最適化。
+
 
 ## Proposals
 
@@ -105,12 +131,52 @@ GitHubAutoApprove: false
 
 ## リスク
 
+- **未Pushコミット164件**（develop: 40件、feature/TASK_013: 125件）が残存。Push戦略の決定が必要。
+- `Assets/MCPForUnity/` 削除が未完了（TASK_028は"DONE"だが実際は未削除）。
+- 未追跡ファイル7件が未コミット（TASK_026-028チケット、Legacy asmdef等）。
 - AI_CONTEXT.md 欠落で Worker 監査が盲点となり、BLOCKED 検知が遅れる恐れ。
-- REPORT_ORCH CLI 導入前に手動保存を行うと検証漏れ・フォーマット逸脱が再発する可能性。
-- 旧レポートの Risk/Changes 欄が空のまま残ると監査が継続的に警告を出し、他メンバーが参照した際に誤った完了認識につながる。
-- AI_CONTEXT の Worker 状態が pending のままなので、完了後に更新しないと次フェーズで警告が再発する。
+
 
 ## 所要時間
 
 - 本フェーズ作業（テンプレ整備・スクリプト強化・監査対応）: 約 2.0h
 - Duration: 本サイクル 1.2h（CLI改修・HANDOVER同期確認・テンプレ更新・レポート手直し開始）。
+
+## In Progress
+
+### TASK_022: Fix Cyclic Dependencies (2026-01-29)
+
+- **Result**: Resolved cyclic dependencies between `Vastcore.*` and `Assembly-CSharp`.
+- **Method**:
+  - Fixed `Vastcore.Editor.Root.asmdef`: Removed non-existent `Vastcore.MapGenerator` reference, set `autoReferenced: false`.
+  - Fixed `Vastcore.Tests.PlayMode.asmdef`: Set `autoReferenced: false`.
+- **Status**: DONE.
+
+## Latest Update (2026-02-02)
+
+- **Goal**: 作業状況の反映（申し送り更新 + 変更をリモートmainへ反映）
+- **Working Branch**: `develop`
+
+### What Changed (Uncommitted at the time of writing)
+
+- `Documentation/QA/LEGACY_UI_MIGRATION_REPORT.md`
+  - Dry-runレポートを最新化（スキャン結果の更新）
+- `ProjectSettings/*.asset` (LFS pointers)
+  - Unityが更新したProjectSettings系の差分が発生
+- `ProjectSettings/Packages/com.unity.probuilder/Settings.json`
+  - ProBuilder設定ファイルの差分が発生
+- `Assets/*/*.meta`
+  - Unityが生成したmetaの差分が発生
+
+### Investigation Notes
+
+- UI移行（Legacy UI Migration）については、Dry-runスキャナ生成のレポートを更新済み。
+- `.gitignore` はローカル環境でツール上の読取に問題がある可能性があるため、内容確認は `git show HEAD:.gitignore` 経由が確実。
+- ルート直下に `debug.log` が生成される場合がある（Unity/Chromium系ログ想定）。コミット対象外。
+
+### Next Steps
+
+- `origin/develop` を取り込み、`develop` を最新化
+- ローカルPre-flight（可能な範囲でUnity EditMode/PlayModeテスト）
+- `develop` の変更を `main` に反映し、`origin/main` へ push
+- `origin/main` と突合して反映漏れが無いことを確認

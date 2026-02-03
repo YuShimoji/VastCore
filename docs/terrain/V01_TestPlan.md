@@ -132,6 +132,51 @@ Unity バージョン: ____
 
 ---
 
+## 最短手動検証チェックリスト（10分）
+
+Unity Editor上で「壊れていない」ことを最短で確認するためのチェックリスト。
+
+### 前提
+- `feature/TASK_010_terrain-window-v0` ブランチで作業
+- Unity Editor がエラーなく起動していること
+
+### 検証手順（順番通り）
+
+1. **Window起動**
+   - `Tools > Vastcore > Terrain > Terrain Generation (v0)` を開く
+   - エラーなく開けること
+
+2. **Noise生成（Seed再現性）**
+   - `Generation Mode = Noise`
+   - `Seed = 123` → `Generate Preview`
+   - 生成後、Terrainを選択して `Tools > Vastcore > Terrain > Debug > Log Heightmap Hash`
+   - `Clear Terrain` → 同じ `Seed=123` で再生成 → **Hashが一致**
+   - `Seed=456` で生成 → **Hashが変化**
+
+3. **HeightMap生成（Read/Write自動化）**
+   - `Generation Mode = HeightMap`
+   - HeightMap Texture を設定
+   - **Read/Write未対応の場合**: Window内の「Enable Read/Write for HeightMap」ボタンを押す
+   - `Generate Preview` → エラーなく生成されること
+
+4. **HeightMap機能（Channel/UV/Invert）**
+   - `Channel` を `R/G/B/A/Luminance` で切替→生成し、**形状が変わる/期待通り**
+   - `UV Tiling = (2,2)` → **繰り返しが増える**
+   - `UV Offset = (0.25, 0.25)` → **模様がずれる**
+   - `Invert Height = ON` → **高低が反転**
+
+5. **NoiseAndHeightMap（複合）**
+   - `Generation Mode = NoiseAndHeightMap`
+   - 上記の `Channel/UV/Invert/Seed` を少し変えながら生成
+   - **エラーなく動き、反映が効いている**
+
+### 完了判定
+- 上記5項目すべてがエラーなく完了
+- HashログでSeed再現性が確認できる
+- HeightMap Read/Write自動化が動作する
+
+---
+
 ## 自動テスト計画 (EditMode)
 
 ### 現状

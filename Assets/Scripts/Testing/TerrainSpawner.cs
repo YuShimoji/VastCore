@@ -42,7 +42,7 @@ namespace Vastcore.Testing
             terrainGenerator.Persistence = persistence;
             terrainGenerator.Lacunarity = lacunarity;
             terrainGenerator.TerrainMaterial = terrainMaterial;
-            terrainGenerator.GenerationMode = TerrainGenerationMode.Noise;
+            terrainGenerator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
         }
 
         [ContextMenu("Generate Terrain")]
@@ -60,7 +60,7 @@ namespace Vastcore.Testing
         [ContextMenu("Clear Terrain")]
         public void ClearTerrain()
         {
-            UnityEngine.Terrain existingTerrain = UnityEngine.Object.FindFirstObjectByType<UnityEngine.Terrain>();
+            Terrain existingTerrain = FindObjectOfType<Terrain>();
             if (existingTerrain != null)
             {
                 DestroyImmediate(existingTerrain.gameObject);

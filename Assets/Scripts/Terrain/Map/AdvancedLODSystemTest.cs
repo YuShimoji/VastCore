@@ -1,8 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 using NUnit.Framework;
-using Vastcore.Terrain;
-using Vastcore.Core;
 using Vastcore.Generation;
 
 namespace Vastcore.Generation.Map
@@ -353,11 +351,14 @@ namespace Vastcore.Generation.Map
                 tileObject.transform.position = new Vector3(i * 200f, 0, 0);
                 tileObject.transform.localScale = Vector3.one * 20f;
                 
-                var tile = TerrainTile.Create(new Vector2Int(i, 0), 1000f);
-                tile.tileObject = tileObject;
-                tile.terrainMesh = tileObject.GetComponent<MeshFilter>().mesh;
-                tile.heightmap = GenerateTestHeightData(64);
-                tile.state = TerrainTile.TileState.Active;
+                var tile = new TerrainTile
+                {
+                    coordinate = new Vector2Int(i, 0),
+                    tileObject = tileObject,
+                    terrainMesh = tileObject.GetComponent<MeshFilter>().mesh,
+                    heightmap = GenerateTestHeightData(64),
+                    state = TerrainTile.TileState.Active
+                };
                 
                 tiles.Add(tile);
                 testObjects.Add(tileObject);
@@ -369,9 +370,9 @@ namespace Vastcore.Generation.Map
         /// <summary>
         /// テストプリミティブオブジェクトを作成
         /// </summary>
-        private List<Vastcore.Terrain.Map.PrimitiveTerrainObject> CreateTestPrimitiveObjects(int count)
+        private List<PrimitiveTerrainObject> CreateTestPrimitiveObjects(int count)
         {
-            var primitives = new List<Vastcore.Terrain.Map.PrimitiveTerrainObject>();
+            var primitives = new List<PrimitiveTerrainObject>();
             
             for (int i = 0; i < count; i++)
             {
@@ -380,9 +381,9 @@ namespace Vastcore.Generation.Map
                 primitiveObject.transform.position = new Vector3(i * 150f, 10f, Random.Range(-100f, 100f));
                 primitiveObject.transform.localScale = Vector3.one * Random.Range(5f, 20f);
                 
-                var primitive = primitiveObject.AddComponent<Vastcore.Terrain.Map.PrimitiveTerrainObject>();
-                primitive.primitiveType = (GenerationPrimitiveType)(int)(PrimitiveTerrainGenerator.PrimitiveType)(i % 4);
-                primitive.scale = primitiveObject.transform.localScale;
+                var primitive = primitiveObject.AddComponent<PrimitiveTerrainObject>();
+                primitive.primitiveType = (GenerationPrimitiveType)((PrimitiveTerrainGenerator.PrimitiveType)(i % 4));
+                primitive.scale = primitiveObject.transform.localScale.magnitude;
                 primitive.enableLOD = true;
                 
                 primitives.Add(primitive);

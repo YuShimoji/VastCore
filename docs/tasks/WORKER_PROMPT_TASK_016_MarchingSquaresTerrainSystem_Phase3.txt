@@ -1,0 +1,144 @@
+# Worker Prompt: TASK_016_MarchingSquaresTerrainSystem_Phase3
+
+## 参照
+- チケット: docs/tasks/TASK_016_MarchingSquaresTerrainSystem_Phase3.md
+- スペック: docs/Spec/MarchingSquaresTerrainSystem_Spec.md（Phase 3セクション）
+- Phase 1実装: Assets/Scripts/Terrain/MarchingSquares/（TASK_014完了）
+- Phase 2実装: Assets/Scripts/Terrain/MarchingSquares/（TASK_015完了、実動作確認待ち）
+- SSOT: docs/Windsurf_AI_Collab_Rules_latest.md
+- HANDOVER: docs/HANDOVER.md
+- MISSION_LOG: .cursor/MISSION_LOG.md
+
+## 境界
+- Focus Area: 
+  - `Assets/Scripts/Terrain/MarchingSquares/` フォルダ（既存フォルダに追加）
+    - `GridPoint.cs`: 拡張データ構造（新規作成）
+    - `MarchingSquaresGrid.cs`: `GridPoint[,]` サポートの拡張（既存ファイルを拡張）
+    - `BiomeTransitionCalculator.cs`: バイオーム遷移ロジック（新規作成）
+    - `HeightMapProcessor.cs`: 高さマップ処理ロジック（新規作成）
+    - `MarchingSquaresGenerator.cs`: レイヤー構造対応の拡張（既存ファイルを拡張）
+
+- Forbidden Area:
+  - `.shared-workflows/` 配下（submodule）
+  - `ProjectSettings/`, `Packages/`（必要が出たら必ず相談）
+  - 既存の2Dハイトマップシステム（`Assets/MapGenerator/Scripts/TerrainGenerator.cs` 等）
+  - 既存の六角形グリッドシステム（`Assets/Scripts/Terrain/DualGrid/` 等）
+  - Phase 1/2で実装した既存のMarching Squaresクラス（`MarchingSquaresCalculator.cs`, `SplineRasterizer.cs`）の破壊的変更
+  - 既存の`bool[,]`ベースのグリッドデータ（後方互換性のため維持）
+
+## DoD
+
+### 必須要件
+
+1. **拡張データ構造** ✅
+   - `GridPoint.cs`: 拡張データ構造クラス
+     - `Height`: 高さ値（float、デフォルト: 0.0）
+     - `BiomeId`: バイオームID（int、デフォルト: 0）
+     - `RoadId`: 道路ID（int、デフォルト: 0、0=道路なし）
+     - `BuildingId`: 建物ID（int、デフォルト: 0、0=建物なし）
+     - `IsFilled`: 埋まっているか（bool、既存のbool値と互換）
+   - `MarchingSquaresGrid.cs`: `GridPoint[,]` サポートの拡張
+     - `GridPoint[,] m_ExtendedData`: 拡張データ配列（オプション）
+     - `bool UseExtendedData`: 拡張データを使用するか（デフォルト: false、後方互換性）
+     - `GetGridPoint(int x, int y)`: GridPointを取得
+     - `SetGridPoint(int x, int y, GridPoint point)`: GridPointを設定
+
+2. **バイオーム遷移** ✅
+   - `BiomeTransitionCalculator.cs`: バイオーム遷移ロジック
+     - `CalculateTransition(int x, int y, MarchingSquaresGrid grid)`: セルのバイオーム遷移を計算
+     - `GetTransitionType(int biomeId1, int biomeId2)`: 遷移タイプを取得（例: 海→陸、陸→山）
+     - `SelectBoundaryModel(int transitionType)`: 境界線モデルを選択
+   - 隣接セルのバイオームIDを比較し、境界を検出
+   - 境界線モデルの選択ロジック（プレハブ配列から選択）
+
+3. **高さマップ対応** ✅
+   - `HeightMapProcessor.cs`: 高さマップ処理ロジック
+     - `ProcessHeightMap(Texture2D heightMap, MarchingSquaresGrid grid)`: 高さマップからHeightを設定
+     - `CalculateHeightAt(int x, int y, Texture2D heightMap)`: グリッド座標での高さを計算
+     - `SelectSlopeModel(float height1, float height2, float height3, float height4)`: スロープモデルを選択
+   - 高さマップからHeightを設定
+   - 崖・スロープモデルの選択ロジック（高低差に基づく）
+
+4. **MarchingSquaresGenerator の拡張** ✅
+   - レイヤー構造対応の拡張
+     - `GenerateMapWithLayers()`: レイヤー構造を考慮した地形生成
+     - レイヤー優先順位: 地形ベース → 道路レイヤー → 建物レイヤー
+   - Inspector設定項目の追加:
+     - `UseExtendedData`: 拡張データを使用するか
+     - `HeightMap`: 高さマップ（Texture2D、オプション）
+     - `BiomeTransitionModels`: バイオーム遷移モデル配列
+     - `SlopeModels`: スロープモデル配列
+
+### 非機能要件
+
+- **後方互換性**: 既存の`bool[,]`ベースのグリッドデータは維持（`UseExtendedData = false`の場合）
+- **Modularity**: 拡張データ構造、バイオーム遷移、高さマップ処理は独立したクラスとして実装
+- **Inspector設定**: 拡張データの使用、高さマップ、遷移モデルをInspectorで設定可能
+- **パフォーマンス**: 拡張データ使用時も許容可能な処理時間（最適化はPhase 4で実施）
+
+### テスト要件
+
+- 手動検証: Unity Editor上で拡張データ構造が正しく動作することを確認
+- 手動検証: バイオーム遷移が正しく検出され、適切なモデルが選択されることを確認
+- 手動検証: 高さマップからHeightが正しく設定され、崖・スロープモデルが選択されることを確認
+- 既存テストがすべて成功することを確認
+
+### Unity固有の制約
+
+- Unity Editor上での手動検証が必要（拡張データ構造、バイオーム遷移、高さマップ処理の確認）
+- EditorOnlyコード（`#if UNITY_EDITOR`）の適切な分離を考慮する
+- ScriptableObject、Texture2D等のUnity API使用時の注意点を明記する
+
+## 停止条件
+
+- 拡張データ構造の実装が複雑になりすぎる場合（仕様の見直しが必要）
+- 既存のMarching Squaresシステムに破壊的変更が必要になる
+- 高さマップ処理に必要な計算リソースが過大になる場合（最適化が必要）
+
+## 納品先
+- レポート: `docs/inbox/REPORT_TASK_016_MarchingSquaresTerrainSystem_Phase3.md`
+- チケット更新: `docs/tasks/TASK_016_MarchingSquaresTerrainSystem_Phase3.md` → Status: DONE
+
+## 実装方針
+
+### Phase 3.1: 拡張データ構造
+
+1. `GridPoint.cs`: 拡張データ構造クラス
+   - Height, BiomeId, RoadId, BuildingIdプロパティ
+   - IsFilledプロパティ（既存のbool値と互換）
+
+2. `MarchingSquaresGrid.cs`: `GridPoint[,]` サポートの拡張
+   - `UseExtendedData`フラグの追加
+   - `GridPoint[,]`配列の追加
+   - 既存の`bool[,]`との互換性維持
+
+### Phase 3.2: バイオーム遷移
+
+1. `BiomeTransitionCalculator.cs`: バイオーム遷移ロジック
+   - 隣接セルのバイオームID比較
+   - 遷移タイプの判定
+   - 境界線モデルの選択
+
+### Phase 3.3: 高さマップ対応
+
+1. `HeightMapProcessor.cs`: 高さマップ処理ロジック
+   - 高さマップからHeightを設定
+   - 崖・スロープモデルの選択ロジック
+
+2. `MarchingSquaresGenerator.cs`: レイヤー構造対応の拡張
+   - `GenerateMapWithLayers()`メソッドの実装
+   - レイヤー優先順位の実装
+
+### Phase 3.4: 動作確認
+
+1. Unity Editor上での動作確認
+   - 拡張データ構造の動作確認
+   - バイオーム遷移の動作確認
+   - 高さマップ処理の動作確認
+
+## 注意事項
+
+- 後方互換性を維持するため、既存の`bool[,]`ベースのグリッドデータは維持する
+- `UseExtendedData = false`の場合、既存の動作を維持する
+- TASK_015の実動作確認結果に依存せず、独立して実装可能
+- 拡張データ構造はオプション機能として実装し、既存システムに影響を与えない

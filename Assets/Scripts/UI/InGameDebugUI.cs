@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
 using System.Collections;
+using UnityEngine.InputSystem;
 
 namespace Vastcore.UI
 {
@@ -14,7 +15,7 @@ namespace Vastcore.UI
     {
         [Header("UI Configuration")]
         [SerializeField] private bool showDebugUI = true;
-        [SerializeField] private KeyCode toggleKey = KeyCode.F1;
+        [SerializeField] private Key toggleKey = Key.F1;
         [SerializeField] private bool startMinimized = false;
         
         [Header("UI Layout")]
@@ -485,7 +486,7 @@ namespace Vastcore.UI
         
         private void HandleInput()
         {
-            if (Input.GetKeyDown(toggleKey))
+            if (Keyboard.current != null && Keyboard.current[toggleKey].wasPressedThisFrame)
             {
                 ToggleUI();
             }

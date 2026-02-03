@@ -1,90 +1,35 @@
-# Global Rules（shared-workflows / v2.x運用）
+# Cursor Rules（shared-workflows / v2.x運用）
+#
+# 使い方:
+# - shared-workflows リポジトリ直下で使う場合:
+#   cp templates/.cursorrules .cursorrules
+# - 消費側プロジェクト（.shared-workflows を submodule 導入済み）で使う場合:
+#   cp .shared-workflows/templates/.cursorrules .cursorrules
+#
+# PowerShell:
+#   Copy-Item templates/.cursorrules .cursorrules -Force
+#   Copy-Item .shared-workflows/templates/.cursorrules .cursorrules -Force
 
-> **重要**: このファイルは Windsurf / Cursor / 他のAIエディタ共通で使用するグローバルルールです。
-> 
-> - **Windsurf**: Windsurf Global Rules として直接適用
-> - **Cursor**: プロジェクトルートの `.cursorrules` にコピーして適用（下記参照）
-> - **他のAIエディタ**: 各エディタのグローバルルール機能に貼り付け
-
----
-
-## Cursor での適用方法
-
-プロジェクトルートに `.cursorrules` ファイルを作成し、このファイルの内容をコピーしてください:
-
-```bash
-# 消費側プロジェクト（.shared-workflows がある場合）
-cp .shared-workflows/prompts/global/WINDSURF_GLOBAL_RULES.txt .cursorrules
-
-# shared-workflows リポジトリ直下で試す場合
-cp prompts/global/WINDSURF_GLOBAL_RULES.txt .cursorrules
-```
-
-PowerShell:
-```powershell
-Copy-Item .shared-workflows/prompts/global/WINDSURF_GLOBAL_RULES.txt .cursorrules -Force
-Copy-Item prompts/global/WINDSURF_GLOBAL_RULES.txt .cursorrules -Force
-```
-
-推奨（取りこぼし対策）: `.cursor/rules.md` も配置する:
-```bash
-mkdir -p .cursor && cp .shared-workflows/templates/.cursor/rules.md .cursor/rules.md
-mkdir -p .cursor && cp templates/.cursor/rules.md .cursor/rules.md
-```
-
-または、以下の内容を `.cursorrules` に直接記載してください。
-
----
-
-## ルール本文
-
-### 目的
-各端末/エディタで「最低限の不変ルール」と「参照先」を統一し、運用ブレを減らす。
-
-### 最初に参照する入口
-- `.shared-workflows/docs/windsurf_workflow/OPEN_HERE.md`
-
-### SSOT（最新版 / 固定参照先）
-- `.shared-workflows/docs/Windsurf_AI_Collab_Rules_latest.md`
-
-### 基本ルール
+## 基本ルール
 - 返信は日本語。
 - 絵文字、装飾表現、冗長な言い回しを使わない。
 - チャットで完結させない。成果（差分）はファイル変更として残す。
 - 作業はタスク化して進め、区切りの良いところでコミットまで行う。
-- マルチステップ作業は todo_list を更新し、in_progress は常に1つに保つ。
 
-### 中間報告ルール（長大作業の安定化）
-- **ツール呼び出し10回ごと**、または**ファイル編集5回ごと**に中間報告を出力する。
-- 報告内容:
-  - 完了した項目
-  - 残り項目
-  - 次のメッセージで指示すべきこと（選択肢形式で提示）
-- 報告後、ユーザーからの確認なしに続行してよいが、**報告を省略してはならない**。
+## 参照先（入口）
+- 入口: `.shared-workflows/docs/windsurf_workflow/OPEN_HERE.md`（無ければ `docs/windsurf_workflow/OPEN_HERE.md`）
+- Orchestrator Driver: `.shared-workflows/prompts/every_time/ORCHESTRATOR_DRIVER.txt`（無ければ `prompts/every_time/ORCHESTRATOR_DRIVER.txt`）
 
-### 終了時の固定テンプレ（必須）
-- 停止/終了（完了でも未完了でも）の場合、必ず「完了/未完了」を明言し、**次にユーザーが返すべき返信テンプレ（選択肢1-3）**を提示する。
-- テンプレのSSOTは `docs/windsurf_workflow/EVERY_SESSION.md`（submodule運用なら `.shared-workflows/docs/windsurf_workflow/EVERY_SESSION.md`）。
+## 中間報告ルール（長大作業の安定化）
+- ツール呼び出し10回ごと、またはファイル編集5回ごとに中間報告を出力する。
+- 報告内容: 完了した項目 / 残り項目 / 次のメッセージで指示すべきこと（選択肢形式）
+- 報告を省略してはならない。
 
-### 高速化ポリシー（コマンド権限）
-- shared-workflows が明示している外部通信コマンド（`git submodule add/update`, `git fetch/pull/push`, `.shared-workflows/scripts/ensure-ssot.js`, `report-orch-cli.js`, `report-validator.js`, `todo-sync.js` など）は **事前承認済み** とし、必要になったら即時実行する。
-- 依存追加/更新（npm/pip install 等）、長時間/高負荷/大量出力が見込まれる処理、破壊的・復旧困難な操作（削除、reset/rebase/force push 等）のみ、実行前にユーザーへ確認する。
-- プロジェクト側 `docs/HANDOVER.md` に `GitHubAutoApprove: true` がある場合は push/PR/merge を自動実行してよい。それでも reset/rebase/force push 等は常に停止して合意を取る。
-
-### ダブルチェック（必須）
-- Push/Merge/テストは「実行した」だけで完了にしない。失敗したら「失敗」と明言し、根拠と次手を提示する。
-- Push/Merge 後は `git status -sb` を確認する（必要なら競合マーカー検出も行う）。
-
-### 停止時の必須アウトプット
+## 停止時の必須アウトプット
 - 途中で停止する場合でも、以下を必ず残す:
   1. 現在の状態（何が完了し、何が残っているか）
   2. 停止理由
   3. 次のメッセージで指示すべきこと（選択肢形式で1-3件提示）
 - 沈黙して終了することは禁止。
 
-### 運用ストレージ（プロジェクト側のSSOT）
-- `AI_CONTEXT.md`（プロジェクトルート）: 状態/中断可能点/意思決定
-- `docs/tasks/`: チケット（Status: OPEN/IN_PROGRESS/DONE）
-- `docs/inbox/`: Worker納品レポート
-- `docs/HANDOVER.md`: 全体進捗/ブロッカー/運用フラグ
-- `.cursor/MISSION_LOG.md`: 現在のフェーズ/進捗（Orchestrator用）
+

@@ -1,3 +1,4 @@
+#if VASTCORE_TEST_SCENE_ENABLED
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -395,3 +396,4 @@ namespace VastCore.Testing
         bool IsTestRunning();
     }
 }
+#endif

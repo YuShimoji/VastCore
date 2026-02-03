@@ -11,9 +11,4 @@ on:
 
 jobs:
   smoke:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Basic validation
-        run: echo "Basic validation passed"
+    uses: YuShimoji/shared-workflows/.github/workflows/ci-smoke.yml@HEAD
