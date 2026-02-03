@@ -1,7 +1,9 @@
 # Handover
 
 ## Summary of Completed Tasks
+
 ### TASK_018: Merge Conflict Resolution (2025-01-12)
+
 - **Result**: Resolved 28 merge conflicts from `origin/master`.
 - **Method**: Mostly used `develop` branch versions (`git checkout --ours`).
 - **Issues**: Potential namespace issues (`Vastcore.Utils` vs `Vastcore.Utilities`).
@@ -10,15 +12,19 @@
   - Verify integration.
 
 ## Current State
+
 - **Branch**: `develop` (synced with `origin/develop` and merged `origin/master`)
 - **Blockers**: None immediately visible.
 
 ## Recent Completions
+
 ### TASK_023: Merge Conflict Resolution (2026-01-22)
+
 - **Result**: Confirmed `origin/main` is merged into `develop`.
 - **Method**: Verified merge commit `a9e1445`.
 - **Status**: DONE.
 
+<<<<<<< Updated upstream
 ## GitHubAutoApprove
 
 GitHubAutoApprove: false
@@ -136,10 +142,41 @@ GitHubAutoApprove: false
 - 本フェーズ作業（テンプレ整備・スクリプト強化・監査対応）: 約 2.0h
 - Duration: 本サイクル 1.2h（CLI改修・HANDOVER同期確認・テンプレ更新・レポート手直し開始）。
 
-## In Progress (from develop)
+## In Progress
+
 ### TASK_022: Fix Cyclic Dependencies (2026-01-29)
+
 - **Result**: Resolved cyclic dependencies between `Vastcore.*` and `Assembly-CSharp`.
-- **Method**: 
+- **Method**:
   - Fixed `Vastcore.Editor.Root.asmdef`: Removed non-existent `Vastcore.MapGenerator` reference, set `autoReferenced: false`.
   - Fixed `Vastcore.Tests.PlayMode.asmdef`: Set `autoReferenced: false`.
 - **Status**: DONE.
+
+## Latest Update (2026-02-02)
+
+- **Goal**: 作業状況の反映（申し送り更新 + 変更をリモートmainへ反映）
+- **Working Branch**: `develop`
+
+### What Changed (Uncommitted at the time of writing)
+
+- `Documentation/QA/LEGACY_UI_MIGRATION_REPORT.md`
+  - Dry-runレポートを最新化（スキャン結果の更新）
+- `ProjectSettings/*.asset` (LFS pointers)
+  - Unityが更新したProjectSettings系の差分が発生
+- `ProjectSettings/Packages/com.unity.probuilder/Settings.json`
+  - ProBuilder設定ファイルの差分が発生
+- `Assets/*/*.meta`
+  - Unityが生成したmetaの差分が発生
+
+### Investigation Notes
+
+- UI移行（Legacy UI Migration）については、Dry-runスキャナ生成のレポートを更新済み。
+- `.gitignore` はローカル環境でツール上の読取に問題がある可能性があるため、内容確認は `git show HEAD:.gitignore` 経由が確実。
+- ルート直下に `debug.log` が生成される場合がある（Unity/Chromium系ログ想定）。コミット対象外。
+
+### Next Steps
+
+- `origin/develop` を取り込み、`develop` を最新化
+- ローカルPre-flight（可能な範囲でUnity EditMode/PlayModeテスト）
+- `develop` の変更を `main` に反映し、`origin/main` へ push
+- `origin/main` と突合して反映漏れが無いことを確認

@@ -1,6 +1,6 @@
 # Legacy UI Migration Report (Dry Run)
 
-- Generated: 2026-01-30 23:58 (local)
+- Generated: 2026-02-02 14:17 (local)
 - Tool: UIMigrationScannerWindow.cs
 - Options: ExcludeExamples=True, ScanScripts=True, ScanScenes=True, ScanPrefabs=True
 
@@ -34,7 +34,11 @@
 - Assets/Scripts/UI/SliderBasedUISystem.cs
 - Assets/Scripts/UI/SliderUIElement.cs
 
+<<<<<<< Updated upstream
 ### C# files with OnGUI (27)
+=======
+### C# files with OnGUI (26)
+>>>>>>> Stashed changes
 - Assets/Editor/StructureGenerator/Core/StructureGeneratorWindow.cs
 - Assets/Editor/Tools/ProBuilderCsg/ProBuilderCsgScannerWindow.cs
 - Assets/Editor/Tools/UIMigration/UIMigrationApplyWindow.cs
@@ -57,7 +61,10 @@
 - Assets/Scripts/Terrain/Map/RuntimeGenerationManagerTest.cs
 - Assets/Scripts/Terrain/Map/RuntimeTerrainManagerTest.cs
 - Assets/Scripts/Terrain/Map/TerrainTexturingSystemTest.cs
+<<<<<<< Updated upstream
 - Assets/Scripts/Terrain/PrimitiveTerrainObject.cs
+=======
+>>>>>>> Stashed changes
 - Assets/Scripts/Testing/PerformanceTestingSystem.cs
 - Assets/Scripts/Testing/TestSceneManager.cs
 - Assets/Scripts/Utilities/Utils/VastcoreLogger.cs
