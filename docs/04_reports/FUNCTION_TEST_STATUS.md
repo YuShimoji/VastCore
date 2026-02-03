@@ -750,3 +750,58 @@ public abstract class BaseStructureTab : IStructureTab
 3. 繝ｦ繝ｼ繧ｶ繝ｼ繝輔ぅ繝ｼ繝峨ヰ繝・け繧帝㍾隕・
 
 **迴ｾ迥ｶ**: 蜈ｨ7繧ｿ繝悶・邨ｱ荳蛹門ｮ御ｺ・ょｮ滄圀縺ｮ蜍穂ｽ懈､懆ｨｼ繝輔ぉ繝ｼ繧ｺ縺ｫ遘ｻ陦悟庄閭ｽ縲・
+
+---
+
+## 2026-02-03: TASK_022 Assembly Cyclic Dependency Verification
+
+### テスト対象
+- ASMdefファイル間の循環依存関係
+- Terrain ⇄ Player 間の依存関係
+
+### テスト環境
+- Unity 6000.2.2f1
+- 対象ファイル: `Assets/Scripts/**/Vastcore.*.asmdef`
+
+### 検証手順
+
+#### 1. ASMdef依存関係検証（静的解析）
+```powershell
+# PowerShellで各ASMdefのreferencesを確認
+Get-Content Assets/Scripts/Terrain/Vastcore.Terrain.asmdef | ConvertFrom-Json | Select-Object -ExpandProperty references
+Get-Content Assets/Scripts/Player/Vastcore.Player.asmdef | ConvertFrom-Json | Select-Object -ExpandProperty references
+Get-Content Assets/Scripts/Generation/Vastcore.Generation.asmdef | ConvertFrom-Json | Select-Object -ExpandProperty references
+```
+
+**期待結果**:
+- Terrain: Player参照なし
+- Generation: Player/Terrain参照なし
+- Player: Terrain参照あり（一方向）
+
+#### 2. コードレベル検証
+```bash
+# Terrain内でPlayerを参照するコードがないか確認
+grep -r "using Vastcore.Player" Assets/Scripts/Terrain/
+# 結果: 空（一致なし）
+
+# Generation内でPlayer/Terrainを参照するコードがないか確認
+grep -rE "using Vastcore\.(Player|Terrain)" Assets/Scripts/Generation/
+# 結果: 空（一致なし）
+```
+
+#### 3. Unity Editor検証
+1. Unity Editorを起動
+2. Consoleウィンドウを開く
+3. 「Cyclic dependencies detected」エラーが出ないことを確認
+4. Assets → Reimport All を実行
+5. 再びエラーが出ないことを確認
+
+### 合格基準
+- [ ] ASMdefファイルに循環参照がない
+- [ ] Consoleに「Cyclic dependencies detected」エラーが出ない
+- [ ] プロジェクトが正常にコンパイルできる
+
+### 発見事項
+- 静的解析: 循環依存なし ✅
+- 依存方向: Generation → Terrain → Player（階層的）✅
+- Unity検証: 未実施（Editor未起動）

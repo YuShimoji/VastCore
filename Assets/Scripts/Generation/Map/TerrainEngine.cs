@@ -259,7 +259,10 @@ namespace Vastcore.Generation
             if (activeTiles.ContainsKey(coordinate))
             {
                 var tile = activeTiles[coordinate];
-                Destroy(tile.gameObject);
+                if (tile != null && tile.gameObject != null)
+                {
+                    Destroy(tile.gameObject);
+                }
                 activeTiles.Remove(coordinate);
             }
         }

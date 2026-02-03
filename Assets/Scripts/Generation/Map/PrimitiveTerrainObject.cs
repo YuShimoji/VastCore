@@ -42,6 +42,22 @@ namespace Vastcore.Generation
         public void OnSpawn() { }
         public void OnDespawn() { }
 
+        // IPoolable interface implementation
+        public void OnSpawnFromPool()
+        {
+            isPooled = true;
+            lastAccessTime = Time.time;
+            OnSpawn();
+        }
+
+        public void OnReturnToPool()
+        {
+            isPooled = false;
+            OnDespawn();
+        }
+
+        public bool IsAvailable => !isPooled;
+
         [Header("Legacy Support")]
         public Vector3 scale
         {

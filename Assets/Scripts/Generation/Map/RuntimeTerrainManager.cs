@@ -144,12 +144,7 @@ namespace Vastcore.Generation
         {
             if (playerTransform != null) return playerTransform;
 
-            var playerController = FindFirstObjectByType<IPlayerController>();
-            if (playerController != null)
-            {
-                return playerController.Transform;
-            }
-
+            // Playerタグで検索
             var playerObj = GameObject.FindGameObjectWithTag("Player");
             if (playerObj != null)
             {
@@ -924,6 +919,7 @@ namespace Vastcore.Generation
             public float memoryLimitMB;
             public float maxFrameTimeMs;
             public float updateInterval;
+        }
         /// <summary>
         /// Terrain generation parameters used by TerrainTileComponent
         /// </summary>

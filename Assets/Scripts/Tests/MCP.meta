@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/MapGenerator/Scripts/Vastcore.MapGenerator.asmdef.meta
+guid: 9d76cca42fe991b4881d831f4af736ad
+AssemblyDefinitionImporter:
+========
+guid: 0c63c61cb373c1a42adbbf8990230796
+folderAsset: yes
+DefaultImporter:
+>>>>>>>> 3ea5763 (Fix: Unityコンパイルエラーの解消):Assets/Scripts/Tests/MCP.meta
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
