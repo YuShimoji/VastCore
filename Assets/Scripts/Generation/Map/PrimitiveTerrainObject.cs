@@ -58,6 +58,17 @@ namespace Vastcore.Generation
 
         public bool IsAvailable => !isPooled;
 
+        public void InitializeFromPool() => OnSpawnFromPool();
+        public void InitializeFromPool(GenerationPrimitiveType type, Vector3 position, Vector3 scale)
+        {
+            InitializeFromPool();
+            this.primitiveType = type;
+            this.transform.position = position;
+            this.transform.localScale = scale;
+            this.originalScale = scale;
+        }
+        public void PrepareForPool() => OnReturnToPool();
+
         [Header("Legacy Support")]
         public Vector3 scale
         {
@@ -74,6 +85,19 @@ namespace Vastcore.Generation
                     objectCollider.enabled = value;
                 }
             }
+        }
+
+        public struct LODStatistics
+        {
+            public int visibleObjects;
+            public int totalObjects;
+            public int[] lodCounts;
+            public LODStatistics() { visibleObjects = 0; totalObjects = 0; lodCounts = new int[3]; }
+        }
+
+        public static LODStatistics GetGlobalLODStatistics()
+        {
+            return new LODStatistics(); // Stub implementation
         }
     }
 

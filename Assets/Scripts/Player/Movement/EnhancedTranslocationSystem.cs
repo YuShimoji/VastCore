@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using Vastcore.Terrain.Map;
+using Vastcore.Generation;
 
 namespace Vastcore.Player
 {

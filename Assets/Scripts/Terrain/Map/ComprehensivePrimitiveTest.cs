@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Vastcore.Generation;
 using System.Linq;
-using Vastcore.Terrain;
+using Vastcore.Generation;
 
 namespace Vastcore.Generation
 {
@@ -393,7 +393,7 @@ namespace Vastcore.Generation
             if (!report.HasValue) return;
             var rep = report.Value;
             
-            var primitiveComponent = primitiveObject.GetComponent<Vastcore.Terrain.Map.PrimitiveTerrainObject>();
+            var primitiveComponent = primitiveObject.GetComponent<PrimitiveTerrainObject>();
             if (primitiveComponent != null)
             {
                 if (!primitiveComponent.enableLOD)
@@ -416,7 +416,7 @@ namespace Vastcore.Generation
             if (!report.HasValue) return;
             var rep = report.Value;
             
-            var primitiveComponent = primitiveObject.GetComponent<Vastcore.Terrain.Map.PrimitiveTerrainObject>();
+            var primitiveComponent = primitiveObject.GetComponent<PrimitiveTerrainObject>();
             if (primitiveComponent != null)
             {
                 // プリミティブタイプに応じた適切なインタラクション設定をチェック

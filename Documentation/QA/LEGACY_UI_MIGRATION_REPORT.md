@@ -1,6 +1,6 @@
 # Legacy UI Migration Report (Dry Run)
 
-- Generated: 2026-02-04 03:41 (local)
+- Generated: 2026-02-04 03:55 (local)
 - Tool: UIMigrationScannerWindow.cs
 - Options: ExcludeExamples=True, ScanScripts=True, ScanScenes=True, ScanPrefabs=True
 

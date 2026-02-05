@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using Vastcore.Generation;
-using Vastcore.Terrain.Map;
+
 using Vastcore.Generation.Map;
 using TemplateBlendSettings = Vastcore.Generation.Map.BlendSettings;
 
