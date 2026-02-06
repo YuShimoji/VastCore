@@ -1,6 +1,6 @@
 {
     "name": "Vastcore.MapGenerator",
-    "rootNamespace": "Vastcore.Generation",
+    "rootNamespace": "Vastcore.MapGenerator",
     "references": [
         "Vastcore.Generation",
         "Vastcore.Core",

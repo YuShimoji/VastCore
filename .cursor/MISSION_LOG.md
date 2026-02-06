@@ -2,17 +2,16 @@
 # Mission Log
 
 > このファイルは、AIエージェント（Orchestrator と Worker）の作業記録を管理するためのSSOTです。
-> Orchestrator と Worker は、このファイルを読み書きして、タスクの状態を同期します。
 
 ---
 
 ## 基本情報
 
-- **Mission ID**: ORCH_20260206_ENV_OPTIMIZATION
-- **開始日時**: 2026-02-06T13:34:00+09:00
-- **最終更新**: 2026-02-06T14:00:00+09:00
-- **現在のフェーズ**: Phase C: 完了
-- **ステータス**: DONE
+- **Mission ID**: ORCH_20260206_PROJECT_CLEANUP
+- **開始日時**: 2026-02-06T13:50:00+09:00
+- **最終更新**: 2026-02-06T14:10:00+09:00
+- **現在のフェーズ**: Phase 8: コミット・push
+- **ステータス**: IN_PROGRESS
 
 ---
 
@@ -20,33 +19,20 @@
 
 ### 目的
 
-- shared-workflows v3.0 適用に伴う環境最適化・ドキュメント整備・CI統合
+- プロジェクト全体のクリーンアップ（コンパイルブロッカー解消、ファイル整理、ブランチ整理）
 
 ### 完了済み
 
-- [x] A1: .cursorrules を v3.x に更新
-- [x] A2: sw-doctor 環境診断 → All Pass
-- [x] A3: ensure-ssot.js → 全ファイル存在確認
-- [x] A4: HANDOVER.md 競合マーカー除去・lint修正・最新化
-- [x] A5: AI_CONTEXT.md 最新化
+- [x] Phase 1: Git ブランチクリーンアップ（ローカル8本+リモート25本削除、worktree整理）
+- [x] Phase 2: MCPForUnity重複解消（Assets/MCPForUnity/ 削除、パッケージ参照のみに統一）
+- [x] Phase 3: MapGenerator asmref/asmdef共存問題解消、rootNamespace修正
+- [x] Phase 4+6: ルート直下39mdファイル→docs/配下に移動、不要ファイル7件削除
+- [x] Phase 5: docs/ 構造統合（design→02_design, progress→04_reports, Spec→02_design, reports→04_reports, ui-migration→04_reports, Windsurf Rules重複削除）
+- [x] Phase 7: SSOT更新（AI_CONTEXT.md, MISSION_LOG.md, HANDOVER.md）
 
 ### 進行中
 
-- [ ] B1: MISSION_LOG.md 刷新
-- [ ] B2: docs/tasks チケット整理
-- [ ] B3: docs/inbox 整理・アーカイブ
-
-### 未完了
-
-- [ ] C1: orchestrator-audit.js 実行・指摘対応
-- [ ] C2: session-end-check.js 最終検証
-- [ ] C3: 全変更をコミット・push
-
-### 背景情報
-
-- 前回セッション: .shared-workflows を 2cbf926 → 4ad0a0a に更新、push済み
-- 現在ブランチ: main (synced with origin/main, commit cb3f8da)
-- コンパイルブロッカー: MCPForUnity重複アセンブリ、MapGenerator競合（TASK_029参照）
+- [ ] Phase 8: コミット・push・最終検証
 
 ---
 
@@ -56,10 +42,8 @@
 
 | タスクID | 説明 | Tier | Status | 進捗 |
 | --- | --- | --- | --- | --- |
-| TASK_029 | Unity Editor Verification | 1 | BLOCKED | MCPForUnity重複, MapGenerator競合 |
+| TASK_029 | Unity Editor Verification | 1 | RECHECK | ブロッカー解消済み、再検証待ち |
 | TASK_021 | Merge Integration & Verification | 2 | BLOCKED | テスト実行インフラ問題 |
-| TASK_031 | MCPForUnity重複解消 | 1 | OPEN | 起票待ち |
-| TASK_032 | MapGeneratorアセンブリ定義整理 | 1 | OPEN | 起票待ち |
 | TASK_026 | 3D Voxel Terrain Phase 1 | 3 | OPEN | Awaiting Start |
 
 ### 候補タスク (Backlog)
@@ -71,29 +55,14 @@
 
 | タスクID | 説明 | 完了日時 |
 | --- | --- | --- |
-| TASK_014 | UnityMcpPackageError | - |
-| TASK_018 | Merge Conflict Resolution | 2025-01-12 |
+| TASK_031 | MCPForUnity重複解消 | 2026-02-06 |
+| TASK_032 | MapGeneratorアセンブリ定義整理 | 2026-02-06 |
+| TASK_030 | Worktree Cleanup & Push | 2026-02-02 |
+| TASK_023 | Merge Conflict Resolution | 2026-01-22 |
+| TASK_022 | Fix Cyclic Dependencies | 2026-01-29 |
 | TASK_019 | Fix SwDoctor Rules Config | 2026-01-30 |
 | TASK_020 | Namespace Consistency | 2026-01-16 |
-| TASK_022 | Fix Cyclic Dependencies | 2026-01-29 |
-| TASK_023 | Merge Conflict Resolution | 2026-01-22 |
-| TASK_030 | Worktree Cleanup & Push | 2026-02-02 |
-
----
-
-## 重要な情報
-
-### 参照ファイル
-
-- SSOT: `.shared-workflows/docs/Windsurf_AI_Collab_Rules_latest.md`
-- HANDOVER: `docs/HANDOVER.md`
-- AI_CONTEXT: `AI_CONTEXT.md`
-
-### 重要な決定事項
-
-- shared-workflows v3.0 適用済み
-- .cursorrules を v3.x に更新済み
-- コンパイルブロッカー（MCPForUnity, MapGenerator）の解消が次の優先事項
+| TASK_018 | Merge Conflict Resolution | 2025-01-12 |
 
 ---
 
@@ -101,38 +70,38 @@
 
 ### すぐに着手すべきこと
 
-1. TASK_031 起票・実行（MCPForUnity重複解消）
-2. TASK_032 起票・実行（MapGeneratorアセンブリ定義整理）
-3. TASK_029 再検証（ブロッカー解消後）
+1. TASK_029 再検証（Unity Editor コンパイル確認）
+2. プラン策定: 次期開発計画の検討
 
 ### 次回 Orchestrator が確認すべきこと
 
-- [ ] TASK_031/032 の起票状態
-- [ ] コンパイルブロッカーの解消状況
-- [ ] Unity Editor でのコンパイル検証
+- [ ] Unity Editor でのコンパイル検証結果
+- [ ] 次期開発計画（TASK_026 3D Voxel Terrain or その他）
 
 ---
 
 ## 変更履歴
 
-### `2026-02-06T13:34:00+09:00` - `Orchestrator` - `ENV_OPTIMIZATION Mission Start`
+### `2026-02-06T14:10:00+09:00` - `Cascade` - `PROJECT_CLEANUP`
 
-- shared-workflows v3.0 適用に伴う環境最適化ミッション開始
-- A1-A5（環境・設定最適化）完了
-- B1-B3（ドキュメント整備）進行中
+- プロジェクト全体クリーンアップ実施
+- コンパイルブロッカー2件解消（MCPForUnity重複、MapGenerator asmref/asmdef共存）
+- ルート直下の散在ファイル39件をdocs/配下に整理
+- 不要ファイル・ブランチの一括削除
+- docs/ 構造を01-04_*体系に統合
 
 ### 過去のミッション（圧縮）
 
-- **ORCH_20260202**: TASK_029/030 検証・Worktree整理、develop/feature push完了
-- **ORCH_20260122**: TASK_023 完了確認、TASK_022 Worker委譲
-- **ORCH_20260117**: TASK_019-022 起票、TASK_022 Worker委譲
-- **ORCH_20260116**: Audit実施、SSOT復旧、タスク棚卸し
-- **ORCH_20250112**: TASK_018 マージコンフリクト解決、コンパイルエラー修正
+- **ORCH_20260206_ENV**: shared-workflows v3.0 環境最適化完了
+- **ORCH_20260202**: TASK_029/030 検証・Worktree整理
+- **ORCH_20260122**: TASK_023 完了、TASK_022 Worker委譲
+- **ORCH_20260117**: TASK_019-022 起票
+- **ORCH_20260116**: Audit・SSOT復旧・タスク棚卸し
 
 ---
 
 ## 注意事項
 
-- このファイルは常に最新の状態を反映する必要があります。各フェーズ完了時に更新してください。
+- このファイルは常に最新の状態を反映する必要があります。
 - Worker は作業開始時にこのファイルを読み、作業完了時に更新してください。
 - Orchestrator は Phase 変更時にこのファイルを読み、Worker にタスクを割り当てます。
