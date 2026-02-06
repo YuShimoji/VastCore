@@ -1,0 +1,20 @@
+﻿<Solution>
+  <Project Path="Vastcore.Terrain.csproj" />
+  <Project Path="Vastcore.Generation.csproj" />
+  <Project Path="Vastcore.UI.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Vastcore.Core.csproj" />
+  <Project Path="Vastcore.Tests.EditMode.csproj" />
+  <Project Path="Vastcore.Player.csproj" />
+  <Project Path="Vastcore.Editor.StructureGenerator.csproj" />
+  <Project Path="Vastcore.Testing.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="Vastcore.Camera.csproj" />
+  <Project Path="Vastcore.Editor.csproj" />
+  <Project Path="Vastcore.MapGenerator.csproj" />
+  <Project Path="Vastcore.Editor.Tools.csproj" />
+  <Project Path="Vastcore.Utilities.csproj" />
+  <Project Path="Vastcore.Legacy.csproj" />
+  <Project Path="Vastcore.Game.csproj" />
+  <Project Path="Vastcore.Editor.MapGenerator.csproj" />
+</Solution>
