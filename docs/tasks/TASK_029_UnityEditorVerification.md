@@ -3,6 +3,9 @@
 ## Status
 Status: BLOCKED
 
+## Report
+Report: docs/reports/REPORT_TASK_029_UnityEditorVerification.md
+
 ## Blocked Reason
 Unity Editorコンパイル検証実施時に以下の問題を検出：
 1. MCPForUnity重複アセンブリ（Assets/ と Packages/ の両方に存在）

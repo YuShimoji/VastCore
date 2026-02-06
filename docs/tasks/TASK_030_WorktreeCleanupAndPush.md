@@ -1,7 +1,7 @@
 # Task: Worktree整理とPush統合
 
 ## Status
-Status: BLOCKED (Push承認待ち)
+Status: DONE (Push完了 2026-02-02)
 
 ## Tier
 Tier: 1
