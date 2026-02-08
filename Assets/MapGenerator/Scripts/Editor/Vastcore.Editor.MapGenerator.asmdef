@@ -1,6 +1,6 @@
 {
     "name": "Vastcore.Editor.MapGenerator",
-    "rootNamespace": "Vastcore.Editor.Generation",
+    "rootNamespace": "Vastcore.Editor.MapGenerator",
     "references": [
         "Vastcore.Generation",
         "Vastcore.Utilities",
