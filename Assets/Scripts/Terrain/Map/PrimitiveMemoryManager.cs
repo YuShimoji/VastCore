@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
-using Vastcore.Terrain.Map;
+using Vastcore.Core;
 
 namespace Vastcore.Generation
 {
@@ -84,8 +84,9 @@ namespace Vastcore.Generation
         {
             if (config.enableMemoryOptimization)
             {
-                memoryMonitor = new MemoryMonitor(config, OnMemoryThresholdExceeded);
-                memoryMonitorCoroutine = StartCoroutine(memoryMonitor.StartMonitoring());
+                memoryMonitor = gameObject.AddComponent<MemoryMonitor>();
+                // Configure with default or config values. Assuming config has values.
+                memoryMonitor.Configure(true, config.memoryCheckInterval, (l) => OnMemoryThresholdExceeded());
             }
 
             if (config.enablePerformanceMonitoring)
@@ -97,10 +98,7 @@ namespace Vastcore.Generation
 
         void OnDestroy()
         {
-            if (memoryMonitorCoroutine != null)
-            {
-                StopCoroutine(memoryMonitorCoroutine);
-            }
+            // MemoryMonitor component handles its own cleanup via OnDestroy
 
             if (performanceMonitorCoroutine != null)
             {

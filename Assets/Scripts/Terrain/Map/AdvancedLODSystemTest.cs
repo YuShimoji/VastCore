@@ -383,7 +383,7 @@ namespace Vastcore.Generation.Map
                 
                 var primitive = primitiveObject.AddComponent<PrimitiveTerrainObject>();
                 primitive.primitiveType = (GenerationPrimitiveType)((PrimitiveTerrainGenerator.PrimitiveType)(i % 4));
-                primitive.scale = primitiveObject.transform.localScale.magnitude;
+                primitive.scale = primitiveObject.transform.localScale;
                 primitive.enableLOD = true;
                 
                 primitives.Add(primitive);

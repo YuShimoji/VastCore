@@ -2,7 +2,8 @@
     "name": "Vastcore.Core",
     "rootNamespace": "Vastcore.Core",
     "references": [
-        "Vastcore.Utilities"
+        "Vastcore.Utilities",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

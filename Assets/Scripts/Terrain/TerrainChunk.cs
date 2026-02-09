@@ -52,8 +52,8 @@ namespace Vastcore.Terrain
             TerrainData.SetHeights(0, 0, heights2D);
 
             var go = gameObject;
-            var terrain = go.GetComponent<Terrain>();
-            if (terrain == null) terrain = go.AddComponent<Terrain>();
+            var terrain = go.GetComponent<UnityEngine.Terrain>();
+            if (terrain == null) terrain = go.AddComponent<UnityEngine.Terrain>();
             terrain.terrainData = TerrainData;
             terrain.drawInstanced = true;
             UnityTerrain = terrain;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Profiling;
 
-namespace VastCore.Testing
+namespace Vastcore.Core
 {
     /// <summary>
     /// メモリ使用量の詳細監視とリーク検出システム
@@ -41,6 +41,23 @@ namespace VastCore.Testing
             if (enableContinuousMonitoring)
             {
                 InvokeRepeating(nameof(TakeMemorySnapshot), 0f, monitoringInterval);
+            }
+        }
+
+        public void Configure(bool continuous, float interval, System.Action<long> onThresholdExceeded)
+        {
+            this.enableContinuousMonitoring = continuous;
+            this.monitoringInterval = interval;
+            this.OnMemoryThresholdExceeded += onThresholdExceeded;
+            
+            // Re-initialize if already started
+            if (Application.isPlaying) 
+            {
+                CancelInvoke(nameof(TakeMemorySnapshot));
+                if (continuous)
+                {
+                    InvokeRepeating(nameof(TakeMemorySnapshot), 0f, interval);
+                }
             }
         }
         
