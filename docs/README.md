@@ -38,3 +38,10 @@
 - **MISSION_LOG**: `.cursor/MISSION_LOG.md` - 作業ログ
 
 当面は段階的に移行し、重複や旧パス（Documentation/）参照は順次解消します。
+
+## New Docs (2026-02)
+- `docs/03_guides/REDEVELOPMENT_LOCAL_SETUP.md`
+- `docs/02_design/TERRAIN_ALGORITHM_NOTES_DUALGRID_HEIGHTMAP.md`
+- `docs/01_planning/TERRAIN_VERTICAL_SLICE_ROADMAP.md`
+- `docs/03_guides/TERRAIN_VERTICAL_SLICE_RUNBOOK.md`
+- `docs/02_design/DUALGRID_HEIGHTMAP_PROFILE_MAPPING_SPEC.md`

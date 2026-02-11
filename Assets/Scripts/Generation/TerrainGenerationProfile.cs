@@ -131,6 +131,17 @@ namespace Vastcore.Generation
         }
         #endregion
 
+        #region DualGrid Height Sampling Settings
+        [Header("DualGrid Height Sampling")]
+        [SerializeField] private DualGridHeightSamplingSettings m_DualGridHeightSampling = new DualGridHeightSamplingSettings();
+
+        public DualGridHeightSamplingSettings DualGridHeightSampling
+        {
+            get => m_DualGridHeightSampling;
+            set => m_DualGridHeightSampling = value ?? new DualGridHeightSamplingSettings();
+        }
+        #endregion
+
         #region Noise Settings
         [Header("Noise Settings")]
         [Tooltip("ノイズシード値")]
@@ -251,6 +262,8 @@ namespace Vastcore.Generation
             m_Persistence = TerrainGenerationConstants.DefaultPersistence;
             m_Lacunarity = TerrainGenerationConstants.DefaultLacunarity;
             m_NoiseOffset = Vector2.zero;
+
+            m_DualGridHeightSampling = new DualGridHeightSamplingSettings();
         }
 
         /// <summary>
@@ -280,6 +293,10 @@ namespace Vastcore.Generation
             m_Persistence = other.m_Persistence;
             m_Lacunarity = other.m_Lacunarity;
             m_NoiseOffset = other.m_NoiseOffset;
+
+            if (m_DualGridHeightSampling == null)
+                m_DualGridHeightSampling = new DualGridHeightSamplingSettings();
+            m_DualGridHeightSampling.CopyFrom(other.m_DualGridHeightSampling);
         }
         #endregion
     }

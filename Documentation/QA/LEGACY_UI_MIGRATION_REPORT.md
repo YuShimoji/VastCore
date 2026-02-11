@@ -1,11 +1,11 @@
 # Legacy UI Migration Report (Dry Run)
 
-- Generated: 2026-02-04 03:55 (local)
+- Generated: 2026-02-12 02:04 (local)
 - Tool: UIMigrationScannerWindow.cs
 - Options: ExcludeExamples=True, ScanScripts=True, ScanScenes=True, ScanPrefabs=True
 
 ## Summary
-- Scripts scanned: 296
+- Scripts scanned: 302
 - Scenes scanned: 51
 - Prefabs scanned: 5
 - C# using UnityEngine.UI: 8
@@ -57,12 +57,12 @@
 
 ### C# files referencing TMPro (10)
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs
+- Assets/Scripts/Core/PerformanceMonitor.cs
 - Assets/Scripts/Terrain/Map/AdvancedTerrainAlgorithmsTest.cs
 - Assets/Scripts/UI/InGameDebugUI.cs
 - Assets/Scripts/UI/MenuManager.cs
 - Assets/Scripts/UI/Menus/TitleScreenManager.cs
 - Assets/Scripts/UI/ModernUIStyleSystem.cs
-- Assets/Scripts/UI/PerformanceMonitor.cs
 - Assets/Scripts/UI/SliderBasedUISystem.cs
 - Assets/Scripts/UI/SliderUIElement.cs
 - Assets/Scripts/UI/TextClickHandler.cs

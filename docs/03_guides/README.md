@@ -25,3 +25,7 @@
   - `/.github/workflows/unity-tests.yml` が `pull_request` / `workflow_dispatch` で起動。
   - リポジトリに `UNITY_LICENSE` シークレットが設定されている場合のみ実行します。
   - EditMode/PlayMode をマトリクスで並列実行します。
+
+## New Docs (2026-02)
+- `docs/03_guides/REDEVELOPMENT_LOCAL_SETUP.md`
+- `docs/03_guides/TERRAIN_VERTICAL_SLICE_RUNBOOK.md`
