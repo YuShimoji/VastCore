@@ -1,3 +1,4 @@
+#if DEFORM_AVAILABLE
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -61,3 +62,5 @@ namespace Vastcore.Generation
         }
     }
 }
+#endif
+

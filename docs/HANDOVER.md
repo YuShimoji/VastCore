@@ -1,3 +1,5 @@
+> **上位SSOT**: [SSOT_WORLD.md](SSOT_WORLD.md) | **索引**: [DOCS_INDEX.md](DOCS_INDEX.md)
+
 - Timestamp: 2026-02-09T08:55:00+09:00
 - Actor: Cascade (ORCHESTRATOR)
 - Type: Phase A Preparation

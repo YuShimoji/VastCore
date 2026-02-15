@@ -1,5 +1,9 @@
 # Vastcore Documentation
 
+> **最上位SSOT**: [SSOT_WORLD.md](SSOT_WORLD.md) — プロジェクト全体の目的・構造・優先順位の最終権威
+> **全ドキュメント索引**: [DOCS_INDEX.md](DOCS_INDEX.md)
+> **アーキテクチャ概観**: [ARCHITECTURE.md](ARCHITECTURE.md)
+
 標準ディレクトリ構成:
 
 - 01_planning/  計画・優先度・ロードマップ

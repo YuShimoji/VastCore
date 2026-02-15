@@ -63,7 +63,9 @@ namespace Vastcore.Generation
         public bool enableDeformIntegration = false;
         public Vastcore.Core.DeformPresetLibrary deformPresetLibrary;
         public bool autoApplyDeform = true;
+#if DEFORM_AVAILABLE
         public VastcoreDeformManager.DeformQualityLevel deformQuality = VastcoreDeformManager.DeformQualityLevel.High;
+#endif
 
         // ブレンド設定（TerrainTemplateEditor から ScriptableObject として参照）
         public BlendSettings blendSettings;

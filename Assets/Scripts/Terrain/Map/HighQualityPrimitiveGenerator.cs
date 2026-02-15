@@ -35,7 +35,9 @@ namespace Vastcore.Generation
             
             [Header("Deform統合")]
             public bool enableDeformSystem;        // Deformシステム使用
+#if DEFORM_AVAILABLE
             public VastcoreDeformManager.DeformQualityLevel deformQuality; // Deform品質レベル
+#endif
             public bool enableGeologicalDeformation; // 地質学的変形
             public bool enableOrganicDeformation;   // 有機的変形
             public float deformIntensity;          // 変形強度 (0-1)
@@ -56,7 +58,9 @@ namespace Vastcore.Generation
                 enableProceduralDetails = true,
                 complexityLevel = 4,
                 enableDeformSystem = true,
+#if DEFORM_AVAILABLE
                 deformQuality = VastcoreDeformManager.DeformQualityLevel.High,
+#endif
                 enableGeologicalDeformation = true,
                 enableOrganicDeformation = true,
                 deformIntensity = 0.8f,
@@ -76,7 +80,9 @@ namespace Vastcore.Generation
                 enableProceduralDetails = true,
                 complexityLevel = 3,
                 enableDeformSystem = true,
+#if DEFORM_AVAILABLE
                 deformQuality = VastcoreDeformManager.DeformQualityLevel.Medium,
+#endif
                 enableGeologicalDeformation = true,
                 enableOrganicDeformation = false,
                 deformIntensity = 0.6f,
@@ -96,7 +102,9 @@ namespace Vastcore.Generation
                 enableProceduralDetails = false,
                 complexityLevel = 2,
                 enableDeformSystem = false,
+#if DEFORM_AVAILABLE
                 deformQuality = VastcoreDeformManager.DeformQualityLevel.Low,
+#endif
                 enableGeologicalDeformation = false,
                 enableOrganicDeformation = false,
                 deformIntensity = 0.3f,

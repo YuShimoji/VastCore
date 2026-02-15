@@ -1,17 +1,3 @@
-# UI Migration Apply Result - Menus (A3)
+# This doc moved to docs/04_reports/UI_MIGRATION_APPLY_RESULT_MENUS.md
 
-- Generated: 2025-10-08 21:21 (local)
-- Rules Version: 1.0
-- Scope: `Assets/Scripts/UI/Menus/`
-
-## Summary
-- Files processed: 1
-- Files changed: 0
-- Backups created: 0
-
-## Details
-- No modifications were required; existing code already conforms to the new `Vastcore.UI` namespace structure.
-
-## Verification
-- No code changes → no compile impact.
-- Unity Editor validation pending (run after other A3 scopes are applied).
+See: [UI_MIGRATION_APPLY_RESULT_MENUS.md](../../docs/04_reports/UI_MIGRATION_APPLY_RESULT_MENUS.md)

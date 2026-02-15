@@ -1,6 +1,9 @@
 # EVERY_SESSION（毎回の運用SSOT / これだけ見れば迷わない）
 
-目的: shared-workflows の運用を **毎回ブレずに**実行する。  
+> **上位SSOT**: [SSOT_WORLD.md](../SSOT_WORLD.md) — プロジェクト全体の最上位仕様
+> 本文書のスコープは「セッション運用プロトコル」に限定される。
+
+目的: shared-workflows の運用を **毎回ブレずに**実行する。
 このファイルは「運用まとめ」の **Single Source of Truth (SSOT)**。他ドキュメントは詳細/背景/補足であり、矛盾した場合は本ファイルの方針を優先する。
 
 ---

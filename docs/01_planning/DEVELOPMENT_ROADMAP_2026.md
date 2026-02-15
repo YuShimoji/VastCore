@@ -1,5 +1,7 @@
 # VastCore Terrain Engine — 開発ロードマップ 2026
 
+> **上位SSOT**: [SSOT_WORLD.md](../SSOT_WORLD.md) | **索引**: [DOCS_INDEX.md](../DOCS_INDEX.md)
+
 **作成日**: 2026-02-09
 **前提**: AUDIT_2026-02 総点検 + コードベース全件精査
 

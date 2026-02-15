@@ -1,3 +1,4 @@
+#if !DEFORM_AVAILABLE
 using UnityEngine;
 
 // Deform パッケージが存在しない環境向けのスタブ定義。
@@ -8,3 +9,5 @@ namespace Deform
     {
     }
 }
+#endif
+
