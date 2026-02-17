@@ -2,6 +2,8 @@
     "name": "Vastcore.Testing",
     "rootNamespace": "Vastcore.Testing",
     "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
         "Vastcore.Core",
         "Vastcore.Utilities",
         "Vastcore.Generation",
@@ -14,28 +16,19 @@
         "Unity.ProBuilder.KdTree",
         "Unity.ProBuilder.Poly2Tri",
         "Unity.ProBuilder.Stl",
-        "Unity.TextMeshPro",
-        "Unity.TestFramework"
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
     "autoReferenced": false,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
     "versionDefines": [],
-    "noEngineReferences": false,
-    "burstSettings": {
-        "enableBurstCompilation": false,
-        "enableBurstSafetyChecks": false,
-        "enableBurstDebug": false,
-        "enableBurstTimings": false,
-        "burstCompilationOptions": {}
-    },
-    "optionalUnityReferences": [
-        "TestAssemblies"
-    ]
+    "noEngineReferences": false
 }

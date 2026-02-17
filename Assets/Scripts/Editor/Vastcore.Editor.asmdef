@@ -6,7 +6,9 @@
         "Vastcore.Utilities",
         "Vastcore.Generation",
         "Vastcore.Terrain",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "Unity.ProBuilder",
+        "Unity.ProBuilder.Editor"
     ],
     "includePlatforms": [
         "Editor"
