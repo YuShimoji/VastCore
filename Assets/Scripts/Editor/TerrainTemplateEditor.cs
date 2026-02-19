@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Vastcore.Generation;
 
 using Vastcore.Generation.Map;
-using TemplateBlendSettings = Vastcore.Generation.Map.BlendSettings;
+using TemplateBlendSettings = Vastcore.Generation.BlendSettings;
 
 namespace Vastcore.Editor
 {

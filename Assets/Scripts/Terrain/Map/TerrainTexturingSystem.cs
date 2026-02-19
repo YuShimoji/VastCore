@@ -64,19 +64,15 @@ namespace Vastcore.Generation
             // プレイヤーTransformを取得
             if (playerTransform == null)
             {
-                var player = FindFirstObjectByType<IPlayerController>();
+                var playerObj = GameObject.FindGameObjectWithTag("Player");
+                var player = playerObj != null ? playerObj.GetComponent<IPlayerController>() : null;
                 if (player != null)
                 {
                     playerTransform = player.Transform;
                 }
-                else
+                else if (playerObj != null)
                 {
-                    // フォールバック: 他の方法でプレイヤーを検索
-                    var playerObj = GameObject.FindGameObjectWithTag("Player");
-                    if (playerObj != null)
-                    {
-                        playerTransform = playerObj.transform;
-                    }
+                    playerTransform = playerObj.transform;
                 }
             }
             

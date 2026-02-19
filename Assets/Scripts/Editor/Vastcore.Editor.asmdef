@@ -6,6 +6,7 @@
         "Vastcore.Utilities",
         "Vastcore.Generation",
         "Vastcore.Terrain",
+        "Vastcore.MapGenerator",
         "Unity.TextMeshPro",
         "Unity.ProBuilder",
         "Unity.ProBuilder.Editor"

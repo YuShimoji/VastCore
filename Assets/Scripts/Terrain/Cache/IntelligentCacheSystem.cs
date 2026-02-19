@@ -4,7 +4,7 @@ using System.Collections;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using Vastcore.Generation;
-
+using Vastcore.Core;
 namespace Vastcore.Generation.Cache
 {
     /// <summary>
@@ -103,7 +103,8 @@ namespace Vastcore.Generation.Cache
             statistics = new CacheStatistics();
             
             // プレイヤーの検索
-            var player = FindFirstObjectByType<IPlayerController>();
+            var playerObj = GameObject.FindGameObjectWithTag("Player");
+            var player = playerObj != null ? playerObj.GetComponent<IPlayerController>() : null;
             if (player != null)
             {
                 playerTransform = player.Transform;

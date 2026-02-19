@@ -92,12 +92,16 @@ namespace Vastcore.Generation
             public int visibleObjects;
             public int totalObjects;
             public int[] lodCounts;
-            public LODStatistics() { visibleObjects = 0; totalObjects = 0; lodCounts = new int[3]; }
         }
 
         public static LODStatistics GetGlobalLODStatistics()
         {
-            return new LODStatistics(); // Stub implementation
+            return new LODStatistics
+            {
+                visibleObjects = 0,
+                totalObjects = 0,
+                lodCounts = new int[3]
+            }; // Stub implementation
         }
     }
 

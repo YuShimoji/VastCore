@@ -170,7 +170,7 @@ namespace Vastcore.Generation
 
                 // PrimitiveTerrainObjectコンポーネントを追加して初期化
         var pto = primitiveObject.AddComponent<PrimitiveTerrainObject>();
-        pto.InitializeFromPool((GenerationPrimitiveType)(int)primitiveType, position, scale.magnitude);
+        pto.InitializeFromPool((GenerationPrimitiveType)(int)primitiveType, position, scale);
 
         // 高品質処理を適用
         ApplyHighQualityProcessing(highQualityMesh, quality);
@@ -1346,26 +1346,25 @@ namespace Vastcore.Generation
         private static void ApplyDeformComponents(ProBuilderMesh primitive, QualitySettings quality, PrimitiveTerrainGenerator.PrimitiveType primitiveType)
         {
             if (!quality.enableDeformSystem) return;
-            
+
+#if DEFORM_AVAILABLE
             var deformManager = VastcoreDeformManager.Instance;
             if (deformManager == null) return;
-            
-#if DEFORM_AVAILABLE
+
             // Deformableコンポーネントを追加
             var deformable = primitive.gameObject.GetComponent<Deformable>();
             if (deformable == null)
             {
                 deformable = primitive.gameObject.AddComponent<Deformable>();
             }
-            
-            // 品質レベルに応じたDeformerを追加
+
+            // 品質設定に応じたDeformerを適用
             ApplyDeformersBasedOnQuality(primitive.gameObject, quality, primitiveType);
-            
+
             // VastcoreDeformManagerに登録
             deformManager.RegisterDeformable(deformable, quality.deformQuality);
 #else
-            // Deformパッケージが利用できない場合はダミー登録
-            deformManager.RegisterDeformable(primitive.gameObject, quality.deformQuality);
+            // Deform package is unavailable; skip deform registration.
 #endif
         }
         
