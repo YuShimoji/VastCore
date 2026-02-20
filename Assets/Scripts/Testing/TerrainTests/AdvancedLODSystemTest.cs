@@ -1,23 +1,23 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Vastcore.Generation;
-
+using Vastcore.Core;
 namespace Vastcore.Generation.Map
 {
     /// <summary>
-    /// 高度なLODシステムのテストクラス
-    /// 地形LODとプリミティブLODの統合テスト
+    /// 鬮伜ｺｦ縺ｪLOD繧ｷ繧ｹ繝・Β縺ｮ繝・せ繝医け繝ｩ繧ｹ
+    /// 蝨ｰ蠖｢LOD縺ｨ繝励Μ繝溘ユ繧｣繝豊OD縺ｮ邨ｱ蜷医ユ繧ｹ繝・
     /// </summary>
     public class AdvancedLODSystemTest : MonoBehaviour
     {
-        [Header("テスト設定")]
+        [Header("Test Settings")]
         [SerializeField] private bool runTestsOnStart = false;
         [SerializeField] private bool enablePerformanceTest = true;
         [SerializeField] private int testObjectCount = 100;
         [SerializeField] private float testDuration = 10f;
         
-        [Header("テスト結果")]
+        [Header("Test Results")]
         [SerializeField] private bool testsCompleted = false;
         [SerializeField] private string testResults = "";
         
@@ -35,11 +35,11 @@ namespace Vastcore.Generation.Map
         }
         
         /// <summary>
-        /// 全テストを実行
+        /// 蜈ｨ繝・せ繝医ｒ螳溯｡・
         /// </summary>
         public System.Collections.IEnumerator RunAllTests()
         {
-            Debug.Log("高度なLODシステムテスト開始");
+            Debug.Log("Starting advanced LOD system tests...");
             
             SetupTestEnvironment();
             
@@ -55,66 +55,66 @@ namespace Vastcore.Generation.Map
             CleanupTestEnvironment();
             
             testsCompleted = true;
-            Debug.Log($"LODシステムテスト完了: {testResults}");
+            Debug.Log($"LOD繧ｷ繧ｹ繝・Β繝・せ繝亥ｮ御ｺ・ {testResults}");
         }
         
         /// <summary>
-        /// テスト環境をセットアップ
+        /// 繝・せ繝育腸蠅・ｒ繧ｻ繝・ヨ繧｢繝・・
         /// </summary>
         private void SetupTestEnvironment()
         {
-            // テストプレイヤーを作成
+            // 繝・せ繝医・繝ｬ繧､繝､繝ｼ繧剃ｽ懈・
             var playerObject = new GameObject("TestPlayer");
             testPlayer = playerObject.transform;
             testPlayer.position = Vector3.zero;
             
-            // カメラを追加
+            // 繧ｫ繝｡繝ｩ繧定ｿｽ蜉
             var camera = playerObject.AddComponent<Camera>();
             camera.tag = "MainCamera";
             
-            // LODシステムを作成
+            // LOD繧ｷ繧ｹ繝・Β繧剃ｽ懈・
             var lodSystemObject = new GameObject("LODSystem");
             terrainLODSystem = lodSystemObject.AddComponent<AdaptiveTerrainLOD>();
             primitiveLODSystem = lodSystemObject.AddComponent<AdvancedPrimitiveLODSystem>();
             
-            // テストオブジェクトリストを初期化
+            // 繝・せ繝医が繝悶ず繧ｧ繧ｯ繝医Μ繧ｹ繝医ｒ蛻晄悄蛹・
             testObjects = new List<GameObject>();
             
-            Debug.Log("テスト環境セットアップ完了");
+            Debug.Log("Test environment setup complete.");
         }
         
         /// <summary>
-        /// 地形LODシステムのテスト
+        /// 蝨ｰ蠖｢LOD繧ｷ繧ｹ繝・Β縺ｮ繝・せ繝・
         /// </summary>
         private System.Collections.IEnumerator TestTerrainLODSystem()
         {
-            Debug.Log("地形LODシステムテスト開始");
+            Debug.Log("Starting terrain LOD system test...");
             
-            // テスト地形タイルを作成
+            // 繝・せ繝亥慍蠖｢繧ｿ繧､繝ｫ繧剃ｽ懈・
             var testTiles = CreateTestTerrainTiles(10);
             
-            // LODシステムにプレイヤーを設定
+            // LOD繧ｷ繧ｹ繝・Β縺ｫ繝励Ξ繧､繝､繝ｼ繧定ｨｭ螳・
             terrainLODSystem.SetPlayerTransform(testPlayer);
             terrainLODSystem.StartLODSystem();
             
-            // 地形タイルを登録
+            // 蝨ｰ蠖｢繧ｿ繧､繝ｫ繧堤匳骭ｲ
             foreach (var tile in testTiles)
             {
                 terrainLODSystem.RegisterTerrainTile(tile);
             }
             
-            // プレイヤーを移動させてLOD変化をテスト
+            // 繝励Ξ繧､繝､繝ｼ繧堤ｧｻ蜍輔＆縺帙※LOD螟牙喧繧偵ユ繧ｹ繝・
             for (int i = 0; i < 5; i++)
             {
                 testPlayer.position = new Vector3(i * 500f, 0, 0);
                 yield return new WaitForSeconds(1f);
                 
-                // LOD統計を確認
+                // LOD邨ｱ險医ｒ遒ｺ隱・
                 var stats = terrainLODSystem.GetLODStatistics();
-                Debug.Log($"地形LOD統計 (距離{i * 500f}m): {string.Join(", ", stats)}");
+                Debug.Log($"蝨ｰ蠖｢LOD邨ｱ險・(霍晞屬{i * 500f}m): {string.Join(", ", stats)}");
             }
             
-            // クリーンアップ
+            // 繧ｯ繝ｪ繝ｼ繝ｳ繧｢繝・・
             foreach (var tile in testTiles)
             {
                 terrainLODSystem.UnregisterTerrainTile(tile);
@@ -125,51 +125,51 @@ namespace Vastcore.Generation.Map
             }
             
             terrainLODSystem.StopLODSystem();
-            testResults += "地形LODテスト: 成功\n";
+            testResults += "蝨ｰ蠖｢LOD繝・せ繝・ 謌仙粥\n";
             
-            Debug.Log("地形LODシステムテスト完了");
+            Debug.Log("Terrain LOD system test completed.");
         }
         
         /// <summary>
-        /// プリミティブLODシステムのテスト
+        /// 繝励Μ繝溘ユ繧｣繝豊OD繧ｷ繧ｹ繝・Β縺ｮ繝・せ繝・
         /// </summary>
         private System.Collections.IEnumerator TestPrimitiveLODSystem()
         {
-            Debug.Log("プリミティブLODシステムテスト開始");
+            Debug.Log("Starting primitive LOD system test...");
             
-            // テストプリミティブオブジェクトを作成
+            // 繝・せ繝医・繝ｪ繝溘ユ繧｣繝悶が繝悶ず繧ｧ繧ｯ繝医ｒ菴懈・
             var testPrimitives = CreateTestPrimitiveObjects(20);
             
-            // LODシステムを開始
+            // LOD繧ｷ繧ｹ繝・Β繧帝幕蟋・
             primitiveLODSystem.StartLODSystem();
             
-            // プリミティブオブジェクトを登録
+            // 繝励Μ繝溘ユ繧｣繝悶が繝悶ず繧ｧ繧ｯ繝医ｒ逋ｻ骭ｲ
             foreach (var primitive in testPrimitives)
             {
                 primitiveLODSystem.RegisterPrimitiveObject(primitive);
             }
             
-            // プレイヤーを移動させてLOD変化をテスト
+            // 繝励Ξ繧､繝､繝ｼ繧堤ｧｻ蜍輔＆縺帙※LOD螟牙喧繧偵ユ繧ｹ繝・
             for (int i = 0; i < 8; i++)
             {
                 testPlayer.position = new Vector3(i * 300f, 0, 0);
                 yield return new WaitForSeconds(1f);
                 
-                // LOD統計を確認
+                // LOD邨ｱ險医ｒ遒ｺ隱・
                 var stats = primitiveLODSystem.GetSystemStatistics();
-                Debug.Log($"プリミティブLOD統計 (距離{i * 300f}m): " +
-                         $"総数:{stats.totalObjects}, 可視:{stats.visibleObjects}, " +
-                         $"インポスター:{stats.impostorObjects}, 品質:{stats.qualityMultiplier:F2}");
+                Debug.Log($"繝励Μ繝溘ユ繧｣繝豊OD邨ｱ險・(霍晞屬{i * 300f}m): " +
+                         $"邱乗焚:{stats.totalObjects}, 蜿ｯ隕・{stats.visibleObjects}, " +
+                         $"繧､繝ｳ繝昴せ繧ｿ繝ｼ:{stats.impostorObjects}, 蜩∬ｳｪ:{stats.qualityMultiplier:F2}");
             }
             
-            // インポスターシステムのテスト
-            testPlayer.position = new Vector3(2000f, 0, 0); // 遠距離
+            // 繧､繝ｳ繝昴せ繧ｿ繝ｼ繧ｷ繧ｹ繝・Β縺ｮ繝・せ繝・
+            testPlayer.position = new Vector3(2000f, 0, 0); // 驕霍晞屬
             yield return new WaitForSeconds(2f);
             
             var finalStats = primitiveLODSystem.GetSystemStatistics();
             bool impostorWorking = finalStats.impostorObjects > 0;
             
-            // クリーンアップ
+            // 繧ｯ繝ｪ繝ｼ繝ｳ繧｢繝・・
             foreach (var primitive in testPrimitives)
             {
                 primitiveLODSystem.UnregisterPrimitiveObject(primitive);
@@ -180,28 +180,28 @@ namespace Vastcore.Generation.Map
             }
             
             primitiveLODSystem.StopLODSystem();
-            testResults += $"プリミティブLODテスト: 成功 (インポスター: {(impostorWorking ? "動作" : "未動作")})\n";
+            testResults += $"Primitive LOD test: PASSED (Impostor: {(impostorWorking ? "Enabled" : "Disabled")})\n";
             
-            Debug.Log("プリミティブLODシステムテスト完了");
+            Debug.Log("Primitive LOD system test completed.");
         }
         
         /// <summary>
-        /// LODシステム統合テスト
+        /// LOD繧ｷ繧ｹ繝・Β邨ｱ蜷医ユ繧ｹ繝・
         /// </summary>
         private System.Collections.IEnumerator TestLODIntegration()
         {
-            Debug.Log("LODシステム統合テスト開始");
+            Debug.Log("Starting integrated LOD system test...");
             
-            // 地形とプリミティブを同時に作成
+            // 蝨ｰ蠖｢縺ｨ繝励Μ繝溘ユ繧｣繝悶ｒ蜷梧凾縺ｫ菴懈・
             var testTiles = CreateTestTerrainTiles(5);
             var testPrimitives = CreateTestPrimitiveObjects(10);
             
-            // 両システムを開始
+            // 荳｡繧ｷ繧ｹ繝・Β繧帝幕蟋・
             terrainLODSystem.SetPlayerTransform(testPlayer);
             terrainLODSystem.StartLODSystem();
             primitiveLODSystem.StartLODSystem();
             
-            // オブジェクトを登録
+            // 繧ｪ繝悶ず繧ｧ繧ｯ繝医ｒ逋ｻ骭ｲ
             foreach (var tile in testTiles)
             {
                 terrainLODSystem.RegisterTerrainTile(tile);
@@ -212,7 +212,7 @@ namespace Vastcore.Generation.Map
                 primitiveLODSystem.RegisterPrimitiveObject(primitive);
             }
             
-            // 統合動作テスト
+            // 邨ｱ蜷亥虚菴懊ユ繧ｹ繝・
             for (int i = 0; i < 5; i++)
             {
                 testPlayer.position = new Vector3(i * 400f, 0, 0);
@@ -221,12 +221,12 @@ namespace Vastcore.Generation.Map
                 var terrainStats = terrainLODSystem.GetLODStatistics();
                 var primitiveStats = primitiveLODSystem.GetSystemStatistics();
                 
-                Debug.Log($"統合テスト (距離{i * 400f}m): " +
-                         $"地形LOD数:{terrainStats.Count}, " +
-                         $"プリミティブ可視:{primitiveStats.visibleObjects}/{primitiveStats.totalObjects}");
+                Debug.Log($"邨ｱ蜷医ユ繧ｹ繝・(霍晞屬{i * 400f}m): " +
+                         $"蝨ｰ蠖｢LOD謨ｰ:{terrainStats.Count}, " +
+                         $"繝励Μ繝溘ユ繧｣繝門庄隕・{primitiveStats.visibleObjects}/{primitiveStats.totalObjects}");
             }
             
-            // クリーンアップ
+            // 繧ｯ繝ｪ繝ｼ繝ｳ繧｢繝・・
             foreach (var tile in testTiles)
             {
                 terrainLODSystem.UnregisterTerrainTile(tile);
@@ -248,27 +248,27 @@ namespace Vastcore.Generation.Map
             terrainLODSystem.StopLODSystem();
             primitiveLODSystem.StopLODSystem();
             
-            testResults += "LOD統合テスト: 成功\n";
-            Debug.Log("LODシステム統合テスト完了");
+            testResults += "LOD邨ｱ蜷医ユ繧ｹ繝・ 謌仙粥\n";
+            Debug.Log("LOD integration test completed.");
         }
         
         /// <summary>
-        /// パフォーマンステスト
+        /// 繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ繝・せ繝・
         /// </summary>
         private System.Collections.IEnumerator TestPerformance()
         {
-            Debug.Log("LODシステムパフォーマンステスト開始");
+            Debug.Log("Starting LOD performance test...");
             
-            // 大量のオブジェクトを作成
+            // 螟ｧ驥上・繧ｪ繝悶ず繧ｧ繧ｯ繝医ｒ菴懈・
             var testTiles = CreateTestTerrainTiles(testObjectCount / 2);
             var testPrimitives = CreateTestPrimitiveObjects(testObjectCount / 2);
             
-            // システムを開始
+            // 繧ｷ繧ｹ繝・Β繧帝幕蟋・
             terrainLODSystem.SetPlayerTransform(testPlayer);
             terrainLODSystem.StartLODSystem();
             primitiveLODSystem.StartLODSystem();
             
-            // オブジェクトを登録
+            // 繧ｪ繝悶ず繧ｧ繧ｯ繝医ｒ逋ｻ骭ｲ
             foreach (var tile in testTiles)
             {
                 terrainLODSystem.RegisterTerrainTile(tile);
@@ -279,7 +279,7 @@ namespace Vastcore.Generation.Map
                 primitiveLODSystem.RegisterPrimitiveObject(primitive);
             }
             
-            // パフォーマンス測定
+            // 繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ貂ｬ螳・
             float startTime = Time.realtimeSinceStartup;
             float totalFrameTime = 0f;
             int frameCount = 0;
@@ -299,7 +299,7 @@ namespace Vastcore.Generation.Map
                 minFrameRate = Mathf.Min(minFrameRate, frameRate);
                 maxFrameRate = Mathf.Max(maxFrameRate, frameRate);
                 
-                // プレイヤーを移動
+                // 繝励Ξ繧､繝､繝ｼ繧堤ｧｻ蜍・
                 float t = (Time.realtimeSinceStartup - startTime) / testDuration;
                 testPlayer.position = new Vector3(Mathf.Sin(t * Mathf.PI * 2) * 1000f, 0, Mathf.Cos(t * Mathf.PI * 2) * 1000f);
                 
@@ -308,11 +308,11 @@ namespace Vastcore.Generation.Map
             
             float averageFrameRate = frameCount / totalFrameTime;
             
-            // 結果を記録
-            testResults += $"パフォーマンステスト: 平均FPS:{averageFrameRate:F1}, " +
-                          $"最小FPS:{minFrameRate:F1}, 最大FPS:{maxFrameRate:F1}\n";
+            // 邨先棡繧定ｨ倬鹸
+            testResults += $"繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ繝・せ繝・ 蟷ｳ蝮⑦PS:{averageFrameRate:F1}, " +
+                          $"譛蟆洲PS:{minFrameRate:F1}, 譛螟ｧFPS:{maxFrameRate:F1}\n";
             
-            // クリーンアップ
+            // 繧ｯ繝ｪ繝ｼ繝ｳ繧｢繝・・
             foreach (var tile in testTiles)
             {
                 terrainLODSystem.UnregisterTerrainTile(tile);
@@ -334,11 +334,11 @@ namespace Vastcore.Generation.Map
             terrainLODSystem.StopLODSystem();
             primitiveLODSystem.StopLODSystem();
             
-            Debug.Log($"パフォーマンステスト完了: 平均FPS {averageFrameRate:F1}");
+            Debug.Log($"繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ繝・せ繝亥ｮ御ｺ・ 蟷ｳ蝮⑦PS {averageFrameRate:F1}");
         }
         
         /// <summary>
-        /// テスト地形タイルを作成
+        /// 繝・せ繝亥慍蠖｢繧ｿ繧､繝ｫ繧剃ｽ懈・
         /// </summary>
         private List<TerrainTile> CreateTestTerrainTiles(int count)
         {
@@ -368,7 +368,7 @@ namespace Vastcore.Generation.Map
         }
         
         /// <summary>
-        /// テストプリミティブオブジェクトを作成
+        /// 繝・せ繝医・繝ｪ繝溘ユ繧｣繝悶が繝悶ず繧ｧ繧ｯ繝医ｒ菴懈・
         /// </summary>
         private List<PrimitiveTerrainObject> CreateTestPrimitiveObjects(int count)
         {
@@ -394,7 +394,7 @@ namespace Vastcore.Generation.Map
         }
         
         /// <summary>
-        /// テスト用高さデータを生成
+        /// 繝・せ繝育畑鬮倥＆繝・・繧ｿ繧堤函謌・
         /// </summary>
         private float[,] GenerateTestHeightData(int resolution)
         {
@@ -413,11 +413,11 @@ namespace Vastcore.Generation.Map
         }
         
         /// <summary>
-        /// テスト環境をクリーンアップ
+        /// 繝・せ繝育腸蠅・ｒ繧ｯ繝ｪ繝ｼ繝ｳ繧｢繝・・
         /// </summary>
         private void CleanupTestEnvironment()
         {
-            // テストオブジェクトを削除
+            // 繝・せ繝医が繝悶ず繧ｧ繧ｯ繝医ｒ蜑企勁
             foreach (var obj in testObjects)
             {
                 if (obj != null)
@@ -427,30 +427,30 @@ namespace Vastcore.Generation.Map
             }
             testObjects.Clear();
             
-            // テストプレイヤーを削除
+            // 繝・せ繝医・繝ｬ繧､繝､繝ｼ繧貞炎髯､
             if (testPlayer != null)
             {
                 DestroyImmediate(testPlayer.gameObject);
             }
             
-            // LODシステムを削除
+            // LOD繧ｷ繧ｹ繝・Β繧貞炎髯､
             if (terrainLODSystem != null)
             {
                 DestroyImmediate(terrainLODSystem.gameObject);
             }
             
-            Debug.Log("テスト環境クリーンアップ完了");
+            Debug.Log("Test environment cleanup complete.");
         }
         
         /// <summary>
-        /// 手動でテストを実行
+        /// 謇句虚縺ｧ繝・せ繝医ｒ螳溯｡・
         /// </summary>
         [ContextMenu("Run LOD System Tests")]
         public void RunTestsManually()
         {
             if (!Application.isPlaying)
             {
-                Debug.LogWarning("テストは実行時にのみ実行できます");
+                Debug.LogWarning("Run this test only in play mode.");
                 return;
             }
             
@@ -458,18 +458,18 @@ namespace Vastcore.Generation.Map
         }
         
         /// <summary>
-        /// テスト結果をログに出力
+        /// 繝・せ繝育ｵ先棡繧偵Ο繧ｰ縺ｫ蜃ｺ蜉・
         /// </summary>
         [ContextMenu("Log Test Results")]
         public void LogTestResults()
         {
             if (testsCompleted)
             {
-                Debug.Log($"LODシステムテスト結果:\n{testResults}");
+                Debug.Log($"LOD繧ｷ繧ｹ繝・Β繝・せ繝育ｵ先棡:\n{testResults}");
             }
             else
             {
-                Debug.Log("テストがまだ完了していません");
+                Debug.Log("繝・せ繝医′縺ｾ縺螳御ｺ・＠縺ｦ縺・∪縺帙ｓ");
             }
         }
     }

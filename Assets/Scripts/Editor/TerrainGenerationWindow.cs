@@ -525,7 +525,7 @@ namespace Vastcore.Editor.Terrain
 
         private void ApplySettingsToGenerator(TerrainGenerator generator)
         {
-            generator.GenerationMode = generationMode;
+            generator.GenerationMode = (TerrainGenerator.TerrainGenerationMode)generationMode;
             generator.Width = (int)terrainWidth;
             generator.Height = (int)terrainLength;
             generator.Depth = (int)terrainHeight;

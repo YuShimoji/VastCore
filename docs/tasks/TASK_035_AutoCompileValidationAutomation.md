@@ -1,7 +1,7 @@
 # Task: TASK_035 Auto Compile Validation Automation
 
 ## Status
-Status: READY
+Status: DONE
 
 ## Tier
 Tier: 1
@@ -36,11 +36,11 @@ Automate Unity compile validation via headless/batchmode script for local and CI
 4. (Optional) Add CI hook for manual trigger path.
 
 ## DoD
-- [ ] Compile-check script is executable from repo root.
-- [ ] Script returns non-zero exit on compile failure.
-- [ ] Output log path is deterministic and documented.
-- [ ] Guide doc updated with usage instructions.
-- [ ] Report created: `docs/04_reports/REPORT_TASK_035_AutoCompileValidationAutomation.md`.
+- [x] Compile-check script is executable from repo root.
+- [x] Script returns non-zero exit on compile failure.
+- [x] Output log path is deterministic and documented.
+- [x] Guide doc updated with usage instructions.
+- [x] Report created: `docs/04_reports/REPORT_TASK_035_AutoCompileValidationAutomation.md`.
 
 ## Deliverables
 1. Script file(s)

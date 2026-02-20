@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Vastcore.Generation;
@@ -8,22 +8,22 @@ using Vastcore.Generation;
 namespace Vastcore.Generation
 {
     /// <summary>
-    /// 16種類全てのプリミティブの包括的テストシステム
-    /// 高品質生成の保証と問題の自動修正
+    /// 16遞ｮ鬘槫・縺ｦ縺ｮ繝励Μ繝溘ユ繧｣繝悶・蛹・峡逧・ユ繧ｹ繝医す繧ｹ繝・Β
+    /// 鬮伜刀雉ｪ逕滓・縺ｮ菫晁ｨｼ縺ｨ蝠城｡後・閾ｪ蜍穂ｿｮ豁｣
     /// </summary>
     public class ComprehensivePrimitiveTest : MonoBehaviour
     {
-        [Header("テスト設定")]
+        [Header("Test Settings")]
         [SerializeField] private bool runTestOnStart = true;
         [SerializeField] private bool autoFixIssues = true;
         [SerializeField] private bool generateTestScene = false;
         [SerializeField] private Vector3 testAreaSize = new Vector3(1000f, 100f, 1000f);
         
-        [Header("品質設定")]
+        [Header("Quality Settings")]
         [SerializeField] private PrimitiveQualityValidator.QualityStandards qualityStandards = PrimitiveQualityValidator.QualityStandards.High;
         [SerializeField] private HighQualityPrimitiveGenerator.QualitySettings generationQuality = HighQualityPrimitiveGenerator.QualitySettings.High;
         
-        [Header("テスト結果")]
+        [Header("繝・せ繝育ｵ先棡")]
         [SerializeField] private int totalPrimitives = 16;
         [SerializeField] private int passedPrimitives = 0;
         [SerializeField] private float overallQualityScore = 0f;
@@ -47,41 +47,41 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region メインテスト関数
+        #region 繝｡繧､繝ｳ繝・せ繝磯未謨ｰ
         /// <summary>
-        /// 包括的テストを開始
+        /// 蛹・峡逧・ユ繧ｹ繝医ｒ髢句ｧ・
         /// </summary>
         [ContextMenu("Start Comprehensive Test")]
         public void StartComprehensiveTest()
         {
-            Debug.Log("🚀 Starting comprehensive primitive quality test for all 16 types...");
+            Debug.Log("噫 Starting comprehensive primitive quality test for all 16 types...");
             
             CleanupTestObjects();
             
-            // 全プリミティブタイプをテスト
+            // 蜈ｨ繝励Μ繝溘ユ繧｣繝悶ち繧､繝励ｒ繝・せ繝・
             testResults = TestAllPrimitiveTypes();
             
-            // 結果を分析
+            // 邨先棡繧貞・譫・
             AnalyzeTestResults();
             
-            // 問題を自動修正（有効な場合）
+            // 蝠城｡後ｒ閾ｪ蜍穂ｿｮ豁｣・域怏蜉ｹ縺ｪ蝣ｴ蜷茨ｼ・
             if (autoFixIssues)
             {
                 AutoFixIssues();
             }
             
-            // テストシーンを生成（有効な場合）
+            // 繝・せ繝医す繝ｼ繝ｳ繧堤函謌撰ｼ域怏蜉ｹ縺ｪ蝣ｴ蜷茨ｼ・
             if (generateTestScene)
             {
                 GenerateTestScene();
             }
             
-            // 最終レポートを生成
+            // 譛邨ゅΞ繝昴・繝医ｒ逕滓・
             GenerateFinalReport();
         }
 
         /// <summary>
-        /// 全プリミティブタイプをテスト
+        /// 蜈ｨ繝励Μ繝溘ユ繧｣繝悶ち繧､繝励ｒ繝・せ繝・
         /// </summary>
         private Dictionary<PrimitiveTerrainGenerator.PrimitiveType, PrimitiveQualityValidator.QualityReport> TestAllPrimitiveTypes()
         {
@@ -100,11 +100,11 @@ namespace Vastcore.Generation
                 {
                     Debug.Log($"[{i+1}/{allTypes.Length}] Testing {primitiveType}...");
                     
-                    // テスト位置を計算（グリッド配置）
+                    // 繝・せ繝井ｽ咲ｽｮ繧定ｨ育ｮ暦ｼ医げ繝ｪ繝・ラ驟咲ｽｮ・・
                     Vector3 testPosition = CalculateTestPosition(i, allTypes.Length);
                     Vector3 testScale = GetOptimalScaleForType(primitiveType);
                     
-                    // 高品質プリミティブを生成
+                    // 鬮伜刀雉ｪ繝励Μ繝溘ユ繧｣繝悶ｒ逕滓・
                     GameObject primitiveObject = HighQualityPrimitiveGenerator.GenerateHighQualityPrimitive(
                         primitiveType, 
                         testPosition, 
@@ -116,7 +116,7 @@ namespace Vastcore.Generation
                     {
                         testObjects.Add(primitiveObject);
                         
-                        // 品質を検証
+                        // 蜩∬ｳｪ繧呈､懆ｨｼ
                         var report = PrimitiveQualityValidator.ValidatePrimitiveQuality(
                             primitiveObject, 
                             primitiveType, 
@@ -125,14 +125,14 @@ namespace Vastcore.Generation
                         
                         results[primitiveType] = report;
                         
-                        // 追加のテストを実行
+                        // 霑ｽ蜉縺ｮ繝・せ繝医ｒ螳溯｡・
                         PerformAdditionalTests(primitiveObject, primitiveType, report);
                         
-                        Debug.Log($"✅ {primitiveType} test completed - Score: {report.overallScore:F2}");
+                        Debug.Log($"笨・{primitiveType} test completed - Score: {report.overallScore:F2}");
                     }
                     else
                     {
-                        Debug.LogError($"❌ Failed to generate {primitiveType}");
+                        Debug.LogError($"笶・Failed to generate {primitiveType}");
                         var failedReport = new PrimitiveQualityValidator.QualityReport(primitiveType);
                         failedReport.issues.Add("Generation failed");
                         results[primitiveType] = failedReport;
@@ -140,7 +140,7 @@ namespace Vastcore.Generation
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError($"❌ Error testing {primitiveType}: {e.Message}");
+                    Debug.LogError($"笶・Error testing {primitiveType}: {e.Message}");
                     var errorReport = new PrimitiveQualityValidator.QualityReport(primitiveType);
                     errorReport.issues.Add($"Test error: {e.Message}");
                     results[primitiveType] = errorReport;
@@ -151,7 +151,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// テスト結果を分析
+        /// 繝・せ繝育ｵ先棡繧貞・譫・
         /// </summary>
         private void AnalyzeTestResults()
         {
@@ -171,7 +171,7 @@ namespace Vastcore.Generation
                           .Select(kvp => kvp.Key.ToString())
             );
 
-            Debug.Log($"📊 Test Analysis Complete:");
+            Debug.Log($"投 Test Analysis Complete:");
             Debug.Log($"   Passed: {passedPrimitives}/{totalPrimitives} ({(float)passedPrimitives/totalPrimitives*100:F1}%)");
             Debug.Log($"   Overall Quality Score: {overallQualityScore:F2}");
             
@@ -182,13 +182,13 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// 問題を自動修正
+        /// 蝠城｡後ｒ閾ｪ蜍穂ｿｮ豁｣
         /// </summary>
         private void AutoFixIssues()
         {
             if (testResults == null) return;
 
-            Debug.Log("🔧 Starting automatic issue fixing...");
+            Debug.Log("肌 Starting automatic issue fixing...");
             
             int fixedCount = 0;
             
@@ -205,7 +205,7 @@ namespace Vastcore.Generation
                     {
                         fixedCount++;
                         
-                        // 修正後に再テスト
+                        // 菫ｮ豁｣蠕後↓蜀阪ユ繧ｹ繝・
                         var retestResult = RetestPrimitive(primitiveType);
                         if (retestResult.HasValue)
                         {
@@ -215,14 +215,14 @@ namespace Vastcore.Generation
                 }
             }
             
-            Debug.Log($"🔧 Auto-fix completed: {fixedCount} primitives fixed");
+            Debug.Log($"肌 Auto-fix completed: {fixedCount} primitives fixed");
             
-            // 結果を再分析
+            // 邨先棡繧貞・蛻・梵
             AnalyzeTestResults();
         }
 
         /// <summary>
-        /// プリミティブの問題を修正を試行
+        /// 繝励Μ繝溘ユ繧｣繝悶・蝠城｡後ｒ菫ｮ豁｣繧定ｩｦ陦・
         /// </summary>
         private bool TryFixPrimitiveIssues(PrimitiveTerrainGenerator.PrimitiveType primitiveType, PrimitiveQualityValidator.QualityReport report)
         {
@@ -232,7 +232,7 @@ namespace Vastcore.Generation
             {
                 if (issue.Contains("vertex count"))
                 {
-                    // 頂点数の問題を修正
+                    // 鬆らせ謨ｰ縺ｮ蝠城｡後ｒ菫ｮ豁｣
                     if (issue.Contains("Insufficient"))
                     {
                         generationQuality.subdivisionLevel = Mathf.Min(generationQuality.subdivisionLevel + 1, 5);
@@ -273,7 +273,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// プリミティブを再テスト
+        /// 繝励Μ繝溘ユ繧｣繝悶ｒ蜀阪ユ繧ｹ繝・
         /// </summary>
         private PrimitiveQualityValidator.QualityReport? RetestPrimitive(PrimitiveTerrainGenerator.PrimitiveType primitiveType)
         {
@@ -297,7 +297,7 @@ namespace Vastcore.Generation
                         qualityStandards
                     );
                     
-                    // テスト用オブジェクトを削除
+                    // 繝・せ繝育畑繧ｪ繝悶ず繧ｧ繧ｯ繝医ｒ蜑企勁
                     DestroyImmediate(primitiveObject);
                     
                     return report;
@@ -312,27 +312,27 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region 追加テスト
+        #region 霑ｽ蜉繝・せ繝・
         /// <summary>
-        /// 追加のテストを実行
+        /// 霑ｽ蜉縺ｮ繝・せ繝医ｒ螳溯｡・
         /// </summary>
         private void PerformAdditionalTests(GameObject primitiveObject, PrimitiveTerrainGenerator.PrimitiveType primitiveType, PrimitiveQualityValidator.QualityReport? report)
         {
-            // パフォーマンステスト
+            // 繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ繝・せ繝・
             TestRenderingPerformance(primitiveObject, report);
             
-            // メモリ使用量テスト
+            // 繝｡繝｢繝ｪ菴ｿ逕ｨ驥上ユ繧ｹ繝・
             TestMemoryUsage(primitiveObject, report);
             
-            // LODテスト
+            // LOD繝・せ繝・
             TestLODSystem(primitiveObject, report);
             
-            // インタラクションテスト
+            // 繧､繝ｳ繧ｿ繝ｩ繧ｯ繧ｷ繝ｧ繝ｳ繝・せ繝・
             TestInteractionSystems(primitiveObject, primitiveType, report);
         }
 
         /// <summary>
-        /// レンダリングパフォーマンステスト
+        /// 繝ｬ繝ｳ繝繝ｪ繝ｳ繧ｰ繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ繝・せ繝・
         /// </summary>
         private void TestRenderingPerformance(GameObject primitiveObject, PrimitiveQualityValidator.QualityReport? report)
         {
@@ -345,13 +345,13 @@ namespace Vastcore.Generation
                 var mesh = meshFilter.sharedMesh;
                 int triangleCount = mesh.triangles.Length / 3;
                 
-                // 三角形数が多すぎる場合は警告
+                // 荳芽ｧ貞ｽ｢謨ｰ縺悟､壹☆縺弱ｋ蝣ｴ蜷医・隴ｦ蜻・
                 if (triangleCount > 2000)
                 {
                     rep.issues.Add($"High triangle count may impact performance: {triangleCount}");
                 }
                 
-                // UV座標の確認
+                // UV蠎ｧ讓吶・遒ｺ隱・
                 if (mesh.uv == null || mesh.uv.Length == 0)
                 {
                     rep.issues.Add("Missing UV coordinates for texturing");
@@ -360,7 +360,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// メモリ使用量テスト
+        /// 繝｡繝｢繝ｪ菴ｿ逕ｨ驥上ユ繧ｹ繝・
         /// </summary>
         private void TestMemoryUsage(GameObject primitiveObject, PrimitiveQualityValidator.QualityReport? report)
         {
@@ -372,12 +372,12 @@ namespace Vastcore.Generation
             {
                 var mesh = meshFilter.sharedMesh;
                 
-                // 概算メモリ使用量を計算
+                // 讎らｮ励Γ繝｢繝ｪ菴ｿ逕ｨ驥上ｒ險育ｮ・
                 int vertexMemory = mesh.vertexCount * 12; // Vector3 = 12 bytes
                 int triangleMemory = mesh.triangles.Length * 4; // int = 4 bytes
                 int totalMemory = vertexMemory + triangleMemory;
                 
-                // 1MB以上の場合は警告
+                // 1MB莉･荳翫・蝣ｴ蜷医・隴ｦ蜻・
                 if (totalMemory > 1024 * 1024)
                 {
                     rep.issues.Add($"High memory usage: {totalMemory / 1024}KB");
@@ -386,7 +386,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// LODシステムテスト
+        /// LOD繧ｷ繧ｹ繝・Β繝・せ繝・
         /// </summary>
         private void TestLODSystem(GameObject primitiveObject, PrimitiveQualityValidator.QualityReport? report)
         {
@@ -401,15 +401,17 @@ namespace Vastcore.Generation
                     rep.recommendations.Add("Consider enabling LOD for better performance");
                 }
                 
-                if (primitiveComponent.lodMeshes == null || primitiveComponent.lodMeshes.Length == 0)
+                if (primitiveComponent.lodDistance0 <= 0f ||
+                    primitiveComponent.lodDistance1 <= primitiveComponent.lodDistance0 ||
+                    primitiveComponent.lodDistance2 <= primitiveComponent.lodDistance1)
                 {
-                    rep.recommendations.Add("Generate LOD meshes for distance-based optimization");
+                    rep.recommendations.Add("Review LOD distance thresholds for proper progression");
                 }
             }
         }
 
         /// <summary>
-        /// インタラクションシステムテスト
+        /// 繧､繝ｳ繧ｿ繝ｩ繧ｯ繧ｷ繝ｧ繝ｳ繧ｷ繧ｹ繝・Β繝・せ繝・
         /// </summary>
         private void TestInteractionSystems(GameObject primitiveObject, PrimitiveTerrainGenerator.PrimitiveType primitiveType, PrimitiveQualityValidator.QualityReport? report)
         {
@@ -419,7 +421,7 @@ namespace Vastcore.Generation
             var primitiveComponent = primitiveObject.GetComponent<PrimitiveTerrainObject>();
             if (primitiveComponent != null)
             {
-                // プリミティブタイプに応じた適切なインタラクション設定をチェック
+                // 繝励Μ繝溘ユ繧｣繝悶ち繧､繝励↓蠢懊§縺滄←蛻・↑繧､繝ｳ繧ｿ繝ｩ繧ｯ繧ｷ繝ｧ繝ｳ險ｭ螳壹ｒ繝√ぉ繝・け
                 switch (primitiveType)
                 {
                     case PrimitiveTerrainGenerator.PrimitiveType.Arch:
@@ -442,9 +444,9 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region ユーティリティ関数
+        #region 繝ｦ繝ｼ繝・ぅ繝ｪ繝・ぅ髢｢謨ｰ
         /// <summary>
-        /// テスト位置を計算
+        /// 繝・せ繝井ｽ咲ｽｮ繧定ｨ育ｮ・
         /// </summary>
         private Vector3 CalculateTestPosition(int index, int totalCount)
         {
@@ -452,7 +454,7 @@ namespace Vastcore.Generation
             int row = index / gridSize;
             int col = index % gridSize;
             
-            float spacing = 300f; // プリミティブ間の間隔
+            float spacing = 300f; // 繝励Μ繝溘ユ繧｣繝夜俣縺ｮ髢馴囈
             float offsetX = (col - gridSize * 0.5f) * spacing;
             float offsetZ = (row - gridSize * 0.5f) * spacing;
             
@@ -460,7 +462,7 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// プリミティブタイプに最適なスケールを取得
+        /// 繝励Μ繝溘ユ繧｣繝悶ち繧､繝励↓譛驕ｩ縺ｪ繧ｹ繧ｱ繝ｼ繝ｫ繧貞叙蠕・
         /// </summary>
         private Vector3 GetOptimalScaleForType(PrimitiveTerrainGenerator.PrimitiveType primitiveType)
         {
@@ -468,13 +470,13 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// テストシーンを生成
+        /// 繝・せ繝医す繝ｼ繝ｳ繧堤函謌・
         /// </summary>
         private void GenerateTestScene()
         {
-            Debug.Log("🎬 Generating test scene with all primitives...");
+            Debug.Log("汐 Generating test scene with all primitives...");
             
-            // テストシーン用の親オブジェクトを作成
+            // 繝・せ繝医す繝ｼ繝ｳ逕ｨ縺ｮ隕ｪ繧ｪ繝悶ず繧ｧ繧ｯ繝医ｒ菴懈・
             GameObject testSceneRoot = new GameObject("PrimitiveTestScene");
             testSceneRoot.transform.position = transform.position + Vector3.forward * 500f;
             
@@ -483,10 +485,10 @@ namespace Vastcore.Generation
                 var primitiveType = kvp.Key;
                 var report = kvp.Value;
                 
-                // 品質に応じて色分けしたマテリアルを作成
+                // 蜩∬ｳｪ縺ｫ蠢懊§縺ｦ濶ｲ蛻・￠縺励◆繝槭ユ繝ｪ繧｢繝ｫ繧剃ｽ懈・
                 Material testMaterial = CreateQualityMaterial(report.overallScore);
                 
-                // プリミティブを生成
+                // 繝励Μ繝溘ユ繧｣繝悶ｒ逕滓・
                 Vector3 position = CalculateTestPosition((int)primitiveType, testResults.Count);
                 position += testSceneRoot.transform.position;
                 
@@ -501,46 +503,46 @@ namespace Vastcore.Generation
                 {
                     primitiveObject.transform.SetParent(testSceneRoot.transform);
                     
-                    // 品質マテリアルを適用
+                    // 蜩∬ｳｪ繝槭ユ繝ｪ繧｢繝ｫ繧帝←逕ｨ
                     var renderer = primitiveObject.GetComponent<MeshRenderer>();
                     if (renderer != null)
                     {
                         renderer.material = testMaterial;
                     }
                     
-                    // 情報表示用のラベルを追加
+                    // 諠・ｱ陦ｨ遉ｺ逕ｨ縺ｮ繝ｩ繝吶Ν繧定ｿｽ蜉
                     CreateInfoLabel(primitiveObject, primitiveType, report);
                 }
             }
             
-            Debug.Log($"🎬 Test scene generated with {testResults.Count} primitives");
+            Debug.Log($"汐 Test scene generated with {testResults.Count} primitives");
         }
 
         /// <summary>
-        /// 品質に応じたマテリアルを作成
+        /// 蜩∬ｳｪ縺ｫ蠢懊§縺溘・繝・Μ繧｢繝ｫ繧剃ｽ懈・
         /// </summary>
         private Material CreateQualityMaterial(float qualityScore)
         {
             Material material = new Material(Shader.Find("Standard"));
             
             if (qualityScore >= 0.9f)
-                material.color = Color.green;      // 優秀
+                material.color = Color.green;      // 蜆ｪ遘
             else if (qualityScore >= 0.7f)
-                material.color = Color.yellow;     // 良好
+                material.color = Color.yellow;     // 濶ｯ螂ｽ
             else if (qualityScore >= 0.5f)
-                material.color = Color.orange;     // 普通
+                material.color = Color.orange;     // 譎ｮ騾・
             else
-                material.color = Color.red;        // 要改善
+                material.color = Color.red;        // 隕∵隼蝟・
                 
             return material;
         }
 
         /// <summary>
-        /// 情報表示ラベルを作成
+        /// 諠・ｱ陦ｨ遉ｺ繝ｩ繝吶Ν繧剃ｽ懈・
         /// </summary>
         private void CreateInfoLabel(GameObject primitiveObject, PrimitiveTerrainGenerator.PrimitiveType primitiveType, PrimitiveQualityValidator.QualityReport report)
         {
-            // 3Dテキストでプリミティブ情報を表示
+            // 3D繝・く繧ｹ繝医〒繝励Μ繝溘ユ繧｣繝匁ュ蝣ｱ繧定｡ｨ遉ｺ
             GameObject label = new GameObject($"Label_{primitiveType}");
             label.transform.SetParent(primitiveObject.transform);
             label.transform.localPosition = Vector3.up * 150f;
@@ -553,11 +555,11 @@ namespace Vastcore.Generation
         }
 
         /// <summary>
-        /// 最終レポートを生成
+        /// 譛邨ゅΞ繝昴・繝医ｒ逕滓・
         /// </summary>
         private void GenerateFinalReport()
         {
-            Debug.Log("📋 Generating final test report...");
+            Debug.Log("搭 Generating final test report...");
             
             string report = "=== COMPREHENSIVE PRIMITIVE QUALITY TEST REPORT ===\n\n";
             
@@ -573,11 +575,11 @@ namespace Vastcore.Generation
             
             if (passedPrimitives == totalPrimitives)
             {
-                report += "🎉 SUCCESS: All 16 primitive types are generating with high quality!\n\n";
+                report += "脂 SUCCESS: All 16 primitive types are generating with high quality!\n\n";
             }
             else
             {
-                report += $"⚠️  WARNING: {totalPrimitives - passedPrimitives} primitive types need attention:\n";
+                report += $"笞・・ WARNING: {totalPrimitives - passedPrimitives} primitive types need attention:\n";
                 foreach (var failedType in failedPrimitiveTypes)
                 {
                     report += $"    - {failedType}\n";
@@ -591,7 +593,7 @@ namespace Vastcore.Generation
                 var type = kvp.Key;
                 var result = kvp.Value;
                 
-                report += $"  {type}: {(result.passedValidation ? "✅" : "❌")} Score: {result.overallScore:F2}\n";
+                report += $"  {type}: {(result.passedValidation ? "PASS" : "FAIL")} Score: {result.overallScore:F2}\n";
                 
                 if (result.issues.Count > 0)
                 {
@@ -606,14 +608,14 @@ namespace Vastcore.Generation
             
             Debug.Log(report);
             
-            // ファイルに保存
+            // 繝輔ぃ繧､繝ｫ縺ｫ菫晏ｭ・
             string filePath = $"Assets/primitive_quality_report_{System.DateTime.Now:yyyyMMdd_HHmmss}.txt";
             System.IO.File.WriteAllText(filePath, report);
-            Debug.Log($"📄 Report saved to: {filePath}");
+            Debug.Log($"塘 Report saved to: {filePath}");
         }
 
         /// <summary>
-        /// テストオブジェクトをクリーンアップ
+        /// 繝・せ繝医が繝悶ず繧ｧ繧ｯ繝医ｒ繧ｯ繝ｪ繝ｼ繝ｳ繧｢繝・・
         /// </summary>
         private void CleanupTestObjects()
         {
@@ -628,7 +630,7 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #region エディタ用メソッド
+        #region 繧ｨ繝・ぅ繧ｿ逕ｨ繝｡繧ｽ繝・ラ
         [ContextMenu("Quick Quality Check")]
         public void QuickQualityCheck()
         {

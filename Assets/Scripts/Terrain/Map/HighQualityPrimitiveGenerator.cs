@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.ProBuilder;
 using UnityEngine.ProBuilder.MeshOperations;
 using System.Collections.Generic;
@@ -139,11 +139,7 @@ namespace Vastcore.Generation
 
             try
             {
-                // FOR TESTING: Intentionally throw an exception for Cube type to test error recovery
-                if (primitiveType == PrimitiveTerrainGenerator.PrimitiveType.Cube)
-                {
-                    throw new System.Exception("Intentional exception for testing Cube generation failure.");
-                }
+                // Debug.Log($"Generating high-quality primitive: {primitiveType} at {position}");
 
                 Debug.Log($"Generating high-quality primitive: {primitiveType} at {position}");
                 
@@ -285,8 +281,10 @@ namespace Vastcore.Generation
             // 高品質処理
             if (quality.subdivisionLevel > 0)
             {
-                // TODO: Subdivide機能は一時的に無効化（ProBuilderのAPI変更により）
-                Debug.LogWarning($"Subdivision feature is temporarily disabled due to ProBuilder API changes. Requested level: {quality.subdivisionLevel}");
+                for (int i = 0; i < quality.subdivisionLevel; i++)
+                {
+                    ConnectElements.Connect(cube, cube.faces);
+                }
             }
             
             // 詳細な変形
@@ -364,8 +362,10 @@ namespace Vastcore.Generation
             // 高品質処理
             if (quality.subdivisionLevel > 0)
             {
-                // TODO: Subdivide機能は一時的に無効化（ProBuilderのAPI変更により）
-                Debug.LogWarning($"Subdivision feature is temporarily disabled due to ProBuilder API changes. Requested level: {quality.subdivisionLevel}");
+                for (int i = 0; i < quality.subdivisionLevel; i++)
+                {
+                    ConnectElements.Connect(pyramid, pyramid.faces);
+                }
             }
             
             if (quality.enableAdvancedDeformation)
@@ -460,8 +460,10 @@ namespace Vastcore.Generation
             // 高品質処理
             if (quality.subdivisionLevel > 0)
             {
-                // TODO: Subdivide機能は一時的に無効化（ProBuilderのAPI変更により）
-                Debug.LogWarning($"Subdivision feature is temporarily disabled due to ProBuilder API changes. Requested level: {quality.subdivisionLevel}");
+                for (int i = 0; i < quality.subdivisionLevel; i++)
+                {
+                    ConnectElements.Connect(octahedron, octahedron.faces);
+                }
             }
             
             if (quality.enableAdvancedDeformation)
@@ -511,8 +513,10 @@ namespace Vastcore.Generation
             // 高品質処理
             if (quality.subdivisionLevel > 0)
             {
-                // TODO: Subdivide機能は一時的に無効化（ProBuilderのAPI変更により）
-                Debug.LogWarning($"Subdivision feature is temporarily disabled due to ProBuilder API changes. Requested level: {quality.subdivisionLevel}");
+                for (int i = 0; i < quality.subdivisionLevel; i++)
+                {
+                    ConnectElements.Connect(monolith, monolith.faces);
+                }
             }
             
             // 上部を細くして自然な石柱形状に
@@ -563,9 +567,11 @@ namespace Vastcore.Generation
                     if (proBuilderMesh == null)
                     {
                         proBuilderMesh = archObject.AddComponent<ProBuilderMesh>();
-                        // TODO: RebuildFromMesh機能はProBuilder API変更により一時的に無効化
-                        Debug.LogWarning($"RebuildFromMesh feature is temporarily disabled due to ProBuilder API changes.");
-                        // proBuilderMesh.RebuildFromMesh(meshFilter.sharedMesh);
+                        var meshRenderer = archObject.GetComponent<MeshRenderer>();
+                        var importer = new MeshImporter(meshFilter.sharedMesh, meshRenderer != null ? meshRenderer.sharedMaterials : null, proBuilderMesh);
+                        importer.Import();
+                        proBuilderMesh.ToMesh();
+                        proBuilderMesh.Refresh();
                     }
                     
                     // 一時的なオブジェクトを削除
@@ -704,8 +710,10 @@ namespace Vastcore.Generation
             // 高品質処理
             if (quality.subdivisionLevel > 0)
             {
-                // TODO: Subdivide機能は一時的に無効化（ProBuilderのAPI変更により）
-                Debug.LogWarning($"Subdivision feature is temporarily disabled due to ProBuilder API changes. Requested level: {quality.subdivisionLevel}");
+                for (int i = 0; i < quality.subdivisionLevel; i++)
+                {
+                    ConnectElements.Connect(formation, formation.faces);
+                }
             }
             
             // 層状構造に変形
@@ -1040,34 +1048,22 @@ namespace Vastcore.Generation
             // 滑らかな法線
             if (quality.enableSmoothNormals)
             {
-                // TODO: SetSmoothingGroup機能はProBuilder API変更により一時的に無効化
-                Debug.LogWarning($"SetSmoothingGroup feature is temporarily disabled due to ProBuilder API changes. Requested: {quality.enableSmoothNormals}");
-                // mesh.SetSmoothingGroup(mesh.faces, 1);
+                Smoothing.ApplySmoothingGroups(mesh, mesh.faces, 60f);
             }
 
             // UV展開
             if (quality.enableUVUnwrapping)
             {
-                // TODO: UV展開機能はProBuilder API変更により一時的に無効化
-                Debug.LogWarning($"UV unwrapping feature is temporarily disabled due to ProBuilder API changes. Requested: {quality.enableUVUnwrapping}");
-                // UnwrapParameters unwrapParams = UnwrapParameters.Default;
-                // unwrapParams.hardAngle = 60f;
-                // unwrapParams.packMargin = 4f;
-                // unwrapParams.angleError = 8f;
-                // unwrapParams.areaError = 15f;
-                // 
-                // Unwrapping.Unwrap(mesh, unwrapParams);
+                // UvUnwrapping はこの ProBuilder バージョンで非公開のため、ここでは no-op とする。
+                Debug.LogWarning("UV unwrapping is not publicly exposed in this ProBuilder version. Skipping explicit unwrap.");
             }
 
             // メッシュ最適化
             if (quality.meshOptimization > 0)
             {
-                // TODO: MeshValidation機能はProBuilder API変更により一時的に無効化
-                Debug.LogWarning($"Mesh validation feature is temporarily disabled due to ProBuilder API changes. Requested level: {quality.meshOptimization}");
-                // MeshValidation.EnsureMeshIsValid(mesh);
-                // TODO: Optimize機能はProBuilder API変更により一時的に無効化
-                Debug.LogWarning($"Optimize feature is temporarily disabled due to ProBuilder API changes. Requested level: {quality.meshOptimization}");
-                // mesh.Optimize();
+                MeshValidation.RemoveDegenerateTriangles(mesh);
+                mesh.ToMesh();
+                mesh.Refresh();
             }
         }
 

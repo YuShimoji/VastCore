@@ -8,6 +8,7 @@
         "Vastcore.Utilities",
         "Vastcore.Generation",
         "Vastcore.Terrain",
+        "Vastcore.MapGenerator",
         "Vastcore.Player",
         "Vastcore.UI",
         "Unity.ProBuilder",

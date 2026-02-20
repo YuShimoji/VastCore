@@ -387,8 +387,11 @@ namespace Vastcore.Generation
                     if (proBuilderMesh == null)
                     {
                         proBuilderMesh = archObject.AddComponent<ProBuilderMesh>();
-                        // TODO: RebuildFromMesh機能はProBuilder API変更により一時的に無効化
-                        Debug.LogWarning($"RebuildFromMesh feature is temporarily disabled due to ProBuilder API changes.");
+                        var meshRenderer = archObject.GetComponent<MeshRenderer>();
+                        var importer = new MeshImporter(meshFilter.sharedMesh, meshRenderer != null ? meshRenderer.sharedMaterials : null, proBuilderMesh);
+                        importer.Import();
+                        proBuilderMesh.ToMesh();
+                        proBuilderMesh.Refresh();
                     }
                     
                     // 一時的なオブジェクトを削除
@@ -550,10 +553,10 @@ namespace Vastcore.Generation
         /// </summary>
         private static void ApplySubdivision(ProBuilderMesh mesh, int subdivisionLevel)
         {
+            if (mesh == null) return;
             for (int i = 0; i < subdivisionLevel; i++)
             {
-                // TODO: Subdivide機能はProBuilder API変更により一時的に無効化
-                Debug.LogWarning($"Subdivide feature is temporarily disabled due to ProBuilder API changes. Requested level: {subdivisionLevel}");
+                ConnectElements.Connect(mesh, mesh.faces);
             }
         }
         #endregion     

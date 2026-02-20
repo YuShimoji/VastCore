@@ -40,20 +40,18 @@
 
 実装完了後、以下の順序で検証する:
 
+#### 2.1.1 自動検証 (推奨)
+リポジトリルートから以下のスクリプトを実行することで、Unity をバックグラウンドで起動し、コンパイルエラーの有無を確認できる。
+
+```powershell
+.\scripts\check-compile.ps1
 ```
-Step 1: using の検証
-  - 追加した using 文ごとに、対象アセンブリの asmdef references を確認
 
-Step 2: 型の一意性検証
-  - 追加・移動した型について、同名型がないか検索
-  rg "class TypeName\b" Assets/ --glob "*.cs"
+- 成功時: `✓ Compilation check passed.` と表示され、終了コード `0` を返す。
+- 失敗時: エラー内容がコンソールおよび `artifacts/logs/compile-check.log` に出力され、非ゼロの終了コードを返す。
 
-Step 3: 条件コンパイルの検証
-  - #if で囲まれたブロック外にオプショナルシンボルがないか確認
-
-Step 4: Unity コンパイル
-  - Unity Editor で Reimport All または batchmode で確認
-```
+#### 2.1.2 手動/詳細検証
+適宜、以下の手順で詳細を確認する:
 
 ### 2.2 エラー発生時の診断フロー
 

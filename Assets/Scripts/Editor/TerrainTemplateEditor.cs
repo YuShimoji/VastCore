@@ -331,7 +331,7 @@ namespace Vastcore.Editor
         {
             if (settings == null) return;
 
-            settings.blendMode = (TemplateBlendMode)EditorGUILayout.EnumPopup("ブレンドモード", settings.blendMode);
+            settings.blendMode = (BlendMode)EditorGUILayout.EnumPopup("ブレンドモード", settings.blendMode);
 
             using (new EditorGUILayout.HorizontalScope())
             {

@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Vastcore.Generation;
@@ -6,7 +6,7 @@ using Vastcore.Generation;
 namespace Vastcore.Tests.EditMode
 {
     /// <summary>
-    /// HeightMapGenerator のユニットテスト
+    /// HeightMapGenerator 縺ｮ繝ｦ繝九ャ繝医ユ繧ｹ繝・
     /// </summary>
     [TestFixture]
     public class HeightMapGeneratorTests
@@ -20,7 +20,7 @@ namespace Vastcore.Tests.EditMode
             testObject = new GameObject("TestTerrainGenerator");
             generator = testObject.AddComponent<TerrainGenerator>();
             
-            // 小さい解像度でテスト（パフォーマンス考慮）
+            // 蟆上＆縺・ｧ｣蜒丞ｺｦ縺ｧ繝・せ繝茨ｼ医ヱ繝輔か繝ｼ繝槭Φ繧ｹ閠・・・・
             generator.Resolution = 33;
             generator.Width = 100;
             generator.Height = 100;
@@ -41,7 +41,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_NoiseMode_ReturnsCorrectDimensions()
         {
-            generator.GenerationMode = TerrainGenerationMode.Noise;
+            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
             
             float[,] heights = HeightMapGenerator.GenerateHeights(generator);
             
@@ -52,7 +52,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_NoiseMode_ValuesAreNormalized()
         {
-            generator.GenerationMode = TerrainGenerationMode.Noise;
+            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
             
             float[,] heights = HeightMapGenerator.GenerateHeights(generator);
             
@@ -69,14 +69,14 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_NoiseMode_DifferentOffsetsProduceDifferentResults()
         {
-            generator.GenerationMode = TerrainGenerationMode.Noise;
+            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
             generator.Offset = Vector2.zero;
             float[,] heights1 = HeightMapGenerator.GenerateHeights(generator);
             
             generator.Offset = new Vector2(1000f, 1000f);
             float[,] heights2 = HeightMapGenerator.GenerateHeights(generator);
             
-            // 少なくとも1つの値が異なることを確認
+            // 蟆代↑縺上→繧・縺､縺ｮ蛟､縺檎焚縺ｪ繧九％縺ｨ繧堤｢ｺ隱・
             bool hasDifference = false;
             for (int y = 0; y < heights1.GetLength(0) && !hasDifference; y++)
             {
@@ -99,15 +99,15 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_HeightMapMode_WithoutTexture_ReturnsZeroHeights()
         {
-            generator.GenerationMode = TerrainGenerationMode.HeightMap;
+            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.HeightMap;
             generator.HeightMap = null;
             
-            // HeightMap が null の場合、Debug.LogError が出力されることを期待
+            // HeightMap 縺・null 縺ｮ蝣ｴ蜷医．ebug.LogError 縺悟・蜉帙＆繧後ｋ縺薙→繧呈悄蠕・
             LogAssert.Expect(LogType.Error, "[TerrainGenerator] Height map is not assigned!");
             
             float[,] heights = HeightMapGenerator.GenerateHeights(generator);
             
-            // テクスチャがない場合、すべて0のはず
+            // 繝・け繧ｹ繝√Ε縺後↑縺・ｴ蜷医√☆縺ｹ縺ｦ0縺ｮ縺ｯ縺・
             for (int y = 0; y < heights.GetLength(0); y++)
             {
                 for (int x = 0; x < heights.GetLength(1); x++)
@@ -120,9 +120,9 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_HeightMapMode_WithTexture_ReturnsCorrectDimensions()
         {
-            generator.GenerationMode = TerrainGenerationMode.HeightMap;
+            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.HeightMap;
             
-            // シンプルなテストテクスチャを作成
+            // 繧ｷ繝ｳ繝励Ν縺ｪ繝・せ繝医ユ繧ｯ繧ｹ繝√Ε繧剃ｽ懈・
             var texture = new Texture2D(32, 32);
             for (int y = 0; y < 32; y++)
             {
@@ -149,9 +149,9 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_CombinedMode_ReturnsCorrectDimensions()
         {
-            generator.GenerationMode = TerrainGenerationMode.NoiseAndHeightMap;
+            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.NoiseAndHeightMap;
             
-            // Combined モードでは HeightMap が必要なのでダミーテクスチャを設定
+            // Combined 繝｢繝ｼ繝峨〒縺ｯ HeightMap 縺悟ｿ・ｦ√↑縺ｮ縺ｧ繝繝溘・繝・け繧ｹ繝√Ε繧定ｨｭ螳・
             var texture = new Texture2D(16, 16);
             for (int y = 0; y < 16; y++)
             {
@@ -174,9 +174,9 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_CombinedMode_ValuesAreNormalized()
         {
-            generator.GenerationMode = TerrainGenerationMode.NoiseAndHeightMap;
+            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.NoiseAndHeightMap;
             
-            // テストテクスチャを作成
+            // 繝・せ繝医ユ繧ｯ繧ｹ繝√Ε繧剃ｽ懈・
             var texture = new Texture2D(32, 32);
             for (int y = 0; y < 32; y++)
             {
@@ -210,15 +210,15 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_HeightMapMode_ChannelR_UsesRedChannel()
         {
-            generator.GenerationMode = TerrainGenerationMode.HeightMap;
+            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.HeightMap;
             generator.HeightMapChannel = HeightMapChannel.R;
             
-            // R=1.0, G=0.0, B=0.0, A=0.0 のテクスチャを作成
+            // R=1.0, G=0.0, B=0.0, A=0.0 縺ｮ繝・け繧ｹ繝√Ε繧剃ｽ懈・
             var texture = new Texture2D(4, 4, TextureFormat.RGBA32, false);
             var colors = new Color[16];
             for (int i = 0; i < colors.Length; i++)
             {
-                colors[i] = new Color(1.0f, 0.0f, 0.0f, 0.0f); // R=1.0, 他=0.0
+                colors[i] = new Color(1.0f, 0.0f, 0.0f, 0.0f); // R=1.0, 莉・0.0
             }
             texture.SetPixels(colors);
             texture.Apply();
@@ -226,7 +226,7 @@ namespace Vastcore.Tests.EditMode
             
             float[,] heights = HeightMapGenerator.GenerateHeights(generator);
             
-            // Rチャンネルが使用されているため、高さ値は1.0に近いはず
+            // R繝√Ε繝ｳ繝阪Ν縺御ｽｿ逕ｨ縺輔ｌ縺ｦ縺・ｋ縺溘ａ縲・ｫ倥＆蛟､縺ｯ1.0縺ｫ霑代＞縺ｯ縺・
             bool hasHighValue = false;
             for (int y = 0; y < heights.GetLength(0) && !hasHighValue; y++)
             {
@@ -246,15 +246,15 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_HeightMapMode_ChannelG_UsesGreenChannel()
         {
-            generator.GenerationMode = TerrainGenerationMode.HeightMap;
+            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.HeightMap;
             generator.HeightMapChannel = HeightMapChannel.G;
             
-            // R=0.0, G=1.0, B=0.0, A=0.0 のテクスチャを作成
+            // R=0.0, G=1.0, B=0.0, A=0.0 縺ｮ繝・け繧ｹ繝√Ε繧剃ｽ懈・
             var texture = new Texture2D(4, 4, TextureFormat.RGBA32, false);
             var colors = new Color[16];
             for (int i = 0; i < colors.Length; i++)
             {
-                colors[i] = new Color(0.0f, 1.0f, 0.0f, 0.0f); // G=1.0, 他=0.0
+                colors[i] = new Color(0.0f, 1.0f, 0.0f, 0.0f); // G=1.0, 莉・0.0
             }
             texture.SetPixels(colors);
             texture.Apply();
@@ -262,7 +262,7 @@ namespace Vastcore.Tests.EditMode
             
             float[,] heights = HeightMapGenerator.GenerateHeights(generator);
             
-            // Gチャンネルが使用されているため、高さ値は1.0に近いはず
+            // G繝√Ε繝ｳ繝阪Ν縺御ｽｿ逕ｨ縺輔ｌ縺ｦ縺・ｋ縺溘ａ縲・ｫ倥＆蛟､縺ｯ1.0縺ｫ霑代＞縺ｯ縺・
             bool hasHighValue = false;
             for (int y = 0; y < heights.GetLength(0) && !hasHighValue; y++)
             {
@@ -282,15 +282,15 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_NoiseMode_SameSeed_ProducesSameResult()
         {
-            generator.GenerationMode = TerrainGenerationMode.Noise;
+            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
             generator.Seed = 12345;
             
             float[,] heights1 = HeightMapGenerator.GenerateHeights(generator);
             
-            // 再生成（同一Seed）
+            // 蜀咲函謌撰ｼ亥酔荳Seed・・
             float[,] heights2 = HeightMapGenerator.GenerateHeights(generator);
             
-            // 同一Seedなら同一結果（完全一致を期待）
+            // 蜷御ｸSeed縺ｪ繧牙酔荳邨先棡・亥ｮ悟・荳閾ｴ繧呈悄蠕・ｼ・
             Assert.AreEqual(heights1.GetLength(0), heights2.GetLength(0));
             Assert.AreEqual(heights1.GetLength(1), heights2.GetLength(1));
             
@@ -307,7 +307,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_NoiseMode_DifferentSeed_ProducesDifferentResult()
         {
-            generator.GenerationMode = TerrainGenerationMode.Noise;
+            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
             generator.Seed = 11111;
             
             float[,] heights1 = HeightMapGenerator.GenerateHeights(generator);
@@ -315,7 +315,7 @@ namespace Vastcore.Tests.EditMode
             generator.Seed = 99999;
             float[,] heights2 = HeightMapGenerator.GenerateHeights(generator);
             
-            // 異なるSeedなら異なる結果（少なくとも1つの値が異なる）
+            // 逡ｰ縺ｪ繧鬼eed縺ｪ繧臥焚縺ｪ繧狗ｵ先棡・亥ｰ代↑縺上→繧・縺､縺ｮ蛟､縺檎焚縺ｪ繧具ｼ・
             bool hasDifference = false;
             for (int y = 0; y < heights1.GetLength(0) && !hasDifference; y++)
             {
@@ -334,25 +334,25 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_HeightMapMode_UVTiling_AppliesTiling()
         {
-            generator.GenerationMode = TerrainGenerationMode.HeightMap;
-            generator.UVTiling = new Vector2(2.0f, 2.0f); // 2倍の繰り返し
+            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.HeightMap;
+            generator.UVTiling = new Vector2(2.0f, 2.0f); // 2蛟阪・郢ｰ繧願ｿ斐＠
             
-            // 左上のみ白、他は黒のテクスチャ
+            // 蟾ｦ荳翫・縺ｿ逋ｽ縲∽ｻ悶・鮟偵・繝・け繧ｹ繝√Ε
             var texture = new Texture2D(4, 4, TextureFormat.RGBA32, false);
             var colors = new Color[16];
             for (int i = 0; i < colors.Length; i++)
             {
                 colors[i] = Color.black;
             }
-            colors[0] = Color.white; // 左上のみ白
+            colors[0] = Color.white; // 蟾ｦ荳翫・縺ｿ逋ｽ
             texture.SetPixels(colors);
             texture.Apply();
             generator.HeightMap = texture;
             
             float[,] heights = HeightMapGenerator.GenerateHeights(generator);
             
-            // UVTiling=2.0 なので、テクスチャが2x2で繰り返される
-            // そのため、複数の位置で高値が現れるはず
+            // UVTiling=2.0 縺ｪ縺ｮ縺ｧ縲√ユ繧ｯ繧ｹ繝√Ε縺・x2縺ｧ郢ｰ繧願ｿ斐＆繧後ｋ
+            // 縺昴・縺溘ａ縲∬､・焚縺ｮ菴咲ｽｮ縺ｧ鬮伜､縺檎樟繧後ｋ縺ｯ縺・
             int highValueCount = 0;
             for (int y = 0; y < heights.GetLength(0); y++)
             {
@@ -365,7 +365,7 @@ namespace Vastcore.Tests.EditMode
                 }
             }
             
-            // Tiling=2.0 なので、複数箇所で高値が現れるはず（最低でも2箇所以上）
+            // Tiling=2.0 縺ｪ縺ｮ縺ｧ縲∬､・焚邂・園縺ｧ鬮伜､縺檎樟繧後ｋ縺ｯ縺夲ｼ域怙菴弱〒繧・邂・園莉･荳奇ｼ・
             Assert.Greater(highValueCount, 1, 
                 "UVTiling should cause texture to repeat, creating multiple high-value regions");
             
@@ -375,16 +375,16 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_HeightMapMode_InvertHeight_InvertsHeights()
         {
-            generator.GenerationMode = TerrainGenerationMode.HeightMap;
+            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.HeightMap;
             generator.InvertHeight = false;
             
-            // グレースケールグラデーションのテクスチャ
+            // 繧ｰ繝ｬ繝ｼ繧ｹ繧ｱ繝ｼ繝ｫ繧ｰ繝ｩ繝・・繧ｷ繝ｧ繝ｳ縺ｮ繝・け繧ｹ繝√Ε
             var texture = new Texture2D(4, 4, TextureFormat.RGBA32, false);
             for (int y = 0; y < 4; y++)
             {
                 for (int x = 0; x < 4; x++)
                 {
-                    float value = (float)(x + y) / 6.0f; // 0.0 ~ 1.0 のグラデーション
+                    float value = (float)(x + y) / 6.0f; // 0.0 ~ 1.0 縺ｮ繧ｰ繝ｩ繝・・繧ｷ繝ｧ繝ｳ
                     texture.SetPixel(x, y, new Color(value, value, value));
                 }
             }
@@ -393,13 +393,13 @@ namespace Vastcore.Tests.EditMode
             
             float[,] heightsNormal = HeightMapGenerator.GenerateHeights(generator);
             
-            // InvertHeight = true で再生成
+            // InvertHeight = true 縺ｧ蜀咲函謌・
             generator.InvertHeight = true;
             float[,] heightsInverted = HeightMapGenerator.GenerateHeights(generator);
             
-            // 反転後は、元の高い位置が低く、低い位置が高くなるはず
-            // ただし、完全に反転するわけではない（正規化の影響もある）ので、
-            // 少なくとも値の分布が変化することを確認
+            // 蜿崎ｻ｢蠕後・縲∝・縺ｮ鬮倥＞菴咲ｽｮ縺御ｽ弱￥縲∽ｽ弱＞菴咲ｽｮ縺碁ｫ倥￥縺ｪ繧九・縺・
+            // 縺溘□縺励∝ｮ悟・縺ｫ蜿崎ｻ｢縺吶ｋ繧上￠縺ｧ縺ｯ縺ｪ縺・ｼ域ｭ｣隕丞喧縺ｮ蠖ｱ髻ｿ繧ゅ≠繧具ｼ峨・縺ｧ縲・
+            // 蟆代↑縺上→繧ょ､縺ｮ蛻・ｸ・′螟牙喧縺吶ｋ縺薙→繧堤｢ｺ隱・
             bool hasDifference = false;
             for (int y = 0; y < heightsNormal.GetLength(0) && !hasDifference; y++)
             {
@@ -424,7 +424,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_SmallResolution_CompletesQuickly()
         {
-            generator.GenerationMode = TerrainGenerationMode.Noise;
+            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
             generator.Resolution = 33;
             
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -437,3 +437,4 @@ namespace Vastcore.Tests.EditMode
         #endregion
     }
 }
+

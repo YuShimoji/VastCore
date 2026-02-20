@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.ProBuilder;
+using UnityEngine.ProBuilder.MeshOperations;
 using System.Linq;
 
 namespace Vastcore.Generation.Map
@@ -41,8 +42,11 @@ namespace Vastcore.Generation.Map
         /// </summary>
         public static void ApplySubdivision(ProBuilderMesh mesh, int subdivisionLevel)
         {
-            // TODO: Subdivide機能はProBuilder API変更により一時的に無効化
-            Debug.LogWarning($"Subdivide feature is temporarily disabled due to ProBuilder API changes. Requested level: {subdivisionLevel}");
+            if (mesh == null) return;
+            for (int i = 0; i < subdivisionLevel; i++)
+            {
+                ConnectElements.Connect(mesh, mesh.faces);
+            }
         }
 
         /// <summary>
