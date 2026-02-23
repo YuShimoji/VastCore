@@ -201,3 +201,33 @@ C# 10 以降の機能 (引数なし struct コンストラクタ、global using 
 | プレイヤーシステム | `Vastcore.Player` | `PlayerController` |
 | UI システム | `Vastcore.UI` | `UIRealtimeManager`, `RealtimeUIBehaviour` |
 | レガシー MapGenerator | `Vastcore.MapGenerator` | `TerrainGenerator`, `HeightMapGenerator` |
+
+---
+
+## 6. 2026-02-22 Addendum (WorldGen Assembly)
+
+This addendum documents the new runtime assembly introduced for the volumetric world generation baseline.
+
+### 6.1 New Runtime Assembly
+
+| Assembly | Directory | rootNamespace | autoReferenced | References |
+|----------|-----------|---------------|----------------|------------|
+| `Vastcore.WorldGen` | `Assets/Scripts/WorldGen/` | `Vastcore.WorldGen` | false | `Vastcore.Core`, `Vastcore.Utilities`, `Vastcore.Generation` |
+
+### 6.2 Reference Updates
+
+- `Vastcore.Terrain` now references `Vastcore.WorldGen`
+- `Vastcore.Editor` now references `Vastcore.WorldGen`
+- `Vastcore.Testing` now references `Vastcore.WorldGen`
+- `Vastcore.Tests.EditMode` now references `Vastcore.WorldGen` (M3 follow-up test coverage)
+
+### 6.3 Dependency Direction
+
+Current direction for the new path:
+
+```text
+Vastcore.Generation -> Vastcore.WorldGen -> Vastcore.Terrain
+```
+
+`Vastcore.WorldGen` does not reference `Vastcore.Terrain`.
+Heightmap integration is injected through `IHeightmapFieldFactory` to avoid cyclic dependencies.

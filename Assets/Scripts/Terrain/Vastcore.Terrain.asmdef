@@ -6,7 +6,8 @@
         "Unity.TextMeshPro",
         "Vastcore.Core",
         "Vastcore.Utilities",
-        "Vastcore.Generation"
+        "Vastcore.Generation",
+        "Vastcore.WorldGen"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

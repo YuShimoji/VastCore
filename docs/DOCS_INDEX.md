@@ -141,3 +141,23 @@ grep -rn --include="*.md" "This doc moved to" Documentation/
 ---
 
 **参照**: [SSOT_WORLD.md](SSOT_WORLD.md) | [ARCHITECTURE.md](ARCHITECTURE.md) | [DOCUMENTATION_CLEANUP_PLAN.md](01_planning/DOCUMENTATION_CLEANUP_PLAN.md)
+
+---
+
+## 2026-02-22 Addendum
+
+New design document added for the volumetric migration skeleton:
+
+- `docs/02_design/WorldGenArchitecture.md`
+  - SSOT recipe baseline
+  - 4-engine boundaries
+  - assembly impact and dependency direction
+  - current milestone status (M0-M1 baseline)
+- `docs/04_reports/REPORT_TASK_WORLDGEN_M0_M1_20260222.md` (WorldGen migration baseline report)
+- `docs/04_reports/REPORT_TASK_WORLDGEN_M2_20260222.md` (M2 graph auto-generation + field burn report)
+- `docs/04_reports/REPORT_TASK_WORLDGEN_M2_VISUALIZATION_20260222.md` (M2 graph gizmo visualization + adapter/update-hook report)
+- `docs/04_reports/REPORT_TASK_WORLDGEN_M2_EDITOR_OVERLAY_20260222.md` (Graph overlay EditorWindow report)
+- `docs/04_reports/REPORT_TASK_WORLDGEN_M3_20260222.md` (M3 mesh extraction/chunking/dirty-region report)
+- `docs/04_reports/REPORT_TASK_WORLDGEN_M3_FOLLOW_20260222.md` (M3 follow-up smoothing/seam/allocation report)
+- `docs/04_reports/REPORT_TASK_WORLDGEN_M3_RECOMMENDED_20260222.md` (M3 recommended seam-processor decoupling report)
+- `docs/04_reports/REPORT_TASK_WORKFLOW_SYNC_20260223.md` (Shared Workflows sync and remote-ready baseline report)

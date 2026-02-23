@@ -147,3 +147,28 @@ Camera                     ← Game
 ---
 
 **参照**: [SSOT_WORLD.md](SSOT_WORLD.md) | [DEVELOPMENT_ROADMAP_2026.md](01_planning/DEVELOPMENT_ROADMAP_2026.md) | [DOCS_INDEX.md](DOCS_INDEX.md)
+
+---
+
+## 6. 2026-02-22 Addendum: WorldGen Baseline
+
+A new assembly `Vastcore.WorldGen` has been added as the baseline for the volumetric generation migration.
+
+### Added runtime module
+
+- `Vastcore.WorldGen`
+  - Entry point: `Vastcore.WorldGen.Pipeline.WorldGenPipeline`
+  - SSOT asset: `Vastcore.WorldGen.Recipe.WorldGenRecipe`
+  - Engines: Field (baseline), Graph (stub), Grammar (stub), Deformation (stub)
+
+### Bridge with existing heightmap system
+
+- Existing `HeightmapProviderSettings` remains unchanged.
+- `Vastcore.Terrain.Facade.TerrainHeightmapFieldFactory` converts existing providers into `IDensityField`.
+- This keeps the old heightmap flow available while enabling new volumetric sampling.
+
+### Current migration status
+
+- M0 completed: assembly wiring and common infrastructure
+- M1 baseline completed: recipe + field pipeline + observability skeleton
+- M2-M5 currently represented by extension slots/stubs for worker handoff

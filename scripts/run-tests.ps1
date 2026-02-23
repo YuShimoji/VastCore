@@ -1,4 +1,4 @@
-param(
+﻿param(
   [ValidateSet('editmode','playmode','all')] [string]$TestMode = 'all',
   [string]$UnityPath = '',
   [string]$ProjectPath = '',
@@ -15,6 +15,8 @@ if (-not $ProjectPath -or $ProjectPath -eq '') {
 # Ensure output dirs
 New-Item -ItemType Directory -Force -Path $ResultsDir | Out-Null
 New-Item -ItemType Directory -Force -Path $LogsDir | Out-Null
+$ResultsDir = (Resolve-Path $ResultsDir).Path
+$LogsDir = (Resolve-Path $LogsDir).Path
 
 function Get-UnityEditorPath() {
   param([string]$Override)
@@ -26,10 +28,11 @@ function Get-UnityEditorPath() {
   $verLine = Get-Content $verFile | Select-Object -First 1
   if ($verLine -notmatch 'm_EditorVersion:\s*(?<v>[^\s]+)') { throw "Could not parse Unity version from $verFile" }
   $version = $Matches['v']
-  $default = "C:\\Program Files\\Unity\\Hub\\Editor\\$version\\Editor\\Unity.exe"
+  $default = "C:\Program Files\Unity\Hub\Editor\$version\Editor\Unity.exe"
   if (Test-Path $default) { return $default }
+
   # Fallback: best-effort search under Unity Hub
-  $hub = "C:\\Program Files\\Unity\\Hub\\Editor"
+  $hub = "C:\Program Files\Unity\Hub\Editor"
   if (Test-Path $hub) {
     $candidate = Get-ChildItem $hub -Directory | Sort-Object Name -Descending | Select-Object -First 1
     if ($candidate) {
@@ -37,6 +40,7 @@ function Get-UnityEditorPath() {
       if (Test-Path $exe) { return $exe }
     }
   }
+
   # Final fallback: rely on PATH
   return 'Unity.exe'
 }
@@ -46,21 +50,33 @@ Write-Host "Using Unity Editor: $unityExe"
 
 function Run-UnityTests() {
   param([string]$mode)
-  $res = Join-Path $ResultsDir ("$mode-results.xml")
-  $log = Join-Path $LogsDir ("$mode.log")
+
+  $normalizedMode = $mode.ToLowerInvariant()
+  $platformArg = switch ($normalizedMode) {
+    'editmode' { 'EditMode' }
+    'playmode' { 'PlayMode' }
+    default { throw "Unsupported test mode: $mode" }
+  }
+
+  $res = Join-Path $ResultsDir ("$normalizedMode-results.xml")
+  $log = Join-Path $LogsDir ("$normalizedMode.log")
+
   $args = @(
-    '-batchmode','-nographics','-quit',
-    '-projectPath', "$ProjectPath",
-    '-runTests','-testPlatform', $mode,
-    '-testResults', "$res",
-    '-logFile', "$log"
+    '-batchmode','-nographics',
+    '-projectPath', "`"$ProjectPath`"",
+    '-runTests','-testPlatform', $platformArg,
+    '-testResults', "`"$res`"",
+    '-logFile', "`"$log`""
   )
-  Write-Host "Running $mode tests..."
-  & $unityExe @args
-  $code = $LASTEXITCODE
-  if ($code -ne 0) { throw "Unity returned non-zero exit code ($code) for $mode" }
+
+  Write-Host "Running $normalizedMode tests..."
+  $process = Start-Process -FilePath $unityExe -ArgumentList $args -NoNewWindow -PassThru -Wait
+  $code = $process.ExitCode
+
+  if ($code -ne 0) { throw "Unity returned non-zero exit code ($code) for $normalizedMode" }
   if (-not (Test-Path $res)) { throw "Results not found: $res" }
-  Write-Host "✓ $mode tests passed. Results: $res"
+
+  Write-Host "PASS: $normalizedMode tests passed. Results: $res"
 }
 
 switch ($TestMode) {
