@@ -5,9 +5,11 @@
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Vastcore.Testing.csproj" />
   <Project Path="Vastcore.Terrain.csproj" />
+  <Project Path="Vastcore.WorldGen.csproj" />
   <Project Path="Vastcore.Core.csproj" />
   <Project Path="Vastcore.Tests.EditMode.csproj" />
   <Project Path="Vastcore.Player.csproj" />
+  <Project Path="Vastcore.Editor.StructureGenerator.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Vastcore.Camera.csproj" />
   <Project Path="Vastcore.Editor.csproj" />
