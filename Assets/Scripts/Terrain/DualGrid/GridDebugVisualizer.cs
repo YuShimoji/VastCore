@@ -1,4 +1,5 @@
 using UnityEngine;
+using Vastcore.Generation;
 
 namespace Vastcore.Terrain.DualGrid
 {
@@ -19,6 +20,10 @@ namespace Vastcore.Terrain.DualGrid
         [SerializeField] private int m_MaxHeight = 5;
         [SerializeField] private bool m_UseHeightMap = false;
         [SerializeField] private Texture2D m_HeightMap;
+        
+        [Header("Profile Settings")]
+        [Tooltip("TerrainGenerationProfile を指定すると、DualGridHeightSamplingSettings が適用されます")]
+        [SerializeField] private TerrainGenerationProfile m_Profile;
         
         [Header("Visualization Settings")]
         [SerializeField] private bool m_ShowNodes = true;
@@ -71,9 +76,12 @@ namespace Vastcore.Terrain.DualGrid
             m_Grid.ApplyRelaxation(m_Seed, m_JitterAmount, m_UsePerlinNoise);
             
             // 高さを生成
+            // プロファイルが指定されている場合は、DualGridHeightSamplingSettings を渡す
+            DualGridHeightSamplingSettings samplingSettings = m_Profile != null ? m_Profile.DualGridHeightSampling : null;
+            
             if (m_UseHeightMap && m_HeightMap != null)
             {
-                VerticalExtrusionGenerator.GenerateFromHeightMap(m_Grid, m_ColumnStack, m_HeightMap, m_MaxHeight);
+                VerticalExtrusionGenerator.GenerateFromHeightMap(m_Grid, m_ColumnStack, m_HeightMap, m_MaxHeight, samplingSettings);
             }
             else
             {
