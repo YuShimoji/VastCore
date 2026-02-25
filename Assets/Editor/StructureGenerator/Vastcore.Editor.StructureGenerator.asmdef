@@ -22,15 +22,7 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": false,
-    "defineConstraints": [
-        "HAS_PROBUILDER"
-    ],
-    "versionDefines": [
-        {
-            "name": "com.unity.probuilder",
-            "expression": "6.0.0",
-            "define": "HAS_PROBUILDER"
-        }
-    ],
+    "defineConstraints": [],
+    "versionDefines": [],
     "noEngineReferences": false
 }
