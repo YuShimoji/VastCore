@@ -1,7 +1,10 @@
 # Task: TASK_037 Terrain Vertical Slice Closeout Summary
 
 ## Status
-Status: READY
+Status: DONE
+
+## Report
+Report: `docs/04_reports/HANDOVER_2026-02-12_TerrainVerticalSlice_Closeout.md`
 
 ## Tier
 Tier: 1
@@ -31,10 +34,10 @@ Create a concise closeout summary for TASK_031-036 so the next assignee can star
 4. Cross-link to mission log and worker prompts.
 
 ## DoD
-- [ ] Closeout summary document created under `docs/04_reports/`.
-- [ ] Includes status table, blocker table, next-action matrix.
-- [ ] Includes direct links to active worker prompts.
-- [ ] Ticket status updated to DONE.
+- [x] Closeout summary document created under `docs/04_reports/`.
+- [x] Includes status table, blocker table, next-action matrix.
+- [x] Includes direct links to active worker prompts.
+- [x] Ticket status updated to DONE.
 
 ## Deliverables
 1. `docs/04_reports/HANDOVER_2026-02-12_TerrainVerticalSlice_Closeout.md` (or equivalent)
