@@ -364,3 +364,33 @@ Phase B 髢句ｧ・(PB-1)
 - Next Action:
   1. Close `TASK_034_UnityValidation_DualGridProfileMapping` with manual Unity evidence.
   2. Re-evaluate start gate for `TASK_PC-1_DeformPackageIntegration` after dependency check.
+
+### 2026-02-26T14:05:00+09:00 - Orchestrator - Shortest Plan Activation (Terrain/Object Generation)
+- Objective: Reduce manual validation load and move with shortest path.
+- Executed gates:
+  1. `scripts/run-tests.ps1 -TestMode playmode` => PASS
+  2. Existing baseline retained: compile PASS, editmode PASS (75/75)
+- Added guides:
+  - `docs/03_guides/TASK_034_MANUAL_VALIDATION_CHECKLIST.md`
+  - `docs/03_guides/TERRAIN_OBJECT_GENERATION_SHORTEST_PLAN.md`
+- Updated task/state docs:
+  - `docs/tasks/TASK_034_UnityValidation_DualGridProfileMapping.md` (compile DoD checked)
+  - `docs/WORKFLOW_STATE_SSOT.md` (next action aligned to shortest plan)
+  - `docs/MILESTONE_PLAN.md` (TASK_037 closeout reflected)
+- Next Action:
+  1. Execute only 4 focused manual checks in TASK_034 checklist.
+  2. Mark TASK_034 as DONE or BLOCKED with concrete evidence.
+
+### 2026-02-26T14:30:00+09:00 - Orchestrator - Non-zero Test Gate Applied
+- Updated: `scripts/run-tests.ps1`
+  - Added optional switch `-RequireNonZeroTests`.
+  - If NUnit `total <= 0`, script fails explicitly.
+- Verification:
+  1. EditMode with strict gate: PASS.
+  2. PlayMode with strict gate: FAIL (`total=0`) -> gate not satisfied.
+- Impact:
+  - Prevents false-green test runs when no tests are executed.
+  - Current shortest path is blocked on PlayMode test inventory (strict mode).
+- Next Action:
+  1. Close TASK_034 manual checks in parallel.
+  2. Decide whether to add minimum PlayMode smoke tests or run strict gate only for EditMode temporarily.

@@ -46,7 +46,7 @@ Validate the `TASK_033` implementation in Unity Editor and close deferred compil
 3. Record evidence and open issues.
 
 ## DoD
-- [ ] Unity compile verification result recorded.
+- [x] Unity compile verification result recorded.
 - [ ] Manual validation results recorded for all 4 mapping dimensions above.
 - [x] Regression observation for legacy fallback path recorded (static verification).
 - [x] Report created: `docs/04_reports/REPORT_TASK_034_UnityValidation_DualGridProfileMapping.md`.
@@ -60,6 +60,7 @@ Validate the `TASK_033` implementation in Unity Editor and close deferred compil
 1. Validation report with logs/screenshots references.
 2. Final ticket status update.
 3. Next action proposal (if blocker remains).
+4. Manual checklist execution record: `docs/03_guides/TASK_034_MANUAL_VALIDATION_CHECKLIST.md`.
 
 ## Stopping Conditions
 - DoD completed and report published.
