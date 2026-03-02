@@ -10,6 +10,7 @@
   <Project Path="Vastcore.Tests.EditMode.csproj" />
   <Project Path="Vastcore.Player.csproj" />
   <Project Path="Vastcore.Editor.StructureGenerator.csproj" />
+  <Project Path="Vastcore.Testing.Runtime.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Vastcore.Camera.csproj" />
   <Project Path="Vastcore.Editor.csproj" />
