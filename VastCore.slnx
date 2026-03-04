@@ -1,5 +1,6 @@
 ﻿<Solution>
   <Project Path="Vastcore.Generation.csproj" />
+  <Project Path="Vastcore.Tests.EditMode.csproj" />
   <Project Path="Vastcore.Editor.Root.csproj" />
   <Project Path="Vastcore.UI.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
@@ -7,7 +8,6 @@
   <Project Path="Vastcore.Terrain.csproj" />
   <Project Path="Vastcore.WorldGen.csproj" />
   <Project Path="Vastcore.Core.csproj" />
-  <Project Path="Vastcore.Tests.EditMode.csproj" />
   <Project Path="Vastcore.Player.csproj" />
   <Project Path="Vastcore.Editor.StructureGenerator.csproj" />
   <Project Path="Vastcore.Testing.Runtime.csproj" />
