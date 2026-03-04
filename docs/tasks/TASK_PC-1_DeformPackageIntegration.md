@@ -15,6 +15,7 @@ Milestone: LG-1
 - 参照: `docs/01_planning/DEVELOPMENT_ROADMAP_2026.md:352`
 - 依存: PA-1（完了済み）と PB-5（未着手）
 - 本タスクは長期目標 LG-1 の先行起票（着手は依存解消後）。
+- **2026-03-04 調査結果**: Deform パッケージ (com.beans.deform@9e57dd3864ea) は導入済みだが、既存の統合コードとAPI互換性なし。統合コードは想定APIで書かれており、実際のDeform APIとの整合性検証が必須。
 
 ## Focus Area
 - `Packages/manifest.json`
@@ -60,6 +61,8 @@ Milestone: LG-1
 
 ## DoD
 - [ ] 依存条件（PA-1, PB-5）が満たされ着手可能になっている
+- [ ] **Deform パッケージ実API調査が完了している** (Deformable, Deformer系のAPIリファレンス作成)
+- [ ] 統合コードとDeform API の互換性ギャップ分析が完了している
 - [ ] Deform パッケージ導入方針が確定している
 - [ ] スタブ撤去可否と移行手順が定義されている
 - [ ] Unity Editor で主要 Deformer 動作が確認されている
@@ -68,3 +71,8 @@ Milestone: LG-1
 ## Notes
 - 長期タスクのため、着手前に再見積もり（Tier/Size）を必須とする。
 - PB-5 完了時に Focus Area を再確定する。
+- **2026-03-04 試行結果**:
+  - DeformPresetLibrary.cs を Core→Generation に移動完了 (e8eae5f)
+  - DEFORM_AVAILABLE シンボル追加試行 → API互換性エラーで撤回
+  - 主なAPI不一致: Deformable.Mesh, CurveDeformer, ScaleDeformer.Factor
+  - 次ステップ: Deform パッケージ実API調査（Explore Agent 推奨）
