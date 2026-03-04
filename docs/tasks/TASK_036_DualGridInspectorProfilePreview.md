@@ -1,7 +1,7 @@
 # Task: TASK_036 DualGrid Inspector Profile Preview
 
 ## Status
-Status: READY
+Status: DONE
 
 ## Tier
 Tier: 2
@@ -10,7 +10,7 @@ Tier: 2
 Branch: feature/TASK_036-dualgrid-inspector-preview
 
 ## Created
-Created: 2026-02-12
+Created: 2026-02-12`r`nCompleted: 2026-02-25`r`nReport: docs/04_reports/REPORT_TASK_036_DualGridInspectorProfilePreview.md
 
 ## Objective
 Enable profile-driven DualGrid sampling preview from Inspector by wiring `TerrainGenerationProfile.DualGridHeightSampling` into debug generation flow.
@@ -36,10 +36,10 @@ Enable profile-driven DualGrid sampling preview from Inspector by wiring `Terrai
 4. Document usage in a short guide/report.
 
 ## DoD
-- [ ] Inspector exposes profile assignment for debug visualizer.
-- [ ] Assigned profile affects sampling behavior in preview generation path.
-- [ ] Null profile keeps legacy behavior.
-- [ ] Report created: `docs/04_reports/REPORT_TASK_036_DualGridInspectorProfilePreview.md`.
+- [x] Inspector exposes profile assignment for debug visualizer.
+- [x] Assigned profile affects sampling behavior in preview generation path.
+- [x] Null profile keeps legacy behavior.
+- [x] Report created: `docs/04_reports/REPORT_TASK_036_DualGridInspectorProfilePreview.md`.
 
 ## Deliverables
 1. Minimal code wiring for preview path
@@ -49,3 +49,4 @@ Enable profile-driven DualGrid sampling preview from Inspector by wiring `Terrai
 ## Stopping Conditions
 - Preview flow can switch between profile-driven and legacy behavior without code changes.
 - Any unresolved issue is recorded with reproduction steps.
+

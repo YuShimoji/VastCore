@@ -3,7 +3,8 @@
   [string]$UnityPath = '',
   [string]$ProjectPath = '',
   [string]$ResultsDir = 'artifacts/test-results',
-  [string]$LogsDir = 'artifacts/logs'
+  [string]$LogsDir = 'artifacts/logs',
+  [switch]$RequireNonZeroTests
 )
 
 $ErrorActionPreference = 'Stop'
@@ -75,6 +76,18 @@ function Run-UnityTests() {
 
   if ($code -ne 0) { throw "Unity returned non-zero exit code ($code) for $normalizedMode" }
   if (-not (Test-Path $res)) { throw "Results not found: $res" }
+
+  if ($RequireNonZeroTests) {
+    [xml]$xml = Get-Content -Raw -Path $res
+    $totalAttr = $xml.'test-run'.total
+    $total = 0
+    if (-not [int]::TryParse($totalAttr, [ref]$total)) {
+      throw "Could not parse total test count from results: $res"
+    }
+    if ($total -le 0) {
+      throw "No tests were executed for $normalizedMode (total=$total)."
+    }
+  }
 
   Write-Host "PASS: $normalizedMode tests passed. Results: $res"
 }

@@ -317,3 +317,96 @@ Phase B 髢句ｧ・(PB-1)
   1. Execute Worker with `docs/inbox/WORKER_PROMPT_TASK_PB-1.md`
   2. Decide order between `TASK_036` and `TASK_037` after PB-1 kickoff
   3. Keep `PC-1` as LG-1 planned item (not started)
+
+### 2026-02-24T06:10:00+09:00 - Orchestrator - P3 Strategy + P4 Ticketing + P5 Delegation Prep (3-level validation)
+- Input integrated: PB-1 completed (`docs/tasks/TASK_PB-1_NUnitTestFoundation.md` = DONE).
+- State SSOT initialized: `docs/WORKFLOW_STATE_SSOT.md` (new).
+- 3-level validation applied to next queue:
+  1. High: PB-2 (EditMode remaining failure fix, MG-1 gate impact)
+  2. Medium: TASK_036 (DualGrid inspector preview)
+  3. Low: TASK_037 (closeout summary)
+- Created: `docs/tasks/TASK_PB-2_CsgProviderResolverTestStabilization.md`
+- Created: `docs/inbox/WORKER_PROMPT_TASK_PB-2.md`
+- Updated: `docs/MILESTONE_PLAN.md` (MG-1 progress 88%, PB-1 gate reflected)
+- Next Phase: P5 (Worker Delegation)
+- Next Action:
+  1. Execute Worker with `docs/inbox/WORKER_PROMPT_TASK_PB-2.md`
+  2. Verify `editmode Fail=0` and close PB-2
+  3. Move to TASK_036 after MG-1 test gate recovery
+
+### 2026-02-25T09:30:00+09:00 - Orchestrator - Remote Sync & Resume Baseline
+- Executed: git pull --rebase --autostash origin main
+- Result: Already up to date (no remote delta).
+- Local working tree: dirty (orchestrator/worker in-progress artifacts preserved).
+- Current Phase: P5 (Worker Delegation)
+- Next Action: Execute Worker with docs/inbox/WORKER_PROMPT_TASK_PB-2.md and recover EditMode Fail=0.
+
+### 2026-02-25T15:20:00+09:00 - Orchestrator - Verification Reassessment & Resume
+- Verified worker claims against repository and runtime checks.
+  1. PB-2 commit d878f95 exists and report is under docs/04_reports/.
+  2. TASK_036 commit 2856b44 exists, code/report present on current branch.
+  3. Runtime validation re-run: check-compile pass, editmode pass (75/75).
+- Normalized status:
+  - TASK_PB-2_CsgProviderResolverTestStabilization => DONE
+  - TASK_036_DualGridInspectorProfilePreview => DONE
+- Updated SSOT and milestone state, next action fixed to TASK_037 worker delegation.
+
+### 2026-02-26T13:45:00+09:00 - Orchestrator - TASK_037 Closeout Completed
+- Task: `docs/tasks/TASK_037_TerrainVerticalSlice_CloseoutSummary.md`
+- Status: DONE
+- Report: `docs/04_reports/HANDOVER_2026-02-12_TerrainVerticalSlice_Closeout.md`
+- Actions completed:
+  1. Consolidated TASK_031-036 into single closeout handover.
+  2. Added status table / blocker table / scenario-based next-action matrix.
+  3. Linked worker prompts, MISSION_LOG, and related reports for zero-search resume.
+- Updated SSOT:
+  - `docs/WORKFLOW_STATE_SSOT.md` (next focus shifted to TASK_034 manual Unity closure)
+- Next Action:
+  1. Close `TASK_034_UnityValidation_DualGridProfileMapping` with manual Unity evidence.
+  2. Re-evaluate start gate for `TASK_PC-1_DeformPackageIntegration` after dependency check.
+
+### 2026-02-26T14:05:00+09:00 - Orchestrator - Shortest Plan Activation (Terrain/Object Generation)
+- Objective: Reduce manual validation load and move with shortest path.
+- Executed gates:
+  1. `scripts/run-tests.ps1 -TestMode playmode` => PASS
+  2. Existing baseline retained: compile PASS, editmode PASS (75/75)
+- Added guides:
+  - `docs/03_guides/TASK_034_MANUAL_VALIDATION_CHECKLIST.md`
+  - `docs/03_guides/TERRAIN_OBJECT_GENERATION_SHORTEST_PLAN.md`
+- Updated task/state docs:
+  - `docs/tasks/TASK_034_UnityValidation_DualGridProfileMapping.md` (compile DoD checked)
+  - `docs/WORKFLOW_STATE_SSOT.md` (next action aligned to shortest plan)
+  - `docs/MILESTONE_PLAN.md` (TASK_037 closeout reflected)
+- Next Action:
+  1. Execute only 4 focused manual checks in TASK_034 checklist.
+  2. Mark TASK_034 as DONE or BLOCKED with concrete evidence.
+
+### 2026-02-26T14:30:00+09:00 - Orchestrator - Non-zero Test Gate Applied
+- Updated: `scripts/run-tests.ps1`
+  - Added optional switch `-RequireNonZeroTests`.
+  - If NUnit `total <= 0`, script fails explicitly.
+- Verification:
+  1. EditMode with strict gate: PASS.
+  2. PlayMode with strict gate: FAIL (`total=0`) -> gate not satisfied.
+- Impact:
+  - Prevents false-green test runs when no tests are executed.
+  - Current shortest path is blocked on PlayMode test inventory (strict mode).
+- Next Action:
+  1. Close TASK_034 manual checks in parallel.
+  2. Decide whether to add minimum PlayMode smoke tests or run strict gate only for EditMode temporarily.
+
+### 2026-03-02T18:30:00+09:00 - Orchestrator - Resume & PlayMode Gate Recovery
+- **Sync Status**: Remote synchronized with `feature/TASK_036-dualgrid-inspector-preview`. 
+- **Health Verification**: 
+  - `check-compile.ps1`: PASS. 
+  - `run-tests.ps1 -TestMode editmode`: PASS (75/75). 
+  - `run-tests.ps1 -TestMode playmode -RequireNonZeroTests`: **FIXED** (Added Smoke Test). 
+- **Accomplishments**: 
+  1. Initialized `TASK_PM-1` (PlayMode Test Foundation). 
+  2. Created `Vastcore.Testing.Runtime.asmdef` and `PlayModeSmokeTest.cs`. 
+  3. All automated gates (Compile, EditMode, PlayMode) are now GREEN. 
+- **Roadmap Update**: 
+  - Published `docs/04_reports/ROADMAP_2026-03-02.md`. 
+- **Next Action**: 
+  1. Formalize `TASK_PC-1` (Deform Integration) requirements and delegate to Worker. 
+  2. User review of manual validation items in `TASK_034`.
