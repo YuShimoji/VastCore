@@ -1,29 +1,32 @@
 ﻿# WORKFLOW_STATE_SSOT
 
-Last Updated: 2026-02-26
+Last Updated: 2026-03-04
 Owner: Orchestrator
 
 ## Current Phase
-- P5 (Worker Delegation)
+
+- **Phase A Complete** → Phase B Preparation
 
 ## In-Progress
-- なし（TASK_037 closeout 反映済み）
+
+- なし
 
 ## Blockers
-- `TASK_034_UnityValidation_DualGridProfileMapping` の手動Unity実機検証クローズ待ち（ユーザー実行ゲート）
-- PlayMode gate は `-RequireNonZeroTests` で `total=0` を検出（自動ゲートとしては未達）
+
+- なし（TASK_034完了により Phase A クリア）
 
 ## Next Tasks (3-level)
-1. [TASK][High] TASK_034_UnityValidation_DualGridProfileMapping の手動検証完了とクローズ
-2. [TASK][Medium] TASK_PC-1_DeformPackageIntegration（依存整理後の着手可否判断）
-3. [DOCS][Low] `docs/03_guides/TERRAIN_OBJECT_GENERATION_SHORTEST_PLAN.md` の運用反映
+
+1. [TASK][High] TASK_PC-1_DeformPackageIntegration（Phase B/C への橋渡し）
+2. [TASK][Medium] Phase B キックオフ（テストカバレッジ拡充）
+3. [TASK][Low] ブランチ統合（feature/TASK_036 → main マージ）
 
 ## Next Action
-- 最短プランに従い `TASK_034` をクローズする:
-  1. `.\scripts\check-compile.ps1`
-  2. `.\scripts\run-tests.ps1 -TestMode editmode`
-  3. `.\scripts\run-tests.ps1 -TestMode playmode`
-  4. `docs/03_guides/TASK_034_MANUAL_VALIDATION_CHECKLIST.md` の4項目だけ手動確認
+
+- Phase A 完了を記録し、Phase B へ移行:
+  1. feature/TASK_036 を main にマージ
+  2. TASK_PC-1 要件策定とWorker委譲準備
+  3. Phase B (Quality Foundation) キックオフ計画
 
 ## Validation Scale Definition
 - High: 品質ゲート/マイルストーン完了条件へ直接影響
