@@ -6,11 +6,9 @@ git clone https://github.com/YuShimoji/VastCore.git
 cd VastCore
 git fetch --all --prune
 git merge --ff-only origin/main
-git submodule update --init --recursive
 ```
 
 Notes:
-- This repository contains `.shared-workflows` as submodule.
 - Prefer `merge --ff-only origin/main` over `git pull` when local branch config has multiple merge targets.
 
 ## 2. Required toolchain

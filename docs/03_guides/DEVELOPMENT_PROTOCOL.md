@@ -1,10 +1,5 @@
 # DEVELOPMENT_PROTOCOL
 
-本プロジェクトは中央リポジトリ「shared-workflows」の標準ルール（Windsurf AI 協調開発ルール v1.1）に準拠します。
-
-- 参照: https://github.com/YuShimoji/shared-workflows
-- ルール本体: `docs/Windsurf_AI_Collab_Rules_v1.1.md`
-
 ## 1. ブランチ戦略
 - `main`: 常にデプロイ可能・安定版。
 - `develop`: 次期リリースの統合ブランチ。
@@ -16,7 +11,6 @@
 - コミット: Conventional Commits に準拠（例: `feat(ui): add mapping template`）。
 
 ## 3. CI/CD
-- `.github/workflows/ci.yml` は中央の再利用ワークフロー `ci-smoke.yml` を参照。
 - Node ベースの簡易サーバ（`scripts/dev-server.js`）とスモークチェック（`scripts/dev-check.js`）で CI 成功を保証。
 - 将来: Unity Editor の headless 検証を追加予定（Backlog 参照）。
 

@@ -21,7 +21,7 @@
      - 判断結果と理由をレポートに記録する
      - 代替手段を取る場合は、その内容と根拠を具体的に記録する
 3. docs/inbox/REPORT を更新し、`report-validator.js` の実行結果を記録
-   - 正しい引数順で実行: `node .shared-workflows/scripts/report-validator.js <REPORT_PATH> --profile <PROFILE> <CONFIG_PATH>`
+   - report-validator を実行（.shared-workflows は廃止済み。プロジェクト側スクリプトを使用）
    - 実行結果（成功/失敗、警告内容）をレポートに記録する
 4. 必須テストを実行し、`<cmd>=<result>` 形式で残す
 5. docs/HANDOVER.md の <HANDOVER_SECTIONS> を更新

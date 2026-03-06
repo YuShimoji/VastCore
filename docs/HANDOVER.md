@@ -85,7 +85,6 @@ Phase B 開始
 ## Current State
 
 - **Branch**: `main` (synced with `origin/main`)
-- **shared-workflows**: v3.0 (`4ad0a0a`)
 - **Blockers**: なし（コンパイルブロッカー2件解消済み）
 
 ## 本セッションの実施内容
@@ -121,7 +120,7 @@ Phase B 開始
 - `docs/Spec/` → `docs/02_design/` に統合
 - `docs/reports/` → `docs/04_reports/` に統合（43ファイル）
 - `docs/ui-migration/` → `docs/04_reports/` に統合
-- `docs/Windsurf_AI_Collab_Rules_*.md` 3件削除（.shared-workflows にSSOTあり）
+- `docs/Windsurf_AI_Collab_Rules_*.md` 3件削除（廃止済み）
 - スプリントレポート 01-06.md をリネームして 04_reports/ に移動
 
 ## リスク
@@ -156,5 +155,4 @@ VastCore/
 │   ├── MapGenerator/   (MapGenerator固有コード)
 │   ├── Editor/         (Editorツール)
 │   └── _Scripts/       (レガシーコード)
-└── .shared-workflows/  (v3.0 submodule)
 ```

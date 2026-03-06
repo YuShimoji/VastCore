@@ -1,54 +1,29 @@
-﻿# WORKFLOW_STATE_SSOT
+# WORKFLOW STATE SSOT
 
-Last Updated: 2026-03-04 18:30
-Owner: Orchestrator
+## Mission
 
-## Current Phase
+広大な景観に映える、ユニークで巨大な人工構造物をプロシージャルに生成する基盤の確立。
+Phase A/B 完了。現在のフォーカス：Phase C 機能完成（Deform正式統合 + CSG検証）およびドキュメント負債の解消。
 
-- **Phase B In Progress** (35% → 45% complete)
+## Done 条件
 
-## In-Progress
+- [x] `TASK_037_TerrainVerticalSlice_CloseoutSummary` の完了
+- [ ] SSOT駆動ワークフローへの完全移行と legacy docs の整理
+- [x] Unity Editor でのコンパイル安定性 95% 以上 (PA-5)
 
-- TB-2: UI EditMode Tests (P0 complete, P1/P2 pending)
-- Unity Asset Recognition (67 UI tests pending Unity reload)
+## 選別規則
 
-## Blockers
+当面は以下の作業分類に従い、D（将来のための品質や汎化）は凍結とします。
 
-- なし
+- A. コア機能・目的の達成
+- B. 制作/開発速度の向上・互換設定
+- C. 失敗からの復旧しやすさ
+- D. テスト拡充、過度なレポート、当面に直結しないリファクタリング → **凍結**
 
-## Next Tasks (3-level)
+## 禁止事項
 
-1. **\[TEST]\[High]** TB-2: Verify UI tests execution (67 tests)
-2. **\[TEST]\[High]** TB-4: Camera EditMode Tests (Quick Win, 2-3 days)
-3. **\[TEST]\[Medium]** TB-2 P1/P2: Component & Navigation tests
-
-## Next Action
-
-- Phase B Test Coverage Expansion:
-  1. Next session: Verify TB-2 UI tests (67) execute in Unity
-  2. Start TB-4: Camera EditMode tests (CameraController, CinematicCamera)
-  3. Complete TB-2 P1/P2 if needed
-
-## Recent Achievements (2026-03-04)
-
-- ✅ TB-1 Complete: Player EditMode tests (224 tests)
-- ✅ TB-2 P0 Complete: UI EditMode tests (67 tests)
-  - ModernUIManagerTests: 15 tests
-  - SliderBasedUISystemTests: 12 tests
-  - RealtimeUpdateSystemTests: 25 tests
-  - InGameDebugUITests: 15 tests
-  - UITestHelper: Test infrastructure
-- ✅ Total EditMode tests: 299 → 366 (projected)
-- ✅ Test coverage: 57% → ~65% (projected)
-
-## Validation Scale Definition
-
-- High: 品質ゲート/マイルストーン完了条件へ直接影響
-- Medium: 価値は高いが、直近ゲートの阻害ではない
-- Low: 価値はあるが、完了順は後続で成立する
-
-## Validation Scale Definition
-- High: 品質ゲート/マイルストーン完了条件へ直接影響
-- Medium: 価値は高いが、直近ゲートの阻害ではない
-- Low: 価値はあるが、完了順は後続で成立する
-
+- `Scripts/Deform/DeformStubs.cs` のロジック変更（ガード追加のみ可）
+- ProBuilder API への直接依存の無差別な追加（`MeshSubdivider.cs` などの抽象化を優先）
+- `ProjectSettings/`, `Packages/` の相談なしの変更
+- 非同期処理における `CancellationToken` の省略
+- 本番ロジックを広範囲に破壊するテスト用改変

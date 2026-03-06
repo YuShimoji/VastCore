@@ -33,6 +33,7 @@ graph TD
 
     subgraph Test["Test Assemblies"]
         Testing["Vastcore.Testing"]
+        TestingRuntime["Vastcore.Testing.Runtime"]
         TestEdit["Vastcore.Tests.EditMode"]
         TestPlay["Vastcore.Tests.PlayMode"]
     end
@@ -137,6 +138,7 @@ graph TD
 | Assembly | Directory | rootNamespace |
 |----------|-----------|---------------|
 | `Vastcore.Testing` | `Assets/Scripts/Testing/` | `Vastcore.Testing` |
+| `Vastcore.Testing.Runtime` | `Assets/Scripts/Testing/RuntimeTests/` | `Vastcore.Testing.RuntimeTests` |
 | `Vastcore.Tests.EditMode` | `Assets/Tests/EditMode/` | `Vastcore.Tests.EditMode` |
 | `Vastcore.Tests.PlayMode` | `Assets/Tests/PlayMode/` | `Vastcore.Tests.PlayMode` |
 | `Vastcore.Legacy` | `Assets/_Scripts/` | *(empty)* |
@@ -220,6 +222,7 @@ This addendum documents the new runtime assembly introduced for the volumetric w
 - `Vastcore.Editor` now references `Vastcore.WorldGen`
 - `Vastcore.Testing` now references `Vastcore.WorldGen`
 - `Vastcore.Tests.EditMode` now references `Vastcore.WorldGen` (M3 follow-up test coverage)
+- `Vastcore.Testing` is configured as test assembly (`optionalUnityReferences: TestAssemblies`) and runs on `Editor` platform for EditMode test discovery
 
 ### 6.3 Dependency Direction
 

@@ -4,14 +4,12 @@
 - 現在のミッション: プロジェクトクリーンアップ完了、次期プラン策定待ち
 - ブランチ: main (synced with origin/main)
 - 関連: <https://github.com/YuShimoji/VastCore>
-- shared-workflows: v3.0 (4ad0a0a)
 
 ## 決定事項
 
 - Orchestrator Protocol (P0-P6) を厳格に運用中。
 - `MISSION_LOG.md` が進行の SSOT。
 - `HANDOVER.md` が成果物の SSOT。
-- shared-workflows v3.0 適用済み（.cursorrules, Global Rules 更新）。
 
 ## プロジェクト構造
 

@@ -5,7 +5,7 @@ Worker に渡すプロンプトを生成する。
 
 ## 手順
 1. 各チケットごとに Worker プロンプトを生成
-2. `docs/windsurf_workflow/WORKER_PROMPT_TEMPLATE.md` をベースに動的生成
+2. `docs/inbox/WORKER_PROMPT_*.md` をベースに動的生成（windsurf_workflow/ は削除済み）
 3. MISSION_LOG.md を更新（Phase 5 完了を記録）
 
 ## プロンプトに必ず含める項目

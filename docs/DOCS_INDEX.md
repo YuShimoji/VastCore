@@ -14,7 +14,7 @@
 |--------|------------|---------|
 | 1 (最上位) | [SSOT_WORLD.md](SSOT_WORLD.md) | プロジェクト全体の目的・構造・優先順位 |
 | 2 | [DEVELOPMENT_ROADMAP_2026.md](01_planning/DEVELOPMENT_ROADMAP_2026.md) | 開発ロードマップ（Phase A-E） |
-| 3 | [EVERY_SESSION.md](windsurf_workflow/EVERY_SESSION.md) | セッション運用プロトコル |
+| 3 | [CLAUDE.md](../CLAUDE.md) | セッション運用プロトコル |
 | 4 | [HANDOVER.md](HANDOVER.md) | フェーズ完了と成果物引き継ぎ |
 | 5 | [TASK_*.md](tasks/) | 個別実装チケット |
 
@@ -85,14 +85,9 @@
 | TASK_019, 031, 032 | 個別修正タスク |
 | BACKLOG_3D_VoxelTerrain_HybridSystem.md | 将来仕様 |
 
-### windsurf_workflow/ — ワークフロー・運用
+### windsurf_workflow/ --- （削除済み）
 
-| ファイル | 役割 |
-|---------|------|
-| [EVERY_SESSION.md](windsurf_workflow/EVERY_SESSION.md) | 運用SSOT（毎回の実行手順） |
-| [ORCHESTRATOR_PROTOCOL.md](windsurf_workflow/ORCHESTRATOR_PROTOCOL.md) | オーケストレータプロトコル |
-| [OPERATIONS_RUNBOOK.md](windsurf_workflow/OPERATIONS_RUNBOOK.md) | 運用手順書 |
-| [OPEN_HERE.md](windsurf_workflow/OPEN_HERE.md) | エントリポイント |
+Windsurf IDE 固有のワークフロー文書。2026-03-07 に削除。セッション運用は CLAUDE.md に移行済み。
 
 ### その他
 

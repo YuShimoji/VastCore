@@ -2,12 +2,12 @@
 
 ## 基本情報
 
-- **最終更新**: 2026-02-25T15:20:00+09:00
-- **更新者**: Orchestrator (Codex)
+- **最終更新**: 2026-03-07
+- **更新者**: Claude Code (Opus)
 
 ---
 
-## 長期目標（Someday / 月次?四半期）
+## 長期目標（Someday / 月次〜四半期）
 
 ### LG-1: Phase C 機能完成（Deform正式統合 + CSG検証）
 
@@ -19,13 +19,13 @@
 
 ---
 
-## 中期目標（Later / 1?2週間）
+## 中期目標（Later / 1〜2週間）
 
 ### MG-1: Phase A 完了と品質基盤の着手
 
 - **ゴール**: Phase A の残件（PA-2, PA-5）を完了し、PB-1（NUnit基盤）を開始できる状態にする。
 - **期限目安**: 2026-03-07
-- **状態**: 完了
+- **状態**: DONE
 - **進捗**: 100%
 - **含まれるタスク**: TASK_PA-2_ProBuilderApiMigration.md, TASK_PA-5_UnityCompileVerification.md, TASK_035_AutoCompileValidationAutomation.md, TASK_PB-1_NUnitTestFoundation.md
 - **完了基準**:
@@ -37,7 +37,7 @@
 
 ---
 
-## 短期目標（Next / 今日?数日）
+## 短期目標（Next / 今日〜数日）
 
 ### SG-1: 直近実行キューの確定と着手
 
@@ -101,10 +101,5 @@ gantt
 
 - 2026-02-19 13:30: MILESTONE_PLAN.md を初期化（SG/MG/LG を定義）
 - 2026-02-20 15:58: PA-2 / TASK_035 / PA-5 完了を反映、SG-2 を追加
-
-
-- 2026-02-25 15:20: PB-2完了/75-75 pass/TASK_036 DONE を反映、次アクションをTASK_037へ固定
-
-
-- 2026-02-26 13:45: TASK_037 DONE を反映、最短プランで TASK_034 クローズへ移行
-
+- 2026-02-25 03:26: PB-1 完了反映（compile/editmode 再検証、MG-1/SG-2 進捗更新）
+- 2026-03-07: MG-1 DONE化、SG-2 TASK_036/037 完了チェック、整合性修正

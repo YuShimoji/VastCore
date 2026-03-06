@@ -17,7 +17,7 @@
 
 ## 終了時テンプレ（必須）
 - 停止/終了（完了でも未完了でも）の場合、必ず `## 次のアクション` に **ユーザー返信テンプレ（選択肢1-3）** を含める。
-- テンプレ本文は `docs/windsurf_workflow/EVERY_SESSION.md` を SSOT とする（submodule 運用なら `.shared-workflows/docs/windsurf_workflow/EVERY_SESSION.md`）。
+- テンプレ本文は `CLAUDE.md` を SSOT とする（windsurf_workflow/ は削除済み）。
 
 ## 停止条件
 - Forbidden Area に触れないと完遂できない

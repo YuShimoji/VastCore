@@ -27,8 +27,11 @@ SSOT_WORLD.md                          ← 最上位仕様（本文書）
   ├── DEVELOPMENT_ROADMAP_2026.md      ← ロードマップ SSOT（Phase A-E の計画と優先度）
   │     従属先: docs/01_planning/DEVELOPMENT_ROADMAP_2026.md
   │
-  ├── EVERY_SESSION.md                 ← 運用 SSOT（セッション運用プロトコル）
-  │     従属先: docs/windsurf_workflow/EVERY_SESSION.md
+  ├── WORKFLOW_STATE_SSOT.md           ← **現在の実行SSOT（最優先アクティブ状態）**
+  │     従属先: docs/WORKFLOW_STATE_SSOT.md
+  │
+  ├── CLAUDE.md                        ← 運用 SSOT（セッション運用プロトコル）
+  │     従属先: CLAUDE.md（プロジェクトルート）
   │
   ├── HANDOVER.md                      ← 成果物 SSOT（フェーズ完了と引き継ぎ）
   │     従属先: docs/HANDOVER.md
@@ -90,8 +93,8 @@ SSOT_WORLD.md                          ← 最上位仕様（本文書）
 | Phase | 名称 | 状態 | ゴール |
 |-------|------|------|-------|
 | **Phase 1-2, 4** | 基本関係性 / 形状制御 / パーティクル配置 | 完了 | 基本生成パイプライン |
-| **Phase A** | 安定化 (Stabilization) | 進行中 | コンパイル安定性 95、ブロッカー解消 |
-| **Phase B** | 品質基盤 (Quality Foundation) | 未着手 | テストカバレッジ 70、CI/CD 稼働 |
+| **Phase A** | 安定化 (Stabilization) | 完了 | コンパイル安定性 95、ブロッカー解消 |
+| **Phase B** | 品質基盤 (Quality Foundation) | 完了 | EditMode 100+テスト、TODO 20→3 削減 |
 | **Phase C** | 機能完成 (Feature Completion) | 未着手 | Deform完了、CSG検証、Phase 5 着手 |
 | **Phase D** | 最適化・拡張 (Optimization) | 未着手 | Phase 5-6 実装、60FPS 安定 |
 | **Phase E** | 仕上げ (Polish) | 未着手 | ドキュメント整合性 75、UI 近代化 |
@@ -107,7 +110,7 @@ SSOT_WORLD.md                          ← 最上位仕様（本文書）
 | **DOCS_INDEX.md** | 全ドキュメント索引 | [docs/DOCS_INDEX.md](DOCS_INDEX.md) |
 | **DEVELOPMENT_ROADMAP_2026.md** | ロードマップ正本 | [docs/01_planning/DEVELOPMENT_ROADMAP_2026.md](01_planning/DEVELOPMENT_ROADMAP_2026.md) |
 | **ROADMAP.md** | ロードマップ導線 | [docs/01_planning/ROADMAP.md](01_planning/ROADMAP.md) |
-| **EVERY_SESSION.md** | 運用SSOT | [docs/windsurf_workflow/EVERY_SESSION.md](windsurf_workflow/EVERY_SESSION.md) |
+| **CLAUDE.md** | 運用SSOT | [CLAUDE.md](../CLAUDE.md) |
 | **HANDOVER.md** | 成果物SSOT | [docs/HANDOVER.md](HANDOVER.md) |
 | **DEV_PLAN_ARCHIVE_2025-01.md** | 目的関数のアーカイブ | [docs/01_planning/DEV_PLAN_ARCHIVE_2025-01.md](01_planning/DEV_PLAN_ARCHIVE_2025-01.md) |
 

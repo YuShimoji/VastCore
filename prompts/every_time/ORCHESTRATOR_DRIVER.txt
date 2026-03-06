@@ -11,7 +11,7 @@
 - ファイルパスはハードコードしない。存在確認してから参照する。
 - **順序を飛ばさない**。フェーズは MISSION_LOG の `Current Phase` に従う。
 - **一度きりで終わらない**。毎回「次に何をするか（誰が/どの条件で）」を必ず残す。
-- 毎回の運用SSOT: `docs/windsurf_workflow/EVERY_SESSION.md`（submodule 運用なら `.shared-workflows/docs/windsurf_workflow/EVERY_SESSION.md`）
+- 毎回の運用SSOT: `CLAUDE.md`（windsurf_workflow/ は廃止・削除済み）
 
 ### 中間報告ルール（長大作業の安定化）
 - **ツール呼び出し10回ごと**、または**ファイル編集5回ごと**に中間報告を出力する:
