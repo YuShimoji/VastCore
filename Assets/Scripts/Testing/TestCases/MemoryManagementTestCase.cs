@@ -142,7 +142,7 @@ namespace Vastcore.Testing
             
             // オブジェクトプールの取得
             // var objectPool = primitiveManager.GetComponent<PrimitiveTerrainObjectPool>();
-            object objectPool = null; // TODO: PrimitiveTerrainObjectPool not implemented
+            object objectPool = null; // Stub: PrimitiveTerrainObjectPool integration pending
             if (objectPool == null)
             {
                 logger.LogWarning("PrimitiveTerrainObjectPool not found, skipping pooling test");
@@ -159,7 +159,7 @@ namespace Vastcore.Testing
             
             for (int i = 0; i < 20; i++)
             {
-                GameObject obj = null; // TODO: GetPooledObject not implemented
+                GameObject obj = null; // Stub: GetPooledObject integration pending
                 if (obj != null)
                 {
                     borrowedObjects.Add(obj);

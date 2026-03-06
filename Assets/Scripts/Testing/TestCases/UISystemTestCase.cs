@@ -294,7 +294,7 @@ namespace Vastcore.Testing
             if (style1 == null || style2 == null)
                 return false;
             
-            // TODO: Implement proper UIStyle comparison when UIStyle class is available
+            // Stub: type-based comparison until UIStyle has equality members
             return style1.GetType() == style2.GetType();
         }
     }

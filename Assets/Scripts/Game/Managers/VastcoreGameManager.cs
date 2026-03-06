@@ -22,7 +22,7 @@ namespace Vastcore.Game.Managers
 
         #region マネージャー参照
         [Header("Managers")]
-        // [SerializeField] private TerrainGenerator m_TerrainGenerator; // TODO: TerrainGeneratorクラスが未実装
+        // Note: TerrainGenerator reference will be added once the class is implemented
         [SerializeField] private TitleScreenManager m_TitleScreenManager;
         #endregion
 
@@ -228,7 +228,7 @@ namespace Vastcore.Game.Managers
                 if (m_CinematicCamera != null)
                 {
                     // m_CinematicCamera.Setup(m_CurrentPlayer.GetComponent<AdvancedPlayerController>(), m_TerrainGenerator.gameObject);
-                    m_CinematicCamera.Setup(m_CurrentPlayer.GetComponent<AdvancedPlayerController>(), null); // TODO: TerrainGenerator実装後に修正
+                    m_CinematicCamera.Setup(m_CurrentPlayer.GetComponent<AdvancedPlayerController>(), null); // Stub: pass TerrainGenerator once available
                 }
             }
 

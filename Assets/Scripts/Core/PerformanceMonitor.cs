@@ -89,7 +89,7 @@ namespace Vastcore.UI
             memoryHistory.Add(memoryMB);
             
             // Collect draw call data (approximation)
-            int drawCalls = 0; // TODO: DebugUI参照を一時的に無効化
+            int drawCalls = 0; // Stub: draw call tracking requires profiler integration
             drawCallHistory.Add(drawCalls);
             
             // Maintain history size

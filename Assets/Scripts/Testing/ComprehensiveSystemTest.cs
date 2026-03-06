@@ -27,10 +27,8 @@ namespace VastCore.Testing
         [SerializeField] private long maxAcceptableMemoryMB = 2048;
         [SerializeField] private float maxFrameTimeMs = 33.33f; // 30FPS相当
         
-        [Header("監視対象システム")]
-        // [SerializeField] private RuntimeTerrainManager terrainManager; // TODO: 未実装のため一時無効化
-        // [SerializeField] private PrimitiveTerrainManager primitiveManager; // TODO: 未実装のため一時無効化
-        // [SerializeField] private RuntimeGenerationManager generationManager; // TODO: 未実装のため一時無効化
+        // Note: RuntimeTerrainManager, PrimitiveTerrainManager, RuntimeGenerationManager
+        // will be added as SerializeField references once their implementations are available.
         
         // テスト状態
         public bool isTestRunning = false;
@@ -240,21 +238,17 @@ namespace VastCore.Testing
         {
             // if (terrainManager == null) return 0;
             // RuntimeTerrainManagerから実際のタイル数を取得
-            return 0; // TODO: 実装時に適切な値を返す
+            return 0; // Stub: returns 0 until RuntimeTerrainManager is available
         }
-        
+
         private int GetActivePrimitiveCount()
         {
-            // if (primitiveManager == null) return 0;
-            // PrimitiveTerrainManagerから実際のプリミティブ数を取得
-            return 0; // TODO: 実装時に適切な値を返す
+            return 0; // Stub: returns 0 until PrimitiveTerrainManager is available
         }
-        
+
         private int GetGenerationQueueSize()
         {
-            // if (generationManager == null) return 0;
-            // RuntimeGenerationManagerから実際のキューサイズを取得
-            return 0; // TODO: 実装時に適切な値を返す
+            return 0; // Stub: returns 0 until RuntimeGenerationManager is available
         }
         
         private void DetectPerformanceAnomalies(PerformanceSnapshot snapshot)
