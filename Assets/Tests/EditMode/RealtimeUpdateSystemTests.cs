@@ -335,7 +335,7 @@ namespace Vastcore.Tests.EditMode
             string paramName = "TestParam";
             float testValue = 3.5f;
 
-            updateSystem.RegisterParameter(paramName, (value) => { }, throttle: 0.1f);
+            updateSystem.RegisterParameter(paramName, (value) => { }, throttleTime: 0.1f);
 
             // Set last update time to recent to trigger queuing
             var lastUpdateTimes = UITestHelper.GetPrivateField<Dictionary<string, float>>(
@@ -602,8 +602,8 @@ namespace Vastcore.Tests.EditMode
             float value2 = 0f;
 
             // Act
-            updateSystem.RegisterParameter(param1, (v) => value1 = v, throttle: 0.1f);
-            updateSystem.RegisterParameter(param2, (v) => value2 = v, throttle: 0.2f);
+            updateSystem.RegisterParameter(param1, (v) => value1 = v, throttleTime: 0.1f);
+            updateSystem.RegisterParameter(param2, (v) => value2 = v, throttleTime: 0.2f);
 
             updateSystem.ForceUpdate(param1, 10f);
             updateSystem.ForceUpdate(param2, 20f);

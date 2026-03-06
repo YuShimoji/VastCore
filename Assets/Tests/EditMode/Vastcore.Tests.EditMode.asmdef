@@ -10,7 +10,9 @@
     "Vastcore.Terrain",
     "Vastcore.WorldGen",
     "Vastcore.Player",
+    "Vastcore.Camera",
     "Vastcore.UI",
+    "Unity.TextMeshPro",
     "Unity.ProBuilder",
     "Unity.ProBuilder.Editor",
     "Vastcore.Testing"
