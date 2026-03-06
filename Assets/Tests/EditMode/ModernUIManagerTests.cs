@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Vastcore.UI;
 using System.Collections.Generic;
 
@@ -114,6 +115,10 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void InitializeUISystem_FiresOnUISystemInitializedEvent()
         {
+            // System already initialized during Awake (autoInitialize=true by default).
+            // Reset isInitialized so we can re-test event firing.
+            UITestHelper.SetPrivateField(manager, "isInitialized", false);
+
             // Arrange
             bool eventFired = false;
             manager.OnUISystemInitialized += () => eventFired = true;
@@ -132,19 +137,23 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void RegisterParameter_BeforeInitialization_LogsError()
         {
-            // Arrange
+            // Arrange - ensure manager is in uninitialized state
+            UITestHelper.SetPrivateField(manager, "isInitialized", false);
+
             string paramName = "TestParam";
             float defaultValue = 1.0f;
             float minValue = 0.0f;
             float maxValue = 10.0f;
             bool callbackInvoked = false;
 
+            // Expect the LogError from RegisterParameter
+            LogAssert.Expect(LogType.Error, "ModernUIManager: Cannot register parameter before initialization");
+
             // Act
             manager.RegisterParameter(paramName, defaultValue, minValue, maxValue, (value) => callbackInvoked = true);
 
             // Assert
             Assert.IsFalse(callbackInvoked, "Callback should not be invoked before initialization");
-            // Note: Would verify Debug.LogError was called in production test
         }
 
         [Test]

@@ -38,14 +38,18 @@ namespace Vastcore.UI
         
         // Update throttling
         private Dictionary<string, float> lastUpdateTimes = new Dictionary<string, float>();
-        
+
+        // Initialization guard
+        private bool isInitialized = false;
+
         private void Awake()
         {
             InitializeUISystem();
         }
-        
+
         private void InitializeUISystem()
         {
+            if (isInitialized) return;
             // Create main canvas if it doesn't exist
             mainCanvas = FindFirstObjectByType<Canvas>();
             if (mainCanvas == null)
@@ -60,6 +64,8 @@ namespace Vastcore.UI
             if (sliderPrefab == null) CreateDefaultSliderPrefab();
             if (panelPrefab == null) CreateDefaultPanelPrefab();
             if (headerPrefab == null) CreateDefaultHeaderPrefab();
+
+            isInitialized = true;
         }
         
         private void CreateMainCanvas()
@@ -106,7 +112,9 @@ namespace Vastcore.UI
                 return activeSliders[parameterName];
             }
             
-            GameObject sliderObject = Instantiate(sliderPrefab, uiContainer);
+            // Create slider via AddComponent (not Instantiate) to ensure Awake runs immediately in EditMode
+            GameObject sliderObject = new GameObject($"Slider_{parameterName}");
+            sliderObject.transform.SetParent(uiContainer, false);
             SliderUIElement sliderElement = ConfigureSliderElement(sliderObject, parameterName, minValue, maxValue, currentValue);
             
             // Bind events with throttling
@@ -154,12 +162,12 @@ namespace Vastcore.UI
         {
             if (activeSliders.ContainsKey(parameterName))
             {
-                Destroy(activeSliders[parameterName].gameObject);
+                SafeDestroy(activeSliders[parameterName].gameObject);
                 activeSliders.Remove(parameterName);
                 lastUpdateTimes.Remove(parameterName);
             }
         }
-        
+
         /// <summary>
         /// Clears all UI elements
         /// </summary>
@@ -168,18 +176,26 @@ namespace Vastcore.UI
             foreach (var slider in activeSliders.Values)
             {
                 if (slider != null && slider.gameObject != null)
-                    Destroy(slider.gameObject);
+                    SafeDestroy(slider.gameObject);
             }
-            
+
             foreach (var panel in activePanels.Values)
             {
                 if (panel != null)
-                    Destroy(panel);
+                    SafeDestroy(panel);
             }
-            
+
             activeSliders.Clear();
             activePanels.Clear();
             lastUpdateTimes.Clear();
+        }
+
+        private void SafeDestroy(UnityEngine.Object obj)
+        {
+            if (Application.isPlaying)
+                Destroy(obj);
+            else
+                DestroyImmediate(obj);
         }
         
         private SliderUIElement ConfigureSliderElement(GameObject sliderObject, string parameterName, float minValue, float maxValue, float currentValue)
@@ -189,23 +205,61 @@ namespace Vastcore.UI
             {
                 element = sliderObject.AddComponent<SliderUIElement>();
             }
-            
+
+            // Ensure core UI components exist (Awake may not have run yet in EditMode)
+            EnsureSliderUIComponents(element);
+
             // Configure slider component
             element.slider.minValue = minValue;
             element.slider.maxValue = maxValue;
             element.slider.value = currentValue;
             element.slider.wholeNumbers = false;
-            
+
             // Configure text elements
             element.labelText.text = parameterName;
             element.valueText.text = currentValue.ToString("F2");
             element.minValueText.text = minValue.ToString("F1");
             element.maxValueText.text = maxValue.ToString("F1");
-            
+
             // Apply modern styling
             ApplyModernStyling(element);
-            
+
             return element;
+        }
+
+        private void EnsureSliderUIComponents(SliderUIElement element)
+        {
+            if (element.slider != null) return;
+
+            // Create minimal slider component if Awake hasn't initialized it
+            GameObject sliderGO = new GameObject("Slider");
+            sliderGO.transform.SetParent(element.transform, false);
+            element.slider = sliderGO.AddComponent<Slider>();
+
+            if (element.labelText == null)
+            {
+                GameObject labelGO = new GameObject("Label");
+                labelGO.transform.SetParent(element.transform, false);
+                element.labelText = labelGO.AddComponent<TextMeshProUGUI>();
+            }
+            if (element.valueText == null)
+            {
+                GameObject valueGO = new GameObject("Value");
+                valueGO.transform.SetParent(element.transform, false);
+                element.valueText = valueGO.AddComponent<TextMeshProUGUI>();
+            }
+            if (element.minValueText == null)
+            {
+                GameObject minGO = new GameObject("MinValue");
+                minGO.transform.SetParent(element.transform, false);
+                element.minValueText = minGO.AddComponent<TextMeshProUGUI>();
+            }
+            if (element.maxValueText == null)
+            {
+                GameObject maxGO = new GameObject("MaxValue");
+                maxGO.transform.SetParent(element.transform, false);
+                element.maxValueText = maxGO.AddComponent<TextMeshProUGUI>();
+            }
         }
         
         private void ConfigurePanel(GameObject panelObject, string panelName, Vector2 position, Vector2 size)

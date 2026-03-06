@@ -280,9 +280,16 @@ namespace Vastcore.UI
             
             if (debugUI != null)
             {
-                debugUI.AddParameter(parameterName, defaultValue, minValue, maxValue, wrappedCallback, category);
+                try
+                {
+                    debugUI.AddParameter(parameterName, defaultValue, minValue, maxValue, wrappedCallback, category);
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning($"ModernUIManager: Failed to add parameter '{parameterName}' to DebugUI: {e.Message}");
+                }
             }
-            
+
             Debug.Log($"ModernUIManager: Registered parameter '{parameterName}' in category '{category}'");
         }
         
@@ -314,11 +321,18 @@ namespace Vastcore.UI
         /// </summary>
         public void UpdateParameterValue(string parameterName, float newValue)
         {
+            // Invoke stored callback and fire event
+            if (parameterCallbacks.ContainsKey(parameterName))
+            {
+                parameterCallbacks[parameterName]?.Invoke(newValue);
+                OnParameterChanged?.Invoke(parameterName, newValue);
+            }
+
             if (debugUI != null)
             {
                 debugUI.UpdateParameterValue(parameterName, newValue);
             }
-            
+
             if (sliderSystem != null)
             {
                 sliderSystem.UpdateSliderValue(parameterName, newValue);

@@ -1,23 +1,23 @@
 # Legacy UI Migration Report (Dry Run)
 
-- Generated: 2026-03-04 17:08 (local)
+- Generated: 2026-03-06 14:10 (local)
 - Tool: UIMigrationScannerWindow.cs
 - Options: ExcludeExamples=True, ScanScripts=True, ScanScenes=True, ScanPrefabs=True
 
 ## Summary
-- Scripts scanned: 384
+- Scripts scanned: 392
 - Scenes scanned: 51
 - Prefabs scanned: 5
-- C# using UnityEngine.UI: 8
+- C# using UnityEngine.UI: 12
 - C# OnGUI occurrences: 27
-- C# TMPro references: 10
+- C# TMPro references: 13
 - C# UI Toolkit references: 1
 - Scenes with uGUI markers: 3
 - Scenes with UI Toolkit: 0
 - Prefabs with uGUI markers: 0
 - Prefabs with UI Toolkit: 0
 
-### C# files using UnityEngine.UI (8)
+### C# files using UnityEngine.UI (12)
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs
 - Assets/Scripts/Camera/Cinematic/CinematicCameraController.cs
 - Assets/Scripts/Testing/TestManager.cs
@@ -26,6 +26,10 @@
 - Assets/Scripts/UI/ModernUIStyleSystem.cs
 - Assets/Scripts/UI/SliderBasedUISystem.cs
 - Assets/Scripts/UI/SliderUIElement.cs
+- Assets/Tests/EditMode/CinematicCameraControllerTests.cs
+- Assets/Tests/EditMode/InGameDebugUITests.cs
+- Assets/Tests/EditMode/SliderBasedUISystemTests.cs
+- Assets/Tests/EditMode/UITestHelper.cs
 
 ### C# files with OnGUI (27)
 - Assets/Editor/StructureGenerator/Core/StructureGeneratorWindow.cs
@@ -56,7 +60,7 @@
 - Assets/Scripts/Utilities/Utils/VastcoreLogger.cs
 - Assets/Tests/EditMode/AdvancedStructureTestRunner.cs
 
-### C# files referencing TMPro (10)
+### C# files referencing TMPro (13)
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs
 - Assets/Scripts/Core/PerformanceMonitor.cs
 - Assets/Scripts/Testing/TerrainTests/AdvancedTerrainAlgorithmsTest.cs
@@ -67,6 +71,9 @@
 - Assets/Scripts/UI/SliderBasedUISystem.cs
 - Assets/Scripts/UI/SliderUIElement.cs
 - Assets/Scripts/UI/TextClickHandler.cs
+- Assets/Tests/EditMode/InGameDebugUITests.cs
+- Assets/Tests/EditMode/SliderBasedUISystemTests.cs
+- Assets/Tests/EditMode/UITestHelper.cs
 
 ### C# files referencing UI Toolkit (1)
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs

@@ -270,7 +270,7 @@ namespace Vastcore.UI
             float currentTime = Time.time;
             
             // Only check performance at intervals to avoid overhead
-            if (currentTime - lastPerformanceCheck < performanceCheckInterval)
+            if (lastPerformanceCheck > 0f && currentTime - lastPerformanceCheck < performanceCheckInterval)
                 return;
             
             lastPerformanceCheck = currentTime;

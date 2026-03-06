@@ -57,16 +57,23 @@ namespace Vastcore.UI
         private bool isUIVisible = true;
         private bool isMinimized = false;
         private Vector2 minimizedSize = new Vector2(200, 100);
-        
+
+        // Initialization guard
+        private bool isInitialized = false;
+
         private void Awake()
         {
             InitializeDebugUI();
         }
-        
+
         private void Start()
         {
+            // Create default parameter sections in Start (not Awake)
+            // so EditMode tests can control initialization
+            CreateParameterSections();
+
             SetupDefaultParameters();
-            
+
             if (!showDebugUI)
             {
                 HideUI();
@@ -75,7 +82,7 @@ namespace Vastcore.UI
             {
                 MinimizeUI();
             }
-            
+
             if (enablePerformanceMonitoring)
             {
                 StartCoroutine(PerformanceMonitoringCoroutine());
@@ -94,6 +101,8 @@ namespace Vastcore.UI
         
         private void InitializeDebugUI()
         {
+            if (isInitialized) return;
+
             // Get or create required systems
             sliderSystem = FindFirstObjectByType<SliderBasedUISystem>();
             if (sliderSystem == null)
@@ -117,8 +126,10 @@ namespace Vastcore.UI
             }
             
             CreateDebugPanel();
+
+            isInitialized = true;
         }
-        
+
         private void CreateDebugPanel()
         {
             // Create main debug panel
@@ -141,9 +152,6 @@ namespace Vastcore.UI
             
             // Create scroll view
             CreateScrollView();
-            
-            // Create parameter sections
-            CreateParameterSections();
         }
         
         private void CreateHeader()
@@ -475,13 +483,19 @@ namespace Vastcore.UI
             };
             
             debugParameters[parameterName] = parameter;
-            
+
             // Create slider UI element
-            var sliderElement = sliderSystem.CreateSliderUI(parameterName, minValue, maxValue, defaultValue, onValueChanged);
-            sliderElement.transform.SetParent(parentPanel.transform, false);
-            
+            if (sliderSystem != null)
+            {
+                var sliderElement = sliderSystem.CreateSliderUI(parameterName, minValue, maxValue, defaultValue, onValueChanged);
+                sliderElement.transform.SetParent(parentPanel.transform, false);
+            }
+
             // Register with update system
-            updateSystem.RegisterParameter(parameterName, onValueChanged);
+            if (updateSystem != null)
+            {
+                updateSystem.RegisterParameter(parameterName, onValueChanged);
+            }
         }
         
         private void HandleInput()
@@ -659,17 +673,17 @@ namespace Vastcore.UI
             if (debugParameters.ContainsKey(name))
             {
                 debugParameters.Remove(name);
-                updateSystem.UnregisterParameter(name);
-                sliderSystem.RemoveSlider(name);
+                if (updateSystem != null) updateSystem.UnregisterParameter(name);
+                if (sliderSystem != null) sliderSystem.RemoveSlider(name);
             }
         }
-        
+
         public void UpdateParameterValue(string name, float newValue)
         {
             if (debugParameters.ContainsKey(name))
             {
                 debugParameters[name].currentValue = newValue;
-                sliderSystem.UpdateSliderValue(name, newValue);
+                if (sliderSystem != null) sliderSystem.UpdateSliderValue(name, newValue);
             }
         }
     }

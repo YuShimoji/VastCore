@@ -149,10 +149,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void AddParameter_RegistersWithSystems()
         {
-            // Arrange
-            UITestHelper.InvokePrivateMethod(debugUI, "InitializeDebugUI");
-            UITestHelper.InvokePrivateMethod(debugUI, "CreateParameterSections");
-
+            // Arrange - system already initialized via Awake (CreateParameterSections runs in Start, not Awake)
             bool callbackInvoked = false;
             float callbackValue = 0f;
 
@@ -176,10 +173,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void RemoveParameter_UnregistersFromSystems()
         {
-            // Arrange
-            UITestHelper.InvokePrivateMethod(debugUI, "InitializeDebugUI");
-            UITestHelper.InvokePrivateMethod(debugUI, "CreateParameterSections");
-
+            // Arrange - system already initialized via Awake
             debugUI.AddParameter("TestParameter", 5.0f, 0f, 10f, (value) => { }, "Test Category");
 
             var debugParameters = UITestHelper.GetPrivateField<Dictionary<string, DebugParameter>>(debugUI, "debugParameters");
@@ -199,10 +193,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void UpdateParameterValue_UpdatesSliderValue()
         {
-            // Arrange
-            UITestHelper.InvokePrivateMethod(debugUI, "InitializeDebugUI");
-            UITestHelper.InvokePrivateMethod(debugUI, "CreateParameterSections");
-
+            // Arrange - system already initialized via Awake
             debugUI.AddParameter("TestParameter", 5.0f, 0f, 10f, (value) => { }, "Test Category");
 
             // Act
@@ -220,9 +211,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void AddParameter_StoresInInternalDictionary()
         {
-            // Arrange
-            UITestHelper.InvokePrivateMethod(debugUI, "InitializeDebugUI");
-            UITestHelper.InvokePrivateMethod(debugUI, "CreateParameterSections");
+            // Arrange - system already initialized via Awake
 
             // Act
             debugUI.AddParameter("StorageTest", 3.0f, 1f, 10f, (value) => { }, "Storage");
@@ -412,9 +401,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void AddMultipleParameters_ToSameCategory_StoresAllParameters()
         {
-            // Arrange
-            UITestHelper.InvokePrivateMethod(debugUI, "InitializeDebugUI");
-            UITestHelper.InvokePrivateMethod(debugUI, "CreateParameterSections");
+            // Arrange - system already initialized via Awake (no default params in EditMode)
 
             // Act
             debugUI.AddParameter("Param1", 1.0f, 0f, 10f, (value) => { }, "TestCategory");
