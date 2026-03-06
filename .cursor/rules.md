@@ -1,6 +1,4 @@
-# Cursor Rules（shared-workflows / v2.x運用）
-
-目的: Cursor が `.cursorrules` を拾わない/弱い環境でも、ルールが適用される確率を上げる。
+# Cursor Rules
 
 ## 基本ルール
 
@@ -11,12 +9,10 @@
 
 ## 参照先
 
-- 入口: `docs/windsurf_workflow/OPEN_HERE.md`
-- Orchestrator Driver: `prompts/every_time/ORCHESTRATOR_DRIVER.txt`
+- セッション運用: `CLAUDE.md`
+- SSOT: `docs/SSOT_WORLD.md`
 
-## 中間報告ルール（長大作業の安定化）
+## 中間報告ルール
 
 - ツール呼び出し10回ごと、またはファイル編集5回ごとに中間報告を出す。
 - 中間報告には「次のメッセージの選択肢（1-3件）」を必ず含める。
-
-
