@@ -74,7 +74,7 @@
 
 ### 04_reports/ — レポート・検証記録
 
-Terrain Vertical Slice、WorldGen M0-M3、Phase A/B 完了レポート等。20ファイル（2026-03-07整理済み、旧レポートはgit履歴に保存）。
+Terrain Vertical Slice、WorldGen M0-M3、Phase A/B 完了レポート等。21ファイル（2026-03-07整理済み、旧レポートはgit履歴に保存）。
 
 ### tasks/ — タスクチケット
 
@@ -117,7 +117,7 @@ grep -rn --include="*.md" -E "([0-9]{4}-XX-XX|[0-9]{4}-[0-9]{2}-XX|重大修正|
 grep -rn --include="*.md" "SSOT_WORLD" docs/
 
 # 期待: ARCHITECTURE.md, ROADMAP.md, DEVELOPMENT_ROADMAP_2026.md,
-#        EVERY_SESSION.md, HANDOVER.md, DOCS_INDEX.md, README.md に参照あり
+#        CLAUDE.md, HANDOVER.md, DOCS_INDEX.md, README.md に参照あり
 ```
 
 ### Documentation/ ディレクトリ

@@ -1,158 +1,196 @@
 > **上位SSOT**: [SSOT_WORLD.md](SSOT_WORLD.md) | **索引**: [DOCS_INDEX.md](DOCS_INDEX.md)
 
-- Timestamp: 2026-02-09T08:55:00+09:00
-- Actor: Cascade (ORCHESTRATOR)
-- Type: Phase A Preparation
-- Mode: Autonomous
+# VastCore — Handover / ワークフロー仕様書
 
-## Current State
+**最終更新**: 2026-03-07
+**Actor**: Claude Code (Opus 4.6)
+**Type**: ドキュメント負債一掃完了ハンドオフ
 
-- **Branch**: `cascade/shared-workflow-driver-orchestrator-da773e` (Phase A準備完了)
-- **Target**: `develop` (統合予定)
-- **Mission**: ORCH_20260209_ROADMAP_PHASE_A
-- **Status**: 準備完了、リモート反映待ち
+---
 
-## Phase A 準備完了事項
+## 1. 現在の状態
 
-### 1. Tier 割り当て完了
-| タスク | Tier | サイズ | 並列実行 |
-|--------|------|--------|---------|
-| PA-1 | Tier 1 | S | ✅ 可 |
-| PA-2 | Tier 2 | L | ❌ 段階実行 |
-| PA-3 | Tier 1 | S | ✅ 可 |
-| PA-4 | Tier 1 | M | ✅ 可 |
-| PA-5 | Tier 3 | S | ❌ 手動検証 |
+| 項目 | 値 |
+|------|-----|
+| **ブランチ** | `main` (trunk-based, origin/main と同期済み) |
+| **Unity** | 6000.3.3f1 (URP) |
+| **C#制約** | .NET Standard 2.1, C# 9.0 |
+| **コンパイル** | PASS |
+| **EditModeテスト** | 75/75 PASS |
+| **PlayModeテスト** | 0件 (未着手、ゲート対象) |
+| **現フェーズ** | Phase A/B 完了 → Phase C 未着手 |
 
-### 2. Forbidden Area 定義完了
-- PA-1: DeformIntegration.cs 実装ロジック変更禁止
-- PA-2: ProBuilderパッケージ変更禁止
-- PA-3: ソースコードロジック変更禁止
-- PA-4: テスト内容変更禁止（移動のみ）
-- PA-5: 新機能追加禁止
+---
 
-### 3. 依存関係マップ作成
-- `docs/01_planning/PHASE_A_DEPENDENCY_MAP.md`
-- Depends-On/Blocks 関係を明確化
-
-### 4. タスクチケット作成
-- `docs/tasks/TASK_PA-1_DeformStubs.md`
-- `docs/tasks/TASK_PA-3_AsmdefNormalization.md`
-- `docs/tasks/TASK_PA-4_TestFileOrganization.md`
-
-### 5. MISSION_LOG更新
-- `.cursor/MISSION_LOG.md` をPhase A仕様に更新
-- Mission ID: ORCH_20260209_ROADMAP_PHASE_A
-
-## 次のアクション
-
-1. **developブランチへのマージ**
-   - 現在のブランチ (`cascade/shared-workflow-driver-orchestrator-da773e`) を develop にマージ
-   - リモート origin/develop へのプッシュ
-
-2. **Worker 起動準備**
-   - PA-1, PA-3, PA-4 の Worker Prompt 作成
-   - 並列実行のため3チケット同時発行可能
-
-3. **Unity Editor 検証フロー確立**
-   - PA-5 の手動検証手順を明確化
-
-## 推奨実行順序
-
-```
-Step 1: developブランチにマージ・プッシュ（本セッション）
-  ↓
-Step 2: Worker起動（PA-1, PA-3, PA-4並列実行）
-  ↓
-Step 3: PA-2調査フェーズ
-  ↓
-Step 4: PA-5 Unity Editor検証
-  ↓
-Phase B 開始
-```
-
-## リスク
-
-- Unity Editor での検証が必要（PA-5）
-- ProBuilder 6.0.8 API 不存在リスク（PA-2）
-
-## 成果物
-
-- Phase A 依存関係マップ
-- 5つのタスクチケット（PA-1〜PA-5）
-- Forbidden Area 定義ドキュメント
-- MISSION_LOG更新
-
-## Current State
-
-- **Branch**: `main` (synced with `origin/main`)
-- **Blockers**: なし（コンパイルブロッカー2件解消済み）
-
-## 本セッションの実施内容
-
-### Phase 1: Git ブランチクリーンアップ
-
-- ローカルブランチ8本削除（develop, master, cascade/*, feature/*）
-- リモートブランチ25本削除（マージ済み6本 + 未マージ古い19本）
-- Windsurf worktree 2本を整理・prune
-
-### Phase 2: MCPForUnity 重複解消 (TASK_031)
-
-- `Assets/MCPForUnity/` ローカルコピーを完全削除（約270ファイル）
-- `Packages/manifest.json` の git URL パッケージ参照はそのまま維持
-- これによりアセンブリ重複コンパイルエラーが解消
-
-### Phase 3: MapGenerator アセンブリ競合解消 (TASK_032)
-
-- `Assets/MapGenerator/Scripts/Vastcore.Generation.asmref` を削除（asmdef と共存不可のため）
-- `Vastcore.MapGenerator.asmdef` の rootNamespace を `Vastcore.MapGenerator` に修正
-- `Vastcore.Editor.MapGenerator.asmdef` の rootNamespace を `Vastcore.Editor.MapGenerator` に修正
-
-### Phase 4+6: ルート直下ファイル整理
-
-- 39件の .md ファイルを docs/ 配下に移動（重複分はルート側を削除）
-- 不要ファイル7件を削除: Error2025-09-11, build_log.txt, doctor_output.json, git_commands.bat, setup_git.bat, test_compilation.bat, WORKER_PROMPT_TASK_020_3DVoxelTerrain_Phase1.txt
-- ルート直下は README.md, CHANGELOG.md, AGENTS.md, AI_CONTEXT.md のみに
-
-### Phase 5: docs/ 構造統合
-
-- `docs/design/` → `docs/02_design/` に統合
-- `docs/progress/` → `docs/04_reports/` に統合
-- `docs/Spec/` → `docs/02_design/` に統合
-- `docs/reports/` → `docs/04_reports/` に統合（43ファイル）
-- `docs/ui-migration/` → `docs/04_reports/` に統合
-- `docs/Windsurf_AI_Collab_Rules_*.md` 3件削除（廃止済み）
-- スプリントレポート 01-06.md をリネームして 04_reports/ に移動
-
-## リスク
-
-- Unity Editor での再コンパイル検証が必要（TASK_029 再検証）
-- MCPForUnity パッケージ参照（git URL）が正常に解決されるか要確認
-
-## Outlook
-
-- **Short-term**: TASK_029 再検証（Unity Editor コンパイル確認）
-- **Mid-term**: TASK_026 3D Voxel Terrain Phase 1、次期開発プラン策定
-- **Long-term**: 2D/3D統合、パフォーマンス最適化
-
-## プロジェクト構造（整理後）
+## 2. プロジェクト構造（2026-03-07 整理後）
 
 ```text
 VastCore/
-├── README.md, CHANGELOG.md, AGENTS.md, AI_CONTEXT.md
-├── .cursor/MISSION_LOG.md
-├── docs/
-│   ├── 01_planning/    (計画・ロードマップ)
-│   ├── 02_design/      (設計・仕様書)
-│   ├── 03_guides/      (ガイド・手順書)
-│   ├── 04_reports/     (レポート・ログ)
-│   ├── tasks/          (タスクチケット)
-│   ├── terrain/        (地形システム固有ドキュメント)
-│   ├── windsurf_workflow/ (Orchestratorプロトコル)
-│   ├── HANDOVER.md     (成果物SSOT)
-│   └── README.md
+├── CLAUDE.md                  ← 運用SSOT（セッション運用プロトコル + Project Context）
+├── AGENTS.md                  ← AIエージェント行動規約
+├── AI_CONTEXT.md              ← AI向け軽量コンテキスト
+├── README.md                  ← プロジェクト概要
+├── CHANGELOG.md               ← 変更履歴
+│
+├── docs/                      ← ドキュメント正本
+│   ├── SSOT_WORLD.md          ← 最上位仕様（憲法）
+│   ├── WORKFLOW_STATE_SSOT.md ← 実行状態SSOT
+│   ├── HANDOVER.md            ← 本文書（成果物SSOT）
+│   ├── DOCS_INDEX.md          ← 全ドキュメント索引
+│   ├── ARCHITECTURE.md        ← モジュール/依存/責務の鳥瞰
+│   ├── MILESTONE_PLAN.md      ← マイルストーン追跡
+│   ├── 01_planning/           ← 計画・ロードマップ
+│   ├── 02_design/             ← 設計仕様
+│   ├── 03_guides/             ← ガイド・手順書
+│   ├── 04_reports/            ← レポート・検証記録（21ファイル、整理済み）
+│   ├── tasks/                 ← タスクチケット
+│   ├── terrain/               ← 地形システム固有
+│   ├── inbox/                 ← 一時レポート受信箱
+│   └── EXAMPLES/              ← Mermaid図テンプレート
+│
 ├── Assets/
-│   ├── Scripts/        (メインコード、asmdef体系)
-│   ├── MapGenerator/   (MapGenerator固有コード)
-│   ├── Editor/         (Editorツール)
-│   └── _Scripts/       (レガシーコード)
+│   ├── Scripts/               ← C#ソースコード（283ファイル, 20 asmdef）
+│   ├── Editor/                ← Editorツール
+│   ├── MapGenerator/          ← MapGenerator固有コード
+│   ├── Tests/                 ← EditMode/PlayModeテスト
+│   └── _Scenes/              ← シーンファイル
+│
+├── Documentation/
+│   └── Concept Arts/          ← コンセプトアート画像のみ（24枚）
+│
+├── .cursor/                   ← Cursor IDE設定
+│   ├── rules.md               ← CLAUDE.md + SSOT_WORLD.md へのポインタ
+│   └── MISSION_LOG.md         ← 履歴的ミッションログ
+│
+├── .cursorrules               ← CLAUDE.md + SSOT_WORLD.md へのポインタ
+└── .serena/                   ← Serena MCP設定（git管理外）
 ```
+
+### 削除済みディレクトリ（git履歴に保存）
+
+| ディレクトリ | 削除理由 | 移行先 |
+|-------------|---------|--------|
+| `.shared-workflows` | gitサブモジュール廃止 | CLAUDE.md に運用プロトコル移行 |
+| `prompts/` | Windsurf Orchestrator/Worker フレームワーク | CLAUDE.md のサブエージェント委譲 |
+| `openspec/` | OpenSpec変更提案プロセス | CLAUDE.md SPEC FIRST |
+| `docs/windsurf_workflow/` | Windsurf IDE固有ワークフロー | CLAUDE.md |
+| `Documentation/Design,Guides,Planning,QA/` | 転送スタブ | docs/ 配下に移行済み |
+
+---
+
+## 3. SSOT階層と運用フロー
+
+```
+SSOT_WORLD.md                       ← プロジェクトの目的・構造・優先順位
+  │
+  ├── DEVELOPMENT_ROADMAP_2026.md   ← Phase A-E の計画と優先度
+  ├── WORKFLOW_STATE_SSOT.md        ← 現在の実行状態（Done条件、Mission）
+  ├── CLAUDE.md                     ← セッション運用（HUMAN_AUTHORITY、検証ポリシー等）
+  ├── HANDOVER.md                   ← 成果物SSOT（本文書）
+  └── docs/tasks/TASK_*.md          ← 個別実装チケット
+```
+
+### 変更管理フロー（CLAUDE.md準拠）
+
+1. **SPEC FIRST**: 仕様を先に言語化、docs/ に記録
+2. **HUMAN_AUTHORITY**: UX/設計/仕様/ビジネスに関わる変更は選択肢提示→承認
+3. **PLAN MODE**: 複数ファイル/レイヤーにまたがる変更はプラン提示→承認
+4. **VERIFICATION POLICY**: 完了条件を先に定義 → 実行 → 機械的検証
+5. **サブエージェント委譲**: 軽量タスクはSonnetに委譲しコスト効率化
+
+### ドキュメント運用ルール
+
+- 新規ドキュメントは `docs/` 配下に配置
+- `DOCS_INDEX.md` に必ず追記
+- SSOT階層での位置を明示、上位への逆リンクを先頭に記載
+- 数値・構成の情報源は実コード（ドキュメント間の相互参照だけで整合性を取らない）
+
+---
+
+## 4. アセンブリアーキテクチャ概要
+
+詳細は [ASSEMBLY_ARCHITECTURE.md](02_design/ASSEMBLY_ARCHITECTURE.md) を参照。
+
+### 依存方向
+
+```
+Utilities (依存なし)
+  ↑
+Core (Utilities)
+  ↑
+Generation / Terrain / WorldGen / MapGenerator
+  ↑
+Player / Camera / UI / Game
+  ↑
+Editor (全上位レイヤー参照可)
+  ↑
+Testing (テスト用スタブ・ヘルパー)
+```
+
+### 禁止事項（AGENTS.md より）
+
+- `Debug.Log` → `VastcoreLogger.Instance.LogInfo(...)`
+- 下位→上位の asmdef 参照追加（循環参照）
+- 同名型の複数アセンブリ定義
+- C# 9.0 非対応構文（引数なし struct コンストラクタ等）
+
+---
+
+## 5. 開発フェーズ
+
+| Phase | 名称 | 状態 | ゴール |
+|-------|------|------|-------|
+| Phase A | 安定化 | **完了** | コンパイル安定性、ブロッカー解消 |
+| Phase B | 品質基盤 | **完了** | EditMode 75テスト、TODO 20→3 削減 |
+| Phase C | 機能完成 | **未着手** | Deform正式統合、CSG検証 |
+| Phase D | 最適化 | 未着手 | 60FPS安定、パフォーマンスチューニング |
+| Phase E | 仕上げ | 未着手 | ドキュメント整合性、UI近代化 |
+
+### Phase C の次期タスク候補
+
+| タスクID | 内容 | 優先度 |
+|---------|------|--------|
+| TASK_PM-1 | PlayMode Smoke Test 導入 | Medium |
+| TASK_PC-1 | Deform Package 正式統合 | Critical |
+| TASK_PB-3 | Terrain 3D Composition プロトタイプ | High |
+
+---
+
+## 6. 検証済みスクリプト
+
+```powershell
+# コンパイルチェック
+./scripts/check-compile.ps1
+
+# EditModeテスト実行
+./scripts/run-tests.ps1 -TestMode editmode
+```
+
+---
+
+## 7. 本セッションの実施内容（2026-03-07）
+
+### ドキュメント負債一掃 — 8コミット, 219ファイル, -14,976行
+
+| # | コミット | 内容 | 影響 |
+|---|---------|------|------|
+| 1 | `7644e00` | shared-workflows + windsurf_workflow 削除、SSOT修正 | 42 files |
+| 2 | `d60eafa` | prompts/ 削除、cursor rules修正 | 16 files |
+| 3 | `445a369` | Unity.Rendering.DebugUI asmdef修正 | 2 files |
+| 4 | `bf75572` | docs/04_reports/ 整理 (116→20) | 97 files |
+| 5 | `c0e1fc9` | Documentation/QA/ スタブ削除、TASK_014参照修正 | 14 files |
+| 6 | `b68cec3` | openspec/ 削除、参照修正 | 31 files |
+| 7 | `f000a82` | Documentation/ スタブ削除、AGENTS.md近代化 | 17 files |
+| 8 | (本コミット) | HANDOVER.md / CLAUDE.md 仕様書更新 | — |
+
+### 主要な構造変更
+
+- **Windsurf → Claude Code 移行完了**: Orchestrator/Worker フレームワーク全廃止、CLAUDE.md + サブエージェントモデルに移行
+- **OpenSpec 廃止**: `openspec/` 削除、CLAUDE.md SPEC FIRST に移行
+- **Documentation/ 統合完了**: 転送スタブ全削除、残存はConcept Artsのみ
+- **レポート整理**: docs/04_reports/ を116→21ファイルに削減
+- **C#パス修正**: UIMigrationツールのハードコードパスを docs/04_reports/ に更新
+
+---
+
+**参照**: [SSOT_WORLD.md](SSOT_WORLD.md) | [CLAUDE.md](../CLAUDE.md) | [DOCS_INDEX.md](DOCS_INDEX.md) | [ARCHITECTURE.md](ARCHITECTURE.md)
