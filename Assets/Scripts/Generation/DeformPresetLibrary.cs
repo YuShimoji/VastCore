@@ -23,7 +23,11 @@ namespace Vastcore.Core
         
         [Header("有機的変形プリセット")]
         [SerializeField] private List<OrganicPreset> organicPresets = new List<OrganicPreset>();
-        
+
+        public List<GeologicalPreset> GeologicalPresets => geologicalPresets;
+        public List<ArchitecturalPreset> ArchitecturalPresets => architecturalPresets;
+        public List<OrganicPreset> OrganicPresets => organicPresets;
+
         /// <summary>
         /// 地質学的変形プリセット
         /// </summary>

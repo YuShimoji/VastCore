@@ -1460,7 +1460,7 @@ namespace Vastcore.Generation
                 case PrimitiveTerrainGenerator.PrimitiveType.Cone:
                     // 先端変形効果
                     var taperDeformer = target.AddComponent<TaperDeformer>();
-                    taperDeformer.Factor = Vector2.one * (1f - quality.deformIntensity * 0.3f);
+                    taperDeformer.Factor = 1f - quality.deformIntensity * 0.3f;
                     break;
                     
                 case PrimitiveTerrainGenerator.PrimitiveType.Monolith:

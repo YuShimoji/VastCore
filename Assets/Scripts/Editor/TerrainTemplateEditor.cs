@@ -625,10 +625,10 @@ namespace Vastcore.Editor
                     EditorGUILayout.LabelField("利用可能なプリセット", EditorStyles.boldLabel);
 
                     // Geological presets
-                    if (selectedTemplate.deformPresetLibrary.geologicalPresets.Count > 0)
+                    if (selectedTemplate.deformPresetLibrary.GeologicalPresets.Count > 0)
                     {
                         EditorGUILayout.LabelField("地質学的プリセット", EditorStyles.miniBoldLabel);
-                        foreach (var preset in selectedTemplate.deformPresetLibrary.geologicalPresets)
+                        foreach (var preset in selectedTemplate.deformPresetLibrary.GeologicalPresets)
                         {
                             if (preset.enabled)
                             {
@@ -638,10 +638,10 @@ namespace Vastcore.Editor
                     }
 
                     // Architectural presets
-                    if (selectedTemplate.deformPresetLibrary.architecturalPresets.Count > 0)
+                    if (selectedTemplate.deformPresetLibrary.ArchitecturalPresets.Count > 0)
                     {
                         EditorGUILayout.LabelField("建築的プリセット", EditorStyles.miniBoldLabel);
-                        foreach (var preset in selectedTemplate.deformPresetLibrary.architecturalPresets)
+                        foreach (var preset in selectedTemplate.deformPresetLibrary.ArchitecturalPresets)
                         {
                             if (preset.enabled)
                             {
@@ -651,10 +651,10 @@ namespace Vastcore.Editor
                     }
 
                     // Organic presets
-                    if (selectedTemplate.deformPresetLibrary.organicPresets.Count > 0)
+                    if (selectedTemplate.deformPresetLibrary.OrganicPresets.Count > 0)
                     {
                         EditorGUILayout.LabelField("有機的プリセット", EditorStyles.miniBoldLabel);
-                        foreach (var preset in selectedTemplate.deformPresetLibrary.organicPresets)
+                        foreach (var preset in selectedTemplate.deformPresetLibrary.OrganicPresets)
                         {
                             if (preset.enabled)
                             {
@@ -732,7 +732,7 @@ namespace Vastcore.Editor
             if (selectedTemplate.deformPresetLibrary == null) return null;
 
             // 最初の有効な地質学的プリセットを使用
-            var geoPreset = selectedTemplate.deformPresetLibrary.geologicalPresets.Find(p => p.enabled);
+            var geoPreset = selectedTemplate.deformPresetLibrary.GeologicalPresets.Find(p => p.enabled);
             if (geoPreset != null)
             {
                 return new Vastcore.Generation.DeformPreset

@@ -26,7 +26,7 @@ namespace Vastcore.Generation
     {
         [Header("Deform設定")]
         [SerializeField] protected bool enableDeformIntegration = true;
-        [SerializeField] protected Vastcore.Core.DeformPresetLibrary deformPresetLibrary;
+        public Vastcore.Core.DeformPresetLibrary deformPresetLibrary;
 
         protected virtual void Awake()
         {
@@ -120,13 +120,6 @@ namespace Vastcore.Generation
             if (deformable == null)
             {
                 deformable = target.AddComponent<Deformable>();
-
-                // メッシュフィルターがある場合、メッシュを設定
-                var meshFilter = target.GetComponent<MeshFilter>();
-                if (meshFilter != null && meshFilter.sharedMesh != null)
-                {
-                    deformable.Mesh = meshFilter.sharedMesh;
-                }
             }
             return deformable;
         }
@@ -140,6 +133,13 @@ namespace Vastcore.Generation
             Debug.LogWarning("ApplyPresetToDeformable not implemented in base class");
         }
 #endif
+    }
+
+    /// <summary>
+    /// Deform統合の具象実装
+    /// </summary>
+    public class DeformIntegration : DeformIntegrationBase
+    {
     }
 
     /// <summary>
