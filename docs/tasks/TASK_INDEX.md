@@ -4,7 +4,7 @@
 
 ## Summary
 - Total: 36 tasks
-- Done: 29 | In Progress: 0 | Pending: 1 | Legacy: 6
+- Done: 31 | In Progress: 0 | Pending: 0 | Legacy: 5
 
 ## Phase A (Terrain Core Stabilization)
 | ID | Title | Status | Summary |

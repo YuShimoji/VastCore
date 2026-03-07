@@ -15,7 +15,7 @@
 | 総 .cs ファイル数 | ~200 |
 | アセンブリ定義 | 10 (Core, Terrain, Generation, Player, Camera, UI, Game, Testing, Editor, Utilities) |
 | StructureGenerator タブ | 7 (Basic, Advanced, Distribution, Operations/Composition, Random, Deform, Relationships) |
-| 開発フェーズ進捗 | Phase 1,2,4 完了 / Phase 3 進行中 / Phase 5,6 未着手 |
+| 開発フェーズ進捗 | Phase 1,2,3,4 完了 / Phase 5,6 未着手 |
 
 ### 健全性スコア (現状 → 目標)
 | 領域 | 現状 | 目標 |
@@ -77,7 +77,7 @@ Vastcore.Testing  (→ Core, Utilities, Generation, Terrain, Player, UI, ProBuil
 | P2-2 | **巨大ファイル SRP 違反** | `BiomeSpecificTerrainGenerator.cs` (1706行), `HighQualityPrimitiveGenerator.cs` (1498行), `CompoundArchitecturalGenerator.cs` (1309行), `ArchitecturalGenerator.cs` (1137行), `NaturalTerrainFeatures.cs` (1083行) | 保守性・テスタビリティ低下 |
 | P2-3 | **Generation asmdef autoReferenced=true** | `Scripts/Generation/Vastcore.Generation.asmdef` | 他アセンブリと不統一。リリースビルドで意図しない参照 |
 | P2-4 | **TODO/FIXME 31件** | 上記 Grep 結果参照 | 技術的負債の可視化不足 |
-| P2-5 | **ドキュメント SSOT 不在** | `docs/01_planning/` に 14 ファイル散在。DEV_PLAN.md は 2025年1月更新のまま | 計画とコードの乖離 |
+| P2-5 | **ドキュメント SSOT 不在** | `docs/01_planning/` に 14 ファイル散在。DEV_PLAN.md はアーカイブ済み | 計画とコードの乖離 |
 | P2-6 | **CI/CD 未稼働** | `.github/workflows/unity-tests.yml` 存在するが UNITY_LICENSE シークレット未設定 | 自動テストが機能していない |
 | P2-7 | **Phase 5/6 未着手** | 高度合成システム、ランダム制御システム | DEV_PLAN.md の中核機能 |
 | P2-8 | **Editor asmdef に ProBuilder 参照なし** | `Scripts/Editor/Vastcore.Editor.asmdef` | Editor 内の ProBuilder 関連ツールがコンパイルできない可能性 |
@@ -244,11 +244,11 @@ DeformIntegrationTestRunner.cs (Testing/) ← テスト
 - **成果物**: `docs/04_reports/COMPILE_VERIFICATION_2026-02.md`
 
 **Phase A 完了基準:**
-- [ ] コンパイルエラー 0
-- [ ] asmdef 依存が全て明示的
-- [ ] テストファイルが Testing アセンブリに集約
-- [ ] Deform 条件付きコンパイルが統一
-- [ ] 健全性スコア: コンパイル安定性 → 95
+- [x] コンパイルエラー 0
+- [x] asmdef 依存が全て明示的
+- [x] テストファイルが Testing アセンブリに集約
+- [x] Deform 条件付きコンパイルが統一
+- [x] 健全性スコア: コンパイル安定性 → 95
 
 ---
 
@@ -336,12 +336,12 @@ DeformIntegrationTestRunner.cs (Testing/) ← テスト
 - **検証**: Core アセンブリが 10ファイル以下（Interfaces + 共通基盤のみ）
 
 **Phase B 完了基準:**
-- [ ] NUnit テスト 70+ 件
-- [ ] 全アセンブリにテストが存在
+- [x] NUnit テスト 70+ 件
+- [x] 全アセンブリにテストが存在
 - [ ] GitHub Actions CI がグリーン
 - [ ] TODO/FIXME が 10件以下
 - [ ] Core アセンブリが純粋な基盤のみ
-- [ ] 健全性スコア: テストカバレッジ → 70、コード品質 → 80
+- [x] 健全性スコア: テストカバレッジ → 70、コード品質 → 80
 
 ---
 
@@ -349,7 +349,7 @@ DeformIntegrationTestRunner.cs (Testing/) ← テスト
 
 **ゴール**: Phase 3 (Deform) 完了、CompositionTab CSG 検証完了、Phase 5 着手
 
-#### PC-1: Deform パッケージ正式導入と統合検証
+#### PC-1: Deform パッケージ正式導入と統合検証 ✅ DONE (2026-03-07)
 - **サイズ**: L
 - **対象ファイル**:
   - 修正: `Packages/manifest.json` — Deform パッケージ バージョン確定
@@ -388,7 +388,7 @@ DeformIntegrationTestRunner.cs (Testing/) ← テスト
 - **依存**: PC-2
 - **検証**: StructureGenerator 全7タブの機能テスト完了
 
-#### PC-4: GeologicalFormation エロージョン実装
+#### PC-4: GeologicalFormation エロージョン実装 ✅ DONE (2026-03-07, commit 7463332)
 - **サイズ**: M
 - **対象ファイル**:
   - 修正: `Scripts/Core/GeologicalFormationGenerator.cs` (PB-5 後は Terrain 配下)
@@ -399,6 +399,7 @@ DeformIntegrationTestRunner.cs (Testing/) ← テスト
   - 新規: `Scripts/Testing/EditMode/TerrainTests/ErosionTests.cs`
 - **依存**: PB-5
 - **検証**: エロージョンの視覚的出力 + 単体テスト
+- **実装詳細**: エロージョンパラメータを RockLayerPhysicalProperties に統合。水力・熱エロージョンは物性値を通じて地質形成に影響する設計
 
 #### PC-5: VastcoreGameManager TerrainGenerator 接続
 - **サイズ**: M
@@ -414,7 +415,7 @@ DeformIntegrationTestRunner.cs (Testing/) ← テスト
 - **検証**: ゲーム起動 → 地形生成 → プレイヤー配置の一連フロー
 
 **Phase C 完了基準:**
-- [ ] Phase 3 (Deform統合) 完了
+- [x] Phase 3 (Deform統合) 完了
 - [ ] CompositionTab CSG + Blend 動作確認
 - [ ] StructureGenerator 全タブ機能完了
 - [ ] GameManager → TerrainGenerator 接続済み
@@ -494,10 +495,10 @@ DeformIntegrationTestRunner.cs (Testing/) ← テスト
 
 **ゴール**: ドキュメント整合性 75、UI 近代化、プロダクション品質
 
-#### PE-1: ドキュメント SSOT 確立
+#### PE-1: ドキュメント SSOT 確立 ⚠ 部分対応 (DEV_PLAN.md はアーカイブ済み)
 - **サイズ**: M
 - **対象ファイル**:
-  - 修正: `docs/01_planning/DEV_PLAN.md` — 本ロードマップとの整合 (2025年1月 → 最新状態に)
+  - ~~修正: `docs/01_planning/DEV_PLAN.md` — 本ロードマップとの整合 (2025年1月 → 最新状態に)~~ **→ アーカイブ済み・削除済み**
   - 統合: `docs/01_planning/REFACTORING_PLAN.md` + `REFACTORING_ACTION_PLAN.md` → 1ファイルに
   - 修正: `docs/01_planning/ISSUES_BACKLOG.md` — 完了タスクのアーカイブ、新タスクの反映
   - 削除: 陳腐化したドキュメント (重複・古い計画書)
