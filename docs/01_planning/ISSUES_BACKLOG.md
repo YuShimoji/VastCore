@@ -102,7 +102,7 @@
 - **Description**: UI 移行 Sprint 02 のドキュメント統合
 - **Artifacts**:
   - `docs/UI_MIGRATION_NOTES.md` (A3-2 結果追記)
-  - `Documentation/QA/LEGACY_UI_MIGRATION_REPORT.md` (スキャン結果)
+  - `docs/04_reports/LEGACY_UI_MIGRATION_REPORT.md` (スキャン結果)
 
 ### T2: Unity テスト環境の健全化
 

@@ -74,4 +74,4 @@
 
 ### 関連レポート
 
-- スキャン結果: `Documentation/QA/LEGACY_UI_MIGRATION_REPORT.md`
+- スキャン結果: `docs/04_reports/LEGACY_UI_MIGRATION_REPORT.md`
