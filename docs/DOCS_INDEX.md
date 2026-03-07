@@ -20,6 +20,21 @@
 
 ---
 
+## 仕様インデックス (SPEC VIEW)
+
+仕様書・設計書の構造化索引。ステータス・実装率・カテゴリで管理する。
+
+- **データソース**: [spec-index.json](spec-index.json) (20件収録)
+- **ID体系**: `SP-xxx` = 仕様書 / `DS-xxx` = 設計書 / `AR-xxx` = アーキテクチャ
+- **ステータス**: done / partial / todo / legacy
+- **カテゴリ**: core / ui / system / infra
+
+仕様を追加・更新した際は spec-index.json も併せて更新すること。
+
+**閲覧**: `cd docs && python -m http.server 8080` → http://localhost:8080/spec-viewer.html
+
+---
+
 ## docs/ ディレクトリ構成
 
 ### ルート直下

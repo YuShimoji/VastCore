@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VastCore Spec Index</title>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --border: #0f3460;
+    --text: #e0e0e0;
+    --text-dim: #8888aa;
+    --accent: #e94560;
+    --done: #4ecca3;
+    --partial: #f0a500;
+    --todo: #7b68ee;
+    --legacy: #666;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem;
+    line-height: 1.6;
+  }
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+    color: var(--accent);
+  }
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+  .stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    min-width: 120px;
+  }
+  .stat-card .label { font-size: 0.75rem; color: var(--text-dim); }
+  .stat-card .value { font-size: 1.5rem; font-weight: 700; }
+  .filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: var(--accent); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  th {
+    background: var(--border);
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  td {
+    padding: 0.6rem 0.75rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  tr:hover td { background: rgba(233, 69, 96, 0.05); }
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .badge-done    { background: rgba(78,204,163,0.2); color: var(--done); }
+  .badge-partial { background: rgba(240,165,0,0.2); color: var(--partial); }
+  .badge-todo    { background: rgba(123,104,238,0.2); color: var(--todo); }
+  .badge-legacy  { background: rgba(102,102,102,0.2); color: var(--legacy); }
+  .badge-cat {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .pct-bar {
+    width: 60px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 0.4rem;
+  }
+  .pct-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+  .pct-fill-done    { background: var(--done); }
+  .pct-fill-partial { background: var(--partial); }
+  .pct-fill-todo    { background: var(--todo); }
+  .pct-fill-legacy  { background: var(--legacy); }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .id-col { font-family: monospace; color: var(--text-dim); font-size: 0.8rem; }
+  .error {
+    background: rgba(233,69,96,0.1);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 2rem 0;
+  }
+  .error code { font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<h1>VastCore Spec Index</h1>
+<p class="subtitle">docs/spec-index.json viewer</p>
+
+<div class="stats" id="stats"></div>
+<div class="filters" id="filters"></div>
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Title</th>
+      <th>Status</th>
+      <th>Progress</th>
+      <th>Category</th>
+      <th>File</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+
+<script>
+(async () => {
+  let data;
+  try {
+    const res = await fetch('spec-index.json');
+    data = await res.json();
+  } catch {
+    document.getElementById('tbody').innerHTML =
+      '<tr><td colspan="6"><div class="error">spec-index.json の読み込みに失敗しました。<br><code>cd docs && python -m http.server 8080</code> でローカルサーバーを起動してください。</div></td></tr>';
+    return;
+  }
+
+  const stats = document.getElementById('stats');
+  const tbody = document.getElementById('tbody');
+  const filters = document.getElementById('filters');
+
+  const counts = { total: data.length, done: 0, partial: 0, todo: 0, legacy: 0 };
+  data.forEach(d => { if (counts[d.status] !== undefined) counts[d.status]++; });
+  const avgPct = Math.round(data.reduce((s, d) => s + d.pct, 0) / data.length);
+
+  stats.innerHTML = `
+    <div class="stat-card"><div class="label">Total</div><div class="value">${counts.total}</div></div>
+    <div class="stat-card"><div class="label">Done</div><div class="value" style="color:var(--done)">${counts.done}</div></div>
+    <div class="stat-card"><div class="label">Partial</div><div class="value" style="color:var(--partial)">${counts.partial}</div></div>
+    <div class="stat-card"><div class="label">Todo</div><div class="value" style="color:var(--todo)">${counts.todo}</div></div>
+    <div class="stat-card"><div class="label">Legacy</div><div class="value" style="color:var(--legacy)">${counts.legacy}</div></div>
+    <div class="stat-card"><div class="label">Avg %</div><div class="value">${avgPct}%</div></div>`;
+
+  const categories = [...new Set(data.map(d => d.cat))];
+  const statuses = ['done', 'partial', 'todo', 'legacy'];
+  let activeFilter = null;
+
+  function render(filterFn) {
+    const filtered = filterFn ? data.filter(filterFn) : data;
+    tbody.innerHTML = filtered.map(d => `
+      <tr>
+        <td class="id-col">${d.id}</td>
+        <td><strong>${d.title}</strong><br><span style="color:var(--text-dim);font-size:0.75rem">${d.summary}</span></td>
+        <td><span class="badge badge-${d.status}">${d.status}</span></td>
+        <td><div class="pct-bar"><div class="pct-fill pct-fill-${d.status}" style="width:${d.pct}%"></div></div>${d.pct}%</td>
+        <td><span class="badge-cat">${d.cat}</span></td>
+        <td><a href="${d.file.replace('docs/', '')}" target="_blank">${d.file.split('/').pop()}</a></td>
+      </tr>`).join('');
+  }
+
+  function setFilter(type, value) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    if (activeFilter === `${type}:${value}`) {
+      activeFilter = null;
+      render(null);
+      return;
+    }
+    activeFilter = `${type}:${value}`;
+    document.querySelector(`[data-filter="${activeFilter}"]`)?.classList.add('active');
+    render(d => d[type] === value);
+  }
+
+  filters.innerHTML =
+    statuses.map(s => `<button class="filter-btn" data-filter="status:${s}" onclick="window._sf('status','${s}')">${s}</button>`).join('') +
+    '<span style="color:var(--border);margin:0 0.25rem">|</span>' +
+    categories.map(c => `<button class="filter-btn" data-filter="cat:${c}" onclick="window._sf('cat','${c}')">${c}</button>`).join('');
+
+  window._sf = setFilter;
+  render(null);
+})();
+</script>
+</body>
+</html>

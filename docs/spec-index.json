@@ -1,0 +1,182 @@
+[
+  {
+    "id": "SP-001",
+    "title": "Dual Grid Terrain System",
+    "status": "partial",
+    "pct": 70,
+    "cat": "core",
+    "file": "docs/02_design/DualGridTerrainSystem_Spec.md",
+    "summary": "Irregular Grid (Townscaper inspired) テクニカル仕様 v0.2"
+  },
+  {
+    "id": "SP-002",
+    "title": "Marching Squares Terrain System",
+    "status": "done",
+    "pct": 100,
+    "cat": "core",
+    "file": "docs/02_design/MarchingSquaresTerrainSystem_Spec.md",
+    "summary": "Dual Grid + Marching Squares + Spline + Prefab 配置仕様 v1.0"
+  },
+  {
+    "id": "SP-003",
+    "title": "DualGrid HeightMap Profile Mapping",
+    "status": "partial",
+    "pct": 60,
+    "cat": "core",
+    "file": "docs/02_design/DUALGRID_HEIGHTMAP_PROFILE_MAPPING_SPEC.md",
+    "summary": "VerticalExtrusionGenerator の profile-driven mapping 仕様 (Draft v0.1)"
+  },
+  {
+    "id": "SP-004",
+    "title": "Advanced Procedural Structure Generation",
+    "status": "legacy",
+    "pct": 0,
+    "cat": "core",
+    "file": "docs/02_design/ADVANCED_STRUCTURE_DESIGN_DOCUMENT.md",
+    "summary": "高度プロシージャル構造物生成システム設計仕様書 v1.0 (2025-01)"
+  },
+  {
+    "id": "SP-005",
+    "title": "Phase 2 Template Integration",
+    "status": "legacy",
+    "pct": 0,
+    "cat": "core",
+    "file": "docs/02_design/Phase2_TemplateIntegration_Spec.md",
+    "summary": "DesignerTerrainTemplate 統合ポイント整理 (歴史的仕様)"
+  },
+  {
+    "id": "SP-006",
+    "title": "Terrain Generation v0",
+    "status": "done",
+    "pct": 100,
+    "cat": "core",
+    "file": "docs/terrain/TerrainGenerationV0_Spec.md",
+    "summary": "HeightMap & Noise ベース単一タイル生成仕様 (Active/Draft)"
+  },
+  {
+    "id": "SP-007",
+    "title": "Terrain Engine Design (Phase 3 / M1)",
+    "status": "partial",
+    "pct": 50,
+    "cat": "core",
+    "file": "docs/02_design/TERRAIN_ENGINE_DESIGN.md",
+    "summary": "シード駆動再現性ある地形生成。高さデータ供給源抽象化設計"
+  },
+  {
+    "id": "SP-008",
+    "title": "WorldGen Architecture (M0-M3)",
+    "status": "done",
+    "pct": 100,
+    "cat": "core",
+    "file": "docs/02_design/WorldGenArchitecture.md",
+    "summary": "Classic (heightmap) vs Volumetric (density field) 新スケルトン定義"
+  },
+  {
+    "id": "SP-009",
+    "title": "DualGrid Terrain Integration Design",
+    "status": "todo",
+    "pct": 0,
+    "cat": "core",
+    "file": "docs/02_design/DualGridTerrainSystem_Integration_Design.md",
+    "summary": "既存システム統合の設計書 v0.1 (Draft, 未実装)"
+  },
+  {
+    "id": "DS-001",
+    "title": "Assembly Architecture (SSOT)",
+    "status": "done",
+    "pct": 100,
+    "cat": "infra",
+    "file": "docs/02_design/ASSEMBLY_ARCHITECTURE.md",
+    "summary": "Unity Assembly Definition 依存グラフと名前空間規約のSSOT"
+  },
+  {
+    "id": "DS-002",
+    "title": "RandomControl Modern UI Design",
+    "status": "partial",
+    "pct": 40,
+    "cat": "ui",
+    "file": "docs/02_design/RANDOMCONTROL_UI_DESIGN.md",
+    "summary": "Blender Shape Keys + Skyrim RaceMenu 参考 UI 設計"
+  },
+  {
+    "id": "DS-003",
+    "title": "Phase 3 Deform Technical Investigation",
+    "status": "done",
+    "pct": 100,
+    "cat": "core",
+    "file": "docs/02_design/PHASE3_DEFORM_TECHNICAL_INVESTIGATION.md",
+    "summary": "ハイトマップ機能実装調査 (2025-08-11)"
+  },
+  {
+    "id": "DS-004",
+    "title": "Legacy Isolation Design",
+    "status": "done",
+    "pct": 100,
+    "cat": "infra",
+    "file": "docs/02_design/LegacyIsolation_Design.md",
+    "summary": "Legacy/Shelved コード隔離設計書 (2025-12-07)"
+  },
+  {
+    "id": "DS-005",
+    "title": "Phase 1.5 Runtime Refactor",
+    "status": "legacy",
+    "pct": 0,
+    "cat": "core",
+    "file": "docs/02_design/Phase15_RuntimeRefactor_Design.md",
+    "summary": "V01ランタイム責務整理・将来拡張準備 (歴史的設計)"
+  },
+  {
+    "id": "DS-006",
+    "title": "Terrain Algorithm Notes: DualGrid & HeightMap",
+    "status": "done",
+    "pct": 100,
+    "cat": "core",
+    "file": "docs/02_design/TERRAIN_ALGORITHM_NOTES_DUALGRID_HEIGHTMAP.md",
+    "summary": "HeightMap / DualGrid 実装挙動まとめ"
+  },
+  {
+    "id": "DS-007",
+    "title": "Refactoring Handover",
+    "status": "legacy",
+    "pct": 0,
+    "cat": "infra",
+    "file": "docs/02_design/REFACTORING_HANDOVER_DOCUMENT.md",
+    "summary": "リファクタリング引き継ぎドキュメント (歴史的資料)"
+  },
+  {
+    "id": "DS-008",
+    "title": "Deform Usage Documentation",
+    "status": "done",
+    "pct": 100,
+    "cat": "core",
+    "file": "docs/03_guides/Deform_Usage_Documentation.md",
+    "summary": "Deform統合後のAPI・使用方法・ベストプラクティス"
+  },
+  {
+    "id": "AR-001",
+    "title": "Architecture Overview",
+    "status": "done",
+    "pct": 100,
+    "cat": "infra",
+    "file": "docs/ARCHITECTURE.md",
+    "summary": "アセンブリ依存DAG・モジュール構成・責務の鳥瞰図"
+  },
+  {
+    "id": "AR-002",
+    "title": "SSOT World",
+    "status": "done",
+    "pct": 100,
+    "cat": "system",
+    "file": "docs/SSOT_WORLD.md",
+    "summary": "プロジェクト全体の最上位仕様。目的・構造・優先順位の最終権威"
+  },
+  {
+    "id": "AR-003",
+    "title": "Workflow State SSOT",
+    "status": "done",
+    "pct": 100,
+    "cat": "system",
+    "file": "docs/WORKFLOW_STATE_SSOT.md",
+    "summary": "現在のミッション・Done条件・フェーズ進捗を定義"
+  }
+]
