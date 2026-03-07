@@ -29,7 +29,7 @@ Verify that the recent merge from `origin/master` into `develop` has not introdu
 ## Results
 - Compilation: **PASS** (after fixing package configuration).
 - Tests: **FAIL** (Infrastructure issue, see report).
-- Report: [INTEGRATION_VERIFICATION_REPORT_TASK021.md](../reports/INTEGRATION_VERIFICATION_REPORT_TASK021.md)
+- Report: INTEGRATION_VERIFICATION_REPORT_TASK021.md (archived)
 
 ## Constraints
 - Do not spend excessive time debugging deep logic bugs; focus on compilation and basic integration integrity first.

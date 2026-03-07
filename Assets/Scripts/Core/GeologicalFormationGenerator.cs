@@ -133,15 +133,8 @@ namespace Vastcore.Generation.Map
         [SerializeField] private float seaLevel = 0f;
         [SerializeField] private float tectonicActivity = 0.5f;
         [SerializeField] private float volcanicActivity = 0.3f;
-        [SerializeField] private float erosionRate = 0.1f; // TODO: Implement erosion simulation
-        
-        // エロージョンシミュレーション用メソッド（将来実装予定）
-        private void ApplyErosion(GeologicalLayer layer)
-        {
-            // 現在は未実装だが、erosionRateを使用する予定
-            float erosionEffect = erosionRate * Time.deltaTime;
-            // TODO: 実際のエロージョン処理を実装
-        }
+        [Header("物理特性コンポーネント")]
+        [SerializeField] private RockLayerPhysicalProperties rockPhysicalProperties;
 
         private List<GeologicalLayer> formationLayers;
         private GeologicalEnvironment currentEnvironment;
@@ -160,6 +153,12 @@ namespace Vastcore.Generation.Map
             formationLayers = new List<GeologicalLayer>();
             currentEnvironment = new GeologicalEnvironment();
             geologicalRandom = new System.Random();
+
+            // RockLayerPhysicalProperties の自動取得
+            if (rockPhysicalProperties == null)
+                rockPhysicalProperties = GetComponent<RockLayerPhysicalProperties>();
+            if (rockPhysicalProperties != null)
+                rockPhysicalProperties.Initialize();
 
             SetupGeologicalTimeScale();
             VastcoreLogger.Instance.LogInfo("GeologicalFormation", "GeologicalFormationGenerator initialized");
@@ -226,9 +225,21 @@ namespace Vastcore.Generation.Map
                     formation.AddLayer(newLayer);
                 }
 
+                // 既存レイヤーへの風化・エロージョン・経年変化の適用
+                if (rockPhysicalProperties != null)
+                {
+                    ApplyPhysicalProcessesToLayers(currentTime);
+                }
+
                 // 時間の進行
                 currentTime += GetTimeStep(formationType);
             }
+
+            // エロージョンで除去されたレイヤーをformationからも同期
+            formation.layers.RemoveAll(l => l.thickness <= 0.1f);
+            formation.totalThickness = 0f;
+            foreach (var l in formation.layers)
+                formation.totalThickness += l.thickness;
 
             // 構造変形の適用
             ApplyStructuralDeformation(formation);
@@ -435,6 +446,25 @@ namespace Vastcore.Generation.Map
                 RockFormationType.Metamorphic => UnityEngine.Random.Range(5f, 50f),    // 5-50百万年
                 _ => 5f
             };
+        }
+
+        /// <summary>
+        /// 既存レイヤーに物理プロセス（風化・エロージョン・経年変化）を適用
+        /// </summary>
+        private void ApplyPhysicalProcessesToLayers(float currentTime)
+        {
+            for (int i = formationLayers.Count - 1; i >= 0; i--)
+            {
+                var layer = formationLayers[i];
+                float layerAge = currentTime - layer.age;
+                rockPhysicalProperties.ApplyPhysicalProperties(layer, currentEnvironment, layerAge);
+
+                // 完全浸食されたレイヤーを除去
+                if (layer.thickness <= 0.1f)
+                {
+                    formationLayers.RemoveAt(i);
+                }
+            }
         }
 
         /// <summary>

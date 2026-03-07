@@ -1,3 +1,5 @@
+> **Note**: This is a historical design document. Links to deleted files have been preserved as text references.
+
 # Phase 1.5: Runtime 責務整理デザインドキュメント
 
 ## 概要
@@ -199,9 +201,9 @@ namespace Vastcore.Generation
 
 ## 関連ドキュメント
 
-- [TerrainGenerationV0_Spec.md](../terrain/TerrainGenerationV0_Spec.md) - V0 仕様書
-- [V01_TestPlan.md](../terrain/V01_TestPlan.md) - V01 テスト計画
-- [Handover_Nov20.md](../progress/Handover_Nov20.md) - 申し送りノート
+- TerrainGenerationV0_Spec.md (archived) - V0 仕様書
+- V01_TestPlan.md (archived) - V01 テスト計画
+- Handover_Nov20.md (archived) - 申し送りノート
 
 ---
 

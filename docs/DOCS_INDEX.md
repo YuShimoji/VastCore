@@ -2,7 +2,7 @@
 
 > **上位SSOT**: [SSOT_WORLD.md](SSOT_WORLD.md)
 
-**最終更新**: 2026-02-14
+**最終更新**: 2026-03-07
 
 ---
 
@@ -33,12 +33,13 @@
 | [README.md](README.md) | docs/ ディレクトリガイド |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | コントリビューションルール |
 
-### 01_planning/ — 計画・ロードマップ
+### 01_planning/ — 計画・ロードマップ (19 files)
 
 | ファイル | 役割 |
 |---------|------|
 | [DEVELOPMENT_ROADMAP_2026.md](01_planning/DEVELOPMENT_ROADMAP_2026.md) | ロードマップ正本（Phase A-E） |
 | [ROADMAP.md](01_planning/ROADMAP.md) | ロードマップ導線（サマリー＋リンク） |
+| [DEV_PLAN.md](01_planning/DEV_PLAN.md) | 開発計画（現行） |
 | [DEV_PLAN_ARCHIVE_2025-01.md](01_planning/DEV_PLAN_ARCHIVE_2025-01.md) | 目的関数のアーカイブ（2025年1月版） |
 | [DOCUMENTATION_CLEANUP_PLAN.md](01_planning/DOCUMENTATION_CLEANUP_PLAN.md) | 表現統一・検証ゲート規約 |
 | [PHASE_A_DEPENDENCY_MAP.md](01_planning/PHASE_A_DEPENDENCY_MAP.md) | Phase A タスク依存関係マップ |
@@ -47,8 +48,16 @@
 | [REFACTORING_PLAN.md](01_planning/REFACTORING_PLAN.md) | リファクタリング計画 |
 | [REFACTORING_ACTION_PLAN.md](01_planning/REFACTORING_ACTION_PLAN.md) | リファクタリング実行計画 |
 | [PROJECT_RESTRUCTURE_PLAN.md](01_planning/PROJECT_RESTRUCTURE_PLAN.md) | プロジェクト再構成計画 |
+| [RESTRUCTURE_PLAN.md](01_planning/RESTRUCTURE_PLAN.md) | 再構成計画（別版） |
+| [ISSUES_BACKLOG.md](01_planning/ISSUES_BACKLOG.md) | 課題バックログ |
+| [README.md](01_planning/README.md) | 計画ディレクトリガイド |
+| [Diagram.md](01_planning/Diagram.md) | 図表定義 |
+| [SG1_TEST_VERIFICATION_PLAN.md](01_planning/SG1_TEST_VERIFICATION_PLAN.md) | SG1 テスト検証計画 |
+| [SPRINT_PLAN_02.md](01_planning/SPRINT_PLAN_02.md) | スプリント計画 #2 |
+| [TEST_PLAN.md](01_planning/TEST_PLAN.md) | テスト計画（全体） |
+| [WEB_DEVELOPMENT_ROADMAP.md](01_planning/WEB_DEVELOPMENT_ROADMAP.md) | Web開発ロードマップ |
 
-### 02_design/ — 設計仕様
+### 02_design/ — 設計仕様 (17 files)
 
 | ファイル | 役割 |
 |---------|------|
@@ -60,8 +69,12 @@
 | [REFACTORING_HANDOVER_DOCUMENT.md](02_design/REFACTORING_HANDOVER_DOCUMENT.md) | リファクタリング引き継ぎ |
 | [RANDOMCONTROL_UI_DESIGN.md](02_design/RANDOMCONTROL_UI_DESIGN.md) | RandomControl UI 設計 |
 | [PHASE3_DEFORM_TECHNICAL_INVESTIGATION.md](02_design/PHASE3_DEFORM_TECHNICAL_INVESTIGATION.md) | Deform 技術調査 |
+| [Phase15_RuntimeRefactor_Design.md](02_design/Phase15_RuntimeRefactor_Design.md) | Phase 1.5 Runtime リファクタ設計（歴史資料） |
+| [LegacyIsolation_Design.md](02_design/LegacyIsolation_Design.md) | レガシー隔離設計（歴史資料） |
+| [Phase2_TemplateIntegration_Spec.md](02_design/Phase2_TemplateIntegration_Spec.md) | Phase 2 テンプレート統合仕様（歴史資料） |
+| [WorldGenArchitecture.md](02_design/WorldGenArchitecture.md) | WorldGen アーキテクチャ設計（M0-M3） |
 
-### 03_guides/ — ガイド・手順書
+### 03_guides/ — ガイド・手順書 (15 files)
 
 | ファイル | 役割 |
 |---------|------|
@@ -71,10 +84,19 @@
 | [DEVELOPMENT_PROTOCOL.md](03_guides/DEVELOPMENT_PROTOCOL.md) | 開発プロトコル |
 | [StructureGenerator_JA.md](03_guides/StructureGenerator_JA.md) | StructureGenerator 日本語ガイド |
 | [Deform_Usage_Documentation.md](03_guides/Deform_Usage_Documentation.md) | Deform 使用方法 |
+| [COMPILATION_GUARD_PROTOCOL.md](03_guides/COMPILATION_GUARD_PROTOCOL.md) | コンパイルガード プロトコル |
+| [UNITY_CODE_STANDARDS.md](03_guides/UNITY_CODE_STANDARDS.md) | Unity コーディング標準 |
+| [UNITY_CACHE_CLEANUP_GUIDE.md](03_guides/UNITY_CACHE_CLEANUP_GUIDE.md) | Unity キャッシュクリーンアップガイド |
+| [CURSOR_WEB_DEVELOPMENT_GUIDE.md](03_guides/CURSOR_WEB_DEVELOPMENT_GUIDE.md) | Cursor Web 開発ガイド |
+| [ORCHESTRATION_PROMPT.md](03_guides/ORCHESTRATION_PROMPT.md) | オーケストレーションプロンプト |
+| [TERRAIN_OBJECT_GENERATION_SHORTEST_PLAN.md](03_guides/TERRAIN_OBJECT_GENERATION_SHORTEST_PLAN.md) | 地形オブジェクト生成最短計画 |
+| [UI_MIGRATION_NOTES.md](03_guides/UI_MIGRATION_NOTES.md) | UI 移行ノート |
+| [TASK_034_MANUAL_VALIDATION_CHECKLIST.md](03_guides/TASK_034_MANUAL_VALIDATION_CHECKLIST.md) | Task 034 手動検証チェックリスト |
+| [README.md](03_guides/README.md) | ガイドディレクトリガイド |
 
-### 04_reports/ — レポート・検証記録
+### 04_reports/ — レポート・検証記録 (21 files)
 
-Terrain Vertical Slice、WorldGen M0-M3、Phase A/B 完了レポート等。21ファイル（2026-03-07整理済み、旧レポートはgit履歴に保存）。
+Terrain Vertical Slice、WorldGen M0-M3、Phase A/B 完了レポート等（2026-03-07整理済み、旧レポートはgit履歴に保存）。
 
 ### tasks/ — タスクチケット
 

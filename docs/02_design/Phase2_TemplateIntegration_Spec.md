@@ -1,3 +1,5 @@
+> **Note**: This is a historical design document. Links to deleted files have been preserved as text references.
+
 # Phase 2: Template 系統合仕様書
 
 ## 概要
@@ -243,8 +245,8 @@ Phase 2.5 (将来)
 ## 関連ドキュメント
 
 - [Phase15_RuntimeRefactor_Design.md](./Phase15_RuntimeRefactor_Design.md)
-- [V01_TestPlan.md](../terrain/V01_TestPlan.md)
-- [TerrainGenerationV0_Spec.md](../terrain/TerrainGenerationV0_Spec.md)
+- V01_TestPlan.md (archived)
+- TerrainGenerationV0_Spec.md (archived)
 
 ---
 
