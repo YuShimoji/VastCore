@@ -42,7 +42,7 @@ namespace Vastcore.Generation
 
 #if DEFORM_AVAILABLE
             // Deformマネージャーに登録
-            if (Vastcore.Core.VastcoreDeformManager.Instance != null)
+            if (VastcoreDeformManager.Instance != null)
             {
                 // 統合準備完了
                 Debug.Log("Deform integration initialized");
@@ -65,7 +65,7 @@ namespace Vastcore.Generation
             ApplyPresetToDeformable(deformable, preset);
 
             // マネージャーに登録
-            Vastcore.Core.VastcoreDeformManager.Instance?.RegisterDeformable(deformable);
+            VastcoreDeformManager.Instance?.RegisterDeformable(deformable);
 #endif
         }
 
@@ -80,7 +80,7 @@ namespace Vastcore.Generation
             var deformable = target.GetComponent<Deformable>();
             if (deformable != null)
             {
-                Vastcore.Core.VastcoreDeformManager.Instance?.UnregisterDeformable(deformable);
+                VastcoreDeformManager.Instance?.UnregisterDeformable(deformable);
                 DestroyImmediate(deformable);
             }
 #endif

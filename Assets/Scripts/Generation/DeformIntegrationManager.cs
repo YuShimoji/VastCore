@@ -223,7 +223,7 @@ namespace Vastcore.Generation
                 case DeformerType.Squash:
                     return target.AddComponent<SquashAndStretchDeformer>();
                 case DeformerType.Curve:
-                    return target.AddComponent<CurveDeformer>();
+                    return target.AddComponent<CurveDisplaceDeformer>();
                 case DeformerType.Lattice:
                     return target.AddComponent<LatticeDeformer>();
                 case DeformerType.Magnet:

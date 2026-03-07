@@ -10,7 +10,8 @@
         "Vastcore.MapGenerator",
         "Unity.TextMeshPro",
         "Unity.ProBuilder",
-        "Unity.ProBuilder.Editor"
+        "Unity.ProBuilder.Editor",
+        "Deform"
     ],
     "includePlatforms": [
         "Editor"
@@ -21,6 +22,12 @@
     "precompiledReferences": [],
     "autoReferenced": false,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.beans.deform",
+            "expression": "",
+            "define": "DEFORM_AVAILABLE"
+        }
+    ],
     "noEngineReferences": false
 }

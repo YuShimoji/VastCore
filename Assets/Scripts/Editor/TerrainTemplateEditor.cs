@@ -672,7 +672,7 @@ namespace Vastcore.Editor
 
                 // 適用オプション
                 selectedTemplate.autoApplyDeform = EditorGUILayout.Toggle("自動適用", selectedTemplate.autoApplyDeform);
-                selectedTemplate.deformQuality = (Vastcore.Core.VastcoreDeformManager.DeformQualityLevel)EditorGUILayout.EnumPopup("品質レベル", selectedTemplate.deformQuality);
+                selectedTemplate.deformQuality = (Vastcore.Generation.VastcoreDeformManager.DeformQualityLevel)EditorGUILayout.EnumPopup("品質レベル", selectedTemplate.deformQuality);
 
                 EditorGUILayout.Space();
 

@@ -1405,7 +1405,10 @@ namespace Vastcore.Generation
                 case PrimitiveTerrainGenerator.PrimitiveType.Crystal:
                     // 結晶成長効果
                     var scaleDeformer = target.AddComponent<ScaleDeformer>();
-                    scaleDeformer.Factor = Vector3.one * (1f + quality.deformIntensity * 0.2f);
+                    var crystalAxisGo = new GameObject("_DeformScaleAxis");
+                    crystalAxisGo.transform.SetParent(target.transform, false);
+                    crystalAxisGo.transform.localScale = Vector3.one * (1f + quality.deformIntensity * 0.2f);
+                    scaleDeformer.Axis = crystalAxisGo.transform;
                     break;
                     
                 case PrimitiveTerrainGenerator.PrimitiveType.Cylinder:

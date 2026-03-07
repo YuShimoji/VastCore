@@ -387,7 +387,10 @@ namespace Vastcore.Core
                     
                 case GeologicalDeformType.CrystalGrowth:
                     var scaleDeformer = target.AddComponent<ScaleDeformer>();
-                    scaleDeformer.Factor = Vector3.one * (1f + preset.intensity * intensityMultiplier);
+                    var scaleAxisGo = new GameObject("_DeformScaleAxis");
+                    scaleAxisGo.transform.SetParent(target.transform, false);
+                    scaleAxisGo.transform.localScale = Vector3.one * (1f + preset.intensity * intensityMultiplier);
+                    scaleDeformer.Axis = scaleAxisGo.transform;
                     break;
                     
                 case GeologicalDeformType.TectonicStress:

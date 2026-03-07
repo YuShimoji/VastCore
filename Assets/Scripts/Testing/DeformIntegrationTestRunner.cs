@@ -174,7 +174,7 @@ namespace Vastcore.Testing
 #endif
                 
                 // 必要なクラスの存在確認
-                var managerType = typeof(Vastcore.Core.VastcoreDeformManager);
+                var managerType = typeof(Vastcore.Generation.VastcoreDeformManager);
                 var generatorType = typeof(Vastcore.Generation.HighQualityPrimitiveGenerator);
                 var presetType = typeof(Vastcore.Core.DeformPresetLibrary);
                 

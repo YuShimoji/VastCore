@@ -16,7 +16,8 @@
         "Unity.ProBuilder.KdTree",
         "Unity.ProBuilder.Poly2Tri",
         "Unity.ProBuilder.Stl",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "Deform"
     ],
     "includePlatforms": [
         "Editor"
@@ -34,6 +35,12 @@
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.beans.deform",
+            "expression": "",
+            "define": "DEFORM_AVAILABLE"
+        }
+    ],
     "noEngineReferences": false
 }

@@ -51,7 +51,7 @@ namespace Vastcore.Generation
         }
 
         // Stub methods to satisfy DeformIntegrationManager usage
-        public void RegisterDeformable(object deformable, DeformQualityLevel quality)
+        public void RegisterDeformable(object deformable, DeformQualityLevel quality = DeformQualityLevel.Medium)
         {
             // Implementation would go here
         }

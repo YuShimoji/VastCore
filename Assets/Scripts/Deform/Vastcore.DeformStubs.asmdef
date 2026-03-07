@@ -1,21 +1,13 @@
 {
-    "name": "Vastcore.Terrain",
-    "rootNamespace": "Vastcore.Terrain",
-    "references": [
-        "Unity.ProBuilder",
-        "Unity.TextMeshPro",
-        "Vastcore.Core",
-        "Vastcore.Utilities",
-        "Vastcore.Generation",
-        "Vastcore.WorldGen",
-        "Deform"
-    ],
+    "name": "Vastcore.DeformStubs",
+    "rootNamespace": "",
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [
         {

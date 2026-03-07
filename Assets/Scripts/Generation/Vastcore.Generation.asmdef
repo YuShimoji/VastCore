@@ -4,7 +4,8 @@
     "references": [
         "Unity.ProBuilder",
         "Vastcore.Core",
-        "Vastcore.Utilities"
+        "Vastcore.Utilities",
+        "Deform"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -13,6 +14,12 @@
     "precompiledReferences": [],
     "autoReferenced": false,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.beans.deform",
+            "expression": "",
+            "define": "DEFORM_AVAILABLE"
+        }
+    ],
     "noEngineReferences": false
 }
