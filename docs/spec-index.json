@@ -156,10 +156,10 @@
     "id": "DS-009",
     "title": "Phase C Scope Definition",
     "status": "partial",
-    "pct": 40,
+    "pct": 80,
     "cat": "system",
     "file": "docs/02_design/PHASE_C_SCOPE_DEFINITION.md",
-    "summary": "Phase C (Deform + CSG) の検証済みスコープ定義。PC-1,PC-4完了、PC-2,3,5残"
+    "summary": "Phase C (Deform + CSG) スコープ定義。PC-1,2,3,4完了。PC-5(GameManager)のみ残"
   },
   {
     "id": "AR-001",

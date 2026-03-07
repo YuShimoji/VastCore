@@ -558,15 +558,231 @@ namespace Vastcore.Editor.Generation
                 return;
             }
 
-            Debug.Log($"[CompositionTab] Executing {_blendMode} blend with factor {_blendFactor}");
-            
-            // TODO: ブレンド実装
-            EditorUtility.DisplayDialog(
-                "Blend Operation",
-                $"{_blendMode} blend is not yet implemented.\n\n" +
-                $"Blend Factor: {_blendFactor}",
-                "OK");
+            try
+            {
+                var objA = _sourceObjects[0];
+                var objB = _sourceObjects[1];
+
+                if (objA == null || objB == null)
+                {
+                    Debug.LogError("[CompositionTab] Source objects are null");
+                    return;
+                }
+
+                EnsureMeshComponents(objA);
+                EnsureMeshComponents(objB);
+
+                var meshA = objA.GetComponent<MeshFilter>()?.sharedMesh;
+                var meshB = objB.GetComponent<MeshFilter>()?.sharedMesh;
+
+                if (meshA == null || meshB == null)
+                {
+                    Debug.LogError("[CompositionTab] Source objects have no mesh data");
+                    return;
+                }
+
+                Debug.Log($"[CompositionTab] Executing {_blendMode} blend (factor={_blendFactor}) on '{objA.name}' ({meshA.vertexCount}v) and '{objB.name}' ({meshB.vertexCount}v)");
+
+                Mesh resultMesh = BlendMeshes(meshA, meshB, objA.transform, objB.transform, _blendMode, _blendFactor);
+                if (resultMesh == null)
+                {
+                    Debug.LogError("[CompositionTab] Blend operation produced no result");
+                    return;
+                }
+
+                var materials = objA.GetComponent<MeshRenderer>()?.sharedMaterials;
+                GameObject resultObject = CreateResultObjectFromMesh(
+                    resultMesh,
+                    materials,
+                    $"Blend_{_blendMode}_Result",
+                    objA.transform);
+
+                Undo.RegisterCreatedObjectUndo(resultObject, $"Blend {_blendMode}");
+                HandleSourceObjects();
+                Selection.activeGameObject = resultObject;
+
+                Debug.Log($"[CompositionTab] {_blendMode} blend completed ({resultMesh.vertexCount} vertices)");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[CompositionTab] Blend failed: {ex.Message}");
+                EditorUtility.DisplayDialog("Blend Error", $"Blend 操作中にエラーが発生しました。\n\n{ex.Message}", "OK");
+            }
         }
+
+        #region Mesh Blend Core
+
+        private Mesh BlendMeshes(Mesh meshA, Mesh meshB, Transform transformA, Transform transformB, BlendMode mode, float factor)
+        {
+            // ワールド空間の頂点を取得
+            Vector3[] vertsA = GetWorldSpaceVertices(meshA, transformA);
+            Vector3[] normsA = GetWorldSpaceNormals(meshA, transformA);
+            Vector3[] vertsB = GetWorldSpaceVertices(meshB, transformB);
+            Vector3[] normsB = GetWorldSpaceNormals(meshB, transformB);
+
+            // メッシュAをベースとし、Bの頂点をAの頂点にマッピング
+            int[] mapping = RemapVertices(vertsA, vertsB);
+
+            Vector3[] resultVerts = new Vector3[vertsA.Length];
+            Vector3[] resultNorms = new Vector3[normsA.Length];
+
+            for (int i = 0; i < vertsA.Length; i++)
+            {
+                int mappedIdx = mapping[i];
+                float localFactor = ComputeLocalBlendFactor(mode, factor, vertsA, normsA, i, vertsB[mappedIdx]);
+
+                resultVerts[i] = Vector3.Lerp(vertsA[i], vertsB[mappedIdx], localFactor);
+
+                if (normsA.Length > i && normsB.Length > mappedIdx)
+                {
+                    resultNorms[i] = Vector3.Slerp(normsA[i], normsB[mappedIdx], localFactor).normalized;
+                }
+            }
+
+            // ワールド空間からローカル空間に戻す (結果は transformA 基準)
+            Matrix4x4 worldToLocal = transformA.worldToLocalMatrix;
+            for (int i = 0; i < resultVerts.Length; i++)
+            {
+                resultVerts[i] = worldToLocal.MultiplyPoint3x4(resultVerts[i]);
+                if (resultNorms.Length > i)
+                {
+                    resultNorms[i] = worldToLocal.MultiplyVector(resultNorms[i]).normalized;
+                }
+            }
+
+            Mesh result = new Mesh();
+            result.name = $"BlendedMesh_{mode}";
+            result.vertices = resultVerts;
+            result.normals = resultNorms;
+            result.triangles = meshA.triangles;
+            result.uv = meshA.uv;
+            result.RecalculateBounds();
+            if (resultNorms.Length == 0 || resultNorms.Length != resultVerts.Length)
+            {
+                result.RecalculateNormals();
+            }
+
+            return result;
+        }
+
+        private float ComputeLocalBlendFactor(BlendMode mode, float globalFactor, Vector3[] vertsA, Vector3[] normsA, int vertexIndex, Vector3 targetPos)
+        {
+            switch (mode)
+            {
+                case BlendMode.Layered:
+                    return globalFactor;
+
+                case BlendMode.Surface:
+                {
+                    // 距離に基づくフォールオフ: 近い頂点ほど強くブレンド
+                    float dist = Vector3.Distance(vertsA[vertexIndex], targetPos);
+                    float maxDist = 10f;
+                    float proximity = 1f - Mathf.Clamp01(dist / maxDist);
+                    return globalFactor * proximity;
+                }
+
+                case BlendMode.Adaptive:
+                {
+                    // 法線の変化率（曲率推定）に基づく: 平坦な部分はよりブレンド、エッジは保存
+                    float curvature = EstimateCurvature(normsA, vertexIndex);
+                    // 曲率が高い(エッジ) → ブレンド弱、曲率が低い(平坦) → ブレンド強
+                    float adaptiveFactor = globalFactor * (1f - Mathf.Clamp01(curvature * 5f));
+                    return adaptiveFactor;
+                }
+
+                case BlendMode.Noise:
+                {
+                    // Perlin noise でブレンドファクターを変調
+                    Vector3 pos = vertsA[vertexIndex];
+                    float noiseScale = 2f;
+                    float noise = Mathf.PerlinNoise(pos.x * noiseScale + 100f, pos.z * noiseScale + 100f);
+                    return globalFactor * noise;
+                }
+
+                default:
+                    return globalFactor;
+            }
+        }
+
+        private float EstimateCurvature(Vector3[] normals, int index)
+        {
+            if (normals == null || normals.Length <= 1) return 0f;
+
+            // 周辺法線との角度差で曲率を推定
+            Vector3 normal = normals[index];
+            float totalAngle = 0f;
+            int samples = 0;
+
+            // 前後の頂点の法線と比較 (インデックス的に近い頂点 = メッシュ上でも近い傾向)
+            for (int offset = -2; offset <= 2; offset++)
+            {
+                if (offset == 0) continue;
+                int neighbor = index + offset;
+                if (neighbor < 0 || neighbor >= normals.Length) continue;
+
+                totalAngle += Vector3.Angle(normal, normals[neighbor]);
+                samples++;
+            }
+
+            return samples > 0 ? (totalAngle / samples) / 180f : 0f;
+        }
+
+        private int[] RemapVertices(Vector3[] source, Vector3[] target)
+        {
+            int[] mapping = new int[source.Length];
+
+            for (int i = 0; i < source.Length; i++)
+            {
+                float minDist = float.MaxValue;
+                int closest = 0;
+
+                for (int j = 0; j < target.Length; j++)
+                {
+                    float dist = (source[i] - target[j]).sqrMagnitude;
+                    if (dist < minDist)
+                    {
+                        minDist = dist;
+                        closest = j;
+                    }
+                }
+
+                mapping[i] = closest;
+            }
+
+            return mapping;
+        }
+
+        private Vector3[] GetWorldSpaceVertices(Mesh mesh, Transform transform)
+        {
+            Vector3[] localVerts = mesh.vertices;
+            Vector3[] worldVerts = new Vector3[localVerts.Length];
+            Matrix4x4 localToWorld = transform.localToWorldMatrix;
+
+            for (int i = 0; i < localVerts.Length; i++)
+            {
+                worldVerts[i] = localToWorld.MultiplyPoint3x4(localVerts[i]);
+            }
+
+            return worldVerts;
+        }
+
+        private Vector3[] GetWorldSpaceNormals(Mesh mesh, Transform transform)
+        {
+            Vector3[] localNorms = mesh.normals;
+            if (localNorms == null || localNorms.Length == 0) return new Vector3[0];
+
+            Vector3[] worldNorms = new Vector3[localNorms.Length];
+            Matrix4x4 localToWorld = transform.localToWorldMatrix;
+
+            for (int i = 0; i < localNorms.Length; i++)
+            {
+                worldNorms[i] = localToWorld.MultiplyVector(localNorms[i]).normalized;
+            }
+
+            return worldNorms;
+        }
+
+        #endregion
 
         private void ExecuteMorph()
         {

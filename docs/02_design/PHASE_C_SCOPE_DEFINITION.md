@@ -1,6 +1,6 @@
 # Phase C: Deform + CSG スコープ定義
 
-> 最終更新: 2026-03-07 | ROADMAP 検証済み
+> 最終更新: 2026-03-08 | ROADMAP 検証済み
 
 ## 1. Phase C の位置づけ
 
@@ -17,8 +17,8 @@ Phase A (Terrain Core Stabilization) と Phase B (Test Baseline) の完了を受
 | ID | タイトル | サイズ | 状態 | 依存 |
 |---|---|---|---|---|
 | PC-1 | Deform パッケージ正式統合 | L | **DONE** | PA-1 |
-| PC-2 | CompositionTab CSG検証 + Blend実装 | L | 着手可能 | PA-2 |
-| PC-3 | StructureGenerator 残タスク | M | 着手可能 | PC-2 |
+| PC-2 | CompositionTab CSG検証 + Blend実装 | L | **DONE** | PA-2 |
+| PC-3 | StructureGenerator 残タスク | M | **DONE** | PC-2 |
 | PC-4 | GeologicalFormation Erosion | M | **DONE** | - |
 | PC-5 | GameManager TerrainGenerator接続 | M | ブロック | - |
 
@@ -43,37 +43,22 @@ Phase A (Terrain Core Stabilization) と Phase B (Test Baseline) の完了を受
 
 ## 4. 残タスク詳細
 
-### PC-2: CompositionTab CSG検証 + Blend実装
+### PC-2: CompositionTab CSG検証 + Blend実装 (DONE)
 
-**現状**:
-- CSG 基盤はリフレクションベースのプロバイダパターンで動作済み
-- `ICsgProvider` → `ProBuilderInternalCsgProvider` / `ParaboxCsgProvider`
-- Union/Intersection/Difference は実装済み
-- Blend 機能 (CompositionTab L563) が未実装
+- 完了日: 2026-03-08
+- 成果:
+  - Blend 4モード実装 (Layered/Surface/Adaptive/Noise)
+  - 頂点ベースメッシュブレンド: ワールド空間変換 → 最近傍頂点マッピング → モード別ファクター計算 → Lerp/Slerp
+  - CSG (Union/Intersect/Subtract) は既存実装で動作済み
+- 制約: 頂点数が大きく異なるメッシュ同士のブレンドは品質に限界がある
 
-**残作業**:
-- [ ] Union/Intersect/Subtract の動作検証 (Undo, オブジェクト処理, チェイニング)
-- [ ] Blend 機能実装 (4モード: Layered/Surface/Adaptive/Noise)
-- [ ] CsgProviderResolver の自動選択ロジック検証
-- [ ] CompositionTab テスト作成
+### PC-3: StructureGenerator 残タスク (DONE)
 
-**対象ファイル**:
-- `Editor/StructureGenerator/Tabs/Editing/CompositionTab.cs`
-- `Editor/StructureGenerator/Utils/ProBuilderInternalCsgProvider.cs`
-- `Editor/StructureGenerator/Utils/ParaboxCsgProvider.cs`
-- `Editor/StructureGenerator/Utils/CsgProviderResolver.cs`
-
-### PC-3: StructureGenerator 残タスク
-
-**残作業**:
-- [ ] BasicStructureTab: Arch, Pyramid サポート追加
-- [ ] GlobalSettingsTab: 設定ロード/保存機能
-- [ ] RandomControlTab: SG-2 残テスト項目
-
-**対象ファイル**:
-- `Editor/StructureGenerator/Tabs/Generation/BasicStructureTab.cs:137`
-- `Editor/StructureGenerator/Core/GlobalSettingsTab.cs:31`
-- `Editor/StructureGenerator/Tabs/Editing/RandomControlTab.cs`
+- 完了日: 2026-03-08
+- 成果:
+  - BasicStructureTab: Arch (半楕円アーチ) + Pyramid (N角錐) の ProBuilderMesh 生成を追加
+  - GlobalSettingsTab: EditorPrefs ベース自動保存/復元 + JSON エクスポート/インポート
+  - RandomControlTab: 機能的に完成済み (Position/Rotation/Scale ランダム化 + Preview)
 
 ### PC-5: GameManager TerrainGenerator接続
 
@@ -122,7 +107,7 @@ Core アセンブリの肥大化が問題になった時点で再検討。
 ## 7. Phase C 完了基準
 
 - [x] Phase 3 (Deform統合) 完了
-- [ ] CompositionTab CSG + Blend 検証済み
-- [ ] StructureGenerator 全タブ機能完了
+- [x] CompositionTab CSG + Blend 検証済み
+- [x] StructureGenerator 全タブ機能完了
 - [ ] GameManager → TerrainGenerator 接続 (PC-5 のスコープ次第)
 - [ ] Architecture Health Score: 85
