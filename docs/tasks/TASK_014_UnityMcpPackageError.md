@@ -5,7 +5,7 @@ Tier: 1
 Branch: develop
 Owner: Worker
 Created: 2025-12-17T12:00:00Z
-Report: docs/04_reports/REPORT_014_UnityMcpPackageError_2025-12-17.md 
+Report: (deleted — legacy report archived in git history)
 
 ## Objective
 - `com.justinpbarnett.unity-mcp`�p�b�P�[�W��Git���|�W�g���G���[����������

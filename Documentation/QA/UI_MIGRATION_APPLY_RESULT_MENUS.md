@@ -1,3 +1,0 @@
-# This doc moved to docs/04_reports/UI_MIGRATION_APPLY_RESULT_MENUS.md
-
-See: [UI_MIGRATION_APPLY_RESULT_MENUS.md](../../docs/04_reports/UI_MIGRATION_APPLY_RESULT_MENUS.md)
