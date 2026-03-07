@@ -2,7 +2,7 @@
 
 本ドキュメントは VastCore プロジェクトにおける AI エージェント (Claude Code およびサブエージェント) の行動規約を定める。
 
-最終更新: 2026-03-07
+最終更新: 2026-03-08
 
 ---
 
@@ -51,15 +51,7 @@
 
 ### 3.2 禁止事項
 
-| 禁止 | 理由 | 代替 |
-|------|------|------|
-| `Debug.Log` | ログ統一 | `VastcoreLogger.Instance.LogInfo(...)` |
-| `FindFirstObjectByType<IInterface>()` | CS0311 | `FindGameObjectWithTag` + `GetComponent` |
-| 引数なし struct コンストラクタ | C# 9 非対応 | オブジェクト初期化子 / static factory |
-| 同名型の複数アセンブリ定義 | CS0029 | 1 型 = 1 アセンブリ |
-| `#if` 外のオプショナルシンボル参照 | CS0103 | `#if` で完全隔離 |
-| 下位→上位の asmdef 参照追加 | 循環参照 | アーキテクチャを見直す |
-| `autoReferenced` の無断変更 | Assembly-CSharp 破壊 | ASSEMBLY_ARCHITECTURE.md と同時更新 |
+`docs/03_guides/UNITY_CODE_STANDARDS.md` の禁止パターン一覧を参照。
 
 ### 3.3 エラー修正の原則
 1. **場当たり修正を禁止する。** `docs/03_guides/COMPILATION_GUARD_PROTOCOL.md` の診断フローに従う。
@@ -116,7 +108,7 @@
 
 ---
 
-## 7. 品質ゲート
+## 6. 品質ゲート
 
 変更をアーカイブ (完了) とする前に、以下すべてを満たすこと:
 
@@ -130,7 +122,7 @@
 
 ---
 
-## 8. 緊急時手順
+## 7. 緊急時手順
 
 コンパイルが壊れた場合:
 1. **即座にコード変更を止める。**

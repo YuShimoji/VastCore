@@ -15,8 +15,8 @@
 - 将来: Unity Editor の headless 検証を追加予定（Backlog 参照）。
 
 ## 4. ドキュメント運用
-- `AI_CONTEXT.md`: ミッション状況・決定事項・リスクを随時更新（付録Aテンプレート）。
-- `docs/`: 設計/仕様/タスク。`docs/ISSUES.md` を `sync-issues` で Issue 同期可能。
+- `CLAUDE.md`: セッション運用SSOT（プロジェクト文脈・開発ルール・仕様管理）。
+- `docs/`: 設計/仕様/タスク。`docs/DOCS_INDEX.md` で全ドキュメントを索引管理。
 
 ## 5. セキュリティ/秘密情報
 - 秘密情報はリポジトリに含めない。必要時は GitHub Secrets を使用。
@@ -30,7 +30,7 @@
 - 以降: PlayMode テスト/asmdef 参照検証を段階導入。
 
 ## 8. 監査/ログ
-- PR/Issue に相関 ID を記載可能。重要作業は `AI_CONTEXT.md` にメモ化。
+- PR/Issue に相関 ID を記載可能。重要作業は `CLAUDE.md` の DECISION LOG にメモ化。
 
 ## 9. Backlog
 - Unity headless smoke の Actions 追加。

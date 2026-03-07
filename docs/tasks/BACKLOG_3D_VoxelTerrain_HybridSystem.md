@@ -23,10 +23,10 @@ Estimated Effort: Large（Phase 1-5で段階的実装）
 
 ## 参照（SSOT）
 
-- **設計書**: `Assets/Docs/3DTerrainDesignDoc_1.0`
+- **設計書**: 削除済み（git履歴: `Assets/Docs/3DTerrainDesignDoc_1.0`）
 - **既存2Dシステム**: `docs/terrain/TerrainGenerationV0_Spec.md`
 - **既存実装**: `Assets/MapGenerator/Scripts/TerrainGenerator.cs`
-- **SSOT**: `docs/Windsurf_AI_Collab_Rules_latest.md`
+- **SSOT**: `docs/SSOT_WORLD.md`
 
 ## 技術要件（必須）
 

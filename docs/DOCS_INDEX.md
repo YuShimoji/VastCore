@@ -89,7 +89,7 @@
 | [Phase2_TemplateIntegration_Spec.md](02_design/Phase2_TemplateIntegration_Spec.md) | Phase 2 テンプレート統合仕様（歴史資料） |
 | [WorldGenArchitecture.md](02_design/WorldGenArchitecture.md) | WorldGen アーキテクチャ設計（M0-M3） |
 
-### 03_guides/ — ガイド・手順書 (15 files)
+### 03_guides/ — ガイド・手順書 (14 files)
 
 | ファイル | 役割 |
 |---------|------|
@@ -103,7 +103,6 @@
 | [UNITY_CODE_STANDARDS.md](03_guides/UNITY_CODE_STANDARDS.md) | Unity コーディング標準 |
 | [UNITY_CACHE_CLEANUP_GUIDE.md](03_guides/UNITY_CACHE_CLEANUP_GUIDE.md) | Unity キャッシュクリーンアップガイド |
 | [CURSOR_WEB_DEVELOPMENT_GUIDE.md](03_guides/CURSOR_WEB_DEVELOPMENT_GUIDE.md) | Cursor Web 開発ガイド |
-| [ORCHESTRATION_PROMPT.md](03_guides/ORCHESTRATION_PROMPT.md) | オーケストレーションプロンプト |
 | [TERRAIN_OBJECT_GENERATION_SHORTEST_PLAN.md](03_guides/TERRAIN_OBJECT_GENERATION_SHORTEST_PLAN.md) | 地形オブジェクト生成最短計画 |
 | [UI_MIGRATION_NOTES.md](03_guides/UI_MIGRATION_NOTES.md) | UI 移行ノート |
 | [TASK_034_MANUAL_VALIDATION_CHECKLIST.md](03_guides/TASK_034_MANUAL_VALIDATION_CHECKLIST.md) | Task 034 手動検証チェックリスト |
@@ -121,10 +120,6 @@ Terrain Vertical Slice、WorldGen M0-M3、Phase A/B 完了レポート等（2026
 | TASK_010 ~ 015 | 地形システム関連タスク |
 | TASK_019, 031, 032 | 個別修正タスク |
 | BACKLOG_3D_VoxelTerrain_HybridSystem.md | 将来仕様 |
-
-### windsurf_workflow/ --- （削除済み）
-
-Windsurf IDE 固有のワークフロー文書。2026-03-07 に削除。セッション運用は CLAUDE.md に移行済み。
 
 ### その他
 
@@ -159,7 +154,7 @@ grep -rn --include="*.md" "SSOT_WORLD" docs/
 
 ### Documentation/ ディレクトリ
 
-転送スタブは全て削除済み（2026-03-07）。残存するのは `Documentation/Concept Arts/` のみ（アートアセット）。
+レガシー文書は全て削除済み（2026-03-08）。残存するのは `Documentation/Concept Arts/` のみ（アートアセット）。
 
 ### 新規ドキュメント追加時のルール
 

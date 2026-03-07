@@ -22,13 +22,12 @@
 
 ---
 
-## 2. プロジェクト構造（2026-03-07 整理後）
+## 2. プロジェクト構造（2026-03-08 整理後）
 
 ```text
 VastCore/
 ├── CLAUDE.md                  ← 運用SSOT（セッション運用プロトコル + Project Context）
 ├── AGENTS.md                  ← AIエージェント行動規約
-├── AI_CONTEXT.md              ← AI向け軽量コンテキスト
 ├── README.md                  ← プロジェクト概要
 ├── CHANGELOG.md               ← 変更履歴
 │
@@ -42,14 +41,14 @@ VastCore/
 │   ├── 01_planning/           ← 計画・ロードマップ
 │   ├── 02_design/             ← 設計仕様
 │   ├── 03_guides/             ← ガイド・手順書
-│   ├── 04_reports/            ← レポート・検証記録（21ファイル、整理済み）
+│   ├── 04_reports/            ← レポート・検証記録
 │   ├── tasks/                 ← タスクチケット
 │   ├── terrain/               ← 地形システム固有
 │   ├── inbox/                 ← 一時レポート受信箱
 │   └── EXAMPLES/              ← Mermaid図テンプレート
 │
 ├── Assets/
-│   ├── Scripts/               ← C#ソースコード（283ファイル, 20 asmdef）
+│   ├── Scripts/               ← C#ソースコード（278ファイル, 21 asmdef）
 │   ├── Editor/                ← Editorツール
 │   ├── MapGenerator/          ← MapGenerator固有コード
 │   ├── Tests/                 ← EditMode/PlayModeテスト
@@ -58,11 +57,6 @@ VastCore/
 ├── Documentation/
 │   └── Concept Arts/          ← コンセプトアート画像のみ（24枚）
 │
-├── .cursor/                   ← Cursor IDE設定
-│   ├── rules.md               ← CLAUDE.md + SSOT_WORLD.md へのポインタ
-│   └── MISSION_LOG.md         ← 履歴的ミッションログ
-│
-├── .cursorrules               ← CLAUDE.md + SSOT_WORLD.md へのポインタ
 └── .serena/                   ← Serena MCP設定（git管理外）
 ```
 
@@ -75,6 +69,13 @@ VastCore/
 | `openspec/` | OpenSpec変更提案プロセス | CLAUDE.md SPEC FIRST |
 | `docs/windsurf_workflow/` | Windsurf IDE固有ワークフロー | CLAUDE.md |
 | `Documentation/Design,Guides,Planning,QA/` | 転送スタブ | docs/ 配下に移行済み |
+| `AI_CONTEXT.md` | Orchestrator Protocol 前提の旧管理 | CLAUDE.md に移行 |
+| `REPORT_CONFIG.yml` | Orchestrator レポート設定 | 廃止 |
+| `.cursorrules`, `.cursor/` | Cursor IDE 固有設定 | CLAUDE.md に移行 |
+| `docs/03_guides/ORCHESTRATION_PROMPT.md` | Orchestrator/Worker プロンプト | CLAUDE.md に移行 |
+| `docs/inbox/WORKER_PROMPT_*` | Worker用プロンプト（全タスク完了済み） | 廃止 |
+| `Assets/Docs/`, `Assets/Documentation/*.md` | レガシー仕様書・旧ロードマップ | docs/ に集約済み |
+| `.github/workflows/ci.yml, sync-issues.yml` | 無機能化済み Shared Workflows | 廃止 |
 
 ---
 

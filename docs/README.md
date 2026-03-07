@@ -39,9 +39,7 @@
 ### 進捗管理
 
 - **HANDOVER**: `docs/HANDOVER.md` - プロジェクトの進捗と状態
-- **MISSION_LOG**: `.cursor/MISSION_LOG.md` - 作業ログ
-
-当面は段階的に移行し、重複や旧パス（Documentation/）参照は順次解消します。
+- **WORKFLOW_STATE_SSOT**: `docs/WORKFLOW_STATE_SSOT.md` - 実行状態SSOT
 
 ## New Docs (2026-02)
 - `docs/03_guides/REDEVELOPMENT_LOCAL_SETUP.md`

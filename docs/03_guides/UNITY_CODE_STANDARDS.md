@@ -1,7 +1,7 @@
 # VastCore Unity Code Standards
 
 本ドキュメントは VastCore プロジェクトにおけるコーディング規約を定める。
-Orchestrator / Worker / 人間を問わず、コード変更時に遵守すること。
+エージェント / 人間を問わず、コード変更時に遵守すること。
 
 最終更新: 2026-02-18
 
