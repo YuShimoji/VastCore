@@ -1,237 +1,152 @@
-# Deformシステム使用ドキュメント
+# Deform 統合仕様書
 
-## 概要
+> 最終更新: 2026-03-07 | Status: Active | PC-1 完了時点
 
-VastCoreプロジェクトに統合されたDeformシステムは、高度なメッシュ変形機能を地形生成システムに提供します。このドキュメントでは、Deformシステムの使用方法、API、ベストプラクティスについて説明します。
+## 1. 概要
 
-## システムアーキテクチャ
+VastCore は Deform パッケージ (`com.beans.deform`) をオプショナル依存として統合。
+`DEFORM_AVAILABLE` シンボルによる条件付きコンパイルで、パッケージの有無に関わらずビルド可能。
 
-### 主要コンポーネント
+## 2. パッケージ情報
 
-- **VastcoreDeformManager**: Deformシステム全体を管理するシングルトンマネージャー
-- **PrimitiveTerrainObject**: 地形オブジェクトに変形機能を統合
-- **DeformationPreset**: 再利用可能な変形設定を定義
-- **Deformable**: Unity Deformパッケージのコアコンポーネント
+- パッケージ: `com.beans.deform@9e57dd3864ea` (git 参照)
+- 依存: Burst Compiler, Mathematics
+- インストール: `Packages/manifest.json` に git URL で登録済み
 
-### 依存関係
+## 3. 有効化メカニズム
 
-- Deformパッケージ (v1.2.2)
-- Burstコンパイラー (1.8.24+)
-- Mathematicsライブラリ (1.2.1+)
+### versionDefines パターン
 
-## 基本的な使用方法
+各 asmdef に以下を設定。パッケージ検出時に `DEFORM_AVAILABLE` を自動定義:
 
-### 1. 地形オブジェクトの変形有効化
-
-```csharp
-// PrimitiveTerrainObjectコンポーネントを取得
-var terrainObj = primitive.GetComponent<PrimitiveTerrainObject>();
-
-// Deform機能を有効化
-terrainObj.UpdateDeformSettings(true, VastcoreDeformManager.DeformQualityLevel.High);
+```json
+"versionDefines": [
+  {
+    "name": "com.beans.deform",
+    "expression": "",
+    "define": "DEFORM_AVAILABLE"
+  }
+]
 ```
 
-### 2. ノイズ変形の適用
+### 対象アセンブリ (6件)
+
+| asmdef | Deform 参照 | versionDefines |
+|--------|------------|----------------|
+| Vastcore.Generation | あり | あり |
+| Vastcore.Terrain | あり | あり |
+| Vastcore.Editor | あり | あり |
+| Vastcore.Editor.StructureGenerator | あり | あり |
+| Vastcore.Testing | あり | あり |
+| Vastcore.DeformStubs | なし | あり |
+
+### コード内の条件分岐
 
 ```csharp
-// 基本的なノイズ変形
-terrainObj.ApplyNoiseDeformation(intensity: 0.1f, frequency: 1f);
-
-// アニメーション付き変形
-terrainObj.ApplyNoiseDeformationAnimated(
-    targetIntensity: 0.2f,
-    targetFrequency: 1.5f,
-    duration: 2f
-);
+#if DEFORM_AVAILABLE
+using Deform;
+// Deform API を使用するコード
+#endif
 ```
 
-### 3. ディスプレイス変形の適用
+パッケージ未インストール時は `#if` ブロック外のスタブコードにフォールバック。
+
+## 4. Deform API マッピング (実 API)
+
+### 4.1 Deformable コンポーネント
+
+| 想定 API (旧) | 実 API | 備考 |
+|--------------|--------|------|
+| `deformable.Mesh = mesh` | 不要 | MeshFilter を自動検出。手動設定不可 |
+| `deformable.Mesh` (getter) | `deformable.GetMesh()` | 変形後メッシュ取得 |
+| - | `deformable.GetOriginalMesh()` | 元メッシュ取得 |
+| - | `deformable.GetCurrentMesh()` | 現在メッシュ取得 |
+
+### 4.2 Deformer 一覧と互換性
+
+#### IFactor 準拠 (Factor: float)
+
+以下は全て `IFactor` インターフェースを実装。`Factor` プロパティ (float) で強度制御:
+
+| Deformer | Factor の意味 |
+|----------|--------------|
+| BendDeformer | 曲げ角度 |
+| TwistDeformer | 捻り角度 |
+| TaperDeformer | テーパー比率 (float, Vector2 ではない) |
+| NoiseDeformer | ノイズ強度 |
+| SineDeformer | 正弦波振幅 |
+| RippleDeformer | 波紋振幅 |
+| WaveDeformer | 波動振幅 |
+| SpherifyDeformer | 球面化率 |
+| InflateDeformer | 膨張率 |
+| MagnetDeformer | 磁力強度 |
+
+#### 特殊 API
+
+| Deformer | API | 備考 |
+|----------|-----|------|
+| ScaleDeformer | `Axis` (Transform) | Factor なし。`Axis.localScale` で制御。子 Transform を作成して割り当てる |
+| CurveDisplaceDeformer | 標準 | `CurveDeformer` は存在しない。`CurveDisplaceDeformer` を使用 |
+| CurveScaleDeformer | 標準 | カーブに沿ったスケーリング |
+
+### 4.3 ScaleDeformer 使用パターン
 
 ```csharp
-// テクスチャを使用したディスプレイス変形
-terrainObj.ApplyDisplaceDeformation(strength: 0.5f, displaceMap: myTexture);
-
-// アニメーション付き変形
-terrainObj.ApplyDisplaceDeformationAnimated(
-    targetStrength: 1f,
-    displaceMap: myTexture,
-    duration: 1.5f
-);
+// ScaleDeformer は Axis (Transform) でスケール制御
+var scaleDeformer = target.AddComponent<ScaleDeformer>();
+var axisGo = new GameObject("_DeformScaleAxis");
+axisGo.transform.SetParent(target.transform, false);
+axisGo.transform.localScale = Vector3.one * scaleFactor;
+scaleDeformer.Axis = axisGo.transform;
 ```
 
-### 4. 地形タイプ固有の変形
+## 5. VastCore 統合レイヤー
 
-```csharp
-// 自動的に地形タイプに適した変形を適用
-terrainObj.ApplyTerrainSpecificDeformation();
+### 5.1 クラス構成
+
+```
+IDeformIntegration (interface)
+  +-- DeformIntegrationBase (abstract MonoBehaviour)
+        +-- DeformIntegration (concrete, エディタテスト用)
+
+DeformIntegrationManager (static, Deformer 生成ファクトリ)
+
+VastcoreDeformManager (MonoBehaviour, シングルトン)
+  - RegisterDeformable / UnregisterDeformable
+
+DeformPresetLibrary (ScriptableObject, Vastcore.Core 名前空間)
+  - GeologicalPresets / ArchitecturalPresets / OrganicPresets
 ```
 
-## プリセットシステム
+### 5.2 DeformPresetLibrary
 
-### プリセットの作成
+`CreateAssetMenu` で ScriptableObject アセットとして作成可能。
+3カテゴリのプリセットを管理:
 
-```csharp
-// デフォルトプリセットを作成
-var preset = DeformationPreset.CreateDefaultPreset(GenerationPrimitiveType.Crystal);
+- `GeologicalPresets` — 地質学的変形 (断層、褶曲、風化)
+- `ArchitecturalPresets` — 建築的変形 (構造歪み、経年劣化)
+- `OrganicPresets` — 有機的変形 (成長、浸食)
 
-// カスタム設定
-preset.noiseIntensity = 0.15f;
-preset.noiseFrequency = 2.0f;
+## 6. スタブ機構
 
-// アセットとして保存
-AssetDatabase.CreateAsset(preset, "Assets/DeformationPresets/CrystalPreset.asset");
-```
+`Assets/Scripts/Deform/DeformStubs.cs` に `#if !DEFORM_AVAILABLE` ガードで
+最小限の型定義を提供。パッケージ未インストール時のコンパイル互換を維持。
 
-### プリセットの適用
+`Vastcore.DeformStubs.asmdef` で独立アセンブリとして管理。
 
-```csharp
-// プリセットを適用
-terrainObj.ApplyDeformationPreset(myPreset);
-```
+## 7. 現在の状態と制限
 
-## エディタツール
+### 実装済み
 
-### Deformation Editor Window
+- asmdef + versionDefines による自動有効化
+- 全 Deformer タイプのファクトリ (DeformIntegrationManager)
+- DeformPresetLibrary (3カテゴリ、デフォルトプリセット生成)
+- スタブによるフォールバック
+- コンパイルエラー 0
 
-1. **Vastcore > Deformation Editor** メニューから開く
-2. シーン内の地形オブジェクトを選択
-3. リアルタイムプレビューを有効化
-4. スライダーでパラメータを調整
-5. プリセットの作成・適用
+### 未実装 (Phase C 残作業)
 
-### Deformation Brush Tool
-
-1. **Vastcore > Deformation Brush Tool** メニューから開く
-2. ブラシツールを有効化
-3. シーン内でクリックして変形を適用
-4. マウスホイールでブラシサイズ調整
-5. Shiftキーで変形を消去
-
-## 高度な機能
-
-### パフォーマンス最適化
-
-```csharp
-// 品質レベル設定
-terrainObj.UpdateDeformSettings(true, VastcoreDeformManager.DeformQualityLevel.Medium);
-
-// Deformマネージャーの統計取得
-var stats = VastcoreDeformManager.Instance.GetStats();
-Debug.Log($"Active deformables: {stats.managedDeformablesCount}");
-```
-
-### Undo/Redoサポート
-
-すべての変形操作はUnityのUndoシステムに対応しています：
-
-- `Ctrl+Z` / `Cmd+Z`: 操作を元に戻す
-- `Ctrl+Y` / `Cmd+Y`: 操作をやり直す
-
-### 変形のクリア
-
-```csharp
-// すべての変形をクリア
-terrainObj.ClearAllDeformers();
-
-// 特定のタイプの変形を削除
-terrainObj.RemoveDeformer<NoiseDeformer>();
-```
-
-## 地形タイプ別推奨設定
-
-| 地形タイプ | ノイズ強度 | 周波数 | 推奨品質 |
-|-----------|-----------|--------|----------|
-| Crystal | 0.15 | 2.0 | High |
-| Boulder | 0.20 | 1.5 | High |
-| Mesa | 0.08 | 0.8 | Medium |
-| Spire | 0.10 | 1.2 | High |
-| Formation | 0.12 | 0.7 | Medium |
-
-## テストとベンチマーク
-
-### 自動テストの実行
-
-```csharp
-// DeformIntegrationTestコンポーネントをシーンに配置
-var testComponent = FindObjectOfType<DeformIntegrationTest>();
-
-// パフォーマンスベンチマーク
-testComponent.RunPerformanceBenchmark();
-
-// メモリ使用量テスト
-testComponent.RunMemoryBenchmark();
-
-// 互換性テスト
-testComponent.RunCompatibilityTest();
-```
-
-### ベンチマーク結果の解釈
-
-- **パフォーマンスオーバーヘッド**: 通常5-15%程度
-- **メモリ使用量**: 変形あたり約50-200KB追加
-- **互換性**: LOD、プーリング、コライダーシステムと完全互換
-
-## トラブルシューティング
-
-### 一般的な問題
-
-**Q: Deformが動作しない**
-A: DEFORM_AVAILABLEシンボルが定義されているか確認してください。
-
-**Q: パフォーマンスが低下する**
-A: 品質レベルをMediumまたはLowに設定するか、フレーム分散を有効化してください。
-
-**Q: 変形が適用されない**
-A: PrimitiveTerrainObjectにDeformableコンポーネントがアタッチされているか確認してください。
-
-### デバッグ情報
-
-```csharp
-// Deformマネージャーの統計を表示
-var stats = VastcoreDeformManager.Instance.GetStats();
-Debug.Log($"Deform Stats: {stats.managedDeformablesCount} objects, {stats.queuedRequestsCount} queued");
-
-// LOD情報を表示
-var lodInfo = terrainObj.GetLODInfo();
-Debug.Log($"LOD: {lodInfo.currentLOD}, Distance: {lodInfo.distance:F1}m");
-```
-
-## APIリファレンス
-
-### PrimitiveTerrainObject
-
-| メソッド | 説明 |
-|---------|------|
-| `ApplyNoiseDeformation(float, float)` | ノイズ変形を適用 |
-| `ApplyDisplaceDeformation(float, Texture2D)` | ディスプレイス変形を適用 |
-| `ApplyTerrainSpecificDeformation()` | 地形タイプ固有の変形を適用 |
-| `ApplyDeformationPreset(DeformationPreset)` | プリセットを適用 |
-| `ClearAllDeformers()` | すべての変形をクリア |
-| `UpdateDeformSettings(bool, QualityLevel)` | Deform設定を更新 |
-
-### VastcoreDeformManager
-
-| メソッド | 説明 |
-|---------|------|
-| `RegisterDeformable(object, QualityLevel)` | Deformableを登録 |
-| `UnregisterDeformable(object)` | Deformableの登録解除 |
-| `QueueDeformation(object, QualityLevel, float)` | 変形をキューに追加 |
-| `GetStats()` | 統計情報を取得 |
-
-## 今後の拡張
-
-- GPUアクセラレーションの強化
-- より詳細なプリセットシステム
-- ランタイム変形アニメーション
-- ネットワーク同期対応
-
-## バージョン履歴
-
-- **v1.0.0**: 基本Deform統合
-- **v1.1.0**: プリセットシステム追加
-- **v1.2.0**: エディタツール統合
-- **v1.3.0**: パフォーマンス最適化
-
----
-
-このドキュメントは継続的に更新されます。質問やフィードバックは開発チームまでお問い合わせください。
+- ランタイムでの変形適用パイプライン
+- DeformPresetLibrary アセットの実データ作成
+- エディタ UI (DeformerTab は StructureGenerator 内に存在するが未検証)
+- PlayMode テスト

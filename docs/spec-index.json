@@ -150,7 +150,16 @@
     "pct": 100,
     "cat": "core",
     "file": "docs/03_guides/Deform_Usage_Documentation.md",
-    "summary": "Deform統合後のAPI・使用方法・ベストプラクティス"
+    "summary": "Deform統合仕様: APIマッピング, versionDefines, 統合レイヤー構成"
+  },
+  {
+    "id": "DS-009",
+    "title": "Phase C Scope Definition",
+    "status": "partial",
+    "pct": 40,
+    "cat": "system",
+    "file": "docs/02_design/PHASE_C_SCOPE_DEFINITION.md",
+    "summary": "Phase C (Deform + CSG) の検証済みスコープ定義。PC-1,PC-4完了、PC-2,3,5残"
   },
   {
     "id": "AR-001",
