@@ -18,17 +18,11 @@
 
 ---
 
-## 2. OpenSpec ワークフロー
+## 2. 変更管理
 
-### 2.1 変更提案
-機能実装・バグ修正の際は OpenSpec プロセスに従う:
+仕様・設計の管理は `CLAUDE.md` の SPEC FIRST / SPEC SYNC セクションに従う。
+変更を伴う場合は以下を明示すること:
 
-1. `openspec/changes/{change-name}/proposal.md` に提案を作成
-2. `specs/` にアセンブリ影響範囲を含む仕様を記述
-3. `tasks.md` に具体的なタスクを分解
-4. 実装 → 検証 → アーカイブ
-
-### 2.2 仕様記述の必須項目
 - **影響アセンブリ**: 変更が影響する asmdef の一覧
 - **新規 using / 参照**: 追加する名前空間インポートと、その asmdef 参照
 - **型の追加/移動**: 新規型の完全修飾名と配置先アセンブリ
@@ -86,7 +80,7 @@
 | 計画・ロードマップ | `docs/01_planning/` | DEVELOPMENT_ROADMAP_2026.md |
 | 作業レポート | `docs/04_reports/` | REPORT_TASK_XXX.md |
 | タスクチケット | `docs/tasks/` | TASK_XXX.md |
-| 変更提案 | `openspec/changes/{name}/` | proposal.md, specs/, tasks.md |
+| 変更仕様 | `docs/` 配下 | CLAUDE.md の SPEC FIRST に従う |
 
 ### 4.2 ドキュメント作成の義務
 

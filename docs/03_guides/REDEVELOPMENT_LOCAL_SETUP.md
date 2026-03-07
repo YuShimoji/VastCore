@@ -39,6 +39,6 @@ git status --short --branch
 - Confirm `TerrainGenerator` can create terrain in Noise / HeightMap / NoiseAndHeightMap modes.
 
 ## 5. Operational conventions for this repo
-- Follow OpenSpec flow before implementation (`openspec/changes/...`).
+- Follow CLAUDE.md SPEC FIRST flow before implementation.
 - Use `VastcoreLogger` for new runtime logging instead of `Debug.Log`.
 - Keep namespaces under `Vastcore.*` for new code.
