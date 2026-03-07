@@ -120,12 +120,9 @@ grep -rn --include="*.md" "SSOT_WORLD" docs/
 #        EVERY_SESSION.md, HANDOVER.md, DOCS_INDEX.md, README.md に参照あり
 ```
 
-### 転送ページチェック
+### Documentation/ ディレクトリ
 
-```bash
-# Documentation/ 配下が全て転送ページであること
-grep -rn --include="*.md" "This doc moved to" Documentation/
-```
+転送スタブは全て削除済み（2026-03-07）。残存するのは `Documentation/Concept Arts/` のみ（アートアセット）。
 
 ### 新規ドキュメント追加時のルール
 

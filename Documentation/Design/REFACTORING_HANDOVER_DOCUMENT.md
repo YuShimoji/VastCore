@@ -1,3 +1,0 @@
-# This doc moved to docs/02_design/REFACTORING_HANDOVER_DOCUMENT.md
-
-See: [REFACTORING_HANDOVER_DOCUMENT.md](../../docs/02_design/REFACTORING_HANDOVER_DOCUMENT.md)

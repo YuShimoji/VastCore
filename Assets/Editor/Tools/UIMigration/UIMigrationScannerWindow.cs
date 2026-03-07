@@ -46,7 +46,7 @@ namespace Vastcore.EditorTools.UIMigration
         private bool _scanScripts = true;
         private bool _scanScenes = true;
         private bool _scanPrefabs = true;
-        private string _reportPath = "Documentation/QA/LEGACY_UI_MIGRATION_REPORT.md";
+        private string _reportPath = "docs/04_reports/LEGACY_UI_MIGRATION_REPORT.md";
         private ScanResults _last;
 
         private static string ProjectRoot
@@ -293,7 +293,7 @@ namespace Vastcore.EditorTools.UIMigration
 
         // Public helper for headless / auto-run scenarios
         public static void RunDryScanAndGenerateReport(
-            string reportPath = "Documentation/QA/LEGACY_UI_MIGRATION_REPORT.md",
+            string reportPath = "docs/04_reports/LEGACY_UI_MIGRATION_REPORT.md",
             bool excludeExamples = true,
             bool scanScripts = true,
             bool scanScenes = true,

@@ -41,7 +41,7 @@ namespace Vastcore.EditorTools.UIMigration
 
         private Vector2 _scroll;
         private string _rulesJsonPath = "docs/ui-migration/ui_mapping_rules.template.json"; // relative to project root
-        private string _reportPath = "Documentation/QA/UI_MIGRATION_RULES_DRYRUN.md";     // relative to project root
+        private string _reportPath = "docs/04_reports/UI_MIGRATION_RULES_DRYRUN.md";     // relative to project root
         private bool _excludeExamples = true;
 
         private static string ProjectRoot

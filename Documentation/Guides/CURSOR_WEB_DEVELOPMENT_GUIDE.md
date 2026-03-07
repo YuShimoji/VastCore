@@ -1,3 +1,0 @@
-# This doc moved to docs/03_guides/CURSOR_WEB_DEVELOPMENT_GUIDE.md
-
-See: [CURSOR_WEB_DEVELOPMENT_GUIDE.md](../../docs/03_guides/CURSOR_WEB_DEVELOPMENT_GUIDE.md)
