@@ -1,37 +1,38 @@
 # DEVELOPMENT_PROTOCOL
 
 ## 1. ブランチ戦略
-- `main`: 常にデプロイ可能・安定版。
-- `develop`: 次期リリースの統合ブランチ。
-- `feat/*`, `chore/*`, `fix/*`: 課題ごとの短命ブランチ。PR 経由で `develop` へ統合。
+- `main`: trunk-based 開発。常にデプロイ可能・安定版を維持。
+- feature ブランチや develop ブランチは使用しない。
 
-## 2. Issue/PR/コミット規約
-- Issue: Goal/Scope/DoD/Risk/影響範囲/関連リンクを記載（中央ルール付録B）。
-- PR: 概要/変更点/テスト/リスク/関連 Issue/中断可能点を記載（付録B）。
+## 2. タスク管理/コミット規約
+- タスク管理: `docs/tasks/TASK_*.md` で管理。GitHub Issue/PR は現在未使用。
 - コミット: Conventional Commits に準拠（例: `feat(ui): add mapping template`）。
 
-## 3. CI/CD
-- Node ベースの簡易サーバ（`scripts/dev-server.js`）とスモークチェック（`scripts/dev-check.js`）で CI 成功を保証。
-- 将来: Unity Editor の headless 検証を追加予定（Backlog 参照）。
+## 3. ビルド/検証
+- 主な検証: Unity Editor でのコンパイル確認（エラー/警告ゼロを維持）。
+- EditMode テスト: 75件（全 PASS 維持）。PlayMode テスト: 未着手。
+- CI/CD: Node.js ベース CI は存在しない。将来的に Unity headless 検証を検討。
 
 ## 4. ドキュメント運用
-- `CLAUDE.md`: セッション運用SSOT（プロジェクト文脈・開発ルール・仕様管理）。
-- `docs/`: 設計/仕様/タスク。`docs/DOCS_INDEX.md` で全ドキュメントを索引管理。
+- セッション SSOT: `CLAUDE.md`（プロジェクト文脈・開発ルール・DECISION LOG）。
+- 設計/仕様: `docs/02_design/`, `docs/03_guides/`, `docs/04_reports/`。
+- 索引: `docs/DOCS_INDEX.md` で全ドキュメントを管理。
+- 仕様閲覧: `docs/spec-viewer.html` + `docs/spec-index.json`（21エントリ）。
 
 ## 5. セキュリティ/秘密情報
 - 秘密情報はリポジトリに含めない。必要時は GitHub Secrets を使用。
 
 ## 6. ロールバック/バックアウト
-- 重大問題時は PR リバートを優先。リリースタグに基づくロールバック手順を Issue に記録。
+- 重大問題時は `git revert` でロールバック。リリースタグに基づくロールバック手順を DECISION LOG に記録。
 
-## 7. テスト方針（当面）
-- CI: スモーク（起動/簡易健全性確認）。
-- 手動: Unity を起動してエラーなしを確認、コアシーンの基本動作をチェック。
-- 以降: PlayMode テスト/asmdef 参照検証を段階導入。
+## 7. コンパイル管理
+- 詳細: `docs/03_guides/COMPILATION_GUARD_PROTOCOL.md` を参照。
+- 原則: コンパイルエラー/警告ゼロを常時維持。versionDefines で条件コンパイル管理。
 
 ## 8. 監査/ログ
-- PR/Issue に相関 ID を記載可能。重要作業は `CLAUDE.md` の DECISION LOG にメモ化。
+- 重要な意思決定は `CLAUDE.md` の DECISION LOG に記録。
+- タスク完了報告は `docs/04_reports/` に配置（TASK_XXXX_REPORT.md）。
 
 ## 9. Backlog
-- Unity headless smoke の Actions 追加。
-- Deform パッケージの asmdef 参照検証ジョブ。
+- Unity headless smoke テストの導入検討。
+- PlayMode テストの段階的導入。
