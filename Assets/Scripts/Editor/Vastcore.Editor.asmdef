@@ -7,7 +7,6 @@
         "Vastcore.Generation",
         "Vastcore.Terrain",
         "Vastcore.WorldGen",
-        "Vastcore.MapGenerator",
         "Unity.TextMeshPro",
         "Unity.ProBuilder",
         "Unity.ProBuilder.Editor",

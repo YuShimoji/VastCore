@@ -3,8 +3,8 @@
 > 最終更新: 2026-03-08
 
 ## Summary
-- Total: 40 tasks
-- Done: 35 | In Progress: 0 | Pending: 0 | Legacy: 5 + 2 (026, 027)
+- Total: 41 tasks
+- Done: 36 | In Progress: 0 | Pending: 0 | Legacy: 5 + 2 (026, 027)
 
 ## Phase A (Terrain Core Stabilization)
 | ID | Title | Status | Summary |
@@ -72,6 +72,11 @@
 | 028b | MCPForUnity 重複アセンブリ定義の解消 | DONE | Assets/ と Packages/ の MCPForUnity 重複を解消 |
 | 029 | Unity Editorコンパイルエラー修正の検証 | BLOCKED | develop ブランチのコンパイルエラー修正3件をUnity Editorで検証 |
 | 030 | Worktree整理とPush統合 | DONE | 複数ブランチでの未Pushコミットを整理しworktree状態をクリーンに |
+
+## Assembly Integration
+| ID | Title | Status | Summary |
+|---|---|---|---|
+| MG-1 | MapGenerator完全統合 | DONE | MapGenerator asmdef廃止、Scripts/Generation/に統合。デッドコード削除、TerrainGenerationMode重複解消 |
 
 ## Notes
 - Legacy tasks (010-030) are historical records and may contain duplicate IDs (e.g., two TASK_014, two TASK_028)

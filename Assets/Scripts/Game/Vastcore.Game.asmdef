@@ -8,7 +8,6 @@
         "Vastcore.Terrain",
         "Vastcore.Camera",
         "Vastcore.Generation",
-        "Vastcore.MapGenerator",
         "Vastcore.UI"
     ],
     "includePlatforms": [],

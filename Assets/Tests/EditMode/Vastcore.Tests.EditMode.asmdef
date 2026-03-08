@@ -6,7 +6,6 @@
     "Vastcore.Core",
     "Vastcore.Utilities",
     "Vastcore.Generation",
-    "Vastcore.MapGenerator",
     "Vastcore.Terrain",
     "Vastcore.WorldGen",
     "Vastcore.Player",
