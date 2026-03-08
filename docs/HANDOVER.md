@@ -2,7 +2,7 @@
 
 # VastCore — Handover / ワークフロー仕様書
 
-**最終更新**: 2026-03-07
+**最終更新**: 2026-03-08
 **Actor**: Claude Code (Opus 4.6)
 **Type**: ドキュメント負債一掃完了ハンドオフ
 
@@ -18,7 +18,7 @@
 | **コンパイル** | PASS |
 | **EditModeテスト** | 75/75 PASS |
 | **PlayModeテスト** | 0件 (未着手、ゲート対象) |
-| **現フェーズ** | Phase A/B 完了 → Phase C 未着手 |
+| **現フェーズ** | Phase A/B/C 完了 → Phase D 未着手 |
 
 ---
 
@@ -143,17 +143,17 @@ Testing (テスト用スタブ・ヘルパー)
 |-------|------|------|-------|
 | Phase A | 安定化 | **完了** | コンパイル安定性、ブロッカー解消 |
 | Phase B | 品質基盤 | **完了** | EditMode 75テスト、TODO 20→3 削減 |
-| Phase C | 機能完成 | **未着手** | Deform正式統合、CSG検証 |
+| Phase C | 機能完成 | **完了** | Deform正式統合、CSG検証、PC-1~PC-5 完了 |
 | Phase D | 最適化 | 未着手 | 60FPS安定、パフォーマンスチューニング |
 | Phase E | 仕上げ | 未着手 | ドキュメント整合性、UI近代化 |
 
-### Phase C の次期タスク候補
+### Phase D の次期タスク候補
 
 | タスクID | 内容 | 優先度 |
 |---------|------|--------|
 | TASK_PM-1 | PlayMode Smoke Test 導入 | Medium |
-| TASK_PC-1 | Deform Package 正式統合 | Critical |
-| TASK_PB-3 | Terrain 3D Composition プロトタイプ | High |
+| TASK_PD-1 | パフォーマンスプロファイリング | High |
+| TASK_PB-3 | Terrain 3D Composition プロトタイプ | Medium |
 
 ---
 
@@ -169,28 +169,25 @@ Testing (テスト用スタブ・ヘルパー)
 
 ---
 
-## 7. 本セッションの実施内容（2026-03-07）
+## 7. 本セッションの実施内容（2026-03-08）
 
-### ドキュメント負債一掃 — 8コミット, 219ファイル, -14,976行
+### Phase C 全完了 + レガシー一掃 — 10コミット
 
-| # | コミット | 内容 | 影響 |
-|---|---------|------|------|
-| 1 | `7644e00` | shared-workflows + windsurf_workflow 削除、SSOT修正 | 42 files |
-| 2 | `d60eafa` | prompts/ 削除、cursor rules修正 | 16 files |
-| 3 | `445a369` | Unity.Rendering.DebugUI asmdef修正 | 2 files |
-| 4 | `bf75572` | docs/04_reports/ 整理 (116→20) | 97 files |
-| 5 | `c0e1fc9` | Documentation/QA/ スタブ削除、TASK_014参照修正 | 14 files |
-| 6 | `b68cec3` | openspec/ 削除、参照修正 | 31 files |
-| 7 | `f000a82` | Documentation/ スタブ削除、AGENTS.md近代化 | 17 files |
-| 8 | (本コミット) | HANDOVER.md / CLAUDE.md 仕様書更新 | — |
+| # | コミット | 内容 |
+|---|---------|------|
+| 1 | `6391e0a` | PC-2 CSG Blend 4モード + PC-3 StructureGenerator 実装 |
+| 2 | `6e2f414` | レガシー Shared Workflows era ファイル 33件削除、用語統一 |
+| 3 | `80de8b9` | DEVELOPMENT_PROTOCOL.md + docs/README.md 全面刷新 |
+| 4 | `b1ccbea` | UI Migration レポート更新 + 欠落 meta 追加 |
+| 5 | `e68f1cc` | PC-5 GameManager → TerrainGenerator 接続 (asmdef参照追加) |
+| 6 | `7d60110` | DOCS_INDEX.md 全検査 (9エントリ追加、Addendum削除) |
 
-### 主要な構造変更
+### 主要な成果
 
-- **Windsurf → Claude Code 移行完了**: Orchestrator/Worker フレームワーク全廃止、CLAUDE.md + サブエージェントモデルに移行
-- **OpenSpec 廃止**: `openspec/` 削除、CLAUDE.md SPEC FIRST に移行
-- **Documentation/ 統合完了**: 転送スタブ全削除、残存はConcept Artsのみ
-- **レポート整理**: docs/04_reports/ を116→21ファイルに削減
-- **C#パス修正**: UIMigrationツールのハードコードパスを docs/04_reports/ に更新
+- **Phase C 全タスク完了**: PC-1 (Deform正式統合) ~ PC-5 (GameManager統合)
+- **レガシーファイル一掃**: AI_CONTEXT, .cursor/, WORKER_PROMPT_*, ORCHESTRATION_PROMPT 等削除
+- **アクティブドキュメントの用語統一**: Orchestrator/Worker → リードエージェント/サブエージェント
+- **DOCS_INDEX.md 完全性検証**: 9エントリ追加、Addendum削除
 
 ---
 
