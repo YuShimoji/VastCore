@@ -60,6 +60,7 @@ namespace Vastcore.Generation
 #if DEFORM_AVAILABLE
             // Deformableコンポーネントの確保
             var deformable = EnsureDeformableComponent(target);
+            if (deformable == null) return;
 
             // プリセット適用
             ApplyPresetToDeformable(deformable, preset);
@@ -81,7 +82,10 @@ namespace Vastcore.Generation
             if (deformable != null)
             {
                 VastcoreDeformManager.Instance?.UnregisterDeformable(deformable);
-                DestroyImmediate(deformable);
+                if (Application.isPlaying)
+                    Destroy(deformable);
+                else
+                    DestroyImmediate(deformable);
             }
 #endif
         }
@@ -119,6 +123,11 @@ namespace Vastcore.Generation
             var deformable = target.GetComponent<Deformable>();
             if (deformable == null)
             {
+                if (target.GetComponent<MeshFilter>() == null)
+                {
+                    Debug.LogWarning($"[DeformIntegration] {target.name} has no MeshFilter. Deformable requires a MeshFilter.");
+                    return null;
+                }
                 deformable = target.AddComponent<Deformable>();
             }
             return deformable;

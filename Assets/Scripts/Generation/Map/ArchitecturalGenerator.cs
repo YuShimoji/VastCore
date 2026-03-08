@@ -138,6 +138,16 @@ namespace Vastcore.Generation
         {
             try
             {
+                if (parameters.span <= 0f || parameters.height <= 0f || parameters.thickness <= 0f)
+                {
+                    Debug.LogError($"[ArchitecturalGenerator] Invalid parameters: span={parameters.span}, height={parameters.height}, thickness={parameters.thickness}. All must be > 0.");
+                    return null;
+                }
+                if (parameters.archSegments < 3)
+                {
+                    parameters.archSegments = 8;
+                }
+
                 GameObject architecturalObject = new GameObject($"Architectural_{parameters.architecturalType}");
                 architecturalObject.transform.position = parameters.position;
                 architecturalObject.transform.rotation = parameters.rotation;
@@ -202,7 +212,7 @@ namespace Vastcore.Generation
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error generating architectural structure {parameters.architecturalType}: {e.Message}");
+                Debug.LogError($"Error generating architectural structure {parameters.architecturalType}: {e}");
                 return null;
             }
         }
@@ -993,15 +1003,15 @@ namespace Vastcore.Generation
         {
             // 全ての子オブジェクトに風化効果を適用
             var renderers = parent.GetComponentsInChildren<MeshRenderer>();
-            
+
             foreach (var renderer in renderers)
             {
-                if (renderer.material != null)
+                // renderer.material はアクセス時に自動でインスタンス化されるため、
+                // 追加の new Material() は不要。直接色を変更する。
+                if (renderer.sharedMaterial != null)
                 {
-                    // 色を少し暗くして古い感じを演出
-                    var material = new Material(renderer.material);
-                    material.color *= 0.8f;
-                    renderer.material = material;
+                    var mat = renderer.material; // 自動インスタンス化 (1回のみ)
+                    mat.color *= 0.8f;
                 }
             }
         }
@@ -1040,7 +1050,14 @@ namespace Vastcore.Generation
             architecturalComponent.hasCollision = true;
             
             // 建築物専用のタグを設定
-            parent.tag = "Architecture";
+            try
+            {
+                parent.tag = "Architecture";
+            }
+            catch (System.Exception)
+            {
+                Debug.LogWarning("[ArchitecturalGenerator] Tag 'Architecture' is not defined. Skipping tag assignment.");
+            }
         }
         #endregion
 

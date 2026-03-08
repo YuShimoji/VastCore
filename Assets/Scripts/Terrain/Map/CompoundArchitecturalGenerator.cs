@@ -126,6 +126,12 @@ namespace Vastcore.Generation
         {
             try
             {
+                if (parameters.overallSize <= 0f || parameters.structureCount <= 0)
+                {
+                    Debug.LogError($"[CompoundArchitecturalGenerator] Invalid parameters: overallSize={parameters.overallSize}, structureCount={parameters.structureCount}. Must be > 0.");
+                    return null;
+                }
+
                 GameObject compoundObject = new GameObject($"Compound_{parameters.compoundType}");
                 compoundObject.transform.position = parameters.position;
                 compoundObject.transform.rotation = parameters.rotation;
@@ -183,7 +189,7 @@ namespace Vastcore.Generation
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error generating compound architectural structure {parameters.compoundType}: {e.Message}");
+                Debug.LogError($"Error generating compound architectural structure {parameters.compoundType}: {e}");
                 return null;
             }
         }
