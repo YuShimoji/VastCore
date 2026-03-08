@@ -20,11 +20,11 @@
   {
     "id": "SP-003",
     "title": "DualGrid HeightMap Profile Mapping",
-    "status": "partial",
-    "pct": 60,
+    "status": "todo",
+    "pct": 0,
     "cat": "core",
     "file": "docs/02_design/DUALGRID_HEIGHTMAP_PROFILE_MAPPING_SPEC.md",
-    "summary": "VerticalExtrusionGenerator の profile-driven mapping 仕様 (Draft v0.1)"
+    "summary": "VerticalExtrusionGenerator の profile-driven mapping 仕様 (Draft v0.1, 設計のみ未実装)"
   },
   {
     "id": "SP-004",
@@ -87,7 +87,7 @@
     "pct": 100,
     "cat": "infra",
     "file": "docs/02_design/ASSEMBLY_ARCHITECTURE.md",
-    "summary": "Unity Assembly Definition 依存グラフと名前空間規約のSSOT"
+    "summary": "Unity Assembly Definition 依存グラフと名前空間規約のSSOT (19 asmdef)"
   },
   {
     "id": "DS-002",
@@ -155,11 +155,11 @@
   {
     "id": "DS-009",
     "title": "Phase C Scope Definition",
-    "status": "partial",
-    "pct": 80,
+    "status": "done",
+    "pct": 100,
     "cat": "system",
     "file": "docs/02_design/PHASE_C_SCOPE_DEFINITION.md",
-    "summary": "Phase C (Deform + CSG) スコープ定義。PC-1,2,3,4完了。PC-5(GameManager)のみ残"
+    "summary": "Phase C (Deform + CSG + StructureGenerator) スコープ定義。PC-1~PC-5 全完了"
   },
   {
     "id": "AR-001",
