@@ -2,7 +2,7 @@
 
 > **上位SSOT**: [SSOT_WORLD.md](SSOT_WORLD.md)
 
-**最終更新**: 2026-03-07
+**最終更新**: 2026-03-08
 
 ---
 
@@ -24,7 +24,7 @@
 
 仕様書・設計書の構造化索引。ステータス・実装率・カテゴリで管理する。
 
-- **データソース**: [spec-index.json](spec-index.json) (20件収録)
+- **データソース**: [spec-index.json](spec-index.json) (21件収録)
 - **ID体系**: `SP-xxx` = 仕様書 / `DS-xxx` = 設計書 / `AR-xxx` = アーキテクチャ
 - **ステータス**: done / partial / todo / legacy
 - **カテゴリ**: core / ui / system / infra
@@ -45,6 +45,9 @@
 | [ARCHITECTURE.md](ARCHITECTURE.md) | モジュール/依存/責務の鳥瞰 |
 | [DOCS_INDEX.md](DOCS_INDEX.md) | 本索引 |
 | [HANDOVER.md](HANDOVER.md) | 成果物SSOT・フェーズ完了状態 |
+| [WORKFLOW_STATE_SSOT.md](WORKFLOW_STATE_SSOT.md) | 実行状態SSOT（現在の作業状況） |
+| [MILESTONE_PLAN.md](MILESTONE_PLAN.md) | マイルストーン追跡 |
+| [SESSION_SUMMARY_2026-03-04.md](SESSION_SUMMARY_2026-03-04.md) | セッションサマリー（歴史資料） |
 | [README.md](README.md) | docs/ ディレクトリガイド |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | コントリビューションルール |
 
@@ -72,7 +75,7 @@
 | [TEST_PLAN.md](01_planning/TEST_PLAN.md) | テスト計画（全体） |
 | [WEB_DEVELOPMENT_ROADMAP.md](01_planning/WEB_DEVELOPMENT_ROADMAP.md) | Web開発ロードマップ |
 
-### 02_design/ — 設計仕様 (17 files)
+### 02_design/ — 設計仕様 (18 files)
 
 | ファイル | 役割 |
 |---------|------|
@@ -88,6 +91,12 @@
 | [LegacyIsolation_Design.md](02_design/LegacyIsolation_Design.md) | レガシー隔離設計（歴史資料） |
 | [Phase2_TemplateIntegration_Spec.md](02_design/Phase2_TemplateIntegration_Spec.md) | Phase 2 テンプレート統合仕様（歴史資料） |
 | [WorldGenArchitecture.md](02_design/WorldGenArchitecture.md) | WorldGen アーキテクチャ設計（M0-M3） |
+| [ASSEMBLY_ARCHITECTURE.md](02_design/ASSEMBLY_ARCHITECTURE.md) | アセンブリ依存グラフ・名前空間規約 |
+| [PHASE_C_SCOPE_DEFINITION.md](02_design/PHASE_C_SCOPE_DEFINITION.md) | Phase C スコープ定義 |
+| [DualGridTerrainSystem_Integration_Design.md](02_design/DualGridTerrainSystem_Integration_Design.md) | DualGrid 統合設計 |
+| [TERRAIN_ENGINE_DESIGN.md](02_design/TERRAIN_ENGINE_DESIGN.md) | テレインエンジン設計 |
+| [Diagram.md](02_design/Diagram.md) | 設計図表 |
+| [README.md](02_design/README.md) | 設計ディレクトリガイド |
 
 ### 03_guides/ — ガイド・手順書 (14 files)
 
@@ -165,23 +174,3 @@ grep -rn --include="*.md" "SSOT_WORLD" docs/
 ---
 
 **参照**: [SSOT_WORLD.md](SSOT_WORLD.md) | [ARCHITECTURE.md](ARCHITECTURE.md) | [DOCUMENTATION_CLEANUP_PLAN.md](01_planning/DOCUMENTATION_CLEANUP_PLAN.md)
-
----
-
-## 2026-02-22 Addendum
-
-New design document added for the volumetric migration skeleton:
-
-- `docs/02_design/WorldGenArchitecture.md`
-  - SSOT recipe baseline
-  - 4-engine boundaries
-  - assembly impact and dependency direction
-  - current milestone status (M0-M1 baseline)
-- `docs/04_reports/REPORT_TASK_WORLDGEN_M0_M1_20260222.md` (WorldGen migration baseline report)
-- `docs/04_reports/REPORT_TASK_WORLDGEN_M2_20260222.md` (M2 graph auto-generation + field burn report)
-- `docs/04_reports/REPORT_TASK_WORLDGEN_M2_VISUALIZATION_20260222.md` (M2 graph gizmo visualization + adapter/update-hook report)
-- `docs/04_reports/REPORT_TASK_WORLDGEN_M2_EDITOR_OVERLAY_20260222.md` (Graph overlay EditorWindow report)
-- `docs/04_reports/REPORT_TASK_WORLDGEN_M3_20260222.md` (M3 mesh extraction/chunking/dirty-region report)
-- `docs/04_reports/REPORT_TASK_WORLDGEN_M3_FOLLOW_20260222.md` (M3 follow-up smoothing/seam/allocation report)
-- `docs/04_reports/REPORT_TASK_WORLDGEN_M3_RECOMMENDED_20260222.md` (M3 recommended seam-processor decoupling report)
-- `docs/04_reports/REPORT_TASK_WORKFLOW_SYNC_20260223.md` (Shared Workflows sync and remote-ready baseline report)
