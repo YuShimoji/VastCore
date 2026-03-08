@@ -2,9 +2,9 @@
 
 # VastCore — Handover / ワークフロー仕様書
 
-**最終更新**: 2026-03-08
+**最終更新**: 2026-03-09
 **Actor**: Claude Code (Opus 4.6)
-**Type**: ドキュメント負債一掃完了ハンドオフ
+**Type**: Phase C完了 + コード品質監査 + MapGenerator統合
 
 ---
 
@@ -48,9 +48,9 @@ VastCore/
 │   └── EXAMPLES/              ← Mermaid図テンプレート
 │
 ├── Assets/
-│   ├── Scripts/               ← C#ソースコード（278ファイル, 21 asmdef）
-│   ├── Editor/                ← Editorツール
-│   ├── MapGenerator/          ← MapGenerator固有コード
+│   ├── Scripts/               ← C#ソースコード（19 asmdef）
+│   ├── Editor/                ← Editorツール（StructureGenerator等）
+│   ├── Resources/MapGenerator/ ← MapGenerator用リソース（MG-1統合後）
 │   ├── Tests/                 ← EditMode/PlayModeテスト
 │   └── _Scenes/              ← シーンファイル
 │
@@ -119,7 +119,7 @@ Utilities (依存なし)
   ↑
 Core (Utilities)
   ↑
-Generation / Terrain / WorldGen / MapGenerator
+Generation / Terrain / WorldGen
   ↑
 Player / Camera / UI / Game
   ↑
@@ -169,9 +169,20 @@ Testing (テスト用スタブ・ヘルパー)
 
 ---
 
-## 7. 本セッションの実施内容（2026-03-08）
+## 7. セッション履歴
 
-### Phase C 全完了 + レガシー一掃 — 10コミット
+### 2026-03-09: コード品質監査 + MapGenerator統合
+
+| # | コミット | 内容 |
+|---|---------|------|
+| 1 | `e55ecba` | MG-1: MapGenerator を Generation に完全統合 (21→19 asmdef) |
+| 2 | `d172be5` | spec-index.json ステータス更新 |
+| 3 | `9841fe6` | Phase C HIGH指摘修正 (Material leak, バリデーション, tag, MeshFilter) |
+| 4 | `b6fac95` | spec-index.json に新規仕様5件追加 |
+| 5 | `3c2dade` | MEDIUM指摘修正 (DeformerType整理, RemoveDeform改善, Manager実装) |
+| 6 | `7a75004` | PC-2 BlendSettings.cs デッドコード削除 + 仕様書修正 |
+
+### 2026-03-08: Phase C全完了 + レガシー一掃
 
 | # | コミット | 内容 |
 |---|---------|------|
@@ -181,13 +192,7 @@ Testing (テスト用スタブ・ヘルパー)
 | 4 | `b1ccbea` | UI Migration レポート更新 + 欠落 meta 追加 |
 | 5 | `e68f1cc` | PC-5 GameManager → TerrainGenerator 接続 (asmdef参照追加) |
 | 6 | `7d60110` | DOCS_INDEX.md 全検査 (9エントリ追加、Addendum削除) |
-
-### 主要な成果
-
-- **Phase C 全タスク完了**: PC-1 (Deform正式統合) ~ PC-5 (GameManager統合)
-- **レガシーファイル一掃**: AI_CONTEXT, .cursor/, WORKER_PROMPT_*, ORCHESTRATION_PROMPT 等削除
-- **アクティブドキュメントの用語統一**: Orchestrator/Worker → リードエージェント/サブエージェント
-- **DOCS_INDEX.md 完全性検証**: 9エントリ追加、Addendum削除
+| 7 | `2376f1f` | HANDOVER.md Phase C完了更新 |
 
 ---
 
