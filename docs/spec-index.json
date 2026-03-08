@@ -187,5 +187,50 @@
     "cat": "system",
     "file": "docs/WORKFLOW_STATE_SSOT.md",
     "summary": "現在のミッション・Done条件・フェーズ進捗を定義"
+  },
+  {
+    "id": "SP-010",
+    "title": "Climate Visual Integration",
+    "status": "todo",
+    "pct": 0,
+    "cat": "core",
+    "file": "docs/02_design/CLIMATE_VISUAL_INTEGRATION_SPEC.md",
+    "summary": "ClimateSystem データのテレイン視覚反映 (Shader Globals / 季節色調 / 風 / 天候)"
+  },
+  {
+    "id": "SP-011",
+    "title": "Ecosystem Generation",
+    "status": "todo",
+    "pct": 0,
+    "cat": "core",
+    "file": "docs/02_design/ECOSYSTEM_GENERATION_SPEC.md",
+    "summary": "バイオーム/気候駆動の植生自動配置。IDensityField パイプライン統合"
+  },
+  {
+    "id": "SP-012",
+    "title": "Destructible Architecture",
+    "status": "todo",
+    "pct": 0,
+    "cat": "core",
+    "file": "docs/02_design/DESTRUCTIBLE_ARCHITECTURE_SPEC.md",
+    "summary": "DensityGrid ベースの構造物破壊。密度減算 + VolumetricStreaming 自動再構築"
+  },
+  {
+    "id": "SP-013",
+    "title": "Composite Structure Assembly Rules",
+    "status": "todo",
+    "pct": 0,
+    "cat": "core",
+    "file": "docs/02_design/COMPOSITE_STRUCTURE_RULES_SPEC.md",
+    "summary": "データ駆動構造物組み立て。GrammarEngine 最小実装 + StructureAssemblyRecipe"
+  },
+  {
+    "id": "DS-010",
+    "title": "Post Phase C Quick Wins",
+    "status": "partial",
+    "pct": 0,
+    "cat": "system",
+    "file": "docs/02_design/POST_PHASE_C_QUICK_WINS.md",
+    "summary": "4提案から抽出した4h以内の小タスク一覧 (14項目, 合計~30h)"
   }
 ]

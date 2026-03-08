@@ -24,7 +24,7 @@
 
 仕様書・設計書の構造化索引。ステータス・実装率・カテゴリで管理する。
 
-- **データソース**: [spec-index.json](spec-index.json) (21件収録)
+- **データソース**: [spec-index.json](spec-index.json) (26件収録)
 - **ID体系**: `SP-xxx` = 仕様書 / `DS-xxx` = 設計書 / `AR-xxx` = アーキテクチャ
 - **ステータス**: done / partial / todo / legacy
 - **カテゴリ**: core / ui / system / infra
