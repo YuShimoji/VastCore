@@ -121,7 +121,7 @@ graph TD
 | `Vastcore.Player` | `Assets/Scripts/Player/` | `Vastcore.Player` | false | Core, Utilities, Terrain, Generation |
 | `Vastcore.Camera` | `Assets/Scripts/Camera/` | `Vastcore.Camera` | false | Core, Utilities, Player |
 | `Vastcore.UI` | `Assets/Scripts/UI/` | `Vastcore.UI` | false | Core, Utilities, Player |
-| `Vastcore.Game` | `Assets/Scripts/Game/` | `Vastcore.Game` | false | Core, Utilities, Player, Terrain, Camera, Generation, UI |
+| `Vastcore.Game` | `Assets/Scripts/Game/` | `Vastcore.Game` | false | Core, Utilities, Player, Terrain, Camera, Generation, MapGenerator, UI |
 
 ### 2.2 Editor-Only (エディタ専用)
 

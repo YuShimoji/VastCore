@@ -3,8 +3,8 @@
 > 最終更新: 2026-03-08
 
 ## Summary
-- Total: 39 tasks
-- Done: 34 | In Progress: 0 | Pending: 0 | Legacy: 5 + 2 (026, 027)
+- Total: 40 tasks
+- Done: 35 | In Progress: 0 | Pending: 0 | Legacy: 5 + 2 (026, 027)
 
 ## Phase A (Terrain Core Stabilization)
 | ID | Title | Status | Summary |
@@ -28,6 +28,7 @@
 | PC-2 | CompositionTab CSG検証 + Blend実装 | DONE | Blend 4モード (Layered/Surface/Adaptive/Noise) 実装。頂点ベースメッシュブレンド |
 | PC-3 | StructureGenerator 残タスク | DONE | Arch/Pyramid生成、GlobalSettings保存/読込、RandomControlTab完成 |
 | PC-4 | GeologicalFormation Erosion | DONE | RockLayerPhysicalProperties として風化/浸食/経年変化を統合 |
+| PC-5 | GameManager TerrainGenerator接続 | DONE | asmdef参照追加 + VastcoreGameManager スタブ解除。TerrainGenerator は既存 |
 
 ## Terrain Vertical Slice
 | ID | Title | Status | Summary |

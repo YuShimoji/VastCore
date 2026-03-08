@@ -20,7 +20,7 @@ Phase A (Terrain Core Stabilization) と Phase B (Test Baseline) の完了を受
 | PC-2 | CompositionTab CSG検証 + Blend実装 | L | **DONE** | PA-2 |
 | PC-3 | StructureGenerator 残タスク | M | **DONE** | PC-2 |
 | PC-4 | GeologicalFormation Erosion | M | **DONE** | - |
-| PC-5 | GameManager TerrainGenerator接続 | M | ブロック | - |
+| PC-5 | GameManager TerrainGenerator接続 | M | **DONE** | - |
 
 ## 3. 完了済みタスク
 
@@ -60,18 +60,17 @@ Phase A (Terrain Core Stabilization) と Phase B (Test Baseline) の完了を受
   - GlobalSettingsTab: EditorPrefs ベース自動保存/復元 + JSON エクスポート/インポート
   - RandomControlTab: 機能的に完成済み (Position/Rotation/Scale ランダム化 + Preview)
 
-### PC-5: GameManager TerrainGenerator接続
+### PC-5: GameManager TerrainGenerator接続 -- DONE
 
-**ブロック理由**: TerrainGenerator クラスが存在しない
+**実施内容**:
+- Vastcore.Game.asmdef に Vastcore.MapGenerator 参照を追加
+- VastcoreGameManager.cs のスタブ解除（TerrainGenerator フィールド追加、GameStartSequence/SetupPlayer/SetupCinematics の接続）
+- TerrainGenerator 不在時は警告のみで続行するよう安全に設計（yield break しない）
+- ComprehensiveSystemTest のスタブ (L241,246,251) は RuntimeTerrainManager 等に依存しており PC-5 スコープ外
 
-**必要な作業 (大型)**:
-- TerrainGenerator クラスの新規実装
-- VastcoreGameManager.cs のスタブ解除 (L25, L155-166, L203-208, L231)
-- ComprehensiveSystemTest.cs のスタブ解除 (L30-32, L239-251)
-
-**判断ポイント**: Phase C のスコープとして適切か、Phase D に移動すべきか要検討。
-TerrainGenerator の設計はプロジェクト全体のアーキテクチャに影響するため、
-仕様策定が先行する必要がある。
+**注記**: 当初「TerrainGenerator クラスが存在しない」と記録されていたが、
+実際には `Assets/MapGenerator/Scripts/TerrainGenerator.cs` (Vastcore.MapGenerator) に実装済みだった。
+ブロック原因は asmdef 参照の欠落のみ。
 
 ## 5. CSG アーキテクチャ (検証済み)
 
