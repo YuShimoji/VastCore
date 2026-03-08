@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using Vastcore.Generation;
 
 using Vastcore.Generation.Map;
-using TemplateBlendSettings = Vastcore.Generation.BlendSettings;
 
 namespace Vastcore.Editor
 {
@@ -39,9 +38,8 @@ namespace Vastcore.Editor
 
         // UI状態
         private bool showAdvancedSettings = false;
-        private bool showBlendSettings = false;
         private int selectedTab = 0;
-        private string[] tabNames = { "基本設定", "地形生成", "ブレンド設定", "プレビュー", "Deform" };
+        private string[] tabNames = { "基本設定", "地形生成", "プレビュー", "Deform" };
         #endregion
 
         #region メニュー
@@ -209,9 +207,8 @@ namespace Vastcore.Editor
                     {
                         case 0: DrawBasicSettings(); break;
                         case 1: DrawTerrainGenerationSettings(); break;
-                        case 2: DrawBlendSettings(); break;
-                        case 3: DrawPreviewTab(); break;
-                        case 4: DrawDeformTab(); break;
+                        case 2: DrawPreviewTab(); break;
+                        case 3: DrawDeformTab(); break;
                     }
                 }
             }
@@ -295,58 +292,6 @@ namespace Vastcore.Editor
                 // 高度設定の内容（必要に応じて追加）
                 EditorGUI.indentLevel--;
             }
-        }
-
-        /// <summary>
-        /// ブレンド設定タブを描画
-        /// </summary>
-        private void DrawBlendSettings()
-        {
-            EditorGUILayout.LabelField("ブレンド設定", EditorStyles.boldLabel);
-            EditorGUI.indentLevel++;
-
-            // BlendSettingsはScriptableObjectとして実装されている想定
-            if (selectedTemplate.blendSettings == null)
-            {
-                if (GUILayout.Button("ブレンド設定を作成"))
-                {
-                    selectedTemplate.blendSettings = CreateInstance<TemplateBlendSettings>();
-                    AssetDatabase.CreateAsset(selectedTemplate.blendSettings, "Assets/Settings/BlendSettings_" + selectedTemplate.templateName + ".asset");
-                }
-            }
-            else
-            {
-                EditorGUILayout.ObjectField("ブレンド設定", selectedTemplate.blendSettings, typeof(TemplateBlendSettings), false);
-                // BlendSettingsのプロパティをインスペクター表示
-                DrawBlendSettingsInspector((TemplateBlendSettings)selectedTemplate.blendSettings);
-            }
-
-            EditorGUI.indentLevel--;
-        }
-
-        /// <summary>
-        /// ブレンド設定インスペクターを描画
-        /// </summary>
-        private void DrawBlendSettingsInspector(TemplateBlendSettings settings)
-        {
-            if (settings == null) return;
-
-            settings.blendMode = (BlendMode)EditorGUILayout.EnumPopup("ブレンドモード", settings.blendMode);
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                EditorGUILayout.PrefixLabel("ブレンド強度");
-                settings.blendStrength = EditorGUILayout.Slider(settings.blendStrength, 0f, 1f);
-            }
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                EditorGUILayout.PrefixLabel("フェード距離");
-                settings.fadeDistance = EditorGUILayout.Slider(settings.fadeDistance, 0f, 1000f);
-            }
-
-            settings.enableEdgeBlending = EditorGUILayout.Toggle("エッジブレンド有効", settings.enableEdgeBlending);
-            settings.edgeBlendWidth = EditorGUILayout.Slider("エッジ幅", settings.edgeBlendWidth, 0f, 50f);
         }
 
         /// <summary>

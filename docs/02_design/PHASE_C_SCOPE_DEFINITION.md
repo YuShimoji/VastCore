@@ -47,10 +47,11 @@ Phase A (Terrain Core Stabilization) と Phase B (Test Baseline) の完了を受
 
 - 完了日: 2026-03-08
 - 成果:
-  - Blend 4モード実装 (Layered/Surface/Adaptive/Noise)
+  - Blend 4モード実装 (Layered/Surface/Adaptive/Noise) — CompositionTab.cs 内に実装
   - 頂点ベースメッシュブレンド: ワールド空間変換 → 最近傍頂点マッピング → モード別ファクター計算 → Lerp/Slerp
   - CSG (Union/Intersect/Subtract) は既存実装で動作済み
 - 制約: 頂点数が大きく異なるメッシュ同士のブレンドは品質に限界がある
+- 備考: 当初 BlendSettings.cs (ScriptableObject) が別途作成されたが、CompositionTab に直接実装されたためデッドコードとなり、品質監査で削除済み
 
 ### PC-3: StructureGenerator 残タスク (DONE)
 
@@ -63,7 +64,7 @@ Phase A (Terrain Core Stabilization) と Phase B (Test Baseline) の完了を受
 ### PC-5: GameManager TerrainGenerator接続 -- DONE
 
 **実施内容**:
-- Vastcore.Game.asmdef に Vastcore.MapGenerator 参照を追加
+- Vastcore.Game.asmdef に MapGenerator 参照を追加 (MG-1統合後は Vastcore.Generation に統合済み)
 - VastcoreGameManager.cs のスタブ解除（TerrainGenerator フィールド追加、GameStartSequence/SetupPlayer/SetupCinematics の接続）
 - TerrainGenerator 不在時は警告のみで続行するよう安全に設計（yield break しない）
 - ComprehensiveSystemTest のスタブ (L241,246,251) は RuntimeTerrainManager 等に依存しており PC-5 スコープ外

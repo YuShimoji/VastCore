@@ -67,9 +67,6 @@ namespace Vastcore.Generation
         public VastcoreDeformManager.DeformQualityLevel deformQuality = VastcoreDeformManager.DeformQualityLevel.High;
 #endif
 
-        // ブレンド設定（TerrainTemplateEditor から ScriptableObject として参照）
-        public BlendSettings blendSettings;
-
         // キャッシュされたデータ
         private float[,] cachedHeightmap;
         private bool isInitialized = false;
