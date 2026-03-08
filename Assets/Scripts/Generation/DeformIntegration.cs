@@ -78,16 +78,36 @@ namespace Vastcore.Generation
             if (target == null) return;
 
 #if DEFORM_AVAILABLE
+            // Deformerコンポーネントを先に削除
+            var deformers = target.GetComponents<Deformer>();
+            foreach (var deformer in deformers)
+            {
+                SafeDestroy(deformer);
+            }
+
+            // ScaleDeformer用のaxis子GameObjectを削除
+            var axisTransform = target.transform.Find("_DeformScaleAxis");
+            if (axisTransform != null)
+            {
+                SafeDestroy(axisTransform.gameObject);
+            }
+
+            // Deformableを削除
             var deformable = target.GetComponent<Deformable>();
             if (deformable != null)
             {
                 VastcoreDeformManager.Instance?.UnregisterDeformable(deformable);
-                if (Application.isPlaying)
-                    Destroy(deformable);
-                else
-                    DestroyImmediate(deformable);
+                SafeDestroy(deformable);
             }
 #endif
+        }
+
+        private static void SafeDestroy(UnityEngine.Object obj)
+        {
+            if (Application.isPlaying)
+                Destroy(obj);
+            else
+                DestroyImmediate(obj);
         }
 
         /// <summary>

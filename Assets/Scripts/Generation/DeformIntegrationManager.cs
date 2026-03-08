@@ -24,19 +24,15 @@ namespace Vastcore.Generation
             Bend,
             Twist,
             Taper,
-            Bulge,
             Noise,
             Sine,
             Ripple,
             Wave,
             Spherify,
-            Melt,
-            Flare,
             Squash,
             Curve,
             Lattice,
-            Magnet,
-            Turbulence
+            Magnet
         }
         
         #endregion
@@ -110,6 +106,11 @@ namespace Vastcore.Generation
                 var deformable = target.GetComponent<Deformable>();
                 if (deformable == null)
                 {
+                    if (target.GetComponent<MeshFilter>() == null)
+                    {
+                        Debug.LogWarning($"[DeformIntegrationManager] {target.name} has no MeshFilter. Deformable requires a MeshFilter.");
+                        return false;
+                    }
                     deformable = target.AddComponent<Deformable>();
                 }
                 
@@ -132,7 +133,7 @@ namespace Vastcore.Generation
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[DeformIntegrationManager] Error applying deformer: {ex.Message}");
+                Debug.LogError($"[DeformIntegrationManager] Error applying deformer: {ex}");
                 return false;
             }
 #else

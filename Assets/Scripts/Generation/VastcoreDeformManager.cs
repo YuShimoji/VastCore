@@ -50,15 +50,20 @@ namespace Vastcore.Generation
             }
         }
 
-        // Stub methods to satisfy DeformIntegrationManager usage
+        private readonly HashSet<object> registeredDeformables = new HashSet<object>();
+
+        public int RegisteredCount => registeredDeformables.Count;
+
         public void RegisterDeformable(object deformable, DeformQualityLevel quality = DeformQualityLevel.Medium)
         {
-            // Implementation would go here
+            if (deformable != null)
+                registeredDeformables.Add(deformable);
         }
 
         public void UnregisterDeformable(object deformable)
         {
-            // Implementation would go here
+            if (deformable != null)
+                registeredDeformables.Remove(deformable);
         }
     }
 }
