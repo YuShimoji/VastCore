@@ -1,15 +1,22 @@
 # WORKFLOW STATE SSOT
 
+Last Updated: 2026-03-16
+
 ## Mission
 
 広大な景観に映える、ユニークで巨大な人工構造物をプロシージャルに生成する基盤の確立。
-Phase A/B 完了。現在のフォーカス：Phase C 機能完成（Deform正式統合 + CSG検証）およびドキュメント負債の解消。
+Phase A/B 完了。Phase C 機能完成に着手中。
+
+## Current Focus
+
+**SG-1: DualGrid Prefabスタンプ配置** — コア実装完了 (2026-03-16)。Unity実機検証待ち。
 
 ## Done 条件
 
 - [x] `TASK_037_TerrainVerticalSlice_CloseoutSummary` の完了
-- [ ] SSOT駆動ワークフローへの完全移行と legacy docs の整理
+- [x] SSOT駆動ワークフローへの完全移行と legacy docs の整理
 - [x] Unity Editor でのコンパイル安定性 95% 以上 (PA-5)
+- [ ] SG-1: DualGrid Prefab配置のモックアップが動作する
 
 ## 選別規則
 

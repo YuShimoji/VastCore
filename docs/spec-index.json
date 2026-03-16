@@ -81,6 +81,15 @@
     "summary": "既存システム統合の設計書 v0.1 (Draft, 未実装)"
   },
   {
+    "id": "SP-010",
+    "title": "DualGrid Prefab Stamp Placement",
+    "status": "partial",
+    "pct": 80,
+    "cat": "core",
+    "file": null,
+    "summary": "DualGridセルへのPrefabスタンプ配置システム。ScriptableObject定義、占有管理、Gizmo可視化"
+  },
+  {
     "id": "DS-001",
     "title": "Assembly Architecture (SSOT)",
     "status": "done",
