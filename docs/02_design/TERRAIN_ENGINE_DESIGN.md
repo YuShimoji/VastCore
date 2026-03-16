@@ -1,10 +1,30 @@
-# Terrain Engine Design (Phase 3 / M1)
+# Terrain Engine Design (Phase 3 / M1-M2)
+
+**Last Updated:** 2026-03-16
 
 ## 目的
 
 - シード駆動の再現性ある地形生成。
 - 高さデータ供給源を抽象化し、ノイズ/テクスチャ/ハイブリッドを差し替え可能にする。
 - M1ではノイズベースを実装。将来M4/M5以降でテクスチャ/ハイブリッドを容易に拡張。
+
+## 正式アーキテクチャにおける位置づけ (2026-03-06 決定)
+
+本システム (HeightMap + Streaming) は、DualGrid + Prefabスタンプアーキテクチャにおける **高さ供給源** として機能する。
+
+```text
+IHeightmapProvider (本spec)
+  ↓ 高さデータ供給
+VerticalExtrusionGenerator (SP-001)
+  ↓ ColumnStack 生成
+StampRegistry + PrefabStampPlacer (SP-014)
+  ↓ Prefab 配置
+Scene (GameObjects)
+```
+
+- **HeightMap系**: 大域的な地形の起伏を定義 (NoiseHeightmapProvider / 将来TextureProvider)
+- **DualGrid系**: Hexベースの不規則グリッドでセルトポロジーを管理
+- **Prefabスタンプ系**: デザイナーPrefabをセルに配置
 
 ## アーキテクチャ概要
 
@@ -36,11 +56,13 @@ flowchart LR
   - `HybridHeightmapProvider`（将来）
 - 設定は `ScriptableObject` ベースの多態で保持し、Factoryで `IHeightmapProvider` を供給。
 
-## M1 範囲（DoD）
+## M1 範囲（DoD） — 実装済み
 
-- 3×3 チャンクをノイズで生成し、例外無しで描画。
-- 同一seed/座標で再現性を確認。隣接チャンクの境界シーム差分は閾値以下。
-- PlayMode テスト（Provider差し替え/範囲/再現性/シーム）を追加しグリーン。
+- [x] 3×3 チャンクをノイズで生成し、例外無しで描画
+- [x] 同一seed/座標で再現性を確認
+- [ ] 隣接チャンクの境界シーム差分は閾値以下 (未検証)
+- [ ] PlayMode テスト (0件 — Phase D以降)
+- **注意**: `HeightmapGenerationContext` は未実装。IHeightmapProvider.Generate の ctx パラメータは現行コードで null または省略されている可能性あり
 
 ## テスト観点
 
@@ -81,12 +103,13 @@ flowchart LR
 - 破棄タイミング: 必要集合から外れたチャンクは即座に `Release()` し、プールへ格納。
 - 拡張余地: `maxLoadPerFrame` で生成件数を制限しスパイクを抑制（M2では閾値小・必要なら次フェーズで最適化）。
 
-### DoD（完了条件）
+### DoD（完了条件） — コア実装済み、PlayModeテスト未実施
 
-- 半径 `loadRadius` に応じた `(2r+1)^2` 枚のチャンクが常にアクティブ。
-- ターゲット移動で新たなチャンクが生成され、遠方チャンクはプールへ戻る。
-- `TerrainChunkPool` による再利用が確認でき、GC/生成スパイクが抑制される（ログまたはプロファイラでヒッチ<20ms 目標）。
-- PlayMode テスト（`TerrainStreamingTests`）が再現性とシームレス性を担保。
+- [x] 半径 `loadRadius` に応じたチャンクがアクティブ (実装済み)
+- [x] ターゲット移動で新チャンク生成、遠方チャンクはプール返却 (実装済み)
+- [x] `TerrainChunkPool` による再利用 (EditModeテスト存在)
+- [ ] GC/生成スパイク抑制の確認 (プロファイラ検証未実施)
+- [ ] PlayMode テスト (`TerrainStreamingTests`) — 0件 (Phase D以降)
 
 ### テスト計画
 
@@ -95,3 +118,25 @@ flowchart LR
 - **PoolReusesChunks**: チャンクをアンロード後に再び必要になった際、プールが再利用される（生成回数が増えない）。
 
 PlayMode テストでは `HeightmapProviderSettings` をテスト用に派生させ、一定高さを返すプロバイダで挙動を検証する。
+
+---
+
+## 実装状態サマリ (2026-03-16)
+
+| コンポーネント | ファイル | 状態 |
+|---------------|----------|------|
+| IHeightmapProvider | Terrain/Providers/IHeightmapProvider.cs | 実装済み |
+| NoiseHeightmapProvider | Terrain/Providers/NoiseHeightmapProvider.cs | 実装済み |
+| TerrainGenerationConfig | Terrain/Config/TerrainGenerationConfig.cs | 実装済み |
+| TerrainChunk | Terrain/TerrainChunk.cs | 実装済み |
+| TerrainChunkPool | Terrain/TerrainChunkPool.cs | 実装済み (EditModeテストあり) |
+| TerrainStreamingController | Terrain/TerrainStreamingController.cs | 実装済み |
+| HeightmapGenerationContext | — | 未実装 |
+| TextureHeightmapProvider | — | 未実装 (将来) |
+| HybridHeightmapProvider | — | 未実装 (将来) |
+
+### DualGrid との統合パス
+
+- `VerticalExtrusionGenerator.GenerateFromHeightMap(Texture2D)` で既存 HeightMap → DualGrid ColumnStack への橋渡しが可能
+- `DualGridHeightSamplingSettings` (Generation/) が UV wrapping / quantization を制御
+- 現時点では IHeightmapProvider と VerticalExtrusionGenerator の直接接続は未実装。手動で HeightMap 結果を渡す形

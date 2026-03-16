@@ -5,18 +5,20 @@ Last Updated: 2026-03-16
 ## Mission
 
 広大な景観に映える、ユニークで巨大な人工構造物をプロシージャルに生成する基盤の確立。
-Phase A/B 完了。Phase C 機能完成に着手中。
+Phase A/B/C 完了。SG-1 Prefabスタンプ単セル配置完了。Phase D 設計中。
 
 ## Current Focus
 
-**SG-1: DualGrid Prefabスタンプ配置** — コア実装完了 (2026-03-16)。Unity実機検証待ち。
+**Phase D 仕様整備** — PD-1〜PD-4 スコープ定義完了。Quick Wins (QW-A〜D) の優先度判断中。
+次スライス候補: マルチセルフットプリント拡張 / PD-4 巨大ファイル分割 / QW-A 気候ビジュアル。
 
 ## Done 条件
 
 - [x] `TASK_037_TerrainVerticalSlice_CloseoutSummary` の完了
 - [x] SSOT駆動ワークフローへの完全移行と legacy docs の整理
 - [x] Unity Editor でのコンパイル安定性 95% 以上 (PA-5)
-- [ ] SG-1: DualGrid Prefab配置のモックアップが動作する
+- [x] SG-1: DualGrid Prefab配置のコア実装完了 (単セル)
+- [ ] Phase D スコープ承認 + 最初のスライス着手
 
 ## 選別規則
 

@@ -13,9 +13,18 @@
 
 - **ゴール**: Deform パッケージ正式統合と StructureGenerator の主要未完了機能を完了し、Phase C の完了基準を満たす。
 - **期限目安**: 2026-05
-- **状態**: 未着手
-- **進捗**: 0%
+- **状態**: DONE (2026-03-09)
+- **進捗**: 100%
 - **関連マイルストーン**: MG-1, MG-2
+- **完了実績**: PC-1〜PC-5 全完了、品質監査 (HIGH 7件 / MEDIUM 4件) 修正済み、MG-1 MapGenerator統合完了 (19 asmdef)
+
+### LG-2: Phase D 最適化・拡張
+
+- **ゴール**: 高度合成 (PD-1)、ランダム制御 (PD-2)、パフォーマンス最適化 (PD-3)、巨大ファイル分割 (PD-4) を完了
+- **期限目安**: 2026-08
+- **状態**: スコープ定義完了、未着手
+- **進捗**: 10%
+- **関連**: docs/02_design/PHASE_D_SCOPE_DEFINITION.md
 
 ---
 
@@ -39,11 +48,12 @@
 
 ## 短期目標（Next / 今日〜数日）
 
-### SG-1 (新): DualGrid Prefab配置の最小実装
+### SG-1: DualGrid Prefab配置の最小実装
 
 - **ゴール**: DualGridセルにPrefabを配置・表示できる最小限の仕組み
 - **状態**: コア実装完了 (2026-03-16)。Unity実機検証待ち
 - **進捗**: 80%
+- **仕様**: docs/02_design/PREFAB_STAMP_PLACEMENT_SPEC.md (SP-014)
 - **完了基準**:
   - [x] PrefabStampDefinition (ScriptableObject) — 配置ルール定義
   - [x] StampPlacement / StampRegistry — 占有管理・配置データ

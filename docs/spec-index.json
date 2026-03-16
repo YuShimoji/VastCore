@@ -3,19 +3,19 @@
     "id": "SP-001",
     "title": "Dual Grid Terrain System",
     "status": "partial",
-    "pct": 70,
+    "pct": 80,
     "cat": "core",
     "file": "docs/02_design/DualGridTerrainSystem_Spec.md",
-    "summary": "Irregular Grid (Townscaper inspired) テクニカル仕様 v0.2"
+    "summary": "Irregular Grid (Townscaper inspired) テクニカル仕様 v0.3。Phase 1完了、Phase 3 Prefabスタンプ単セル完了。Marching Squares凍結"
   },
   {
     "id": "SP-002",
     "title": "Marching Squares Terrain System",
-    "status": "done",
+    "status": "legacy",
     "pct": 100,
     "cat": "core",
     "file": "docs/02_design/MarchingSquaresTerrainSystem_Spec.md",
-    "summary": "Dual Grid + Marching Squares + Spline + Prefab 配置仕様 v1.0"
+    "summary": "凍結 (2026-03-06)。Prefabスタンプ方式に置換。仕様書は歴史的資料として保持"
   },
   {
     "id": "SP-003",
@@ -55,12 +55,12 @@
   },
   {
     "id": "SP-007",
-    "title": "Terrain Engine Design (Phase 3 / M1)",
+    "title": "Terrain Engine Design (Phase 3 / M1-M2)",
     "status": "partial",
-    "pct": 50,
+    "pct": 70,
     "cat": "core",
     "file": "docs/02_design/TERRAIN_ENGINE_DESIGN.md",
-    "summary": "シード駆動再現性ある地形生成。高さデータ供給源抽象化設計"
+    "summary": "シード駆動再現性ある地形生成。M1/M2コア実装済み。DualGrid高さ供給源として統合。PlayModeテスト未実施"
   },
   {
     "id": "SP-008",
@@ -81,13 +81,13 @@
     "summary": "既存システム統合の設計書 v0.1 (Draft, 未実装)"
   },
   {
-    "id": "SP-010",
+    "id": "SP-014",
     "title": "DualGrid Prefab Stamp Placement",
     "status": "partial",
     "pct": 80,
     "cat": "core",
-    "file": null,
-    "summary": "DualGridセルへのPrefabスタンプ配置システム。ScriptableObject定義、占有管理、Gizmo可視化"
+    "file": "docs/02_design/PREFAB_STAMP_PLACEMENT_SPEC.md",
+    "summary": "DualGridセルへのPrefabスタンプ配置システム。ScriptableObject定義、占有管理、Gizmo可視化。SG-1単セル完了、マルチセル未着手"
   },
   {
     "id": "DS-001",
@@ -241,5 +241,50 @@
     "cat": "system",
     "file": "docs/02_design/POST_PHASE_C_QUICK_WINS.md",
     "summary": "4提案から抽出した4h以内の小タスク一覧 (14項目, 合計~30h)"
+  },
+  {
+    "id": "PD-001",
+    "title": "Phase D Scope Definition",
+    "status": "partial",
+    "pct": 30,
+    "cat": "system",
+    "file": "docs/02_design/PHASE_D_SCOPE_DEFINITION.md",
+    "summary": "Phase D (最適化・拡張) 全体スコープ。PD-1~PD-4の目標・依存・完了基準"
+  },
+  {
+    "id": "PD-002",
+    "title": "Advanced Composition System (PD-1)",
+    "status": "todo",
+    "pct": 0,
+    "cat": "core",
+    "file": "docs/02_design/PHASE_D_SCOPE_DEFINITION.md",
+    "summary": "ComposeModels / LODGenerator / MeshBlender。複数メッシュ統合+LOD自動生成パイプライン"
+  },
+  {
+    "id": "PD-003",
+    "title": "Controlled Random System (PD-2)",
+    "status": "todo",
+    "pct": 0,
+    "cat": "core",
+    "file": "docs/02_design/PHASE_D_SCOPE_DEFINITION.md",
+    "summary": "シード駆動再現可能ランダム。RandomPresetLibrary + BlendShapeRandom"
+  },
+  {
+    "id": "PD-004",
+    "title": "Performance Optimization (PD-3)",
+    "status": "todo",
+    "pct": 0,
+    "cat": "core",
+    "file": "docs/02_design/PHASE_D_SCOPE_DEFINITION.md",
+    "summary": "Job System / Burst Compiler 統合。60FPS安定 + GC Alloc 1MB/frame以下"
+  },
+  {
+    "id": "PD-005",
+    "title": "Large File Decomposition (PD-4)",
+    "status": "todo",
+    "pct": 0,
+    "cat": "infra",
+    "file": "docs/02_design/PHASE_D_SCOPE_DEFINITION.md",
+    "summary": "1000行超ファイル4件の分割。BiomeSpecific/HighQualityPrimitive/CompoundArchitectural/NaturalTerrain"
   }
 ]
