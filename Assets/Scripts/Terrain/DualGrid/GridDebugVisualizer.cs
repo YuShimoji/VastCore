@@ -25,22 +25,34 @@ namespace Vastcore.Terrain.DualGrid
         [Tooltip("TerrainGenerationProfile を指定すると、DualGridHeightSamplingSettings が適用されます")]
         [SerializeField] private TerrainGenerationProfile m_Profile;
         
+        [Header("Stamp Settings")]
+        [Tooltip("テスト配置するスタンプ定義（Inspector上でアサイン）")]
+        [SerializeField] private PrefabStampDefinition m_TestStampDefinition;
+        [Tooltip("テスト配置するセルIDのリスト")]
+        [SerializeField] private int[] m_TestStampCellIds = new int[0];
+        [Tooltip("テスト配置のシード")]
+        [SerializeField] private int m_StampSeed = 42;
+
         [Header("Visualization Settings")]
         [SerializeField] private bool m_ShowNodes = true;
         [SerializeField] private bool m_ShowEdges = true;
         [SerializeField] private bool m_ShowCells = true;
         [SerializeField] private bool m_ShowVerticalStacks = true;
+        [SerializeField] private bool m_ShowStamps = true;
         [SerializeField] private float m_NodeSize = 0.1f;
         [SerializeField] private float m_EdgeWidth = 0.02f;
         [SerializeField] private Color m_NodeColor = Color.yellow;
         [SerializeField] private Color m_EdgeColor = Color.white;
         [SerializeField] private Color m_CellColor = new Color(1f, 0f, 0f, 0.3f);
         [SerializeField] private Color m_StackColor = new Color(0f, 1f, 0f, 0.5f);
+        [SerializeField] private Color m_StampColor = new Color(0f, 0.5f, 1f, 0.7f);
+        [SerializeField] private Color m_OccupiedColor = new Color(1f, 0.5f, 0f, 0.5f);
         #endregion
 
         #region Private Fields
         private IrregularGrid m_Grid;
         private ColumnStack m_ColumnStack;
+        private StampRegistry m_StampRegistry;
         private bool m_IsInitialized = false;
         #endregion
 
@@ -68,17 +80,18 @@ namespace Vastcore.Terrain.DualGrid
         {
             m_Grid = new IrregularGrid();
             m_ColumnStack = new ColumnStack();
-            
+            m_StampRegistry = new StampRegistry();
+
             // グリッドを生成
             m_Grid.GenerateGrid(m_GridRadius);
-            
+
             // Relaxationを適用
             m_Grid.ApplyRelaxation(m_Seed, m_JitterAmount, m_UsePerlinNoise);
-            
+
             // 高さを生成
             // プロファイルが指定されている場合は、DualGridHeightSamplingSettings を渡す
             DualGridHeightSamplingSettings samplingSettings = m_Profile != null ? m_Profile.DualGridHeightSampling : null;
-            
+
             if (m_UseHeightMap && m_HeightMap != null)
             {
                 VerticalExtrusionGenerator.GenerateFromHeightMap(m_Grid, m_ColumnStack, m_HeightMap, m_MaxHeight, samplingSettings);
@@ -87,8 +100,53 @@ namespace Vastcore.Terrain.DualGrid
             {
                 VerticalExtrusionGenerator.GenerateFromNoise(m_Grid, m_ColumnStack, m_Seed, m_MaxHeight);
             }
-            
+
+            // テスト用スタンプ配置
+            PlaceTestStamps();
+
             m_IsInitialized = true;
+        }
+
+        /// <summary>
+        /// Inspector指定のテスト用スタンプを配置
+        /// </summary>
+        private void PlaceTestStamps()
+        {
+            if (m_TestStampDefinition == null || m_TestStampCellIds == null || m_TestStampCellIds.Length == 0)
+            {
+                return;
+            }
+
+            System.Random random = new System.Random(m_StampSeed);
+
+            foreach (int cellId in m_TestStampCellIds)
+            {
+                Cell cell = FindCellById(cellId);
+                if (cell == null)
+                {
+                    continue;
+                }
+
+                float rotation = m_TestStampDefinition.GetRandomRotation(random);
+                float scale = m_TestStampDefinition.GetRandomScale(random);
+                m_StampRegistry.Place(m_TestStampDefinition, cell, m_ColumnStack, rotation, scale);
+            }
+        }
+
+        /// <summary>
+        /// セルIDからCellを検索
+        /// </summary>
+        private Cell FindCellById(int _cellId)
+        {
+            foreach (Cell cell in m_Grid.Cells)
+            {
+                if (cell.Id == _cellId)
+                {
+                    return cell;
+                }
+            }
+
+            return null;
         }
         #endregion
 
@@ -127,6 +185,12 @@ namespace Vastcore.Terrain.DualGrid
             if (m_ShowVerticalStacks)
             {
                 DrawVerticalStacks();
+            }
+
+            // スタンプを描画
+            if (m_ShowStamps)
+            {
+                DrawStamps();
             }
         }
         
@@ -222,6 +286,48 @@ namespace Vastcore.Terrain.DualGrid
                 }
             }
         }
+
+        /// <summary>
+        /// 配置済みスタンプをGizmoで描画
+        /// </summary>
+        private void DrawStamps()
+        {
+            if (m_StampRegistry == null || m_StampRegistry.Count == 0)
+            {
+                return;
+            }
+
+            foreach (StampPlacement placement in m_StampRegistry.Placements)
+            {
+                Cell cell = FindCellById(placement.AnchorCellId);
+                if (cell == null)
+                {
+                    continue;
+                }
+
+                Vector3 center = cell.GetCenter();
+                Vector3 stampPos = new Vector3(center.x, placement.Layer * 1.0f + 0.5f, center.z);
+
+                // スタンプ位置にソリッドキューブを描画
+                Gizmos.color = m_StampColor;
+                Gizmos.DrawCube(stampPos, new Vector3(0.6f, 0.6f, 0.6f) * placement.Scale);
+
+                // ワイヤーフレーム外枠
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawWireCube(stampPos, new Vector3(0.7f, 0.7f, 0.7f) * placement.Scale);
+            }
+
+            // 占有セルをハイライト
+            foreach (Cell cell in m_Grid.Cells)
+            {
+                if (m_StampRegistry.IsOccupied(cell.Id))
+                {
+                    Gizmos.color = m_OccupiedColor;
+                    Vector3 center = cell.GetCenter();
+                    Gizmos.DrawCube(center, new Vector3(0.4f, 0.1f, 0.4f));
+                }
+            }
+        }
         #endregion
 
         #region Public Methods
@@ -231,6 +337,30 @@ namespace Vastcore.Terrain.DualGrid
         public void RegenerateGrid()
         {
             InitializeGrid();
+        }
+
+        /// <summary>
+        /// StampRegistryへの参照を取得（テスト・Editor拡張用）
+        /// </summary>
+        public StampRegistry GetStampRegistry()
+        {
+            return m_StampRegistry;
+        }
+
+        /// <summary>
+        /// IrregularGridへの参照を取得（テスト・Editor拡張用）
+        /// </summary>
+        public IrregularGrid GetGrid()
+        {
+            return m_Grid;
+        }
+
+        /// <summary>
+        /// ColumnStackへの参照を取得（テスト・Editor拡張用）
+        /// </summary>
+        public ColumnStack GetColumnStack()
+        {
+            return m_ColumnStack;
         }
         #endregion
     }
