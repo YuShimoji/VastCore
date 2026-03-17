@@ -161,7 +161,10 @@ namespace Vastcore.Terrain.DualGrid
 
             if (instance != null)
             {
-                Object.DestroyImmediate(instance);
+                if (Application.isPlaying)
+                    Object.Destroy(instance);
+                else
+                    Object.DestroyImmediate(instance);
             }
 
             m_Instances.Remove(_placementId);
@@ -177,7 +180,10 @@ namespace Vastcore.Terrain.DualGrid
             {
                 if (kvp.Value != null)
                 {
-                    Object.DestroyImmediate(kvp.Value);
+                    if (Application.isPlaying)
+                        Object.Destroy(kvp.Value);
+                    else
+                        Object.DestroyImmediate(kvp.Value);
                 }
             }
 
