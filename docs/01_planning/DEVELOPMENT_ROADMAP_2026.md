@@ -398,17 +398,16 @@ DeformIntegrationTestRunner.cs (Testing/) ← テスト
 - **依存**: PC-2
 - **検証**: StructureGenerator 全7タブの機能テスト完了
 
-#### PC-4: GeologicalFormation エロージョン実装
+#### PC-4: エロージョン実装 — **コア実装完了 (2026-03-17)**
+
 - **サイズ**: M
 - **対象ファイル**:
-  - 修正: `Scripts/Core/GeologicalFormationGenerator.cs` (PB-5 後は Terrain 配下)
-    - L136: erosionRate パラメータの実装
-    - L143: エロージョンシミュレーション実装
-  - 新規: `Scripts/Terrain/Erosion/HydraulicErosion.cs` — 水力エロージョン
-  - 新規: `Scripts/Terrain/Erosion/ThermalErosion.cs` — 熱エロージョン
-  - 新規: `Scripts/Testing/EditMode/TerrainTests/ErosionTests.cs`
-- **依存**: PB-5
-- **検証**: エロージョンの視覚的出力 + 単体テスト
+  - 既存: `Scripts/Core/GeologicalFormationGenerator.cs` — 地質層レベルエロージョンは RockLayerPhysicalProperties で実装済み
+  - [x] 新規: `Scripts/Terrain/Erosion/HydraulicErosion.cs` — ドロップレットベース水力エロージョン
+  - [x] 新規: `Scripts/Terrain/Erosion/ThermalErosion.cs` — 安息角ベース熱エロージョン
+  - [x] 新規: `Tests/EditMode/ErosionTests.cs` — 9件テスト
+- **依存**: なし (Pure C#)
+- **検証**: EditMode テスト + Unity実機での視覚出力確認待ち
 
 #### PC-5: VastcoreGameManager TerrainFacade 接続 — **コア実装完了 (2026-03-17)**
 
