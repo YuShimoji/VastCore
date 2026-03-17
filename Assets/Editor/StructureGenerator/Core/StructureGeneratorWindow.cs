@@ -80,6 +80,42 @@ namespace Vastcore.Editor.Generation
             {
                 _tabs[_selectedTab]?.DrawGUI();
             }
+
+            // --- Stamp Export セクション ---
+            DrawStampExportSection();
+        }
+
+        /// <summary>
+        /// 選択中の構造物を PrefabStampDefinition にエクスポートする UI
+        /// </summary>
+        private void DrawStampExportSection()
+        {
+            var selected = Selection.activeGameObject;
+            if (selected == null) return;
+
+            // MeshFilter を持つオブジェクトのみ対象
+            var mf = selected.GetComponent<MeshFilter>();
+            if (mf == null || mf.sharedMesh == null) return;
+
+            EditorGUILayout.Space(10);
+            EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+            EditorGUILayout.LabelField("Stamp Export", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                $"選択中: {selected.name} ({mf.sharedMesh.vertexCount} vertices)\n" +
+                "Prefab + PrefabStampDefinition を自動生成し、DualGrid 配置で使用可能にします。",
+                MessageType.Info);
+
+            if (GUILayout.Button("Export as Stamp", GUILayout.Height(30)))
+            {
+                var def = StampExporter.ExportAsStamp(selected);
+                if (def != null)
+                {
+                    EditorUtility.DisplayDialog(
+                        "Stamp Export",
+                        $"エクスポート完了:\n{def.DisplayName}\n\nTerrainWithStampsBootstrap の stampDefinition にアサインして使用してください。",
+                        "OK");
+                }
+            }
         }
         
         private void OnSceneGUI(SceneView sceneView)

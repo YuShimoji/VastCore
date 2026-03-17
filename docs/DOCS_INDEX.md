@@ -75,7 +75,7 @@
 | [TEST_PLAN.md](01_planning/TEST_PLAN.md) | テスト計画（全体） |
 | [WEB_DEVELOPMENT_ROADMAP.md](01_planning/WEB_DEVELOPMENT_ROADMAP.md) | Web開発ロードマップ |
 
-### 02_design/ — 設計仕様 (27 files)
+### 02_design/ — 設計仕様 (28 files)
 
 | ファイル | 役割 |
 |---------|------|
@@ -106,6 +106,7 @@
 | [ECOSYSTEM_GENERATION_SPEC.md](02_design/ECOSYSTEM_GENERATION_SPEC.md) | エコシステム生成 (SP-011, todo) |
 | [DESTRUCTIBLE_ARCHITECTURE_SPEC.md](02_design/DESTRUCTIBLE_ARCHITECTURE_SPEC.md) | 破壊可能建造物 (SP-012, todo) |
 | [COMPOSITE_STRUCTURE_RULES_SPEC.md](02_design/COMPOSITE_STRUCTURE_RULES_SPEC.md) | 複合構造物組立ルール (SP-013, todo) |
+| [STAMP_EXPORT_PIPELINE_SPEC.md](02_design/STAMP_EXPORT_PIPELINE_SPEC.md) | Stamp Export Pipeline (SP-017, partial) |
 
 ### 03_guides/ — ガイド・手順書 (15 files)
 

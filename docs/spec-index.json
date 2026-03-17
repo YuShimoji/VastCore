@@ -99,6 +99,15 @@
     "summary": "Hydraulic+Thermal erosion。Pure C#実装。ErosionSettings SO。TerrainChunk.Build統合。EditModeテスト付き"
   },
   {
+    "id": "SP-017",
+    "title": "Stamp Export Pipeline",
+    "status": "partial",
+    "pct": 50,
+    "cat": "core",
+    "file": "docs/02_design/STAMP_EXPORT_PIPELINE_SPEC.md",
+    "summary": "StructureGenerator→Prefab→PrefabStampDefinition変換。パイプライン貫通の最小ブリッジ。StampExporter実装済み、Unity実機検証待ち"
+  },
+  {
     "id": "DS-001",
     "title": "Assembly Architecture (SSOT)",
     "status": "done",
