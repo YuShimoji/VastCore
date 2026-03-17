@@ -5,12 +5,13 @@ Last Updated: 2026-03-17
 ## Mission
 
 広大な景観に映える、ユニークで巨大な人工構造物をプロシージャルに生成する基盤の確立。
-Phase A/B 完了。Phase C 機能完成に着手中。
+Phase A/B/C 完了。SG-1/SG-2 + PD-4 完了。Phase D 設計中。
 
 ## Current Focus
 
-**パイプライン統合** — Erosion→Terrain、Stamp→Terrain高さ、DualGrid+Terrain統合オーケストレータ完了 (2026-03-17)。
-PC-1〜PC-5 全コア実装完了。Unity実機での機能動作検証待ち（コンパイルは通過確認済み）。
+**Phase D 準備 + ドキュメント整合** — local/origin統合完了 (2026-03-17)。
+spec-index整合、DOCS_INDEX更新、legacy仕様注記追加。
+次: Phase Dスコープ承認 + 最初のスライス着手。HUMAN_AUTHORITY判断待ち（最終体験像、バリエーション手段）。
 
 ## Done 条件
 
@@ -20,6 +21,7 @@ PC-1〜PC-5 全コア実装完了。Unity実機での機能動作検証待ち（
 - [x] SG-1: DualGrid Prefab配置の単一セル実装完了
 - [x] SG-2: マルチセルフットプリント実装完了
 - [ ] SG-1 + SG-2: Unity実機検証 (コンパイル確認 + Gizmo目視)
+- [ ] Phase D スコープ承認 + 最初のスライス着手
 
 ## 選別規則
 
