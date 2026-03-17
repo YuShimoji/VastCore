@@ -237,7 +237,7 @@
     "id": "DS-010",
     "title": "Post Phase C Quick Wins",
     "status": "partial",
-    "pct": 0,
+    "pct": 5,
     "cat": "system",
     "file": "docs/02_design/POST_PHASE_C_QUICK_WINS.md",
     "summary": "4提案から抽出した4h以内の小タスク一覧 (14項目, 合計~30h)"
