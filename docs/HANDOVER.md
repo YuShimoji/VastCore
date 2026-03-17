@@ -171,7 +171,15 @@ Testing (テスト用スタブ・ヘルパー)
 
 ## 7. セッション履歴
 
-### 2026-03-17: local/origin統合 + spec-index整合 (夜間自走)
+### 2026-03-18: パイプライン貫通 + タスク整理 + push (夜間自走 session 2)
+
+| # | コミット | 内容 |
+|---|---------|------|
+| 4 | `57ad88a` | feat(SP-017): StampExporter — StructureGenerator→DualGrid配置ブリッジ |
+| 5 | `45b8e39` | docs: TASK_026(FROZEN), 027(DEFERRED), 029(OBSOLETE) クローズ + cascade 31ブランチ削除 |
+| 6 | (pending) | docs: DOCS_INDEX 04_reports 21件登録 |
+
+### 2026-03-17: local/origin統合 + spec-index整合 (夜間自走 session 1)
 
 | # | コミット | 内容 |
 |---|---------|------|

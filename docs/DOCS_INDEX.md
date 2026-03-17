@@ -130,7 +130,29 @@
 
 ### 04_reports/ — レポート・検証記録 (21 files)
 
-Terrain Vertical Slice、WorldGen M0-M3、Phase A/B 完了レポート等（2026-03-07整理済み、旧レポートはgit履歴に保存）。
+| ファイル | 役割 |
+|---------|------|
+| [COMPILE_VERIFICATION_2026-02.md](04_reports/COMPILE_VERIFICATION_2026-02.md) | コンパイル検証レポート (2026-02) |
+| [LEGACY_UI_MIGRATION_REPORT.md](04_reports/LEGACY_UI_MIGRATION_REPORT.md) | レガシーUI移行レポート |
+| [ROADMAP_2026-03-02.md](04_reports/ROADMAP_2026-03-02.md) | ロードマップスナップショット (2026-03-02) |
+| [HANDOVER_2026-02-12_TerrainVerticalSlice_Closeout.md](04_reports/HANDOVER_2026-02-12_TerrainVerticalSlice_Closeout.md) | Vertical Slice クローズアウト |
+| [HANDOVER_2026-02-12_TerrainVerticalSlice_QuickStart.md](04_reports/HANDOVER_2026-02-12_TerrainVerticalSlice_QuickStart.md) | Vertical Slice クイックスタート |
+| [REPORT_PB-2_CsgProviderResolverTestStabilization.md](04_reports/REPORT_PB-2_CsgProviderResolverTestStabilization.md) | PB-2 CSG テスト安定化 |
+| [REPORT_TASK_PA-2_ProBuilderApiMigration.md](04_reports/REPORT_TASK_PA-2_ProBuilderApiMigration.md) | PA-2 ProBuilder API 移行 |
+| [REPORT_TASK_031_VerticalSliceKickoff_2026-02-11.md](04_reports/REPORT_TASK_031_VerticalSliceKickoff_2026-02-11.md) | TASK_031 Vertical Slice キックオフ |
+| [REPORT_TASK_032_DualGridHeightMapProfileMapping_2026-02-11.md](04_reports/REPORT_TASK_032_DualGridHeightMapProfileMapping_2026-02-11.md) | TASK_032 DualGrid HeightMap 設計 |
+| [REPORT_TASK_033_DualGridHeightMapProfileMappingImplementation.md](04_reports/REPORT_TASK_033_DualGridHeightMapProfileMappingImplementation.md) | TASK_033 DualGrid HeightMap 実装 |
+| [REPORT_TASK_034_UnityValidation_DualGridProfileMapping.md](04_reports/REPORT_TASK_034_UnityValidation_DualGridProfileMapping.md) | TASK_034 Unity 検証 |
+| [REPORT_TASK_035_AutoCompileValidationAutomation.md](04_reports/REPORT_TASK_035_AutoCompileValidationAutomation.md) | TASK_035 自動コンパイル検証 |
+| [REPORT_TASK_036_DualGridInspectorProfilePreview.md](04_reports/REPORT_TASK_036_DualGridInspectorProfilePreview.md) | TASK_036 Inspector プレビュー |
+| [REPORT_TASK_WORKFLOW_SYNC_20260223.md](04_reports/REPORT_TASK_WORKFLOW_SYNC_20260223.md) | ワークフロー同期 |
+| [REPORT_TASK_WORLDGEN_M0_M1_20260222.md](04_reports/REPORT_TASK_WORLDGEN_M0_M1_20260222.md) | WorldGen M0-M1 |
+| [REPORT_TASK_WORLDGEN_M2_20260222.md](04_reports/REPORT_TASK_WORLDGEN_M2_20260222.md) | WorldGen M2 |
+| [REPORT_TASK_WORLDGEN_M2_EDITOR_OVERLAY_20260222.md](04_reports/REPORT_TASK_WORLDGEN_M2_EDITOR_OVERLAY_20260222.md) | WorldGen M2 Editor Overlay |
+| [REPORT_TASK_WORLDGEN_M2_VISUALIZATION_20260222.md](04_reports/REPORT_TASK_WORLDGEN_M2_VISUALIZATION_20260222.md) | WorldGen M2 可視化 |
+| [REPORT_TASK_WORLDGEN_M3_20260222.md](04_reports/REPORT_TASK_WORLDGEN_M3_20260222.md) | WorldGen M3 |
+| [REPORT_TASK_WORLDGEN_M3_FOLLOW_20260222.md](04_reports/REPORT_TASK_WORLDGEN_M3_FOLLOW_20260222.md) | WorldGen M3 フォローアップ |
+| [REPORT_TASK_WORLDGEN_M3_RECOMMENDED_20260222.md](04_reports/REPORT_TASK_WORLDGEN_M3_RECOMMENDED_20260222.md) | WorldGen M3 推奨事項 |
 
 ### tasks/ — タスクチケット
 
