@@ -4,7 +4,7 @@
 
 ## Summary
 - Total: 36 tasks
-- Done: 29 | In Progress: 0 | Pending: 1 | Superseded: 1 | Legacy: 5
+- Done: 29 | In Progress: 0 | Frozen: 1 | Deferred: 1 | Obsolete: 1 | Superseded: 1 | Legacy: 3
 
 ## Phase A (Terrain Core Stabilization)
 | ID | Title | Status | Summary |
@@ -62,11 +62,11 @@
 | 021 | Merge Integration & Verification | SUPERSEDED | マージ後の統合検証。PB-1/PB-2でテスト基盤が別途整備され陳腐化 (2026-03-17 close) |
 | 022 | Release Cyclic Dependencies | DONE | Assembly-CSharp と Vastcore.* 間の循環依存を解消 |
 | 023 | Merge Conflict Resolution (origin/main into develop) | DONE | origin/main から develop への60+件のマージコンフリクト解決 |
-| 026 | 3D Voxel Terrain Hybrid System - Phase 1 | OPEN | Marching Cubesアルゴリズムを用いたハイブリッド・ボクセル地形生成システムの基盤実装 |
-| 027 | MCP Unity Verification | OPEN | Model Context Protocol (MCP) パッケージの動作検証 |
+| 026 | 3D Voxel Terrain Hybrid System - Phase 1 | FROZEN | Prefabスタンプ方式に置換。Decision Log 2026-03-06 |
+| 027 | MCP Unity Verification | DEFERRED | .NET 10.0必須で環境未整備。環境整備後に再検討 |
 | 028 | Fix PrimitiveTerrain Compilation | DONE | PrimitiveTerrainObject の IPoolable 実装エラー修正 |
 | 028b | MCPForUnity 重複アセンブリ定義の解消 | DONE | Assets/ と Packages/ の MCPForUnity 重複を解消 |
-| 029 | Unity Editorコンパイルエラー修正の検証 | BLOCKED | develop ブランチのコンパイルエラー修正3件をUnity Editorで検証 |
+| 029 | Unity Editorコンパイルエラー修正の検証 | OBSOLETE | developブランチ廃止(trunk-based移行)により前提消滅 |
 | 030 | Worktree整理とPush統合 | DONE | 複数ブランチでの未Pushコミットを整理しworktree状態をクリーンに |
 
 ## Notes
