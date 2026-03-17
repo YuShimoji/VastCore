@@ -3,10 +3,10 @@
     "id": "SP-001",
     "title": "Dual Grid Terrain System",
     "status": "partial",
-    "pct": 70,
+    "pct": 85,
     "cat": "core",
     "file": "docs/02_design/DualGridTerrainSystem_Spec.md",
-    "summary": "Irregular Grid (Townscaper inspired) テクニカル仕様 v0.2"
+    "summary": "Irregular Grid (Townscaper inspired) テクニカル仕様。Grid+Relaxation+ColumnStack+Stamp+Hex検索 実装済み"
   },
   {
     "id": "SP-002",
@@ -21,7 +21,7 @@
     "id": "SP-003",
     "title": "DualGrid HeightMap Profile Mapping",
     "status": "partial",
-    "pct": 60,
+    "pct": 85,
     "cat": "core",
     "file": "docs/02_design/DUALGRID_HEIGHTMAP_PROFILE_MAPPING_SPEC.md",
     "summary": "VerticalExtrusionGenerator の profile-driven mapping 仕様 (Draft v0.1)"
@@ -57,7 +57,7 @@
     "id": "SP-007",
     "title": "Terrain Engine Design (Phase 3 / M1)",
     "status": "partial",
-    "pct": 50,
+    "pct": 65,
     "cat": "core",
     "file": "docs/02_design/TERRAIN_ENGINE_DESIGN.md",
     "summary": "シード駆動再現性ある地形生成。高さデータ供給源抽象化設計"
