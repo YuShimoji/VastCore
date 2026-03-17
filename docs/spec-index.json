@@ -74,11 +74,11 @@
   {
     "id": "SP-009",
     "title": "DualGrid Terrain Integration Design",
-    "status": "todo",
-    "pct": 0,
+    "status": "partial",
+    "pct": 75,
     "cat": "core",
     "file": "docs/02_design/DualGridTerrainSystem_Integration_Design.md",
-    "summary": "既存システム統合の設計書 v0.1 (Draft, 未実装)"
+    "summary": "DualGrid+Terrain統合設計。TerrainWithStampsBootstrap+IHeightSampler実装済み。EditorWindow統合未着手"
   },
   {
     "id": "SP-010",
@@ -88,6 +88,15 @@
     "cat": "core",
     "file": "docs/02_design/SP010_PrefabStampPlacement_Spec.md",
     "summary": "DualGridセルへのPrefabスタンプ配置システム。ScriptableObject定義、単一/マルチセル占有管理、Gizmo可視化。SG-1(単一セル)+SG-2(マルチセルフットプリント)完了"
+  },
+  {
+    "id": "SP-016",
+    "title": "Erosion System",
+    "status": "done",
+    "pct": 100,
+    "cat": "core",
+    "file": "docs/02_design/EROSION_SYSTEM_SPEC.md",
+    "summary": "Hydraulic+Thermal erosion。Pure C#実装。ErosionSettings SO。TerrainChunk.Build統合。EditModeテスト付き"
   },
   {
     "id": "DS-001",

@@ -75,7 +75,7 @@
 | [TEST_PLAN.md](01_planning/TEST_PLAN.md) | テスト計画（全体） |
 | [WEB_DEVELOPMENT_ROADMAP.md](01_planning/WEB_DEVELOPMENT_ROADMAP.md) | Web開発ロードマップ |
 
-### 02_design/ — 設計仕様 (18 files)
+### 02_design/ — 設計仕様 (27 files)
 
 | ファイル | 役割 |
 |---------|------|
@@ -97,8 +97,17 @@
 | [TERRAIN_ENGINE_DESIGN.md](02_design/TERRAIN_ENGINE_DESIGN.md) | テレインエンジン設計 |
 | [Diagram.md](02_design/Diagram.md) | 設計図表 |
 | [README.md](02_design/README.md) | 設計ディレクトリガイド |
+| [SP010_PrefabStampPlacement_Spec.md](02_design/SP010_PrefabStampPlacement_Spec.md) | Prefab Stamp 配置仕様 (SP-010) |
+| [PREFAB_STAMP_PLACEMENT_SPEC.md](02_design/PREFAB_STAMP_PLACEMENT_SPEC.md) | Prefab Stamp 配置仕様 (旧版) |
+| [EROSION_SYSTEM_SPEC.md](02_design/EROSION_SYSTEM_SPEC.md) | Erosion System 仕様 (SP-016) |
+| [PHASE_D_SCOPE_DEFINITION.md](02_design/PHASE_D_SCOPE_DEFINITION.md) | Phase D スコープ定義 (PD-001) |
+| [POST_PHASE_C_QUICK_WINS.md](02_design/POST_PHASE_C_QUICK_WINS.md) | Phase C 後 Quick Wins (DS-010) |
+| [CLIMATE_VISUAL_INTEGRATION_SPEC.md](02_design/CLIMATE_VISUAL_INTEGRATION_SPEC.md) | 気候視覚統合 (SP-015, todo) |
+| [ECOSYSTEM_GENERATION_SPEC.md](02_design/ECOSYSTEM_GENERATION_SPEC.md) | エコシステム生成 (SP-011, todo) |
+| [DESTRUCTIBLE_ARCHITECTURE_SPEC.md](02_design/DESTRUCTIBLE_ARCHITECTURE_SPEC.md) | 破壊可能建造物 (SP-012, todo) |
+| [COMPOSITE_STRUCTURE_RULES_SPEC.md](02_design/COMPOSITE_STRUCTURE_RULES_SPEC.md) | 複合構造物組立ルール (SP-013, todo) |
 
-### 03_guides/ — ガイド・手順書 (14 files)
+### 03_guides/ — ガイド・手順書 (15 files)
 
 | ファイル | 役割 |
 |---------|------|
@@ -116,6 +125,7 @@
 | [UI_MIGRATION_NOTES.md](03_guides/UI_MIGRATION_NOTES.md) | UI 移行ノート |
 | [TASK_034_MANUAL_VALIDATION_CHECKLIST.md](03_guides/TASK_034_MANUAL_VALIDATION_CHECKLIST.md) | Task 034 手動検証チェックリスト |
 | [README.md](03_guides/README.md) | ガイドディレクトリガイド |
+| [QUICKSTART_VERIFICATION.md](03_guides/QUICKSTART_VERIFICATION.md) | Bootstrap 検証クイックスタート |
 
 ### 04_reports/ — レポート・検証記録 (21 files)
 
