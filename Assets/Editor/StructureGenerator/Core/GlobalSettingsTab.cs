@@ -25,10 +25,12 @@ namespace Vastcore.Editor.Generation
         // --- UI用変数 ---
         private Vector2 _scrollPosition;
 
+        private const string k_PrefsPrefix = "VastcoreGlobalSettings_";
+
         public GlobalSettingsTab(StructureGeneratorWindow parent)
         {
             _parent = parent;
-            // TODO: 設定のロード/保存機能を追加
+            LoadSettings();
         }
 
         public void DrawGUI()
@@ -73,8 +75,44 @@ namespace Vastcore.Editor.Generation
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("生成設定", EditorStyles.boldLabel);
 
+            EditorGUI.BeginChangeCheck();
             DefaultSpawnPosition = EditorGUILayout.Vector3Field("デフォルト生成位置", DefaultSpawnPosition);
             GlobalStructureScale = EditorGUILayout.Slider("グローバルスケール", GlobalStructureScale, 0.1f, 50f);
+            if (EditorGUI.EndChangeCheck())
+            {
+                SaveSettings();
+            }
+
+            EditorGUILayout.Space();
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("設定を保存"))
+            {
+                SaveSettings();
+            }
+            if (GUILayout.Button("設定をリセット"))
+            {
+                DefaultSpawnPosition = Vector3.zero;
+                GlobalStructureScale = 5f;
+                SaveSettings();
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void SaveSettings()
+        {
+            EditorPrefs.SetFloat(k_PrefsPrefix + "SpawnX", DefaultSpawnPosition.x);
+            EditorPrefs.SetFloat(k_PrefsPrefix + "SpawnY", DefaultSpawnPosition.y);
+            EditorPrefs.SetFloat(k_PrefsPrefix + "SpawnZ", DefaultSpawnPosition.z);
+            EditorPrefs.SetFloat(k_PrefsPrefix + "Scale", GlobalStructureScale);
+        }
+
+        private void LoadSettings()
+        {
+            float x = EditorPrefs.GetFloat(k_PrefsPrefix + "SpawnX", 0f);
+            float y = EditorPrefs.GetFloat(k_PrefsPrefix + "SpawnY", 0f);
+            float z = EditorPrefs.GetFloat(k_PrefsPrefix + "SpawnZ", 0f);
+            DefaultSpawnPosition = new Vector3(x, y, z);
+            GlobalStructureScale = EditorPrefs.GetFloat(k_PrefsPrefix + "Scale", 5f);
         }
 
         public void OnSceneGUI()

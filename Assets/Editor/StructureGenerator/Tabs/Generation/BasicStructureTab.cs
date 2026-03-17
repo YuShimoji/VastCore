@@ -15,6 +15,8 @@ namespace Vastcore.Editor.Generation
         // --- データクラス ---
         private class CylinderParams { public int subdivisions = 12; public float radius = 1f; public float height = 2f; }
         private class TorusParams { public int rows = 12; public int columns = 24; public float innerRadius = 0.5f; public float outerRadius = 1f; }
+        private class ArchParams { public float width = 3f; public float height = 3f; public float depth = 0.5f; public int segments = 8; }
+        private class PyramidParams { public int sides = 4; public float height = 3f; }
         
         // --- IStructureTab 実装 ---
         public TabCategory Category => TabCategory.Generation;
@@ -34,6 +36,8 @@ namespace Vastcore.Editor.Generation
         // --- 形状別パラメータ ---
         private CylinderParams _cylinderParams = new CylinderParams();
         private TorusParams _torusParams = new TorusParams();
+        private ArchParams _archParams = new ArchParams();
+        private PyramidParams _pyramidParams = new PyramidParams();
         
         public BasicStructureTab(StructureGeneratorWindow parent)
         {
@@ -87,7 +91,16 @@ namespace Vastcore.Editor.Generation
                     _torusParams.outerRadius = EditorGUILayout.Slider("大半径", _torusParams.outerRadius, 0.1f, 20f);
                     _torusParams.innerRadius = EditorGUILayout.Slider("小半径", _torusParams.innerRadius, 0.05f, _torusParams.outerRadius);
                     break;
-                // 他の形状も同様に追加...
+                case BasicShapeType.Arch:
+                    _archParams.width = EditorGUILayout.Slider("幅", _archParams.width, 0.5f, 20f);
+                    _archParams.height = EditorGUILayout.Slider("高さ", _archParams.height, 0.5f, 20f);
+                    _archParams.depth = EditorGUILayout.Slider("奥行き", _archParams.depth, 0.1f, 5f);
+                    _archParams.segments = EditorGUILayout.IntSlider("セグメント数", _archParams.segments, 3, 32);
+                    break;
+                case BasicShapeType.Pyramid:
+                    _pyramidParams.sides = EditorGUILayout.IntSlider("底面辺数", _pyramidParams.sides, 3, 12);
+                    _pyramidParams.height = EditorGUILayout.Slider("高さ", _pyramidParams.height, 0.5f, 20f);
+                    break;
                 default:
                     EditorGUILayout.HelpBox("この形状に追加のパラメータはありません。", MessageType.None);
                     break;
@@ -133,8 +146,18 @@ namespace Vastcore.Editor.Generation
                 case BasicShapeType.Wall:
                     pbMesh = ShapeGenerator.CreateShape(ShapeType.Cube);
                     pbMesh.transform.localScale = new Vector3(5f, 3f, 0.2f) * _parent.GlobalSettings.GlobalStructureScale;
-                        break;
-                 // TODO: Arch, Pyramid
+                    break;
+                case BasicShapeType.Arch:
+                    pbMesh = ShapeGenerator.CreateShape(ShapeType.Arch);
+                    float archScale = _parent.GlobalSettings.GlobalStructureScale;
+                    pbMesh.transform.localScale = new Vector3(
+                        _archParams.width * archScale,
+                        _archParams.height * archScale,
+                        _archParams.depth * archScale);
+                    break;
+                case BasicShapeType.Pyramid:
+                    pbMesh = CreateManualPyramid();
+                    break;
                 }
                 
                 if (pbMesh != null)
@@ -242,6 +265,46 @@ namespace Vastcore.Editor.Generation
             ProBuilderMesh pbMesh = ProBuilderMesh.Create(vertices, faces);
             float scale = _parent.GlobalSettings.GlobalStructureScale;
             pbMesh.transform.localScale = Vector3.one * scale;
+            return pbMesh;
+        }
+
+        private ProBuilderMesh CreateManualPyramid()
+        {
+            int sides = _pyramidParams.sides;
+            float height = _pyramidParams.height;
+            float radius = _parent.GlobalSettings.GlobalStructureScale / 2f;
+
+            List<Vector3> vertices = new List<Vector3>();
+
+            // 頂点 (apex)
+            vertices.Add(new Vector3(0f, height, 0f));
+
+            // 底面の頂点
+            for (int i = 0; i < sides; i++)
+            {
+                float angle = (float)i / sides * 360f * Mathf.Deg2Rad;
+                float x = Mathf.Cos(angle) * radius;
+                float z = Mathf.Sin(angle) * radius;
+                vertices.Add(new Vector3(x, 0f, z));
+            }
+
+            List<Face> faces = new List<Face>();
+
+            // 側面 (三角形: apex + 底辺2頂点)
+            for (int i = 0; i < sides; i++)
+            {
+                int current = i + 1;
+                int next = (i + 1) % sides + 1;
+                faces.Add(new Face(new int[] { 0, next, current }));
+            }
+
+            // 底面 (三角形ファン)
+            for (int i = 0; i < sides - 2; i++)
+            {
+                faces.Add(new Face(new int[] { 1, i + 2, i + 3 }));
+            }
+
+            ProBuilderMesh pbMesh = ProBuilderMesh.Create(vertices, faces);
             return pbMesh;
         }
 

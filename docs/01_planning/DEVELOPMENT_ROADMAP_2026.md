@@ -387,13 +387,14 @@ DeformIntegrationTestRunner.cs (Testing/) ← テスト
 - **依存**: PA-2
 - **検証**: CSG Union/Subtract/Intersect + Blend の全操作が Editor 上で動作
 
-#### PC-3: StructureGenerator 残タスク完了
+#### PC-3: StructureGenerator 残タスク完了 — **コア TODO 解消完了 (2026-03-17)**
+
 - **サイズ**: M
 - **対象ファイル**:
-  - 修正: `Editor/StructureGenerator/Tabs/Generation/BasicStructureTab.cs:137` — Arch, Pyramid 対応
-  - 修正: `Editor/StructureGenerator/Core/GlobalSettingsTab.cs:31` — 設定ロード/保存機能
-  - 修正: `Editor/StructureGenerator/Tabs/Editing/RandomControlTab.cs` — SG-2 残テスト項目
-  - 新規(必要時): `Editor/StructureGenerator/Tabs/Editing/RandomControlPresetManager.cs` — RC-1 プリセット管理
+  - [x] 修正: `Editor/StructureGenerator/Tabs/Generation/BasicStructureTab.cs` — Arch (ProBuilder ShapeType.Arch) + Pyramid (手動メッシュ生成) 対応
+  - [x] 修正: `Editor/StructureGenerator/Core/GlobalSettingsTab.cs` — EditorPrefs による設定ロード/保存/リセット機能
+  - 未対応: `Editor/StructureGenerator/Tabs/Editing/RandomControlTab.cs` — SG-2 残テスト項目
+  - 未対応: `Editor/StructureGenerator/Tabs/Editing/RandomControlPresetManager.cs` — RC-1 プリセット管理
 - **依存**: PC-2
 - **検証**: StructureGenerator 全7タブの機能テスト完了
 
