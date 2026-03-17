@@ -2,7 +2,7 @@
 
 ## 基本情報
 
-- **最終更新**: 2026-03-16
+- **最終更新**: 2026-03-17
 - **更新者**: Claude Code (Opus 4.6)
 
 ---
@@ -39,11 +39,11 @@
 
 ## 短期目標（Next / 今日〜数日）
 
-### SG-1 (新): DualGrid Prefab配置の最小実装
+### SG-1: DualGrid Prefab配置の最小実装
 
 - **ゴール**: DualGridセルにPrefabを配置・表示できる最小限の仕組み
-- **状態**: コア実装完了 (2026-03-16)。Unity実機検証待ち
-- **進捗**: 80%
+- **状態**: コア実装完了 (2026-03-16)
+- **進捗**: 90%
 - **完了基準**:
   - [x] PrefabStampDefinition (ScriptableObject) — 配置ルール定義
   - [x] StampPlacement / StampRegistry — 占有管理・配置データ
@@ -53,7 +53,20 @@
   - [ ] Unity Editor でのコンパイル確認
   - [ ] Inspector でのGizmo描画の目視確認
 
-### SG-2 (新): WFC 調査・提案
+### SG-2: マルチセルフットプリント拡張
+
+- **ゴール**: 複数ヘックスにまたがるPrefabスタンプ配置の占有管理
+- **状態**: 実装完了 (2026-03-17)。Unity実機検証待ち
+- **進捗**: 90%
+- **完了基準**:
+  - [x] StampPlacement に OccupiedCellIds 追加
+  - [x] IrregularGrid に FindCellsByHex / FindCell 追加
+  - [x] StampRegistry マルチセル CanPlace/Place/Remove
+  - [x] EditModeテスト 8件追加
+  - [x] 後方互換 (単一セルの旧API動作保証)
+  - [ ] Unity Editor でのコンパイル確認
+
+### SG-3 (候補): WFC 調査・提案
 
 - **ゴール**: WFC の簡略化方針を調査し、具体的な提案を作成
 - **状態**: 未着手

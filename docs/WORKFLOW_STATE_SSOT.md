@@ -1,6 +1,6 @@
 # WORKFLOW STATE SSOT
 
-Last Updated: 2026-03-16
+Last Updated: 2026-03-17
 
 ## Mission
 
@@ -9,14 +9,17 @@ Phase A/B 完了。Phase C 機能完成に着手中。
 
 ## Current Focus
 
-**SG-1: DualGrid Prefabスタンプ配置** — コア実装完了 (2026-03-16)。Unity実機検証待ち。
+**SG-2: マルチセルフットプリント** — 実装完了 (2026-03-17)。Unity実機検証待ち。
+SG-1 (単一セルPrefabスタンプ配置) + SG-2 (マルチセルフットプリント拡張) ともに実装完了。
 
 ## Done 条件
 
 - [x] `TASK_037_TerrainVerticalSlice_CloseoutSummary` の完了
 - [x] SSOT駆動ワークフローへの完全移行と legacy docs の整理
 - [x] Unity Editor でのコンパイル安定性 95% 以上 (PA-5)
-- [ ] SG-1: DualGrid Prefab配置のモックアップが動作する
+- [x] SG-1: DualGrid Prefab配置の単一セル実装完了
+- [x] SG-2: マルチセルフットプリント実装完了
+- [ ] SG-1 + SG-2: Unity実機検証 (コンパイル確認 + Gizmo目視)
 
 ## 選別規則
 

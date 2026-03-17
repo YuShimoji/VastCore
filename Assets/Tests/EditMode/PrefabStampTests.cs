@@ -429,6 +429,304 @@ namespace Vastcore.Tests.EditMode
             field?.SetValue(_def, _mode);
         }
 
+        /// <summary>
+        /// テスト用: PrefabStampDefinitionのprivateフィールドm_FootprintOffsetsを設定
+        /// </summary>
+        private void SetFootprintOffsets(PrefabStampDefinition _def, Vector2Int[] _offsets)
+        {
+            var field = typeof(PrefabStampDefinition).GetField("m_FootprintOffsets",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            field?.SetValue(_def, _offsets);
+        }
+
+        /// <summary>
+        /// テスト用: 有効なPrefab付き定義を生成
+        /// </summary>
+        private PrefabStampDefinition CreateValidDefinition(out GameObject _prefab)
+        {
+            _prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var def = CreateTestDefinition();
+            SetPrefabOnDefinition(def, _prefab);
+            return def;
+        }
+
+        #endregion
+
+        #region Multi-Cell Footprint Tests
+
+        [Test]
+        public void PrefabStampDefinition_IsSingleCell_FalseWithOffsets()
+        {
+            // Arrange
+            var def = CreateTestDefinition();
+            SetFootprintOffsets(def, new Vector2Int[] { new Vector2Int(1, 0) });
+
+            // Act & Assert
+            Assert.IsFalse(def.IsSingleCell, "Definition with offsets should not be single cell");
+
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void StampRegistry_MultiCell_CanPlace_RequiresGrid()
+        {
+            // Arrange
+            var registry = new StampRegistry();
+            var def = CreateValidDefinition(out var prefab);
+            SetFootprintOffsets(def, new Vector2Int[] { new Vector2Int(1, 0) });
+            var cell = new Cell(0, 0, 0, 0);
+
+            // Act — gridなしでマルチセル配置を試行
+            bool canPlace = registry.CanPlace(def, cell, null);
+
+            // Assert
+            Assert.IsFalse(canPlace, "Multi-cell CanPlace should fail without grid");
+
+            Object.DestroyImmediate(prefab);
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void StampRegistry_MultiCell_Place_OccupiesAllSubCells()
+        {
+            // Arrange
+            CreateTestGrid(2, out var grid, out var columnStack);
+            var registry = new StampRegistry();
+            var def = CreateValidDefinition(out var prefab);
+
+            // アンカーhex(0,0) + オフセットhex(1,0) の2ヘックスフットプリント
+            SetFootprintOffsets(def, new Vector2Int[] { new Vector2Int(1, 0) });
+
+            // アンカーセルを取得（hex 0,0 の最初のサブセル）
+            Cell anchorCell = grid.FindCell(0, 0, 0);
+            Assert.IsNotNull(anchorCell, "Anchor cell (0,0,0) should exist in radius-2 grid");
+
+            // Act
+            StampPlacement placement = registry.Place(def, anchorCell, columnStack, 0f, 1f, grid);
+
+            // Assert
+            Assert.IsNotNull(placement, "Multi-cell placement should succeed");
+            Assert.AreEqual(1, registry.Count);
+
+            // アンカーヘックス(0,0)の全サブセルが占有されている
+            for (int sub = 0; sub < 3; sub++)
+            {
+                Cell c = grid.FindCell(0, 0, sub);
+                if (c != null)
+                {
+                    Assert.IsTrue(registry.IsOccupied(c.Id),
+                        $"Anchor hex subcell (0,0,{sub}) id={c.Id} should be occupied");
+                }
+            }
+
+            // オフセットヘックス(1,0)の全サブセルが占有されている
+            for (int sub = 0; sub < 3; sub++)
+            {
+                Cell c = grid.FindCell(1, 0, sub);
+                if (c != null)
+                {
+                    Assert.IsTrue(registry.IsOccupied(c.Id),
+                        $"Offset hex subcell (1,0,{sub}) id={c.Id} should be occupied");
+                }
+            }
+
+            // OccupiedCellIds の件数確認
+            Assert.IsNotNull(placement.OccupiedCellIds);
+            Assert.IsTrue(placement.OccupiedCellIds.Length >= 2,
+                "OccupiedCellIds should contain at least 2 cells (anchor + offset subcells)");
+
+            // Cleanup
+            Object.DestroyImmediate(prefab);
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void StampRegistry_MultiCell_BlocksOverlappingPlacement()
+        {
+            // Arrange
+            CreateTestGrid(2, out var grid, out var columnStack);
+            var registry = new StampRegistry();
+
+            var def1 = CreateValidDefinition(out var prefab1);
+            SetFootprintOffsets(def1, new Vector2Int[] { new Vector2Int(1, 0) }); // hex(0,0) + hex(1,0)
+
+            var def2 = CreateValidDefinition(out var prefab2);
+            SetFootprintOffsets(def2, new Vector2Int[] { new Vector2Int(-1, 0) }); // hex(1,0) + hex(0,0)
+
+            Cell anchor1 = grid.FindCell(0, 0, 0);
+            Cell anchor2 = grid.FindCell(1, 0, 0);
+
+            // Act
+            StampPlacement first = registry.Place(def1, anchor1, columnStack, 0f, 1f, grid);
+            StampPlacement second = registry.Place(def2, anchor2, columnStack, 0f, 1f, grid);
+
+            // Assert
+            Assert.IsNotNull(first, "First multi-cell placement should succeed");
+            Assert.IsNull(second, "Overlapping multi-cell placement should fail (hex 1,0 shared)");
+            Assert.AreEqual(1, registry.Count);
+
+            // Cleanup
+            Object.DestroyImmediate(prefab1);
+            Object.DestroyImmediate(def1);
+            Object.DestroyImmediate(prefab2);
+            Object.DestroyImmediate(def2);
+        }
+
+        [Test]
+        public void StampRegistry_MultiCell_Remove_FreesAllCells()
+        {
+            // Arrange
+            CreateTestGrid(2, out var grid, out var columnStack);
+            var registry = new StampRegistry();
+            var def = CreateValidDefinition(out var prefab);
+            SetFootprintOffsets(def, new Vector2Int[] { new Vector2Int(1, 0) });
+
+            Cell anchorCell = grid.FindCell(0, 0, 0);
+            StampPlacement placement = registry.Place(def, anchorCell, columnStack, 0f, 1f, grid);
+            int occupiedBefore = registry.OccupiedCellCount;
+
+            // Act
+            bool removed = registry.Remove(placement.PlacementId);
+
+            // Assert
+            Assert.IsTrue(removed);
+            Assert.AreEqual(0, registry.Count);
+            Assert.AreEqual(0, registry.OccupiedCellCount, "All occupied cells should be freed");
+            Assert.IsTrue(occupiedBefore > 1, $"Should have had multiple occupied cells ({occupiedBefore})");
+
+            // 全サブセルが解放されている
+            for (int sub = 0; sub < 3; sub++)
+            {
+                Cell c0 = grid.FindCell(0, 0, sub);
+                Cell c1 = grid.FindCell(1, 0, sub);
+                if (c0 != null)
+                    Assert.IsFalse(registry.IsOccupied(c0.Id), $"hex(0,0,{sub}) should be freed");
+                if (c1 != null)
+                    Assert.IsFalse(registry.IsOccupied(c1.Id), $"hex(1,0,{sub}) should be freed");
+            }
+
+            // Cleanup
+            Object.DestroyImmediate(prefab);
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void StampRegistry_MultiCell_GetPlacementAt_FindsFromAnyOccupiedCell()
+        {
+            // Arrange
+            CreateTestGrid(2, out var grid, out var columnStack);
+            var registry = new StampRegistry();
+            var def = CreateValidDefinition(out var prefab);
+            SetFootprintOffsets(def, new Vector2Int[] { new Vector2Int(1, 0) });
+
+            Cell anchorCell = grid.FindCell(0, 0, 0);
+            StampPlacement placement = registry.Place(def, anchorCell, columnStack, 0f, 1f, grid);
+
+            // Act — オフセットヘックスのサブセルからも検索できる
+            Cell offsetCell = grid.FindCell(1, 0, 0);
+            Assert.IsNotNull(offsetCell, "Offset cell should exist");
+            StampPlacement found = registry.GetPlacementAt(offsetCell.Id);
+
+            // Assert
+            Assert.IsNotNull(found, "Should find placement from offset hex cell");
+            Assert.AreEqual(placement.PlacementId, found.PlacementId);
+
+            // Cleanup
+            Object.DestroyImmediate(prefab);
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void StampRegistry_MultiCell_CanPlace_FailsIfOffsetHexMissing()
+        {
+            // Arrange — radius-1 grid は中心hex(0,0)とその近傍のみ
+            CreateTestGrid(1, out var grid, out var columnStack);
+            var registry = new StampRegistry();
+            var def = CreateValidDefinition(out var prefab);
+
+            // 遠方のオフセットを指定（radius-1グリッドには存在しない）
+            SetFootprintOffsets(def, new Vector2Int[] { new Vector2Int(5, 5) });
+
+            Cell anchorCell = grid.FindCell(0, 0, 0);
+            Assert.IsNotNull(anchorCell);
+
+            // Act
+            bool canPlace = registry.CanPlace(def, anchorCell, grid);
+
+            // Assert
+            Assert.IsFalse(canPlace, "Should fail when footprint hex is outside grid");
+
+            // Cleanup
+            Object.DestroyImmediate(prefab);
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void StampRegistry_SingleCell_BackwardCompatible()
+        {
+            // 単一セルスタンプが旧APIでも新APIでも動作する
+            // Arrange
+            CreateTestGrid(1, out var grid, out var columnStack);
+            var registry = new StampRegistry();
+            var def = CreateValidDefinition(out var prefab);
+            // FootprintOffsets はデフォルト空 → IsSingleCell = true
+
+            Cell targetCell = grid.Cells[0];
+
+            // Act — 旧API（gridなし）
+            StampPlacement p1 = registry.Place(def, targetCell, columnStack, 0f, 1f);
+
+            // Assert
+            Assert.IsNotNull(p1);
+            Assert.IsNotNull(p1.OccupiedCellIds);
+            Assert.AreEqual(1, p1.OccupiedCellIds.Length, "Single cell should occupy exactly 1 cell");
+            Assert.AreEqual(targetCell.Id, p1.OccupiedCellIds[0]);
+
+            // Cleanup
+            Object.DestroyImmediate(prefab);
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void StampRegistry_MultiCell_ThreeHexFootprint()
+        {
+            // 3ヘックスの大きなフットプリント
+            // Arrange
+            CreateTestGrid(3, out var grid, out var columnStack);
+            var registry = new StampRegistry();
+            var def = CreateValidDefinition(out var prefab);
+
+            // アンカー(0,0) + (1,0) + (0,1) の三角形フットプリント
+            SetFootprintOffsets(def, new Vector2Int[] {
+                new Vector2Int(1, 0),
+                new Vector2Int(0, 1)
+            });
+
+            Cell anchorCell = grid.FindCell(0, 0, 0);
+            Assert.IsNotNull(anchorCell);
+
+            // Act
+            StampPlacement placement = registry.Place(def, anchorCell, columnStack, 0f, 1f, grid);
+
+            // Assert
+            Assert.IsNotNull(placement, "3-hex footprint should place successfully");
+            Assert.IsTrue(placement.OccupiedCellIds.Length >= 3,
+                $"Should occupy cells from 3 hexes (got {placement.OccupiedCellIds.Length})");
+
+            // 3つのヘックス全てが占有されている
+            foreach (var hex in new[] { (0, 0), (1, 0), (0, 1) })
+            {
+                Cell c = grid.FindCell(hex.Item1, hex.Item2, 0);
+                Assert.IsNotNull(c, $"hex({hex.Item1},{hex.Item2}) should exist");
+                Assert.IsTrue(registry.IsOccupied(c.Id),
+                    $"hex({hex.Item1},{hex.Item2}) should be occupied");
+            }
+
+            // Cleanup
+            Object.DestroyImmediate(prefab);
+            Object.DestroyImmediate(def);
+        }
+
         #endregion
     }
 }
