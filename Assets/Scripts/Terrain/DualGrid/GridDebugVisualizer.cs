@@ -109,6 +109,7 @@ namespace Vastcore.Terrain.DualGrid
 
         /// <summary>
         /// Inspector指定のテスト用スタンプを配置
+        /// マルチセル定義の場合はグリッド参照付きで配置する
         /// </summary>
         private void PlaceTestStamps()
         {
@@ -129,7 +130,15 @@ namespace Vastcore.Terrain.DualGrid
 
                 float rotation = m_TestStampDefinition.GetRandomRotation(random);
                 float scale = m_TestStampDefinition.GetRandomScale(random);
-                m_StampRegistry.Place(m_TestStampDefinition, cell, m_ColumnStack, rotation, scale);
+
+                if (m_TestStampDefinition.IsSingleCell)
+                {
+                    m_StampRegistry.Place(m_TestStampDefinition, cell, m_ColumnStack, rotation, scale);
+                }
+                else
+                {
+                    m_StampRegistry.Place(m_TestStampDefinition, cell, m_ColumnStack, rotation, scale, m_Grid);
+                }
             }
         }
 
