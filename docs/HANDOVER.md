@@ -2,9 +2,9 @@
 
 # VastCore — Handover / ワークフロー仕様書
 
-**最終更新**: 2026-03-09
+**最終更新**: 2026-03-17
 **Actor**: Claude Code (Opus 4.6)
-**Type**: Phase C完了 + コード品質監査 + MapGenerator統合
+**Type**: local/origin統合 + spec-index整合 + 夜間自走
 
 ---
 
@@ -12,13 +12,13 @@
 
 | 項目 | 値 |
 |------|-----|
-| **ブランチ** | `main` (trunk-based, origin/main と同期済み) |
+| **ブランチ** | `main` (trunk-based, local/origin統合済み 2026-03-17) |
 | **Unity** | 6000.3.3f1 (URP) |
 | **C#制約** | .NET Standard 2.1, C# 9.0 |
-| **コンパイル** | PASS |
-| **EditModeテスト** | 75/75 PASS |
+| **コンパイル** | 要確認 (マージ後未検証) |
+| **EditModeテスト** | 91件+ (最終確認はマージ前) |
 | **PlayModeテスト** | 0件 (未着手、ゲート対象) |
-| **現フェーズ** | Phase A/B/C 完了 → Phase D 未着手 |
+| **現フェーズ** | Phase A/B/C 完了 + SG-1/SG-2 + PD-4。Phase D 未着手 |
 
 ---
 
@@ -170,6 +170,14 @@ Testing (テスト用スタブ・ヘルパー)
 ---
 
 ## 7. セッション履歴
+
+### 2026-03-17: local/origin統合 + spec-index整合 (夜間自走)
+
+| # | コミット | 内容 |
+|---|---------|------|
+| 1 | `3b90526` | merge: origin/main統合 (SG-2, Erosion, Bootstrap, TerrainFacade) + local (PD-4, Phase C audit) — 12競合解決 |
+| 2 | `79ef68d` | fix: SP-010重複解消 (Climate Visual → SP-015) |
+| 3 | `c0115f8` | docs: spec-index sync — SP-009更新, SP-016 Erosion追加, DOCS_INDEX 10件追記 |
 
 ### 2026-03-09: コード品質監査 + MapGenerator統合
 
