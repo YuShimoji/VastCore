@@ -3,6 +3,7 @@
 > **上位SSOT**: [SSOT_WORLD.md](../SSOT_WORLD.md) | **索引**: [DOCS_INDEX.md](../DOCS_INDEX.md)
 
 **作成日**: 2026-02-09
+**最終更新**: 2026-03-17
 **前提**: AUDIT_2026-02 総点検 + コードベース全件精査
 
 ---
@@ -345,9 +346,17 @@ DeformIntegrationTestRunner.cs (Testing/) ← テスト
 
 ---
 
-### Phase C: 機能完成 (Feature Completion) — 3-4 スプリント
+### Phase C: 機能完成 (Feature Completion) — 3-4 スプリント — **着手中**
 
 **ゴール**: Phase 3 (Deform) 完了、CompositionTab CSG 検証完了、Phase 5 着手
+
+**Phase C 進捗 (2026-03-17):**
+
+- PC-1 Deform: versionDefines + API スタブ修正完了。実パッケージ完全統合は未完了
+- SG-1: DualGrid Prefabスタンプ単一セル配置 — 完了 (2026-03-16)
+- SG-2: マルチセルフットプリント拡張 — 完了 (2026-03-17)
+- SP-010 仕様書作成完了
+- EditModeテスト: 91件 → 99件見込み (SG-1: 16件 + SG-2: 8件追加)
 
 #### PC-1: Deform パッケージ正式導入と統合検証
 - **サイズ**: L

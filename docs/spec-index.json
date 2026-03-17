@@ -86,7 +86,7 @@
     "status": "partial",
     "pct": 90,
     "cat": "core",
-    "file": null,
+    "file": "docs/02_design/SP010_PrefabStampPlacement_Spec.md",
     "summary": "DualGridセルへのPrefabスタンプ配置システム。ScriptableObject定義、単一/マルチセル占有管理、Gizmo可視化。SG-1(単一セル)+SG-2(マルチセルフットプリント)完了"
   },
   {

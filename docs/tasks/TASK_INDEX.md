@@ -1,10 +1,10 @@
 # Task Index
 
-> 最終更新: 2026-03-07
+> 最終更新: 2026-03-17
 
 ## Summary
 - Total: 36 tasks
-- Done: 29 | In Progress: 0 | Pending: 1 | Legacy: 6
+- Done: 29 | In Progress: 0 | Pending: 1 | Superseded: 1 | Legacy: 5
 
 ## Phase A (Terrain Core Stabilization)
 | ID | Title | Status | Summary |
@@ -59,7 +59,7 @@
 | 018 | origin/master からのマージコンフリクト解決 | DONE | 約60ファイルのマージコンフリクトを解決 |
 | 019 | SW Doctor Rules Configuration Fix | DONE | sw-doctor の SSOT ファイル不一致エラー解消 |
 | 020 | Namespace Consistency (Utils vs Utilities) | DONE | Vastcore.Utils と Vastcore.Utilities の名前空間を統一 |
-| 021 | Merge Integration & Verification | BLOCKED | マージ後の統合検証（テスト実行インフラ問題でBLOCKED） |
+| 021 | Merge Integration & Verification | SUPERSEDED | マージ後の統合検証。PB-1/PB-2でテスト基盤が別途整備され陳腐化 (2026-03-17 close) |
 | 022 | Release Cyclic Dependencies | DONE | Assembly-CSharp と Vastcore.* 間の循環依存を解消 |
 | 023 | Merge Conflict Resolution (origin/main into develop) | DONE | origin/main から develop への60+件のマージコンフリクト解決 |
 | 026 | 3D Voxel Terrain Hybrid System - Phase 1 | OPEN | Marching Cubesアルゴリズムを用いたハイブリッド・ボクセル地形生成システムの基盤実装 |
