@@ -559,13 +559,167 @@ namespace Vastcore.Editor.Generation
             }
 
             Debug.Log($"[CompositionTab] Executing {_blendMode} blend with factor {_blendFactor}");
-            
-            // TODO: ブレンド実装
-            EditorUtility.DisplayDialog(
-                "Blend Operation",
-                $"{_blendMode} blend is not yet implemented.\n\n" +
-                $"Blend Factor: {_blendFactor}",
-                "OK");
+
+            switch (_blendMode)
+            {
+                case BlendMode.Layered:
+                    ExecuteLayeredBlend();
+                    break;
+                default:
+                    EditorUtility.DisplayDialog(
+                        "Blend Operation",
+                        $"{_blendMode} blend is not yet implemented.\n\nBlend Factor: {_blendFactor}",
+                        "OK");
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Layered Blend: 同一頂点数のメッシュ間で頂点座標を補間する。
+        /// 頂点数が不一致の場合は CombineMeshes でサブメッシュ合成にフォールバック。
+        /// </summary>
+        private void ExecuteLayeredBlend()
+        {
+            var objA = _sourceObjects[0];
+            var objB = _sourceObjects[1];
+
+            var mfA = objA.GetComponent<MeshFilter>();
+            var mfB = objB.GetComponent<MeshFilter>();
+
+            if (mfA == null || mfB == null || mfA.sharedMesh == null || mfB.sharedMesh == null)
+            {
+                Debug.LogError("[CompositionTab] Both objects must have MeshFilter with valid Mesh");
+                return;
+            }
+
+            Mesh meshA = mfA.sharedMesh;
+            Mesh meshB = mfB.sharedMesh;
+
+            Mesh resultMesh;
+            Material[] resultMaterials;
+
+            if (meshA.vertexCount == meshB.vertexCount)
+            {
+                // 同一頂点数: 頂点補間ブレンド
+                resultMesh = BlendMeshVertices(meshA, meshB, _blendFactor,
+                    objA.transform, objB.transform);
+                // マテリアルはA側を優先
+                var mrA = objA.GetComponent<MeshRenderer>();
+                resultMaterials = mrA != null ? mrA.sharedMaterials : new Material[0];
+            }
+            else
+            {
+                // 頂点数不一致: CombineMeshes フォールバック
+                resultMesh = CombineMeshesWeighted(meshA, meshB, _blendFactor,
+                    objA.transform, objB.transform);
+                var mrA = objA.GetComponent<MeshRenderer>();
+                var mrB = objB.GetComponent<MeshRenderer>();
+                var mats = new System.Collections.Generic.List<Material>();
+                if (mrA != null) mats.AddRange(mrA.sharedMaterials);
+                if (mrB != null) mats.AddRange(mrB.sharedMaterials);
+                resultMaterials = mats.ToArray();
+            }
+
+            string resultName = $"Blend_{objA.name}_{objB.name}";
+            var resultObj = CreateResultObjectFromMesh(resultMesh, resultMaterials, resultName, objA.transform);
+            Undo.RegisterCreatedObjectUndo(resultObj, "Layered Blend");
+            Selection.activeGameObject = resultObj;
+
+            // ソースオブジェクトの処理
+            HandleSourceObjectsPostOperation();
+
+            Debug.Log($"[CompositionTab] Layered blend completed: {resultName} (factor={_blendFactor})");
+        }
+
+        /// <summary>
+        /// 同一頂点数メッシュの頂点座標を blendFactor で補間
+        /// </summary>
+        private Mesh BlendMeshVertices(Mesh _meshA, Mesh _meshB, float _factor,
+            Transform _transformA, Transform _transformB)
+        {
+            var vertsA = _meshA.vertices;
+            var vertsB = _meshB.vertices;
+            var normalsA = _meshA.normals;
+            var normalsB = _meshB.normals;
+
+            var blendedVerts = new Vector3[vertsA.Length];
+            var blendedNormals = new Vector3[normalsA.Length];
+
+            // ワールド空間で補間し、A のローカル空間に戻す
+            for (int i = 0; i < vertsA.Length; i++)
+            {
+                Vector3 worldA = _transformA.TransformPoint(vertsA[i]);
+                Vector3 worldB = _transformB.TransformPoint(vertsB[i]);
+                Vector3 blended = Vector3.Lerp(worldA, worldB, _factor);
+                blendedVerts[i] = _transformA.InverseTransformPoint(blended);
+            }
+
+            for (int i = 0; i < Mathf.Min(normalsA.Length, normalsB.Length); i++)
+            {
+                blendedNormals[i] = Vector3.Slerp(normalsA[i], normalsB[i], _factor).normalized;
+            }
+
+            Mesh result = UnityEngine.Object.Instantiate(_meshA);
+            result.name = "BlendedMesh";
+            result.vertices = blendedVerts;
+            if (blendedNormals.Length == blendedVerts.Length)
+                result.normals = blendedNormals;
+            else
+                result.RecalculateNormals();
+            result.RecalculateBounds();
+            return result;
+        }
+
+        /// <summary>
+        /// 頂点数不一致時の CombineMeshes フォールバック
+        /// blendFactor でスケールを調整して合成
+        /// </summary>
+        private Mesh CombineMeshesWeighted(Mesh _meshA, Mesh _meshB, float _factor,
+            Transform _transformA, Transform _transformB)
+        {
+            // B のスケールを blendFactor で制御
+            var combineA = new CombineInstance
+            {
+                mesh = _meshA,
+                transform = _transformA.localToWorldMatrix
+            };
+            var combineB = new CombineInstance
+            {
+                mesh = _meshB,
+                transform = _transformB.localToWorldMatrix * Matrix4x4.Scale(Vector3.one * _factor)
+            };
+
+            Mesh result = new Mesh();
+            result.name = "CombinedBlendMesh";
+            result.CombineMeshes(new CombineInstance[] { combineA, combineB }, false);
+            result.RecalculateNormals();
+            result.RecalculateBounds();
+            return result;
+        }
+
+        /// <summary>
+        /// ブレンド/CSG 後のソースオブジェクト処理
+        /// </summary>
+        private void HandleSourceObjectsPostOperation()
+        {
+            foreach (var obj in _sourceObjects)
+            {
+                if (obj == null) continue;
+                if (_deleteSourceObjects)
+                {
+                    Undo.DestroyObjectImmediate(obj);
+                }
+                else if (_hideSourceObjects)
+                {
+                    Undo.RecordObject(obj, "Hide Source Object");
+                    obj.SetActive(false);
+                }
+            }
+
+            if (_deleteSourceObjects)
+            {
+                _sourceObjects.Clear();
+            }
         }
 
         private void ExecuteMorph()
