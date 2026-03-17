@@ -409,18 +409,20 @@ DeformIntegrationTestRunner.cs (Testing/) ← テスト
 - **依存**: PB-5
 - **検証**: エロージョンの視覚的出力 + 単体テスト
 
-#### PC-5: VastcoreGameManager TerrainGenerator 接続
+#### PC-5: VastcoreGameManager TerrainFacade 接続 — **コア実装完了 (2026-03-17)**
+
 - **サイズ**: M
 - **対象ファイル**:
   - 修正: `Scripts/Game/Managers/VastcoreGameManager.cs`
-    - L25: TerrainGenerator フィールド有効化
-    - L231: CinematicCamera.Setup への TerrainGenerator 引数追加
-  - 修正: `Scripts/Testing/ComprehensiveSystemTest.cs`
-    - L31-33: RuntimeTerrainManager 等の参照を有効化
-    - L243, L250, L257: 実装値を返す
-  - 新規: `Scripts/Testing/PlayMode/IntegrationTests/GameManagerIntegrationTests.cs`
+    - [x] TerrainFacade フィールド追加 (auto-find対応)
+    - [x] SetupTerrain() コルーチン新設 (ストリーミング初期化)
+    - [x] CinematicCamera.Setup へ TerrainFacade.gameObject 引数追加
+    - [x] DefaultSpawnPosition フィールド追加
+    - [x] 重複using削除、XMLドキュメント修正
+  - 未対応: `Scripts/Testing/ComprehensiveSystemTest.cs` の参照有効化
+  - 未対応: PlayMode統合テスト
 - **依存**: PB-2
-- **検証**: ゲーム起動 → 地形生成 → プレイヤー配置の一連フロー
+- **検証**: ゲーム起動 → TerrainFacade初期化 → Player配置 → ストリーミング開始の一連フロー
 
 **Phase C 完了基準:**
 - [ ] Phase 3 (Deform統合) 完了

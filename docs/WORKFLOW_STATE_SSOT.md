@@ -9,8 +9,8 @@ Phase A/B 完了。Phase C 機能完成に着手中。
 
 ## Current Focus
 
-**SG-2: マルチセルフットプリント** — 実装完了 (2026-03-17)。Unity実機検証待ち。
-SG-1 (単一セルPrefabスタンプ配置) + SG-2 (マルチセルフットプリント拡張) ともに実装完了。
+**PC-5: GameManager → TerrainFacade 接続** — コア実装完了 (2026-03-17)。Unity実機検証待ち。
+SG-1 + SG-2 (Prefabスタンプ) + PC-5 (プレイアブル接続) ともに実装完了。
 
 ## Done 条件
 
