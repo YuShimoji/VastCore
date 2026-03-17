@@ -1,6 +1,8 @@
+> **LEGACY**: この文書は歴史的資料です。現在のアーキテクチャは DualGrid + Prefab スタンプ方式に移行済み。
+
 # 【設計仕様書】高度プロシージャル構造物生成システム
 
-**プロジェクト名:** Vastcore - Advanced Procedural Structure Generation System  
+**プロジェクト名:** Vastcore - Advanced Procedural Structure Generation System
 **作成日:** 2025年1月  
 **バージョン:** 1.0  
 
