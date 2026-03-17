@@ -1,7 +1,9 @@
-# SP-014: DualGrid Prefab Stamp Placement
+> **LEGACY**: この文書は旧版です。最新版は [SP010_PrefabStampPlacement_Spec.md](SP010_PrefabStampPlacement_Spec.md) を参照。
+
+# SP-014: DualGrid Prefab Stamp Placement (旧版)
 
 - **最終更新日時**: 2026-03-16
-- **ステータス**: Partial (80%)
+- **ステータス**: Superseded by SP-010
 - **実装**: SG-1 (単セル配置コア完了)
 
 ---
