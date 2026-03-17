@@ -274,32 +274,25 @@ namespace Vastcore.Editor.Generation
             float depth = _archParams.depth * _parent.GlobalSettings.GlobalStructureScale;
             float halfDepth = depth / 2f;
 
-            // アーチ = 半円の外輪 + 内輪 を前後面で繋いだ形状
-            float outerRadius = Mathf.Sqrt(halfWidth * halfWidth + archHeight * archHeight) * 0.5f;
-            // 実用的には幅と高さから楕円的にサンプリング
             float radiusX = halfWidth;
             float radiusY = archHeight;
             float innerRadiusX = radiusX - thickness;
             float innerRadiusY = radiusY - thickness;
 
             List<Vector3> vertices = new List<Vector3>();
-            // 前面: 外輪 (0..segments) + 内輪 (segments+1..2*segments+1)
-            // 後面: 外輪 (2*(segments+1)..3*segments+2) + 内輪 (3*(segments+1)..4*segments+3)
             int ringCount = segments + 1;
 
             for (int face = 0; face < 2; face++)
             {
                 float z = face == 0 ? halfDepth : -halfDepth;
-                // 外輪
                 for (int i = 0; i <= segments; i++)
                 {
                     float t = (float)i / segments;
-                    float angle = t * Mathf.PI; // 0 to PI (半円)
+                    float angle = t * Mathf.PI;
                     float x = Mathf.Cos(angle) * radiusX;
                     float y = Mathf.Sin(angle) * radiusY;
                     vertices.Add(new Vector3(x, y, z));
                 }
-                // 内輪
                 for (int i = 0; i <= segments; i++)
                 {
                     float t = (float)i / segments;
@@ -318,20 +311,13 @@ namespace Vastcore.Editor.Generation
 
             for (int i = 0; i < segments; i++)
             {
-                // 前面 (外輪-内輪)
                 faces.Add(new Face(new int[] { frontOuterStart + i, frontOuterStart + i + 1, frontInnerStart + i + 1, frontInnerStart + i }));
-                // 後面 (外輪-内輪) -- 反転ワインディング
                 faces.Add(new Face(new int[] { backOuterStart + i, backInnerStart + i, backInnerStart + i + 1, backOuterStart + i + 1 }));
-                // 外側面 (前面外輪-後面外輪)
                 faces.Add(new Face(new int[] { frontOuterStart + i, backOuterStart + i, backOuterStart + i + 1, frontOuterStart + i + 1 }));
-                // 内側面 (前面内輪-後面内輪) -- 反転
                 faces.Add(new Face(new int[] { frontInnerStart + i, frontInnerStart + i + 1, backInnerStart + i + 1, backInnerStart + i }));
             }
 
-            // 左右の柱底面キャップ (アーチの両端)
-            // 左端: i=0
             faces.Add(new Face(new int[] { frontOuterStart, frontInnerStart, backInnerStart, backOuterStart }));
-            // 右端: i=segments
             faces.Add(new Face(new int[] { frontOuterStart + segments, backOuterStart + segments, backInnerStart + segments, frontInnerStart + segments }));
 
             ProBuilderMesh pbMesh = ProBuilderMesh.Create(vertices, faces);

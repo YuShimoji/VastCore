@@ -169,6 +169,58 @@ namespace Vastcore.Terrain.DualGrid
             m_Cells?.Clear();
             m_Radius = 0;
         }
+
+        /// <summary>
+        /// 指定されたAxial座標 (q, r) に属する全サブセルを取得
+        /// </summary>
+        /// <param name="_hexQ">Axial座標 q</param>
+        /// <param name="_hexR">Axial座標 r</param>
+        /// <param name="_results">結果を格納するリスト（クリアされない）</param>
+        /// <returns>見つかったセル数</returns>
+        public int FindCellsByHex(int _hexQ, int _hexR, List<Cell> _results)
+        {
+            if (_results == null || m_Cells == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            foreach (Cell cell in m_Cells)
+            {
+                if (cell.HexQ == _hexQ && cell.HexR == _hexR)
+                {
+                    _results.Add(cell);
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// 指定されたAxial座標 (q, r) とサブインデックスでセルを検索
+        /// </summary>
+        /// <param name="_hexQ">Axial座標 q</param>
+        /// <param name="_hexR">Axial座標 r</param>
+        /// <param name="_subIndex">サブセルインデックス</param>
+        /// <returns>セル。見つからない場合null</returns>
+        public Cell FindCell(int _hexQ, int _hexR, int _subIndex)
+        {
+            if (m_Cells == null)
+            {
+                return null;
+            }
+
+            foreach (Cell cell in m_Cells)
+            {
+                if (cell.HexQ == _hexQ && cell.HexR == _hexR && cell.SubIndex == _subIndex)
+                {
+                    return cell;
+                }
+            }
+
+            return null;
+        }
         #endregion
     }
 }

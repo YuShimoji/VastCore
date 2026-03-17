@@ -34,6 +34,8 @@ namespace Vastcore.Editor.Generation
         // --- UI用変数 ---
         private Vector2 _scrollPosition;
 
+        private const string k_PrefsPrefix = "VastcoreGlobalSettings_";
+
         public GlobalSettingsTab(StructureGeneratorWindow parent)
         {
             _parent = parent;
@@ -99,6 +101,22 @@ namespace Vastcore.Editor.Generation
             {
                 SaveToEditorPrefs();
             }
+
+            EditorGUILayout.Space();
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("設定を保存"))
+            {
+                SaveToEditorPrefs();
+            }
+            if (GUILayout.Button("設定をリセット"))
+            {
+                DefaultSpawnPosition = Vector3.zero;
+                GlobalStructureScale = 5f;
+                MaterialPalette.Clear();
+                SelectedMaterialIndex = 0;
+                SaveToEditorPrefs();
+            }
+            EditorGUILayout.EndHorizontal();
         }
 
         private void DrawSaveLoadSection()

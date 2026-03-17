@@ -2,7 +2,7 @@
 
 ## 基本情報
 
-- **最終更新**: 2026-03-16
+- **最終更新**: 2026-03-17
 - **更新者**: Claude Code (Opus 4.6)
 
 ---
@@ -13,18 +13,9 @@
 
 - **ゴール**: Deform パッケージ正式統合と StructureGenerator の主要未完了機能を完了し、Phase C の完了基準を満たす。
 - **期限目安**: 2026-05
-- **状態**: DONE (2026-03-09)
-- **進捗**: 100%
+- **状態**: 未着手
+- **進捗**: 0%
 - **関連マイルストーン**: MG-1, MG-2
-- **完了実績**: PC-1〜PC-5 全完了、品質監査 (HIGH 7件 / MEDIUM 4件) 修正済み、MG-1 MapGenerator統合完了 (19 asmdef)
-
-### LG-2: Phase D 最適化・拡張
-
-- **ゴール**: 高度合成 (PD-1)、ランダム制御 (PD-2)、パフォーマンス最適化 (PD-3)、巨大ファイル分割 (PD-4) を完了
-- **期限目安**: 2026-08
-- **状態**: スコープ定義完了、未着手
-- **進捗**: 10%
-- **関連**: docs/02_design/PHASE_D_SCOPE_DEFINITION.md
 
 ---
 
@@ -51,9 +42,8 @@
 ### SG-1: DualGrid Prefab配置の最小実装
 
 - **ゴール**: DualGridセルにPrefabを配置・表示できる最小限の仕組み
-- **状態**: コア実装完了 (2026-03-16)。Unity実機検証待ち
-- **進捗**: 80%
-- **仕様**: docs/02_design/PREFAB_STAMP_PLACEMENT_SPEC.md (SP-014)
+- **状態**: コア実装完了 (2026-03-16)
+- **進捗**: 90%
 - **完了基準**:
   - [x] PrefabStampDefinition (ScriptableObject) — 配置ルール定義
   - [x] StampPlacement / StampRegistry — 占有管理・配置データ
@@ -63,7 +53,20 @@
   - [ ] Unity Editor でのコンパイル確認
   - [ ] Inspector でのGizmo描画の目視確認
 
-### SG-2 (新): WFC 調査・提案
+### SG-2: マルチセルフットプリント拡張
+
+- **ゴール**: 複数ヘックスにまたがるPrefabスタンプ配置の占有管理
+- **状態**: 実装完了 (2026-03-17)。Unity実機検証待ち
+- **進捗**: 90%
+- **完了基準**:
+  - [x] StampPlacement に OccupiedCellIds 追加
+  - [x] IrregularGrid に FindCellsByHex / FindCell 追加
+  - [x] StampRegistry マルチセル CanPlace/Place/Remove
+  - [x] EditModeテスト 8件追加
+  - [x] 後方互換 (単一セルの旧API動作保証)
+  - [ ] Unity Editor でのコンパイル確認
+
+### SG-3 (候補): WFC 調査・提案
 
 - **ゴール**: WFC の簡略化方針を調査し、具体的な提案を作成
 - **状態**: 未着手

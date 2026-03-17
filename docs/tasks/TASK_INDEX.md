@@ -1,10 +1,10 @@
 # Task Index
 
-> 最終更新: 2026-03-08
+> 最終更新: 2026-03-17
 
 ## Summary
-- Total: 41 tasks
-- Done: 36 | In Progress: 0 | Pending: 0 | Legacy: 5 + 2 (026, 027)
+- Total: 36 tasks
+- Done: 29 | In Progress: 0 | Pending: 1 | Superseded: 1 | Legacy: 5
 
 ## Phase A (Terrain Core Stabilization)
 | ID | Title | Status | Summary |
@@ -24,11 +24,7 @@
 ## Phase C (Deform + CSG)
 | ID | Title | Status | Summary |
 |---|---|---|---|
-| PC-1 | Deform パッケージ正式導入と統合検証 | DONE | Deform をスタブ運用から正式パッケージ運用へ移行し統合動作を検証 |
-| PC-2 | CompositionTab CSG検証 + Blend実装 | DONE | Blend 4モード (Layered/Surface/Adaptive/Noise) 実装。頂点ベースメッシュブレンド |
-| PC-3 | StructureGenerator 残タスク | DONE | Arch/Pyramid生成、GlobalSettings保存/読込、RandomControlTab完成 |
-| PC-4 | GeologicalFormation Erosion | DONE | RockLayerPhysicalProperties として風化/浸食/経年変化を統合 |
-| PC-5 | GameManager TerrainGenerator接続 | DONE | asmdef参照追加 + VastcoreGameManager スタブ解除。TerrainGenerator は既存 |
+| PC-1 | Deform パッケージ正式導入と統合検証 | OPEN | Deform をスタブ運用から正式パッケージ運用へ移行し統合動作を検証 |
 
 ## Terrain Vertical Slice
 | ID | Title | Status | Summary |
@@ -63,23 +59,17 @@
 | 018 | origin/master からのマージコンフリクト解決 | DONE | 約60ファイルのマージコンフリクトを解決 |
 | 019 | SW Doctor Rules Configuration Fix | DONE | sw-doctor の SSOT ファイル不一致エラー解消 |
 | 020 | Namespace Consistency (Utils vs Utilities) | DONE | Vastcore.Utils と Vastcore.Utilities の名前空間を統一 |
-| 021 | Merge Integration & Verification | BLOCKED | マージ後の統合検証（テスト実行インフラ問題でBLOCKED） |
+| 021 | Merge Integration & Verification | SUPERSEDED | マージ後の統合検証。PB-1/PB-2でテスト基盤が別途整備され陳腐化 (2026-03-17 close) |
 | 022 | Release Cyclic Dependencies | DONE | Assembly-CSharp と Vastcore.* 間の循環依存を解消 |
 | 023 | Merge Conflict Resolution (origin/main into develop) | DONE | origin/main から develop への60+件のマージコンフリクト解決 |
-| 026 | 3D Voxel Terrain Hybrid System - Phase 1 | LEGACY | Marching Cubesアルゴリズムを用いたハイブリッド・ボクセル地形生成システムの基盤実装 |
-| 027 | MCP Unity Verification | LEGACY | Model Context Protocol (MCP) パッケージの動作検証 |
+| 026 | 3D Voxel Terrain Hybrid System - Phase 1 | OPEN | Marching Cubesアルゴリズムを用いたハイブリッド・ボクセル地形生成システムの基盤実装 |
+| 027 | MCP Unity Verification | OPEN | Model Context Protocol (MCP) パッケージの動作検証 |
 | 028 | Fix PrimitiveTerrain Compilation | DONE | PrimitiveTerrainObject の IPoolable 実装エラー修正 |
 | 028b | MCPForUnity 重複アセンブリ定義の解消 | DONE | Assets/ と Packages/ の MCPForUnity 重複を解消 |
 | 029 | Unity Editorコンパイルエラー修正の検証 | BLOCKED | develop ブランチのコンパイルエラー修正3件をUnity Editorで検証 |
 | 030 | Worktree整理とPush統合 | DONE | 複数ブランチでの未Pushコミットを整理しworktree状態をクリーンに |
 
-## Assembly Integration
-| ID | Title | Status | Summary |
-|---|---|---|---|
-| MG-1 | MapGenerator完全統合 | DONE | MapGenerator asmdef廃止、Scripts/Generation/に統合。デッドコード削除、TerrainGenerationMode重複解消 |
-
 ## Notes
 - Legacy tasks (010-030) are historical records and may contain duplicate IDs (e.g., two TASK_014, two TASK_028)
 - Tasks marked as BLOCKED have documented blockers in their respective task files
-- Phase C (Deform + CSG): PC-1, PC-4 完了。次は PC-2 (CSG Blend) + PC-3 (StructureGenerator)
-- TASK_026, 027: 2026-03-08 にLEGACY化 (長期放置のため)
+- Phase C (Deform + CSG) has only one task (PC-1) which is pending dependency completion

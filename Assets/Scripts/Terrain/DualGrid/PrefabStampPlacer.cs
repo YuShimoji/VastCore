@@ -27,6 +27,11 @@ namespace Vastcore.Terrain.DualGrid
         /// 生成されたインスタンスの親Transform
         /// </summary>
         private Transform m_Parent;
+
+        /// <summary>
+        /// 地形高さサンプラー（null の場合はレイヤー高さのみ使用）
+        /// </summary>
+        private IHeightSampler m_HeightSampler;
         #endregion
 
         #region Public Properties
@@ -56,6 +61,16 @@ namespace Vastcore.Terrain.DualGrid
         public void SetParent(Transform _parent)
         {
             m_Parent = _parent;
+        }
+
+        /// <summary>
+        /// 地形高さサンプラーを設定。
+        /// 設定すると、スタンプ配置時にレイヤー高さの代わりに地形表面高さを使用する。
+        /// </summary>
+        /// <param name="_sampler">高さサンプラー（null で無効化）</param>
+        public void SetHeightSampler(IHeightSampler _sampler)
+        {
+            m_HeightSampler = _sampler;
         }
 
         /// <summary>
@@ -146,7 +161,10 @@ namespace Vastcore.Terrain.DualGrid
 
             if (instance != null)
             {
-                Object.DestroyImmediate(instance);
+                if (Application.isPlaying)
+                    Object.Destroy(instance);
+                else
+                    Object.DestroyImmediate(instance);
             }
 
             m_Instances.Remove(_placementId);
@@ -162,7 +180,10 @@ namespace Vastcore.Terrain.DualGrid
             {
                 if (kvp.Value != null)
                 {
-                    Object.DestroyImmediate(kvp.Value);
+                    if (Application.isPlaying)
+                        Object.Destroy(kvp.Value);
+                    else
+                        Object.DestroyImmediate(kvp.Value);
                 }
             }
 
@@ -199,12 +220,27 @@ namespace Vastcore.Terrain.DualGrid
         }
 
         /// <summary>
-        /// セル中心 + レイヤー高さ → ワールド座標
+        /// セル中心 → ワールド座標。
+        /// IHeightSampler が設定されている場合は地形表面高さを使用し、
+        /// レイヤー高さをオフセットとして加算する。
+        /// 未設定の場合は従来通りレイヤー高さのみ。
         /// </summary>
         private Vector3 CalculateWorldPosition(Cell _cell, int _layer)
         {
             Vector3 center = _cell.GetCenter();
-            return new Vector3(center.x, _layer * c_LayerHeight, center.z);
+
+            float y;
+            if (m_HeightSampler != null)
+            {
+                float terrainHeight = m_HeightSampler.SampleHeight(center.x, center.z);
+                y = terrainHeight + _layer * c_LayerHeight;
+            }
+            else
+            {
+                y = _layer * c_LayerHeight;
+            }
+
+            return new Vector3(center.x, y, center.z);
         }
         #endregion
     }

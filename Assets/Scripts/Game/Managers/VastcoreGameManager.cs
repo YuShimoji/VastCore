@@ -8,9 +8,11 @@ using Vastcore.UI;
 using Vastcore.UI.Menus;
 using Vastcore.Camera.Cinematic;
 using Vastcore.Generation;
+using Vastcore.Terrain.Facade;
 
 namespace Vastcore.Game.Managers
 {
+    /// <summary>
     /// ゲームの起動シーケンス、各マネージャーの連携を統括する
     /// </summary>
     public class VastcoreGameManager : MonoBehaviour
@@ -21,7 +23,7 @@ namespace Vastcore.Game.Managers
 
         #region マネージャー参照
         [Header("Managers")]
-        [SerializeField] private TerrainGenerator m_TerrainGenerator;
+        [SerializeField] private TerrainFacade m_TerrainFacade;
         [SerializeField] private TitleScreenManager m_TitleScreenManager;
         #endregion
 
@@ -29,6 +31,7 @@ namespace Vastcore.Game.Managers
         [Header("Player Settings")]
         [SerializeField] private GameObject m_PlayerPrefab;
         [SerializeField] private bool m_AutoFindPlayer = true;
+        [SerializeField] private Vector3 m_DefaultSpawnPosition = new Vector3(0f, 50f, 0f);
         #endregion
 
         #region カメラ・演出設定
@@ -117,7 +120,8 @@ namespace Vastcore.Game.Managers
                 foreach (Light light in lights)
                 {
                     if (light.type == LightType.Directional)
-                    {                        m_SunLight = light;
+                    {
+                        m_SunLight = light;
                         break;
                     }
                 }
@@ -151,24 +155,15 @@ namespace Vastcore.Game.Managers
         {
             Debug.Log("[VastcoreGameManager] Starting Game Sequence...");
 
-            if (m_TerrainGenerator == null)
-            {
-                m_TerrainGenerator = FindFirstObjectByType<TerrainGenerator>();
-            }
-
-            if (m_TerrainGenerator != null)
-            {
-                yield return StartCoroutine(m_TerrainGenerator.GenerateTerrain());
-                VastcoreLogger.Instance.LogInfo("[VastcoreGameManager] Terrain Generation Completed.");
-            }
-            else
-            {
-                VastcoreLogger.Instance.LogWarning("[VastcoreGameManager] TerrainGenerator not found. Skipping terrain generation.");
-            }
-
+            // 1. プレイヤー配置
             yield return StartCoroutine(SetupPlayer());
             Debug.Log("[VastcoreGameManager] Player Setup Completed.");
 
+            // 2. 地形初期化（プレイヤー位置を基準にストリーミング開始）
+            yield return StartCoroutine(SetupTerrain());
+            Debug.Log("[VastcoreGameManager] Terrain Setup Completed.");
+
+            // 3. カメラ・シネマティクス
             yield return StartCoroutine(SetupCinematics());
             Debug.Log("[VastcoreGameManager] Cinematics Setup Completed.");
 
@@ -191,6 +186,32 @@ namespace Vastcore.Game.Managers
             Debug.Log("[VastcoreGameManager] Game Sequence Completed! Player is ready.");
         }
 
+        private IEnumerator SetupTerrain()
+        {
+            if (m_TerrainFacade == null)
+            {
+                m_TerrainFacade = FindFirstObjectByType<TerrainFacade>();
+            }
+
+            if (m_TerrainFacade == null)
+            {
+                Debug.LogWarning("[VastcoreGameManager] TerrainFacade not found. Skipping terrain setup.");
+                yield break;
+            }
+
+            // TerrainFacade.Start() で自動初期化されるため、
+            // ここでは初期ストリーミングが安定するまで待機する
+            if (m_CurrentPlayer != null)
+            {
+                m_TerrainFacade.UpdateStreaming(m_CurrentPlayer.transform.position);
+            }
+
+            // 初期チャンク生成のために1フレーム待機
+            yield return null;
+
+            Debug.Log($"[VastcoreGameManager] Terrain mode: {m_TerrainFacade.Mode}");
+        }
+
         private IEnumerator SetupPlayer()
         {
             if (m_AutoFindPlayer)
@@ -200,12 +221,7 @@ namespace Vastcore.Game.Managers
 
             if (m_CurrentPlayer == null && m_PlayerPrefab != null)
             {
-                Vector3 spawnPosition = Vector3.zero;
-                if (m_TerrainGenerator != null)
-                {
-                    spawnPosition = new Vector3(m_TerrainGenerator.terrainSize.x / 2, 100, m_TerrainGenerator.terrainSize.z / 2);
-                }
-                m_CurrentPlayer = Instantiate(m_PlayerPrefab, spawnPosition, Quaternion.identity);
+                m_CurrentPlayer = Instantiate(m_PlayerPrefab, m_DefaultSpawnPosition, Quaternion.identity);
             }
 
             if (m_CurrentPlayer == null)
@@ -226,7 +242,8 @@ namespace Vastcore.Game.Managers
                 m_CinematicCamera = camObj.GetComponent<CinematicCameraController>();
                 if (m_CinematicCamera != null)
                 {
-                    m_CinematicCamera.Setup(m_CurrentPlayer.GetComponent<AdvancedPlayerController>(), m_TerrainGenerator != null ? m_TerrainGenerator.gameObject : null);
+                    GameObject terrainTarget = m_TerrainFacade != null ? m_TerrainFacade.gameObject : null;
+                    m_CinematicCamera.Setup(m_CurrentPlayer.GetComponent<AdvancedPlayerController>(), terrainTarget);
                 }
             }
 
@@ -250,14 +267,13 @@ namespace Vastcore.Game.Managers
         {
             while (m_EnableDynamicLighting)
             {
-                // Example: Update light intensity based on player's altitude
                 if (m_CurrentPlayer != null)
                 {
                     float normalizedHeight = Mathf.InverseLerp(0, 500, m_CurrentPlayer.transform.position.y);
                     m_SunLight.intensity = m_LightIntensityCurve.Evaluate(normalizedHeight);
                     RenderSettings.skybox.SetColor("_Tint", m_SkyboxTint.Evaluate(normalizedHeight));
                 }
-                yield return new WaitForSeconds(1f); // Update every second
+                yield return new WaitForSeconds(1f);
             }
         }
         #endregion

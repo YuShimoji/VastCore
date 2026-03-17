@@ -1,4 +1,5 @@
 using UnityEngine;
+using Vastcore.Terrain.Erosion;
 using Vastcore.Terrain.Providers;
 
 namespace Vastcore.Terrain.Config
@@ -11,6 +12,10 @@ namespace Vastcore.Terrain.Config
         [Min(2)] public int resolution = 257; // Unity Terrain は 2^n+1 が扱いやすい
         [Min(1f)] public float worldSize = 256f; // 1 チャンクの横幅（m）
         [Min(1f)] public float heightScale = 100f; // 地形の高さ（m）
+
+        [Header("Erosion")]
+        [Tooltip("エロージョン設定（null の場合はエロージョンなし）")]
+        public ErosionSettings erosionSettings;
 
         public IHeightmapProvider CreateHeightProvider()
         {

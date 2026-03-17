@@ -54,6 +54,12 @@ namespace Vastcore.Terrain.DualGrid
         /// スケール
         /// </summary>
         [SerializeField] private float m_Scale;
+
+        /// <summary>
+        /// 占有しているセルIDの配列（アンカーセル含む）
+        /// 単一セルスタンプの場合はアンカーセルIDのみ
+        /// </summary>
+        [SerializeField] private int[] m_OccupiedCellIds;
         #endregion
 
         #region Public Properties
@@ -66,6 +72,11 @@ namespace Vastcore.Terrain.DualGrid
         public float Rotation => m_Rotation;
         public int Layer => m_Layer;
         public float Scale => m_Scale;
+
+        /// <summary>
+        /// 占有しているセルIDの配列（読み取り専用）
+        /// </summary>
+        public int[] OccupiedCellIds => m_OccupiedCellIds;
         #endregion
 
         #region Constructors
@@ -78,8 +89,10 @@ namespace Vastcore.Terrain.DualGrid
         /// <param name="_rotation">Y軸回転（度）</param>
         /// <param name="_layer">配置レイヤー</param>
         /// <param name="_scale">スケール</param>
+        /// <param name="_occupiedCellIds">占有セルID配列（nullの場合はアンカーセルのみ）</param>
         public StampPlacement(int _placementId, PrefabStampDefinition _definition,
-            Cell _anchorCell, float _rotation, int _layer, float _scale)
+            Cell _anchorCell, float _rotation, int _layer, float _scale,
+            int[] _occupiedCellIds = null)
         {
             m_PlacementId = _placementId;
             m_Definition = _definition;
@@ -90,6 +103,7 @@ namespace Vastcore.Terrain.DualGrid
             m_Rotation = _rotation;
             m_Layer = _layer;
             m_Scale = _scale;
+            m_OccupiedCellIds = _occupiedCellIds ?? new int[] { _anchorCell.Id };
         }
         #endregion
 

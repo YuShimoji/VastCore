@@ -1,5 +1,6 @@
 using UnityEngine;
 using Vastcore.Terrain.Config;
+using Vastcore.Terrain.Erosion;
 using Vastcore.Terrain.Providers;
 
 namespace Vastcore.Terrain
@@ -34,13 +35,19 @@ namespace Vastcore.Terrain
             var ctx = new HeightmapGenerationContext { Seed = 0 }; // seed は settings 側で適用済み
             provider.Generate(heights, res, worldOrigin, size, ctx);
 
-            // Unity Terrain expects heights in [0,1] but with 2D array [res,res]
+            // Apply erosion if configured
+            if (config.erosionSettings != null && config.erosionSettings.enabled)
+            {
+                ApplyErosion(heights, res, config.erosionSettings);
+            }
+
+            // Unity Terrain expects heights in [0,1] with 2D array [z, x]
             var heights2D = new float[res, res];
-            for (int y = 0; y < res; y++)
+            for (int z = 0; z < res; z++)
             {
                 for (int x = 0; x < res; x++)
                 {
-                    heights2D[y, x] = Mathf.Clamp01(heights[x + y * res]);
+                    heights2D[z, x] = Mathf.Clamp01(heights[x + z * res]);
                 }
             }
 
@@ -65,6 +72,47 @@ namespace Vastcore.Terrain
             var chunk = go.AddComponent<TerrainChunk>();
             chunk.Build(config, provider, worldOrigin);
             return chunk;
+        }
+
+        /// <summary>
+        /// 1D ハイトマップにエロージョンを適用する。
+        /// heights は [0,1] 正規化された 1D 配列 (x + z * res indexing)。
+        /// </summary>
+        private void ApplyErosion(float[] _heights, int _res, ErosionSettings _settings)
+        {
+            // 1D → 2D [x, z] (エロージョンクラスの期待レイアウト)
+            var map = new float[_res, _res];
+            for (int z = 0; z < _res; z++)
+                for (int x = 0; x < _res; x++)
+                    map[x, z] = _heights[x + z * _res];
+
+            // Hydraulic erosion
+            if (_settings.enableHydraulic)
+            {
+                var hydraulic = new HydraulicErosion
+                {
+                    Iterations = _settings.hydraulicIterations,
+                    ErosionRate = _settings.erosionRate,
+                    DepositionRate = _settings.depositionRate
+                };
+                hydraulic.Apply(map, _settings.erosionSeed);
+            }
+
+            // Thermal erosion
+            if (_settings.enableThermal)
+            {
+                var thermal = new ThermalErosion
+                {
+                    Iterations = _settings.thermalIterations,
+                    TalusAngle = _settings.talusAngle
+                };
+                thermal.Apply(map);
+            }
+
+            // 2D → 1D に書き戻し (クランプ付き)
+            for (int z = 0; z < _res; z++)
+                for (int x = 0; x < _res; x++)
+                    _heights[x + z * _res] = Mathf.Clamp01(map[x, z]);
         }
     }
 }

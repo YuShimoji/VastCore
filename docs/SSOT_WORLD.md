@@ -1,7 +1,7 @@
 # VastCore — World SSOT (Single Source of Truth)
 
 **ステータス**: 最上位仕様（憲法）
-**最終更新**: 2026-03-07
+**最終更新**: 2026-03-17
 **スコープ**: プロジェクト全体の目的・構造・優先順位の最終権威
 
 > **本文書が VastCore プロジェクトの最上位 SSOT である。**
@@ -58,7 +58,7 @@ SSOT_WORLD.md                          ← 最上位仕様（本文書）
 | レイヤー | 責務 | 主要アセンブリ |
 |---------|------|--------------|
 | **Generation** | プロシージャル生成、Deform統合、プリミティブ生成 | `Vastcore.Generation` |
-| **Terrain** | 地形メッシュ、LOD、チャンク管理、ストリーミング | `Vastcore.Terrain` |
+| **Terrain** | 地形メッシュ、DualGrid、Prefabスタンプ配置、LOD、チャンク管理 | `Vastcore.Terrain` |
 
 ### 3.3 プレゼンテーションレイヤー
 
@@ -95,7 +95,7 @@ SSOT_WORLD.md                          ← 最上位仕様（本文書）
 | **Phase 1-2, 4** | 基本関係性 / 形状制御 / パーティクル配置 | 完了 | 基本生成パイプライン |
 | **Phase A** | 安定化 (Stabilization) | 完了 | コンパイル安定性 95、ブロッカー解消 |
 | **Phase B** | 品質基盤 (Quality Foundation) | 完了 | EditMode 100+テスト、TODO 20→3 削減 |
-| **Phase C** | 機能完成 (Feature Completion) | 未着手 | Deform完了、CSG検証、Phase 5 着手 |
+| **Phase C** | 機能完成 (Feature Completion) | 着手中 | Deform統合(PC-1完了)、Prefabスタンプ(SG-1+SG-2完了)、CSG検証、Phase 5 着手 |
 | **Phase D** | 最適化・拡張 (Optimization) | 未着手 | Phase 5-6 実装、60FPS 安定 |
 | **Phase E** | 仕上げ (Polish) | 未着手 | ドキュメント整合性 75、UI 近代化 |
 

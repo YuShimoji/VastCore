@@ -1,24 +1,25 @@
 # WORKFLOW STATE SSOT
 
-Last Updated: 2026-03-16
+Last Updated: 2026-03-17
 
 ## Mission
 
 広大な景観に映える、ユニークで巨大な人工構造物をプロシージャルに生成する基盤の確立。
-Phase A/B/C 完了。SG-1 Prefabスタンプ単セル配置完了。Phase D 設計中。
+Phase A/B 完了。Phase C 機能完成に着手中。
 
 ## Current Focus
 
-**Phase D 仕様整備** — PD-1〜PD-4 スコープ定義完了。Quick Wins (QW-A〜D) の優先度判断中。
-次スライス候補: マルチセルフットプリント拡張 / PD-4 巨大ファイル分割 / QW-A 気候ビジュアル。
+**パイプライン統合** — Erosion→Terrain、Stamp→Terrain高さ、DualGrid+Terrain統合オーケストレータ完了 (2026-03-17)。
+PC-1〜PC-5 全コア実装完了。Unity実機での機能動作検証待ち（コンパイルは通過確認済み）。
 
 ## Done 条件
 
 - [x] `TASK_037_TerrainVerticalSlice_CloseoutSummary` の完了
 - [x] SSOT駆動ワークフローへの完全移行と legacy docs の整理
 - [x] Unity Editor でのコンパイル安定性 95% 以上 (PA-5)
-- [x] SG-1: DualGrid Prefab配置のコア実装完了 (単セル)
-- [ ] Phase D スコープ承認 + 最初のスライス着手
+- [x] SG-1: DualGrid Prefab配置の単一セル実装完了
+- [x] SG-2: マルチセルフットプリント実装完了
+- [ ] SG-1 + SG-2: Unity実機検証 (コンパイル確認 + Gizmo目視)
 
 ## 選別規則
 

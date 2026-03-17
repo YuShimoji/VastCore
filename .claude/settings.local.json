@@ -5,7 +5,8 @@
       "Bash(git stash:*)",
       "Bash(git clean:*)",
       "Bash(git pull:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "mcp__serena__edit_memory"
     ]
   }
 }

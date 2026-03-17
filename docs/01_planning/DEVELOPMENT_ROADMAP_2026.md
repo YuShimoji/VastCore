@@ -3,6 +3,7 @@
 > **上位SSOT**: [SSOT_WORLD.md](../SSOT_WORLD.md) | **索引**: [DOCS_INDEX.md](../DOCS_INDEX.md)
 
 **作成日**: 2026-02-09
+**最終更新**: 2026-03-17
 **前提**: AUDIT_2026-02 総点検 + コードベース全件精査
 
 ---
@@ -15,7 +16,7 @@
 | 総 .cs ファイル数 | ~200 |
 | アセンブリ定義 | 10 (Core, Terrain, Generation, Player, Camera, UI, Game, Testing, Editor, Utilities) |
 | StructureGenerator タブ | 7 (Basic, Advanced, Distribution, Operations/Composition, Random, Deform, Relationships) |
-| 開発フェーズ進捗 | Phase 1,2,3,4 完了 / Phase 5,6 未着手 |
+| 開発フェーズ進捗 | Phase 1,2,4 完了 / Phase 3 進行中 / Phase 5,6 未着手 |
 
 ### 健全性スコア (現状 → 目標)
 | 領域 | 現状 | 目標 |
@@ -77,7 +78,7 @@ Vastcore.Testing  (→ Core, Utilities, Generation, Terrain, Player, UI, ProBuil
 | P2-2 | **巨大ファイル SRP 違反** | `BiomeSpecificTerrainGenerator.cs` (1706行), `HighQualityPrimitiveGenerator.cs` (1498行), `CompoundArchitecturalGenerator.cs` (1309行), `ArchitecturalGenerator.cs` (1137行), `NaturalTerrainFeatures.cs` (1083行) | 保守性・テスタビリティ低下 |
 | P2-3 | **Generation asmdef autoReferenced=true** | `Scripts/Generation/Vastcore.Generation.asmdef` | 他アセンブリと不統一。リリースビルドで意図しない参照 |
 | P2-4 | **TODO/FIXME 31件** | 上記 Grep 結果参照 | 技術的負債の可視化不足 |
-| P2-5 | **ドキュメント SSOT 不在** | `docs/01_planning/` に 14 ファイル散在。DEV_PLAN.md はアーカイブ済み | 計画とコードの乖離 |
+| P2-5 | **ドキュメント SSOT 不在** | `docs/01_planning/` に 14 ファイル散在。DEV_PLAN.md は 2025年1月更新のまま | 計画とコードの乖離 |
 | P2-6 | **CI/CD 未稼働** | `.github/workflows/unity-tests.yml` 存在するが UNITY_LICENSE シークレット未設定 | 自動テストが機能していない |
 | P2-7 | **Phase 5/6 未着手** | 高度合成システム、ランダム制御システム | DEV_PLAN.md の中核機能 |
 | P2-8 | **Editor asmdef に ProBuilder 参照なし** | `Scripts/Editor/Vastcore.Editor.asmdef` | Editor 内の ProBuilder 関連ツールがコンパイルできない可能性 |
@@ -244,11 +245,11 @@ DeformIntegrationTestRunner.cs (Testing/) ← テスト
 - **成果物**: `docs/04_reports/COMPILE_VERIFICATION_2026-02.md`
 
 **Phase A 完了基準:**
-- [x] コンパイルエラー 0
-- [x] asmdef 依存が全て明示的
-- [x] テストファイルが Testing アセンブリに集約
-- [x] Deform 条件付きコンパイルが統一
-- [x] 健全性スコア: コンパイル安定性 → 95
+- [ ] コンパイルエラー 0
+- [ ] asmdef 依存が全て明示的
+- [ ] テストファイルが Testing アセンブリに集約
+- [ ] Deform 条件付きコンパイルが統一
+- [ ] 健全性スコア: コンパイル安定性 → 95
 
 ---
 
@@ -336,20 +337,28 @@ DeformIntegrationTestRunner.cs (Testing/) ← テスト
 - **検証**: Core アセンブリが 10ファイル以下（Interfaces + 共通基盤のみ）
 
 **Phase B 完了基準:**
-- [x] NUnit テスト 70+ 件
-- [x] 全アセンブリにテストが存在
+- [ ] NUnit テスト 70+ 件
+- [ ] 全アセンブリにテストが存在
 - [ ] GitHub Actions CI がグリーン
 - [ ] TODO/FIXME が 10件以下
 - [ ] Core アセンブリが純粋な基盤のみ
-- [x] 健全性スコア: テストカバレッジ → 70、コード品質 → 80
+- [ ] 健全性スコア: テストカバレッジ → 70、コード品質 → 80
 
 ---
 
-### Phase C: 機能完成 (Feature Completion) — 3-4 スプリント
+### Phase C: 機能完成 (Feature Completion) — 3-4 スプリント — **着手中**
 
 **ゴール**: Phase 3 (Deform) 完了、CompositionTab CSG 検証完了、Phase 5 着手
 
-#### PC-1: Deform パッケージ正式導入と統合検証 ✅ DONE (2026-03-07)
+**Phase C 進捗 (2026-03-17):**
+
+- PC-1 Deform: versionDefines + API スタブ修正完了。実パッケージ完全統合は未完了
+- SG-1: DualGrid Prefabスタンプ単一セル配置 — 完了 (2026-03-16)
+- SG-2: マルチセルフットプリント拡張 — 完了 (2026-03-17)
+- SP-010 仕様書作成完了
+- EditModeテスト: 91件 → 99件見込み (SG-1: 16件 + SG-2: 8件追加)
+
+#### PC-1: Deform パッケージ正式導入と統合検証
 - **サイズ**: L
 - **対象ファイル**:
   - 修正: `Packages/manifest.json` — Deform パッケージ バージョン確定
@@ -378,44 +387,45 @@ DeformIntegrationTestRunner.cs (Testing/) ← テスト
 - **依存**: PA-2
 - **検証**: CSG Union/Subtract/Intersect + Blend の全操作が Editor 上で動作
 
-#### PC-3: StructureGenerator 残タスク完了
+#### PC-3: StructureGenerator 残タスク完了 — **コア TODO 解消完了 (2026-03-17)**
+
 - **サイズ**: M
 - **対象ファイル**:
-  - 修正: `Editor/StructureGenerator/Tabs/Generation/BasicStructureTab.cs:137` — Arch, Pyramid 対応
-  - 修正: `Editor/StructureGenerator/Core/GlobalSettingsTab.cs:31` — 設定ロード/保存機能
-  - 修正: `Editor/StructureGenerator/Tabs/Editing/RandomControlTab.cs` — SG-2 残テスト項目
-  - 新規(必要時): `Editor/StructureGenerator/Tabs/Editing/RandomControlPresetManager.cs` — RC-1 プリセット管理
+  - [x] 修正: `Editor/StructureGenerator/Tabs/Generation/BasicStructureTab.cs` — Arch (ProBuilder ShapeType.Arch) + Pyramid (手動メッシュ生成) 対応
+  - [x] 修正: `Editor/StructureGenerator/Core/GlobalSettingsTab.cs` — EditorPrefs による設定ロード/保存/リセット機能
+  - 未対応: `Editor/StructureGenerator/Tabs/Editing/RandomControlTab.cs` — SG-2 残テスト項目
+  - 未対応: `Editor/StructureGenerator/Tabs/Editing/RandomControlPresetManager.cs` — RC-1 プリセット管理
 - **依存**: PC-2
 - **検証**: StructureGenerator 全7タブの機能テスト完了
 
-#### PC-4: GeologicalFormation エロージョン実装 ✅ DONE (2026-03-07, commit 7463332)
+#### PC-4: エロージョン実装 — **コア実装完了 (2026-03-17)**
+
 - **サイズ**: M
 - **対象ファイル**:
-  - 修正: `Scripts/Core/GeologicalFormationGenerator.cs` (PB-5 後は Terrain 配下)
-    - L136: erosionRate パラメータの実装
-    - L143: エロージョンシミュレーション実装
-  - 新規: `Scripts/Terrain/Erosion/HydraulicErosion.cs` — 水力エロージョン
-  - 新規: `Scripts/Terrain/Erosion/ThermalErosion.cs` — 熱エロージョン
-  - 新規: `Scripts/Testing/EditMode/TerrainTests/ErosionTests.cs`
-- **依存**: PB-5
-- **検証**: エロージョンの視覚的出力 + 単体テスト
-- **実装詳細**: エロージョンパラメータを RockLayerPhysicalProperties に統合。水力・熱エロージョンは物性値を通じて地質形成に影響する設計
+  - 既存: `Scripts/Core/GeologicalFormationGenerator.cs` — 地質層レベルエロージョンは RockLayerPhysicalProperties で実装済み
+  - [x] 新規: `Scripts/Terrain/Erosion/HydraulicErosion.cs` — ドロップレットベース水力エロージョン
+  - [x] 新規: `Scripts/Terrain/Erosion/ThermalErosion.cs` — 安息角ベース熱エロージョン
+  - [x] 新規: `Tests/EditMode/ErosionTests.cs` — 9件テスト
+- **依存**: なし (Pure C#)
+- **検証**: EditMode テスト + Unity実機での視覚出力確認待ち
 
-#### PC-5: VastcoreGameManager TerrainGenerator 接続
+#### PC-5: VastcoreGameManager TerrainFacade 接続 — **コア実装完了 (2026-03-17)**
+
 - **サイズ**: M
 - **対象ファイル**:
   - 修正: `Scripts/Game/Managers/VastcoreGameManager.cs`
-    - L25: TerrainGenerator フィールド有効化
-    - L231: CinematicCamera.Setup への TerrainGenerator 引数追加
-  - 修正: `Scripts/Testing/ComprehensiveSystemTest.cs`
-    - L31-33: RuntimeTerrainManager 等の参照を有効化
-    - L243, L250, L257: 実装値を返す
-  - 新規: `Scripts/Testing/PlayMode/IntegrationTests/GameManagerIntegrationTests.cs`
+    - [x] TerrainFacade フィールド追加 (auto-find対応)
+    - [x] SetupTerrain() コルーチン新設 (ストリーミング初期化)
+    - [x] CinematicCamera.Setup へ TerrainFacade.gameObject 引数追加
+    - [x] DefaultSpawnPosition フィールド追加
+    - [x] 重複using削除、XMLドキュメント修正
+  - 未対応: `Scripts/Testing/ComprehensiveSystemTest.cs` の参照有効化
+  - 未対応: PlayMode統合テスト
 - **依存**: PB-2
-- **検証**: ゲーム起動 → 地形生成 → プレイヤー配置の一連フロー
+- **検証**: ゲーム起動 → TerrainFacade初期化 → Player配置 → ストリーミング開始の一連フロー
 
 **Phase C 完了基準:**
-- [x] Phase 3 (Deform統合) 完了
+- [ ] Phase 3 (Deform統合) 完了
 - [ ] CompositionTab CSG + Blend 動作確認
 - [ ] StructureGenerator 全タブ機能完了
 - [ ] GameManager → TerrainGenerator 接続済み
@@ -495,10 +505,10 @@ DeformIntegrationTestRunner.cs (Testing/) ← テスト
 
 **ゴール**: ドキュメント整合性 75、UI 近代化、プロダクション品質
 
-#### PE-1: ドキュメント SSOT 確立 ⚠ 部分対応 (DEV_PLAN.md はアーカイブ済み)
+#### PE-1: ドキュメント SSOT 確立
 - **サイズ**: M
 - **対象ファイル**:
-  - ~~修正: `docs/01_planning/DEV_PLAN.md` — 本ロードマップとの整合 (2025年1月 → 最新状態に)~~ **→ アーカイブ済み・削除済み**
+  - 修正: `docs/01_planning/DEV_PLAN.md` — 本ロードマップとの整合 (2025年1月 → 最新状態に)
   - 統合: `docs/01_planning/REFACTORING_PLAN.md` + `REFACTORING_ACTION_PLAN.md` → 1ファイルに
   - 修正: `docs/01_planning/ISSUES_BACKLOG.md` — 完了タスクのアーカイブ、新タスクの反映
   - 削除: 陳腐化したドキュメント (重複・古い計画書)
