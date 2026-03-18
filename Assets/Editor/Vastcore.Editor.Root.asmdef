@@ -5,7 +5,8 @@
         "Vastcore.Core",
         "Vastcore.Generation",
         "Vastcore.Terrain",
-        "Vastcore.Utilities"
+        "Vastcore.Utilities",
+        "Vastcore.Player"
     ],
     "includePlatforms": [
         "Editor"
