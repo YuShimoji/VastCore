@@ -255,7 +255,7 @@
     "id": "PD-001",
     "title": "Phase D Scope Definition",
     "status": "partial",
-    "pct": 50,
+    "pct": 75,
     "cat": "system",
     "file": "docs/02_design/PHASE_D_SCOPE_DEFINITION.md",
     "summary": "Phase D (最適化・拡張) 全体スコープ。PD-1~PD-4の目標・依存・完了基準"
