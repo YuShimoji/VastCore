@@ -300,7 +300,7 @@
     "id": "SP-018",
     "title": "Parametric Variation (V1)",
     "status": "partial",
-    "pct": 70,
+    "pct": 85,
     "cat": "core",
     "file": "docs/02_design/SP018_PARAMETRIC_VARIATION_SPEC.md",
     "summary": "PrefabStampDefinitionへのパラメトリック変異追加。PositionJitter/MaterialVariants/ChildToggleGroups。V4段階的バリエーションの第1段階"
