@@ -11,7 +11,8 @@ Phase A/B/C 完了。SG-1/SG-2 + PD-4 完了。Phase D スコープ策定中。
 
 **Phase D: オーサリング主体 + 段階的バリエーション** — 最終体験像(T1)とバリエーション手段(V4)を決定 (2026-03-18)。
 StructureGeneratorはEditorツールとして深化。バリエーションはまずV1(パラメトリック変異)をPrefabStampDefinitionに追加、検証後にWFC/CSGへ拡張。
-次: Unity実機検証 (SG-1/SG-2 + SP-017 StampExporter + SP-018 V1パラメトリック変異)。
+SP-019 建物定義仕様策定完了 (タグ重み複合体方式)。Phase 1 コアデータ構造の実装中。
+次: SP-019 Phase 1 実装 → Unity実機検証 (SG-1/SG-2 + SP-017 + SP-018 + SP-019)。
 
 ## Done 条件
 

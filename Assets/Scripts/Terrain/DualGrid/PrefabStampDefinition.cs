@@ -1,4 +1,5 @@
 using UnityEngine;
+using Vastcore.Generation;
 
 namespace Vastcore.Terrain.DualGrid
 {
@@ -56,6 +57,10 @@ namespace Vastcore.Terrain.DualGrid
         [Header("Footprint")]
         [Tooltip("占有するHexオフセット（アンカーセルからの相対座標）。空の場合は単一セル")]
         [SerializeField] private Vector2Int[] m_FootprintOffsets = new Vector2Int[0];
+
+        [Header("Tag Profile")]
+        [Tooltip("この構造物のタグプロファイル。配置・バリエーション選択に使用")]
+        [SerializeField] private StructureTagProfile m_TagProfile = new StructureTagProfile();
 
         [Header("Variation (V1)")]
         [Tooltip("XZ平面での位置ずれ半径（ワールド単位）。0で無効")]
@@ -119,6 +124,11 @@ namespace Vastcore.Terrain.DualGrid
         /// 子オブジェクト切替グループ名配列
         /// </summary>
         public string[] ChildToggleGroups => m_ChildToggleGroups;
+
+        /// <summary>
+        /// タグプロファイル (建物の性質を記述するタグ重みベクトル)
+        /// </summary>
+        public StructureTagProfile TagProfile => m_TagProfile;
         #endregion
 
         #region Public Methods

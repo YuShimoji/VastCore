@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using Vastcore.Generation;
 using Vastcore.Terrain.DualGrid;
 
 namespace Vastcore.Editor.Generation
@@ -25,8 +26,10 @@ namespace Vastcore.Editor.Generation
         /// </summary>
         /// <param name="_target">エクスポート対象の GameObject</param>
         /// <param name="_positionJitter">V1: XZ位置ジッター半径（0で無効）</param>
+        /// <param name="_tagProfile">タグプロファイル（nullの場合はタグなし）</param>
         /// <returns>生成された PrefabStampDefinition（失敗時 null）</returns>
-        public static PrefabStampDefinition ExportAsStamp(GameObject _target, float _positionJitter = 0f)
+        public static PrefabStampDefinition ExportAsStamp(GameObject _target, float _positionJitter = 0f,
+            StructureTagProfile _tagProfile = null)
         {
             if (_target == null)
             {
@@ -101,6 +104,13 @@ namespace Vastcore.Editor.Generation
                 Debug.Log($"[StampExporter] ChildToggleGroups 自動検出: {string.Join(", ", childNames)}");
             }
 
+            // タグプロファイルを設定
+            if (_tagProfile != null && !_tagProfile.IsEmpty)
+            {
+                ApplyTagProfile(serializedDef, _tagProfile);
+                Debug.Log($"[StampExporter] タグプロファイル設定: {_tagProfile}");
+            }
+
             serializedDef.ApplyModifiedPropertiesWithoutUndo();
 
             AssetDatabase.CreateAsset(definition, defPath);
@@ -161,6 +171,27 @@ namespace Vastcore.Editor.Generation
             }
 
             return names.Count >= 2 ? names.ToArray() : System.Array.Empty<string>();
+        }
+
+        /// <summary>
+        /// StructureTagProfile を SerializedObject 経由で PrefabStampDefinition に適用する
+        /// </summary>
+        private static void ApplyTagProfile(SerializedObject _serializedDef, StructureTagProfile _profile)
+        {
+            var tagProfileProp = _serializedDef.FindProperty("m_TagProfile");
+            if (tagProfileProp == null) return;
+
+            var tagsProp = tagProfileProp.FindPropertyRelative("m_Tags");
+            if (tagsProp == null) return;
+
+            var allTags = _profile.GetAllTags();
+            tagsProp.arraySize = allTags.Count;
+            for (int i = 0; i < allTags.Count; i++)
+            {
+                var element = tagsProp.GetArrayElementAtIndex(i);
+                element.FindPropertyRelative("tagName").stringValue = allTags[i].tagName;
+                element.FindPropertyRelative("weight").floatValue = allTags[i].weight;
+            }
         }
 
         /// <summary>
