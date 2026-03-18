@@ -1,17 +1,17 @@
 # WORKFLOW STATE SSOT
 
-Last Updated: 2026-03-17
+Last Updated: 2026-03-18
 
 ## Mission
 
 広大な景観に映える、ユニークで巨大な人工構造物をプロシージャルに生成する基盤の確立。
-Phase A/B/C 完了。SG-1/SG-2 + PD-4 完了。Phase D 設計中。
+Phase A/B/C 完了。SG-1/SG-2 + PD-4 完了。Phase D スコープ策定中。
 
 ## Current Focus
 
-**Phase D 準備 + ドキュメント整合** — local/origin統合完了 (2026-03-17)。
-spec-index整合、DOCS_INDEX更新、legacy仕様注記追加。
-次: Phase Dスコープ承認 + 最初のスライス着手。HUMAN_AUTHORITY判断待ち（最終体験像、バリエーション手段）。
+**Phase D: オーサリング主体 + 段階的バリエーション** — 最終体験像(T1)とバリエーション手段(V4)を決定 (2026-03-18)。
+StructureGeneratorはEditorツールとして深化。バリエーションはまずV1(パラメトリック変異)をPrefabStampDefinitionに追加、検証後にWFC/CSGへ拡張。
+次: Phase Dスコープ承認 + V1パラメトリック変異の最初のスライス。
 
 ## Done 条件
 
@@ -21,7 +21,8 @@ spec-index整合、DOCS_INDEX更新、legacy仕様注記追加。
 - [x] SG-1: DualGrid Prefab配置の単一セル実装完了
 - [x] SG-2: マルチセルフットプリント実装完了
 - [ ] SG-1 + SG-2: Unity実機検証 (コンパイル確認 + Gizmo目視)
-- [ ] Phase D スコープ承認 + 最初のスライス着手
+- [ ] Phase D スコープ承認 (T1オーサリング + V4段階的バリエーション)
+- [ ] V1: パラメトリック変異の最初のスライス着手
 
 ## 選別規則
 
