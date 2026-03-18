@@ -102,7 +102,7 @@
     "id": "SP-017",
     "title": "Stamp Export Pipeline",
     "status": "partial",
-    "pct": 50,
+    "pct": 75,
     "cat": "core",
     "file": "docs/02_design/STAMP_EXPORT_PIPELINE_SPEC.md",
     "summary": "StructureGenerator→Prefab→PrefabStampDefinition変換。パイプライン貫通の最小ブリッジ。StampExporter実装済み、Unity実機検証待ち"
