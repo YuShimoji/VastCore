@@ -28,14 +28,31 @@ namespace Vastcore.Terrain
         [Range(0f, 1f)] public float jitterAmount = 0.3f;
 
         [Header("Stamps")]
-        [Tooltip("配置するスタンプ定義")]
-        public PrefabStampDefinition stampDefinition;
+        [Tooltip("配置するスタンプ定義群（複数可）。自動配置時はランダム選択")]
+        public PrefabStampDefinition[] stampDefinitions = new PrefabStampDefinition[0];
         [Tooltip("配置するセルID群 (空の場合は自動配置)")]
         public int[] stampCellIds = new int[0];
         [Tooltip("自動配置時の配置確率 (0-1)")]
         [Range(0f, 1f)] public float autoPlaceProbability = 0.2f;
         [Tooltip("スタンプのシード")]
         public int stampSeed = 42;
+
+        /// <summary>
+        /// 後方互換: 単一スタンプ定義のプロパティ。
+        /// stampDefinitions[0] への読み書きアクセスを提供する。
+        /// </summary>
+        public PrefabStampDefinition stampDefinition
+        {
+            get => stampDefinitions != null && stampDefinitions.Length > 0 ? stampDefinitions[0] : null;
+            set
+            {
+                if (value == null) { stampDefinitions = new PrefabStampDefinition[0]; return; }
+                if (stampDefinitions == null || stampDefinitions.Length == 0)
+                    stampDefinitions = new PrefabStampDefinition[] { value };
+                else
+                    stampDefinitions[0] = value;
+            }
+        }
 
         [Header("Options")]
         public bool autoBuildOnStart = true;
@@ -68,10 +85,12 @@ namespace Vastcore.Terrain
             // 3. スタンプを配置 (地形高さ追従)
             PlaceStamps();
 
+            int defCount = stampDefinitions != null ? stampDefinitions.Length : 0;
             Debug.Log($"[TerrainWithStamps] Build complete: " +
                       $"{m_Chunks.Count} chunks, " +
                       $"{m_Grid.Cells.Count} cells, " +
-                      $"{m_StampRegistry.Count} stamps");
+                      $"{defCount} definitions, " +
+                      $"{m_StampRegistry.Count} stamps placed");
         }
 
         private void BuildTerrainChunks()
@@ -135,9 +154,11 @@ namespace Vastcore.Terrain
 
         private void PlaceStamps()
         {
-            if (stampDefinition == null || !stampDefinition.IsValid())
+            // 有効な定義のみフィルタリング
+            var validDefs = GetValidDefinitions();
+            if (validDefs.Count == 0)
             {
-                Debug.Log("[TerrainWithStamps] No valid stamp definition, skipping stamp placement");
+                Debug.Log("[TerrainWithStamps] No valid stamp definitions, skipping stamp placement");
                 return;
             }
 
@@ -146,19 +167,44 @@ namespace Vastcore.Terrain
             if (stampCellIds != null && stampCellIds.Length > 0)
             {
                 // 明示的なセルID指定
-                PlaceStampsAtCellIds(rng);
+                PlaceStampsAtCellIds(rng, validDefs);
             }
             else
             {
                 // 自動配置
-                PlaceStampsAuto(rng);
+                PlaceStampsAuto(rng, validDefs);
             }
 
             // GameObject インスタンス化
             m_Placer.InstantiateAll(m_StampRegistry, m_Grid);
         }
 
-        private void PlaceStampsAtCellIds(System.Random _rng)
+        /// <summary>
+        /// stampDefinitions から IsValid() な定義のみ取得
+        /// </summary>
+        private List<PrefabStampDefinition> GetValidDefinitions()
+        {
+            var result = new List<PrefabStampDefinition>();
+            if (stampDefinitions == null) return result;
+            foreach (var def in stampDefinitions)
+            {
+                if (def != null && def.IsValid())
+                    result.Add(def);
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 定義リストからランダムに1つ選択
+        /// </summary>
+        private PrefabStampDefinition PickRandomDefinition(
+            System.Random _rng, List<PrefabStampDefinition> _defs)
+        {
+            return _defs[_rng.Next(_defs.Count)];
+        }
+
+        private void PlaceStampsAtCellIds(System.Random _rng,
+            List<PrefabStampDefinition> _defs)
         {
             foreach (int cellId in stampCellIds)
             {
@@ -169,30 +215,33 @@ namespace Vastcore.Terrain
                 }
                 if (cell == null) continue;
 
-                float rotation = stampDefinition.GetRandomRotation(_rng);
-                float scale = stampDefinition.GetRandomScale(_rng);
+                var def = PickRandomDefinition(_rng, _defs);
+                float rotation = def.GetRandomRotation(_rng);
+                float scale = def.GetRandomScale(_rng);
 
-                if (stampDefinition.IsSingleCell)
-                    m_StampRegistry.Place(stampDefinition, cell, m_ColumnStack, rotation, scale);
+                if (def.IsSingleCell)
+                    m_StampRegistry.Place(def, cell, m_ColumnStack, rotation, scale);
                 else
-                    m_StampRegistry.Place(stampDefinition, cell, m_ColumnStack, rotation, scale, m_Grid);
+                    m_StampRegistry.Place(def, cell, m_ColumnStack, rotation, scale, m_Grid);
             }
         }
 
-        private void PlaceStampsAuto(System.Random _rng)
+        private void PlaceStampsAuto(System.Random _rng,
+            List<PrefabStampDefinition> _defs)
         {
             foreach (Cell cell in m_Grid.Cells)
             {
                 if (_rng.NextDouble() > autoPlaceProbability) continue;
                 if (m_StampRegistry.IsOccupied(cell.Id)) continue;
 
-                float rotation = stampDefinition.GetRandomRotation(_rng);
-                float scale = stampDefinition.GetRandomScale(_rng);
+                var def = PickRandomDefinition(_rng, _defs);
+                float rotation = def.GetRandomRotation(_rng);
+                float scale = def.GetRandomScale(_rng);
 
-                if (stampDefinition.IsSingleCell)
-                    m_StampRegistry.Place(stampDefinition, cell, m_ColumnStack, rotation, scale);
+                if (def.IsSingleCell)
+                    m_StampRegistry.Place(def, cell, m_ColumnStack, rotation, scale);
                 else
-                    m_StampRegistry.Place(stampDefinition, cell, m_ColumnStack, rotation, scale, m_Grid);
+                    m_StampRegistry.Place(def, cell, m_ColumnStack, rotation, scale, m_Grid);
             }
         }
     }
