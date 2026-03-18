@@ -295,5 +295,14 @@
     "cat": "infra",
     "file": "docs/02_design/PHASE_D_SCOPE_DEFINITION.md",
     "summary": "1000行超ファイル4件の分割。BiomeSpecific/HighQualityPrimitive/CompoundArchitectural/NaturalTerrain"
+  },
+  {
+    "id": "SP-018",
+    "title": "Parametric Variation (V1)",
+    "status": "partial",
+    "pct": 10,
+    "cat": "core",
+    "file": "docs/02_design/SP018_PARAMETRIC_VARIATION_SPEC.md",
+    "summary": "PrefabStampDefinitionへのパラメトリック変異追加。PositionJitter/MaterialVariants/ChildToggleGroups。V4段階的バリエーションの第1段階"
   }
 ]

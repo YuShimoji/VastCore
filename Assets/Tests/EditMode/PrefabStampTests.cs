@@ -440,6 +440,36 @@ namespace Vastcore.Tests.EditMode
         }
 
         /// <summary>
+        /// テスト用: PrefabStampDefinitionのprivateフィールドm_PositionJitterを設定
+        /// </summary>
+        private void SetPositionJitter(PrefabStampDefinition _def, float _jitter)
+        {
+            var field = typeof(PrefabStampDefinition).GetField("m_PositionJitter",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            field?.SetValue(_def, _jitter);
+        }
+
+        /// <summary>
+        /// テスト用: PrefabStampDefinitionのprivateフィールドm_MaterialVariantsを設定
+        /// </summary>
+        private void SetMaterialVariants(PrefabStampDefinition _def, Material[] _variants)
+        {
+            var field = typeof(PrefabStampDefinition).GetField("m_MaterialVariants",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            field?.SetValue(_def, _variants);
+        }
+
+        /// <summary>
+        /// テスト用: PrefabStampDefinitionのprivateフィールドm_ChildToggleGroupsを設定
+        /// </summary>
+        private void SetChildToggleGroups(PrefabStampDefinition _def, string[] _groups)
+        {
+            var field = typeof(PrefabStampDefinition).GetField("m_ChildToggleGroups",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            field?.SetValue(_def, _groups);
+        }
+
+        /// <summary>
         /// テスト用: 有効なPrefab付き定義を生成
         /// </summary>
         private PrefabStampDefinition CreateValidDefinition(out GameObject _prefab)
@@ -448,6 +478,191 @@ namespace Vastcore.Tests.EditMode
             var def = CreateTestDefinition();
             SetPrefabOnDefinition(def, _prefab);
             return def;
+        }
+
+        #endregion
+
+        #region Parametric Variation (V1) Tests
+
+        [Test]
+        public void PrefabStampDefinition_PositionJitter_ZeroReturnsZeroOffset()
+        {
+            // Arrange
+            var def = CreateTestDefinition();
+            // m_PositionJitter defaults to 0
+            var random = new System.Random(42);
+
+            // Act
+            Vector3 offset = def.GetRandomPositionOffset(random);
+
+            // Assert
+            Assert.AreEqual(Vector3.zero, offset, "Zero jitter should produce zero offset");
+
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void PrefabStampDefinition_PositionJitter_StaysWithinRadius()
+        {
+            // Arrange
+            var def = CreateTestDefinition();
+            SetPositionJitter(def, 0.5f);
+            var random = new System.Random(42);
+
+            // Act & Assert (100 samples)
+            for (int i = 0; i < 100; i++)
+            {
+                Vector3 offset = def.GetRandomPositionOffset(random);
+                float distance = new Vector2(offset.x, offset.z).magnitude;
+                Assert.LessOrEqual(distance, 0.5f + 0.001f,
+                    $"Offset distance {distance} should be within jitter radius 0.5");
+                Assert.AreEqual(0f, offset.y, 0.001f, "Y offset should always be 0");
+            }
+
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void PrefabStampDefinition_PositionJitter_NullRandomReturnsZero()
+        {
+            // Arrange
+            var def = CreateTestDefinition();
+            SetPositionJitter(def, 1.0f);
+
+            // Act
+            Vector3 offset = def.GetRandomPositionOffset(null);
+
+            // Assert
+            Assert.AreEqual(Vector3.zero, offset, "Null random should return zero offset");
+
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void PrefabStampDefinition_MaterialVariants_EmptyReturnsNull()
+        {
+            // Arrange
+            var def = CreateTestDefinition();
+            // m_MaterialVariants defaults to empty
+            var random = new System.Random(42);
+
+            // Act
+            Material mat = def.GetRandomMaterial(random);
+
+            // Assert
+            Assert.IsNull(mat, "Empty material variants should return null");
+
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void PrefabStampDefinition_MaterialVariants_SelectsFromArray()
+        {
+            // Arrange
+            var def = CreateTestDefinition();
+            var mat1 = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var mat2 = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            mat1.name = "TestMat1";
+            mat2.name = "TestMat2";
+            SetMaterialVariants(def, new Material[] { mat1, mat2 });
+
+            var random = new System.Random(42);
+
+            // Act (20 samples)
+            bool sawMat1 = false;
+            bool sawMat2 = false;
+            for (int i = 0; i < 20; i++)
+            {
+                Material selected = def.GetRandomMaterial(random);
+                Assert.IsNotNull(selected, "Should select a material");
+                if (selected == mat1) sawMat1 = true;
+                if (selected == mat2) sawMat2 = true;
+            }
+
+            // Assert
+            Assert.IsTrue(sawMat1 && sawMat2,
+                "Both materials should be selected over 20 samples");
+
+            Object.DestroyImmediate(mat1);
+            Object.DestroyImmediate(mat2);
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void PrefabStampDefinition_ChildToggleGroups_EmptyReturnsMinus1()
+        {
+            // Arrange
+            var def = CreateTestDefinition();
+            // m_ChildToggleGroups defaults to empty
+            var random = new System.Random(42);
+
+            // Act
+            int index = def.GetRandomChildToggleIndex(random);
+
+            // Assert
+            Assert.AreEqual(-1, index, "Empty groups should return -1");
+
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void PrefabStampDefinition_ChildToggleGroups_IndexInRange()
+        {
+            // Arrange
+            var def = CreateTestDefinition();
+            SetChildToggleGroups(def, new string[] { "Roof_A", "Roof_B", "Roof_C" });
+            var random = new System.Random(42);
+
+            // Act & Assert (50 samples)
+            for (int i = 0; i < 50; i++)
+            {
+                int index = def.GetRandomChildToggleIndex(random);
+                Assert.GreaterOrEqual(index, 0);
+                Assert.Less(index, 3, $"Index {index} should be < 3");
+            }
+
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void PrefabStampDefinition_Variation_SameSeedProducesSameResult()
+        {
+            // Arrange
+            var def = CreateTestDefinition();
+            SetPositionJitter(def, 1.0f);
+            SetChildToggleGroups(def, new string[] { "A", "B" });
+
+            // Act
+            var rng1 = new System.Random(12345);
+            Vector3 offset1 = def.GetRandomPositionOffset(rng1);
+            int toggle1 = def.GetRandomChildToggleIndex(rng1);
+
+            var rng2 = new System.Random(12345);
+            Vector3 offset2 = def.GetRandomPositionOffset(rng2);
+            int toggle2 = def.GetRandomChildToggleIndex(rng2);
+
+            // Assert
+            Assert.AreEqual(offset1, offset2, "Same seed should produce same position offset");
+            Assert.AreEqual(toggle1, toggle2, "Same seed should produce same toggle index");
+
+            Object.DestroyImmediate(def);
+        }
+
+        [Test]
+        public void PrefabStampDefinition_Variation_DefaultsAreBackwardCompatible()
+        {
+            // 全変異パラメータのデフォルト値で従来動作が変わらないことを確認
+            // Arrange
+            var def = CreateTestDefinition();
+
+            // Assert
+            Assert.AreEqual(0f, def.PositionJitter, "Default PositionJitter should be 0");
+            Assert.IsNotNull(def.MaterialVariants, "MaterialVariants should not be null");
+            Assert.AreEqual(0, def.MaterialVariants.Length, "Default MaterialVariants should be empty");
+            Assert.IsNotNull(def.ChildToggleGroups, "ChildToggleGroups should not be null");
+            Assert.AreEqual(0, def.ChildToggleGroups.Length, "Default ChildToggleGroups should be empty");
+
+            Object.DestroyImmediate(def);
         }
 
         #endregion

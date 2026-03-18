@@ -32,6 +32,11 @@ namespace Vastcore.Terrain.DualGrid
         /// 地形高さサンプラー（null の場合はレイヤー高さのみ使用）
         /// </summary>
         private IHeightSampler m_HeightSampler;
+
+        /// <summary>
+        /// 変異生成のベースシード（0の場合は配置IDのみでシード生成）
+        /// </summary>
+        private int m_VariationSeed;
         #endregion
 
         #region Public Properties
@@ -74,6 +79,16 @@ namespace Vastcore.Terrain.DualGrid
         }
 
         /// <summary>
+        /// 変異生成のベースシードを設定。
+        /// 配置IDと組み合わせて各スタンプ固有の乱数列を生成する。
+        /// </summary>
+        /// <param name="_seed">ベースシード</param>
+        public void SetVariationSeed(int _seed)
+        {
+            m_VariationSeed = _seed;
+        }
+
+        /// <summary>
         /// StampPlacementに基づいてGameObjectを生成
         /// </summary>
         /// <param name="_placement">配置データ</param>
@@ -104,8 +119,14 @@ namespace Vastcore.Terrain.DualGrid
                 Destroy(_placement.PlacementId);
             }
 
-            // ワールド座標を計算
+            // 変異用の決定論的乱数を生成
+            System.Random variationRng = new System.Random(
+                m_VariationSeed ^ _placement.PlacementId);
+
+            // ワールド座標を計算 + PositionJitter
             Vector3 position = CalculateWorldPosition(anchorCell, _placement.Layer);
+            position += _placement.Definition.GetRandomPositionOffset(variationRng);
+
             Quaternion rotation = Quaternion.Euler(0f, _placement.Rotation, 0f);
             Vector3 scale = Vector3.one * _placement.Scale;
 
@@ -115,6 +136,12 @@ namespace Vastcore.Terrain.DualGrid
 
             instance.transform.localScale = scale;
             instance.name = $"Stamp_{_placement.Definition.DisplayName}_{_placement.PlacementId}";
+
+            // MaterialVariants 適用
+            ApplyMaterialVariation(instance, _placement.Definition, variationRng);
+
+            // ChildToggleGroups 適用
+            ApplyChildToggle(instance, _placement.Definition, variationRng);
 
             m_Instances[_placement.PlacementId] = instance;
             return instance;
@@ -217,6 +244,52 @@ namespace Vastcore.Terrain.DualGrid
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// マテリアルバリエーションを適用
+        /// </summary>
+        private void ApplyMaterialVariation(GameObject _instance,
+            PrefabStampDefinition _definition, System.Random _random)
+        {
+            Material mat = _definition.GetRandomMaterial(_random);
+            if (mat == null) return;
+
+            MeshRenderer renderer = _instance.GetComponent<MeshRenderer>();
+            if (renderer != null)
+            {
+                renderer.sharedMaterial = mat;
+            }
+        }
+
+        /// <summary>
+        /// 子オブジェクト表示切替を適用
+        /// </summary>
+        private void ApplyChildToggle(GameObject _instance,
+            PrefabStampDefinition _definition, System.Random _random)
+        {
+            string[] groups = _definition.ChildToggleGroups;
+            if (groups == null || groups.Length == 0) return;
+
+            int selectedIndex = _definition.GetRandomChildToggleIndex(_random);
+
+            bool anyFound = false;
+            for (int i = 0; i < groups.Length; i++)
+            {
+                Transform child = _instance.transform.Find(groups[i]);
+                if (child != null)
+                {
+                    child.gameObject.SetActive(i == selectedIndex);
+                    anyFound = true;
+                }
+            }
+
+            // 名前が1つも見つからなかった場合は警告
+            if (!anyFound)
+            {
+                Vastcore.Core.VastcoreLogger.Instance.LogWarning(
+                    $"ChildToggleGroups: '{_definition.DisplayName}' に該当する子オブジェクトが見つかりません");
+            }
         }
 
         /// <summary>

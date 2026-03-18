@@ -56,6 +56,16 @@ namespace Vastcore.Terrain.DualGrid
         [Header("Footprint")]
         [Tooltip("占有するHexオフセット（アンカーセルからの相対座標）。空の場合は単一セル")]
         [SerializeField] private Vector2Int[] m_FootprintOffsets = new Vector2Int[0];
+
+        [Header("Variation (V1)")]
+        [Tooltip("XZ平面での位置ずれ半径（ワールド単位）。0で無効")]
+        [SerializeField] private float m_PositionJitter = 0f;
+
+        [Tooltip("ランダム選択されるマテリアル候補。空の場合はPrefab既定")]
+        [SerializeField] private Material[] m_MaterialVariants = new Material[0];
+
+        [Tooltip("表示/非表示を切り替える子オブジェクト名。各配置で1つをランダム表示。空で無効")]
+        [SerializeField] private string[] m_ChildToggleGroups = new string[0];
         #endregion
 
         #region Public Properties
@@ -94,6 +104,21 @@ namespace Vastcore.Terrain.DualGrid
         /// 単一セルスタンプかどうか
         /// </summary>
         public bool IsSingleCell => m_FootprintOffsets == null || m_FootprintOffsets.Length == 0;
+
+        /// <summary>
+        /// XZ位置ジッター半径
+        /// </summary>
+        public float PositionJitter => m_PositionJitter;
+
+        /// <summary>
+        /// マテリアルバリアント配列
+        /// </summary>
+        public Material[] MaterialVariants => m_MaterialVariants;
+
+        /// <summary>
+        /// 子オブジェクト切替グループ名配列
+        /// </summary>
+        public string[] ChildToggleGroups => m_ChildToggleGroups;
         #endregion
 
         #region Public Methods
@@ -144,6 +169,67 @@ namespace Vastcore.Terrain.DualGrid
                 default:
                     return 0f;
             }
+        }
+
+        /// <summary>
+        /// PositionJitter に基づくランダムなXZ位置オフセットを取得
+        /// </summary>
+        /// <param name="_random">乱数生成器</param>
+        /// <returns>XZオフセット（Y=0）</returns>
+        public Vector3 GetRandomPositionOffset(System.Random _random)
+        {
+            if (_random == null || m_PositionJitter <= 0f)
+            {
+                return Vector3.zero;
+            }
+
+            float angle = (float)(_random.NextDouble() * System.Math.PI * 2.0);
+            float distance = (float)_random.NextDouble() * m_PositionJitter;
+            return new Vector3(
+                Mathf.Cos(angle) * distance,
+                0f,
+                Mathf.Sin(angle) * distance);
+        }
+
+        /// <summary>
+        /// MaterialVariants からランダムに1つ選択
+        /// </summary>
+        /// <param name="_random">乱数生成器</param>
+        /// <returns>選択されたマテリアル。候補がない場合はnull</returns>
+        public Material GetRandomMaterial(System.Random _random)
+        {
+            if (m_MaterialVariants == null || m_MaterialVariants.Length == 0)
+            {
+                return null;
+            }
+
+            if (_random == null)
+            {
+                return m_MaterialVariants[0];
+            }
+
+            int index = _random.Next(m_MaterialVariants.Length);
+            return m_MaterialVariants[index];
+        }
+
+        /// <summary>
+        /// ChildToggleGroups からランダムに1つのインデックスを選択
+        /// </summary>
+        /// <param name="_random">乱数生成器</param>
+        /// <returns>選択されたインデックス。グループがない場合は-1</returns>
+        public int GetRandomChildToggleIndex(System.Random _random)
+        {
+            if (m_ChildToggleGroups == null || m_ChildToggleGroups.Length == 0)
+            {
+                return -1;
+            }
+
+            if (_random == null)
+            {
+                return 0;
+            }
+
+            return _random.Next(m_ChildToggleGroups.Length);
         }
 
         public override string ToString()
