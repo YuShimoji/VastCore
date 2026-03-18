@@ -304,5 +304,14 @@
     "cat": "core",
     "file": "docs/02_design/SP018_PARAMETRIC_VARIATION_SPEC.md",
     "summary": "PrefabStampDefinitionへのパラメトリック変異追加。PositionJitter/MaterialVariants/ChildToggleGroups。V4段階的バリエーションの第1段階"
+  },
+  {
+    "id": "DS-009",
+    "title": "Building & Structure Inventory",
+    "status": "done",
+    "pct": 100,
+    "cat": "system",
+    "file": "docs/02_design/BUILDING_STRUCTURE_INVENTORY.md",
+    "summary": "建物・構造物の現状棚卸し。50種以上の生成能力があるが仕様は0件。カテゴリ統一・構成要素定義・配置ルールが未策定"
   }
 ]
