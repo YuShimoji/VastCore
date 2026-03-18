@@ -1,11 +1,11 @@
 # Legacy UI Migration Report (Dry Run)
 
-- Generated: 2026-03-07 21:15 (local)
+- Generated: 2026-03-17 13:31 (local)
 - Tool: UIMigrationScannerWindow.cs
 - Options: ExcludeExamples=True, ScanScripts=True, ScanScenes=True, ScanPrefabs=True
 
 ## Summary
-- Scripts scanned: 395
+- Scripts scanned: 403
 - Scenes scanned: 51
 - Prefabs scanned: 5
 - C# using UnityEngine.UI: 12

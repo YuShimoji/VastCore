@@ -20,4 +20,5 @@
   <Project Path="Vastcore.Legacy.csproj" />
   <Project Path="Vastcore.Game.csproj" />
   <Project Path="Vastcore.Editor.MapGenerator.csproj" />
+  <Project Path="Vastcore.DeformStubs.csproj" />
 </Solution>
