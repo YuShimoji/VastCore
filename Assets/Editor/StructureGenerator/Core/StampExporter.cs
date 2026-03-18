@@ -80,6 +80,20 @@ namespace Vastcore.Editor.Generation
             serializedDef.FindProperty("m_RotationMode").enumValueIndex = (int)StampRotationMode.Step90;
             serializedDef.FindProperty("m_HeightRule").enumValueIndex = (int)StampHeightRule.TopOfStack;
             serializedDef.FindProperty("m_ScaleRange").vector2Value = new Vector2(0.8f, 1.2f);
+
+            // V1 Variation: 子オブジェクト名を自動検出して ChildToggleGroups に設定
+            string[] childNames = DetectChildToggleCandidates(prefab);
+            if (childNames.Length > 0)
+            {
+                var toggleProp = serializedDef.FindProperty("m_ChildToggleGroups");
+                toggleProp.arraySize = childNames.Length;
+                for (int i = 0; i < childNames.Length; i++)
+                {
+                    toggleProp.GetArrayElementAtIndex(i).stringValue = childNames[i];
+                }
+                Debug.Log($"[StampExporter] ChildToggleGroups 自動検出: {string.Join(", ", childNames)}");
+            }
+
             serializedDef.ApplyModifiedPropertiesWithoutUndo();
 
             AssetDatabase.CreateAsset(definition, defPath);
@@ -114,6 +128,32 @@ namespace Vastcore.Editor.Generation
             }
 
             AssetDatabase.CreateFolder(parent, folderName);
+        }
+
+        /// <summary>
+        /// Prefab の直接子オブジェクトから ChildToggleGroups 候補を検出する。
+        /// 2つ以上の直接子がある場合にのみ候補として返す（1つでは切替の意味がない）。
+        /// </summary>
+        private static string[] DetectChildToggleCandidates(GameObject _prefab)
+        {
+            if (_prefab == null) return System.Array.Empty<string>();
+
+            Transform root = _prefab.transform;
+            if (root.childCount < 2) return System.Array.Empty<string>();
+
+            var names = new System.Collections.Generic.List<string>();
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                // MeshRenderer を持つ子のみ候補 (装飾パーツの差替用途)
+                if (child.GetComponent<MeshRenderer>() != null ||
+                    child.GetComponent<MeshFilter>() != null)
+                {
+                    names.Add(child.name);
+                }
+            }
+
+            return names.Count >= 2 ? names.ToArray() : System.Array.Empty<string>();
         }
 
         /// <summary>
