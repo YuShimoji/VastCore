@@ -24,8 +24,9 @@ namespace Vastcore.Editor.Generation
         /// 選択中の GameObject を Prefab 化し、PrefabStampDefinition を自動生成する
         /// </summary>
         /// <param name="_target">エクスポート対象の GameObject</param>
+        /// <param name="_positionJitter">V1: XZ位置ジッター半径（0で無効）</param>
         /// <returns>生成された PrefabStampDefinition（失敗時 null）</returns>
-        public static PrefabStampDefinition ExportAsStamp(GameObject _target)
+        public static PrefabStampDefinition ExportAsStamp(GameObject _target, float _positionJitter = 0f)
         {
             if (_target == null)
             {
@@ -80,6 +81,12 @@ namespace Vastcore.Editor.Generation
             serializedDef.FindProperty("m_RotationMode").enumValueIndex = (int)StampRotationMode.Step90;
             serializedDef.FindProperty("m_HeightRule").enumValueIndex = (int)StampHeightRule.TopOfStack;
             serializedDef.FindProperty("m_ScaleRange").vector2Value = new Vector2(0.8f, 1.2f);
+
+            // V1 Variation: PositionJitter を設定
+            if (_positionJitter > 0f)
+            {
+                serializedDef.FindProperty("m_PositionJitter").floatValue = _positionJitter;
+            }
 
             // V1 Variation: 子オブジェクト名を自動検出して ChildToggleGroups に設定
             string[] childNames = DetectChildToggleCandidates(prefab);

@@ -85,6 +85,11 @@ namespace Vastcore.Editor.Generation
             DrawStampExportSection();
         }
 
+        #region Stamp Export Fields
+        private bool _showVariationPreview = true;
+        private float _exportPositionJitter = 0f;
+        #endregion
+
         /// <summary>
         /// 選択中の構造物を PrefabStampDefinition にエクスポートする UI
         /// </summary>
@@ -105,16 +110,85 @@ namespace Vastcore.Editor.Generation
                 "Prefab + PrefabStampDefinition を自動生成し、DualGrid 配置で使用可能にします。",
                 MessageType.Info);
 
+            // --- V1 Variation Preview ---
+            _showVariationPreview = EditorGUILayout.Foldout(_showVariationPreview, "Variation Preview (V1)");
+            if (_showVariationPreview)
+            {
+                EditorGUI.indentLevel++;
+                DrawVariationPreview(selected);
+                EditorGUI.indentLevel--;
+            }
+
             if (GUILayout.Button("Export as Stamp", GUILayout.Height(30)))
             {
-                var def = StampExporter.ExportAsStamp(selected);
+                var def = StampExporter.ExportAsStamp(selected, _exportPositionJitter);
                 if (def != null)
                 {
+                    string childInfo = def.ChildToggleGroups.Length > 0
+                        ? $"\nChildToggleGroups: {string.Join(", ", def.ChildToggleGroups)}"
+                        : "";
+                    string jitterInfo = def.PositionJitter > 0
+                        ? $"\nPositionJitter: {def.PositionJitter:F2}"
+                        : "";
+
                     EditorUtility.DisplayDialog(
                         "Stamp Export",
-                        $"エクスポート完了:\n{def.DisplayName}\n\nTerrainWithStampsBootstrap の stampDefinition にアサインして使用してください。",
+                        $"エクスポート完了:\n{def.DisplayName}{childInfo}{jitterInfo}" +
+                        "\n\nTerrainWithStampsBootstrap の stampDefinition にアサインして使用してください。",
                         "OK");
                 }
+            }
+        }
+
+        /// <summary>
+        /// 変異パラメータのプレビュー表示
+        /// </summary>
+        private void DrawVariationPreview(GameObject _target)
+        {
+            // PositionJitter 設定
+            _exportPositionJitter = EditorGUILayout.Slider(
+                "Position Jitter", _exportPositionJitter, 0f, 2f);
+
+            // 子オブジェクト候補の検出と表示
+            var children = new System.Collections.Generic.List<string>();
+            Transform root = _target.transform;
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (child.GetComponent<MeshRenderer>() != null ||
+                    child.GetComponent<MeshFilter>() != null)
+                {
+                    children.Add(child.name);
+                }
+            }
+
+            if (children.Count >= 2)
+            {
+                EditorGUILayout.LabelField("Child Toggle Candidates", EditorStyles.miniLabel);
+                EditorGUI.indentLevel++;
+                foreach (string name in children)
+                {
+                    EditorGUILayout.LabelField($"• {name}", EditorStyles.miniLabel);
+                }
+                EditorGUI.indentLevel--;
+                EditorGUILayout.HelpBox(
+                    $"{children.Count}個の子オブジェクトを検出。Export時にChildToggleGroupsへ自動設定されます。",
+                    MessageType.None);
+            }
+            else
+            {
+                EditorGUILayout.LabelField(
+                    "ChildToggleGroups: なし (MeshRenderer付き子オブジェクトが2つ未満)",
+                    EditorStyles.miniLabel);
+            }
+
+            // マテリアル情報
+            var renderer = _target.GetComponent<MeshRenderer>();
+            if (renderer != null && renderer.sharedMaterial != null)
+            {
+                EditorGUILayout.LabelField(
+                    $"Material: {renderer.sharedMaterial.name} (MaterialVariantsはInspectorで後から追加)",
+                    EditorStyles.miniLabel);
             }
         }
         
