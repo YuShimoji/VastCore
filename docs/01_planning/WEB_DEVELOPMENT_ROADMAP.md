@@ -1,3 +1,5 @@
+> **LEGACY**: Cursor Web 開発は廃止。現在は Claude Code + Unity 直接開発。歴史的資料として保持。
+
 # Vastcore Cursor Web 開発ロードマップ
 
 **最終更新**: 2025年1月  

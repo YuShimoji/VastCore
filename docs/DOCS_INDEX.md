@@ -2,7 +2,7 @@
 
 > **上位SSOT**: [SSOT_WORLD.md](SSOT_WORLD.md)
 
-**最終更新**: 2026-03-08
+**最終更新**: 2026-03-18
 
 ---
 
@@ -24,7 +24,7 @@
 
 仕様書・設計書の構造化索引。ステータス・実装率・カテゴリで管理する。
 
-- **データソース**: [spec-index.json](spec-index.json) (26件収録)
+- **データソース**: [spec-index.json](spec-index.json) (34件収録)
 - **ID体系**: `SP-xxx` = 仕様書 / `DS-xxx` = 設計書 / `AR-xxx` = アーキテクチャ
 - **ステータス**: done / partial / todo / legacy
 - **カテゴリ**: core / ui / system / infra
@@ -75,7 +75,7 @@
 | [TEST_PLAN.md](01_planning/TEST_PLAN.md) | テスト計画（全体） |
 | [WEB_DEVELOPMENT_ROADMAP.md](01_planning/WEB_DEVELOPMENT_ROADMAP.md) | Web開発ロードマップ |
 
-### 02_design/ — 設計仕様 (28 files)
+### 02_design/ — 設計仕様 (32 files)
 
 | ファイル | 役割 |
 |---------|------|
@@ -107,6 +107,10 @@
 | [DESTRUCTIBLE_ARCHITECTURE_SPEC.md](02_design/DESTRUCTIBLE_ARCHITECTURE_SPEC.md) | 破壊可能建造物 (SP-012, todo) |
 | [COMPOSITE_STRUCTURE_RULES_SPEC.md](02_design/COMPOSITE_STRUCTURE_RULES_SPEC.md) | 複合構造物組立ルール (SP-013, todo) |
 | [STAMP_EXPORT_PIPELINE_SPEC.md](02_design/STAMP_EXPORT_PIPELINE_SPEC.md) | Stamp Export Pipeline (SP-017, partial) |
+| [SP018_PARAMETRIC_VARIATION_SPEC.md](02_design/SP018_PARAMETRIC_VARIATION_SPEC.md) | パラメトリック変異 V1 (SP-018, partial) |
+| [BUILDING_DEFINITION_SPEC.md](02_design/BUILDING_DEFINITION_SPEC.md) | 建物定義 タグ重み複合体方式 (SP-019, partial) |
+| [BUILDING_STRUCTURE_INVENTORY.md](02_design/BUILDING_STRUCTURE_INVENTORY.md) | 建物・構造物 現状棚卸し (DS-009, done) |
+| [BUILDING_SPEC_HANDOFF.md](02_design/BUILDING_SPEC_HANDOFF.md) | 建物仕様策定 別セッション Handoff Packet |
 
 ### 03_guides/ — ガイド・手順書 (15 files)
 

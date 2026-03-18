@@ -4,7 +4,7 @@
 
 ## Summary
 - Total: 36 tasks
-- Done: 29 | In Progress: 0 | Frozen: 1 | Deferred: 1 | Obsolete: 1 | Superseded: 1 | Legacy: 3
+- Done: 30 | In Progress: 0 | Frozen: 1 | Deferred: 1 | Obsolete: 1 | Superseded: 1 | Legacy: 2
 
 ## Phase A (Terrain Core Stabilization)
 | ID | Title | Status | Summary |
@@ -24,7 +24,7 @@
 ## Phase C (Deform + CSG)
 | ID | Title | Status | Summary |
 |---|---|---|---|
-| PC-1 | Deform パッケージ正式導入と統合検証 | OPEN | Deform をスタブ運用から正式パッケージ運用へ移行し統合動作を検証 |
+| PC-1 | Deform パッケージ正式導入と統合検証 | DONE | Deform をスタブ運用から正式パッケージ運用へ移行し統合動作を検証 |
 
 ## Terrain Vertical Slice
 | ID | Title | Status | Summary |
@@ -72,4 +72,4 @@
 ## Notes
 - Legacy tasks (010-030) are historical records and may contain duplicate IDs (e.g., two TASK_014, two TASK_028)
 - Tasks marked as BLOCKED have documented blockers in their respective task files
-- Phase C (Deform + CSG) has only one task (PC-1) which is pending dependency completion
+- Phase C (Deform + CSG) 完了。PC-1 含む全タスク DONE

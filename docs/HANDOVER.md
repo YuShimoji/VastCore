@@ -2,9 +2,9 @@
 
 # VastCore — Handover / ワークフロー仕様書
 
-**最終更新**: 2026-03-17
+**最終更新**: 2026-03-18
 **Actor**: Claude Code (Opus 4.6)
-**Type**: local/origin統合 + spec-index整合 + 夜間自走
+**Type**: Phase D 進行中 — SP-018/019 実装 + 実機検証準備
 
 ---
 
@@ -15,10 +15,10 @@
 | **ブランチ** | `main` (trunk-based, local/origin統合済み 2026-03-17) |
 | **Unity** | 6000.3.6f1 (URP) |
 | **C#制約** | .NET Standard 2.1, C# 9.0 |
-| **コンパイル** | 要確認 (マージ後未検証) |
-| **EditModeテスト** | 91件+ (最終確認はマージ前) |
+| **コンパイル** | 要確認 (session 4/5 で修正済みだが Unity 実機未検証) |
+| **EditModeテスト** | 91件+ (session 4 で 3 件追加: StructureTagAdapter/Profile/ComponentSelector) |
 | **PlayModeテスト** | 0件 (未着手、ゲート対象) |
-| **現フェーズ** | Phase A/B/C 完了 + SG-1/SG-2 + PD-4。Phase D 未着手 |
+| **現フェーズ** | Phase D 進行中 (T1 オーサリング + V4 段階的バリエーション) |
 
 ---
 
@@ -144,16 +144,26 @@ Testing (テスト用スタブ・ヘルパー)
 | Phase A | 安定化 | **完了** | コンパイル安定性、ブロッカー解消 |
 | Phase B | 品質基盤 | **完了** | EditMode 75テスト、TODO 20→3 削減 |
 | Phase C | 機能完成 | **完了** | Deform正式統合、CSG検証、PC-1~PC-5 完了 |
-| Phase D | 最適化 | 未着手 | 60FPS安定、パフォーマンスチューニング |
+| Phase D | オーサリング + バリエーション | **進行中** | T1オーサリング主体 + V4段階的バリエーション。SP-018(V1)/SP-019(建物定義) 実装中 |
 | Phase E | 仕上げ | 未着手 | ドキュメント整合性、UI近代化 |
 
-### Phase D の次期タスク候補
+### Phase D 進行状況
 
-| タスクID | 内容 | 優先度 |
-|---------|------|--------|
-| TASK_PM-1 | PlayMode Smoke Test 導入 | Medium |
-| TASK_PD-1 | パフォーマンスプロファイリング | High |
-| TASK_PB-3 | Terrain 3D Composition プロトタイプ | Medium |
+| 項目 | 状態 | pct |
+|------|------|-----|
+| PD-4: 巨大ファイル分割 | **完了** | 100 |
+| SP-018: パラメトリック変異 (V1) | 実装済み、実機検証待ち | 85 |
+| SP-017: StampExporter | 実装済み、実機検証待ち | 75 |
+| SP-019: 建物定義 (タグ重み複合体) | Phase 1 コアデータ構造実装中 | 65 |
+| PD-2: ランダム制御 (V1.5) | 未着手 | 0 |
+| PD-1: 高度合成 (V3) | 未着手 | 0 |
+| PD-3: パフォーマンス最適化 | 未着手 | 0 |
+
+### 次ステップ
+
+1. Unity実機検証: コンパイル確認 → QUICKSTART Step 1-3b (SP-017/018 目視)
+2. SP-019 Phase 2-6 残実装
+3. PD-2 ランダム制御 → V1.5 (RandomControlTab→StampDefinition転写)
 
 ---
 
@@ -170,6 +180,18 @@ Testing (テスト用スタブ・ヘルパー)
 ---
 
 ## 7. セッション履歴
+
+### 2026-03-18: Phase D 進行 — SP-018/019 実装 + 棚卸し (session 4/5)
+
+| # | コミット | 内容 |
+|---|---------|------|
+| 1 | `ee18873` | Unity 6000.3.6f1 + package upgrades |
+| 2 | `e5bc669` | feat(SP-018): V1 parametric variation (PositionJitter/MaterialVariants/ChildToggleGroups) |
+| 3 | `7290a4a` | feat(SP-018): PrefabStampDefinition Custom Inspector + variation preview |
+| 4 | `ff0cd6a` | docs: Phase D scope — T1+V4方針反映 + V1→V3拡張パス定義 |
+| 5 | `a65655e` | feat: TerrainWithStampsBootstrap 複数StampDef対応 |
+| 6 | `ce5aae0` | feat(SP-019): Building Definition Tag-Weight Composite Phase 1-3 |
+| 7 | `903e190` | docs: session 5 handoff (REFRESH + コンパイル修正 + 棚卸し) |
 
 ### 2026-03-18: パイプライン貫通 + タスク整理 + push (夜間自走 session 2)
 

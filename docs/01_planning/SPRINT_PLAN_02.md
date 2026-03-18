@@ -1,3 +1,5 @@
+> **LEGACY**: Sprint 02 (旧UI移行) 完了済み。歴史的資料として保持。
+
 # Sprint 02 計画
 
 - **[A] 旧UI → Vastcore.UI 置換ルール**

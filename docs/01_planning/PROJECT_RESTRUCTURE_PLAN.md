@@ -1,3 +1,5 @@
+> **LEGACY**: Phase A (安定化) で完了済み。REFACTORING_PLAN.md と重複。歴史的資料として保持。
+
 # Vastcoreプロジェクト構造整理計画
 
 ## 現在の問題点
