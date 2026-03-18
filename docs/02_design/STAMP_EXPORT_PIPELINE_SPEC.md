@@ -2,7 +2,7 @@
 
 # SP-017: Stamp Export Pipeline Spec
 
-**Status:** partial (50%)
+**Status:** partial (75%)
 **Version:** v1.0
 **Last Updated:** 2026-03-17
 

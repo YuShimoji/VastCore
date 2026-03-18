@@ -48,6 +48,32 @@ Phase C 実装完了後の動作検証手順。全アセットを一括生成し
 - 自動配置がランダムに散布されるか
 - Stamp Seed を変えると配置パターンが変わるか
 
+### V1 変異確認 (SP-018)
+
+1. **Stamp_Cube** の Inspector を開く → **Variation (V1)** セクションが表示されるか
+2. **Position Jitter** を 0.5 に設定 → Play → 各 Cube の位置が微妙にずれるか
+3. **Material Variants** にマテリアルを2つ設定 → Play → Cube ごとにマテリアルが異なるか
+4. **Variation Preview** セクションを開く → Seed を変えて 3 サンプルの値が変わるか
+5. Stamp Seed 固定で2回 Play → 同じ配置パターンが再現されるか (決定論的再現性)
+
+## Step 3b: Stamp Export (SP-017)
+
+1. メニュー: **Tools > Vastcore > Structure Generator** を開く
+2. **Basic Shapes** タブで Arch を Generate
+3. 生成された Arch を Hierarchy で選択
+4. Structure Generator ウィンドウ下部に **Stamp Export** セクションが表示される
+5. **Variation Preview (V1)** を開く:
+   - Position Jitter スライダーが動作するか
+   - Child Toggle Candidates に子オブジェクトが列挙されるか (2つ以上ある場合)
+6. **Export as Stamp** ボタンを押す
+7. `Assets/Resources/Stamps/` に Prefab + StampDefinition が生成されるか
+
+### 確認ポイント
+
+- エクスポートダイアログに DisplayName / ChildToggleGroups / PositionJitter が表示されるか
+- 生成された StampDefinition の Inspector に V1 セクションが表示されるか
+- 生成された StampDefinition を TerrainWithStampsBootstrap にアサインして Play → 動作するか
+
 ## Step 4: エロージョンプレビュー (ErosionPreview)
 
 1. 空の GameObject に `ErosionPreview` を追加 (MeshFilter + MeshRenderer 自動追加)
@@ -106,3 +132,6 @@ Phase C 実装完了後の動作検証手順。全アセットを一括生成し
 | Player が出現しない | PlayerPrefab 未アサイン | Player_Minimal をアサイン |
 | Gizmo が見えない | Game View で確認している | Scene View に切り替え |
 | エロージョンの効果がない | ErosionSettings.enabled = false | Inspector で true にする |
+| Variation セクションが見えない | Custom Inspector 未適用 | PrefabStampDefinitionEditor.cs がコンパイルされているか確認 |
+| 変異が適用されない | PositionJitter = 0 / 配列が空 | Inspector で値を設定する |
+| Export ボタンが表示されない | MeshFilter のないオブジェクトを選択 | MeshFilter 付きオブジェクトを選択 |

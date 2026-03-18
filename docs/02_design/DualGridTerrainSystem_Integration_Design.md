@@ -3,7 +3,7 @@
 **Version:** 0.1 (Draft)  
 **Target:** Unity / C#  
 **Last Updated:** 2026-01-12  
-**Status:** 設計段階（実装未着手）
+**Status:** 実装済み（TerrainWithStampsBootstrap + IHeightSampler + UnityTerrainHeightSampler）
 
 ---
 
