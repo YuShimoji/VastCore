@@ -1,18 +1,18 @@
 # WORKFLOW STATE SSOT
 
-Last Updated: 2026-03-18
+Last Updated: 2026-03-22
 
 ## Mission
 
 広大な景観に映える、ユニークで巨大な人工構造物をプロシージャルに生成する基盤の確立。
-Phase A/B/C 完了。SG-1/SG-2 + PD-4 完了。Phase D スコープ策定中。
+Phase A/B/C 完了。SG-1/SG-2 + PD-4 完了。Phase D 実装進行中。
 
 ## Current Focus
 
-**Phase D: オーサリング主体 + 段階的バリエーション** — 最終体験像(T1)とバリエーション手段(V4)を決定 (2026-03-18)。
-StructureGeneratorはEditorツールとして深化。バリエーションはまずV1(パラメトリック変異)をPrefabStampDefinitionに追加、検証後にWFC/CSGへ拡張。
-SP-019 建物定義仕様策定完了 (タグ重み複合体方式)。Phase 1 コアデータ構造の実装中。
-次: SP-019 Phase 1 実装 → Unity実機検証 (SG-1/SG-2 + SP-017 + SP-018 + SP-019)。
+**Phase D: オーサリング主体 + 段階的バリエーション** — T1+V4方針決定済み。
+SP-018 (pct 85) + SP-017 (pct 75) + SP-019 Phase 1-3 (pct 65) 実装済み。
+コード品質・asmdef整合・meta欠落・仕様整合は全てクリーン (session 8 検証)。
+次: Unity実機検証 (QUICKSTART Step 1-3b) → SP-017/018 pct更新 → SP-019 Phase 4-6設計。
 
 ## Done 条件
 

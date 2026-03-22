@@ -1,7 +1,7 @@
 # 建物定義仕様書 (Building Definition Specification)
 
 - **ID**: SP-019
-- **ステータス**: draft
+- **ステータス**: partial
 - **バージョン**: 0.1.0
 - **作成日**: 2026-03-18
 - **前提**: DS-009 (棚卸し完了), SP-010 (Stamp配置), SP-017 (StampExport), SP-018 (パラメトリック変異)

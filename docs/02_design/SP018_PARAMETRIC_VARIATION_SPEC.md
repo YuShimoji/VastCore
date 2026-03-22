@@ -3,7 +3,7 @@
 > 上位SSOT: [SSOT_WORLD.md](../SSOT_WORLD.md)
 > 関連: SP-010 (Prefab Stamp Placement), SP-017 (Stamp Export Pipeline)
 
-## Status: DRAFT
+## Status: PARTIAL (Unity実機検証待ち)
 
 ## 概要
 
