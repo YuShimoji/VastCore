@@ -318,10 +318,10 @@
     "id": "SP-019",
     "title": "Building Definition (Tag-Weight Composite)",
     "status": "partial",
-    "pct": 85,
+    "pct": 100,
     "cat": "core",
     "file": "docs/02_design/BUILDING_DEFINITION_SPEC.md",
-    "summary": "タグ重み複合体方式による建物定義。フラットタグ(0.0-1.0)+ブレンドスコア(コサイン類似度)+SOプリセット。構成要素(外殻/開口部/装飾)+配置ルール(親和度マトリクス)+スタイル(StructureMaterialPalette SO+StructureMaterialSelector)。Phase 1-5実装済み、Phase 6 Inspector未着手"
+    "summary": "タグ重み複合体方式による建物定義。フラットタグ(0.0-1.0)+ブレンドスコア(コサイン類似度)+SOプリセット。構成要素(外殻/開口部/装飾)+配置ルール(親和度マトリクス)+スタイル(StructureMaterialPalette SO+StructureMaterialSelector)。Phase 1-6全完了"
   },
   {
     "id": "SP-020",
