@@ -2,6 +2,7 @@ using UnityEngine;
 using Vastcore.Terrain.Config;
 using Vastcore.Terrain.Erosion;
 using Vastcore.Terrain.Providers;
+using Vastcore.Utilities;
 
 namespace Vastcore.Terrain
 {
@@ -23,8 +24,8 @@ namespace Vastcore.Terrain
         {
             _config = config;
             _worldOrigin = worldOrigin;
-            if (config == null) { Debug.LogError("TerrainChunk.Build: config is null"); return; }
-            if (provider == null) { Debug.LogError("TerrainChunk.Build: provider is null"); return; }
+            if (config == null) { VastcoreLogger.Instance.LogError("TerrainChunk", "TerrainChunk.Build: config is null"); return; }
+            if (provider == null) { VastcoreLogger.Instance.LogError("TerrainChunk", "TerrainChunk.Build: provider is null"); return; }
 
             int res = Mathf.Max(2, config.resolution);
             float size = Mathf.Max(1f, config.worldSize);

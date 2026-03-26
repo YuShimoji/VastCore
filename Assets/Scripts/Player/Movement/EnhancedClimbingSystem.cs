@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using Vastcore.Generation;
+using Vastcore.Utilities;
 
 namespace Vastcore.Player
 {
@@ -116,14 +117,14 @@ namespace Vastcore.Player
             
             if (playerController == null)
             {
-                Debug.LogError("AdvancedPlayerController not found on " + gameObject.name);
+                VastcoreLogger.Instance.LogError("Climbing", "AdvancedPlayerController not found on " + gameObject.name);
                 enabled = false;
                 return;
             }
-            
+
             if (characterController == null)
             {
-                Debug.LogError("CharacterController not found on " + gameObject.name);
+                VastcoreLogger.Instance.LogError("Climbing", "CharacterController not found on " + gameObject.name);
                 enabled = false;
                 return;
             }
@@ -145,7 +146,7 @@ namespace Vastcore.Player
                 climbEffect = CreateClimbParticleEffect();
             }
             
-            Debug.Log("EnhancedClimbingSystem initialized");
+            VastcoreLogger.Instance.LogInfo("Climbing", "EnhancedClimbingSystem initialized");
         }
         
         /// <summary>
@@ -524,7 +525,7 @@ namespace Vastcore.Player
             
             if (enableDebugLogs)
             {
-                Debug.Log($"Started climbing on surface: {currentClimbSurface.Value.area:F1}m2");
+                VastcoreLogger.Instance.LogDebug("Climbing", $"Started climbing on surface: {currentClimbSurface.Value.area:F1}m2");
             }
         }
         
@@ -644,7 +645,7 @@ namespace Vastcore.Player
             
             if (enableDebugLogs)
             {
-                Debug.Log("Exited climbing");
+                VastcoreLogger.Instance.LogDebug("Climbing", "Exited climbing");
             }
         }
         
@@ -682,7 +683,7 @@ namespace Vastcore.Player
                 
                 if (enableDebugLogs)
                 {
-                    Debug.Log("Performed wall jump");
+                    VastcoreLogger.Instance.LogDebug("Climbing", "Performed wall jump");
                 }
             }
         }

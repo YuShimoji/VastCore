@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using Vastcore.Utilities;
 
 namespace Vastcore.Terrain
 {
@@ -36,7 +37,7 @@ namespace Vastcore.Terrain
         [ContextMenu("Generate Basic Terrain")]
         public void GenerateBasicTerrain()
         {
-            Debug.Log("Generating basic terrain...");
+            VastcoreLogger.Instance.LogInfo("TerrainDisplay", "Generating basic terrain...");
 
             // 既存の地形を削除
             if (terrainObject != null)
@@ -78,7 +79,7 @@ namespace Vastcore.Terrain
             var meshCollider = terrainObject.AddComponent<MeshCollider>();
             meshCollider.sharedMesh = terrainMesh;
 
-            Debug.Log("Basic terrain generated successfully!");
+            VastcoreLogger.Instance.LogInfo("TerrainDisplay", "Basic terrain generated successfully!");
         }
 
         /// <summary>
@@ -179,7 +180,7 @@ namespace Vastcore.Terrain
                 terrainMesh = null;
             }
 
-            Debug.Log("Terrain cleared");
+            VastcoreLogger.Instance.LogInfo("TerrainDisplay", "Terrain cleared");
         }
 
         void OnDestroy()

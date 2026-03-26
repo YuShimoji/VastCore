@@ -323,7 +323,7 @@ namespace Vastcore.Generation
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"Tag 'CompoundArchitecture' is not defined. Skipping tag assignment. Details: {ex.Message}");
+                VastcoreLogger.Instance.LogWarning("CompoundArch", $"Tag 'CompoundArchitecture' is not defined. Skipping tag assignment. Details: {ex.Message}");
             }
         }
 

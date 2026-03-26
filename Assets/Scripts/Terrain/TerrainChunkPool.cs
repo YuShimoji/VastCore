@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Vastcore.Terrain.Config;
 using Vastcore.Terrain.Providers;
+using Vastcore.Utilities;
 
 namespace Vastcore.Terrain
 {
@@ -34,7 +35,7 @@ namespace Vastcore.Terrain
         {
             if (_config == null || _provider == null)
             {
-                Debug.LogError("TerrainChunkPool.Acquire called without config/provider");
+                VastcoreLogger.Instance.LogError("ChunkPool", "TerrainChunkPool.Acquire called without config/provider");
                 return null;
             }
 

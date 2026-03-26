@@ -1,4 +1,5 @@
 using UnityEngine;
+using Vastcore.Utilities;
 
 namespace Vastcore.Terrain.MarchingSquares
 {
@@ -72,14 +73,14 @@ namespace Vastcore.Terrain.MarchingSquares
         {
             if (_width <= 0 || _height <= 0)
             {
-                Debug.LogError($"MarchingSquaresGrid: Invalid grid size ({_width}, {_height}). Using default size (10, 10).");
+                VastcoreLogger.Instance.LogError("MarchingSquaresGrid", $"MarchingSquaresGrid: Invalid grid size ({_width}, {_height}). Using default size (10, 10).");
                 _width = 10;
                 _height = 10;
             }
 
             if (_cellSize <= 0f)
             {
-                Debug.LogError($"MarchingSquaresGrid: Invalid cell size ({_cellSize}). Using default size (1.0).");
+                VastcoreLogger.Instance.LogError("MarchingSquaresGrid", $"MarchingSquaresGrid: Invalid cell size ({_cellSize}). Using default size (1.0).");
                 _cellSize = 1.0f;
             }
 
@@ -111,7 +112,7 @@ namespace Vastcore.Terrain.MarchingSquares
         {
             if (!IsValidIndex(_x, _y))
             {
-                Debug.LogWarning($"MarchingSquaresGrid.SetVertex: Invalid index ({_x}, {_y}). Grid size is ({m_Width}, {m_Height}).");
+                VastcoreLogger.Instance.LogWarning("MarchingSquaresGrid", $"MarchingSquaresGrid.SetVertex: Invalid index ({_x}, {_y}). Grid size is ({m_Width}, {m_Height}).");
                 return;
             }
 
@@ -151,7 +152,7 @@ namespace Vastcore.Terrain.MarchingSquares
         {
             if (!IsValidIndex(_x, _y))
             {
-                Debug.LogWarning($"MarchingSquaresGrid.GetVertex: Invalid index ({_x}, {_y}). Grid size is ({m_Width}, {m_Height}). Returning false.");
+                VastcoreLogger.Instance.LogWarning("MarchingSquaresGrid", $"MarchingSquaresGrid.GetVertex: Invalid index ({_x}, {_y}). Grid size is ({m_Width}, {m_Height}). Returning false.");
                 return false;
             }
 
@@ -174,7 +175,7 @@ namespace Vastcore.Terrain.MarchingSquares
         {
             if (!IsValidIndex(_x, _y))
             {
-                Debug.LogWarning($"MarchingSquaresGrid.GetGridPoint: Invalid index ({_x}, {_y}). Grid size is ({m_Width}, {m_Height}). Returning default.");
+                VastcoreLogger.Instance.LogWarning("MarchingSquaresGrid", $"MarchingSquaresGrid.GetGridPoint: Invalid index ({_x}, {_y}). Grid size is ({m_Width}, {m_Height}). Returning default.");
                 return GridPoint.Default;
             }
 
@@ -197,7 +198,7 @@ namespace Vastcore.Terrain.MarchingSquares
         {
             if (!IsValidIndex(_x, _y))
             {
-                Debug.LogWarning($"MarchingSquaresGrid.SetGridPoint: Invalid index ({_x}, {_y}). Grid size is ({m_Width}, {m_Height}).");
+                VastcoreLogger.Instance.LogWarning("MarchingSquaresGrid", $"MarchingSquaresGrid.SetGridPoint: Invalid index ({_x}, {_y}). Grid size is ({m_Width}, {m_Height}).");
                 return;
             }
 
@@ -251,13 +252,13 @@ namespace Vastcore.Terrain.MarchingSquares
         {
             if (_width <= 0 || _height <= 0)
             {
-                Debug.LogError($"MarchingSquaresGrid.Resize: Invalid grid size ({_width}, {_height}).");
+                VastcoreLogger.Instance.LogError("MarchingSquaresGrid", $"MarchingSquaresGrid.Resize: Invalid grid size ({_width}, {_height}).");
                 return;
             }
 
             if (_cellSize <= 0f)
             {
-                Debug.LogError($"MarchingSquaresGrid.Resize: Invalid cell size ({_cellSize}).");
+                VastcoreLogger.Instance.LogError("MarchingSquaresGrid", $"MarchingSquaresGrid.Resize: Invalid cell size ({_cellSize}).");
                 return;
             }
 

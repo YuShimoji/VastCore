@@ -4,6 +4,7 @@ using TMPro;
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine.InputSystem;
+using Vastcore.Utilities;
 
 namespace Vastcore.UI
 {
@@ -122,7 +123,7 @@ namespace Vastcore.UI
             styleSystem = Resources.Load<ModernUIStyleSystem>("ModernUIStyle");
             if (styleSystem == null)
             {
-                Debug.LogWarning("ModernUIStyleSystem not found in Resources. Using default styling.");
+                VastcoreLogger.Instance.LogWarning("DebugUI", "ModernUIStyleSystem not found in Resources. Using default styling.");
             }
             
             CreateDebugPanel();
@@ -383,19 +384,19 @@ namespace Vastcore.UI
             // Add terrain-specific parameters
             AddDebugParameter("Terrain Scale", 1f, 0.1f, 5f, terrainPanel, (value) => {
                 // This would connect to the actual terrain generation system
-                Debug.Log($"Terrain Scale changed to: {value}");
+                VastcoreLogger.Instance.LogDebug("DebugUI", $"Terrain Scale changed to: {value}");
             });
-            
+
             AddDebugParameter("Height Multiplier", 50f, 10f, 200f, terrainPanel, (value) => {
-                Debug.Log($"Height Multiplier changed to: {value}");
+                VastcoreLogger.Instance.LogDebug("DebugUI", $"Height Multiplier changed to: {value}");
             });
-            
+
             AddDebugParameter("Noise Frequency", 0.01f, 0.001f, 0.1f, terrainPanel, (value) => {
-                Debug.Log($"Noise Frequency changed to: {value}");
+                VastcoreLogger.Instance.LogDebug("DebugUI", $"Noise Frequency changed to: {value}");
             });
-            
+
             AddDebugParameter("Circular Radius", 1000f, 500f, 2000f, terrainPanel, (value) => {
-                Debug.Log($"Circular Radius changed to: {value}");
+                VastcoreLogger.Instance.LogDebug("DebugUI", $"Circular Radius changed to: {value}");
             });
         }
         
@@ -404,19 +405,19 @@ namespace Vastcore.UI
             GameObject primitivePanel = CreateParameterPanel("Primitive Generation");
             
             AddDebugParameter("Spawn Probability", 0.05f, 0.01f, 0.2f, primitivePanel, (value) => {
-                Debug.Log($"Spawn Probability changed to: {value}");
+                VastcoreLogger.Instance.LogDebug("DebugUI", $"Spawn Probability changed to: {value}");
             });
-            
+
             AddDebugParameter("Min Scale", 50f, 10f, 100f, primitivePanel, (value) => {
-                Debug.Log($"Min Scale changed to: {value}");
+                VastcoreLogger.Instance.LogDebug("DebugUI", $"Min Scale changed to: {value}");
             });
-            
+
             AddDebugParameter("Max Scale", 500f, 100f, 1000f, primitivePanel, (value) => {
-                Debug.Log($"Max Scale changed to: {value}");
+                VastcoreLogger.Instance.LogDebug("DebugUI", $"Max Scale changed to: {value}");
             });
-            
+
             AddDebugParameter("Min Distance", 200f, 50f, 500f, primitivePanel, (value) => {
-                Debug.Log($"Min Distance changed to: {value}");
+                VastcoreLogger.Instance.LogDebug("DebugUI", $"Min Distance changed to: {value}");
             });
         }
         

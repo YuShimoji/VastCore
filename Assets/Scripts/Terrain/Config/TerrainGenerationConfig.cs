@@ -1,6 +1,7 @@
 using UnityEngine;
 using Vastcore.Terrain.Erosion;
 using Vastcore.Terrain.Providers;
+using Vastcore.Utilities;
 
 namespace Vastcore.Terrain.Config
 {
@@ -21,7 +22,7 @@ namespace Vastcore.Terrain.Config
         {
             if (heightmapSettings == null)
             {
-                Debug.LogError("TerrainGenerationConfig.heightmapSettings is null");
+                VastcoreLogger.Instance.LogError("TerrainConfig", "TerrainGenerationConfig.heightmapSettings is null");
                 return null;
             }
             return heightmapSettings.CreateProvider();

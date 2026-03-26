@@ -83,7 +83,7 @@ namespace Vastcore.Generation
             // 更新コルーチンを開始
             updateCoroutine = StartCoroutine(UpdatePrimitivesCoroutine());
             
-            Debug.Log("PrimitiveTerrainManager initialized");
+            VastcoreLogger.Instance.LogInfo("PrimitiveTerrain", "PrimitiveTerrainManager initialized");
         }
 
         /// <summary>
@@ -98,7 +98,7 @@ namespace Vastcore.Generation
             }
             else
             {
-                Debug.LogWarning("Player not found. Using camera as fallback.");
+                VastcoreLogger.Instance.LogWarning("PrimitiveTerrain", "Player not found. Using camera as fallback.");
                 var camera = Camera.main;
                 if (camera != null)
                 {
@@ -207,7 +207,7 @@ namespace Vastcore.Generation
             
             if (showDebugInfo && positionsToRemove.Count > 0)
             {
-                Debug.Log($"Returned {positionsToRemove.Count} distant primitives to pool");
+                VastcoreLogger.Instance.LogDebug("PrimitiveTerrain", $"Returned {positionsToRemove.Count} distant primitives to pool");
             }
         }
 
@@ -285,7 +285,7 @@ namespace Vastcore.Generation
                 var terrainInfo = TerrainAlignmentSystem.GetTerrainInfoAtPosition(position);
                 if (!terrainInfo.hasValidTerrain)
                 {
-                    Debug.LogWarning($"No valid terrain found at position {position}");
+                    VastcoreLogger.Instance.LogWarning("PrimitiveTerrain", $"No valid terrain found at position {position}");
                     return null;
                 }
                 
@@ -301,7 +301,7 @@ namespace Vastcore.Generation
                 
                 if (primitiveComponent == null)
                 {
-                    Debug.LogWarning("Failed to get object from pool");
+                    VastcoreLogger.Instance.LogWarning("PrimitiveTerrain", "Failed to get object from pool");
                     return null;
                 }
                 
@@ -327,14 +327,14 @@ namespace Vastcore.Generation
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"Spawned {rule.primitiveName} at {position} (from pool)");
+                    VastcoreLogger.Instance.LogDebug("PrimitiveTerrain", $"Spawned {rule.primitiveName} at {position} (from pool)");
                 }
                 
                 return primitiveComponent;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error spawning primitive terrain: {e.Message}");
+                VastcoreLogger.Instance.LogError("PrimitiveTerrain", $"Error spawning primitive terrain: {e.Message}", e);
                 return null;
             }
         }
@@ -362,7 +362,7 @@ namespace Vastcore.Generation
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"Returned primitive to pool at {position}");
+                    VastcoreLogger.Instance.LogDebug("PrimitiveTerrain", $"Returned primitive to pool at {position}");
                 }
             }
         }
@@ -517,7 +517,7 @@ namespace Vastcore.Generation
                 memoryManager.ForceMemoryOptimization();
             }
             
-            Debug.Log("Forced memory optimization for PrimitiveTerrainManager");
+            VastcoreLogger.Instance.LogInfo("PrimitiveTerrain", "Forced memory optimization for PrimitiveTerrainManager");
         }
         #endregion
 

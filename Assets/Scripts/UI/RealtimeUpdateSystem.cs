@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Vastcore.Utilities;
 
 namespace Vastcore.UI
 {
@@ -185,7 +186,7 @@ namespace Vastcore.UI
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"Error executing update for parameter '{updateData.parameterName}': {e.Message}");
+                    VastcoreLogger.Instance.LogError("RealtimeUpdate", $"Error executing update for parameter '{updateData.parameterName}': {e.Message}", e);
                 }
             }
         }
@@ -300,7 +301,7 @@ namespace Vastcore.UI
             {
                 if (isPerformanceLimited)
                 {
-                    Debug.LogWarning("RealtimeUpdateSystem: Performance limited mode enabled");
+                    VastcoreLogger.Instance.LogWarning("RealtimeUpdate", "Performance limited mode enabled");
                     // Reduce update frequency
                     updateThrottleTime = Mathf.Min(updateThrottleTime * 1.5f, 0.5f);
                     // Reduce batch size
@@ -308,7 +309,7 @@ namespace Vastcore.UI
                 }
                 else
                 {
-                    Debug.Log("RealtimeUpdateSystem: Performance limitation removed");
+                    VastcoreLogger.Instance.LogInfo("RealtimeUpdate", "Performance limitation removed");
                     // Restore normal update frequency
                     updateThrottleTime = Mathf.Max(updateThrottleTime / 1.5f, 0.05f);
                     // Restore batch size

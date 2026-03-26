@@ -1,4 +1,5 @@
 using UnityEngine;
+using Vastcore.Utilities;
 
 namespace Vastcore.Terrain.MarchingSquares
 {
@@ -20,7 +21,7 @@ namespace Vastcore.Terrain.MarchingSquares
         {
             if (_grid == null)
             {
-                Debug.LogError("MarchingSquaresCalculator.CalculateIndex: Grid is null.");
+                VastcoreLogger.Instance.LogError("MarchingSquares", "MarchingSquaresCalculator.CalculateIndex: Grid is null.");
                 return 0;
             }
 
@@ -53,7 +54,7 @@ namespace Vastcore.Terrain.MarchingSquares
         {
             if (_grid == null)
             {
-                Debug.LogError("MarchingSquaresCalculator.GetCellCorners: Grid is null.");
+                VastcoreLogger.Instance.LogError("MarchingSquares", "MarchingSquaresCalculator.GetCellCorners: Grid is null.");
                 return (false, false, false, false);
             }
 

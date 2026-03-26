@@ -135,7 +135,7 @@ namespace Vastcore.Core
             }
             catch (Exception handlerError)
             {
-                Debug.LogError($"エラーハンドラー自体でエラーが発生: {handlerError.Message}");
+                VastcoreLogger.Instance.LogError("ErrorHandler", $"エラーハンドラー自体でエラーが発生: {handlerError.Message}", handlerError);
                 return false;
             }
         }

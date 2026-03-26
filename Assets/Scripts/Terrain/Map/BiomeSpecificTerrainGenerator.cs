@@ -4,6 +4,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using Vastcore.Core;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -172,7 +173,7 @@ namespace Vastcore.Generation
                     GenerateGrasslandTerrain(heightmap, biomeDefinition, worldPosition);
                     break;
                 default:
-                    Debug.LogWarning($"Unknown biome type: {biomeType}");
+                    VastcoreLogger.Instance.LogWarning("BiomeTerrain", $"Unknown biome type: {biomeType}");
                     break;
             }
         }

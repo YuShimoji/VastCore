@@ -76,14 +76,14 @@ namespace Vastcore.Generation.GPU
         {
             if (!SystemInfo.supportsComputeShaders)
             {
-                Debug.LogWarning("ComputeShaders not supported. Falling back to CPU generation.");
+                VastcoreLogger.Instance.LogWarning("GPUTerrain", "ComputeShaders not supported. Falling back to CPU generation.");
                 useGPUGeneration = false;
                 return;
             }
             
             if (terrainComputeShader == null)
             {
-                Debug.LogError("Terrain ComputeShader not assigned!");
+                VastcoreLogger.Instance.LogError("GPUTerrain", "Terrain ComputeShader not assigned!");
                 useGPUGeneration = false;
                 return;
             }
@@ -96,7 +96,7 @@ namespace Vastcore.Generation.GPU
             // RenderTextureの作成
             CreateRenderTextures();
             
-            Debug.Log("GPU Terrain Generator initialized successfully");
+            VastcoreLogger.Instance.LogInfo("GPUTerrain", "GPU Terrain Generator initialized successfully");
         }
         
         private void CreateRenderTextures()
@@ -222,7 +222,7 @@ namespace Vastcore.Generation.GPU
             }
             else
             {
-                Debug.LogError("GPU Readback failed for terrain generation");
+                VastcoreLogger.Instance.LogError("GPUTerrain", "GPU Readback failed for terrain generation");
                 // CPUフォールバックを実行
                 VastcoreLogger.Instance.LogError("GPUTerrain", $"Readback error -> CPU fallback coord={request.coordinate}");
                 StartCoroutine(GenerateTerrainCPU(request.coordinate, request.parameters, request.onComplete));

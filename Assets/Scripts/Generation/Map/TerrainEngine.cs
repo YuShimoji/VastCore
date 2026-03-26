@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -113,11 +114,11 @@ namespace Vastcore.Generation
                 }
 
                 isInitialized = true;
-                Debug.Log("TerrainEngine initialized successfully");
+                VastcoreLogger.Instance.LogInfo("TerrainEngine", "TerrainEngine initialized successfully");
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"TerrainEngine initialization failed: {e.Message}");
+                VastcoreLogger.Instance.LogError("TerrainEngine", $"TerrainEngine initialization failed: {e.Message}");
             }
         }
 
@@ -201,7 +202,7 @@ namespace Vastcore.Generation
         {
             if (!isInitialized)
             {
-                Debug.LogWarning("TerrainEngine not initialized");
+                VastcoreLogger.Instance.LogWarning("TerrainEngine", "TerrainEngine not initialized");
                 return null;
             }
 
@@ -233,7 +234,7 @@ namespace Vastcore.Generation
         {
             if (!isInitialized)
             {
-                Debug.LogWarning("TerrainEngine not initialized");
+                VastcoreLogger.Instance.LogWarning("TerrainEngine", "TerrainEngine not initialized");
                 return null;
             }
 
@@ -306,7 +307,7 @@ namespace Vastcore.Generation
             activeTiles[task.coordinate] = tile;
             processingTiles.Remove(task.coordinate);
 
-            Debug.Log($"Terrain tile generated: {task.coordinate}");
+            VastcoreLogger.Instance.LogInfo("TerrainEngine", $"Terrain tile generated: {task.coordinate}");
         }
 
         /// <summary>

@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using Vastcore.Generation;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -119,7 +120,7 @@ namespace Vastcore.Generation
             
             if (logPoolOperations)
             {
-                Debug.Log($"PrimitiveTerrainObjectPool initialized with {initialPoolSize} objects");
+                VastcoreLogger.Instance.LogDebug("ObjectPool", $"PrimitiveTerrainObjectPool initialized with {initialPoolSize} objects");
             }
         }
 
@@ -145,7 +146,7 @@ namespace Vastcore.Generation
         {
             if (primitiveTerrainPrefab == null)
             {
-                Debug.LogError("PrimitiveTerrainPrefab is not assigned!");
+                VastcoreLogger.Instance.LogError("ObjectPool", "PrimitiveTerrainPrefab is not assigned!");
                 return null;
             }
             
@@ -162,7 +163,7 @@ namespace Vastcore.Generation
             
             if (logPoolOperations)
             {
-                Debug.Log($"Created new pool object: {go.name} (Total created: {totalCreated})");
+                VastcoreLogger.Instance.LogDebug("ObjectPool", $"Created new pool object: {go.name} (Total created: {totalCreated})");
             }
             
             return primitiveObj;
@@ -206,12 +207,12 @@ namespace Vastcore.Generation
                 
                 if (logPoolOperations)
                 {
-                    Debug.Log($"Retrieved object from pool: {obj.name} (Active: {activeObjects.Count})");
+                    VastcoreLogger.Instance.LogDebug("ObjectPool", $"Retrieved object from pool: {obj.name} (Active: {activeObjects.Count})");
                 }
             }
             else
             {
-                Debug.LogWarning($"Failed to get object from pool. Active: {activeObjects.Count}, Available: {availableObjects.Count}");
+                VastcoreLogger.Instance.LogWarning("ObjectPool", $"Failed to get object from pool. Active: {activeObjects.Count}, Available: {availableObjects.Count}");
             }
             
             return obj;
@@ -248,7 +249,7 @@ namespace Vastcore.Generation
             
             if (logPoolOperations)
             {
-                Debug.Log($"Returned object to pool: {obj.name} (Available: {GetTotalAvailableCount()})");
+                VastcoreLogger.Instance.LogDebug("ObjectPool", $"Returned object to pool: {obj.name} (Available: {GetTotalAvailableCount()})");
             }
         }
 
@@ -325,7 +326,7 @@ namespace Vastcore.Generation
             
             if (logPoolOperations && cleanedUp > 0)
             {
-                Debug.Log($"Cleaned up {cleanedUp} excess pool objects");
+                VastcoreLogger.Instance.LogDebug("ObjectPool", $"Cleaned up {cleanedUp} excess pool objects");
             }
         }
 
@@ -383,7 +384,7 @@ namespace Vastcore.Generation
         private void LogPerformanceStatistics()
         {
             var stats = GetPoolStatistics();
-            Debug.Log($"Pool Stats - Active: {stats.activeCount}, Available: {stats.availableCount}, " +
+            VastcoreLogger.Instance.LogInfo("ObjectPool", $"Pool Stats - Active: {stats.activeCount}, Available: {stats.availableCount}, " +
                      $"Created: {stats.totalCreated}, Reused: {stats.totalReused}, Peak: {stats.peakActiveCount}");
         }
 
@@ -447,7 +448,7 @@ namespace Vastcore.Generation
             totalReturned = 0;
             peakActiveCount = 0;
             
-            Debug.Log("Pool has been reset");
+            VastcoreLogger.Instance.LogInfo("ObjectPool", "Pool has been reset");
         }
     }
 

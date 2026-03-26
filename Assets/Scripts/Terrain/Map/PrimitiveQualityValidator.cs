@@ -3,6 +3,7 @@ using UnityEngine.ProBuilder;
 using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Generation;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -102,7 +103,7 @@ namespace Vastcore.Generation
             
             try
             {
-                Debug.Log($"Validating quality for primitive: {primitiveType}");
+                VastcoreLogger.Instance.LogInfo("QualityValidator", $"Validating quality for primitive: {primitiveType}");
                 
                 // メッシュ品質を検証
                 float meshScore = ValidateMeshQuality(primitiveObject, standards, report);
@@ -127,12 +128,12 @@ namespace Vastcore.Generation
                 // 推奨事項を生成
                 GenerateRecommendations(report);
                 
-                Debug.Log($"Quality validation completed for {primitiveType}: Score={report.overallScore:F2}, Passed={report.passedValidation}");
+                VastcoreLogger.Instance.LogInfo("QualityValidator", $"Quality validation completed for {primitiveType}: Score={report.overallScore:F2}, Passed={report.passedValidation}");
                 return report;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error validating primitive quality {primitiveType}: {e.Message}");
+                VastcoreLogger.Instance.LogError("QualityValidator", $"Error validating primitive quality {primitiveType}: {e.Message}", e);
                 report.issues.Add($"Validation error: {e.Message}");
                 return report;
             }
@@ -154,7 +155,7 @@ namespace Vastcore.Generation
             var allTypes = System.Enum.GetValues(typeof(PrimitiveTerrainGenerator.PrimitiveType))
                                 .Cast<PrimitiveTerrainGenerator.PrimitiveType>();
 
-            Debug.Log("Starting comprehensive quality validation for all 16 primitive types");
+            VastcoreLogger.Instance.LogInfo("QualityValidator", "Starting comprehensive quality validation for all 16 primitive types");
 
             foreach (var primitiveType in allTypes)
             {
@@ -185,7 +186,7 @@ namespace Vastcore.Generation
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError($"Error testing primitive {primitiveType}: {e.Message}");
+                    VastcoreLogger.Instance.LogError("QualityValidator", $"Error testing primitive {primitiveType}: {e.Message}", e);
                     var errorReport = new QualityReport(primitiveType);
                     errorReport.issues.Add($"Generation error: {e.Message}");
                     results[primitiveType] = errorReport;
@@ -714,7 +715,7 @@ namespace Vastcore.Generation
         /// </summary>
         private static void LogValidationResults(Dictionary<PrimitiveTerrainGenerator.PrimitiveType, QualityReport> results)
         {
-            Debug.Log("=== Primitive Quality Validation Results ===");
+            VastcoreLogger.Instance.LogInfo("QualityValidator", "=== Primitive Quality Validation Results ===");
             
             int passedCount = 0;
             int totalCount = results.Count;
@@ -725,26 +726,26 @@ namespace Vastcore.Generation
                 var report = kvp.Value;
                 
                 string status = report.passedValidation ? "PASS" : "FAIL";
-                Debug.Log($"{type}: {status} (Score: {report.overallScore:F2})");
+                VastcoreLogger.Instance.LogInfo("QualityValidator", $"{type}: {status} (Score: {report.overallScore:F2})");
                 
                 if (report.passedValidation)
                     passedCount++;
                 
                 if (report.issues.Count > 0)
                 {
-                    Debug.LogWarning($"  Issues: {string.Join(", ", report.issues)}");
+                    VastcoreLogger.Instance.LogWarning("QualityValidator", $"  Issues: {string.Join(", ", report.issues)}");
                 }
             }
             
-            Debug.Log($"Overall Results: {passedCount}/{totalCount} primitives passed validation ({(float)passedCount/totalCount*100:F1}%)");
+            VastcoreLogger.Instance.LogInfo("QualityValidator", $"Overall Results: {passedCount}/{totalCount} primitives passed validation ({(float)passedCount/totalCount*100:F1}%)");
             
             if (passedCount == totalCount)
             {
-                Debug.Log("✅ All 16 primitive types are generating with high quality!");
+                VastcoreLogger.Instance.LogInfo("QualityValidator", "✅ All 16 primitive types are generating with high quality!");
             }
             else
             {
-                Debug.LogWarning($"⚠️ {totalCount - passedCount} primitive types need quality improvements");
+                VastcoreLogger.Instance.LogWarning("QualityValidator", $"⚠️ {totalCount - passedCount} primitive types need quality improvements");
             }
         }
         #endregion

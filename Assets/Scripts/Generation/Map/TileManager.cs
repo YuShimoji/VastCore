@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Generation;
 using Vastcore.Core;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -97,7 +98,7 @@ namespace Vastcore.Generation
         /// </summary>
         private void InitializeTileManager()
         {
-            Debug.Log("Initializing TileManager...");
+            VastcoreLogger.Instance.LogInfo("TileManager", "Initializing TileManager...");
             
             // プレイヤーを自動検索
             if (autoFindPlayer && playerTransform == null)
@@ -116,7 +117,7 @@ namespace Vastcore.Generation
                 GenerateInitialTiles();
             }
             
-            Debug.Log($"TileManager initialized. Tile size: {tileSize}m, Load radius: {loadRadius}, Max tiles: {maxActiveTiles}");
+            VastcoreLogger.Instance.LogInfo("TileManager", $"TileManager initialized. Tile size: {tileSize}m, Load radius: {loadRadius}, Max tiles: {maxActiveTiles}");
         }
         
         /// <summary>
@@ -136,7 +137,7 @@ namespace Vastcore.Generation
             if (playerController != null)
             {
                 playerTransform = playerController.Transform;
-                Debug.Log("Found IPlayerController");
+                VastcoreLogger.Instance.LogInfo("TileManager", "Found IPlayerController");
                 return playerTransform;
             }
 
@@ -144,17 +145,17 @@ namespace Vastcore.Generation
             var playerObject = GameObject.FindGameObjectWithTag("Player");
             if (playerObject != null)
             {
-                Debug.Log("Found Player by tag");
+                VastcoreLogger.Instance.LogInfo("TileManager", "Found Player by tag");
                 return playerObject.transform;
             }
 
             if (Camera.main != null)
             {
-                Debug.Log("Using Main Camera as player");
+                VastcoreLogger.Instance.LogInfo("TileManager", "Using Main Camera as player");
                 return Camera.main.transform;
             }
 
-            Debug.LogWarning("Could not find player transform");
+            VastcoreLogger.Instance.LogWarning("TileManager", "Could not find player transform");
             return null;
         }
         
@@ -195,7 +196,7 @@ namespace Vastcore.Generation
         /// </summary>
         private void OnPlayerTileChanged()
         {
-            Debug.Log($"Player moved to tile {currentPlayerTile}");
+            VastcoreLogger.Instance.LogDebug("TileManager", $"Player moved to tile {currentPlayerTile}");
             
             // 新しく読み込むべきタイルを特定
             var tilesToLoad = GetTilesInRadius(currentPlayerTile, loadRadius);
@@ -372,7 +373,7 @@ namespace Vastcore.Generation
             loadingTiles.Remove(tileCoordinate);
             activeTiles[tileCoordinate] = tile;
             
-            Debug.Log($"Loaded tile {tileCoordinate} in {generationTime:F3}s");
+            VastcoreLogger.Instance.LogDebug("TileManager", $"Loaded tile {tileCoordinate} in {generationTime:F3}s");
         }
         
         /// <summary>
@@ -391,7 +392,7 @@ namespace Vastcore.Generation
             activeTiles.Remove(tileCoordinate);
             totalTilesUnloaded++;
             
-            Debug.Log($"Unloaded tile {tileCoordinate}");
+            VastcoreLogger.Instance.LogDebug("TileManager", $"Unloaded tile {tileCoordinate}");
         }
         #endregion
 
@@ -424,7 +425,7 @@ namespace Vastcore.Generation
             
             if (currentMemoryUsage > memoryLimitBytes)
             {
-                Debug.LogWarning($"Memory usage ({currentMemoryUsage / 1024 / 1024}MB) exceeds limit ({memoryLimitMB}MB)");
+                VastcoreLogger.Instance.LogWarning("TileManager", $"Memory usage ({currentMemoryUsage / 1024 / 1024}MB) exceeds limit ({memoryLimitMB}MB)");
                 FreeMemory();
             }
         }
@@ -544,7 +545,7 @@ namespace Vastcore.Generation
         /// </summary>
         public void UnloadAllTiles()
         {
-            Debug.Log("Unloading all tiles...");
+            VastcoreLogger.Instance.LogInfo("TileManager", "Unloading all tiles...");
             
             var tilesToUnload = activeTiles.Keys.ToList();
             foreach (var tileCoord in tilesToUnload)
@@ -614,15 +615,15 @@ namespace Vastcore.Generation
         public void LogDebugInfo()
         {
             var stats = GetStats();
-            Debug.Log($"=== TileManager Debug Info ===");
-            Debug.Log($"Active Tiles: {stats.activeTileCount}");
-            Debug.Log($"Loading Tiles: {stats.loadingTileCount}");
-            Debug.Log($"Total Generated: {stats.totalTilesGenerated}");
-            Debug.Log($"Total Unloaded: {stats.totalTilesUnloaded}");
-            Debug.Log($"Average Generation Time: {stats.averageGenerationTime:F3}s");
-            Debug.Log($"Memory Usage: {stats.currentMemoryUsageMB:F1}MB");
-            Debug.Log($"Player Tile: {stats.currentPlayerTile}");
-            Debug.Log($"==============================");
+            VastcoreLogger.Instance.LogInfo("TileManager", $"=== TileManager Debug Info ===");
+            VastcoreLogger.Instance.LogInfo("TileManager", $"Active Tiles: {stats.activeTileCount}");
+            VastcoreLogger.Instance.LogInfo("TileManager", $"Loading Tiles: {stats.loadingTileCount}");
+            VastcoreLogger.Instance.LogInfo("TileManager", $"Total Generated: {stats.totalTilesGenerated}");
+            VastcoreLogger.Instance.LogInfo("TileManager", $"Total Unloaded: {stats.totalTilesUnloaded}");
+            VastcoreLogger.Instance.LogInfo("TileManager", $"Average Generation Time: {stats.averageGenerationTime:F3}s");
+            VastcoreLogger.Instance.LogInfo("TileManager", $"Memory Usage: {stats.currentMemoryUsageMB:F1}MB");
+            VastcoreLogger.Instance.LogInfo("TileManager", $"Player Tile: {stats.currentPlayerTile}");
+            VastcoreLogger.Instance.LogInfo("TileManager", $"==============================");
         }
         #endregion
 

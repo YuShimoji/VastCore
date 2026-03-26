@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using Vastcore.Generation;
+using Vastcore.Utilities;
 
 namespace Vastcore.Player
 {
@@ -163,7 +164,7 @@ namespace Vastcore.Player
         {
             if (!IsValidLandingPosition(targetPosition))
             {
-                Debug.LogWarning("Invalid landing position detected, warp cancelled");
+                VastcoreLogger.Instance.LogWarning("Translocation", "Invalid landing position detected, warp cancelled");
                 return;
             }
             

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Utilities;
 
 namespace Vastcore.UI
 {
@@ -56,11 +57,11 @@ namespace Vastcore.UI
         {
             if (isInitialized)
             {
-                Debug.LogWarning("ModernUIManager: UI System already initialized");
+                VastcoreLogger.Instance.LogWarning("UI", "ModernUIManager: UI System already initialized");
                 return;
             }
             
-            Debug.Log("ModernUIManager: Initializing Modern UI System...");
+            VastcoreLogger.Instance.LogInfo("UI", "ModernUIManager: Initializing Modern UI System...");
             
             // Create or find required components
             SetupUIComponents();
@@ -74,7 +75,7 @@ namespace Vastcore.UI
             isInitialized = true;
             OnUISystemInitialized?.Invoke();
             
-            Debug.Log("ModernUIManager: Modern UI System initialized successfully");
+            VastcoreLogger.Instance.LogInfo("UI", "ModernUIManager: Modern UI System initialized successfully");
         }
         
         private void SetupUIComponents()
@@ -133,7 +134,7 @@ namespace Vastcore.UI
                 styleSystem = Resources.Load<ModernUIStyleSystem>("ModernUIStyle");
                 if (styleSystem == null)
                 {
-                    Debug.LogWarning("ModernUIManager: ModernUIStyleSystem not found in Resources. Consider creating one.");
+                    VastcoreLogger.Instance.LogWarning("UI", "ModernUIManager: ModernUIStyleSystem not found in Resources. Consider creating one.");
                 }
             }
         }
@@ -174,14 +175,14 @@ namespace Vastcore.UI
             {
                 performanceMonitor.OnPerformanceStateChanged += (state) =>
                 {
-                    Debug.Log($"Performance state changed to: {state}");
+                    VastcoreLogger.Instance.LogInfo("UI", $"Performance state changed to: {state}");
                 };
                 
                 performanceMonitor.OnWarningsUpdated += (warnings) =>
                 {
                     foreach (string warning in warnings)
                     {
-                        Debug.LogWarning($"Performance Warning: {warning}");
+                        VastcoreLogger.Instance.LogWarning("UI", $"Performance Warning: {warning}");
                     }
                 };
             }
@@ -207,18 +208,18 @@ namespace Vastcore.UI
             
             RegisterParameter("Terrain_Scale", 1f, 0.1f, 5f, (value) =>
             {
-                Debug.Log($"Terrain Scale updated to: {value}");
+                VastcoreLogger.Instance.LogDebug("UI", $"Terrain Scale updated to: {value}");
                 // This would call the actual terrain generation system
             });
             
             RegisterParameter("Terrain_HeightMultiplier", 50f, 10f, 200f, (value) =>
             {
-                Debug.Log($"Terrain Height Multiplier updated to: {value}");
+                VastcoreLogger.Instance.LogDebug("UI", $"Terrain Height Multiplier updated to: {value}");
             });
             
             RegisterParameter("Terrain_NoiseFrequency", 0.01f, 0.001f, 0.1f, (value) =>
             {
-                Debug.Log($"Terrain Noise Frequency updated to: {value}");
+                VastcoreLogger.Instance.LogDebug("UI", $"Terrain Noise Frequency updated to: {value}");
             });
         }
         
@@ -228,17 +229,17 @@ namespace Vastcore.UI
             
             RegisterParameter("Primitive_SpawnProbability", 0.05f, 0.01f, 0.2f, (value) =>
             {
-                Debug.Log($"Primitive Spawn Probability updated to: {value}");
+                VastcoreLogger.Instance.LogDebug("UI", $"Primitive Spawn Probability updated to: {value}");
             });
             
             RegisterParameter("Primitive_MinScale", 50f, 10f, 100f, (value) =>
             {
-                Debug.Log($"Primitive Min Scale updated to: {value}");
+                VastcoreLogger.Instance.LogDebug("UI", $"Primitive Min Scale updated to: {value}");
             });
             
             RegisterParameter("Primitive_MaxScale", 500f, 100f, 1000f, (value) =>
             {
-                Debug.Log($"Primitive Max Scale updated to: {value}");
+                VastcoreLogger.Instance.LogDebug("UI", $"Primitive Max Scale updated to: {value}");
             });
         }
         
@@ -249,7 +250,7 @@ namespace Vastcore.UI
         {
             if (!isInitialized)
             {
-                Debug.LogError("ModernUIManager: Cannot register parameter before initialization");
+                VastcoreLogger.Instance.LogError("UI", "ModernUIManager: Cannot register parameter before initialization");
                 return;
             }
             
@@ -286,11 +287,11 @@ namespace Vastcore.UI
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogWarning($"ModernUIManager: Failed to add parameter '{parameterName}' to DebugUI: {e.Message}");
+                    VastcoreLogger.Instance.LogWarning("UI", $"ModernUIManager: Failed to add parameter '{parameterName}' to DebugUI: {e.Message}");
                 }
             }
 
-            Debug.Log($"ModernUIManager: Registered parameter '{parameterName}' in category '{category}'");
+            VastcoreLogger.Instance.LogInfo("UI", $"ModernUIManager: Registered parameter '{parameterName}' in category '{category}'");
         }
         
         /// <summary>
@@ -313,7 +314,7 @@ namespace Vastcore.UI
                 debugUI.RemoveParameter(parameterName);
             }
             
-            Debug.Log($"ModernUIManager: Unregistered parameter '{parameterName}'");
+            VastcoreLogger.Instance.LogInfo("UI", $"ModernUIManager: Unregistered parameter '{parameterName}'");
         }
         
         /// <summary>

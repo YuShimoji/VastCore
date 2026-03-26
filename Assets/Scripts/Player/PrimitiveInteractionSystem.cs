@@ -128,7 +128,7 @@ namespace Vastcore.Player
             // 既存のプリミティブオブジェクトを検索して処理
             ProcessExistingPrimitives();
             
-            Debug.Log("PrimitiveInteractionSystem initialized");
+            VastcoreLogger.Instance.LogInfo("PlayerInteraction", "PrimitiveInteractionSystem initialized");
         }
         
         /// <summary>
@@ -218,7 +218,7 @@ namespace Vastcore.Player
             
             if (enableDebugLogs)
             {
-                Debug.Log($"Processed interactions for {primitive.name}: {interactionData.grindEdges.Count} grind edges, {interactionData.climbSurfaces.Count} climb surfaces");
+                VastcoreLogger.Instance.LogDebug("PlayerInteraction", $"Processed interactions for {primitive.name}: {interactionData.grindEdges.Count} grind edges, {interactionData.climbSurfaces.Count} climb surfaces");
             }
         }
         
@@ -673,7 +673,7 @@ namespace Vastcore.Player
         {
             if (showInteractionInfo)
             {
-                Debug.Log($"Detected interactions - Grind edges: {detectedGrindEdges.Count}, Climb surfaces: {detectedClimbSurfaces.Count}");
+                VastcoreLogger.Instance.LogDebug("PlayerInteraction", $"Detected interactions - Grind edges: {detectedGrindEdges.Count}, Climb surfaces: {detectedClimbSurfaces.Count}");
             }
         }
         

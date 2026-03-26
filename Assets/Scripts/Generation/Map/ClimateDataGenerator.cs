@@ -1,4 +1,5 @@
 using UnityEngine;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -94,11 +95,11 @@ namespace Vastcore.Generation
                 currentSeason = 0f;
                 
                 isInitialized = true;
-                Debug.Log("ClimateDataGenerator initialized successfully");
+                VastcoreLogger.Instance.LogInfo("ClimateData", "ClimateDataGenerator initialized successfully");
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"ClimateDataGenerator initialization failed: {e.Message}");
+                VastcoreLogger.Instance.LogError("ClimateData", $"ClimateDataGenerator initialization failed: {e.Message}");
             }
         }
         
@@ -122,7 +123,7 @@ namespace Vastcore.Generation
         {
             if (!isInitialized)
             {
-                Debug.LogWarning("ClimateDataGenerator not initialized");
+                VastcoreLogger.Instance.LogWarning("ClimateData", "ClimateDataGenerator not initialized");
                 return ClimateData.Default;
             }
             
@@ -154,7 +155,7 @@ namespace Vastcore.Generation
                 
                 if (logClimateData)
                 {
-                    Debug.Log($"Climate at {worldPosition}: T={temperature:F1}°C, M={moisture:F0}mm, " +
+                    VastcoreLogger.Instance.LogDebug("ClimateData", $"Climate at {worldPosition}: T={temperature:F1}°C, M={moisture:F0}mm, " +
                              $"Wind={windSpeed:F1}m/s {windDirection}");
                 }
                 
@@ -162,7 +163,7 @@ namespace Vastcore.Generation
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"GetClimateDataAtPosition failed: {e.Message}");
+                VastcoreLogger.Instance.LogError("ClimateData", $"GetClimateDataAtPosition failed: {e.Message}");
                 return ClimateData.Default;
             }
         }

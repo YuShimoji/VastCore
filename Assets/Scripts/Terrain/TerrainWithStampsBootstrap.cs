@@ -3,6 +3,7 @@ using UnityEngine;
 using Vastcore.Terrain.Config;
 using Vastcore.Terrain.DualGrid;
 using Vastcore.Terrain.Providers;
+using Vastcore.Utilities;
 
 namespace Vastcore.Terrain
 {
@@ -86,7 +87,7 @@ namespace Vastcore.Terrain
             PlaceStamps();
 
             int defCount = stampDefinitions != null ? stampDefinitions.Length : 0;
-            Debug.Log($"[TerrainWithStamps] Build complete: " +
+            VastcoreLogger.Instance.LogInfo("StampsBootstrap", $"[TerrainWithStamps] Build complete: " +
                       $"{m_Chunks.Count} chunks, " +
                       $"{m_Grid.Cells.Count} cells, " +
                       $"{defCount} definitions, " +
@@ -97,14 +98,14 @@ namespace Vastcore.Terrain
         {
             if (config == null)
             {
-                Debug.LogError("[TerrainWithStamps] config is null");
+                VastcoreLogger.Instance.LogError("StampsBootstrap", "[TerrainWithStamps] config is null");
                 return;
             }
 
             var provider = config.CreateHeightProvider();
             if (provider == null)
             {
-                Debug.LogError("[TerrainWithStamps] provider create failed");
+                VastcoreLogger.Instance.LogError("StampsBootstrap", "[TerrainWithStamps] provider create failed");
                 return;
             }
 
@@ -158,7 +159,7 @@ namespace Vastcore.Terrain
             var validDefs = GetValidDefinitions();
             if (validDefs.Count == 0)
             {
-                Debug.Log("[TerrainWithStamps] No valid stamp definitions, skipping stamp placement");
+                VastcoreLogger.Instance.LogInfo("StampsBootstrap", "[TerrainWithStamps] No valid stamp definitions, skipping stamp placement");
                 return;
             }
 

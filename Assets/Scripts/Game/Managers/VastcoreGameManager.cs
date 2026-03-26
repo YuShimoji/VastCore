@@ -95,7 +95,7 @@ namespace Vastcore.Game.Managers
         #region 初期化
         private void InitializeGame()
         {
-            Debug.Log("Initializing Vastcore Game Manager...");
+            VastcoreLogger.Instance.LogInfo("GameManager", "Initializing Vastcore Game Manager...");
 
             SetupQualitySettings();
             SetupEnvironment();
@@ -153,19 +153,19 @@ namespace Vastcore.Game.Managers
         #region ゲーム開始シーケンス
         private IEnumerator GameStartSequence()
         {
-            Debug.Log("[VastcoreGameManager] Starting Game Sequence...");
+            VastcoreLogger.Instance.LogInfo("GameManager", "Starting Game Sequence...");
 
             // 1. プレイヤー配置
             yield return StartCoroutine(SetupPlayer());
-            Debug.Log("[VastcoreGameManager] Player Setup Completed.");
+            VastcoreLogger.Instance.LogInfo("GameManager", "Player Setup Completed.");
 
             // 2. 地形初期化（プレイヤー位置を基準にストリーミング開始）
             yield return StartCoroutine(SetupTerrain());
-            Debug.Log("[VastcoreGameManager] Terrain Setup Completed.");
+            VastcoreLogger.Instance.LogInfo("GameManager", "Terrain Setup Completed.");
 
             // 3. カメラ・シネマティクス
             yield return StartCoroutine(SetupCinematics());
-            Debug.Log("[VastcoreGameManager] Cinematics Setup Completed.");
+            VastcoreLogger.Instance.LogInfo("GameManager", "Cinematics Setup Completed.");
 
             if (!m_SkipIntroCinematic && m_CinematicCamera != null)
             {
@@ -183,7 +183,7 @@ namespace Vastcore.Game.Managers
                 m_TitleScreenManager.ShowTitle();
             }
 
-            Debug.Log("[VastcoreGameManager] Game Sequence Completed! Player is ready.");
+            VastcoreLogger.Instance.LogInfo("GameManager", "Game Sequence Completed! Player is ready.");
         }
 
         private IEnumerator SetupTerrain()
@@ -195,7 +195,7 @@ namespace Vastcore.Game.Managers
 
             if (m_TerrainFacade == null)
             {
-                Debug.LogWarning("[VastcoreGameManager] TerrainFacade not found. Skipping terrain setup.");
+                VastcoreLogger.Instance.LogWarning("GameManager", "TerrainFacade not found. Skipping terrain setup.");
                 yield break;
             }
 
@@ -209,7 +209,7 @@ namespace Vastcore.Game.Managers
             // 初期チャンク生成のために1フレーム待機
             yield return null;
 
-            Debug.Log($"[VastcoreGameManager] Terrain mode: {m_TerrainFacade.Mode}");
+            VastcoreLogger.Instance.LogInfo("GameManager", $"Terrain mode: {m_TerrainFacade.Mode}");
         }
 
         private IEnumerator SetupPlayer()
@@ -226,7 +226,7 @@ namespace Vastcore.Game.Managers
 
             if (m_CurrentPlayer == null)
             {
-                Debug.LogError("Player could not be found or instantiated!");
+                VastcoreLogger.Instance.LogError("GameManager", "Player could not be found or instantiated!");
                 yield break;
             }
 

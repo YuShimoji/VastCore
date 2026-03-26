@@ -1,4 +1,5 @@
 using UnityEngine;
+using Vastcore.Utilities;
 
 namespace Vastcore.Terrain.MarchingSquares
 {
@@ -58,19 +59,19 @@ namespace Vastcore.Terrain.MarchingSquares
         {
             if (_heightMap == null)
             {
-                Debug.LogError("HeightMapProcessor.ProcessHeightMap: HeightMap is null.");
+                VastcoreLogger.Instance.LogError("HeightMapProcessor", "HeightMapProcessor.ProcessHeightMap: HeightMap is null.");
                 return -1;
             }
 
             if (_grid == null)
             {
-                Debug.LogError("HeightMapProcessor.ProcessHeightMap: Grid is null.");
+                VastcoreLogger.Instance.LogError("HeightMapProcessor", "HeightMapProcessor.ProcessHeightMap: Grid is null.");
                 return -1;
             }
 
             if (!_grid.UseExtendedData)
             {
-                Debug.LogWarning("HeightMapProcessor.ProcessHeightMap: ExtendedData is not enabled. Enabling ExtendedData...");
+                VastcoreLogger.Instance.LogWarning("HeightMapProcessor", "HeightMapProcessor.ProcessHeightMap: ExtendedData is not enabled. Enabling ExtendedData...");
                 _grid.UseExtendedData = true;
             }
 
@@ -93,7 +94,7 @@ namespace Vastcore.Terrain.MarchingSquares
                 }
             }
 
-            Debug.Log($"HeightMapProcessor.ProcessHeightMap: Processed {processedCount} vertices.");
+            VastcoreLogger.Instance.LogDebug("HeightMapProcessor", $"HeightMapProcessor.ProcessHeightMap: Processed {processedCount} vertices.");
             return processedCount;
         }
 

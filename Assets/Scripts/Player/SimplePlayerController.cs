@@ -1,4 +1,5 @@
 using UnityEngine;
+using Vastcore.Utilities;
 
 [RequireComponent(typeof(CharacterController))]
 public class SimplePlayerController : MonoBehaviour
@@ -49,7 +50,7 @@ public class SimplePlayerController : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Main Camera not found. Please ensure a camera is in the scene and tagged as 'MainCamera'.");
+            VastcoreLogger.Instance.LogError("Player", "Main Camera not found. Please ensure a camera is in the scene and tagged as 'MainCamera'.");
         }
     }
 

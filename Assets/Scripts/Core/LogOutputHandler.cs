@@ -59,7 +59,7 @@ namespace Vastcore.Core
             }
             catch (Exception error)
             {
-                Debug.LogError($"ファイルログ初期化エラー: {error.Message}");
+                VastcoreLogger.Instance.LogError("LogOutput", $"ファイルログ初期化エラー: {error.Message}", error);
                 enableFileLogging = false;
             }
         }
@@ -91,7 +91,7 @@ namespace Vastcore.Core
             }
             catch (Exception error)
             {
-                Debug.LogWarning($"古いログファイルクリーンアップエラー: {error.Message}");
+                VastcoreLogger.Instance.LogWarning("LogOutput", $"古いログファイルクリーンアップエラー: {error.Message}");
             }
         }
         
@@ -140,7 +140,7 @@ namespace Vastcore.Core
             }
             catch (Exception error)
             {
-                Debug.LogError($"ファイルログ出力エラー: {error.Message}");
+                VastcoreLogger.Instance.LogError("LogOutput", $"ファイルログ出力エラー: {error.Message}", error);
             }
         }
         
@@ -163,7 +163,7 @@ namespace Vastcore.Core
             }
             catch (Exception error)
             {
-                Debug.LogError($"ログファイルローテーションエラー: {error.Message}");
+                VastcoreLogger.Instance.LogError("LogOutput", $"ログファイルローテーションエラー: {error.Message}", error);
             }
         }
         
@@ -176,7 +176,7 @@ namespace Vastcore.Core
             }
             catch (Exception error)
             {
-                Debug.LogError($"ログフラッシュエラー: {error.Message}");
+                VastcoreLogger.Instance.LogError("LogOutput", $"ログフラッシュエラー: {error.Message}", error);
             }
         }
         
@@ -191,7 +191,7 @@ namespace Vastcore.Core
             }
             catch (Exception error)
             {
-                Debug.LogError($"ログファイルクローズエラー: {error.Message}");
+                VastcoreLogger.Instance.LogError("LogOutput", $"ログファイルクローズエラー: {error.Message}", error);
             }
         }
         
@@ -214,7 +214,7 @@ namespace Vastcore.Core
             }
             catch (Exception error)
             {
-                Debug.LogError($"ログ手動保存エラー: {error.Message}");
+                VastcoreLogger.Instance.LogError("LogOutput", $"ログ手動保存エラー: {error.Message}", error);
             }
         }
     }

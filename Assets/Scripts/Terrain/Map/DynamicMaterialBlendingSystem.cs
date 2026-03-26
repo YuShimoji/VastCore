@@ -118,7 +118,7 @@ namespace Vastcore.Generation
         /// </summary>
         private void InitializeBlendingSystem()
         {
-            Debug.Log("Initializing DynamicMaterialBlendingSystem...");
+            VastcoreLogger.Instance.LogInfo("MaterialBlending", "Initializing DynamicMaterialBlendingSystem...");
             
             // 必要なコンポーネントを取得
             texturingSystem = GetComponent<TerrainTexturingSystem>();
@@ -150,7 +150,7 @@ namespace Vastcore.Generation
                 StartEnvironmentalUpdates();
             }
             
-            Debug.Log("DynamicMaterialBlendingSystem initialized successfully");
+            VastcoreLogger.Instance.LogInfo("MaterialBlending", "DynamicMaterialBlendingSystem initialized successfully");
         }
         
         /// <summary>

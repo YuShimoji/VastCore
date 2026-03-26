@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -147,7 +148,7 @@ namespace Vastcore.Generation
         {
             var featureData = new TerrainFeatureData();
 
-            Debug.Log("自然地形特徴生成開始...");
+            VastcoreLogger.Instance.LogInfo("NaturalTerrain", "自然地形特徴生成開始...");
             var totalStartTime = System.DateTime.Now;
 
             try
@@ -158,7 +159,7 @@ namespace Vastcore.Generation
                     var mountainStartTime = System.DateTime.Now;
                     featureData.mountainRanges = GenerateMountainRanges(heightmap, resolution, tileSize);
                     var mountainTime = (System.DateTime.Now - mountainStartTime).TotalMilliseconds;
-                    Debug.Log($"山脈生成完了: {featureData.mountainRanges.Count}個, {mountainTime:F2}ms");
+                    VastcoreLogger.Instance.LogDebug("NaturalTerrain", $"山脈生成完了: {featureData.mountainRanges.Count}個, {mountainTime:F2}ms");
                 }
 
                 // 2. 谷システムの生成（山脈に基づいて谷を作る）
@@ -167,7 +168,7 @@ namespace Vastcore.Generation
                     var valleyStartTime = System.DateTime.Now;
                     GenerateValleys(heightmap, resolution, tileSize, featureData.mountainRanges);
                     var valleyTime = (System.DateTime.Now - valleyStartTime).TotalMilliseconds;
-                    Debug.Log($"谷生成完了: {valleyTime:F2}ms");
+                    VastcoreLogger.Instance.LogDebug("NaturalTerrain", $"谷生成完了: {valleyTime:F2}ms");
                 }
 
                 // 3. 断層線の生成（地質学的特徴を追加）
@@ -176,7 +177,7 @@ namespace Vastcore.Generation
                     var faultStartTime = System.DateTime.Now;
                     GenerateFaultLines(heightmap, resolution, tileSize);
                     var faultTime = (System.DateTime.Now - faultStartTime).TotalMilliseconds;
-                    Debug.Log($"断層線生成完了: {faultTime:F2}ms");
+                    VastcoreLogger.Instance.LogDebug("NaturalTerrain", $"断層線生成完了: {faultTime:F2}ms");
                 }
 
                 // 4. 河川システムの生成（最後に実行して水の流れを作る）
@@ -185,17 +186,17 @@ namespace Vastcore.Generation
                     var riverStartTime = System.DateTime.Now;
                     featureData.riverSystems = GenerateRiverSystems(heightmap, resolution, tileSize);
                     var riverTime = (System.DateTime.Now - riverStartTime).TotalMilliseconds;
-                    Debug.Log($"河川生成完了: {featureData.riverSystems.Count}個, {riverTime:F2}ms");
+                    VastcoreLogger.Instance.LogDebug("NaturalTerrain", $"河川生成完了: {featureData.riverSystems.Count}個, {riverTime:F2}ms");
                 }
 
                 // 5. 地形の最終調整（安息角の適用など）
                 var adjustmentStartTime = System.DateTime.Now;
                 ApplyFinalTerrainAdjustments(heightmap, resolution);
                 var adjustmentTime = (System.DateTime.Now - adjustmentStartTime).TotalMilliseconds;
-                Debug.Log($"地形調整完了: {adjustmentTime:F2}ms");
+                VastcoreLogger.Instance.LogDebug("NaturalTerrain", $"地形調整完了: {adjustmentTime:F2}ms");
 
                 var totalTime = (System.DateTime.Now - totalStartTime).TotalMilliseconds;
-                Debug.Log($"自然地形特徴生成完了 - 総時間: {totalTime:F2}ms");
+                VastcoreLogger.Instance.LogInfo("NaturalTerrain", $"自然地形特徴生成完了 - 総時間: {totalTime:F2}ms");
 
                 // 生成結果の統計情報を記録
                 featureData.generationStats = new TerrainGenerationStats
@@ -211,8 +212,7 @@ namespace Vastcore.Generation
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"自然地形特徴生成中にエラーが発生しました: {e.Message}");
-                Debug.LogError($"スタックトレース: {e.StackTrace}");
+                VastcoreLogger.Instance.LogError("NaturalTerrain", $"自然地形特徴生成中にエラーが発生しました: {e.Message}", e);
 
                 // エラー時でも基本的なデータ構造を返す
                 return featureData ?? new TerrainFeatureData();

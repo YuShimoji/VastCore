@@ -1,5 +1,6 @@
 using UnityEngine;
 using Vastcore.Generation;
+using Vastcore.Utilities;
 
 namespace Vastcore.Terrain.DualGrid
 {
@@ -26,13 +27,13 @@ namespace Vastcore.Terrain.DualGrid
         {
             if (_grid == null || _columnStack == null)
             {
-                Debug.LogError("VerticalExtrusionGenerator: Grid or ColumnStack is null.");
+                VastcoreLogger.Instance.LogError("VerticalExtrusion", "VerticalExtrusionGenerator: Grid or ColumnStack is null.");
                 return;
             }
 
             if (_heightMap == null)
             {
-                Debug.LogWarning("VerticalExtrusionGenerator: HeightMap is null. Using noise instead.");
+                VastcoreLogger.Instance.LogWarning("VerticalExtrusion", "VerticalExtrusionGenerator: HeightMap is null. Using noise instead.");
                 GenerateFromNoise(_grid, _columnStack, 0, _maxHeight);
                 return;
             }
@@ -68,7 +69,7 @@ namespace Vastcore.Terrain.DualGrid
         {
             if (_grid == null || _columnStack == null)
             {
-                Debug.LogError("VerticalExtrusionGenerator: Grid or ColumnStack is null.");
+                VastcoreLogger.Instance.LogError("VerticalExtrusion", "VerticalExtrusionGenerator: Grid or ColumnStack is null.");
                 return;
             }
 
@@ -101,13 +102,13 @@ namespace Vastcore.Terrain.DualGrid
         {
             if (_grid == null || _columnStack == null)
             {
-                Debug.LogError("VerticalExtrusionGenerator: Grid or ColumnStack is null.");
+                VastcoreLogger.Instance.LogError("VerticalExtrusion", "VerticalExtrusionGenerator: Grid or ColumnStack is null.");
                 return;
             }
 
             if (_heightMap == null || _heightMap.GetLength(0) != _mapSize || _heightMap.GetLength(1) != _mapSize)
             {
-                Debug.LogWarning("VerticalExtrusionGenerator: HeightMap array is invalid. Using noise instead.");
+                VastcoreLogger.Instance.LogWarning("VerticalExtrusion", "VerticalExtrusionGenerator: HeightMap array is invalid. Using noise instead.");
                 GenerateFromNoise(_grid, _columnStack, 0, _maxHeight);
                 return;
             }

@@ -128,7 +128,7 @@ namespace Vastcore.Generation
             {
                 if (parameters.overallSize <= 0f || parameters.structureCount <= 0)
                 {
-                    Debug.LogError($"[CompoundArchitecturalGenerator] Invalid parameters: overallSize={parameters.overallSize}, structureCount={parameters.structureCount}. Must be > 0.");
+                    VastcoreLogger.Instance.LogError("CompoundArch", $"[CompoundArchitecturalGenerator] Invalid parameters: overallSize={parameters.overallSize}, structureCount={parameters.structureCount}. Must be > 0.");
                     return null;
                 }
 
@@ -164,7 +164,7 @@ namespace Vastcore.Generation
                         GenerateTriumphalArch(compoundObject, parameters);
                         break;
                     default:
-                        Debug.LogWarning($"Compound architectural type {parameters.compoundType} not implemented");
+                        VastcoreLogger.Instance.LogWarning("CompoundArch", $"Compound architectural type {parameters.compoundType} not implemented");
                         GenerateMultipleBridge(compoundObject, parameters);
                         break;
                 }
@@ -184,12 +184,12 @@ namespace Vastcore.Generation
                 // 複合コライダーを設定
                 SetupCompoundColliders(compoundObject, parameters);
 
-                Debug.Log($"Successfully generated compound architectural structure: {parameters.compoundType}");
+                VastcoreLogger.Instance.LogInfo("CompoundArch", $"Successfully generated compound architectural structure: {parameters.compoundType}");
                 return compoundObject;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error generating compound architectural structure {parameters.compoundType}: {e}");
+                VastcoreLogger.Instance.LogError("CompoundArch", $"Error generating compound architectural structure {parameters.compoundType}: {e.Message}", e);
                 return null;
             }
         }

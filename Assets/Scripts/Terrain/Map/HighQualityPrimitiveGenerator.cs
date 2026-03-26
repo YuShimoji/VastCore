@@ -4,6 +4,7 @@ using UnityEngine.ProBuilder.MeshOperations;
 using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Core;
+using Vastcore.Utilities;
 
 #if DEFORM_AVAILABLE
 using Deform;
@@ -141,7 +142,7 @@ namespace Vastcore.Generation
             {
                 // Debug.Log($"Generating high-quality primitive: {primitiveType} at {position}");
 
-                Debug.Log($"Generating high-quality primitive: {primitiveType} at {position}");
+                VastcoreLogger.Instance.LogInfo("PrimitiveGen", $"Generating high-quality primitive: {primitiveType} at {position}");
                 
                 // 基本パラメータを設定
                 var parameters = PrimitiveTerrainGenerator.PrimitiveGenerationParams.Default(primitiveType);
@@ -156,7 +157,7 @@ namespace Vastcore.Generation
                 
                 if (highQualityMesh == null)
                 {
-                    Debug.LogError($"Failed to generate high-quality mesh for {primitiveType}");
+                    VastcoreLogger.Instance.LogError("PrimitiveGen", $"Failed to generate high-quality mesh for {primitiveType}");
                     return null;
                 }
                 // GameObjectを設定
@@ -186,15 +187,15 @@ namespace Vastcore.Generation
                 // 品質検証
                 if (!ValidatePrimitiveQuality(primitiveObject, primitiveType, quality))
                 {
-                    Debug.LogWarning($"Quality validation failed for {primitiveType}");
+                    VastcoreLogger.Instance.LogWarning("PrimitiveGen", $"Quality validation failed for {primitiveType}");
                 }
 
-                Debug.Log($"Successfully generated high-quality {primitiveType}");
+                VastcoreLogger.Instance.LogInfo("PrimitiveGen", $"Successfully generated high-quality {primitiveType}");
                 return primitiveObject;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error generating high-quality primitive {primitiveType}: {e.Message}");
+                VastcoreLogger.Instance.LogError("PrimitiveGen", $"Error generating high-quality primitive {primitiveType}: {e.Message}", e);
                 return null;
             }
         }
@@ -212,7 +213,7 @@ namespace Vastcore.Generation
             bool allPassed = true;
             var primitiveTypes = System.Enum.GetValues(typeof(PrimitiveTerrainGenerator.PrimitiveType));
             
-            Debug.Log("Starting comprehensive primitive quality test...");
+            VastcoreLogger.Instance.LogInfo("PrimitiveGen", "Starting comprehensive primitive quality test...");
             
             foreach (PrimitiveTerrainGenerator.PrimitiveType primitiveType in primitiveTypes)
             {
@@ -227,7 +228,7 @@ namespace Vastcore.Generation
                     
                     if (testObject == null)
                     {
-                        Debug.LogError($"Failed to generate {primitiveType}");
+                        VastcoreLogger.Instance.LogError("PrimitiveGen", $"Failed to generate {primitiveType}");
                         allPassed = false;
                         continue;
                     }
@@ -235,12 +236,12 @@ namespace Vastcore.Generation
                     bool passed = ValidatePrimitiveQuality(testObject, primitiveType, quality);
                     if (!passed)
                     {
-                        Debug.LogError($"Quality validation failed for {primitiveType}");
+                        VastcoreLogger.Instance.LogError("PrimitiveGen", $"Quality validation failed for {primitiveType}");
                         allPassed = false;
                     }
                     else
                     {
-                        Debug.Log($"✓ {primitiveType} passed quality test");
+                        VastcoreLogger.Instance.LogInfo("PrimitiveGen", $"✓ {primitiveType} passed quality test");
                     }
                     
                     // テストオブジェクトを削除
@@ -248,12 +249,12 @@ namespace Vastcore.Generation
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError($"Exception testing {primitiveType}: {e.Message}");
+                    VastcoreLogger.Instance.LogError("PrimitiveGen", $"Exception testing {primitiveType}: {e.Message}", e);
                     allPassed = false;
                 }
             }
             
-            Debug.Log($"Primitive quality test completed. Result: {(allPassed ? "PASSED" : "FAILED")}");
+            VastcoreLogger.Instance.LogInfo("PrimitiveGen", $"Primitive quality test completed. Result: {(allPassed ? "PASSED" : "FAILED")}");
             return allPassed;
         }
 

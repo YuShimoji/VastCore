@@ -4,6 +4,7 @@ using UnityEngine.ProBuilder.MeshOperations;
 using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Core;
+using Vastcore.Utilities;
 
 #if DEFORM_AVAILABLE
 using Deform;
@@ -29,7 +30,7 @@ namespace Vastcore.Generation
             if (quality.enableUVUnwrapping)
             {
                 // UvUnwrapping はこの ProBuilder バージョンで非公開のため、ここでは no-op とする。
-                Debug.LogWarning("UV unwrapping is not publicly exposed in this ProBuilder version. Skipping explicit unwrap.");
+                VastcoreLogger.Instance.LogWarning("PrimitiveGen", "UV unwrapping is not publicly exposed in this ProBuilder version. Skipping explicit unwrap.");
             }
 
             // メッシュ最適化
@@ -202,21 +203,21 @@ namespace Vastcore.Generation
             int expectedMinVertices = GetExpectedMinVertices(primitiveType, quality);
             if (mesh.vertexCount < expectedMinVertices)
             {
-                Debug.LogWarning($"Insufficient vertex count for {primitiveType}: {mesh.vertexCount} < {expectedMinVertices}");
+                VastcoreLogger.Instance.LogWarning("PrimitiveGen", $"Insufficient vertex count for {primitiveType}: {mesh.vertexCount} < {expectedMinVertices}");
                 return false;
             }
             
             // 三角形数の検証
             if (mesh.triangles.Length < 12) // 最低限の三角形数
             {
-                Debug.LogWarning($"Insufficient triangle count for {primitiveType}: {mesh.triangles.Length / 3}");
+                VastcoreLogger.Instance.LogWarning("PrimitiveGen", $"Insufficient triangle count for {primitiveType}: {mesh.triangles.Length / 3}");
                 return false;
             }
             
             // UV座標の検証（必要な場合）
             if (quality.enableUVUnwrapping && (mesh.uv == null || mesh.uv.Length == 0))
             {
-                Debug.LogWarning($"Missing UV coordinates for {primitiveType}");
+                VastcoreLogger.Instance.LogWarning("PrimitiveGen", $"Missing UV coordinates for {primitiveType}");
                 return false;
             }
             
@@ -224,7 +225,7 @@ namespace Vastcore.Generation
             var collider = primitiveObject.GetComponent<Collider>();
             if (quality.enablePreciseColliders && collider == null)
             {
-                Debug.LogWarning($"Missing collider for {primitiveType}");
+                VastcoreLogger.Instance.LogWarning("PrimitiveGen", $"Missing collider for {primitiveType}");
                 return false;
             }
             

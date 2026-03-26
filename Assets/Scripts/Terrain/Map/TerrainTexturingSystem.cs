@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Core;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -59,7 +60,7 @@ namespace Vastcore.Generation
         /// </summary>
         private void InitializeTexturingSystem()
         {
-            Debug.Log("Initializing TerrainTexturingSystem...");
+            VastcoreLogger.Instance.LogInfo("TerrainTexturing", "Initializing TerrainTexturingSystem...");
             
             // プレイヤーTransformを取得
             if (playerTransform == null)
@@ -85,7 +86,7 @@ namespace Vastcore.Generation
             // デフォルト設定を初期化
             InitializeDefaultSettings();
             
-            Debug.Log("TerrainTexturingSystem initialized successfully");
+            VastcoreLogger.Instance.LogInfo("TerrainTexturing", "TerrainTexturingSystem initialized successfully");
         }
         
         /// <summary>

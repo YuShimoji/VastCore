@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using Vastcore.Utilities;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -53,7 +54,7 @@ namespace Vastcore.Generation.GPU
             terrainGenerator = FindFirstObjectByType<GPUTerrainGenerator>();
             if (terrainGenerator == null)
             {
-                Debug.LogWarning("GPUTerrainGenerator not found. Performance monitoring disabled.");
+                VastcoreLogger.Instance.LogWarning("GPUPerf", "GPUTerrainGenerator not found. Performance monitoring disabled.");
                 enableMonitoring = false;
             }
         }
@@ -118,12 +119,12 @@ namespace Vastcore.Generation.GPU
         {
             if (perfInfo.activeGenerations > maxConcurrentOperations / 2)
             {
-                Debug.LogWarning($"High GPU load detected. Consider reducing concurrent generations from {perfInfo.activeGenerations} to {maxConcurrentOperations / 2}");
+                VastcoreLogger.Instance.LogWarning("GPUPerf", $"High GPU load detected. Consider reducing concurrent generations from {perfInfo.activeGenerations} to {maxConcurrentOperations / 2}");
             }
             
             if (perfInfo.textureResolution > 512 && frameTimeSamples.LastOrDefault() > targetFrameTime * 2f)
             {
-                Debug.LogWarning($"Consider reducing texture resolution from {perfInfo.textureResolution} to improve performance");
+                VastcoreLogger.Instance.LogWarning("GPUPerf", $"Consider reducing texture resolution from {perfInfo.textureResolution} to improve performance");
             }
         }
         
@@ -167,7 +168,7 @@ namespace Vastcore.Generation.GPU
         {
             var stats = GetCurrentStats();
             
-            Debug.Log($"GPU Performance Stats:\n" +
+            VastcoreLogger.Instance.LogInfo("GPUPerf", $"GPU Performance Stats:\n" +
                      $"Frame Time: Avg={stats.averageFrameTime:F2}ms, Max={stats.maxFrameTime:F2}ms, Min={stats.minFrameTime:F2}ms\n" +
                      $"GPU Memory: Avg={stats.averageGPUMemory:F1}MB, Max={stats.maxGPUMemory:F1}MB\n" +
                      $"Generations: Avg={stats.averageGenerationCount}, Max={stats.maxGenerationCount}\n" +
@@ -189,7 +190,7 @@ namespace Vastcore.Generation.GPU
                 if (stats.averageFrameTime > targetFrameTime * 1.5f)
                 {
                     int newMaxConcurrent = Mathf.Max(1, perfInfo.maxConcurrentGenerations - 1);
-                    Debug.Log($"Auto-optimizing: Reducing max concurrent generations to {newMaxConcurrent}");
+                    VastcoreLogger.Instance.LogInfo("GPUPerf", $"Auto-optimizing: Reducing max concurrent generations to {newMaxConcurrent}");
                     // terrainGenerator.SetMaxConcurrentGenerations(newMaxConcurrent);
                 }
                 
@@ -197,7 +198,7 @@ namespace Vastcore.Generation.GPU
                 if (stats.averageGPUMemory > maxGPUMemoryUsage * 0.9f)
                 {
                     int newResolution = Mathf.Max(256, perfInfo.textureResolution / 2);
-                    Debug.Log($"Auto-optimizing: Reducing texture resolution to {newResolution}");
+                    VastcoreLogger.Instance.LogInfo("GPUPerf", $"Auto-optimizing: Reducing texture resolution to {newResolution}");
                     // terrainGenerator.SetTextureResolution(newResolution);
                 }
             }

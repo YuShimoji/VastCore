@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.ProBuilder;
 using System.Collections.Generic;
 using System.Linq;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -90,14 +91,14 @@ namespace Vastcore.Generation
         {
             try
             {
-                Debug.Log($"Starting crystal growth simulation for {crystalParams.crystalSystem}");
-                
+                VastcoreLogger.Instance.LogInfo("CrystalGrowth", $"Starting crystal growth simulation for {crystalParams.crystalSystem}");
+
                 // 初期結晶核を生成
                 ProBuilderMesh crystal = GenerateInitialNucleus(crystalParams);
-                
+
                 if (crystal == null)
                 {
-                    Debug.LogError("Failed to generate initial crystal nucleus");
+                    VastcoreLogger.Instance.LogError("CrystalGrowth", "Failed to generate initial crystal nucleus");
                     return null;
                 }
 
@@ -127,12 +128,12 @@ namespace Vastcore.Generation
                 crystal.ToMesh();
                 crystal.Refresh();
 
-                Debug.Log($"Crystal growth simulation completed with {growthHistory.Count} growth cycles");
+                VastcoreLogger.Instance.LogInfo("CrystalGrowth", $"Crystal growth simulation completed with {growthHistory.Count} growth cycles");
                 return crystal;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error in crystal growth simulation: {e.Message}");
+                VastcoreLogger.Instance.LogError("CrystalGrowth", $"Error in crystal growth simulation: {e.Message}");
                 return null;
             }
         }
@@ -790,18 +791,18 @@ namespace Vastcore.Generation
         /// </summary>
         public static void LogGrowthHistory(List<GrowthStep> growthHistory)
         {
-            Debug.Log("=== Crystal Growth History ===");
-            
+            VastcoreLogger.Instance.LogDebug("CrystalGrowth", "=== Crystal Growth History ===");
+
             foreach (var step in growthHistory)
             {
-                Debug.Log($"Step {step.stepNumber}: Size={step.crystalSize}, " +
+                VastcoreLogger.Instance.LogDebug("CrystalGrowth", $"Step {step.stepNumber}: Size={step.crystalSize}, " +
                          $"Temp={step.currentTemperature:F1}K, " +
                          $"Supersaturation={step.currentSupersaturation:F2}, " +
                          $"Defects={step.newDefects.Count}, " +
                          $"GrowthSites={step.growthSites.Count}");
             }
-            
-            Debug.Log("=== End Growth History ===");
+
+            VastcoreLogger.Instance.LogDebug("CrystalGrowth", "=== End Growth History ===");
         }
         #endregion
     }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Vastcore.Terrain.Config;
+using Vastcore.Utilities;
 
 namespace Vastcore.Terrain
 {
@@ -66,7 +67,7 @@ namespace Vastcore.Terrain
         {
             if (config == null)
             {
-                Debug.LogError("TerrainStreamingController: config is null");
+                VastcoreLogger.Instance.LogError("TerrainStreaming", "TerrainStreamingController: config is null");
                 return;
             }
 

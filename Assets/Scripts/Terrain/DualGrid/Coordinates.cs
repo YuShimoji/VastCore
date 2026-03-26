@@ -1,4 +1,5 @@
 using UnityEngine;
+using Vastcore.Utilities;
 
 namespace Vastcore.Terrain.DualGrid
 {
@@ -119,7 +120,7 @@ namespace Vastcore.Terrain.DualGrid
         {
             if (_direction < 0 || _direction >= s_HexDirections.Length)
             {
-                Debug.LogWarning($"Invalid hex direction: {_direction}");
+                VastcoreLogger.Instance.LogWarning("DualGrid", $"Invalid hex direction: {_direction}");
                 return new Vector2Int(_q, _r);
             }
             
@@ -141,7 +142,7 @@ namespace Vastcore.Terrain.DualGrid
         {
             if (_subIndex < 0 || _subIndex > 2)
             {
-                Debug.LogWarning($"Invalid sub cell index: {_subIndex}");
+                VastcoreLogger.Instance.LogWarning("DualGrid", $"Invalid sub cell index: {_subIndex}");
                 return AxialToWorld3D(_q, _r);
             }
             

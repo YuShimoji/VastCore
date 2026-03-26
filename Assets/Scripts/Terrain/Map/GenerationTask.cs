@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation.Map
 {
@@ -85,7 +86,7 @@ namespace Vastcore.Generation.Map
             }
             catch (InvalidCastException)
             {
-                Debug.LogWarning($"GenerationTask: パラメータ '{key}' の型変換に失敗しました。デフォルト値を返します。");
+                VastcoreLogger.Instance.LogWarning("GenerationTask", $"GenerationTask: パラメータ '{key}' の型変換に失敗しました。デフォルト値を返します。");
                 return defaultValue;
             }
         }
@@ -116,7 +117,7 @@ namespace Vastcore.Generation.Map
             isExecuting = false;
             isCompleted = true;
             onError?.Invoke(errorMessage);
-            Debug.LogError($"GenerationTask Error [{taskId}]: {errorMessage}");
+            VastcoreLogger.Instance.LogError("GenerationTask", $"GenerationTask Error [{taskId}]: {errorMessage}");
         }
 
         /// <summary>

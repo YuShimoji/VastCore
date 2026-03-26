@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -95,7 +96,7 @@ namespace Vastcore.Generation
         {
             if (heightMap == null)
             {
-                Debug.LogError("HeightMap is null in MeshGenerator.");
+                VastcoreLogger.Instance.LogError("MeshGenerator", "HeightMap is null in MeshGenerator.");
                 return new Mesh();
             }
 

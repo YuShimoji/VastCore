@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Utilities;
 
 #if DEFORM_AVAILABLE
 using Deform;
@@ -45,7 +46,7 @@ namespace Vastcore.Generation
             if (VastcoreDeformManager.Instance != null)
             {
                 // 統合準備完了
-                Debug.Log("Deform integration initialized");
+                VastcoreLogger.Instance.LogInfo("DeformIntegration", "Deform integration initialized");
             }
 #endif
         }
@@ -145,7 +146,7 @@ namespace Vastcore.Generation
             {
                 if (target.GetComponent<MeshFilter>() == null)
                 {
-                    Debug.LogWarning($"[DeformIntegration] {target.name} has no MeshFilter. Deformable requires a MeshFilter.");
+                    VastcoreLogger.Instance.LogWarning("DeformIntegration", $"[DeformIntegration] {target.name} has no MeshFilter. Deformable requires a MeshFilter.");
                     return null;
                 }
                 deformable = target.AddComponent<Deformable>();
@@ -159,7 +160,7 @@ namespace Vastcore.Generation
         protected virtual void ApplyPresetToDeformable(Deformable deformable, DeformPreset preset)
         {
             // 実装はサブクラスで
-            Debug.LogWarning("ApplyPresetToDeformable not implemented in base class");
+            VastcoreLogger.Instance.LogWarning("DeformIntegration", "ApplyPresetToDeformable not implemented in base class");
         }
 #endif
     }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using Vastcore.Utilities;
 
 namespace Vastcore.Camera.Controllers
 {
@@ -29,7 +30,7 @@ namespace Vastcore.Camera.Controllers
             }
             else
             {
-                Debug.LogError("CameraController could not find an object with the PlayerController script.", this);
+                VastcoreLogger.Instance.LogError("Camera", "CameraController could not find an object with the PlayerController script.");
             }
         }
     }

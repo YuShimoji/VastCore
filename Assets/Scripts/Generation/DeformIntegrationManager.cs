@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using Vastcore.Utilities;
 
 #if DEFORM_AVAILABLE
 using Deform;
@@ -95,7 +96,7 @@ namespace Vastcore.Generation
         {
             if (target == null)
             {
-                Debug.LogError("[DeformIntegrationManager] Target GameObject is null.");
+                VastcoreLogger.Instance.LogError("DeformIntegration", "[DeformIntegrationManager] Target GameObject is null.");
                 return false;
             }
 
@@ -108,36 +109,36 @@ namespace Vastcore.Generation
                 {
                     if (target.GetComponent<MeshFilter>() == null)
                     {
-                        Debug.LogWarning($"[DeformIntegrationManager] {target.name} has no MeshFilter. Deformable requires a MeshFilter.");
+                        VastcoreLogger.Instance.LogWarning("DeformIntegration", $"[DeformIntegrationManager] {target.name} has no MeshFilter. Deformable requires a MeshFilter.");
                         return false;
                     }
                     deformable = target.AddComponent<Deformable>();
                 }
-                
+
                 // Add the appropriate deformer based on type
                 Deformer deformer = AddDeformerComponent(target, settings.type);
                 if (deformer == null)
                 {
-                    Debug.LogError($"[DeformIntegrationManager] Failed to add deformer of type {settings.type}");
+                    VastcoreLogger.Instance.LogError("DeformIntegration", $"[DeformIntegrationManager] Failed to add deformer of type {settings.type}");
                     return false;
                 }
-                
+
                 // Apply common settings
                 ApplyDeformerSettings(deformer, settings);
-                
+
                 // Register with VastcoreDeformManager
                 RegisterWithManager(deformable);
-                
-                Debug.Log($"[DeformIntegrationManager] Applied {settings.type} deformer to {target.name}");
+
+                VastcoreLogger.Instance.LogInfo("DeformIntegration", $"[DeformIntegrationManager] Applied {settings.type} deformer to {target.name}");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[DeformIntegrationManager] Error applying deformer: {ex}");
+                VastcoreLogger.Instance.LogError("DeformIntegration", $"[DeformIntegrationManager] Error applying deformer: {ex}");
                 return false;
             }
 #else
-            Debug.LogWarning("[DeformIntegrationManager] Deform package is not available.");
+            VastcoreLogger.Instance.LogWarning("DeformIntegration", "[DeformIntegrationManager] Deform package is not available.");
             return false;
 #endif
         }
@@ -170,7 +171,7 @@ namespace Vastcore.Generation
                     UnityEngine.Object.DestroyImmediate(deformable);
             }
             
-            Debug.Log($"[DeformIntegrationManager] Removed all deformers from {target.name}");
+            VastcoreLogger.Instance.LogInfo("DeformIntegration", $"[DeformIntegrationManager] Removed all deformers from {target.name}");
 #endif
         }
         
@@ -230,7 +231,7 @@ namespace Vastcore.Generation
                 case DeformerType.Magnet:
                     return target.AddComponent<MagnetDeformer>();
                 default:
-                    Debug.LogWarning($"[DeformIntegrationManager] Deformer type {type} not implemented, using BendDeformer as fallback.");
+                    VastcoreLogger.Instance.LogWarning("DeformIntegration", $"[DeformIntegrationManager] Deformer type {type} not implemented, using BendDeformer as fallback.");
                     return target.AddComponent<BendDeformer>();
             }
         }

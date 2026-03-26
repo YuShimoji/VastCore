@@ -71,7 +71,7 @@ namespace Vastcore.Generation
             // 更新間隔チェック
             if (Time.time - lastUpdateTime >= 0.1f)
             {
-                Debug.Log($"Update called after {Time.time - lastUpdateTime:F3} seconds");
+                VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"Update called after {Time.time - lastUpdateTime:F3} seconds");
                 lastUpdateTime = Time.time;
             }
         }
@@ -81,7 +81,7 @@ namespace Vastcore.Generation
         /// </summary>
         private void InitializeRuntimeManager()
         {
-            Debug.Log("Initializing RuntimeTerrainManager...");
+            VastcoreLogger.Instance.LogInfo("RuntimeTerrain", "Initializing RuntimeTerrainManager...");
             VastcoreLogger.Instance.LogInfo("RuntimeTerrain", $"Init start dyn={(enableDynamicGeneration?1:0)} upd={updateInterval}s maxGenPerFrame={maxGenerationsPerFrame} maxDelPerFrame={maxDeletionsPerFrame}");
 
             // TileManagerを取得または作成
@@ -112,7 +112,7 @@ namespace Vastcore.Generation
             StartDynamicGeneration();
             StartMemoryManagement();
 
-            Debug.Log("RuntimeTerrainManager initialized successfully");
+            VastcoreLogger.Instance.LogInfo("RuntimeTerrain", "RuntimeTerrainManager initialized successfully");
             VastcoreLogger.Instance.LogInfo("RuntimeTerrain", "Init done");
         }
 
@@ -350,7 +350,7 @@ namespace Vastcore.Generation
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to process tile generation request for {request.coordinate}: {e.Message}");
+                VastcoreLogger.Instance.LogError("RuntimeTerrain", $"Failed to process tile generation request for {request.coordinate}: {e.Message}");
                 VastcoreLogger.Instance.LogError("RuntimeTerrain", $"ProcessGen error coord={request.coordinate} msg={e.Message}");
                 performanceStats.generationErrors++;
             }
@@ -387,7 +387,7 @@ namespace Vastcore.Generation
 
                     if (logTileOperations)
                     {
-                        Debug.Log($"Deleted tile: {tileCoord}");
+                        VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"Deleted tile: {tileCoord}");
                     }
                 }
 
@@ -395,7 +395,7 @@ namespace Vastcore.Generation
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to delete tile {tileCoord}: {e.Message}");
+                VastcoreLogger.Instance.LogError("RuntimeTerrain", $"Failed to delete tile {tileCoord}: {e.Message}");
                 VastcoreLogger.Instance.LogError("RuntimeTerrain", $"ProcessDel error coord={tileCoord} msg={e.Message}");
                 performanceStats.deletionErrors++;
             }
@@ -447,13 +447,13 @@ namespace Vastcore.Generation
 
             if (currentMemoryMB > memoryLimitMB)
             {
-                Debug.LogWarning($"Memory usage ({currentMemoryMB:F1}MB) exceeds limit ({memoryLimitMB}MB)");
+                VastcoreLogger.Instance.LogWarning("RuntimeTerrain", $"Memory usage ({currentMemoryMB:F1}MB) exceeds limit ({memoryLimitMB}MB)");
                 VastcoreLogger.Instance.LogError("RuntimeTerrain", $"Memory exceed current={currentMemoryMB:F1}MB limit={memoryLimitMB}MB");
                 TriggerEmergencyCleanup();
             }
             else if (currentMemoryMB > memoryWarningThresholdMB)
             {
-                Debug.LogWarning($"Memory usage ({currentMemoryMB:F1}MB) approaching limit ({memoryLimitMB}MB)");
+                VastcoreLogger.Instance.LogWarning("RuntimeTerrain", $"Memory usage ({currentMemoryMB:F1}MB) approaching limit ({memoryLimitMB}MB)");
                 VastcoreLogger.Instance.LogWarning("RuntimeTerrain", $"Memory warning current={currentMemoryMB:F1}MB warn={memoryWarningThresholdMB}MB limit={memoryLimitMB}MB");
                 TriggerPreventiveCleanup();
             }
@@ -643,7 +643,7 @@ namespace Vastcore.Generation
             VastcoreLogger.Instance.LogInfo("RuntimeTerrain", $"RequestGen coord={tileCoord} pri={priority}");
             if (logTileOperations)
             {
-                Debug.Log($"Requested tile generation: {tileCoord} (Priority: {priority})");
+                VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"Requested tile generation: {tileCoord} (Priority: {priority})");
             }
         }
 
@@ -673,7 +673,7 @@ namespace Vastcore.Generation
 
             if (logTileOperations)
             {
-                Debug.Log($"Requested tile deletion: {tileCoord} (Priority: {priority})");
+                VastcoreLogger.Instance.LogDebug("RuntimeTerrain", $"Requested tile deletion: {tileCoord} (Priority: {priority})");
             }
         }
 
@@ -849,17 +849,17 @@ namespace Vastcore.Generation
         [ContextMenu("Log Performance Stats")]
         public void LogPerformanceStats()
         {
-            Debug.Log($"=== RuntimeTerrainManager Performance Stats ===");
-            Debug.Log($"Total Tiles Generated: {performanceStats.totalTilesGenerated}");
-            Debug.Log($"Total Tiles Deleted: {performanceStats.totalTilesDeleted}");
-            Debug.Log($"Generation Errors: {performanceStats.generationErrors}");
-            Debug.Log($"Deletion Errors: {performanceStats.deletionErrors}");
-            Debug.Log($"Emergency Cleanups: {performanceStats.emergencyCleanups}");
-            Debug.Log($"Aggressive Cleanups: {performanceStats.aggressiveCleanups}");
-            Debug.Log($"Current Memory Usage: {performanceStats.currentMemoryUsageMB:F1}MB");
-            Debug.Log($"Average Frame Time: {performanceStats.averageFrameTime * 1000f:F1}ms");
-            Debug.Log($"Tiles Per Second: {performanceStats.tilesPerSecond}");
-            Debug.Log($"===============================================");
+            VastcoreLogger.Instance.LogInfo("RuntimeTerrain", $"=== RuntimeTerrainManager Performance Stats ===");
+            VastcoreLogger.Instance.LogInfo("RuntimeTerrain", $"Total Tiles Generated: {performanceStats.totalTilesGenerated}");
+            VastcoreLogger.Instance.LogInfo("RuntimeTerrain", $"Total Tiles Deleted: {performanceStats.totalTilesDeleted}");
+            VastcoreLogger.Instance.LogInfo("RuntimeTerrain", $"Generation Errors: {performanceStats.generationErrors}");
+            VastcoreLogger.Instance.LogInfo("RuntimeTerrain", $"Deletion Errors: {performanceStats.deletionErrors}");
+            VastcoreLogger.Instance.LogInfo("RuntimeTerrain", $"Emergency Cleanups: {performanceStats.emergencyCleanups}");
+            VastcoreLogger.Instance.LogInfo("RuntimeTerrain", $"Aggressive Cleanups: {performanceStats.aggressiveCleanups}");
+            VastcoreLogger.Instance.LogInfo("RuntimeTerrain", $"Current Memory Usage: {performanceStats.currentMemoryUsageMB:F1}MB");
+            VastcoreLogger.Instance.LogInfo("RuntimeTerrain", $"Average Frame Time: {performanceStats.averageFrameTime * 1000f:F1}ms");
+            VastcoreLogger.Instance.LogInfo("RuntimeTerrain", $"Tiles Per Second: {performanceStats.tilesPerSecond}");
+            VastcoreLogger.Instance.LogInfo("RuntimeTerrain", $"===============================================");
         }
         #endregion
 

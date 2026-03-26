@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using Vastcore.Player;
+using Vastcore.Utilities;
 
 namespace Vastcore.Camera.Cinematic
 {
@@ -45,7 +46,7 @@ namespace Vastcore.Camera.Cinematic
 
             if (m_TopLetterbox == null || m_BottomLetterbox == null)
             {
-                Debug.LogError("Letterbox images are not assigned in the inspector!");
+                VastcoreLogger.Instance.LogError("CinematicCamera", "Letterbox images are not assigned in the inspector!");
             }
         }
 
@@ -53,7 +54,7 @@ namespace Vastcore.Camera.Cinematic
         {
             if (m_PlayerController == null || m_PlayerCamera == null || m_TerrainTransform == null)
             {
-                Debug.LogError("CinematicCameraController is not properly set up. Aborting cinematic.");
+                VastcoreLogger.Instance.LogError("CinematicCamera", "CinematicCameraController is not properly set up. Aborting cinematic.");
                 yield break;
             }
 
@@ -96,7 +97,7 @@ namespace Vastcore.Camera.Cinematic
             // プレイヤーの操作を完全に許可
             m_PlayerController.EnablePlayerControl();
             
-            Debug.Log("[CinematicCameraController] Initial cinematic completed.");
+            VastcoreLogger.Instance.LogInfo("CinematicCamera", "Initial cinematic completed.");
         }
 
         private IEnumerator FadeLetterbox(bool fadeIn)

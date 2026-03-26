@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation.Map
 {
@@ -146,14 +147,14 @@ namespace Vastcore.Generation.Map
             // キューサイズ制限チェック
             if (priorityQueue.Count >= maxQueueSize)
             {
-                Debug.LogWarning("RuntimeGenerationManager: キューが満杯です。古いタスクを削除します。");
+                VastcoreLogger.Instance.LogWarning("RuntimeGeneration", "RuntimeGenerationManager: キューが満杯です。古いタスクを削除します。");
                 RemoveOldestLowPriorityTask();
             }
 
             // 重複チェック
             if (activeTasksById.ContainsKey(task.taskId))
             {
-                Debug.LogWarning($"RuntimeGenerationManager: 重複タスクID {task.taskId} をスキップします。");
+                VastcoreLogger.Instance.LogWarning("RuntimeGeneration", $"RuntimeGenerationManager: 重複タスクID {task.taskId} をスキップします。");
                 return false;
             }
 
@@ -165,7 +166,7 @@ namespace Vastcore.Generation.Map
 
             if (showDebugInfo)
             {
-                Debug.Log($"RuntimeGenerationManager: タスクをキューに追加 - {task}");
+                VastcoreLogger.Instance.LogDebug("RuntimeGeneration", $"RuntimeGenerationManager: タスクをキューに追加 - {task}");
             }
 
             return true;
@@ -192,7 +193,7 @@ namespace Vastcore.Generation.Map
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"RuntimeGenerationManager: タスクをキャンセル - {taskId}");
+                    VastcoreLogger.Instance.LogDebug("RuntimeGeneration", $"RuntimeGenerationManager: タスクをキャンセル - {taskId}");
                 }
                 
                 return true;
@@ -346,7 +347,7 @@ namespace Vastcore.Generation.Map
 
             if (showDebugInfo)
             {
-                Debug.Log($"RuntimeGenerationManager: タスク実行開始 - {task}");
+                VastcoreLogger.Instance.LogDebug("RuntimeGeneration", $"RuntimeGenerationManager: タスク実行開始 - {task}");
             }
 
             // タスクタイプに応じて処理を分岐
@@ -362,7 +363,7 @@ namespace Vastcore.Generation.Map
 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"RuntimeGenerationManager: タスク完了 - {task.taskId}");
+                    VastcoreLogger.Instance.LogDebug("RuntimeGeneration", $"RuntimeGenerationManager: タスク完了 - {task.taskId}");
                 }
             }
             catch (Exception ex)
@@ -383,7 +384,7 @@ namespace Vastcore.Generation.Map
                 OnTaskError?.Invoke(task, errorMessage);
             }
 
-            Debug.LogError($"RuntimeGenerationManager: {errorMessage}\n{ex.StackTrace}");
+            VastcoreLogger.Instance.LogError("RuntimeGeneration", $"RuntimeGenerationManager: {errorMessage}\n{ex.StackTrace}", ex);
         }
 
         /// <summary>
@@ -425,7 +426,7 @@ namespace Vastcore.Generation.Map
                     break;
 
                 default:
-                    Debug.LogWarning($"RuntimeGenerationManager: 未対応のタスクタイプ - {task.type}");
+                    VastcoreLogger.Instance.LogWarning("RuntimeGeneration", $"RuntimeGenerationManager: 未対応のタスクタイプ - {task.type}");
                     break;
             }
 
@@ -505,7 +506,7 @@ namespace Vastcore.Generation.Map
 
                 if (showDebugInfo && (maxGenerationPerFrame != recommendedTaskCount || maxGenerationTimeMs != recommendedTimeMs))
                 {
-                    Debug.Log($"RuntimeGenerationManager: パフォーマンス調整 - TaskCount: {maxGenerationPerFrame}, TimeMs: {maxGenerationTimeMs}");
+                    VastcoreLogger.Instance.LogDebug("RuntimeGeneration", $"RuntimeGenerationManager: パフォーマンス調整 - TaskCount: {maxGenerationPerFrame}, TimeMs: {maxGenerationTimeMs}");
                 }
             }
             else
@@ -553,7 +554,7 @@ namespace Vastcore.Generation.Map
                 
                 if (showDebugInfo)
                 {
-                    Debug.Log($"RuntimeGenerationManager: タイムアウトタスクを削除 - {task.taskId}");
+                    VastcoreLogger.Instance.LogDebug("RuntimeGeneration", $"RuntimeGenerationManager: タイムアウトタスクを削除 - {task.taskId}");
                 }
             }
         }
@@ -602,7 +603,7 @@ namespace Vastcore.Generation.Map
         {
             if (showDebugInfo)
             {
-                Debug.Log("RuntimeGenerationManager: パフォーマンスが改善されました。生成処理を増加します。");
+                VastcoreLogger.Instance.LogDebug("RuntimeGeneration", "RuntimeGenerationManager: パフォーマンスが改善されました。生成処理を増加します。");
             }
         }
 
@@ -613,7 +614,7 @@ namespace Vastcore.Generation.Map
         {
             if (showDebugInfo)
             {
-                Debug.Log("RuntimeGenerationManager: パフォーマンスが悪化しました。生成処理を制限します。");
+                VastcoreLogger.Instance.LogDebug("RuntimeGeneration", "RuntimeGenerationManager: パフォーマンスが悪化しました。生成処理を制限します。");
             }
         }
 

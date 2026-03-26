@@ -1,6 +1,7 @@
 using UnityEngine;
 using Vastcore.Terrain.Config;
 using Vastcore.Terrain.Providers;
+using Vastcore.Utilities;
 
 namespace Vastcore.Terrain
 {
@@ -30,13 +31,13 @@ namespace Vastcore.Terrain
         {
             if (config == null)
             {
-                Debug.LogError("TerrainGridBootstrap: config is null");
+                VastcoreLogger.Instance.LogError("TerrainBootstrap", "TerrainGridBootstrap: config is null");
                 return;
             }
             _provider = config.CreateHeightProvider();
             if (_provider == null)
             {
-                Debug.LogError("TerrainGridBootstrap: provider create failed");
+                VastcoreLogger.Instance.LogError("TerrainBootstrap", "TerrainGridBootstrap: provider create failed");
                 return;
             }
 

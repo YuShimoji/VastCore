@@ -1,5 +1,6 @@
 using UnityEngine;
 using Vastcore.Core;
+using Vastcore.Utilities;
 
 namespace Vastcore.Player
 {
@@ -131,7 +132,7 @@ namespace Vastcore.Player
                 cameraTransform = GetComponentInChildren<Camera>()?.transform;
                 if (cameraTransform == null)
                 {
-                    Debug.LogError("No camera found as a child of the player. Please assign one.");
+                    VastcoreLogger.Instance.LogError("Player", "No camera found as a child of the player. Please assign one.");
                     enabled = false;
                     return;
                 }
@@ -151,20 +152,20 @@ namespace Vastcore.Player
         public void EnablePlayerControl()
         {
             m_ControlState = PlayerControlState.FullControl;
-            Debug.Log("Player control enabled.");
+            VastcoreLogger.Instance.LogInfo("Player", "Player control enabled.");
         }
         
         public void DisablePlayerControl()
         {
             m_ControlState = PlayerControlState.Disabled;
             velocity = Vector3.zero; // 念のため速度をリセット
-            Debug.Log("Player control disabled.");
+            VastcoreLogger.Instance.LogInfo("Player", "Player control disabled.");
         }
 
         public void EnableLookOnly()
         {
             m_ControlState = PlayerControlState.LookOnly;
-            Debug.Log("Player look-only enabled.");
+            VastcoreLogger.Instance.LogInfo("Player", "Player look-only enabled.");
         }
 
         private void OnEnable()
@@ -480,7 +481,7 @@ namespace Vastcore.Player
         {
             if (translocationSpherePrefab == null)
             {
-                Debug.LogError("Translocation Sphere Prefab is not assigned.");
+                VastcoreLogger.Instance.LogError("Player", "Translocation Sphere Prefab is not assigned.");
                 return;
             }
 

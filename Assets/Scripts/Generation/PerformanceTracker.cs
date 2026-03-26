@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -41,7 +42,7 @@ namespace Vastcore.Generation
         {
             if (config.logMemoryUsage)
             {
-                Debug.Log($"Memory: {lastMemoryUsage}MB, Objects: {lastActiveObjectCount}, GC Calls: {gcCallCount}");
+                VastcoreLogger.Instance.LogDebug("PerfTracker", $"Memory: {lastMemoryUsage}MB, Objects: {lastActiveObjectCount}, GC Calls: {gcCallCount}");
             }
         }
 

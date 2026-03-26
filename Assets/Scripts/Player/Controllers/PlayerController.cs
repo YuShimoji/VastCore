@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Vastcore.Utilities;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CapsuleCollider))]
@@ -117,7 +118,7 @@ public class PlayerController : MonoBehaviour
         // レイヤーマスクが未設定の場合、警告を出す
         if (groundLayer.value == 0)
         {
-            Debug.LogWarning("Ground Layerが設定されていません。PlayerのInspectorから設定してください。", this);
+            VastcoreLogger.Instance.LogWarning("Player", "Ground Layerが設定されていません。PlayerのInspectorから設定してください。");
         }
 
         // パフォーマンス向上のため、メインカメラをキャッシュ
@@ -130,7 +131,7 @@ public class PlayerController : MonoBehaviour
             float maxFov = defaultFov + 20f;
             if (sprintFov < minFov || sprintFov > maxFov)
             {
-                Debug.LogWarning($"Sprint FOV ({sprintFov}) が推奨範囲 ({minFov:F1}-{maxFov:F1}) 外です。Inspectorから調整してください。", this);
+                VastcoreLogger.Instance.LogWarning("Player", $"Sprint FOV ({sprintFov}) が推奨範囲 ({minFov:F1}-{maxFov:F1}) 外です。Inspectorから調整してください。");
             }
         }
 
@@ -146,7 +147,7 @@ public class PlayerController : MonoBehaviour
         // 入力感度の検証
         if (inputSensitivity < 0.1f || inputSensitivity > 3.0f)
         {
-            Debug.LogWarning($"Input Sensitivity ({inputSensitivity}) が有効範囲 (0.1-3.0) 外です。自動的にクランプします。", this);
+            VastcoreLogger.Instance.LogWarning("Player", $"Input Sensitivity ({inputSensitivity}) が有効範囲 (0.1-3.0) 外です。自動的にクランプします。");
             inputSensitivity = Mathf.Clamp(inputSensitivity, 0.1f, 3.0f);
         }
 
@@ -157,7 +158,7 @@ public class PlayerController : MonoBehaviour
             float maxFov = defaultFov + 20f;
             if (sprintFov < minFov || sprintFov > maxFov)
             {
-                Debug.LogWarning($"Sprint FOV ({sprintFov}) が推奨範囲 ({minFov:F1}-{maxFov:F1}) 外です。自動的にクランプします。", this);
+                VastcoreLogger.Instance.LogWarning("Player", $"Sprint FOV ({sprintFov}) が推奨範囲 ({minFov:F1}-{maxFov:F1}) 外です。自動的にクランプします。");
                 sprintFov = Mathf.Clamp(sprintFov, minFov, maxFov);
             }
         }

@@ -3,6 +3,7 @@ using UnityEngine.ProBuilder;
 using UnityEngine.ProBuilder.MeshOperations;
 using System.Collections.Generic;
 using System.Linq;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -143,14 +144,14 @@ namespace Vastcore.Generation
         {
             try
             {
-                Debug.Log($"Generating crystal structure: {parameters.crystalSystem}");
+                VastcoreLogger.Instance.LogInfo("CrystalStructure", $"Generating crystal structure: {parameters.crystalSystem}");
                 
                 // 基本結晶形状を生成
                 ProBuilderMesh baseCrystal = GenerateBaseCrystalShape(parameters);
                 
                 if (baseCrystal == null)
                 {
-                    Debug.LogError($"Failed to generate base crystal shape for {parameters.crystalSystem}");
+                    VastcoreLogger.Instance.LogError("CrystalStructure", $"Failed to generate base crystal shape for {parameters.crystalSystem}");
                     return null;
                 }
 
@@ -176,12 +177,12 @@ namespace Vastcore.Generation
                 baseCrystal.ToMesh();
                 baseCrystal.Refresh();
 
-                Debug.Log($"Successfully generated {parameters.crystalSystem} crystal structure");
+                VastcoreLogger.Instance.LogInfo("CrystalStructure", $"Successfully generated {parameters.crystalSystem} crystal structure");
                 return baseCrystal;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error generating crystal structure {parameters.crystalSystem}: {e.Message}");
+                VastcoreLogger.Instance.LogError("CrystalStructure", $"Error generating crystal structure {parameters.crystalSystem}: {e.Message}", e);
                 return null;
             }
         }
@@ -261,7 +262,7 @@ namespace Vastcore.Generation
                 case CrystalSystem.Triclinic:
                     return GenerateTriclinicCrystal(parameters);
                 default:
-                    Debug.LogWarning($"Crystal system {parameters.crystalSystem} not implemented, using cubic");
+                    VastcoreLogger.Instance.LogWarning("CrystalStructure", $"Crystal system {parameters.crystalSystem} not implemented, using cubic");
                     return GenerateCubicCrystal(parameters);
             }
         }

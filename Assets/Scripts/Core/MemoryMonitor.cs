@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Profiling;
+using Vastcore.Utilities;
 
 namespace Vastcore.Core
 {
@@ -74,7 +75,7 @@ namespace Vastcore.Core
             
             baselineMemory = GetTotalMemoryUsage();
             
-            Debug.Log($"MemoryMonitor initialized. Baseline memory: {baselineMemory / (1024 * 1024)}MB");
+            VastcoreLogger.Instance.LogInfo("MemoryMonitor", $"MemoryMonitor initialized. Baseline memory: {baselineMemory / (1024 * 1024)}MB");
         }
         
         public void TakeMemorySnapshot()
@@ -141,7 +142,7 @@ namespace Vastcore.Core
                 leakDetected = true;
                 long leakSizeMB = currentIncrease / (1024 * 1024);
                 
-                Debug.LogWarning($"Memory leak detected! Current increase: {leakSizeMB}MB, Trend: {slope:F2}MB/s");
+                VastcoreLogger.Instance.LogWarning("MemoryMonitor", $"Memory leak detected! Current increase: {leakSizeMB}MB, Trend: {slope:F2}MB/s");
                 OnMemoryLeakDetected?.Invoke(leakSizeMB);
                 
                 if (enableAutomaticGC)
@@ -152,7 +153,7 @@ namespace Vastcore.Core
             else if (!isLeaking && leakDetected)
             {
                 leakDetected = false;
-                Debug.Log("Memory leak condition resolved");
+                VastcoreLogger.Instance.LogInfo("MemoryMonitor", "Memory leak condition resolved");
             }
         }
         
@@ -192,7 +193,7 @@ namespace Vastcore.Core
         
         public void ForceGarbageCollection()
         {
-            Debug.Log("Forcing garbage collection...");
+            VastcoreLogger.Instance.LogInfo("MemoryMonitor", "Forcing garbage collection...");
             
             System.GC.Collect();
             System.GC.WaitForPendingFinalizers();
@@ -201,7 +202,7 @@ namespace Vastcore.Core
             // Unity固有のクリーンアップ
             Resources.UnloadUnusedAssets();
             
-            Debug.Log("Garbage collection completed");
+            VastcoreLogger.Instance.LogInfo("MemoryMonitor", "Garbage collection completed");
         }
         
         public MemoryReport GenerateMemoryReport()

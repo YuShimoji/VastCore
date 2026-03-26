@@ -2,6 +2,7 @@ using UnityEngine;
 // using Vastcore.Diagnostics;
 using System.IO;
 using System.Collections;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -104,7 +105,7 @@ namespace Vastcore.Generation
 
         public IEnumerator GenerateTerrain()
         {
-            Debug.Log("[TerrainGenerator] Starting terrain generation...");
+            VastcoreLogger.Instance.LogInfo("TerrainGenerator", "[TerrainGenerator] Starting terrain generation...");
 
             // テレインデータの作成
             var terrainData = new TerrainData();
@@ -128,7 +129,7 @@ namespace Vastcore.Generation
             if (m_TerrainMaterial == null)
             {
                 m_TerrainMaterial = Resources.Load<Material>("GroundMaterial");
-                Debug.LogWarning("Terrain material was not set. Loading default 'GroundMaterial'.");
+                VastcoreLogger.Instance.LogWarning("TerrainGenerator", "Terrain material was not set. Loading default 'GroundMaterial'.");
             }
             GeneratedTerrain.materialTemplate = m_TerrainMaterial;
 
@@ -162,10 +163,10 @@ namespace Vastcore.Generation
             }
             else
             {
-                Debug.LogWarning("Layer 'Terrain' does not exist. Please create it in the Tag and Layer Manager.");
+                VastcoreLogger.Instance.LogWarning("TerrainGenerator", "Layer 'Terrain' does not exist. Please create it in the Tag and Layer Manager.");
             }
 
-            Debug.Log("[TerrainGenerator] Terrain generation completed.");
+            VastcoreLogger.Instance.LogInfo("TerrainGenerator", "[TerrainGenerator] Terrain generation completed.");
             yield return null;
         }
 

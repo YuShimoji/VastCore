@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using Vastcore.Generation;
+using Vastcore.Utilities;
 
 namespace Vastcore.Player
 {
@@ -94,14 +95,14 @@ namespace Vastcore.Player
             
             if (playerController == null)
             {
-                Debug.LogError("AdvancedPlayerController not found on " + gameObject.name);
+                VastcoreLogger.Instance.LogError("GrindSystem", "AdvancedPlayerController not found on " + gameObject.name);
                 enabled = false;
                 return;
             }
-            
+
             if (characterController == null)
             {
-                Debug.LogError("CharacterController not found on " + gameObject.name);
+                VastcoreLogger.Instance.LogError("GrindSystem", "CharacterController not found on " + gameObject.name);
                 enabled = false;
                 return;
             }
@@ -120,7 +121,7 @@ namespace Vastcore.Player
                 grindEffect = CreateGrindParticleEffect();
             }
             
-            Debug.Log("EnhancedGrindSystem initialized");
+            VastcoreLogger.Instance.LogInfo("GrindSystem", "EnhancedGrindSystem initialized");
         }
         
         /// <summary>
@@ -356,7 +357,7 @@ namespace Vastcore.Player
             
             if (enableDebugLogs)
             {
-                Debug.Log($"Started grinding on edge: {currentGrindEdge.Value.length:F1}m, speed: {currentGrindSpeed:F1}");
+                VastcoreLogger.Instance.LogDebug("GrindSystem", $"Started grinding on edge: {currentGrindEdge.Value.length:F1}m, speed: {currentGrindSpeed:F1}");
             }
         }
         
@@ -507,7 +508,7 @@ namespace Vastcore.Player
             
             if (enableDebugLogs)
             {
-                Debug.Log("Exited grind");
+                VastcoreLogger.Instance.LogDebug("GrindSystem", "Exited grind");
             }
         }
         

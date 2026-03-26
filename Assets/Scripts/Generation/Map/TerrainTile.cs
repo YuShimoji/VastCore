@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using Vastcore.Generation;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -147,7 +148,7 @@ namespace Vastcore.Generation
         {
             if (state != TileState.Unloaded && state != TileState.Error)
             {
-                Debug.LogWarning($"Tile {coordinate} is already loaded or loading");
+                VastcoreLogger.Instance.LogWarning("TerrainTile", $"Tile {coordinate} is already loaded or loading");
                 return;
             }
             
@@ -171,11 +172,11 @@ namespace Vastcore.Generation
                 lastAccessedAt = System.DateTime.Now;
                 accessCount++;
                 
-                Debug.Log($"Generated tile {coordinate} in {generationTime:F3}s");
+                VastcoreLogger.Instance.LogInfo("TerrainTile", $"Generated tile {coordinate} in {generationTime:F3}s");
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to generate tile {coordinate}: {e.Message}");
+                VastcoreLogger.Instance.LogError("TerrainTile", $"Failed to generate tile {coordinate}: {e.Message}");
                 state = TileState.Error;
             }
         }
@@ -229,12 +230,12 @@ namespace Vastcore.Generation
                 terrainCollider = null;
                 
                 state = TileState.Unloaded;
-                
-                Debug.Log($"Unloaded tile {coordinate}");
+
+                VastcoreLogger.Instance.LogInfo("TerrainTile", $"Unloaded tile {coordinate}");
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to unload tile {coordinate}: {e.Message}");
+                VastcoreLogger.Instance.LogError("TerrainTile", $"Failed to unload tile {coordinate}: {e.Message}");
                 state = TileState.Error;
             }
         }

@@ -70,13 +70,13 @@ namespace Vastcore.Generation.Cache
             terrainManager = FindFirstObjectByType<RuntimeTerrainManager>();
             if (terrainManager == null)
             {
-                Debug.LogWarning("RuntimeTerrainManager not found. Cache integration limited.");
+                VastcoreLogger.Instance.LogWarning("TerrainCache", "RuntimeTerrainManager not found. Cache integration limited.");
             }
-            
+
             gpuGenerator = FindFirstObjectByType<GPUTerrainGenerator>();
             if (gpuGenerator == null)
             {
-                Debug.LogWarning("GPUTerrainGenerator not found. Using CPU fallback.");
+                VastcoreLogger.Instance.LogWarning("TerrainCache", "GPUTerrainGenerator not found. Using CPU fallback.");
             }
         }
         
@@ -160,12 +160,11 @@ namespace Vastcore.Generation.Cache
                 VastcoreLogger.Instance.LogInfo("TerrainCache", $"LoadFromCacheAsync complete coord={coordinate}");
                 onComplete?.Invoke(terrainTile);
                 
-                Debug.Log($"Loaded terrain tile {coordinate} from cache");
+                VastcoreLogger.Instance.LogInfo("TerrainCache", $"Loaded terrain tile {coordinate} from cache");
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to load terrain tile {coordinate} from cache: {e.Message}");
-                VastcoreLogger.Instance.LogError("TerrainCache", $"LoadFromCacheAsync error coord={coordinate}: {e.Message}", e);
+                VastcoreLogger.Instance.LogError("TerrainCache", $"Failed to load terrain tile {coordinate} from cache: {e.Message}", e);
                 
                 // フォールバック: 新規生成
                 RequestDirectGeneration(coordinate, onComplete);
@@ -413,16 +412,16 @@ namespace Vastcore.Generation.Cache
         public void OptimizeCacheEfficiency()
         {
             var stats = cacheSystem.GetStatistics();
-            
+
             if (stats.hitRatio < 0.7f)
             {
-                Debug.Log("Low cache hit ratio detected. Increasing preload radius.");
+                VastcoreLogger.Instance.LogInfo("TerrainCache", "Low cache hit ratio detected. Increasing preload radius.");
                 // プリロード半径の調整（実装は IntelligentCacheSystem に依存）
             }
-            
+
             if (stats.totalMemoryUsed > maxMemoryCacheSize * 1024 * 1024 * 0.9f)
             {
-                Debug.Log("High memory usage detected. Triggering cache cleanup.");
+                VastcoreLogger.Instance.LogInfo("TerrainCache", "High memory usage detected. Triggering cache cleanup.");
                 // メモリクリーンアップの実行
             }
         }

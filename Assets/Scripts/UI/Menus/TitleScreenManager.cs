@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using TMPro;
 using Vastcore.Player;
+using Vastcore.Utilities;
 
 namespace Vastcore.UI.Menus
 {
@@ -33,7 +34,7 @@ namespace Vastcore.UI.Menus
         {
             if (playerController == null)
             {
-                Debug.LogError("AdvancedPlayerController is null. Cannot setup TitleScreenManager.");
+                VastcoreLogger.Instance.LogError("TitleScreen", "AdvancedPlayerController is null. Cannot setup TitleScreenManager.");
                 return;
             }
 
@@ -41,12 +42,12 @@ namespace Vastcore.UI.Menus
 
             if (m_PlayerCamera == null)
             {
-                Debug.LogError("Player camera could not be found on the AdvancedPlayerController!");
+                VastcoreLogger.Instance.LogError("TitleScreen", "Player camera could not be found on the AdvancedPlayerController!");
             }
 
             if (m_TitleText == null)
             {
-                Debug.LogError("Title Text (TextMeshPro) is not assigned in the inspector!");
+                VastcoreLogger.Instance.LogError("TitleScreen", "Title Text (TextMeshPro) is not assigned in the inspector!");
                 return;
             }
             
@@ -62,7 +63,7 @@ namespace Vastcore.UI.Menus
         {
             if (m_PlayerCamera == null || m_TitleText == null)
             {
-                Debug.LogWarning("Cannot show title because camera or text is not set up.");
+                VastcoreLogger.Instance.LogWarning("TitleScreen", "Cannot show title because camera or text is not set up.");
                 return;
             }
 
@@ -83,7 +84,7 @@ namespace Vastcore.UI.Menus
             if (m_LookAwayCoroutine != null) StopCoroutine(m_LookAwayCoroutine);
             m_LookAwayCoroutine = StartCoroutine(CheckLookAway());
             
-            Debug.Log("[TitleScreenManager] Title sequence started.");
+            VastcoreLogger.Instance.LogInfo("TitleScreen", "Title sequence started.");
         }
 
         /// <summary>
@@ -114,7 +115,7 @@ namespace Vastcore.UI.Menus
             m_IsTitleActive = false; // 視線チェックを停止
             yield return StartCoroutine(FadeTitle(false));
             m_TitleText.gameObject.SetActive(false);
-            Debug.Log("[TitleScreenManager] Title faded out and deactivated due to look away.");
+            VastcoreLogger.Instance.LogInfo("TitleScreen", "Title faded out and deactivated due to look away.");
         }
 
         /// <summary>

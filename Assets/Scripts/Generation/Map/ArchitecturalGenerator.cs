@@ -140,7 +140,7 @@ namespace Vastcore.Generation
             {
                 if (parameters.span <= 0f || parameters.height <= 0f || parameters.thickness <= 0f)
                 {
-                    Debug.LogError($"[ArchitecturalGenerator] Invalid parameters: span={parameters.span}, height={parameters.height}, thickness={parameters.thickness}. All must be > 0.");
+                    VastcoreLogger.Instance.LogError("ArchitecturalGen", $"[ArchitecturalGenerator] Invalid parameters: span={parameters.span}, height={parameters.height}, thickness={parameters.thickness}. All must be > 0.");
                     return null;
                 }
                 if (parameters.archSegments < 3)
@@ -186,7 +186,7 @@ namespace Vastcore.Generation
                         GenerateViaduct(architecturalObject, parameters);
                         break;
                     default:
-                        Debug.LogWarning($"Architectural type {parameters.architecturalType} not implemented");
+                        VastcoreLogger.Instance.LogWarning("ArchitecturalGen", $"Architectural type {parameters.architecturalType} not implemented");
                         GenerateSimpleArch(architecturalObject, parameters);
                         break;
                 }
@@ -207,12 +207,12 @@ namespace Vastcore.Generation
                 SetupArchitecturalColliders(architecturalObject, parameters);
                 SetupArchitecturalInteractions(architecturalObject, parameters);
 
-                Debug.Log($"Successfully generated architectural structure: {parameters.architecturalType}");
+                VastcoreLogger.Instance.LogInfo("ArchitecturalGen", $"Successfully generated architectural structure: {parameters.architecturalType}");
                 return architecturalObject;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error generating architectural structure {parameters.architecturalType}: {e}");
+                VastcoreLogger.Instance.LogError("ArchitecturalGen", $"Error generating architectural structure {parameters.architecturalType}: {e}");
                 return null;
             }
         }
@@ -1056,7 +1056,7 @@ namespace Vastcore.Generation
             }
             catch (System.Exception)
             {
-                Debug.LogWarning("[ArchitecturalGenerator] Tag 'Architecture' is not defined. Skipping tag assignment.");
+                VastcoreLogger.Instance.LogWarning("ArchitecturalGen", "[ArchitecturalGenerator] Tag 'Architecture' is not defined. Skipping tag assignment.");
             }
         }
         #endregion
@@ -1102,13 +1102,13 @@ namespace Vastcore.Generation
             // 構造的に不安定な比率をチェック
             if (heightToSpanRatio < 0.2f || heightToSpanRatio > 2.0f)
             {
-                Debug.LogWarning($"Potentially unstable height to span ratio: {heightToSpanRatio}");
+                VastcoreLogger.Instance.LogWarning("ArchitecturalGen", $"Potentially unstable height to span ratio: {heightToSpanRatio}");
                 return false;
             }
-            
+
             if (thicknessToSpanRatio < 0.02f)
             {
-                Debug.LogWarning($"Insufficient thickness for span: {thicknessToSpanRatio}");
+                VastcoreLogger.Instance.LogWarning("ArchitecturalGen", $"Insufficient thickness for span: {thicknessToSpanRatio}");
                 return false;
             }
             

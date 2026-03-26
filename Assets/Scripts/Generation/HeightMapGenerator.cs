@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using Vastcore.Utilities;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -132,7 +133,7 @@ namespace Vastcore.Generation
         {
             if (generator.HeightMap == null)
             {
-                Debug.LogError("[TerrainGenerator] Height map is not assigned!");
+                VastcoreLogger.Instance.LogError("HeightMapGenerator", "[TerrainGenerator] Height map is not assigned!");
                 return new float[generator.Resolution, generator.Resolution];
             }
 
@@ -142,7 +143,7 @@ namespace Vastcore.Generation
 #endif
             if (!generator.HeightMap.isReadable)
             {
-                Debug.LogError("[TerrainGenerator] Height map texture is not readable. Enable Read/Write in the texture import settings.");
+                VastcoreLogger.Instance.LogError("HeightMapGenerator", "[TerrainGenerator] Height map texture is not readable. Enable Read/Write in the texture import settings.");
                 return new float[generator.Resolution, generator.Resolution];
             }
 

@@ -1,6 +1,7 @@
 using UnityEngine;
 using Vastcore.Generation.GPU;
 using Vastcore.Generation.Cache;
+using Vastcore.Utilities;
 using System.Collections;
 
 
@@ -80,7 +81,7 @@ namespace Vastcore.Generation.Optimization
             
             if (gpuGenerator == null)
             {
-                Debug.LogWarning("GPUTerrainGenerator not found. GPU optimization disabled.");
+                VastcoreLogger.Instance.LogWarning("PerfOptimization", "GPUTerrainGenerator not found. GPU optimization disabled.");
                 enableGPUOptimization = false;
             }
             
@@ -90,14 +91,14 @@ namespace Vastcore.Generation.Optimization
             
             if (cacheSystem == null)
             {
-                Debug.LogWarning("IntelligentCacheSystem not found. Cache optimization disabled.");
+                VastcoreLogger.Instance.LogWarning("PerfOptimization", "IntelligentCacheSystem not found. Cache optimization disabled.");
                 enableCacheOptimization = false;
             }
             
             // 地形管理コンポーネント
             terrainManager = FindFirstObjectByType<RuntimeTerrainManager>();
             
-            Debug.Log("Performance Optimization Controller initialized");
+            VastcoreLogger.Instance.LogInfo("PerfOptimization", "Performance Optimization Controller initialized");
         }
         
         private void Update()
@@ -203,7 +204,7 @@ namespace Vastcore.Generation.Optimization
             
             if (newState != currentState)
             {
-                Debug.Log($"Performance state changed: {currentState} -> {newState} (Score: {performanceScore:F2})");
+                VastcoreLogger.Instance.LogInfo("PerfOptimization", $"Performance state changed: {currentState} -> {newState} (Score: {performanceScore:F2})");
                 currentState = newState;
             }
         }
@@ -256,7 +257,7 @@ namespace Vastcore.Generation.Optimization
         
         private void PerformLightOptimization()
         {
-            Debug.Log("Performing light optimization");
+            VastcoreLogger.Instance.LogInfo("PerfOptimization", "Performing light optimization");
             
             // GPU最適化
             if (enableGPUOptimization && currentMetrics.frameTime > maxFrameTimeMs * 1.2f)
@@ -273,7 +274,7 @@ namespace Vastcore.Generation.Optimization
         
         private void PerformEmergencyOptimization()
         {
-            Debug.LogWarning("Performing emergency optimization");
+            VastcoreLogger.Instance.LogWarning("PerfOptimization", "Performing emergency optimization");
             
             // 大幅なGPU設定削減
             if (enableGPUOptimization)
@@ -296,7 +297,7 @@ namespace Vastcore.Generation.Optimization
         
         private void PerformRecoveryOptimization()
         {
-            Debug.Log("Performing recovery optimization");
+            VastcoreLogger.Instance.LogInfo("PerfOptimization", "Performing recovery optimization");
             
             // 段階的な設定復旧
             if (currentMetrics.frameRate > targetFrameRate * 0.8f)
@@ -329,7 +330,7 @@ namespace Vastcore.Generation.Optimization
             int newResolution = Mathf.RoundToInt(perfInfo.textureResolution * factor);
             newResolution = Mathf.Clamp(newResolution, minTextureResolution, maxTextureResolution);
             
-            Debug.Log($"GPU optimization: Concurrent={newConcurrent}, Resolution={newResolution}");
+            VastcoreLogger.Instance.LogDebug("PerfOptimization", $"GPU optimization: Concurrent={newConcurrent}, Resolution={newResolution}");
         }
         
         private void OptimizeCacheSettings(float factor)
@@ -337,7 +338,7 @@ namespace Vastcore.Generation.Optimization
             if (cacheSystem == null) return;
             
             // キャッシュ設定の調整（実装は IntelligentCacheSystem に依存）
-            Debug.Log($"Cache optimization: Factor={factor}");
+            VastcoreLogger.Instance.LogDebug("PerfOptimization", $"Cache optimization: Factor={factor}");
         }
         
         private IEnumerator EmergencyCacheCleanup()
@@ -347,14 +348,14 @@ namespace Vastcore.Generation.Optimization
             if (cacheSystem != null)
             {
                 // メモリキャッシュの部分クリア
-                Debug.Log("Emergency cache cleanup initiated");
+                VastcoreLogger.Instance.LogInfo("PerfOptimization", "Emergency cache cleanup initiated");
                 // cacheSystem.ClearCache(false); // メモリのみクリア
             }
         }
         
         private void LogOptimizationResults()
         {
-            Debug.Log($"Optimization Results:\n" +
+            VastcoreLogger.Instance.LogDebug("PerfOptimization", $"Optimization Results:\n" +
                      $"State: {currentState}\n" +
                      $"Frame Rate: {currentMetrics.frameRate:F1} FPS\n" +
                      $"Frame Time: {currentMetrics.frameTime:F2} ms\n" +
@@ -379,7 +380,7 @@ namespace Vastcore.Generation.Optimization
             currentState = OptimizationState.Optimal;
             maxTasksPerFrame = 3;
             
-            Debug.Log("Optimization settings reset to defaults");
+            VastcoreLogger.Instance.LogInfo("PerfOptimization", "Optimization settings reset to defaults");
         }
         
         /// <summary>

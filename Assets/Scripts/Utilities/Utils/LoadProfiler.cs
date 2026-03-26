@@ -25,7 +25,7 @@ namespace Vastcore.Utilities
                 long endAllocated = Profiler.GetTotalAllocatedMemoryLong();
                 long deltaBytes = endAllocated - _startTotalAllocated;
                 float ms = (float)_stopwatch.Elapsed.TotalMilliseconds;
-                UnityEngine.Debug.Log($"[LoadProfiler] {_label} took {ms:F2} ms, ΔAlloc {deltaBytes / 1024f:F1} KB");
+                VastcoreLogger.Instance.LogInfo("LoadProfiler", $"{_label} took {ms:F2} ms, ΔAlloc {deltaBytes / 1024f:F1} KB");
             }
         }
 

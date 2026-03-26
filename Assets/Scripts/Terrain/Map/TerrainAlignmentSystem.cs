@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -56,7 +57,7 @@ namespace Vastcore.Generation
         {
             if (primitive == null)
             {
-                Debug.LogError("Primitive object is null");
+                VastcoreLogger.Instance.LogError("TerrainAlignment", "Primitive object is null");
                 return;
             }
 
@@ -102,7 +103,7 @@ namespace Vastcore.Generation
             
             if (bounds.size == Vector3.zero)
             {
-                Debug.LogWarning($"Could not get bounds for {primitive.name}");
+                VastcoreLogger.Instance.LogWarning("TerrainAlignment", $"Could not get bounds for {primitive.name}");
                 return;
             }
             
@@ -268,7 +269,7 @@ namespace Vastcore.Generation
                 }
             }
             
-            Debug.LogWarning($"Could not find valid placement position near {desiredPosition} after {maxAttempts} attempts");
+            VastcoreLogger.Instance.LogWarning("TerrainAlignment", $"Could not find valid placement position near {desiredPosition} after {maxAttempts} attempts");
             return null;
         }
 
@@ -300,7 +301,7 @@ namespace Vastcore.Generation
                 }
             }
             
-            Debug.Log($"Generated {placements.Count} optimal placements out of requested {objectCount}");
+            VastcoreLogger.Instance.LogInfo("TerrainAlignment", $"Generated {placements.Count} optimal placements out of requested {objectCount}");
             return placements;
         }
         #endregion

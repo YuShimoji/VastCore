@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -69,7 +70,7 @@ namespace Vastcore.Generation
             {
                 // RuntimeTerrainManagerのタイル生成イベントに統合処理を追加
                 // 注: 実際の実装では、RuntimeTerrainManagerにイベントシステムを追加する必要があります
-                Debug.Log("自然地形特徴統合システム初期化完了");
+                VastcoreLogger.Instance.LogInfo("NaturalTerrain", "自然地形特徴統合システム初期化完了");
             }
         }
 
@@ -122,7 +123,7 @@ namespace Vastcore.Generation
                 UpdateTileMesh(tile, heightmap);
             }
 
-            Debug.Log($"タイル {coordinate} に自然地形特徴を適用完了");
+            VastcoreLogger.Instance.LogInfo("NaturalTerrain", $"タイル {coordinate} に自然地形特徴を適用完了");
         }
 
         /// <summary>

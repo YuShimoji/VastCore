@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Vastcore.Utilities;
 
 namespace Vastcore.Terrain.DualGrid
 {
@@ -68,7 +69,7 @@ namespace Vastcore.Terrain.DualGrid
         {
             if (m_Nodes == null || m_Nodes.Count == 0)
             {
-                Debug.LogWarning("IrregularGrid: Nodes are empty. GenerateGrid() must be called first.");
+                VastcoreLogger.Instance.LogWarning("IrregularGrid", "IrregularGrid: Nodes are empty. GenerateGrid() must be called first.");
                 return;
             }
             
@@ -155,7 +156,7 @@ namespace Vastcore.Terrain.DualGrid
                 // 距離の差が大きすぎる場合は警告（実際の実装では修正処理を追加）
                 if (maxDist > minDist * 3.0f)
                 {
-                    Debug.LogWarning($"Cell {cell.Id} may have convexity issues. MinDist: {minDist}, MaxDist: {maxDist}");
+                    VastcoreLogger.Instance.LogWarning("IrregularGrid", $"Cell {cell.Id} may have convexity issues. MinDist: {minDist}, MaxDist: {maxDist}");
                 }
             }
         }

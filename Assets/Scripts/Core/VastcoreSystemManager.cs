@@ -106,7 +106,7 @@ namespace Vastcore.Core
             try
             {
                 currentStatus = SystemStatus.Initializing;
-                Debug.Log("Vastcoreシステム初期化を開始...");
+                VastcoreLogger.Instance.LogInfo("SystemManager", "Vastcoreシステム初期化を開始...");
                 
                 // 1. ログシステムの初期化（最優先）
                 if (enableLogger)
@@ -149,14 +149,13 @@ namespace Vastcore.Core
                 }
                 else
                 {
-                    Debug.Log("Vastcoreシステムの初期化が完了しました");
+                    VastcoreLogger.Instance.LogInfo("SystemManager", "Vastcoreシステムの初期化が完了しました");
                 }
             }
             catch (Exception error)
             {
                 currentStatus = SystemStatus.Error;
-                Debug.LogError($"Vastcoreシステム初期化エラー: {error.Message}");
-                Debug.LogException(error);
+                VastcoreLogger.Instance.LogError("SystemManager", $"Vastcoreシステム初期化エラー: {error.Message}", error);
             }
         }
         
@@ -168,12 +167,12 @@ namespace Vastcore.Core
                 if (logger != null)
                 {
                     logger.minimumLogLevel = systemLogLevel;
-                    Debug.Log("VastcoreLogger初期化完了");
+                    logger.LogInfo("SystemManager", "VastcoreLogger初期化完了");
                 }
             }
             catch (Exception error)
             {
-                Debug.LogError($"Logger初期化エラー: {error.Message}");
+                VastcoreLogger.Instance.LogError("SystemManager", $"Logger初期化エラー: {error.Message}", error);
             }
         }
         
@@ -190,13 +189,13 @@ namespace Vastcore.Core
                     }
                     else
                     {
-                        Debug.Log("VastcoreErrorHandler初期化完了");
+                        VastcoreLogger.Instance.LogInfo("SystemManager", "VastcoreErrorHandler初期化完了");
                     }
                 }
             }
             catch (Exception error)
             {
-                Debug.LogError($"ErrorHandler初期化エラー: {error.Message}");
+                VastcoreLogger.Instance.LogError("SystemManager", $"ErrorHandler初期化エラー: {error.Message}", error);
             }
         }
         
@@ -213,13 +212,13 @@ namespace Vastcore.Core
                     }
                     else
                     {
-                        Debug.Log("VastcoreDebugVisualizer初期化完了");
+                        VastcoreLogger.Instance.LogInfo("SystemManager", "VastcoreDebugVisualizer初期化完了");
                     }
                 }
             }
             catch (Exception error)
             {
-                Debug.LogError($"DebugVisualizer初期化エラー: {error.Message}");
+                VastcoreLogger.Instance.LogError("SystemManager", $"DebugVisualizer初期化エラー: {error.Message}", error);
             }
         }
         
@@ -236,13 +235,13 @@ namespace Vastcore.Core
                     }
                     else
                     {
-                        Debug.Log("VastcoreDiagnostics初期化完了");
+                        VastcoreLogger.Instance.LogInfo("SystemManager", "VastcoreDiagnostics初期化完了");
                     }
                 }
             }
             catch (Exception error)
             {
-                Debug.LogError($"Diagnostics初期化エラー: {error.Message}");
+                VastcoreLogger.Instance.LogError("SystemManager", $"Diagnostics初期化エラー: {error.Message}", error);
             }
         }
         
@@ -263,7 +262,7 @@ namespace Vastcore.Core
                     }
                     else
                     {
-                        Debug.LogWarning("TerrainErrorRecoveryタイプが検出されませんでした");
+                        VastcoreLogger.Instance.LogWarning("SystemManager", "TerrainErrorRecoveryタイプが検出されませんでした");
                     }
                     return;
                 }
@@ -321,7 +320,7 @@ namespace Vastcore.Core
                     }
                     else
                     {
-                        Debug.LogWarning("TerrainErrorRecovery が ITerrainRecoveryService を実装していません");
+                        VastcoreLogger.Instance.LogWarning("SystemManager", "TerrainErrorRecovery が ITerrainRecoveryService を実装していません");
                     }
                     return;
                 }
@@ -334,13 +333,13 @@ namespace Vastcore.Core
                 }
                 else
                 {
-                    Debug.Log("TerrainRecoveryService 初期化完了");
+                    VastcoreLogger.Instance.LogInfo("SystemManager", "TerrainRecoveryService 初期化完了");
                 }
             }
             catch (Exception error)
             {
                 terrainRecoveryService = null;
-                Debug.LogError($"TerrainErrorRecovery初期化エラー: {error.Message}");
+                VastcoreLogger.Instance.LogError("SystemManager", $"TerrainErrorRecovery初期化エラー: {error.Message}", error);
             }
         }
         
@@ -382,7 +381,7 @@ namespace Vastcore.Core
                 if (enableLogger && logger == null)
                 {
                     allSystemsHealthy = false;
-                    Debug.LogWarning("Loggerが無効になっています");
+                    VastcoreLogger.Instance.LogWarning("SystemManager", "Loggerが無効になっています");
                 }
                 
                 if (enableDebugVisualizer && debugVisualizer == null)
@@ -429,7 +428,7 @@ namespace Vastcore.Core
                 }
                 else
                 {
-                    Debug.LogError($"システム健全性チェック中にエラー: {error.Message}");
+                    VastcoreLogger.Instance.LogError("SystemManager", $"システム健全性チェック中にエラー: {error.Message}", error);
                 }
             }
         }
@@ -487,7 +486,7 @@ namespace Vastcore.Core
             }
             catch (Exception error)
             {
-                Debug.LogError($"システムシャットダウン中にエラー: {error.Message}");
+                VastcoreLogger.Instance.LogError("SystemManager", $"システムシャットダウン中にエラー: {error.Message}", error);
             }
         }
         

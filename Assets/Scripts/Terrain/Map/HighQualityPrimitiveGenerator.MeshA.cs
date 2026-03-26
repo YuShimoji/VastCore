@@ -4,6 +4,7 @@ using UnityEngine.ProBuilder.MeshOperations;
 using System.Collections.Generic;
 using System.Linq;
 using Vastcore.Core;
+using Vastcore.Utilities;
 
 #if DEFORM_AVAILABLE
 using Deform;
@@ -75,7 +76,7 @@ namespace Vastcore.Generation
                     mesh = GenerateHighQualityFormation(scale, quality);
                     break;
                 default:
-                    Debug.LogWarning($"Primitive type {primitiveType} not implemented, using high-quality cube");
+                    VastcoreLogger.Instance.LogWarning("PrimitiveGen", $"Primitive type {primitiveType} not implemented, using high-quality cube");
                     mesh = GenerateHighQualityCube(scale, quality);
                     break;
             }

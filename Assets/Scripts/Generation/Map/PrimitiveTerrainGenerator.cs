@@ -106,7 +106,7 @@ namespace Vastcore.Generation
                 
                 if (proBuilderMesh == null)
                 {
-                    Debug.LogError($"Failed to generate base primitive: {parameters.primitiveType}");
+                    VastcoreLogger.Instance.LogError("PrimitiveTerrainGen", $"Failed to generate base primitive: {parameters.primitiveType}");
                     return null;
                 }
 
@@ -144,12 +144,12 @@ namespace Vastcore.Generation
                 // インタラクション設定を追加
                 SetupInteractionComponents(primitiveObject, parameters);
 
-                Debug.Log($"Successfully generated primitive terrain: {parameters.primitiveType} at {parameters.position}");
+                VastcoreLogger.Instance.LogInfo("PrimitiveTerrainGen", $"Successfully generated primitive terrain: {parameters.primitiveType} at {parameters.position}");
                 return primitiveObject;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error generating primitive terrain {parameters.primitiveType}: {e.Message}");
+                VastcoreLogger.Instance.LogError("PrimitiveTerrainGen", $"Error generating primitive terrain {parameters.primitiveType}: {e.Message}");
                 return null;
             }
         }
@@ -213,7 +213,7 @@ namespace Vastcore.Generation
                     mesh = GenerateFormation(scale);
                     break;
                 default:
-                    Debug.LogWarning($"Primitive type {type} not implemented, using cube");
+                    VastcoreLogger.Instance.LogWarning("PrimitiveTerrainGen", $"Primitive type {type} not implemented, using cube");
                     mesh = GenerateScaledCube(scale);
                     break;
             }
@@ -708,7 +708,7 @@ namespace Vastcore.Generation
         {
             if (types.Length != offsets.Length || types.Length != scales.Length)
             {
-                Debug.LogError("Arrays must have the same length for compound primitive generation");
+                VastcoreLogger.Instance.LogError("PrimitiveTerrainGen", "Arrays must have the same length for compound primitive generation");
                 return null;
             }
 

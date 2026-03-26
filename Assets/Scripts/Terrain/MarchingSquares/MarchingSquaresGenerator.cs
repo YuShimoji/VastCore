@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Vastcore.Utilities;
 
 #if UNITY_SPLINES
 using Unity.Splines;
@@ -102,14 +103,14 @@ namespace Vastcore.Terrain.MarchingSquares
         {
             if (m_GridWidth <= 0 || m_GridHeight <= 0)
             {
-                Debug.LogError($"MarchingSquaresGenerator.InitializeGrid: Invalid grid size ({m_GridWidth}, {m_GridHeight}). Using default size (10, 10).");
+                VastcoreLogger.Instance.LogError("MarchingSquares", $"MarchingSquaresGenerator.InitializeGrid: Invalid grid size ({m_GridWidth}, {m_GridHeight}). Using default size (10, 10).");
                 m_GridWidth = 10;
                 m_GridHeight = 10;
             }
 
             if (m_CellSize <= 0f)
             {
-                Debug.LogError($"MarchingSquaresGenerator.InitializeGrid: Invalid cell size ({m_CellSize}). Using default size (1.0).");
+                VastcoreLogger.Instance.LogError("MarchingSquares", $"MarchingSquaresGenerator.InitializeGrid: Invalid cell size ({m_CellSize}). Using default size (1.0).");
                 m_CellSize = 1.0f;
             }
 
@@ -129,7 +130,7 @@ namespace Vastcore.Terrain.MarchingSquares
         {
             if (m_Grid == null)
             {
-                Debug.LogError("MarchingSquaresGenerator.GenerateMap: Grid is not initialized. Call InitializeGrid() first.");
+                VastcoreLogger.Instance.LogError("MarchingSquares", "MarchingSquaresGenerator.GenerateMap: Grid is not initialized. Call InitializeGrid() first.");
                 return;
             }
 
@@ -182,7 +183,7 @@ namespace Vastcore.Terrain.MarchingSquares
                 }
             }
 
-            Debug.Log($"MarchingSquaresGenerator.GenerateMap: Generated {m_GeneratedObjects.Count} objects.");
+            VastcoreLogger.Instance.LogInfo("MarchingSquares", $"MarchingSquaresGenerator.GenerateMap: Generated {m_GeneratedObjects.Count} objects.");
         }
 
         /// <summary>
@@ -239,18 +240,18 @@ namespace Vastcore.Terrain.MarchingSquares
         public int RasterizeFromSpline(bool _value = true)
         {
 #if !UNITY_SPLINES
-            Debug.LogError("MarchingSquaresGenerator.RasterizeFromSpline: Unity Spline Package is not installed. Please install 'com.unity.splines' from Package Manager.");
+            VastcoreLogger.Instance.LogError("MarchingSquares", "MarchingSquaresGenerator.RasterizeFromSpline: Unity Spline Package is not installed. Please install 'com.unity.splines' from Package Manager.");
             return -1;
 #else
             if (m_Grid == null)
             {
-                Debug.LogError("MarchingSquaresGenerator.RasterizeFromSpline: Grid is not initialized. Call InitializeGrid() first.");
+                VastcoreLogger.Instance.LogError("MarchingSquares", "MarchingSquaresGenerator.RasterizeFromSpline: Grid is not initialized. Call InitializeGrid() first.");
                 return -1;
             }
 
             if (m_SplineContainer == null)
             {
-                Debug.LogError("MarchingSquaresGenerator.RasterizeFromSpline: SplineContainer is not assigned. Please assign a SplineContainer in the Inspector.");
+                VastcoreLogger.Instance.LogError("MarchingSquares", "MarchingSquaresGenerator.RasterizeFromSpline: SplineContainer is not assigned. Please assign a SplineContainer in the Inspector.");
                 return -1;
             }
 
@@ -258,7 +259,7 @@ namespace Vastcore.Terrain.MarchingSquares
             var splines = m_SplineContainer.Splines;
             if (splines == null || splines.Count == 0)
             {
-                Debug.LogWarning("MarchingSquaresGenerator.RasterizeFromSpline: SplineContainer has no splines or the spline is empty.");
+                VastcoreLogger.Instance.LogWarning("MarchingSquares", "MarchingSquaresGenerator.RasterizeFromSpline: SplineContainer has no splines or the spline is empty.");
                 return 0;
             }
 
@@ -284,7 +285,7 @@ namespace Vastcore.Terrain.MarchingSquares
                 totalRasterized += rasterized;
             }
 
-            Debug.Log($"MarchingSquaresGenerator.RasterizeFromSpline: Rasterized {totalRasterized} vertices from {splines.Count} spline(s).");
+            VastcoreLogger.Instance.LogInfo("MarchingSquares", $"MarchingSquaresGenerator.RasterizeFromSpline: Rasterized {totalRasterized} vertices from {splines.Count} spline(s).");
 
             // 自動生成オプションが有効な場合、地形を生成
             if (m_AutoGenerateAfterRasterize && totalRasterized > 0)
@@ -304,7 +305,7 @@ namespace Vastcore.Terrain.MarchingSquares
         {
             if (m_Grid == null)
             {
-                Debug.LogError("MarchingSquaresGenerator.GenerateMapWithLayers: Grid is not initialized. Call InitializeGrid() first.");
+                VastcoreLogger.Instance.LogError("MarchingSquares", "MarchingSquaresGenerator.GenerateMapWithLayers: Grid is not initialized. Call InitializeGrid() first.");
                 return;
             }
 
@@ -415,7 +416,7 @@ namespace Vastcore.Terrain.MarchingSquares
                 }
             }
 
-            Debug.Log($"MarchingSquaresGenerator.GenerateMapWithLayers: Generated {m_GeneratedObjects.Count} objects.");
+            VastcoreLogger.Instance.LogInfo("MarchingSquares", $"MarchingSquaresGenerator.GenerateMapWithLayers: Generated {m_GeneratedObjects.Count} objects.");
         }
         #endregion
 

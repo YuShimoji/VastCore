@@ -1,4 +1,5 @@
 using UnityEngine;
+using Vastcore.Utilities;
 
 #if UNITY_SPLINES
 using Unity.Splines;
@@ -39,30 +40,30 @@ namespace Vastcore.Terrain.MarchingSquares
             float _samplingInterval = c_DefaultSamplingInterval)
         {
 #if !UNITY_SPLINES
-            Debug.LogError("SplineRasterizer.RasterizeSpline: Unity Spline Package is not installed. Please install 'com.unity.splines' from Package Manager.");
+            VastcoreLogger.Instance.LogError("SplineRasterizer", "SplineRasterizer.RasterizeSpline: Unity Spline Package is not installed. Please install 'com.unity.splines' from Package Manager.");
             return 0;
 #else
             if (_spline == null)
             {
-                Debug.LogError("SplineRasterizer.RasterizeSpline: Spline is null.");
+                VastcoreLogger.Instance.LogError("SplineRasterizer", "SplineRasterizer.RasterizeSpline: Spline is null.");
                 return 0;
             }
 
             if (_grid == null)
             {
-                Debug.LogError("SplineRasterizer.RasterizeSpline: Grid is null.");
+                VastcoreLogger.Instance.LogError("SplineRasterizer", "SplineRasterizer.RasterizeSpline: Grid is null.");
                 return 0;
             }
 
             if (_brushRadius <= 0f)
             {
-                Debug.LogWarning($"SplineRasterizer.RasterizeSpline: Invalid brush radius ({_brushRadius}). Using default value (0.5).");
+                VastcoreLogger.Instance.LogWarning("SplineRasterizer", $"SplineRasterizer.RasterizeSpline: Invalid brush radius ({_brushRadius}). Using default value (0.5).");
                 _brushRadius = 0.5f;
             }
 
             if (_samplingInterval <= 0f)
             {
-                Debug.LogWarning($"SplineRasterizer.RasterizeSpline: Invalid sampling interval ({_samplingInterval}). Using default value ({c_DefaultSamplingInterval}).");
+                VastcoreLogger.Instance.LogWarning("SplineRasterizer", $"SplineRasterizer.RasterizeSpline: Invalid sampling interval ({_samplingInterval}). Using default value ({c_DefaultSamplingInterval}).");
                 _samplingInterval = c_DefaultSamplingInterval;
             }
 
@@ -73,7 +74,7 @@ namespace Vastcore.Terrain.MarchingSquares
 
             if (splineLength <= 0f)
             {
-                Debug.LogWarning("SplineRasterizer.RasterizeSpline: Spline length is zero or negative.");
+                VastcoreLogger.Instance.LogWarning("SplineRasterizer", "SplineRasterizer.RasterizeSpline: Spline length is zero or negative.");
                 return 0;
             }
 
@@ -104,7 +105,7 @@ namespace Vastcore.Terrain.MarchingSquares
             Vector2Int endGridPos = _grid.WorldToGrid(endPoint);
             rasterizedCount += SetGridDataInRange(endGridPos.x, endGridPos.y, _brushRadius, _value, _grid);
 
-            Debug.Log($"SplineRasterizer.RasterizeSpline: Rasterized {rasterizedCount} vertices from spline (length: {splineLength}, sampling interval: {_samplingInterval}).");
+            VastcoreLogger.Instance.LogInfo("SplineRasterizer", $"SplineRasterizer.RasterizeSpline: Rasterized {rasterizedCount} vertices from spline (length: {splineLength}, sampling interval: {_samplingInterval}).");
             return rasterizedCount;
 #endif
         }
@@ -127,13 +128,13 @@ namespace Vastcore.Terrain.MarchingSquares
         {
             if (_grid == null)
             {
-                Debug.LogError("SplineRasterizer.SetGridDataInRange: Grid is null.");
+                VastcoreLogger.Instance.LogError("SplineRasterizer", "SplineRasterizer.SetGridDataInRange: Grid is null.");
                 return 0;
             }
 
             if (_radius <= 0f)
             {
-                Debug.LogWarning($"SplineRasterizer.SetGridDataInRange: Invalid radius ({_radius}). Using default value (0.5).");
+                VastcoreLogger.Instance.LogWarning("SplineRasterizer", $"SplineRasterizer.SetGridDataInRange: Invalid radius ({_radius}). Using default value (0.5).");
                 _radius = 0.5f;
             }
 

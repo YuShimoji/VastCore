@@ -4,6 +4,7 @@ using TMPro;
 using System;
 using System.Collections.Generic;
 using System.Collections;
+using Vastcore.Utilities;
 
 namespace Vastcore.UI
 {
@@ -107,7 +108,7 @@ namespace Vastcore.UI
         {
             if (activeSliders.ContainsKey(parameterName))
             {
-                Debug.LogWarning($"Slider for parameter '{parameterName}' already exists. Updating existing slider.");
+                VastcoreLogger.Instance.LogWarning("SliderUI", $"Slider for parameter '{parameterName}' already exists. Updating existing slider.");
                 UpdateSliderValue(parameterName, currentValue);
                 return activeSliders[parameterName];
             }

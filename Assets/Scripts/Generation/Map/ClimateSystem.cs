@@ -4,6 +4,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -144,11 +145,11 @@ namespace Vastcore.Generation
                 }
                 
                 isInitialized = true;
-                Debug.Log("ClimateSystem initialized successfully");
+                VastcoreLogger.Instance.LogInfo("Climate", "ClimateSystem initialized successfully");
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"ClimateSystem initialization failed: {e.Message}");
+                VastcoreLogger.Instance.LogError("Climate", $"ClimateSystem initialization failed: {e.Message}");
             }
         }
         
@@ -211,7 +212,7 @@ namespace Vastcore.Generation
         {
             if (!isInitialized)
             {
-                Debug.LogWarning("ClimateSystem not initialized");
+                VastcoreLogger.Instance.LogWarning("Climate", "ClimateSystem not initialized");
                 return ClimateData.Default;
             }
             
@@ -236,7 +237,7 @@ namespace Vastcore.Generation
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"GetClimateAt failed: {e.Message}");
+                VastcoreLogger.Instance.LogError("Climate", $"GetClimateAt failed: {e.Message}");
                 return ClimateData.Default;
             }
         }

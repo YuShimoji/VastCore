@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using Vastcore.Core;
+using Vastcore.Utilities;
 
 namespace Vastcore.Generation
 {
@@ -114,7 +115,7 @@ namespace Vastcore.Generation
             // 初期メモリ使用量を記録
             lastMemoryUsage = System.GC.GetTotalMemory(false);
 
-            Debug.Log("PrimitiveMemoryManager initialized");
+            VastcoreLogger.Instance.LogInfo("PrimitiveMemory", "PrimitiveMemoryManager initialized");
         }
 
         private void OnMemoryThresholdExceeded()
@@ -135,7 +136,7 @@ namespace Vastcore.Generation
                 
                 if (logMemoryUsage)
                 {
-                    Debug.Log($"Registered object: {obj.name} (Total managed: {managedObjects.Count})");
+                    VastcoreLogger.Instance.LogDebug("PrimitiveMemory", $"Registered object: {obj.name} (Total managed: {managedObjects.Count})");
                 }
             }
         }
@@ -152,7 +153,7 @@ namespace Vastcore.Generation
                 
                 if (logMemoryUsage)
                 {
-                    Debug.Log($"Unregistered object: {obj.name} (Total managed: {managedObjects.Count})");
+                    VastcoreLogger.Instance.LogDebug("PrimitiveMemory", $"Unregistered object: {obj.name} (Total managed: {managedObjects.Count})");
                 }
             }
         }
@@ -215,7 +216,7 @@ namespace Vastcore.Generation
             
             if (logMemoryUsage)
             {
-                Debug.Log($"Memory usage: {currentMemory / (1024 * 1024)}MB (Delta: {memoryDelta / 1024}KB, Ratio: {memoryUsageRatio:F2})");
+                VastcoreLogger.Instance.LogDebug("PrimitiveMemory", $"Memory usage: {currentMemory / (1024 * 1024)}MB (Delta: {memoryDelta / 1024}KB, Ratio: {memoryUsageRatio:F2})");
             }
         }
 
@@ -260,7 +261,7 @@ namespace Vastcore.Generation
             
             if (removedCount > 0 && logMemoryUsage)
             {
-                Debug.Log($"Cleaned up {removedCount} invalid objects");
+                VastcoreLogger.Instance.LogDebug("PrimitiveMemory", $"Cleaned up {removedCount} invalid objects");
             }
         }
 
@@ -293,7 +294,7 @@ namespace Vastcore.Generation
             
             if (objectsToCull.Count > 0 && logMemoryUsage)
             {
-                Debug.Log($"Culled {objectsToCull.Count} distant objects");
+                VastcoreLogger.Instance.LogDebug("PrimitiveMemory", $"Culled {objectsToCull.Count} distant objects");
             }
         }
 
@@ -324,7 +325,7 @@ namespace Vastcore.Generation
             
             if (culledCount > 0 && logMemoryUsage)
             {
-                Debug.Log($"Culled {culledCount} least recently used objects");
+                VastcoreLogger.Instance.LogDebug("PrimitiveMemory", $"Culled {culledCount} least recently used objects");
             }
         }
 
@@ -365,7 +366,7 @@ namespace Vastcore.Generation
             if (logMemoryUsage)
             {
                 long memoryAfterGC = System.GC.GetTotalMemory(false);
-                Debug.Log($"Garbage collection completed in {gcTime:F3}s. Memory after GC: {memoryAfterGC / (1024 * 1024)}MB");
+                VastcoreLogger.Instance.LogDebug("PrimitiveMemory", $"Garbage collection completed in {gcTime:F3}s. Memory after GC: {memoryAfterGC / (1024 * 1024)}MB");
             }
         }
 
@@ -376,7 +377,7 @@ namespace Vastcore.Generation
         {
             var metrics = GetPerformanceMetrics();
             
-            Debug.Log($"Performance Metrics - " +
+            VastcoreLogger.Instance.LogDebug("PrimitiveMemory", $"Performance Metrics - " +
                      $"Managed Objects: {metrics.managedObjectCount}, " +
                      $"Memory: {metrics.memoryUsageMB:F1}MB, " +
                      $"GC Calls: {metrics.gcCallCount}, " +
@@ -418,7 +419,7 @@ namespace Vastcore.Generation
             PerformMemoryOptimization();
             TriggerGarbageCollection();
             
-            Debug.Log("Forced memory optimization completed");
+            VastcoreLogger.Instance.LogInfo("PrimitiveMemory", "Forced memory optimization completed");
         }
 
         /// <summary>
@@ -437,7 +438,7 @@ namespace Vastcore.Generation
             managedObjects.Clear();
             objectLastAccessTime.Clear();
             
-            Debug.Log("All managed objects cleared");
+            VastcoreLogger.Instance.LogInfo("PrimitiveMemory", "All managed objects cleared");
         }
     }
 

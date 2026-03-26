@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using Vastcore.Generation;
 using Vastcore.Core;
+using Vastcore.Utilities;
 namespace Vastcore.Generation.Cache
 {
     /// <summary>
@@ -116,11 +117,11 @@ namespace Vastcore.Generation.Cache
                 playerTransform = Camera.main.transform;
                 lastPlayerPosition = playerTransform.position;
                 playerPositionHistory = new List<Vector3> { playerTransform.position };
-                Debug.LogWarning("Player object not found. Using Main Camera for predictive preload.");
+                VastcoreLogger.Instance.LogWarning("TerrainCache", "Player object not found. Using Main Camera for predictive preload.");
             }
             else
             {
-                Debug.LogWarning("Player transform could not be determined. Predictive preload disabled.");
+                VastcoreLogger.Instance.LogWarning("TerrainCache", "Player transform could not be determined. Predictive preload disabled.");
                 enablePredictivePreload = false;
             }
             
@@ -136,7 +137,7 @@ namespace Vastcore.Generation.Cache
                 LoadDiskCacheIndex();
             }
             
-            Debug.Log("Intelligent Cache System initialized");
+            VastcoreLogger.Instance.LogInfo("TerrainCache", "Intelligent Cache System initialized");
         }
         
         /// <summary>
@@ -358,7 +359,7 @@ namespace Vastcore.Generation.Cache
                 if (terrainGenerator != null)
                 {
                     // 非同期生成リクエスト（実装は RuntimeTerrainManager に依存）
-                    Debug.Log($"Requesting preload generation for tile {coordinate}");
+                    VastcoreLogger.Instance.LogDebug("TerrainCache", $"Requesting preload generation for tile {coordinate}");
                 }
             }
             
@@ -393,7 +394,7 @@ namespace Vastcore.Generation.Cache
                 memoryCache.Remove(evictCoordinate);
                 statistics.memoryEvictions++;
                 
-                Debug.Log($"Evicted tile {evictCoordinate} from memory cache");
+                VastcoreLogger.Instance.LogDebug("TerrainCache", $"Evicted tile {evictCoordinate} from memory cache");
             }
         }
         
@@ -432,11 +433,11 @@ namespace Vastcore.Generation.Cache
                 diskCacheIndex[coordinate] = fileName;
                 statistics.diskWrites++;
                 
-                Debug.Log($"Saved tile {coordinate} to disk cache");
+                VastcoreLogger.Instance.LogDebug("TerrainCache", $"Saved tile {coordinate} to disk cache");
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to save tile {coordinate} to disk: {e.Message}");
+                VastcoreLogger.Instance.LogError("TerrainCache", $"Failed to save tile {coordinate} to disk: {e.Message}");
             }
         }
         
@@ -469,11 +470,11 @@ namespace Vastcore.Generation.Cache
                     onComplete(data);
                 }
                 
-                Debug.Log($"Loaded tile {coordinate} from disk cache");
+                VastcoreLogger.Instance.LogDebug("TerrainCache", $"Loaded tile {coordinate} from disk cache");
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to load tile {coordinate} from disk: {e.Message}");
+                VastcoreLogger.Instance.LogError("TerrainCache", $"Failed to load tile {coordinate} from disk: {e.Message}");
                 onComplete(null);
             }
         }
@@ -505,7 +506,7 @@ namespace Vastcore.Generation.Cache
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to load tile {coordinate} from disk: {e.Message}");
+                VastcoreLogger.Instance.LogError("TerrainCache", $"Failed to load tile {coordinate} from disk: {e.Message}");
                 return null;
             }
         }
@@ -526,11 +527,11 @@ namespace Vastcore.Generation.Cache
                     }
                 }
                 
-                Debug.Log($"Loaded {diskCacheIndex.Count} entries from disk cache index");
+                VastcoreLogger.Instance.LogInfo("TerrainCache", $"Loaded {diskCacheIndex.Count} entries from disk cache index");
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to load disk cache index: {e.Message}");
+                VastcoreLogger.Instance.LogError("TerrainCache", $"Failed to load disk cache index: {e.Message}");
             }
         }
         
@@ -592,11 +593,11 @@ namespace Vastcore.Generation.Cache
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError($"Failed to clear disk cache: {e.Message}");
+                    VastcoreLogger.Instance.LogError("TerrainCache", $"Failed to clear disk cache: {e.Message}");
                 }
             }
             
-            Debug.Log("Cache cleared");
+            VastcoreLogger.Instance.LogInfo("TerrainCache", "Cache cleared");
         }
         
         private void Update()

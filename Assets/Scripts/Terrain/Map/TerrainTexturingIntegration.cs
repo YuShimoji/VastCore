@@ -78,7 +78,7 @@ namespace Vastcore.Generation
         /// </summary>
         private void InitializeIntegration()
         {
-            Debug.Log("Initializing TerrainTexturingIntegration...");
+            VastcoreLogger.Instance.LogInfo("TerrainTexturing", "Initializing TerrainTexturingIntegration...");
             
             // 必要なコンポーネントを取得または作成
             if (terrainManager == null)
@@ -119,7 +119,7 @@ namespace Vastcore.Generation
             // イベントハンドラーを登録
             RegisterEventHandlers();
             
-            Debug.Log("TerrainTexturingIntegration initialized successfully");
+            VastcoreLogger.Instance.LogInfo("TerrainTexturing", "TerrainTexturingIntegration initialized successfully");
         }
         
         /// <summary>
@@ -216,7 +216,7 @@ namespace Vastcore.Generation
         /// </summary>
         private void OnNewTileDetected(TerrainTile tile)
         {
-            Debug.Log($"New tile detected: {tile.coordinate}");
+            VastcoreLogger.Instance.LogInfo("TerrainTexturing", $"New tile detected: {tile.coordinate}");
             
             // テクスチャ統合データを作成
             var integrationData = new TextureIntegrationData(tile);
@@ -477,7 +477,7 @@ namespace Vastcore.Generation
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to process texture integration request for tile {request.tile.coordinate}: {e.Message}");
+                VastcoreLogger.Instance.LogError("TerrainTexturing", $"Failed to process texture integration request for tile {request.tile.coordinate}: {e.Message}", e);
                 statistics.processingErrors++;
             }
         }

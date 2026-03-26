@@ -1,4 +1,5 @@
 using UnityEngine;
+using Vastcore.Utilities;
 
 namespace Vastcore.Terrain.MarchingSquares
 {
@@ -63,7 +64,7 @@ namespace Vastcore.Terrain.MarchingSquares
         {
             if (_grid == null)
             {
-                Debug.LogError("BiomeTransitionCalculator.CalculateTransition: Grid is null.");
+                VastcoreLogger.Instance.LogError("BiomeTransition", "BiomeTransitionCalculator.CalculateTransition: Grid is null.");
                 return TransitionType_None;
             }
 

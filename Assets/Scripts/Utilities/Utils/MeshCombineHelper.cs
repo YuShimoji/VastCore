@@ -10,14 +10,14 @@ namespace Vastcore.Utilities
         {
             if (parent == null || collider == null)
             {
-                Debug.LogError("MeshCombineHelper.CombineChildrenToCollider: parent or collider is null");
+                VastcoreLogger.Instance.LogError("MeshCombine", "MeshCombineHelper.CombineChildrenToCollider: parent or collider is null");
                 return;
             }
 
             var meshFilters = parent.GetComponentsInChildren<MeshFilter>();
             if (meshFilters == null || meshFilters.Length == 0)
             {
-                Debug.LogWarning("MeshCombineHelper.CombineChildrenToCollider: no MeshFilters found");
+                VastcoreLogger.Instance.LogWarning("MeshCombine", "MeshCombineHelper.CombineChildrenToCollider: no MeshFilters found");
                 return;
             }
 
@@ -36,7 +36,7 @@ namespace Vastcore.Utilities
 
             if (validCount == 0)
             {
-                Debug.LogWarning("MeshCombineHelper.CombineChildrenToCollider: no valid meshes to combine");
+                VastcoreLogger.Instance.LogWarning("MeshCombine", "MeshCombineHelper.CombineChildrenToCollider: no valid meshes to combine");
                 return;
             }
 

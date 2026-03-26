@@ -1,4 +1,5 @@
 using UnityEngine;
+using Vastcore.Utilities;
 
 namespace Vastcore.Terrain
 {
@@ -29,7 +30,7 @@ namespace Vastcore.Terrain
         [ContextMenu("Setup Scene")]
         public void SetupScene()
         {
-            Debug.Log("Setting up basic scene...");
+            VastcoreLogger.Instance.LogInfo("SceneSetup", "Setting up basic scene...");
 
             // カメラのセットアップ
             if (setupCamera)
@@ -49,7 +50,7 @@ namespace Vastcore.Terrain
                 SetupTerrain();
             }
 
-            Debug.Log("Scene setup completed!");
+            VastcoreLogger.Instance.LogInfo("SceneSetup", "Scene setup completed!");
         }
 
         private void SetupCamera()
@@ -68,7 +69,7 @@ namespace Vastcore.Terrain
             mainCamera.transform.position = cameraPosition;
             mainCamera.transform.LookAt(cameraLookAt);
 
-            Debug.Log("Camera setup completed");
+            VastcoreLogger.Instance.LogInfo("SceneSetup", "Camera setup completed");
         }
 
         private void SetupLighting()
@@ -90,7 +91,7 @@ namespace Vastcore.Terrain
             // 環境ライトの設定
             RenderSettings.ambientLight = new Color(0.2f, 0.2f, 0.2f);
 
-            Debug.Log("Lighting setup completed");
+            VastcoreLogger.Instance.LogInfo("SceneSetup", "Lighting setup completed");
         }
 
         private void SetupTerrain()
@@ -99,7 +100,7 @@ namespace Vastcore.Terrain
             BasicTerrainDisplay existingTerrain = FindFirstObjectByType<BasicTerrainDisplay>();
             if (existingTerrain != null)
             {
-                Debug.Log("Terrain already exists in scene");
+                VastcoreLogger.Instance.LogInfo("SceneSetup", "Terrain already exists in scene");
                 return;
             }
 
@@ -126,14 +127,14 @@ namespace Vastcore.Terrain
                 terrainDisplay.GenerateBasicTerrain();
             }
 
-            Debug.Log("Terrain setup completed");
+            VastcoreLogger.Instance.LogInfo("SceneSetup", "Terrain setup completed");
         }
 
         [ContextMenu("Clear Scene")]
         public void ClearScene()
         {
             // 作成したオブジェクトを削除（オプション）
-            Debug.Log("Scene cleared (manual cleanup may be needed)");
+            VastcoreLogger.Instance.LogInfo("SceneSetup", "Scene cleared (manual cleanup may be needed)");
         }
     }
 }
