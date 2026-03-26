@@ -317,7 +317,7 @@
   {
     "id": "SP-019",
     "title": "Building Definition (Tag-Weight Composite)",
-    "status": "partial",
+    "status": "done",
     "pct": 100,
     "cat": "core",
     "file": "docs/02_design/BUILDING_DEFINITION_SPEC.md",
