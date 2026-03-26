@@ -2,9 +2,9 @@
 
 # VastCore — Handover / ワークフロー仕様書
 
-**最終更新**: 2026-03-18
+**最終更新**: 2026-03-23
 **Actor**: Claude Code (Opus 4.6)
-**Type**: Phase D 進行中 — SP-018/019 実装 + 実機検証準備
+**Type**: Phase D 進行中 — SP-019 Phase 1-5完了 + Pipeline仕様策定準備
 
 ---
 
@@ -154,7 +154,7 @@ Testing (テスト用スタブ・ヘルパー)
 | PD-4: 巨大ファイル分割 | **完了** | 100 |
 | SP-018: パラメトリック変異 (V1) | 実装済み、実機検証待ち | 85 |
 | SP-017: StampExporter | 実装済み、実機検証待ち | 75 |
-| SP-019: 建物定義 (タグ重み複合体) | Phase 1-3 実装済み (Phase 4-6 未着手) | 65 |
+| SP-019: 建物定義 (タグ重み複合体) | Phase 1-5 実装済み (Phase 6 Inspector未着手) | 85 |
 | PD-2: ランダム制御 (V1.5) | 未着手 | 0 |
 | PD-1: 高度合成 (V3) | 未着手 | 0 |
 | PD-3: パフォーマンス最適化 | 未着手 | 0 |
@@ -162,8 +162,9 @@ Testing (テスト用スタブ・ヘルパー)
 ### 次ステップ
 
 1. Unity実機検証: コンパイル確認 → QUICKSTART Step 1-3b (SP-017/018/019 目視)
-2. SP-019 Phase 4-6 設計・実装 (HUMAN_AUTHORITY: 配置ルール+スタイル)
-3. PD-2 ランダム制御 → V1.5 (RandomControlTab→StampDefinition転写)
+2. SP-019 Phase 6 Inspector (BuildingDefinition/AdjacencyRuleSet/PlacementZone/MaterialPalette)
+3. Pipeline仕様策定: end-to-endデザイナーワークフローの明文化
+4. PD-2 ランダム制御 → V1.5 (RandomControlTab→StampDefinition転写)
 
 ---
 
@@ -180,6 +181,23 @@ Testing (テスト用スタブ・ヘルパー)
 ---
 
 ## 7. セッション履歴
+
+### 2026-03-23: docs debt解消 + Pipeline仕様ドラフト (session 10 nightshift)
+
+| # | コミット | 内容 |
+|---|---------|------|
+| (pending) | — | docs debt解消 (SSOT_WORLD/HANDOVER/WORKFLOW同期) |
+| (pending) | — | Pipeline仕様ドラフト (SP-020) |
+
+### 2026-03-22: SP-019 Phase 4-5 + コード品質監査 (session 8/9)
+
+| # | コミット | 内容 |
+|---|---------|------|
+| 1 | `2904699` | docs: session 8 nightshift — コード品質監査 + 仕様ステータス修正 |
+| 2 | `54712ab` | docs: HANDOVER.md SP-019進捗修正 |
+| 3 | `e202de2` | feat(SP-019): Phase 4 配置ルール — AdjacencyRuleSet + PlacementZone + StructurePlacementSolver |
+| 4 | `2d789f4` | docs: CLAUDE.md session 8 SP-019 Phase 4 反映 |
+| 5 | (unstaged) | feat(SP-019): Phase 5 StructureMaterialPalette SO + StructureMaterialSelector + テスト15件 |
 
 ### 2026-03-18: Phase D 進行 — SP-018/019 実装 + 棚卸し (session 4/5)
 
@@ -231,6 +249,49 @@ Testing (テスト用スタブ・ヘルパー)
 | 5 | `e68f1cc` | PC-5 GameManager → TerrainGenerator 接続 (asmdef参照追加) |
 | 6 | `7d60110` | DOCS_INDEX.md 全検査 (9エントリ追加、Addendum削除) |
 | 7 | `2376f1f` | HANDOVER.md Phase C完了更新 |
+
+---
+
+## 8. HANDOFF SNAPSHOT (2026-03-23)
+
+| 項目 | 値 |
+|------|-----|
+| 主レーン | Authoring / Tooling |
+| 現在スライス | Pipeline仕様策定 (SP-020 ドラフト完了) |
+| 今回変更した対象 | SSOT_WORLD.md, HANDOVER.md, WORKFLOW_STATE_SSOT.md, CLAUDE.md, DOCS_INDEX.md, spec-index.json, DESIGNER_PIPELINE_SPEC.md (新規) |
+| 次回最初に確認すべきファイル | docs/02_design/DESIGNER_PIPELINE_SPEC.md (SP-020 ドラフト、Q1-Q5 の設計判断待ち) |
+| 未確定の設計論点 | GAP修復順序(Q-1)、智能配置統合方法(Q-2)、マテリアル適用タイミング(Q-3)、タグUI形式(Q-4)、自動化度合い(Q-5) |
+| 今は触らない範囲 | Phase E (仕上げ)、SP-011/012/013/015 (todo仕様) |
+
+### 未コミットの変更内容
+
+**変更ファイル (8件):**
+- CLAUDE.md: 直近の状態を session 10 nightshift に更新
+- BUILDING_DEFINITION_SPEC.md: 軽微修正 (前セッションからの残り)
+- LEGACY_UI_MIGRATION_REPORT.md: 軽微修正 (前セッションからの残り)
+- DOCS_INDEX.md: SP-020追加、ファイル数更新、最終更新日
+- HANDOVER.md: SP-019進捗更新、session履歴追加、次ステップ更新、HANDOFF SNAPSHOT追加
+- SSOT_WORLD.md: Phase C/D 状態修正、最終更新日
+- WORKFLOW_STATE_SSOT.md: Current Focus更新、SP-019 pct同期
+- spec-index.json: SP-020エントリ追加
+
+**未追跡ファイル (6件):**
+- Assets/Scripts/Editor/AdjacencyRuleSetCreator.cs — SP-019 Phase 4: AdjacencyRuleSet初期データ生成
+- Assets/Scripts/Editor/StructureMaterialPaletteCreator.cs — SP-019 Phase 5: MaterialPalette初期データ生成
+- Assets/Scripts/Generation/StructureMaterialPalette.cs — SP-019 Phase 5: マテリアルパレットSO
+- Assets/Scripts/Generation/StructureMaterialSelector.cs — SP-019 Phase 5: ブレンドスコアルーレット選択
+- Assets/Tests/EditMode/StructureMaterialSelectorTests.cs — SP-019 Phase 5: テスト15件
+- docs/02_design/DESIGNER_PIPELINE_SPEC.md — SP-020: デザイナーパイプライン仕様ドラフト
+
+### パイプライン調査で発見した5件のGAP (SP-020 §4に詳述)
+
+| GAP | 断絶箇所 | 要点 |
+|-----|----------|------|
+| GAP-1 | StructureGeneratorWindow → StampExporter | Export時にTagProfileが渡されない (UIなし) |
+| GAP-2 | BuildingDefinition SO群の編集UI | SP-019 Phase 6 Inspector未着手 |
+| GAP-3 | PlaceStampsAuto → StructurePlacementSolver | 智能配置エンジンが未接続 (ランダムのみ) |
+| GAP-4 | PlacementZone/AdjacencyRuleSet | Bootstrap Inspector に公開されていない |
+| GAP-5 | StructureMaterialSelector | 配置フロー内で呼ばれていない |
 
 ---
 

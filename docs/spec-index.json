@@ -318,9 +318,18 @@
     "id": "SP-019",
     "title": "Building Definition (Tag-Weight Composite)",
     "status": "partial",
-    "pct": 75,
+    "pct": 85,
     "cat": "core",
     "file": "docs/02_design/BUILDING_DEFINITION_SPEC.md",
-    "summary": "タグ重み複合体方式による建物定義。フラットタグ(0.0-1.0)+ブレンドスコア(コサイン類似度)+SOプリセット。構成要素(外殻/開口部/装飾)+配置ルール(親和度マトリクス)+スタイル(マテリアルパレットSO)。6フェーズ実装計画"
+    "summary": "タグ重み複合体方式による建物定義。フラットタグ(0.0-1.0)+ブレンドスコア(コサイン類似度)+SOプリセット。構成要素(外殻/開口部/装飾)+配置ルール(親和度マトリクス)+スタイル(StructureMaterialPalette SO+StructureMaterialSelector)。Phase 1-5実装済み、Phase 6 Inspector未着手"
+  },
+  {
+    "id": "SP-020",
+    "title": "Designer Pipeline Specification",
+    "status": "draft",
+    "pct": 15,
+    "cat": "system",
+    "file": "docs/02_design/DESIGNER_PIPELINE_SPEC.md",
+    "summary": "End-to-endデザイナーワークフロー仕様。StructureGenerator→StampExporter→BuildingDefinition→DualGrid配置の4Stage定義。5件のGAP(断絶点)を特定。手動/自動境界の明文化"
   }
 ]

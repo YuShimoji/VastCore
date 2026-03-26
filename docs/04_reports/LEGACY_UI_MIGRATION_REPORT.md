@@ -1,11 +1,11 @@
 # Legacy UI Migration Report (Dry Run)
 
-- Generated: 2026-03-17 13:31 (local)
+- Generated: 2026-03-20 09:10 (local)
 - Tool: UIMigrationScannerWindow.cs
 - Options: ExcludeExamples=True, ScanScripts=True, ScanScenes=True, ScanPrefabs=True
 
 ## Summary
-- Scripts scanned: 403
+- Scripts scanned: 429
 - Scenes scanned: 51
 - Prefabs scanned: 5
 - C# using UnityEngine.UI: 12
@@ -37,10 +37,10 @@
 - Assets/Editor/Tools/UIMigration/UIMigrationApplyWindow.cs
 - Assets/Editor/Tools/UIMigration/UIMigrationRulesDryRunWindow.cs
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs
-- Assets/MapGenerator/Scripts/Editor/HeightmapTerrainGeneratorWindow.cs
 - Assets/Scripts/Core/VastcoreDebugVisualizer.cs
 - Assets/Scripts/Editor/DeformationBrushTool.cs
 - Assets/Scripts/Editor/DeformationEditorWindow.cs
+- Assets/Scripts/Editor/HeightmapTerrainGeneratorWindow.cs
 - Assets/Scripts/Editor/TerrainAssetBrowser.cs
 - Assets/Scripts/Editor/TerrainGenerationWindow.cs
 - Assets/Scripts/Editor/TerrainTemplateEditor.cs

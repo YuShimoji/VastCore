@@ -2,7 +2,7 @@
 
 > **上位SSOT**: [SSOT_WORLD.md](SSOT_WORLD.md)
 
-**最終更新**: 2026-03-18
+**最終更新**: 2026-03-23
 
 ---
 
@@ -24,7 +24,7 @@
 
 仕様書・設計書の構造化索引。ステータス・実装率・カテゴリで管理する。
 
-- **データソース**: [spec-index.json](spec-index.json) (34件収録)
+- **データソース**: [spec-index.json](spec-index.json) (35件収録)
 - **ID体系**: `SP-xxx` = 仕様書 / `DS-xxx` = 設計書 / `AR-xxx` = アーキテクチャ
 - **ステータス**: done / partial / todo / legacy
 - **カテゴリ**: core / ui / system / infra
@@ -75,7 +75,7 @@
 | [TEST_PLAN.md](01_planning/TEST_PLAN.md) | テスト計画（全体） |
 | [WEB_DEVELOPMENT_ROADMAP.md](01_planning/WEB_DEVELOPMENT_ROADMAP.md) | Web開発ロードマップ |
 
-### 02_design/ — 設計仕様 (32 files)
+### 02_design/ — 設計仕様 (33 files)
 
 | ファイル | 役割 |
 |---------|------|
@@ -111,6 +111,7 @@
 | [BUILDING_DEFINITION_SPEC.md](02_design/BUILDING_DEFINITION_SPEC.md) | 建物定義 タグ重み複合体方式 (SP-019, partial) |
 | [BUILDING_STRUCTURE_INVENTORY.md](02_design/BUILDING_STRUCTURE_INVENTORY.md) | 建物・構造物 現状棚卸し (DS-009, done) |
 | [BUILDING_SPEC_HANDOFF.md](02_design/BUILDING_SPEC_HANDOFF.md) | 建物仕様策定 別セッション Handoff Packet |
+| [DESIGNER_PIPELINE_SPEC.md](02_design/DESIGNER_PIPELINE_SPEC.md) | デザイナーパイプライン仕様 (SP-020, draft) |
 
 ### 03_guides/ — ガイド・手順書 (15 files)
 
