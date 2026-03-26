@@ -13,8 +13,7 @@
     "Vastcore.UI",
     "Unity.TextMeshPro",
     "Unity.ProBuilder",
-    "Unity.ProBuilder.Editor",
-    "Vastcore.Testing"
+    "Unity.ProBuilder.Editor"
   ],
   "includePlatforms": ["Editor"],
   "excludePlatforms": [],
