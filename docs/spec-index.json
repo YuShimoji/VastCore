@@ -326,8 +326,8 @@
   {
     "id": "SP-020",
     "title": "Designer Pipeline Specification",
-    "status": "draft",
-    "pct": 15,
+    "status": "partial",
+    "pct": 60,
     "cat": "system",
     "file": "docs/02_design/DESIGNER_PIPELINE_SPEC.md",
     "summary": "End-to-endデザイナーワークフロー仕様。StructureGenerator→StampExporter→BuildingDefinition→DualGrid配置の4Stage定義。5件のGAP(断絶点)を特定。手動/自動境界の明文化"

@@ -15,8 +15,8 @@
 | **ブランチ** | `main` (trunk-based, local/origin統合済み 2026-03-17) |
 | **Unity** | 6000.3.6f1 (URP) |
 | **C#制約** | .NET Standard 2.1, C# 9.0 |
-| **コンパイル** | 要確認 (session 4/5 で修正済みだが Unity 実機未検証) |
-| **EditModeテスト** | 91件+ (session 4 で 3 件追加: StructureTagAdapter/Profile/ComponentSelector) |
+| **コンパイル** | 要確認 (session 11 でデッドコード大量削除+リファクタ実施、Unity 実機未検証) |
+| **EditModeテスト** | 91件+ (session 4 で 3 件追加。session 11 でデッドテスト51件削除) |
 | **PlayModeテスト** | 0件 (未着手、ゲート対象) |
 | **現フェーズ** | Phase D 進行中 (T1 オーサリング + V4 段階的バリエーション) |
 
@@ -154,17 +154,16 @@ Testing (テスト用スタブ・ヘルパー)
 | PD-4: 巨大ファイル分割 | **完了** | 100 |
 | SP-018: パラメトリック変異 (V1) | 実装済み、実機検証待ち | 85 |
 | SP-017: StampExporter | 実装済み、実機検証待ち | 75 |
-| SP-019: 建物定義 (タグ重み複合体) | Phase 1-5 実装済み (Phase 6 Inspector未着手) | 85 |
+| SP-019: 建物定義 (タグ重み複合体) | Phase 1-6 全完了 | 100 |
 | PD-2: ランダム制御 (V1.5) | 未着手 | 0 |
 | PD-1: 高度合成 (V3) | 未着手 | 0 |
 | PD-3: パフォーマンス最適化 | 未着手 | 0 |
 
 ### 次ステップ
 
-1. Unity実機検証: コンパイル確認 → QUICKSTART Step 1-3b (SP-017/018/019 目視)
-2. SP-019 Phase 6 Inspector (BuildingDefinition/AdjacencyRuleSet/PlacementZone/MaterialPalette)
-3. Pipeline仕様策定: end-to-endデザイナーワークフローの明文化
-4. PD-2 ランダム制御 → V1.5 (RandomControlTab→StampDefinition転写)
+1. Unity実機検証: コンパイル確認 → QUICKSTART Step 1-3b (SP-017/018/019/020 目視)
+2. PD-2 ランダム制御 → V1.5 (RandomControlTab→StampDefinition転写)
+3. SP-020 Pipeline仕様の残課題 (Stage間の詳細ワークフロー文書化)
 
 ---
 
@@ -181,6 +180,19 @@ Testing (テスト用スタブ・ヘルパー)
 ---
 
 ## 7. セッション履歴
+
+### 2026-03-26: コード品質大改善 + SP-019完了 + Pipeline GAP修復 (session 11 nightshift)
+
+| # | コミット | 内容 |
+|---|---------|------|
+| 1 | `99203a1` | feat(SP-019): Phase 5 StructureMaterialPalette + docs同期 |
+| 2 | `6d43953` | excise: レガシーテスト基盤 + デッドコード一括削除 (51ファイル, 15,598行) |
+| 3 | `5f12b63` | excise: テストランナー4件 + 重複仕様ファイル削除 |
+| 4 | `fd2e720` | refactor: Debug.Log → VastcoreLogger 一括移行 (runtime層全完了, 77ファイル) |
+| 5 | `089629f` | excise: デッドコード6件削除 (永久無効化+孤立+完了済みタスク) |
+| 6 | `a155492` | feat(SP-019): Phase 6 Inspector UI — TagProfile/TagPreset/AdjacencyRuleSet |
+| 7 | `a6c80d8` | feat(SP-020): Pipeline GAP 4件修復 — 智能配置+マテリアル自動選択+タグExport |
+| 8 | (pending) | docs: session 11 同期 |
 
 ### 2026-03-23: docs debt解消 + Pipeline仕様ドラフト (session 10 nightshift)
 
@@ -252,46 +264,43 @@ Testing (テスト用スタブ・ヘルパー)
 
 ---
 
-## 8. HANDOFF SNAPSHOT (2026-03-23)
+## 8. HANDOFF SNAPSHOT (2026-03-26)
 
 | 項目 | 値 |
 |------|-----|
-| 主レーン | Authoring / Tooling |
-| 現在スライス | Pipeline仕様策定 (SP-020 ドラフト完了) |
-| 今回変更した対象 | SSOT_WORLD.md, HANDOVER.md, WORKFLOW_STATE_SSOT.md, CLAUDE.md, DOCS_INDEX.md, spec-index.json, DESIGNER_PIPELINE_SPEC.md (新規) |
-| 次回最初に確認すべきファイル | docs/02_design/DESIGNER_PIPELINE_SPEC.md (SP-020 ドラフト、Q1-Q5 の設計判断待ち) |
-| 未確定の設計論点 | GAP修復順序(Q-1)、智能配置統合方法(Q-2)、マテリアル適用タイミング(Q-3)、タグUI形式(Q-4)、自動化度合い(Q-5) |
+| 主レーン | Excise + Advance (品質大改善 + 機能完成) |
+| 現在スライス | Phase D 完了間近、安定化+次フェーズ準備 |
+| 今回変更した対象 | 77ファイルのDebug.Log移行、51ファイルのデッドコード削除、SP-019 Phase 6 Inspector 3件、Pipeline GAP 4件修復 |
+| 次回最初に確認すべきファイル | Unity Editor でコンパイル確認 (大量削除+リファクタ後の整合性) |
+| 未確定の設計論点 | PD-2 ランダム制御の優先度、Phase E 開始タイミング |
 | 今は触らない範囲 | Phase E (仕上げ)、SP-011/012/013/015 (todo仕様) |
 
-### 未コミットの変更内容
+### Session 11 成果サマリ
 
-**変更ファイル (8件):**
-- CLAUDE.md: 直近の状態を session 10 nightshift に更新
-- BUILDING_DEFINITION_SPEC.md: 軽微修正 (前セッションからの残り)
-- LEGACY_UI_MIGRATION_REPORT.md: 軽微修正 (前セッションからの残り)
-- DOCS_INDEX.md: SP-020追加、ファイル数更新、最終更新日
-- HANDOVER.md: SP-019進捗更新、session履歴追加、次ステップ更新、HANDOFF SNAPSHOT追加
-- SSOT_WORLD.md: Phase C/D 状態修正、最終更新日
-- WORKFLOW_STATE_SSOT.md: Current Focus更新、SP-019 pct同期
-- spec-index.json: SP-020エントリ追加
+**Excise (削除):**
+- Assets/_Scripts/ 全削除 (Vastcore.Legacy, 5ファイル)
+- Assets/Scripts/Testing/ 全削除 (44手動テストハーネス, 3 asmdef)
+- Terrain/Map テストランナー 4件削除
+- デッドEditor 6件削除 (永久無効化・孤立・完了済み)
+- 重複仕様ファイル削除 (PREFAB_STAMP_PLACEMENT_SPEC.md)
+- 累計: 約18,000行削除
 
-**未追跡ファイル (6件):**
-- Assets/Scripts/Editor/AdjacencyRuleSetCreator.cs — SP-019 Phase 4: AdjacencyRuleSet初期データ生成
-- Assets/Scripts/Editor/StructureMaterialPaletteCreator.cs — SP-019 Phase 5: MaterialPalette初期データ生成
-- Assets/Scripts/Generation/StructureMaterialPalette.cs — SP-019 Phase 5: マテリアルパレットSO
-- Assets/Scripts/Generation/StructureMaterialSelector.cs — SP-019 Phase 5: ブレンドスコアルーレット選択
-- Assets/Tests/EditMode/StructureMaterialSelectorTests.cs — SP-019 Phase 5: テスト15件
-- docs/02_design/DESIGNER_PIPELINE_SPEC.md — SP-020: デザイナーパイプライン仕様ドラフト
+**Refactor:**
+- Debug.Log → VastcoreLogger 移行: runtime層全完了 (77ファイル, 約500箇所)
 
-### パイプライン調査で発見した5件のGAP (SP-020 §4に詳述)
+**Advance:**
+- SP-019 Phase 6 Inspector UI (3件: PropertyDrawer + CustomEditor x2)
+- SP-020 Pipeline GAP 4件修復 (GAP-1/3/4/5)
 
-| GAP | 断絶箇所 | 要点 |
+### パイプラインGAP状況 (SP-020)
+
+| GAP | 断絶箇所 | 状態 |
 |-----|----------|------|
-| GAP-1 | StructureGeneratorWindow → StampExporter | Export時にTagProfileが渡されない (UIなし) |
-| GAP-2 | BuildingDefinition SO群の編集UI | SP-019 Phase 6 Inspector未着手 |
-| GAP-3 | PlaceStampsAuto → StructurePlacementSolver | 智能配置エンジンが未接続 (ランダムのみ) |
-| GAP-4 | PlacementZone/AdjacencyRuleSet | Bootstrap Inspector に公開されていない |
-| GAP-5 | StructureMaterialSelector | 配置フロー内で呼ばれていない |
+| GAP-1 | StructureGeneratorWindow → StampExporter TagProfile接続 | **修復済み** |
+| GAP-2 | BuildingDefinition SO群の編集UI | **修復済み** (SP-019 Phase 6) |
+| GAP-3 | PlaceStampsAuto → StructurePlacementSolver接続 | **修復済み** |
+| GAP-4 | PlacementZone/AdjacencyRuleSet Inspector公開 | **修復済み** |
+| GAP-5 | StructureMaterialSelector 配置フロー統合 | **修復済み** |
 
 ---
 

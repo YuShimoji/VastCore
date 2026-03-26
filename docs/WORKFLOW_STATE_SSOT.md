@@ -1,19 +1,19 @@
 # WORKFLOW STATE SSOT
 
-Last Updated: 2026-03-23
+Last Updated: 2026-03-26
 
 ## Mission
 
 広大な景観に映える、ユニークで巨大な人工構造物をプロシージャルに生成する基盤の確立。
-Phase A/B/C 完了。SG-1/SG-2 + PD-4 完了。Phase D 実装進行中。
+Phase A/B/C 完了。SG-1/SG-2 + PD-4 完了。Phase D 実装完了。安定化+次フェーズ準備中。
 
 ## Current Focus
 
 **Phase D: オーサリング主体 + 段階的バリエーション** — T1+V4方針決定済み。
-SP-018 (pct 85) + SP-017 (pct 75) + SP-019 Phase 1-5 (pct 85) 実装済み。
-SP-019: TagProfile/Adapter/ComponentSelector/AdjacencyRuleSet/PlacementZone/StructurePlacementSolver/StructureMaterialPalette/StructureMaterialSelector 全て実装済み。Phase 6 Inspector未着手。
-コード品質・asmdef整合・meta欠落・仕様整合は全てクリーン (session 8 検証)。
-次: Pipeline仕様策定 (end-to-endデザイナーワークフロー) → Unity実機検証 → SP-019 Phase 6 or PD-2。
+SP-018 (pct 85) + SP-017 (pct 75) + SP-019 Phase 1-6 (pct 100) 実装完了。
+SP-020 Pipeline GAP 4件修復済み (GAP-1/3/4/5)。
+コード品質大改善: Debug.Log→VastcoreLogger移行(runtime完了)、デッドコード約18,000行削除。
+次: Unity実機検証 → PD-2 (ランダム制御) or Phase E (仕上げ)。
 
 ## Done 条件
 
