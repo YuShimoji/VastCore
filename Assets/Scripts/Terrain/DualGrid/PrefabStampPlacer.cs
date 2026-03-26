@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Vastcore.Generation;
 
 namespace Vastcore.Terrain.DualGrid
 {
@@ -37,6 +38,16 @@ namespace Vastcore.Terrain.DualGrid
         /// 変異生成のベースシード（0の場合は配置IDのみでシード生成）
         /// </summary>
         private int m_VariationSeed;
+
+        /// <summary>
+        /// StructureMaterialPalette 候補配列（パレットベースマテリアル選択用）
+        /// </summary>
+        private StructureMaterialPalette[] m_MaterialPalettes;
+
+        /// <summary>
+        /// タグ親和度ベースのマテリアル選択器
+        /// </summary>
+        private StructureMaterialSelector m_MaterialSelector;
         #endregion
 
         #region Public Properties
@@ -86,6 +97,20 @@ namespace Vastcore.Terrain.DualGrid
         public void SetVariationSeed(int _seed)
         {
             m_VariationSeed = _seed;
+        }
+
+        /// <summary>
+        /// マテリアルパレット候補を設定。
+        /// パレットが設定されている場合、スタンプの TagProfile とのブレンドスコアで
+        /// マテリアルを自動選択する (MaterialVariants より優先)。
+        /// </summary>
+        /// <param name="_palettes">パレット候補配列</param>
+        public void SetMaterialPalettes(StructureMaterialPalette[] _palettes)
+        {
+            m_MaterialPalettes = _palettes;
+            m_MaterialSelector = (_palettes != null && _palettes.Length > 0)
+                ? new StructureMaterialSelector()
+                : null;
         }
 
         /// <summary>
@@ -247,12 +272,32 @@ namespace Vastcore.Terrain.DualGrid
         }
 
         /// <summary>
-        /// マテリアルバリエーションを適用
+        /// マテリアルバリエーションを適用。
+        /// パレットが設定されている場合はタグ親和度ベースで選択 (MaterialVariants よりも優先)。
         /// </summary>
         private void ApplyMaterialVariation(GameObject _instance,
             PrefabStampDefinition _definition, System.Random _random)
         {
-            Material mat = _definition.GetRandomMaterial(_random);
+            Material mat = null;
+
+            // パレットベース選択 (TagProfile があり、パレットが設定されている場合)
+            if (m_MaterialSelector != null && m_MaterialPalettes != null
+                && _definition.TagProfile != null && !_definition.TagProfile.IsEmpty)
+            {
+                StructureMaterialPalette palette = m_MaterialSelector.Select(
+                    _definition.TagProfile, m_MaterialPalettes, _random);
+                if (palette != null)
+                {
+                    mat = palette.WallMaterial;
+                }
+            }
+
+            // フォールバック: 従来の MaterialVariants からランダム選択
+            if (mat == null)
+            {
+                mat = _definition.GetRandomMaterial(_random);
+            }
+
             if (mat == null) return;
 
             MeshRenderer renderer = _instance.GetComponent<MeshRenderer>();
@@ -287,7 +332,7 @@ namespace Vastcore.Terrain.DualGrid
             // 名前が1つも見つからなかった場合は警告
             if (!anyFound)
             {
-                Vastcore.Core.VastcoreLogger.Instance.LogWarning(
+                Vastcore.Utilities.VastcoreLogger.Instance.LogWarning("StampPlacer",
                     $"ChildToggleGroups: '{_definition.DisplayName}' に該当する子オブジェクトが見つかりません");
             }
         }

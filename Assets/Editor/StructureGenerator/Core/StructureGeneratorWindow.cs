@@ -88,6 +88,7 @@ namespace Vastcore.Editor.Generation
         #region Stamp Export Fields
         private bool _showVariationPreview = true;
         private float _exportPositionJitter = 0f;
+        private Vastcore.Generation.StructureTagPreset _exportTagPreset;
         #endregion
 
         /// <summary>
@@ -119,9 +120,14 @@ namespace Vastcore.Editor.Generation
                 EditorGUI.indentLevel--;
             }
 
+            // --- Tag Profile ---
+            _exportTagPreset = (Vastcore.Generation.StructureTagPreset)EditorGUILayout.ObjectField(
+                "Tag Preset", _exportTagPreset, typeof(Vastcore.Generation.StructureTagPreset), false);
+
             if (GUILayout.Button("Export as Stamp", GUILayout.Height(30)))
             {
-                var def = StampExporter.ExportAsStamp(selected, _exportPositionJitter);
+                var tagProfile = _exportTagPreset != null ? _exportTagPreset.Profile : null;
+                var def = StampExporter.ExportAsStamp(selected, _exportPositionJitter, tagProfile);
                 if (def != null)
                 {
                     string childInfo = def.ChildToggleGroups.Length > 0

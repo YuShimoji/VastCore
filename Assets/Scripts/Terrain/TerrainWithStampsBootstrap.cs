@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Vastcore.Generation;
 using Vastcore.Terrain.Config;
 using Vastcore.Terrain.DualGrid;
 using Vastcore.Terrain.Providers;
@@ -54,6 +55,17 @@ namespace Vastcore.Terrain
                     stampDefinitions[0] = value;
             }
         }
+
+        [Header("Placement Rules")]
+        [Tooltip("配置ゾーン設定 (密度・バイアス・間隔)。null の場合は autoPlaceProbability フォールバック")]
+        public PlacementZone placementZone;
+
+        [Tooltip("隣接親和度ルール。null の場合は均一スコア")]
+        public AdjacencyRuleSet adjacencyRules;
+
+        [Header("Material Palettes")]
+        [Tooltip("StructureMaterialSelector に渡すパレット候補")]
+        public StructureMaterialPalette[] materialPalettes = new StructureMaterialPalette[0];
 
         [Header("Options")]
         public bool autoBuildOnStart = true;
@@ -151,6 +163,12 @@ namespace Vastcore.Terrain
                 // 最初のチャンクの Terrain を使用（マルチチャンクの高さ統合は将来課題）
                 m_Placer.SetHeightSampler(new UnityTerrainHeightSampler(m_Chunks[0].UnityTerrain));
             }
+
+            // マテリアルパレットを接続
+            if (materialPalettes != null && materialPalettes.Length > 0)
+            {
+                m_Placer.SetMaterialPalettes(materialPalettes);
+            }
         }
 
         private void PlaceStamps()
@@ -230,6 +248,24 @@ namespace Vastcore.Terrain
         private void PlaceStampsAuto(System.Random _rng,
             List<PrefabStampDefinition> _defs)
         {
+            // PlacementZone が設定されていれば StructurePlacementSolver で智能配置
+            if (placementZone != null)
+            {
+                var solver = new StructurePlacementSolver(m_StampRegistry);
+                int placed = solver.Solve(
+                    (IReadOnlyList<Cell>)m_Grid.Cells,
+                    _defs,
+                    placementZone,
+                    adjacencyRules,
+                    _rng);
+                VastcoreLogger.Instance.LogInfo("StampsBootstrap",
+                    $"[TerrainWithStamps] Solver placed {placed} stamps");
+                return;
+            }
+
+            // レガシーフォールバック: 単純確率配置
+            VastcoreLogger.Instance.LogInfo("StampsBootstrap",
+                "[TerrainWithStamps] PlacementZone not set, using legacy auto-placement");
             foreach (Cell cell in m_Grid.Cells)
             {
                 if (_rng.NextDouble() > autoPlaceProbability) continue;
