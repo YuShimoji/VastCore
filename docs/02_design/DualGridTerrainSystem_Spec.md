@@ -114,7 +114,7 @@ public class Cell
 ### Step 4: Content Placement (Prefab Stamp System)
 
 ~~Marching Squares によるメッシュ解決~~ → **凍結** (2026-03-06 決定)。
-Prefabスタンプ方式に置換。詳細は [SP-014: PREFAB_STAMP_PLACEMENT_SPEC.md](PREFAB_STAMP_PLACEMENT_SPEC.md) を参照。
+Prefabスタンプ方式に置換。詳細は [SP-010: PrefabStampPlacement](SP010_PrefabStampPlacement_Spec.md) を参照。
 
 - デザイナー作成の Prefab を ScriptableObject (PrefabStampDefinition) で定義
 - StampRegistry がセル単位の占有管理とルール適用を担当

@@ -98,7 +98,6 @@
 | [Diagram.md](02_design/Diagram.md) | 設計図表 |
 | [README.md](02_design/README.md) | 設計ディレクトリガイド |
 | [SP010_PrefabStampPlacement_Spec.md](02_design/SP010_PrefabStampPlacement_Spec.md) | Prefab Stamp 配置仕様 (SP-010) |
-| [PREFAB_STAMP_PLACEMENT_SPEC.md](02_design/PREFAB_STAMP_PLACEMENT_SPEC.md) | Prefab Stamp 配置仕様 (旧版) |
 | [EROSION_SYSTEM_SPEC.md](02_design/EROSION_SYSTEM_SPEC.md) | Erosion System 仕様 (SP-016) |
 | [PHASE_D_SCOPE_DEFINITION.md](02_design/PHASE_D_SCOPE_DEFINITION.md) | Phase D スコープ定義 (PD-001) |
 | [POST_PHASE_C_QUICK_WINS.md](02_design/POST_PHASE_C_QUICK_WINS.md) | Phase C 後 Quick Wins (DS-010) |
