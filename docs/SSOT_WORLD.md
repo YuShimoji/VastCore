@@ -27,11 +27,11 @@ SSOT_WORLD.md                          ← 最上位仕様（本文書）
   ├── DEVELOPMENT_ROADMAP_2026.md      ← ロードマップ SSOT（Phase A-E の計画と優先度）
   │     従属先: docs/01_planning/DEVELOPMENT_ROADMAP_2026.md
   │
-  ├── WORKFLOW_STATE_SSOT.md           ← **現在の実行SSOT（最優先アクティブ状態）**
-  │     従属先: docs/WORKFLOW_STATE_SSOT.md
+  ├── runtime-state.md                 ← **現在の実行状態（最優先アクティブ状態）**
+  │     従属先: docs/runtime-state.md
   │
-  ├── CLAUDE.md                        ← 運用 SSOT（セッション運用プロトコル）
-  │     従属先: CLAUDE.md（プロジェクトルート）
+  ├── Agent operating rules            ← AI/Agent 入口と repo-local 運用ルール
+  │     従属先: AGENTS.md + docs/REPO_LOCAL_RULES.md
   │
   ├── HANDOVER.md                      ← 成果物 SSOT（フェーズ完了と引き継ぎ）
   │     従属先: docs/HANDOVER.md
@@ -110,7 +110,8 @@ SSOT_WORLD.md                          ← 最上位仕様（本文書）
 | **DOCS_INDEX.md** | 全ドキュメント索引 | [docs/DOCS_INDEX.md](DOCS_INDEX.md) |
 | **DEVELOPMENT_ROADMAP_2026.md** | ロードマップ正本 | [docs/01_planning/DEVELOPMENT_ROADMAP_2026.md](01_planning/DEVELOPMENT_ROADMAP_2026.md) |
 | **ROADMAP.md** | ロードマップ導線 | [docs/01_planning/ROADMAP.md](01_planning/ROADMAP.md) |
-| **CLAUDE.md** | 運用SSOT | [CLAUDE.md](../CLAUDE.md) |
+| **AGENTS.md / REPO_LOCAL_RULES.md** | AI/Agent 入口と運用ルール | [AGENTS.md](../AGENTS.md) / [docs/REPO_LOCAL_RULES.md](REPO_LOCAL_RULES.md) |
+| **CLAUDE.md** | プロジェクト文脈（運用ルールではない） | [CLAUDE.md](../CLAUDE.md) |
 | **HANDOVER.md** | 成果物SSOT | [docs/HANDOVER.md](HANDOVER.md) |
 | **DEV_PLAN_ARCHIVE_2025-01.md** | 目的関数のアーカイブ | [docs/01_planning/DEV_PLAN_ARCHIVE_2025-01.md](01_planning/DEV_PLAN_ARCHIVE_2025-01.md) |
 
@@ -120,8 +121,9 @@ SSOT_WORLD.md                          ← 最上位仕様（本文書）
 
 1. **実装判断に迷ったら**: 本文書 → ROADMAP_2026 → 該当タスクチケットの順に参照する。
 2. **目的関数 vs 制約条件**: 美的出力（何を作るか）は DEV_PLAN_ARCHIVE に思想がある。工学的制約（どう作るか）は ROADMAP_2026 に従う。
-3. **SSOT 矛盾時**: 上位文書を優先。矛盾を発見したら HANDOVER.md に記録し、次セッションで解決する。
-4. **新規ドキュメント作成時**: 必ず DOCS_INDEX.md に追記し、SSOT 階層内での位置を明示する。
+3. **Agent 再開時**: `AGENTS.md` → `docs/REPO_LOCAL_RULES.md` → `docs/runtime-state.md` を先に読む。詳細探索は `docs/NAV.md` を使う。
+4. **SSOT 矛盾時**: 上位文書を優先。矛盾を発見したら owning doc を特定し、現在状態は `runtime-state.md`、永続判断は `project-context.md` が存在する場合はそこへ記録する。
+5. **新規ドキュメント作成時**: 必ず DOCS_INDEX.md に追記し、SSOT 階層内での位置を明示する。
 
 ---
 

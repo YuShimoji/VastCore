@@ -1,19 +1,35 @@
 # Interaction Notes
-# 報告UI・手動確認・質問形式に関する project-local メモ。
 
-## 手動確認の出し方
-- 手動確認項目は本文で提示する。
-- AskUserQuestion では `OK / NG番号` だけを聞く。
-- 手動確認依頼と次アクション選択を同じ質問に混ぜない。
+Project-local notes for reporting, asks, manual verification, and user-facing
+style.
 
-## 禁止パターン
-- AskUserQuestion の `question` に Markdown テーブルを入れる
-- 選択肢を commit / しない の yes/no で埋める
-- 既知文脈を「詳細を教えてください」で再質問する
+## Reporting Style
 
-## ユーザーが嫌う形式
-- [例] 進路選択を狭める二択
-- [例] 読みにくい崩れた表
+- Use Japanese unless the user requests otherwise.
+- Keep ordinary updates short and concrete.
+- Explain what changed and why it matters before listing file paths.
+- Do not use fixed closeout templates unless the user asks for a fixed format.
+- When reporting residual work, include purpose, effect, requirements, current
+  state, owner, and next move.
 
-## 報告メモ
-- [例] BLOCK SUMMARY では先に原因分析を示す
+## Manual Verification Asks
+
+- Put verification instructions in normal text.
+- Ask only one decision at a time.
+- Use `OK / NG` or `PASS / FAIL` only after the target, actor, owner artifact,
+  and success meaning are explicit.
+- Ask for next direction separately from manual verification.
+
+## Avoid
+
+- Broad "please explain the context again" questions when repo docs can answer.
+- Options whose only axis is commit / do not commit.
+- Large markdown tables for short asks.
+- Reporting historical handoff text as if it were current evidence.
+
+## Current User Preference Notes
+
+- The user asked for a strong modernization of VastCore project-local Agent
+  instructions, aligned with newer projects such as NLMYTGen.
+- `AGENTS.md` must remain thin and must not become procedures, status, roadmap,
+  closeout template, or history.

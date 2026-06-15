@@ -77,12 +77,13 @@ StampRegistryは占有管理のみ。「街並み」のルールがない:
 | `Assets/Scripts/Generation/Map/ArchitecturalGenerator.cs` | 建築構造生成 (1154行) |
 | `Assets/Scripts/Terrain/Map/CompoundArchitecturalGenerator.cs` + TypesA/B/Connection | 複合建築 (1363行) |
 | `Assets/Editor/StructureGenerator/Tabs/` | 全10タブ実装 |
-| `CLAUDE.md` | プロジェクトルール・HUMAN_AUTHORITY境界 |
+| `AGENTS.md` + `docs/REPO_LOCAL_RULES.md` | Agent 入口・repo-local 運用ルール |
+| `docs/INVARIANTS.md` | プロジェクト境界・凍結 frontier・責務境界 |
 
 ## 制約
 
 - HUMAN_AUTHORITY: 建物の種類・外観・スタイルは体験・感性系の判断を含む → 選択肢を提示して承認を得ること
-- SPEC FIRST: 仕様を先に言語化してから実装
+- SPEC FIRST: 仕様を先に言語化してから実装。Agent 運用ルールは `docs/REPO_LOCAL_RULES.md` を優先する
 - T1方針: オーサリング主体。StructureGeneratorはEditorツールとして深化する方向
 - V4方針: バリエーションは段階的 (V1パラメトリック → V2 WFC → V3 CSG)
 - コード標準: PascalCase public, _camelCase params, m_CamelCase private, #region, 日本語XMLdoc

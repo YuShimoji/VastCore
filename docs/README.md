@@ -6,11 +6,11 @@
 
 ## プロジェクト概要
 
-VastCore は Unity 6 ベースの GPU 加速テレインエンジン。6バイオーム、LOD、マネージャーアーキテクチャを備える。現在は **Phase C**（Deform統合 + CSG検証）実行中。
+VastCore は Unity 6 ベースの GPU 加速テレインエンジン。DualGrid + HeightMap + designer Prefab Stamp placement を主軸に、広大な景観に映える人工構造物の生成を目指す。
 
-- 環境: Unity 6000.3.3f1 (URP) / C# (.NET Standard 2.1)
-- バージョン: v1.0.0 安定版
-- 構成: 278 C# ファイル、19 アセンブリ定義、75 EditMode テスト
+- 環境: Unity 6000.3.6f1 (URP) / C# (.NET Standard 2.1)
+- 現在位置: [runtime-state.md](runtime-state.md)
+- Agent 再開導線: [AGENTS.md](../AGENTS.md) → [REPO_LOCAL_RULES.md](REPO_LOCAL_RULES.md) → [runtime-state.md](runtime-state.md)
 
 ## ディレクトリ構成
 
@@ -30,9 +30,12 @@ VastCore は Unity 6 ベースの GPU 加速テレインエンジン。6バイ�
 ### SSOT 階層
 
 - **SSOT_WORLD.md** - 最上位SSOT（プロジェクト全体の目的・構造・優先順位）
-- **WORKFLOW_STATE_SSOT.md** - 実行状態SSOT（現在の作業状況）
+- **runtime-state.md** - 現在位置・active artifact・next action
+- **REPO_LOCAL_RULES.md** - AI/Agent の repo-local 運用 front-door
+- **NAV.md** - 迷ったときのドキュメント地図
+- **WORKFLOW_STATE_SSOT.md** - 旧実行状態SSOT（歴史資料）
 - **HANDOVER.md** - 成果物SSOT（完了タスク・進捗状況）
-- **CLAUDE.md** - セッション開始時の文脈（PROJECT CONTEXT / DECISION LOG）
+- **CLAUDE.md** - プロジェクト文脈（運用ルールではない）
 
 ### アーキテクチャ
 

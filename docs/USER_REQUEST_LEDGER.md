@@ -1,20 +1,33 @@
 # User Request Ledger
-# ユーザーの継続要望・差分要求・backlog を保持する台帳。
 
-## 現在有効な要求
-- [例] 今後は動画制作者側ワークフローを入念に設計する。
+ユーザーの継続要望・差分要求・backlog delta を保持する台帳。
 
-## 未反映の是正要求
-- [例] 手動確認と次アクション選択を分離する。
+## Currently Active Requests
+
+- Project-local Agent instruction files should start from a fresh, modern state.
+- Align VastCore's AI instruction structure with newer projects such as
+  NLMYTGen: thin adapters, repo-local rules front-door, runtime state as current
+  truth, and no operational history inside `AGENTS.md`.
+- Treat missing referenced docs as stale references, not blockers.
+- For residual work, report purpose, effect, requirements, current state, owner,
+  and next move.
+
+## Standing Reporting Preferences
+
+- Use Japanese for normal project reports.
+- Keep responses concise and repo-grounded.
+- Report observable files, commands, checks, and unresolved items when the user
+  asks for strict scope.
+- Do not ask the user to re-explain context that the repo already stores.
 
 ## Backlog Delta
-- [例] スクロール吸着にフェードを実装
-- [例] スレッド / キャラクターポートレートにアイコン設定
 
-## 今後明文化すべきこと
-- [例] スキップ処理のアルゴリズム
-- [例] YMM4 側のテンプレート運用
+- If a future task needs richer feature status, add or update the narrow owning
+  registry/spec instead of expanding `AGENTS.md`.
+- If local tool startup friction recurs, keep local machine settings out of
+  tracked repo files unless the setting is intentionally shared.
 
-## 運用ルール
-- 会話で一度出た要求のうち、次回以降も効くものをここへ残す。
-- 単なる感想ではなく、仕様・設計・backlog に効くものを優先する。
+## Operating Rule
+
+Record durable user corrections here when they affect future work. Do not store
+one-off status, temporary plans, or completed command logs.

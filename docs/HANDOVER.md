@@ -1,5 +1,7 @@
 > **上位SSOT**: [SSOT_WORLD.md](SSOT_WORLD.md) | **索引**: [DOCS_INDEX.md](DOCS_INDEX.md)
 
+> **現行 Agent 運用ではない履歴資料**: この文書内の `CLAUDE.md` 運用SSOT / SPEC FIRST / セッション運用記述は 2026-03 時点の履歴です。現在の Agent 再開導線は [AGENTS.md](../AGENTS.md) → [REPO_LOCAL_RULES.md](REPO_LOCAL_RULES.md) → [runtime-state.md](runtime-state.md) です。
+
 # VastCore — Handover / ワークフロー仕様書
 
 **最終更新**: 2026-03-23

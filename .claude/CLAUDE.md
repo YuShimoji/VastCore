@@ -1,20 +1,18 @@
-# CLAUDE.md (project adapter)
-# This file is intentionally thin.
-# Canonical source of truth lives in docs/ai/*.md and project-local canonical docs.
+# CLAUDE.md - Claude Code entry pointer
 
-Read in this order when present:
-1. @../docs/ai/CORE_RULESET.md
-2. @../docs/ai/DECISION_GATES.md
-3. @../docs/ai/STATUS_AND_HANDOFF.md
-4. @../docs/ai/WORKFLOWS_AND_PHASES.md
-5. @../docs/INVARIANTS.md
-6. @../docs/USER_REQUEST_LEDGER.md
-7. @../docs/OPERATOR_WORKFLOW.md
-8. @../docs/INTERACTION_NOTES.md
-9. @../docs/runtime-state.md
-10. @../docs/project-context.md
-11. @../docs/FEATURE_REGISTRY.md
-12. @../docs/AUTOMATION_BOUNDARY.md
+**Operating rules:** [`docs/REPO_LOCAL_RULES.md`](../docs/REPO_LOCAL_RULES.md)
 
-Do not duplicate the shared ruleset here.
-Project-specific exceptions, if any, should be short and explicit below this line.
+This file is intentionally thin. `AGENTS.md` is also an entry pointer. Do not add
+detailed procedures, work history, report templates, roadmap status, or option
+menus here.
+
+Minimum rules:
+
+- Usually read/write only this repo. If the user explicitly names cross-project
+  scope, touch only that named scope.
+- Normal restart is `AGENTS.md` -> `docs/REPO_LOCAL_RULES.md` ->
+  `docs/runtime-state.md`.
+- Read `docs/ai/*.md` only when a specific gate or status semantic is needed.
+- For Unity code changes, check the owning assembly and
+  `docs/02_design/ASSEMBLY_ARCHITECTURE.md` when dependencies or asmdefs are
+  involved.

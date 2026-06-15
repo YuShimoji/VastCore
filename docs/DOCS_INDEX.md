@@ -14,9 +14,10 @@
 |--------|------------|---------|
 | 1 (最上位) | [SSOT_WORLD.md](SSOT_WORLD.md) | プロジェクト全体の目的・構造・優先順位 |
 | 2 | [DEVELOPMENT_ROADMAP_2026.md](01_planning/DEVELOPMENT_ROADMAP_2026.md) | 開発ロードマップ（Phase A-E） |
-| 3 | [CLAUDE.md](../CLAUDE.md) | セッション運用プロトコル |
-| 4 | [HANDOVER.md](HANDOVER.md) | フェーズ完了と成果物引き継ぎ |
-| 5 | [TASK_*.md](tasks/) | 個別実装チケット |
+| 3 | [AGENTS.md](../AGENTS.md) / [REPO_LOCAL_RULES.md](REPO_LOCAL_RULES.md) | AI/Agent 入口と repo-local 運用ルール |
+| 4 | [runtime-state.md](runtime-state.md) | 現在位置・active artifact・next action |
+| 5 | [HANDOVER.md](HANDOVER.md) | フェーズ完了と成果物引き継ぎ（歴史資料を含む） |
+| 6 | [TASK_*.md](tasks/) | 個別実装チケット |
 
 ---
 
@@ -44,8 +45,11 @@
 | [SSOT_WORLD.md](SSOT_WORLD.md) | 最上位仕様（憲法） |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | モジュール/依存/責務の鳥瞰 |
 | [DOCS_INDEX.md](DOCS_INDEX.md) | 本索引 |
+| [NAV.md](NAV.md) | Agent 向けドキュメント地図 |
+| [REPO_LOCAL_RULES.md](REPO_LOCAL_RULES.md) | repo-local AI/Agent 運用 front-door |
 | [HANDOVER.md](HANDOVER.md) | 成果物SSOT・フェーズ完了状態 |
-| [WORKFLOW_STATE_SSOT.md](WORKFLOW_STATE_SSOT.md) | 実行状態SSOT（現在の作業状況） |
+| [runtime-state.md](runtime-state.md) | 現在の実行状態 |
+| [WORKFLOW_STATE_SSOT.md](WORKFLOW_STATE_SSOT.md) | 旧実行状態SSOT（歴史資料。現在状態は runtime-state.md） |
 | [MILESTONE_PLAN.md](MILESTONE_PLAN.md) | マイルストーン追跡 |
 | [SESSION_SUMMARY_2026-03-04.md](SESSION_SUMMARY_2026-03-04.md) | セッションサマリー（歴史資料） |
 | [README.md](README.md) | docs/ ディレクトリガイド |
@@ -195,7 +199,7 @@ grep -rn --include="*.md" -E "([0-9]{4}-XX-XX|[0-9]{4}-[0-9]{2}-XX|重大修正|
 grep -rn --include="*.md" "SSOT_WORLD" docs/
 
 # 期待: ARCHITECTURE.md, ROADMAP.md, DEVELOPMENT_ROADMAP_2026.md,
-#        CLAUDE.md, HANDOVER.md, DOCS_INDEX.md, README.md に参照あり
+#        AGENTS.md / REPO_LOCAL_RULES.md, HANDOVER.md, DOCS_INDEX.md, README.md に参照あり
 ```
 
 ### Documentation/ ディレクトリ

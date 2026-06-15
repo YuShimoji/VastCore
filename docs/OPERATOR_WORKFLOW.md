@@ -2,29 +2,43 @@
 
 人間オペレーターの実ワークフロー・痛点・品質目標を保持する正本。
 
-## 全体フロー
-- ここに実際の制作/運用フローを書く
+## Overall Flow
 
-## 工程ごとの痛点
-- どこで詰まるか
-- 何が手戻りを生むか
-- どこが自動化で本当に楽になるか
-
-## 品質目標
-- どの状態になれば「回る」と言えるか
+1. Assistant scopes the current artifact and checks repo-local rules.
+2. Assistant implements or prepares the smallest artifact-moving change.
+3. Assistant runs narrow mechanical checks when available.
+4. User performs Unity Editor / scene / visual judgement when acceptance depends
+   on actual editor behavior or creative feel.
+5. Assistant records evidence and syncs only the owning docs.
 
 ## Actor Boundaries
-- user が担う工程
-- assistant が支援・自動化できる工程
-- tool が担う工程
-- shared で進める工程
 
-## 手動工程 / 自動化禁止工程
-- 感性判断
-- 人間レビュー
-- 実機確認
-など、AI が置き換えてはならない工程を明記する。
+- user: final visual/creative judgement, Unity Editor acceptance when the editor
+  must be observed, reopening frozen product frontiers.
+- assistant: source edits, doc sync, static checks, focused tests, readback, gap
+  reports.
+- tool: scripted checks, local servers, browser or editor automation when
+  available and task-relevant.
+- shared: manual Editor verification followed by assistant evidence capture.
 
-## 運用ルール
-- 一度説明された workflow pain はここへ固定する
-- 「本制作へ進む前に workflow proof が必要」な案件では、その proof 条件もここへ残す
+## Manual Verification Boundaries
+
+- Unity Editor compile/play/scene behavior is not accepted from prose alone.
+- If the assistant cannot run the required Unity verification, it must state the
+  missing check and provide the exact user-owned verification target.
+- Do not mix manual verification requests with strategic next-direction choices.
+
+## Pain Points to Avoid
+
+- Rebuilding context from long historical handoffs when `runtime-state` and the
+  owning spec are enough.
+- Treating stale March-era progress summaries as current acceptance.
+- Spreading the same rule across `AGENTS.md`, `CLAUDE.md`, docs, and tool config.
+- Asking the user to choose between commit/no-commit instead of explaining the
+  actual bottleneck.
+
+## Quality Goal
+
+The workflow is healthy when a new agent can read the normal 3-file restart set,
+identify the current artifact and bottleneck, and know which doc owns any deeper
+evidence it needs.
