@@ -10,6 +10,7 @@ This handoff is a preservation branch, not a merge-ready implementation claim.
 branch: codex/vc-rst-remote-handoff-20260622
 target repo: YuShimoji/VastCore
 intended comparison base: origin/main
+draft PR: https://github.com/YuShimoji/VastCore/pull/47
 ```
 
 The local checkout was on `main` when this handoff started, with:
