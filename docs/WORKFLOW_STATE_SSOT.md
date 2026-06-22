@@ -1,18 +1,20 @@
 # WORKFLOW STATE SSOT
 
-Last Updated: 2026-03-22
+Last Updated: 2026-03-26
 
 ## Mission
 
 広大な景観に映える、ユニークで巨大な人工構造物をプロシージャルに生成する基盤の確立。
 Phase A/B/C 完了。SG-1/SG-2 + PD-4 完了。Phase D 実装進行中。
+Session 9 (2026-03-26): レガシー根絶 — _Scripts/ 5件 + docs 15件削除、spec-index legacy 4件 removed。
 
 ## Current Focus
 
 **Phase D: オーサリング主体 + 段階的バリエーション** — T1+V4方針決定済み。
-SP-018 (pct 85) + SP-017 (pct 75) + SP-019 Phase 1-3 (pct 65) 実装済み。
+SP-018 (pct 85) + SP-017 (pct 75) + SP-019 Phase 1-4 (pct 75) 実装済み。
 コード品質・asmdef整合・meta欠落・仕様整合は全てクリーン (session 8 検証)。
-次: Unity実機検証 (QUICKSTART Step 1-3b) → SP-017/018 pct更新 → SP-019 Phase 4-6設計。
+Session 9: レガシー根絶完了。Assets/_Scripts/ (Vastcore.Legacy asmdef含む) 全削除。docs legacy 15件削除。spec-index legacy 4件 removed。
+次: Unity実機検証 (QUICKSTART Step 1-3b) → Testing/ 45件精査 → SP-019 Phase 5-6設計。
 
 ## Done 条件
 

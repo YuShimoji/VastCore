@@ -8,7 +8,7 @@
 - `git` — バージョン管理
 
 ## Specifications
-- 変更提案: CLAUDE.md の SPEC FIRST に従い docs/ 配下に仕様を記述
+- 変更提案: docs/SSOT_WORLD.md と docs/spec-index.json に従い docs/ 配下に仕様を記述
 - タスク管理: `docs/tasks/TASK_XXX.md`
 
 ## Documentation

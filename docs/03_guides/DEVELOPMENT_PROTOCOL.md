@@ -14,7 +14,7 @@
 - CI/CD: Node.js ベース CI は存在しない。将来的に Unity headless 検証を検討。
 
 ## 4. ドキュメント運用
-- セッション SSOT: `CLAUDE.md`（プロジェクト文脈・開発ルール・DECISION LOG）。
+- セッション状態: `docs/WORKFLOW_STATE_SSOT.md` と `docs/HANDOVER.md`。AI 運用ルールは `docs/ai/*.md`。
 - 設計/仕様: `docs/02_design/`, `docs/03_guides/`, `docs/04_reports/`。
 - 索引: `docs/DOCS_INDEX.md` で全ドキュメントを管理。
 - 仕様閲覧: `docs/spec-viewer.html` + `docs/spec-index.json`（21エントリ）。
@@ -30,7 +30,7 @@
 - 原則: コンパイルエラー/警告ゼロを常時維持。versionDefines で条件コンパイル管理。
 
 ## 8. 監査/ログ
-- 重要な意思決定は `CLAUDE.md` の DECISION LOG に記録。
+- 重要な意思決定は `docs/HANDOVER.md` または該当する `docs/04_reports/` に記録。
 - タスク完了報告は `docs/04_reports/` に配置（TASK_XXXX_REPORT.md）。
 
 ## 9. Backlog

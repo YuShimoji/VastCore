@@ -19,7 +19,7 @@
 | `autoReferenced`の無断変更 | Assembly-CSharp破壊 | ASSEMBLY_ARCHITECTURE.mdと同時更新 |
 
 ## Change Process
-1. CLAUDE.md の SPEC FIRST に従い docs/ 配下に仕様を記述
+1. docs/SSOT_WORLD.md と docs/spec-index.json に従い docs/ 配下に仕様を記述
 2. アセンブリ影響範囲を含む仕様を docs/ に記録
 3. タスク分解 → 実装 → 検証 → アーカイブ
 

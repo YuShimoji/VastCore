@@ -32,5 +32,4 @@
 
 - **正本（詳細計画）**: [DEVELOPMENT_ROADMAP_2026.md](DEVELOPMENT_ROADMAP_2026.md)
 - **目的関数アーカイブ**: [DEV_PLAN_ARCHIVE_2025-01.md](DEV_PLAN_ARCHIVE_2025-01.md)
-- **Phase A 依存マップ**: [PHASE_A_DEPENDENCY_MAP.md](PHASE_A_DEPENDENCY_MAP.md)
 - **タスクチケット**: [docs/tasks/](../tasks/)

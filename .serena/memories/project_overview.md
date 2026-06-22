@@ -35,7 +35,7 @@ docs/
   03_guides/         ガイド (COMPILATION_GUARD_PROTOCOL.md, UNITY_CODE_STANDARDS.md)
   04_reports/        作業レポート
   tasks/             タスクチケット
-(deleted)            OpenSpec変更提案プロセスは廃止。CLAUDE.md SPEC FIRSTに移行
+(deleted)            OpenSpec変更提案プロセスは廃止。docs/spec-index.json と docs/tasks/ に移行
 ```
 
 ## Key Documents (必読)

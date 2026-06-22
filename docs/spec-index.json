@@ -29,20 +29,20 @@
   {
     "id": "SP-004",
     "title": "Advanced Procedural Structure Generation",
-    "status": "legacy",
+    "status": "removed",
     "pct": 0,
     "cat": "core",
-    "file": "docs/02_design/ADVANCED_STRUCTURE_DESIGN_DOCUMENT.md",
-    "summary": "高度プロシージャル構造物生成システム設計仕様書 v1.0 (2025-01)"
+    "file": null,
+    "summary": "SP-019 に置き換え。設計文書削除済み (2026-03-26)"
   },
   {
     "id": "SP-005",
     "title": "Phase 2 Template Integration",
-    "status": "legacy",
+    "status": "removed",
     "pct": 0,
     "cat": "core",
-    "file": "docs/02_design/Phase2_TemplateIntegration_Spec.md",
-    "summary": "DesignerTerrainTemplate 統合ポイント整理 (歴史的仕様)"
+    "file": null,
+    "summary": "設計方針転換で陳腐化。設計文書削除済み (2026-03-26)"
   },
   {
     "id": "SP-006",
@@ -146,11 +146,11 @@
   {
     "id": "DS-005",
     "title": "Phase 1.5 Runtime Refactor",
-    "status": "legacy",
+    "status": "removed",
     "pct": 0,
     "cat": "core",
-    "file": "docs/02_design/Phase15_RuntimeRefactor_Design.md",
-    "summary": "V01ランタイム責務整理・将来拡張準備 (歴史的設計)"
+    "file": null,
+    "summary": "Phase A-C で代替完了。設計文書削除済み (2026-03-26)"
   },
   {
     "id": "DS-006",
@@ -164,11 +164,11 @@
   {
     "id": "DS-007",
     "title": "Refactoring Handover",
-    "status": "legacy",
+    "status": "removed",
     "pct": 0,
     "cat": "infra",
-    "file": "docs/02_design/REFACTORING_HANDOVER_DOCUMENT.md",
-    "summary": "リファクタリング引き継ぎドキュメント (歴史的資料)"
+    "file": null,
+    "summary": "Phase A-C で代替完了。設計文書削除済み (2026-03-26)"
   },
   {
     "id": "DS-008",

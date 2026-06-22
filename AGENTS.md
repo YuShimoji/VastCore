@@ -1,6 +1,6 @@
 # VastCore AI Agent Protocol
 
-本ドキュメントは VastCore プロジェクトにおける AI エージェント (Claude Code およびサブエージェント) の行動規約を定める。
+本ドキュメントは VastCore プロジェクトにおける AI エージェントの入口を定める。
 
 最終更新: 2026-03-08
 
@@ -20,7 +20,7 @@
 
 ## 2. 変更管理
 
-仕様・設計の管理は `CLAUDE.md` の SPEC FIRST / SPEC SYNC セクションに従う。
+仕様・設計の管理は `docs/SSOT_WORLD.md`、`docs/spec-index.json`、該当する `docs/02_design/` または `docs/tasks/` の正本に従う。
 変更を伴う場合は以下を明示すること:
 
 - **影響アセンブリ**: 変更が影響する asmdef の一覧
@@ -72,7 +72,7 @@
 | 計画・ロードマップ | `docs/01_planning/` | DEVELOPMENT_ROADMAP_2026.md |
 | 作業レポート | `docs/04_reports/` | REPORT_TASK_XXX.md |
 | タスクチケット | `docs/tasks/` | TASK_XXX.md |
-| 変更仕様 | `docs/` 配下 | CLAUDE.md の SPEC FIRST に従う |
+| 変更仕様 | `docs/` 配下 | `docs/SSOT_WORLD.md` と `docs/spec-index.json` に従う |
 
 ### 4.2 ドキュメント作成の義務
 
@@ -91,7 +91,7 @@
 
 ## 5. エージェントの責務
 
-### リードエージェント (Claude Code)
+### リードエージェント
 - タスク分解時に **変更対象アセンブリ名** と **ASSEMBLY_ARCHITECTURE.md 参照** を明示する
 - 完了レポートに「コンパイル確認済み」がない場合、DONE にしない
 - 構造的整合性 (型の重複、循環参照) の確認を実装後に行う

@@ -32,13 +32,12 @@ VastCore は Unity 6 ベースの GPU 加速テレインエンジン。6バイ�
 - **SSOT_WORLD.md** - 最上位SSOT（プロジェクト全体の目的・構造・優先順位）
 - **WORKFLOW_STATE_SSOT.md** - 実行状態SSOT（現在の作業状況）
 - **HANDOVER.md** - 成果物SSOT（完了タスク・進捗状況）
-- **CLAUDE.md** - セッション開始時の文脈（PROJECT CONTEXT / DECISION LOG）
+- **docs/ai/*.md** - AI 運用ルール
 
 ### アーキテクチャ
 
 - **ARCHITECTURE.md** - アーキテクチャ概観
-- **02_design/ASSEMBLY_ARCHITECTURE.md** - 19 アセンブリ定義の詳細
-- **02_design/PHASE_C_SCOPE_DEFINITION.md** - Phase C スコープ定義
+- **02_design/ASSEMBLY_ARCHITECTURE.md** - 18 アセンブリ定義の詳細
 
 ### 地形システム
 

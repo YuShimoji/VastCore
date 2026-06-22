@@ -26,7 +26,6 @@
 
 ```text
 VastCore/
-├── CLAUDE.md                  ← 運用SSOT（セッション運用プロトコル + Project Context）
 ├── AGENTS.md                  ← AIエージェント行動規約
 ├── README.md                  ← プロジェクト概要
 ├── CHANGELOG.md               ← 変更履歴
@@ -64,15 +63,15 @@ VastCore/
 
 | ディレクトリ | 削除理由 | 移行先 |
 |-------------|---------|--------|
-| `.shared-workflows` | gitサブモジュール廃止 | CLAUDE.md に運用プロトコル移行 |
-| `prompts/` | Windsurf Orchestrator/Worker フレームワーク | CLAUDE.md のサブエージェント委譲 |
-| `openspec/` | OpenSpec変更提案プロセス | CLAUDE.md SPEC FIRST |
-| `docs/windsurf_workflow/` | Windsurf IDE固有ワークフロー | CLAUDE.md |
+| `.shared-workflows` | gitサブモジュール廃止 | docs/ai と AGENTS.md に運用プロトコル移行 |
+| `prompts/` | Windsurf Orchestrator/Worker フレームワーク | docs/ai と AGENTS.md に委譲方針を集約 |
+| `openspec/` | OpenSpec変更提案プロセス | docs/spec-index.json と docs/tasks/ に移行 |
+| `docs/windsurf_workflow/` | Windsurf IDE固有ワークフロー | docs/ai と AGENTS.md |
 | `Documentation/Design,Guides,Planning,QA/` | 転送スタブ | docs/ 配下に移行済み |
-| `AI_CONTEXT.md` | Orchestrator Protocol 前提の旧管理 | CLAUDE.md に移行 |
+| `AI_CONTEXT.md` | Orchestrator Protocol 前提の旧管理 | docs/HANDOVER.md と docs/WORKFLOW_STATE_SSOT.md に移行 |
 | `REPORT_CONFIG.yml` | Orchestrator レポート設定 | 廃止 |
-| `.cursorrules`, `.cursor/` | Cursor IDE 固有設定 | CLAUDE.md に移行 |
-| `docs/03_guides/ORCHESTRATION_PROMPT.md` | Orchestrator/Worker プロンプト | CLAUDE.md に移行 |
+| `.cursorrules`, `.cursor/` | Cursor IDE 固有設定 | docs/ai と AGENTS.md |
+| `docs/03_guides/ORCHESTRATION_PROMPT.md` | Orchestrator/Worker プロンプト | docs/ai と AGENTS.md |
 | `docs/inbox/WORKER_PROMPT_*` | Worker用プロンプト（全タスク完了済み） | 廃止 |
 | `Assets/Docs/`, `Assets/Documentation/*.md` | レガシー仕様書・旧ロードマップ | docs/ に集約済み |
 | `.github/workflows/ci.yml, sync-issues.yml` | 無機能化済み Shared Workflows | 廃止 |
@@ -86,12 +85,12 @@ SSOT_WORLD.md                       ← プロジェクトの目的・構造・�
   │
   ├── DEVELOPMENT_ROADMAP_2026.md   ← Phase A-E の計画と優先度
   ├── WORKFLOW_STATE_SSOT.md        ← 現在の実行状態（Done条件、Mission）
-  ├── CLAUDE.md                     ← セッション運用（HUMAN_AUTHORITY、検証ポリシー等）
+  ├── docs/ai/*.md                  ← AI 運用（HUMAN_AUTHORITY、検証ポリシー等）
   ├── HANDOVER.md                   ← 成果物SSOT（本文書）
   └── docs/tasks/TASK_*.md          ← 個別実装チケット
 ```
 
-### 変更管理フロー（CLAUDE.md準拠）
+### 変更管理フロー（docs/ai と SSOT 準拠）
 
 1. **SPEC FIRST**: 仕様を先に言語化、docs/ に記録
 2. **HUMAN_AUTHORITY**: UX/設計/仕様/ビジネスに関わる変更は選択肢提示→承認
@@ -154,7 +153,7 @@ Testing (テスト用スタブ・ヘルパー)
 | PD-4: 巨大ファイル分割 | **完了** | 100 |
 | SP-018: パラメトリック変異 (V1) | 実装済み、実機検証待ち | 85 |
 | SP-017: StampExporter | 実装済み、実機検証待ち | 75 |
-| SP-019: 建物定義 (タグ重み複合体) | Phase 1-3 実装済み (Phase 4-6 未着手) | 65 |
+| SP-019: 建物定義 (タグ重み複合体) | Phase 1-4 実装済み (Phase 5-6 未着手) | 75 |
 | PD-2: ランダム制御 (V1.5) | 未着手 | 0 |
 | PD-1: 高度合成 (V3) | 未着手 | 0 |
 | PD-3: パフォーマンス最適化 | 未着手 | 0 |
@@ -162,7 +161,7 @@ Testing (テスト用スタブ・ヘルパー)
 ### 次ステップ
 
 1. Unity実機検証: コンパイル確認 → QUICKSTART Step 1-3b (SP-017/018/019 目視)
-2. SP-019 Phase 4-6 設計・実装 (HUMAN_AUTHORITY: 配置ルール+スタイル)
+2. SP-019 Phase 5-6 設計・実装 (HUMAN_AUTHORITY: スタイル+Inspector)
 3. PD-2 ランダム制御 → V1.5 (RandomControlTab→StampDefinition転写)
 
 ---
@@ -234,4 +233,4 @@ Testing (テスト用スタブ・ヘルパー)
 
 ---
 
-**参照**: [SSOT_WORLD.md](SSOT_WORLD.md) | [CLAUDE.md](../CLAUDE.md) | [DOCS_INDEX.md](DOCS_INDEX.md) | [ARCHITECTURE.md](ARCHITECTURE.md)
+**参照**: [SSOT_WORLD.md](SSOT_WORLD.md) | [DOCS_INDEX.md](DOCS_INDEX.md) | [ARCHITECTURE.md](ARCHITECTURE.md) | [docs/ai/](ai/)

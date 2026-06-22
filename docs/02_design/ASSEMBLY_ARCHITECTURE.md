@@ -36,10 +36,6 @@ graph TD
         TestPlay["Vastcore.Tests.PlayMode"]
     end
 
-    subgraph Isolated["Isolated"]
-        Legacy["Vastcore.Legacy"]
-    end
-
     Core --> Utilities
     Generation --> Core
     Generation --> Utilities
@@ -121,7 +117,7 @@ graph TD
 | `Vastcore.Editor.Tools` | `Assets/Editor/Tools/` | `Vastcore.EditorTools` | *(none)* |
 | `Vastcore.Editor.StructureGenerator` | `Assets/Editor/StructureGenerator/` | `Vastcore.Editor.StructureGenerator` | Terrain, Core, Utilities, Generation |
 
-### 2.3 Test / Legacy
+### 2.3 Test
 
 | Assembly | Directory | rootNamespace |
 |----------|-----------|---------------|
@@ -129,7 +125,6 @@ graph TD
 | `Vastcore.Testing.Runtime` | `Assets/Scripts/Testing/RuntimeTests/` | `Vastcore.Testing.RuntimeTests` |
 | `Vastcore.Tests.EditMode` | `Assets/Tests/EditMode/` | `Vastcore.Tests.EditMode` |
 | `Vastcore.Tests.PlayMode` | `Assets/Tests/PlayMode/` | `Vastcore.Tests.PlayMode` |
-| `Vastcore.Legacy` | `Assets/_Scripts/` | *(empty)* |
 
 ---
 

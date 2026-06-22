@@ -30,11 +30,11 @@ SSOT_WORLD.md                          ← 最上位仕様（本文書）
   ├── WORKFLOW_STATE_SSOT.md           ← **現在の実行SSOT（最優先アクティブ状態）**
   │     従属先: docs/WORKFLOW_STATE_SSOT.md
   │
-  ├── CLAUDE.md                        ← 運用 SSOT（セッション運用プロトコル）
-  │     従属先: CLAUDE.md（プロジェクトルート）
-  │
   ├── HANDOVER.md                      ← 成果物 SSOT（フェーズ完了と引き継ぎ）
   │     従属先: docs/HANDOVER.md
+  │
+  ├── AI 運用ルール                    ← エージェント運用プロトコル
+  │     従属先: docs/ai/*.md / AGENTS.md
   │
   └── タスクチケット                    ← 個別実装チケット
         従属先: docs/tasks/TASK_*.md
@@ -110,7 +110,7 @@ SSOT_WORLD.md                          ← 最上位仕様（本文書）
 | **DOCS_INDEX.md** | 全ドキュメント索引 | [docs/DOCS_INDEX.md](DOCS_INDEX.md) |
 | **DEVELOPMENT_ROADMAP_2026.md** | ロードマップ正本 | [docs/01_planning/DEVELOPMENT_ROADMAP_2026.md](01_planning/DEVELOPMENT_ROADMAP_2026.md) |
 | **ROADMAP.md** | ロードマップ導線 | [docs/01_planning/ROADMAP.md](01_planning/ROADMAP.md) |
-| **CLAUDE.md** | 運用SSOT | [CLAUDE.md](../CLAUDE.md) |
+| **docs/ai/*.md** | AI 運用ルール | [docs/ai/](ai/) |
 | **HANDOVER.md** | 成果物SSOT | [docs/HANDOVER.md](HANDOVER.md) |
 | **DEV_PLAN_ARCHIVE_2025-01.md** | 目的関数のアーカイブ | [docs/01_planning/DEV_PLAN_ARCHIVE_2025-01.md](01_planning/DEV_PLAN_ARCHIVE_2025-01.md) |
 

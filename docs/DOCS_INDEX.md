@@ -2,7 +2,7 @@
 
 > **上位SSOT**: [SSOT_WORLD.md](SSOT_WORLD.md)
 
-**最終更新**: 2026-03-18
+**最終更新**: 2026-03-26
 
 ---
 
@@ -14,9 +14,10 @@
 |--------|------------|---------|
 | 1 (最上位) | [SSOT_WORLD.md](SSOT_WORLD.md) | プロジェクト全体の目的・構造・優先順位 |
 | 2 | [DEVELOPMENT_ROADMAP_2026.md](01_planning/DEVELOPMENT_ROADMAP_2026.md) | 開発ロードマップ（Phase A-E） |
-| 3 | [CLAUDE.md](../CLAUDE.md) | セッション運用プロトコル |
+| 3 | [WORKFLOW_STATE_SSOT.md](WORKFLOW_STATE_SSOT.md) | 現在の実行状態 |
 | 4 | [HANDOVER.md](HANDOVER.md) | フェーズ完了と成果物引き継ぎ |
-| 5 | [TASK_*.md](tasks/) | 個別実装チケット |
+| 5 | [docs/ai/*.md](ai/) | AI 運用ルール |
+| 6 | [TASK_*.md](tasks/) | 個別実装チケット |
 
 ---
 
@@ -24,7 +25,7 @@
 
 仕様書・設計書の構造化索引。ステータス・実装率・カテゴリで管理する。
 
-- **データソース**: [spec-index.json](spec-index.json) (34件収録)
+- **データソース**: [spec-index.json](spec-index.json) (34件収録、うち4件 removed)
 - **ID体系**: `SP-xxx` = 仕様書 / `DS-xxx` = 設計書 / `AR-xxx` = アーキテクチャ
 - **ステータス**: done / partial / todo / legacy
 - **カテゴリ**: core / ui / system / infra
@@ -51,31 +52,23 @@
 | [README.md](README.md) | docs/ ディレクトリガイド |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | コントリビューションルール |
 
-### 01_planning/ — 計画・ロードマップ (19 files)
+### 01_planning/ — 計画・ロードマップ (11 files)
 
 | ファイル | 役割 |
 |---------|------|
 | [DEVELOPMENT_ROADMAP_2026.md](01_planning/DEVELOPMENT_ROADMAP_2026.md) | ロードマップ正本（Phase A-E） |
 | [ROADMAP.md](01_planning/ROADMAP.md) | ロードマップ導線（サマリー＋リンク） |
-| [DEV_PLAN.md](01_planning/DEV_PLAN.md) | 開発計画（現行） |
 | [DEV_PLAN_ARCHIVE_2025-01.md](01_planning/DEV_PLAN_ARCHIVE_2025-01.md) | 目的関数のアーカイブ（2025年1月版） |
 | [DOCUMENTATION_CLEANUP_PLAN.md](01_planning/DOCUMENTATION_CLEANUP_PLAN.md) | 表現統一・検証ゲート規約 |
-| [PHASE_A_DEPENDENCY_MAP.md](01_planning/PHASE_A_DEPENDENCY_MAP.md) | Phase A タスク依存関係マップ |
 | [TERRAIN_VERTICAL_SLICE_ROADMAP.md](01_planning/TERRAIN_VERTICAL_SLICE_ROADMAP.md) | 地形バーティカルスライス計画 |
 | [TASK_PRIORITIZATION.md](01_planning/TASK_PRIORITIZATION.md) | タスク優先度マトリクス |
-| [REFACTORING_PLAN.md](01_planning/REFACTORING_PLAN.md) | リファクタリング計画 |
-| [REFACTORING_ACTION_PLAN.md](01_planning/REFACTORING_ACTION_PLAN.md) | リファクタリング実行計画 |
-| [PROJECT_RESTRUCTURE_PLAN.md](01_planning/PROJECT_RESTRUCTURE_PLAN.md) | プロジェクト再構成計画 |
-| [RESTRUCTURE_PLAN.md](01_planning/RESTRUCTURE_PLAN.md) | 再構成計画（別版） |
 | [ISSUES_BACKLOG.md](01_planning/ISSUES_BACKLOG.md) | 課題バックログ |
 | [README.md](01_planning/README.md) | 計画ディレクトリガイド |
 | [Diagram.md](01_planning/Diagram.md) | 図表定義 |
 | [SG1_TEST_VERIFICATION_PLAN.md](01_planning/SG1_TEST_VERIFICATION_PLAN.md) | SG1 テスト検証計画 |
-| [SPRINT_PLAN_02.md](01_planning/SPRINT_PLAN_02.md) | スプリント計画 #2 |
 | [TEST_PLAN.md](01_planning/TEST_PLAN.md) | テスト計画（全体） |
-| [WEB_DEVELOPMENT_ROADMAP.md](01_planning/WEB_DEVELOPMENT_ROADMAP.md) | Web開発ロードマップ |
 
-### 02_design/ — 設計仕様 (32 files)
+### 02_design/ — 設計仕様 (25 files)
 
 | ファイル | 役割 |
 |---------|------|
@@ -83,22 +76,16 @@
 | [MarchingSquaresTerrainSystem_Spec.md](02_design/MarchingSquaresTerrainSystem_Spec.md) | MarchingSquares 実装仕様 |
 | [DUALGRID_HEIGHTMAP_PROFILE_MAPPING_SPEC.md](02_design/DUALGRID_HEIGHTMAP_PROFILE_MAPPING_SPEC.md) | DualGrid ハイトマップ統合仕様 |
 | [TERRAIN_ALGORITHM_NOTES_DUALGRID_HEIGHTMAP.md](02_design/TERRAIN_ALGORITHM_NOTES_DUALGRID_HEIGHTMAP.md) | 地形アルゴリズムノート |
-| [ADVANCED_STRUCTURE_DESIGN_DOCUMENT.md](02_design/ADVANCED_STRUCTURE_DESIGN_DOCUMENT.md) | 6段階構造物生成設計（歴史資料） |
-| [REFACTORING_HANDOVER_DOCUMENT.md](02_design/REFACTORING_HANDOVER_DOCUMENT.md) | リファクタリング引き継ぎ |
 | [RANDOMCONTROL_UI_DESIGN.md](02_design/RANDOMCONTROL_UI_DESIGN.md) | RandomControl UI 設計 |
 | [PHASE3_DEFORM_TECHNICAL_INVESTIGATION.md](02_design/PHASE3_DEFORM_TECHNICAL_INVESTIGATION.md) | Deform 技術調査 |
-| [Phase15_RuntimeRefactor_Design.md](02_design/Phase15_RuntimeRefactor_Design.md) | Phase 1.5 Runtime リファクタ設計（歴史資料） |
 | [LegacyIsolation_Design.md](02_design/LegacyIsolation_Design.md) | レガシー隔離設計（歴史資料） |
-| [Phase2_TemplateIntegration_Spec.md](02_design/Phase2_TemplateIntegration_Spec.md) | Phase 2 テンプレート統合仕様（歴史資料） |
 | [WorldGenArchitecture.md](02_design/WorldGenArchitecture.md) | WorldGen アーキテクチャ設計（M0-M3） |
 | [ASSEMBLY_ARCHITECTURE.md](02_design/ASSEMBLY_ARCHITECTURE.md) | アセンブリ依存グラフ・名前空間規約 |
-| [PHASE_C_SCOPE_DEFINITION.md](02_design/PHASE_C_SCOPE_DEFINITION.md) | Phase C スコープ定義 |
 | [DualGridTerrainSystem_Integration_Design.md](02_design/DualGridTerrainSystem_Integration_Design.md) | DualGrid 統合設計 |
 | [TERRAIN_ENGINE_DESIGN.md](02_design/TERRAIN_ENGINE_DESIGN.md) | テレインエンジン設計 |
 | [Diagram.md](02_design/Diagram.md) | 設計図表 |
 | [README.md](02_design/README.md) | 設計ディレクトリガイド |
 | [SP010_PrefabStampPlacement_Spec.md](02_design/SP010_PrefabStampPlacement_Spec.md) | Prefab Stamp 配置仕様 (SP-010) |
-| [PREFAB_STAMP_PLACEMENT_SPEC.md](02_design/PREFAB_STAMP_PLACEMENT_SPEC.md) | Prefab Stamp 配置仕様 (旧版) |
 | [EROSION_SYSTEM_SPEC.md](02_design/EROSION_SYSTEM_SPEC.md) | Erosion System 仕様 (SP-016) |
 | [PHASE_D_SCOPE_DEFINITION.md](02_design/PHASE_D_SCOPE_DEFINITION.md) | Phase D スコープ定義 (PD-001) |
 | [POST_PHASE_C_QUICK_WINS.md](02_design/POST_PHASE_C_QUICK_WINS.md) | Phase C 後 Quick Wins (DS-010) |
@@ -110,7 +97,6 @@
 | [SP018_PARAMETRIC_VARIATION_SPEC.md](02_design/SP018_PARAMETRIC_VARIATION_SPEC.md) | パラメトリック変異 V1 (SP-018, partial) |
 | [BUILDING_DEFINITION_SPEC.md](02_design/BUILDING_DEFINITION_SPEC.md) | 建物定義 タグ重み複合体方式 (SP-019, partial) |
 | [BUILDING_STRUCTURE_INVENTORY.md](02_design/BUILDING_STRUCTURE_INVENTORY.md) | 建物・構造物 現状棚卸し (DS-009, done) |
-| [BUILDING_SPEC_HANDOFF.md](02_design/BUILDING_SPEC_HANDOFF.md) | 建物仕様策定 別セッション Handoff Packet |
 
 ### 03_guides/ — ガイド・手順書 (15 files)
 
@@ -195,7 +181,7 @@ grep -rn --include="*.md" -E "([0-9]{4}-XX-XX|[0-9]{4}-[0-9]{2}-XX|重大修正|
 grep -rn --include="*.md" "SSOT_WORLD" docs/
 
 # 期待: ARCHITECTURE.md, ROADMAP.md, DEVELOPMENT_ROADMAP_2026.md,
-#        CLAUDE.md, HANDOVER.md, DOCS_INDEX.md, README.md に参照あり
+#        WORKFLOW_STATE_SSOT.md, HANDOVER.md, DOCS_INDEX.md, README.md に参照あり
 ```
 
 ### Documentation/ ディレクトリ
