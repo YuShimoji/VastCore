@@ -19,6 +19,9 @@
 - Report observable files, commands, checks, and unresolved items when the user
   asks for strict scope.
 - Do not ask the user to re-explain context that the repo already stores.
+- When the user asks to keep context in the project and make another terminal
+  resume immediately, update repo-local state/handoff docs and push that state
+  instead of leaving the handoff only in chat.
 
 ## Backlog Delta
 

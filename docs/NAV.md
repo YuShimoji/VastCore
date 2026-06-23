@@ -22,6 +22,7 @@ Stop there unless the task needs more evidence.
 - Spec registry and viewer data: `docs/spec-index.json`
 - Task tickets: `docs/tasks/`
 - Reports and historical evidence: `docs/04_reports/`
+- Restart gates and current restoration evidence: `docs/restart/`
 
 ## AI / Agent Rule Owners
 
@@ -33,6 +34,7 @@ Stop there unless the task needs more evidence.
 - Operator workflow: `docs/OPERATOR_WORKFLOW.md`
 - Interaction/reporting notes: `docs/INTERACTION_NOTES.md`
 - Durable decision history: `docs/project-context.md` when present
+- Current restart reports: `docs/restart/`
 - Claude Code pointer: `.claude/CLAUDE.md`
 - Codex local config: `.codex/config.toml`
 
