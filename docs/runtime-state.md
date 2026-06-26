@@ -1,27 +1,27 @@
 # VastCore Runtime State
 
-Last Updated: 2026-06-23
+Last Updated: 2026-06-26
 
 ## Current Position
 
 | Field | Value |
 |---|---|
 | Project | VastCore Terrain Engine |
-| Branch | main |
-| Active artifact | `docs/restart/VC_PACKAGE_MANAGER_RESTORATION_REPORT.md` |
-| Current bottleneck | VC-RST-2 Package Manager restoration is blocked because the required clean `origin/main` worktree path is absent in this environment |
-| Change relation | restart / handoff / evidence-only |
+| Branch | `codex/vc-rst-2e-upm-root-cause` |
+| Active artifact | `docs/restart/VC_UPM_SHORT_PATH_CONTROL_REPORT.md` |
+| Current bottleneck | VC-RST-2 Package Manager restoration remains blocked because a brand-new short ASCII path control project also fails in Unity Package Manager before package resolution |
+| Change relation | restart / diagnostic evidence / environment repair decision |
 
 ## Current Block
 
-Purpose: preserve the package-restoration restart context in tracked docs so a
-different terminal can resume without relying on chat history.
+Purpose: record the VC-RST-2i short-path control result and keep the next
+repair decision grounded in tracked repo state.
 
 In scope:
 
-- Current package-restoration stop condition
-- Clean-worktree availability evidence
-- Next-terminal package restoration entry point
+- T+2i short ASCII path control result
+- UPM failure signal and retained local log paths
+- Next repair discriminator after short-path failure
 - Handoff report under `docs/restart/`
 
 Out of scope:
@@ -30,25 +30,32 @@ Out of scope:
 - Terrain algorithms, DualGrid, mining, CSG, EasyRoads integration, Simulator
   split, Trail, player controller, or architecture refactors
 - Broad rewrite of old handover artifacts
-- Unity compile or Editor acceptance claims
+- Unity compile or Editor acceptance claims beyond the observed UPM failure
 - `ProjectSettings/`, `Packages/`, or Unity gameplay/source changes
 
 ## Current Trust Assessment
 
-- Trusted: accessible repo path, `main` branch, `HEAD...@{u}` readback of `0 0`
-  before this handoff edit, and the fact that the requested clean worktree path
-  `C:\Users\PLANNER007\VastCore\VastCore-origin-main-compile` was absent here.
-- Needs re-check: Unity Package Manager state, package manifest/lockfile
-  integrity, Unity compile state, and runtime behavior. The VC-RST-2 package
-  gate was not entered because the clean validation worktree was missing.
+- Trusted: current repo path
+  `C:\Users\thank\Storage\Game Projects\VastCore_TerrainEngine\VastCore`,
+  diagnostic branch `codex/vc-rst-2e-upm-root-cause`, fetched remote parity
+  before the slice, no starting VastCore product diffs, Unity `6000.3.6f1`
+  executable path, short control path `C:\vc-upm-short\control-6000-3-6`,
+  and the repeated UPM signal `The "path" argument must be of type string.
+  Received undefined`.
+- Needs re-check: behavior after Unity Hub/license refresh, behavior under a
+  clean Windows user/profile, behavior after Unity Editor repair/reinstall, and
+  VastCore package resolution after any environment repair succeeds. C# compile
+  is still not reached.
 - Historical only: March 2026 handoff/progress summaries. Treat them as context,
-  not current acceptance evidence.
+  not current acceptance evidence. T+2f/T+2g/T+2h reports are current evidence
+  for the prior PLANNER007 environment path, but local ignored logs remain
+  same-machine artifacts unless explicitly preserved elsewhere.
 
 ## Next Action
 
-Resume VC-RST-2 only after locating or recreating a clean `origin/main`
-validation worktree. Then preserve `Packages/manifest.json` and
-`Packages/packages-lock.json`, reproduce the Unity Package Manager baseline, and
-test the smallest reversible package-level hypothesis. Do not start C# fixes or
-terrain implementation until Unity Package Manager reaches C# compilation in
-that clean validation path.
+Do not start package edits, C# fixes, or terrain implementation. The next useful
+move is user-side Unity Hub/license refresh readback, followed by an Agent rerun
+of the same short-path control project. If that does not change the failure,
+choose between a clean Windows user/profile control and Unity Editor
+`6000.3.6f1` repair/reinstall, then rerun the short-path control before
+retesting VastCore.
