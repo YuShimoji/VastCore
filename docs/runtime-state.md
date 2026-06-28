@@ -8,22 +8,22 @@ Last Updated: 2026-06-28
 |---|---|
 | Project | VastCore Terrain Engine |
 | Branch | `codex/vc-rst-2e-upm-root-cause` |
-| Active artifact | `docs/restart/VC_THANK_PROFILE_UPM_RETEST_REPORT.md` |
-| Current bottleneck | VC-RST-2 Package Manager restoration remains blocked because a new Thank-profile short-path control project also fails in Unity Package Manager before package resolution |
+| Active artifact | `docs/restart/VC_UPM_EDITOR_INSTALL_OR_GLOBAL_REPAIR_DECISION.md` |
+| Current bottleneck | VC-RST-2 Package Manager restoration remains blocked because Thank-profile controls fail in Unity Package Manager before package resolution; the next discriminator is an already-installed editor version control before repair |
 | Change relation | restart / diagnostic evidence / environment repair decision |
 
 ## Current Block
 
-Purpose: record the Thank-profile route reset and UPM retest result, separating
-current `C:\Users\thank` evidence from historical PLANNER007 diagnostics.
+Purpose: record the T+2k non-destructive repair decision after the Thank-profile
+control also reproduced the UPM failure.
 
 In scope:
 
-- Thank-profile route classification
-- Thank-profile short ASCII path control result
-- T+2j Hub/license refresh retest baseline
-- UPM failure signal and retained local log paths
-- Next repair discriminator after Thank also reproduced the failure
+- Current Thank-profile and repo verification
+- Consolidated UPM failure evidence chain
+- Safe environment/install metadata
+- Repair/control option matrix
+- Recommended next discriminator before repair/reinstall
 - Handoff report under `docs/restart/`
 
 Out of scope:
@@ -42,13 +42,13 @@ Out of scope:
   diagnostic branch `codex/vc-rst-2e-upm-root-cause`, fetched remote parity
   before the slice, no starting VastCore product diffs, Unity `6000.3.6f1`
   executable path, current Windows profile `thank` / `C:\Users\thank`,
-  Thank control path `C:\vc-upm-thank\control-6000-3-6`, and the repeated UPM
-  signal `The "path" argument must be of type string. Received undefined` in
-  that Thank control.
-- Needs re-check: behavior after Unity Editor repair/reinstall, behavior under
-  a clean Windows user/profile if selected, shared network/proxy/environment
-  factors, and VastCore package resolution after any environment repair
-  succeeds. C# compile is still not reached.
+  Thank control path `C:\vc-upm-thank\control-6000-3-6`, repeated UPM
+  `path` undefined failure in that control, and installed Unity `6000.3.3f1`
+  availability for a low-risk version control.
+- Needs re-check: behavior under already-installed Unity `6000.3.3f1`, behavior
+  after Unity Editor repair/reinstall, shared network/proxy/environment factors,
+  and VastCore package resolution after any control succeeds. C# compile is
+  still not reached.
 - Historical only: March 2026 handoff/progress summaries. Treat them as context,
   not current acceptance evidence. T+2f/T+2g/T+2h reports are current evidence
   for the prior PLANNER007 environment path, but local ignored logs remain
@@ -57,9 +57,8 @@ Out of scope:
 ## Next Action
 
 Do not start package edits, C# fixes, or terrain implementation. The next useful
-move is an install/global UPM repair decision:
-`VC-RST-2k-editor-install-or-global-upm-repair-decision`. That decision should
-choose between Unity Editor `6000.3.6f1` repair/reinstall verification, an
-optional clean Windows user/profile control, and an upstream UPM bug-report
-package. After any selected environment discriminator, rerun a short-path
-control before retesting VastCore.
+move is `VC-RST-2l-fresh-editor-version-control`: create/import a fresh
+Thank-profile short-path control with already-installed Unity `6000.3.3f1`.
+Do not repair/reinstall Unity unless that low-risk installed-version control is
+inconclusive or also fails and the user approves the repair path. Retest VastCore
+only after a control project resolves packages.
