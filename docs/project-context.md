@@ -8,6 +8,15 @@ evidence, but they are not current acceptance unless re-verified.
 
 ## Decision Log
 
+- 2026-06-29: VC-RST-2 remote resume handoff was refreshed after the T+2n
+  network/proxy/env audit. Network/proxy/env is now weakened as the direct UPM
+  root; the next discriminator is user-approved Unity Editor / embedded UPM
+  repair or reinstall, followed by a short-path empty-manifest control retest
+  before VastCore is reopened.
+- 2026-06-29: A local docs-only refresh of
+  `docs/04_reports/LEGACY_UI_MIGRATION_REPORT.md` was preserved for remote sync.
+  No `Assets`, `Packages`, or `ProjectSettings` changes are part of this
+  handoff.
 - 2026-06-23: VC-RST-2 package restoration did not enter Unity or Package
   Manager validation because the required clean worktree path
   `C:\Users\PLANNER007\VastCore\VastCore-origin-main-compile` was absent in the
@@ -22,6 +31,13 @@ evidence, but they are not current acceptance unless re-verified.
 
 ## Handoff Notes
 
+- Current remote resume handoff:
+  `docs/restart/VC_REMOTE_RESUME_HANDOFF_20260629.md`.
+- Current active artifact:
+  `docs/restart/VC_UPM_NETWORK_PROXY_ENV_AUDIT.md`.
+- Next action: `VC-RST-2o-editor-repair-retest` after user-approved Unity
+  Editor / embedded UPM repair or reinstall. The Agent should retest a
+  short-path empty-manifest control before reopening VastCore.
 - Future handoffs should reference the active artifact and bottleneck from
   `docs/runtime-state.md`.
 - VC-RST-2 restart context is tracked in

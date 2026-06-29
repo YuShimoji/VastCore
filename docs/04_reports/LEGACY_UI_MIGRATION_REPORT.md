@@ -1,26 +1,25 @@
 # Legacy UI Migration Report (Dry Run)
 
-- Generated: 2026-03-20 09:10 (local)
+- Generated: 2026-06-28 23:36 (local)
 - Tool: UIMigrationScannerWindow.cs
 - Options: ExcludeExamples=True, ScanScripts=True, ScanScenes=True, ScanPrefabs=True
 
 ## Summary
-- Scripts scanned: 429
+- Scripts scanned: 374
 - Scenes scanned: 51
 - Prefabs scanned: 5
-- C# using UnityEngine.UI: 12
-- C# OnGUI occurrences: 27
-- C# TMPro references: 13
+- C# using UnityEngine.UI: 11
+- C# OnGUI occurrences: 17
+- C# TMPro references: 12
 - C# UI Toolkit references: 1
 - Scenes with uGUI markers: 3
 - Scenes with UI Toolkit: 0
 - Prefabs with uGUI markers: 0
 - Prefabs with UI Toolkit: 0
 
-### C# files using UnityEngine.UI (12)
+### C# files using UnityEngine.UI (11)
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs
 - Assets/Scripts/Camera/Cinematic/CinematicCameraController.cs
-- Assets/Scripts/Testing/TestManager.cs
 - Assets/Scripts/UI/InGameDebugUI.cs
 - Assets/Scripts/UI/MenuManager.cs
 - Assets/Scripts/UI/ModernUIStyleSystem.cs
@@ -31,39 +30,28 @@
 - Assets/Tests/EditMode/SliderBasedUISystemTests.cs
 - Assets/Tests/EditMode/UITestHelper.cs
 
-### C# files with OnGUI (27)
+### C# files with OnGUI (17)
 - Assets/Editor/StructureGenerator/Core/StructureGeneratorWindow.cs
 - Assets/Editor/Tools/ProBuilderCsg/ProBuilderCsgScannerWindow.cs
 - Assets/Editor/Tools/UIMigration/UIMigrationApplyWindow.cs
 - Assets/Editor/Tools/UIMigration/UIMigrationRulesDryRunWindow.cs
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs
 - Assets/Scripts/Core/VastcoreDebugVisualizer.cs
-- Assets/Scripts/Editor/DeformationBrushTool.cs
-- Assets/Scripts/Editor/DeformationEditorWindow.cs
 - Assets/Scripts/Editor/HeightmapTerrainGeneratorWindow.cs
+- Assets/Scripts/Editor/StructureTagProfileDrawer.cs
 - Assets/Scripts/Editor/TerrainAssetBrowser.cs
 - Assets/Scripts/Editor/TerrainGenerationWindow.cs
 - Assets/Scripts/Editor/TerrainTemplateEditor.cs
-- Assets/Scripts/Editor/Tests/PrimitiveErrorRecoveryTester.cs
 - Assets/Scripts/Editor/WorldGen/WorldGenGraphOverlayWindow.cs
 - Assets/Scripts/Player/AdvancedPlayerController.cs
 - Assets/Scripts/Player/EnhancedGrindSystem.cs
 - Assets/Scripts/Player/Movement/EnhancedClimbingSystem.cs
 - Assets/Scripts/Terrain/GPU/GPUPerformanceMonitor.cs
-- Assets/Scripts/Testing/PerformanceTestingSystem.cs
-- Assets/Scripts/Testing/TerrainTests/ClimateTerrainFeedbackTest.cs
-- Assets/Scripts/Testing/TerrainTests/LODMemorySystemTest.cs
-- Assets/Scripts/Testing/TerrainTests/RuntimeGenerationManagerTest.cs
-- Assets/Scripts/Testing/TerrainTests/RuntimeTerrainManagerTest.cs
-- Assets/Scripts/Testing/TerrainTests/TerrainTexturingSystemTest.cs
-- Assets/Scripts/Testing/TestSceneManager.cs
 - Assets/Scripts/Utilities/Utils/VastcoreLogger.cs
-- Assets/Tests/EditMode/AdvancedStructureTestRunner.cs
 
-### C# files referencing TMPro (13)
+### C# files referencing TMPro (12)
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs
 - Assets/Scripts/Core/PerformanceMonitor.cs
-- Assets/Scripts/Testing/TerrainTests/AdvancedTerrainAlgorithmsTest.cs
 - Assets/Scripts/UI/InGameDebugUI.cs
 - Assets/Scripts/UI/MenuManager.cs
 - Assets/Scripts/UI/Menus/TitleScreenManager.cs
