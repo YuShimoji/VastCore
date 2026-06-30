@@ -419,7 +419,5 @@ namespace Vastcore.Generation
             
             return stats;
         }
-        #endregion
-    }
     }
 }

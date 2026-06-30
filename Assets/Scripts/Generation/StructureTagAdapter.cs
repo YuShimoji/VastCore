@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using ArchitecturalType = Vastcore.Generation.ArchitecturalGenerator.ArchitecturalType;
-using CompoundArchitecturalType = Vastcore.Generation.CompoundArchitecturalGenerator.CompoundArchitecturalType;
+using CompoundArchitecturalType = Vastcore.Generation.CompoundArchitecturalType;
 using PrimitiveType = Vastcore.Generation.PrimitiveTerrainGenerator.PrimitiveType;
 using CrystalSystem = Vastcore.Generation.CrystalStructureGenerator.CrystalSystem;
 

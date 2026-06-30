@@ -291,6 +291,6 @@ namespace Vastcore.Generation
             return octahedron;
         }
 
-        /// <summary>
+        #endregion
     }
 }

@@ -315,7 +315,5 @@ namespace Vastcore.Generation
                 column.GetComponent<MeshRenderer>().material = parameters.decorationMaterial;
             }
         }
-        #endregion
-
     }
 }

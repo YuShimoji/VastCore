@@ -1,6 +1,6 @@
 # VastCore Runtime State
 
-Last Updated: 2026-06-29
+Last Updated: 2026-06-30
 
 ## Current Position
 
@@ -8,70 +8,75 @@ Last Updated: 2026-06-29
 |---|---|
 | Project | VastCore Terrain Engine |
 | Branch | `codex/vc-rst-2e-upm-root-cause` |
-| Active artifact | `docs/restart/VC_UPM_NETWORK_PROXY_ENV_AUDIT.md` |
-| Current bottleneck | VC-RST-2 Package Manager restoration remains blocked before package resolution; network/proxy/env has been weakened as the direct root, so the next discriminator is user-owned Unity Editor / embedded UPM repair followed by a short-path control retest |
-| Change relation | restart / diagnostic evidence / network-proxy-env audit / remote handoff |
+| Active artifact | `docs/restart/VC_DUALGRID_STRUCTURE_PLACEMENT_API_RESTORATION_REPORT.md` |
+| Current bottleneck | VC-RST-7 resolved the direct `StructurePlacementSolver.cs` stale `Edge` / `Cell.Edges` API blocker by using the current `Cell.Neighbors` model; Unity batchmode now reaches `Assets/Scripts/Editor/TerrainGeneratorEditor.cs(76,48): CS0426` for `TerrainGenerationMode`, paired with editor `TerrainGenerator.TerrainGenerationMode` usages. |
+| Change relation | restart / C# compile restoration / DualGrid solver compatibility / editor TerrainGenerator mode handoff |
 
 ## Current Block
 
-Purpose: preserve the T+2n network/proxy/env audit result and current restart
-boundary for another terminal after remote sync.
+Purpose: preserve accumulated VC-RST-3 through VC-RST-6 compile-restoration changes, record the VC-RST-7 target fix, and keep the next terminal focused on the current editor TerrainGenerator mode compile blocker.
 
-In scope:
+In scope for the completed VC-RST-7 work:
 
 - Current Thank-profile and repo verification
-- Redacted environment variable snapshot
-- Windows proxy readback
-- Unity Hub / Editor / UPM log network signal extraction
-- DNS, TCP 443, HTTPS, and TLS endpoint checks for Unity package/CDN/API/license
-  hosts
-- Network/proxy/env hypothesis update and next-action decision
-- Handoff report under `docs/restart/VC_REMOTE_RESUME_HANDOFF_20260629.md`
+- Remote fetch and upstream parity readback without pulling over the dirty compile-restoration worktree
+- Preservation of accumulated uncommitted VC-RST-3/4/5/6 changes
+- Inspection of `StructurePlacementSolver.cs`
+- Inspection of current DualGrid `Cell` and neighbor representation
+- Confirmation that `GridTopology` populates `Cell.Neighbors`
+- Confirmation that an `Edge` type is absent in the checked DualGrid scope
+- Minimal solver compatibility fix from stale `Edge` / `Cell.Edges` usage to `Cell.Neighbors`
+- Unity batchmode confirmation that compile advanced past the VC-RST-7 target blocker
+- Focused report under `docs/restart/VC_DUALGRID_STRUCTURE_PLACEMENT_API_RESTORATION_REPORT.md`
 
-Out of scope:
+Out of scope for VC-RST-7:
 
-- Unity gameplay/code changes
-- Terrain algorithms, DualGrid, mining, CSG, EasyRoads integration, Simulator
-  split, Trail, player controller, or architecture refactors
-- Unity repair, reinstall, uninstall, Hub sign-in changes, global cache deletion,
-  new Editor install, administrator action, or process termination
-- Proxy, firewall, security, environment-variable, or Windows setting changes
-- Unity compile or Editor acceptance claims beyond the observed UPM failure
-- `ProjectSettings/`, `Packages/`, or Unity gameplay/source changes
+- DualGrid redesign, placement algorithm redesign, terrain feature implementation, mining, CSG, EasyRoads integration, simulator/player work, UI, visual work, scene work, or gameplay work
+- Unity repair, reinstall, Hub sign-in changes, cache deletion, proxy/firewall edits, package edits, or `ProjectSettings/` changes
+- Test `.meta` hygiene under `Assets/Tests/EditMode`
+- Editor TerrainGenerator API fixes after compile advanced to the new editor cluster
 
 ## Current Trust Assessment
 
-- Trusted: current repo path
-  `C:\Users\thank\Storage\Game Projects\VastCore_TerrainEngine\VastCore`,
-  diagnostic branch `codex/vc-rst-2e-upm-root-cause`, remote parity
-  before the handoff, no VastCore product diffs, current Windows profile
-  `thank` / `C:\Users\thank`, Unity `6000.3.3f1` and `6000.3.6f1`
-  executable paths, embedded UnityPackageManager `22.19.0` signal for both
-  versions, control path `C:\vc-upm-6000-3-3\control`, and repeated UPM
-  `path` undefined failure in both create and import runs. Safe env variables
-  show no proxy/UPM/npm/yarn/TLS overrides; WinHTTP and HKCU proxy settings are
-  direct/disabled; DNS/TCP/HTTPS/TLS checks pass for Unity package endpoints.
-  Hub release metadata endpoints return 404, but package registry metadata
-  returns 200.
-- Needs re-check: behavior after user-approved Unity repair/reinstall or
-  alternate Unity/UPM-family install, behavior on another machine/VM, and
-  VastCore package resolution after any control succeeds. C# compile is still
-  not reached.
-- Current remote handoff: `docs/restart/VC_REMOTE_RESUME_HANDOFF_20260629.md`.
-- Local docs-only report refresh included in sync:
-  `docs/04_reports/LEGACY_UI_MIGRATION_REPORT.md`.
-- Historical only: March 2026 handoff/progress summaries. Treat them as context,
-  not current acceptance evidence. PLANNER007 controls remain corroborating
-  historical evidence, not the current Thank-profile route.
+- Trusted: current repo path `C:\Users\thank\Storage\Game Projects\VastCore_TerrainEngine\VastCore`, diagnostic branch `codex/vc-rst-2e-upm-root-cause`, HEAD `588f547 docs: refresh remote resume handoff`, upstream parity `0 0` after fetch, and current Windows profile `thank` / `C:\Users\thank`.
+- Trusted: current Unity batchmode compile reaches C# compilation; the checked current log shows Package Manager registering packages and no checked `path undefined` regression.
+- Trusted: `Cell` exposes `Cell[] Neighbors`, constructors initialize it, and `GridTopology.BuildNeighborRelations` assigns neighbor cells.
+- Trusted: `StructurePlacementSolver.cs` no longer references `Edge`, `.Edges`, or `IReadOnlyList<Edge>`.
+- Trusted: the previous `StructurePlacementSolver.cs(270,27): CS0246 Edge` and `StructurePlacementSolver.cs(270,47): CS1061 Cell.Edges` errors are absent from the latest checked compile log.
+- Needs re-check: clean C# compile baseline. Current first blocker is `Assets\Scripts\Editor\TerrainGeneratorEditor.cs(76,48): error CS0426: The type name 'TerrainGenerationMode' does not exist in the type 'TerrainGenerator'`.
+- Needs re-check: paired editor mode errors at `TerrainGeneratorEditor.cs(97,58)`, `TerrainGeneratorEditor.cs(121,58)`, and `TerrainGenerationWindow.cs(528,58)`.
+- Deferred visible errors after the first cluster: `Assets\Editor\StructureGenerator\Core\StructureGeneratorWindow.cs(140,21): CS0104 EditorUtility` and `Assets\Editor\PhaseCVerificationSetup.cs(5,16): CS0234 Vastcore.Game`.
+- Deferred debt: `Assets/Tests/EditMode/AdjacencyRuleSetTests.cs.meta` and `Assets/Tests/EditMode/StructurePlacementSolverTests.cs.meta` still have empty GUIDs; they were not repaired because they are not the current first compile blocker.
+- Current local report: `docs/restart/VC_DUALGRID_STRUCTURE_PLACEMENT_API_RESTORATION_REPORT.md`.
+- Local validation log: `artifacts/logs/compile-check.log`.
 
 ## Next Action
 
-Do not start package edits, C# fixes, or terrain implementation. The next useful
-move is `VC-RST-2o-editor-repair-retest`: after user-approved Unity Editor /
-embedded UPM repair or reinstall, rerun a short-path empty-manifest control
-before reopening VastCore.
+Continue with `VC-RST-8-editor-terrain-generation-mode-api-restoration`.
 
-Do not repair/reinstall Unity, install another Editor, delete caches, change Hub
-sign-in state, change proxy/firewall/security settings, or retest VastCore
-without an explicit scoped prompt. Retest VastCore only after a control project
-resolves packages.
+Start from the first compile error:
+
+`Assets\Scripts\Editor\TerrainGeneratorEditor.cs(76,48): error CS0426: The type name 'TerrainGenerationMode' does not exist in the type 'TerrainGenerator'`
+
+Paired errors in the same visible cluster:
+
+- `Assets\Scripts\Editor\TerrainGeneratorEditor.cs(97,58): error CS0117: 'TerrainGenerator' does not contain a definition for 'TerrainGenerationMode'`
+- `Assets\Scripts\Editor\TerrainGeneratorEditor.cs(121,58): error CS0117: 'TerrainGenerator' does not contain a definition for 'TerrainGenerationMode'`
+- `Assets\Scripts\Editor\TerrainGenerationWindow.cs(528,58): error CS0426: The type name 'TerrainGenerationMode' does not exist in the type 'TerrainGenerator'`
+
+Initial inspection points:
+
+- `Assets/Scripts/Editor/TerrainGeneratorEditor.cs`
+- `Assets/Scripts/Editor/TerrainGenerationWindow.cs`
+- `Assets/Scripts/Generation/TerrainGenerator.cs`
+- `Assets/Scripts/Generation/TerrainGenerationMode.cs`
+- relevant asmdefs only if namespace or assembly visibility is proven to be the blocker
+
+Do not start editor workflow redesign, terrain feature work, visual work, scene work, or package/project-setting edits unless a later compile-restoration slice proves a minimal API compatibility change is the first active blocker.
+
+## Remote Sync Handoff
+
+The current dirty compile-restoration chain was prepared for remote sync at the
+user's request. See `docs/restart/VC_REMOTE_SYNC_HANDOFF_REPORT.md` for the
+compact cross-terminal handoff packet, including the current first error,
+validation state, deferred debt, and restart read order.

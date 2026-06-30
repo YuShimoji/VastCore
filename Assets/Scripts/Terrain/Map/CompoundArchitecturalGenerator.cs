@@ -126,7 +126,10 @@ namespace Vastcore.Generation
         {
             try
             {
-                if (parameters.overallSize <= 0f || parameters.structureCount <= 0)
+                if (parameters.overallSize.x <= 0f
+                    || parameters.overallSize.y <= 0f
+                    || parameters.overallSize.z <= 0f
+                    || parameters.structureCount <= 0)
                 {
                     VastcoreLogger.Instance.LogError("CompoundArch", $"[CompoundArchitecturalGenerator] Invalid parameters: overallSize={parameters.overallSize}, structureCount={parameters.structureCount}. Must be > 0.");
                     return null;
@@ -265,6 +268,5 @@ namespace Vastcore.Generation
             return baseTime * complexityMultiplier * sizeMultiplier;
         }
         #endregion
-    }
     }
 }

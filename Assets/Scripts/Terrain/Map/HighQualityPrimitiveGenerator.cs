@@ -258,6 +258,6 @@ namespace Vastcore.Generation
             return allPassed;
         }
 
-        #region Deform統合機能
+        #endregion
     }
 }

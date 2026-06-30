@@ -432,8 +432,6 @@ namespace Vastcore.Generation
                 spire.GetComponent<MeshRenderer>().material = parameters.primaryMaterial;
             }
         }
-
-        /// <summary>
-        /// 回廊を生成
+        #endregion
     }
 }

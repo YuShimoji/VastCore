@@ -299,7 +299,5 @@ namespace Vastcore.Generation
         }
         #endregion
 
-        #endregion // 高品質メッシュ生成
-        
     }
 }

@@ -254,8 +254,8 @@ namespace Vastcore.Terrain.DualGrid
         }
 
         /// <summary>
-        /// 対象セルの周辺に既配置建物との隣接親和度を評価する。
-        /// 近隣に配置がない場合は 1.0 を返す。
+        /// Evaluates adjacency affinity against already placed structures around the target cell.
+        /// Returns 1.0 when no neighboring placement exists.
         /// </summary>
         private float EvaluateAdjacency(
             StructureTagProfile _candidateProfile,
@@ -266,33 +266,36 @@ namespace Vastcore.Terrain.DualGrid
             float totalAffinity = 0f;
             int neighborCount = 0;
 
-            // セルのエッジから隣接セルを辿る
-            IReadOnlyList<Edge> edges = _cell.Edges;
-            for (int e = 0; e < edges.Count; e++)
+            Cell[] neighbors = _cell.Neighbors;
+            if (neighbors == null)
             {
-                Edge edge = edges[e];
-                // エッジに隣接するセルを探す
-                for (int c = 0; c < _allCells.Count; c++)
+                return 1f;
+            }
+
+            for (int i = 0; i < neighbors.Length; i++)
+            {
+                Cell neighbor = neighbors[i];
+                if (neighbor == null || neighbor.Id == _cell.Id)
                 {
-                    Cell neighbor = _allCells[c];
-                    if (neighbor.Id == _cell.Id) continue;
-
-                    // 隣接セルに配置があるか
-                    StampPlacement existing = m_Registry.GetPlacementAt(neighbor.Id);
-                    if (existing == null) continue;
-                    if (existing.Definition == null || existing.Definition.TagProfile == null)
-                        continue;
-
-                    float affinity = _rules.EvaluateAdjacency(
-                        _candidateProfile, existing.Definition.TagProfile);
-                    totalAffinity += affinity;
-                    neighborCount++;
+                    continue;
                 }
+
+                StampPlacement existing = m_Registry.GetPlacementAt(neighbor.Id);
+                if (existing == null || existing.Definition == null
+                    || existing.Definition.TagProfile == null)
+                {
+                    continue;
+                }
+
+                float affinity = _rules.EvaluateAdjacency(
+                    _candidateProfile, existing.Definition.TagProfile);
+                totalAffinity += affinity;
+                neighborCount++;
             }
 
             if (neighborCount == 0)
             {
-                return 1f; // 近隣に配置なし → 制約なし
+                return 1f;
             }
 
             return Mathf.Clamp01(totalAffinity / neighborCount);

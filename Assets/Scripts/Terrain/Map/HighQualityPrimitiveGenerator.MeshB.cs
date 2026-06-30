@@ -285,7 +285,5 @@ namespace Vastcore.Generation
             
             return formation;
         }
-
-        #region 高度な変形処理
     }
 }
