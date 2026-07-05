@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using Vastcore.Generation;
+using ArchitecturalType = Vastcore.Generation.ArchitecturalGenerator.ArchitecturalType;
 
 namespace Vastcore.Tests.EditMode
 {

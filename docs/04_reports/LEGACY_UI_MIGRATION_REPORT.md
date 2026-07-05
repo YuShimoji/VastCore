@@ -1,15 +1,15 @@
 # Legacy UI Migration Report (Dry Run)
 
-- Generated: 2026-06-28 23:36 (local)
+- Generated: 2026-07-06 03:17 (local)
 - Tool: UIMigrationScannerWindow.cs
 - Options: ExcludeExamples=True, ScanScripts=True, ScanScenes=True, ScanPrefabs=True
 
 ## Summary
-- Scripts scanned: 374
+- Scripts scanned: 377
 - Scenes scanned: 51
 - Prefabs scanned: 5
 - C# using UnityEngine.UI: 11
-- C# OnGUI occurrences: 17
+- C# OnGUI occurrences: 18
 - C# TMPro references: 12
 - C# UI Toolkit references: 1
 - Scenes with uGUI markers: 3
@@ -30,12 +30,13 @@
 - Assets/Tests/EditMode/SliderBasedUISystemTests.cs
 - Assets/Tests/EditMode/UITestHelper.cs
 
-### C# files with OnGUI (17)
+### C# files with OnGUI (18)
 - Assets/Editor/StructureGenerator/Core/StructureGeneratorWindow.cs
 - Assets/Editor/Tools/ProBuilderCsg/ProBuilderCsgScannerWindow.cs
 - Assets/Editor/Tools/UIMigration/UIMigrationApplyWindow.cs
 - Assets/Editor/Tools/UIMigration/UIMigrationRulesDryRunWindow.cs
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs
+- Assets/Editor/VastCore/DesignerCockpit/VastCoreDesignerCockpitWindow.cs
 - Assets/Scripts/Core/VastcoreDebugVisualizer.cs
 - Assets/Scripts/Editor/HeightmapTerrainGeneratorWindow.cs
 - Assets/Scripts/Editor/StructureTagProfileDrawer.cs

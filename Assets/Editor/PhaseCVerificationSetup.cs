@@ -1,8 +1,9 @@
 using UnityEditor;
 using UnityEngine;
+using System;
+using System.Linq;
 using Vastcore.Terrain.DualGrid;
 using Vastcore.Terrain.Erosion;
-using Vastcore.Game.Managers;
 
 namespace Vastcore.Editor
 {
@@ -39,7 +40,7 @@ namespace Vastcore.Editor
 
         private static void SetupDualGridVisualizer()
         {
-            if (Object.FindFirstObjectByType<GridDebugVisualizer>() != null)
+            if (UnityEngine.Object.FindFirstObjectByType<GridDebugVisualizer>() != null)
             {
                 Debug.Log("[PhaseCVerification] GridDebugVisualizer already exists, skipping.");
                 return;
@@ -58,7 +59,7 @@ namespace Vastcore.Editor
 
         private static void SetupErosionPreview()
         {
-            if (Object.FindFirstObjectByType<ErosionPreview>() != null)
+            if (UnityEngine.Object.FindFirstObjectByType<ErosionPreview>() != null)
             {
                 Debug.Log("[PhaseCVerification] ErosionPreview already exists, skipping.");
                 return;
@@ -77,24 +78,48 @@ namespace Vastcore.Editor
 
         private static void SetupGameManager()
         {
-            if (Object.FindFirstObjectByType<VastcoreGameManager>() != null)
+            Type gameManagerType = FindType("Vastcore.Game.Managers.VastcoreGameManager");
+            if (gameManagerType == null || !typeof(Component).IsAssignableFrom(gameManagerType))
+            {
+                Debug.LogWarning("[PhaseCVerification] VastcoreGameManager type is unavailable to this editor assembly.");
+                return;
+            }
+
+            bool exists = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
+                .Any(component => component != null && component.GetType() == gameManagerType);
+
+            if (exists)
             {
                 Debug.Log("[PhaseCVerification] VastcoreGameManager already exists, skipping.");
                 return;
             }
 
             var go = new GameObject("VastcoreGameManager");
-            go.AddComponent<VastcoreGameManager>();
+            go.AddComponent(gameManagerType);
             Undo.RegisterCreatedObjectUndo(go, "Create GameManager");
 
             Debug.Log("[PhaseCVerification] Created VastcoreGameManager. " +
                       "Assign PlayerPrefab in Inspector for PC-5 startup test.");
         }
 
+        private static Type FindType(string fullName)
+        {
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                Type type = assembly.GetType(fullName);
+                if (type != null)
+                {
+                    return type;
+                }
+            }
+
+            return null;
+        }
+
         private static void SetupLighting()
         {
             // Directional Light がなければ作成
-            Light[] lights = Object.FindObjectsByType<Light>(FindObjectsSortMode.None);
+            Light[] lights = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None);
             bool hasDirectional = false;
             foreach (var light in lights)
             {

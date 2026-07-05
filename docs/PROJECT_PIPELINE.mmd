@@ -1,0 +1,17 @@
+flowchart LR
+    Designer["Designer in Unity Editor"]
+    Cockpit["VastCore Designer Cockpit"]
+    Session["Local Session Asset"]
+    Random["Deterministic Random Transform"]
+    Status["Honest Status Tiles"]
+    Structure["Structure Generator Tabs"]
+    Terrain["Terrain / DualGrid Future Slots"]
+    Smoke["Manual Smoke Checklist"]
+
+    Designer --> Cockpit
+    Cockpit --> Session
+    Cockpit --> Random
+    Cockpit --> Status
+    Status -. "inspection only" .-> Structure
+    Status -. "placeholder only" .-> Terrain
+    Cockpit --> Smoke

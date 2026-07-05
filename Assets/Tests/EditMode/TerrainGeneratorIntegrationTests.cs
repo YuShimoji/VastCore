@@ -58,7 +58,7 @@ namespace Vastcore.Tests.EditMode
         public void GenerateTerrain_NoiseMode_CreatesTerrainWithCorrectSize()
         {
             // Arrange
-            _generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
+            _generator.GenerationMode = TerrainGenerationMode.Noise;
 
             // Act
             IEnumerator routine = _generator.GenerateTerrain();
@@ -90,7 +90,7 @@ namespace Vastcore.Tests.EditMode
             texture.SetPixels(colors);
             texture.Apply();
 
-            _generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.HeightMap;
+            _generator.GenerationMode = TerrainGenerationMode.HeightMap;
             _generator.HeightMap = texture;
             _generator.HeightMapScale = 1f;
             _generator.HeightMapOffset = 0f;
@@ -123,7 +123,7 @@ namespace Vastcore.Tests.EditMode
         public void GetHighestPoint_ReturnsNonZeroWorldPositionAfterGeneration()
         {
             // Arrange
-            _generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
+            _generator.GenerationMode = TerrainGenerationMode.Noise;
 
             // Act
             IEnumerator routine = _generator.GenerateTerrain();
@@ -141,7 +141,7 @@ namespace Vastcore.Tests.EditMode
         public void GenerateTerrain_NoiseMode_WithSeed_ProducesDeterministicResult()
         {
             // Arrange
-            _generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
+            _generator.GenerationMode = TerrainGenerationMode.Noise;
             _generator.Seed = 12345;
 
             // Act - First generation
@@ -190,7 +190,7 @@ namespace Vastcore.Tests.EditMode
             texture.SetPixels(colors);
             texture.Apply();
 
-            _generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.HeightMap;
+            _generator.GenerationMode = TerrainGenerationMode.HeightMap;
             _generator.HeightMap = texture;
             _generator.HeightMapChannel = HeightMapChannel.R;
 
@@ -236,7 +236,7 @@ namespace Vastcore.Tests.EditMode
             }
             texture.Apply();
 
-            _generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.HeightMap;
+            _generator.GenerationMode = TerrainGenerationMode.HeightMap;
             _generator.HeightMap = texture;
             _generator.InvertHeight = false;
 
@@ -298,7 +298,7 @@ namespace Vastcore.Tests.EditMode
             }
             texture.Apply();
 
-            _generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.NoiseAndHeightMap;
+            _generator.GenerationMode = TerrainGenerationMode.NoiseAndHeightMap;
             _generator.HeightMap = texture;
             _generator.HeightMapChannel = HeightMapChannel.Luminance;
             _generator.Seed = 54321;

@@ -41,7 +41,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_NoiseMode_ReturnsCorrectDimensions()
         {
-            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
+            generator.GenerationMode = TerrainGenerationMode.Noise;
             
             float[,] heights = HeightMapGenerator.GenerateHeights(generator);
             
@@ -52,7 +52,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_NoiseMode_ValuesAreNormalized()
         {
-            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
+            generator.GenerationMode = TerrainGenerationMode.Noise;
             
             float[,] heights = HeightMapGenerator.GenerateHeights(generator);
             
@@ -69,7 +69,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_NoiseMode_DifferentOffsetsProduceDifferentResults()
         {
-            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
+            generator.GenerationMode = TerrainGenerationMode.Noise;
             generator.Offset = Vector2.zero;
             float[,] heights1 = HeightMapGenerator.GenerateHeights(generator);
             
@@ -99,7 +99,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_HeightMapMode_WithoutTexture_ReturnsZeroHeights()
         {
-            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.HeightMap;
+            generator.GenerationMode = TerrainGenerationMode.HeightMap;
             generator.HeightMap = null;
             
             // HeightMap 縺・null 縺ｮ蝣ｴ蜷医．ebug.LogError 縺悟・蜉帙＆繧後ｋ縺薙→繧呈悄蠕・
@@ -120,7 +120,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_HeightMapMode_WithTexture_ReturnsCorrectDimensions()
         {
-            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.HeightMap;
+            generator.GenerationMode = TerrainGenerationMode.HeightMap;
             
             // 繧ｷ繝ｳ繝励Ν縺ｪ繝・せ繝医ユ繧ｯ繧ｹ繝√Ε繧剃ｽ懈・
             var texture = new Texture2D(32, 32);
@@ -149,7 +149,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_CombinedMode_ReturnsCorrectDimensions()
         {
-            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.NoiseAndHeightMap;
+            generator.GenerationMode = TerrainGenerationMode.NoiseAndHeightMap;
             
             // Combined 繝｢繝ｼ繝峨〒縺ｯ HeightMap 縺悟ｿ・ｦ√↑縺ｮ縺ｧ繝繝溘・繝・け繧ｹ繝√Ε繧定ｨｭ螳・
             var texture = new Texture2D(16, 16);
@@ -174,7 +174,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_CombinedMode_ValuesAreNormalized()
         {
-            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.NoiseAndHeightMap;
+            generator.GenerationMode = TerrainGenerationMode.NoiseAndHeightMap;
             
             // 繝・せ繝医ユ繧ｯ繧ｹ繝√Ε繧剃ｽ懈・
             var texture = new Texture2D(32, 32);
@@ -210,7 +210,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_HeightMapMode_ChannelR_UsesRedChannel()
         {
-            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.HeightMap;
+            generator.GenerationMode = TerrainGenerationMode.HeightMap;
             generator.HeightMapChannel = HeightMapChannel.R;
             
             // R=1.0, G=0.0, B=0.0, A=0.0 縺ｮ繝・け繧ｹ繝√Ε繧剃ｽ懈・
@@ -246,7 +246,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_HeightMapMode_ChannelG_UsesGreenChannel()
         {
-            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.HeightMap;
+            generator.GenerationMode = TerrainGenerationMode.HeightMap;
             generator.HeightMapChannel = HeightMapChannel.G;
             
             // R=0.0, G=1.0, B=0.0, A=0.0 縺ｮ繝・け繧ｹ繝√Ε繧剃ｽ懈・
@@ -282,7 +282,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_NoiseMode_SameSeed_ProducesSameResult()
         {
-            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
+            generator.GenerationMode = TerrainGenerationMode.Noise;
             generator.Seed = 12345;
             
             float[,] heights1 = HeightMapGenerator.GenerateHeights(generator);
@@ -307,7 +307,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_NoiseMode_DifferentSeed_ProducesDifferentResult()
         {
-            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
+            generator.GenerationMode = TerrainGenerationMode.Noise;
             generator.Seed = 11111;
             
             float[,] heights1 = HeightMapGenerator.GenerateHeights(generator);
@@ -334,7 +334,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_HeightMapMode_UVTiling_AppliesTiling()
         {
-            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.HeightMap;
+            generator.GenerationMode = TerrainGenerationMode.HeightMap;
             generator.UVTiling = new Vector2(2.0f, 2.0f); // 2蛟阪・郢ｰ繧願ｿ斐＠
             
             // 蟾ｦ荳翫・縺ｿ逋ｽ縲∽ｻ悶・鮟偵・繝・け繧ｹ繝√Ε
@@ -375,7 +375,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_HeightMapMode_InvertHeight_InvertsHeights()
         {
-            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.HeightMap;
+            generator.GenerationMode = TerrainGenerationMode.HeightMap;
             generator.InvertHeight = false;
             
             // 繧ｰ繝ｬ繝ｼ繧ｹ繧ｱ繝ｼ繝ｫ繧ｰ繝ｩ繝・・繧ｷ繝ｧ繝ｳ縺ｮ繝・け繧ｹ繝√Ε
@@ -424,7 +424,7 @@ namespace Vastcore.Tests.EditMode
         [Test]
         public void GenerateHeights_SmallResolution_CompletesQuickly()
         {
-            generator.GenerationMode = TerrainGenerator.TerrainGenerationMode.Noise;
+            generator.GenerationMode = TerrainGenerationMode.Noise;
             generator.Resolution = 33;
             
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();

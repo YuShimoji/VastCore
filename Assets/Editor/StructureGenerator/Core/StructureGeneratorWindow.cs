@@ -137,7 +137,7 @@ namespace Vastcore.Editor.Generation
                         ? $"\nPositionJitter: {def.PositionJitter:F2}"
                         : "";
 
-                    EditorUtility.DisplayDialog(
+                    UnityEditor.EditorUtility.DisplayDialog(
                         "Stamp Export",
                         $"エクスポート完了:\n{def.DisplayName}{childInfo}{jitterInfo}" +
                         "\n\nTerrainWithStampsBootstrap の stampDefinition にアサインして使用してください。",

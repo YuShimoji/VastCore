@@ -1,5 +1,8 @@
 using NUnit.Framework;
 using Vastcore.Generation;
+using ArchitecturalType = Vastcore.Generation.ArchitecturalGenerator.ArchitecturalType;
+using CrystalSystem = Vastcore.Generation.CrystalStructureGenerator.CrystalSystem;
+using PrimitiveType = Vastcore.Generation.PrimitiveTerrainGenerator.PrimitiveType;
 
 namespace Vastcore.Tests.EditMode
 {
