@@ -12,22 +12,33 @@ untested areas, and usable for a first designer session.
 ## Manual Smoke Checklist
 
 1. Open `Tools/VastCore/Designer Cockpit`.
-2. Confirm the top strip shows selected object count, session name, seed, last
-   saved UTC, and status.
-3. Select zero scene objects and confirm `Apply Random Transform to Selected`
-   is disabled with a clear warning.
-4. Create or select one or more scene objects.
-5. Click `Refresh Status` and confirm selected object count updates.
-6. Change session name, seed, notes, and random transform min/max values.
-7. Click `Apply Random Transform to Selected`.
-8. Confirm selected transforms changed and Unity Undo restores the previous
+2. Confirm the compact top summary shows session name, seed, selected object
+   count, last saved UTC, loaded asset path/status, short capability badges,
+   and the last operation message.
+3. Confirm the primary action row exposes New, Save, Load, Refresh, and Apply.
+4. Select zero scene objects and confirm Apply is disabled with calm copy:
+   `Select a scene object to apply Random Variation.`
+5. Switch through Overview, Random Variation, Terrain, Composition, Deform, and
+   Diagnostics.
+6. In Overview, change session name, seed, notes, and session asset selection.
+7. In Random, adjust Position Spread, Y Lock/Height Variation, Yaw Variation,
+   Scale Variation, Relative Position, and Uniform Scale.
+8. Open Advanced ranges and confirm Position/Rotation/Scale min/max remain
+   accessible without being always visible.
+9. Click `Refresh` and confirm selected object count updates.
+10. Create or select one or more scene objects.
+11. Click `Apply`.
+12. Confirm selected transforms changed and Unity Undo restores the previous
    transforms.
-9. Click `Save Session` and confirm a `.asset` is created under
+13. Click `Save` and confirm a `.asset` is created under
    `Assets/Data/VastCore/DesignerSessions`.
-10. Click `New Session`, then `Load Session`, and confirm the saved fields are
+14. Click `New`, then `Load`, and confirm the saved fields are
     restored.
-11. Confirm status tiles label Composition, Deform, Terrain, and
-    Topology/DualGrid as partial, untested, or placeholder rather than complete.
+15. Open Diagnostics and confirm Review Status details, class/package
+    detection details, Terrain namespace detection, and raw status notes live
+    there rather than in the main mode panels.
+16. Confirm Terrain, Compose, and Deform panels use concise status copy and do
+    not imply runtime generation, CSG/Blend, or Deform execution is complete.
 
 ## Not Covered
 

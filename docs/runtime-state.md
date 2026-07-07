@@ -1,16 +1,16 @@
 # VastCore Runtime State
 
-Last Updated: 2026-07-06
+Last Updated: 2026-07-07
 
 ## Current Position
 
 | Field | Value |
 |---|---|
 | Project | VastCore Terrain Engine |
-| Branch | `codex/vc-rst-2e-upm-root-cause` |
-| Active artifact | `docs/restart/VC_DESIGNER_COCKPIT_REMOTE_HANDOFF_REPORT.md` |
-| Current bottleneck | Designer Cockpit MVP is implemented, sample session asset exists, and C# compile check passes; next bottleneck is an in-Unity manual smoke pass for open/apply/undo/save/load evidence. |
-| Change relation | designer-facing Unity Editor cockpit / local session save-load MVP / compile restoration follow-through / remote handoff |
+| Branch | `codex/vc-rst-cockpit-ux-diagnostics-20260706` |
+| Active artifact | `docs/04_reports/REPORT_DESIGNER_COCKPIT_UX_DIAGNOSTICS_2026-07-06.md` |
+| Current bottleneck | Designer Cockpit MVP is implemented and the UX diagnostics slice is in progress locally; remote parity is current, Unity batchmode is blocked by the known UPM `path undefined` failure, and the next acceptance bottleneck is an in-Unity manual smoke/layout pass. |
+| Change relation | designer-facing Unity Editor cockpit / mode-based authoring UX / local session save-load MVP / compile and smoke evidence follow-through |
 
 ## Current Block
 
@@ -36,6 +36,13 @@ Completed in this block:
 - Fixed adjacent editor compile blockers in `StructureGeneratorWindow.cs` and
   `PhaseCVerificationSetup.cs`.
 - Restored stale test enum references using narrow type aliases.
+- Reorganized the Cockpit into top summary, primary action row, mode selector,
+  concise mode panels, Random Variation controls, Advanced ranges, and
+  Diagnostics.
+- Updated the smoke checklist and cockpit overview so reviewer work follows the
+  current mode-based UX instead of the older always-visible parameter surface.
+- Captured UX diagnostics notes and report artifacts for the mode-based Cockpit
+  slice.
 
 Out of scope for this block:
 
@@ -48,19 +55,28 @@ Out of scope for this block:
 
 ## Current Trust Assessment
 
-- Trusted: current repo path
-  `C:\Users\thank\Storage\Game Projects\VastCore_TerrainEngine\VastCore`.
-- Trusted: branch `codex/vc-rst-2e-upm-root-cause`.
+- Trusted: current repo path `C:\Users\PLANNER007\VastCore\VastCore`.
+- Trusted: current local branch
+  `codex/vc-rst-cockpit-ux-diagnostics-20260706` is at parity `0 0` with
+  `origin/codex/vc-rst-2e-upm-root-cause` after `git fetch --all --prune`.
 - Trusted: menu entry exists at `Tools/VastCore/Designer Cockpit`.
 - Trusted: session save path is code-owned as
   `Assets/Data/VastCore/DesignerSessions`.
 - Trusted: sample session asset exists at
   `Assets/Data/VastCore/DesignerSessions/Designer_Session.asset`.
-- Trusted: Unity batchmode C# compile completed with no `error CS` entries and
-  ended with `Exiting batchmode successfully now!`.
-- Trusted validation log: `artifacts/logs/compile-check.log`.
-- Trusted: `git fetch origin` succeeded and pre-commit upstream parity was
-  `0 0` against `origin/codex/vc-rst-2e-upm-root-cause`.
+- Historical validation: the remote handoff recorded a prior Unity batchmode C#
+  compile success.
+- Current validation log: `artifacts/logs/compile-check.log` now records the
+  Package Manager `path undefined` failure from the latest local rerun.
+- Trusted: `git diff --check` passes with only CRLF normalization warnings.
+- Trusted: menu/class duplicate search found one Cockpit menu item and one
+  `VastCoreDesignerCockpitWindow` class.
+- Current validation blocker: `scripts/check-compile.ps1` exits 1 before C#
+  compile because Package Manager reports `The "path" argument must be of type
+  string. Received undefined. No packages loaded.`
+- Current narrow compiler rerun: inconclusive; direct `csc` invocation reached
+  Unity/NetStandard/IMGUI reference-set setup failures, not a Cockpit source
+  diagnostic.
 - Needs re-check: manual Unity Editor smoke for open/apply/Undo/save/load.
 - Needs re-check: editmode/playmode test execution; this block ran compile
   check only.
@@ -72,18 +88,21 @@ Out of scope for this block:
 
 ## Next Action
 
-Run the manual smoke checklist in `docs/DESIGNER_COCKPIT_SMOKE_TEST.md`:
+Run the manual smoke checklist in `docs/DESIGNER_COCKPIT_SMOKE_TEST.md` against
+the current mode-based Cockpit:
 
 1. Open `Tools/VastCore/Designer Cockpit`.
-2. Confirm status tiles and selected object count update.
-3. Select objects, apply the random transform recipe, and verify Undo restores
-   transforms.
-4. Save a session asset under `Assets/Data/VastCore/DesignerSessions`.
-5. Create a new session, load the saved asset, and confirm fields restore.
+2. Confirm the top summary, primary actions, mode selector, and Diagnostics
+   drawer layout.
+3. Switch through Overview, Random Variation, Terrain, Composition, Deform, and
+   Diagnostics.
+4. Select objects, apply Random Variation, and verify Undo restores transforms.
+5. Save a session asset under `Assets/Data/VastCore/DesignerSessions`.
+6. Create a new session, load the saved asset, and confirm fields restore.
 
 After smoke evidence exists, the next likely slice is to capture SG-2 dashboard
-smoke results or feed CT-1 Composition verification into the cockpit status
-tiles.
+smoke results, promote verified evidence into Cockpit Evidence Tiles, or feed
+CT-1 Composition verification into Diagnostics.
 
 ## Remote Handoff
 
