@@ -2,6 +2,13 @@
 
 Updated: 2026-07-06
 
+## Supersession Note
+
+For the pushed Cockpit UX diagnostics review branch, read
+`docs/restart/VC_DESIGNER_COCKPIT_UX_REMOTE_REVIEW_HANDOFF.md` instead. This
+file records the base Designer Cockpit MVP handoff before the mode-based UX
+review branch was packaged.
+
 ## Resume Start
 
 1. Read `AGENTS.md`.

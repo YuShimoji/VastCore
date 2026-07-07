@@ -9,7 +9,7 @@ Last Updated: 2026-07-07
 | Project | VastCore Terrain Engine |
 | Branch | `codex/vc-rst-cockpit-ux-diagnostics-20260706` |
 | Active artifact | `docs/04_reports/REPORT_DESIGNER_COCKPIT_UX_DIAGNOSTICS_2026-07-06.md` |
-| Current bottleneck | Designer Cockpit MVP is implemented and the UX diagnostics slice is in progress locally; remote parity is current, Unity batchmode is blocked by the known UPM `path undefined` failure, and the next acceptance bottleneck is an in-Unity manual smoke/layout pass. |
+| Current bottleneck | Designer Cockpit MVP is implemented and the UX diagnostics slice is pushed as a remote review branch; Unity batchmode is blocked by the known UPM `path undefined` failure, and the next acceptance bottleneck is an in-Unity manual smoke/layout pass. |
 | Change relation | designer-facing Unity Editor cockpit / mode-based authoring UX / local session save-load MVP / compile and smoke evidence follow-through |
 
 ## Current Block
@@ -43,6 +43,10 @@ Completed in this block:
   current mode-based UX instead of the older always-visible parameter surface.
 - Captured UX diagnostics notes and report artifacts for the mode-based Cockpit
   slice.
+- Packaged and pushed the UX diagnostics diff to
+  `origin/codex/vc-rst-cockpit-ux-diagnostics-20260706` at commit `55440cf`.
+- Added remote review handoff at
+  `docs/restart/VC_DESIGNER_COCKPIT_UX_REMOTE_REVIEW_HANDOFF.md`.
 
 Out of scope for this block:
 
@@ -58,7 +62,9 @@ Out of scope for this block:
 - Trusted: current repo path `C:\Users\PLANNER007\VastCore\VastCore`.
 - Trusted: current local branch
   `codex/vc-rst-cockpit-ux-diagnostics-20260706` is at parity `0 0` with
-  `origin/codex/vc-rst-2e-upm-root-cause` after `git fetch --all --prune`.
+  `origin/codex/vc-rst-cockpit-ux-diagnostics-20260706` after push.
+- Trusted: review branch commit `55440cf` contains the Cockpit UX diagnostics
+  code and docs diff.
 - Trusted: menu entry exists at `Tools/VastCore/Designer Cockpit`.
 - Trusted: session save path is code-owned as
   `Assets/Data/VastCore/DesignerSessions`.
@@ -106,5 +112,7 @@ CT-1 Composition verification into Diagnostics.
 
 ## Remote Handoff
 
-Read `docs/restart/VC_DESIGNER_COCKPIT_REMOTE_HANDOFF_REPORT.md` for the compact
-cross-terminal packet after pulling this branch.
+Read `docs/restart/VC_DESIGNER_COCKPIT_UX_REMOTE_REVIEW_HANDOFF.md` for the
+compact cross-terminal packet after fetching this branch. The older
+`docs/restart/VC_DESIGNER_COCKPIT_REMOTE_HANDOFF_REPORT.md` describes the base
+MVP handoff before this UX review branch.
