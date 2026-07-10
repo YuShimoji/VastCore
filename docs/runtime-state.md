@@ -39,9 +39,15 @@ Completed or verified in this block:
 - Verified GitHub Actions run `29082183177`: canonical state validation and
   Project Pulse publication both passed, and Issue #48 was updated from this
   branch. The new workflow now uses the current checkout/github-script majors.
+- Verified follow-up run `29083404696` with those current action majors; both
+  jobs passed without the prior Node runtime warning.
 - The same push exposed an existing invalid Unity workflow before any job ran.
   Replaced the direct secret-in-job-condition with a license-gate output and
   aligned its configured Editor from 6000.2.2f1 to project version 6000.3.6f1.
+- Dispatched repaired Unity workflow run `29083435552`: license-gate passed and
+  the Unity test job was correctly skipped because no license secret exists.
+- Opened draft PR #49 against the preceding Cockpit UX branch so review contains
+  only this workflow refresh rather than 349 commits from obsolete `master`.
 - Restored the canonical `docs/INVARIANTS.md` from mojibake to readable Japanese.
 - Removed stale "current" claims from `docs/project-context.md`; historical
   handoffs remain evidence only.
@@ -69,6 +75,8 @@ Deliberately not changed:
   the known UPM failure before package load and before C# compilation.
 - Trusted: GitHub Actions run `29082183177` passed both Project State and Pulse
   jobs and updated the pinned external issue from the configured owner branch.
+- Trusted: follow-up Pulse run `29083404696` passed on current action majors;
+  Unity workflow dispatch `29083435552` passed its gate and skipped tests.
 - Not accepted: current C# compile, EditMode/PlayMode tests, Cockpit layout,
   Random Variation Apply/Undo, and session save/load in the Editor.
 - Not configured: repository secret `UNITY_LICENSE`; the repaired Actions
@@ -108,4 +116,5 @@ from this file by `.github/workflows/project-pulse.yml`. This file remains the
 authoritative source; the issue is the public projection and discussion surface.
 Repository variable `PROJECT_PULSE_BRANCH` currently assigns publication to
 `codex/vc-ai-workflow-refresh-20260710` and must move with an explicit branch
-handoff.
+handoff. The active review surface is draft PR
+[#49](https://github.com/YuShimoji/VastCore/pull/49).

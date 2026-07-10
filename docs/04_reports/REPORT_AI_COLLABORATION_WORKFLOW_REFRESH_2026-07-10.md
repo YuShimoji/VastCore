@@ -86,7 +86,13 @@ Issue は通知、履歴、コメントによる判断回収に向き、`GITHUB_
 [#29082183177](https://github.com/YuShimoji/VastCore/actions/runs/29082183177) では、
 canonical state検証とIssue #48へのpublishがともに成功した。そこで検出された旧Node
 runtime警告は、公式release上の現行majorである `actions/checkout@v7` と
-`actions/github-script@v9` へ更新して解消する。
+`actions/github-script@v9` へ更新し、再実行
+[#29083404696](https://github.com/YuShimoji/VastCore/actions/runs/29083404696) の
+validate/publish成功で解消を確認した。
+
+現在の差分レビューはdraft PR
+[#49](https://github.com/YuShimoji/VastCore/pull/49) に限定している。baseは古いdefault
+`master` ではなく、直前のCockpit UX枝なので、運用差分だけを独立して判断できる。
 
 Wiki は今後、用語集、長期設計、確定した意思決定など更新頻度の低い読み物へ使う。
 視覚的ダッシュボードが必要になった時は、同じ正本から GitHub Pages を生成し、
@@ -111,7 +117,9 @@ Pulse本文の手動コピーは行わない。
 `if` から直接参照する無効なgateと、プロジェクトと異なるEditor versionを修正し、
 license-gateのboolean output経由でテストjobをskipできる構造にした。Editor指定も
 6000.3.6f1へ合わせた。repositoryに `UNITY_LICENSE` は未設定なので、これはworkflowを
-有効化する修正であり、Unityテスト成功の証拠ではない。
+有効化する修正であり、Unityテスト成功の証拠ではない。手動dispatch
+[#29083435552](https://github.com/YuShimoji/VastCore/actions/runs/29083435552) では
+license-gateが成功し、Unity test jobが意図どおり `skipped` になることを確認した。
 
 既存の `markdownlint` / CodeQL が `develop` のみを対象とする問題と、`main` 切替後の
 branch protection/CI全体設計は別スライスに残した。「赤いcheckを増やす」のではなく、
