@@ -28,8 +28,9 @@ residual-work reporting live in `docs/REPO_LOCAL_RULES.md`.
 
 ### Artifact-first
 
-Advance the active artifact or its verified delivery path. Docs, cleanup, tests,
-mocks, and surveys are supporting work unless they unblock that path.
+Advance the active artifact or its verified delivery path through one coherent
+outcome. Docs, cleanup, tests, mocks, and surveys are supporting work unless they
+unblock that path. Coherent does not mean smallest possible micro-step.
 
 ### Explain Once Canonicalization
 
@@ -53,7 +54,9 @@ normal next steps. User interest in "looking again" is not approval.
 
 If the user chooses a proposed item for deeper review, that means
 "evaluate/specify this next", not "approve implementation". Keep status semantics
-strict.
+strict. An explicit direction choice inside an already approved Mission Packet
+does authorize the named proof slice when the packet says so; do not turn that
+choice into another generic approval round.
 
 ### No Pendulum Compensation
 

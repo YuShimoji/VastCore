@@ -8,6 +8,14 @@ evidence, but they are not current acceptance unless re-verified.
 
 ## Decision Log
 
+- 2026-07-10: Supervisor-to-developer work is outcome-based. A Mission Packet
+  authorizes one coherent implementation/verification/state-sync batch; only
+  concrete destructive or contract boundaries and unresolved expensive creative
+  direction require a mid-block stop.
+- 2026-07-10: `docs/runtime-state.md` remains the narrative current-state SSOT.
+  A pinned GitHub Project Pulse issue is a generated external projection, while
+  Wiki/Pages remain candidates for durable reference material rather than live
+  status.
 - 2026-06-29: VC-RST-2 remote resume handoff was refreshed after the T+2n
   network/proxy/env audit. Network/proxy/env is now weakened as the direct UPM
   root; the next discriminator is user-approved Unity Editor / embedded UPM
@@ -29,21 +37,13 @@ evidence, but they are not current acceptance unless re-verified.
   `docs/architecture/`. These docs record current compile and dependency risks;
   they do not approve a broad refactor or claim Unity acceptance.
 
-## Handoff Notes
+## Historical Handoff Index
 
-- Current remote resume handoff:
-  `docs/restart/VC_REMOTE_RESUME_HANDOFF_20260629.md`.
-- Current active artifact:
-  `docs/restart/VC_UPM_NETWORK_PROXY_ENV_AUDIT.md`.
-- Next action: `VC-RST-2o-editor-repair-retest` after user-approved Unity
-  Editor / embedded UPM repair or reinstall. The Agent should retest a
-  short-path empty-manifest control before reopening VastCore.
-- Future handoffs should reference the active artifact and bottleneck from
-  `docs/runtime-state.md`.
-- VC-RST-2 restart context is tracked in
-  `docs/restart/VC_PACKAGE_MANAGER_RESTORATION_REPORT.md`. A next terminal
-  should recreate or locate a clean `origin/main` worktree before touching
-  `Packages/`, `ProjectSettings/`, generated folders, or Unity batchmode.
-- Remote sync for this block should include the restart report and the current
-  trust boundary that Unity Package Manager, compile, and runtime behavior still
-  need re-check.
+- Current state, active artifact, bottleneck, and next action always come from
+  `docs/runtime-state.md`; historical entries below are evidence only.
+- Designer Cockpit UX review handoff:
+  `docs/restart/VC_DESIGNER_COCKPIT_UX_REMOTE_REVIEW_HANDOFF.md`.
+- VC-RST-2 package restoration history:
+  `docs/restart/VC_PACKAGE_MANAGER_RESTORATION_REPORT.md`.
+- Earlier remote-resume packets under `docs/restart/` must not override current
+  evidence without re-verification.

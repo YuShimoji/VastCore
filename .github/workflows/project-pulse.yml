@@ -1,0 +1,140 @@
+name: Project State and Pulse
+
+on:
+  push:
+    branches:
+      - main
+      - "codex/**"
+      - "feature/**"
+    paths:
+      - docs/runtime-state.md
+      - docs/REPO_LOCAL_RULES.md
+      - docs/INVARIANTS.md
+      - docs/USER_REQUEST_LEDGER.md
+      - docs/OPERATOR_WORKFLOW.md
+      - docs/INTERACTION_NOTES.md
+      - docs/project-context.md
+      - docs/ai/**
+      - scripts/check-project-state.ps1
+      - .github/workflows/project-pulse.yml
+  pull_request:
+    paths:
+      - docs/runtime-state.md
+      - docs/REPO_LOCAL_RULES.md
+      - docs/INVARIANTS.md
+      - docs/USER_REQUEST_LEDGER.md
+      - docs/OPERATOR_WORKFLOW.md
+      - docs/INTERACTION_NOTES.md
+      - docs/project-context.md
+      - docs/ai/**
+      - scripts/check-project-state.ps1
+      - .github/workflows/project-pulse.yml
+  schedule:
+    - cron: "17 0 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: vastcore-project-state-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate canonical state
+        shell: pwsh
+        env:
+          SOURCE_BRANCH: ${{ github.head_ref || github.ref_name }}
+          PULSE_BRANCH: ${{ vars.PROJECT_PULSE_BRANCH }}
+        run: |
+          $expected = if ($env:SOURCE_BRANCH -eq $env:PULSE_BRANCH) { $env:SOURCE_BRANCH } else { '' }
+          ./scripts/check-project-state.ps1 -ExpectedBranch $expected
+
+  publish:
+    if: github.event_name != 'pull_request' && github.ref_name == vars.PROJECT_PULSE_BRANCH
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update Project Pulse issue
+        uses: actions/github-script@v7
+        env:
+          PROJECT_PULSE_ISSUE: ${{ vars.PROJECT_PULSE_ISSUE }}
+          PROJECT_PULSE_BRANCH: ${{ vars.PROJECT_PULSE_BRANCH }}
+          SOURCE_PATH: docs/runtime-state.md
+        with:
+          script: |
+            const fs = require('fs');
+            const title = '[Project Pulse] VastCore 現在地';
+            const marker = '<!-- vastcore-project-pulse -->';
+            const sourcePath = process.env.SOURCE_PATH;
+            const pulseBranch = process.env.PROJECT_PULSE_BRANCH;
+            const sourceBranch = context.ref.replace('refs/heads/', '');
+            if (!pulseBranch || sourceBranch !== pulseBranch) {
+              core.setFailed(`Refusing to publish from '${sourceBranch}'; Project Pulse owner is '${pulseBranch || 'unset'}'.`);
+              return;
+            }
+            const state = fs.readFileSync(sourcePath, 'utf8').trim();
+            const shortSha = context.sha.slice(0, 7);
+            const sourceUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/blob/${context.sha}/${sourcePath}`;
+            const dateMatch = state.match(/^Last Updated:\s*(\d{4}-\d{2}-\d{2})\s*$/m);
+            let staleWarning = '';
+
+            if (dateMatch) {
+              const ageDays = Math.floor((Date.now() - Date.parse(`${dateMatch[1]}T00:00:00Z`)) / 86400000);
+              if (ageDays > 7) {
+                staleWarning = `\n> [!WARNING]\n> 正本の最終更新から ${ageDays} 日経過しています。現在地を再確認してください。\n`;
+              }
+            }
+
+            const body = [
+              marker,
+              '> [!NOTE]',
+              '> このIssueは `docs/runtime-state.md` から自動生成されます。本文を直接編集しないでください。',
+              `> Source: [${sourceBranch}@${shortSha}](${sourceUrl}) · synced ${new Date().toISOString()}`,
+              staleWarning,
+              state,
+              '',
+              '---',
+              '判断やレビューはコメントへ残し、確定事項はリポジトリの owning document に反映します。'
+            ].filter(Boolean).join('\n');
+
+            const issueNumber = Number.parseInt(process.env.PROJECT_PULSE_ISSUE || '', 10);
+            if (!Number.isInteger(issueNumber)) {
+              core.setFailed('PROJECT_PULSE_ISSUE must name the pre-initialized Project Pulse issue.');
+              return;
+            }
+
+            const response = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber
+            });
+            const issue = response.data;
+            const labels = issue.labels.map(label => typeof label === 'string' ? label : label.name);
+
+            if (issue.pull_request || issue.title !== title || !issue.body?.includes(marker) || !labels.includes('project-pulse')) {
+              core.setFailed(`Issue #${issueNumber} is not the initialized Project Pulse target.`);
+              return;
+            }
+
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              title,
+              body,
+              state: 'open'
+            });
+
+            core.notice(`Project Pulse issue: #${issueNumber}`);

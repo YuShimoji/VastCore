@@ -15,6 +15,9 @@ Stop there unless the task needs more evidence.
 
 - Product purpose and world-level priority: `docs/SSOT_WORLD.md`
 - Current state and active bottleneck: `docs/runtime-state.md`
+- Public current-state projection: pinned GitHub Issue
+  [#48 Project Pulse](https://github.com/YuShimoji/VastCore/issues/48), generated
+  from `docs/runtime-state.md`
 - Assembly boundaries: `docs/02_design/ASSEMBLY_ARCHITECTURE.md`
 - Code standards: `docs/03_guides/UNITY_CODE_STANDARDS.md`
 - Compile diagnosis: `docs/03_guides/COMPILATION_GUARD_PROTOCOL.md`
@@ -37,6 +40,8 @@ Stop there unless the task needs more evidence.
 - Current restart reports: `docs/restart/`
 - Claude Code pointer: `.claude/CLAUDE.md`
 - Codex local config: `.codex/config.toml`
+- State validation and external projection: `scripts/check-project-state.ps1`
+  and `.github/workflows/project-pulse.yml`
 
 ## Staleness Rule
 
