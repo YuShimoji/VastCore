@@ -11,6 +11,18 @@ style.
 - Do not use fixed closeout templates unless the user asks for a fixed format.
 - When reporting residual work, include purpose, effect, requirements, current
   state, owner, and next move.
+- Keep Git sync, mechanical validation, and human/visual acceptance as separate
+  claims. A clean branch or written checklist is not Unity acceptance.
+
+## Progress Rhythm
+
+- Report a meaningful change in direction, a reviewable intermediate result, or
+  a long-running tool wait; do not narrate every command.
+- Close one coherent outcome with what changed, why it changes the workflow or
+  decision, evidence, uncertainty, and two to four genuinely different next
+  entrances when a choice is useful.
+- Mark one recommended default. Explain what becomes possible after each option,
+  rather than asking the user to choose an implementation procedure.
 
 ## Manual Verification Asks
 
@@ -19,6 +31,8 @@ style.
 - Use `OK / NG` or `PASS / FAIL` only after the target, actor, owner artifact,
   and success meaning are explicit.
 - Ask for next direction separately from manual verification.
+- Group related Editor checks into one batch. Do not return with a new manual ask
+  after every small fix.
 
 ## Avoid
 
@@ -26,10 +40,9 @@ style.
 - Options whose only axis is commit / do not commit.
 - Large markdown tables for short asks.
 - Reporting historical handoff text as if it were current evidence.
+- Safety language without a named hazard, consequence, and decision.
+- Micro-prompts for work that remains inside an approved outcome.
+- Broad visual implementation before direction intent is established.
 
-## Current User Preference Notes
-
-- The user asked for a strong modernization of VastCore project-local Agent
-  instructions, aligned with newer projects such as NLMYTGen.
-- `AGENTS.md` must remain thin and must not become procedures, status, roadmap,
-  closeout template, or history.
+Durable user preferences belong in `docs/USER_REQUEST_LEDGER.md`; this file owns
+only interaction behavior.

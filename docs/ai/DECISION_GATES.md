@@ -2,6 +2,19 @@
 Ruleset-Version: v20
 Status: canonical
 
+## Risk-Proportional Autonomy Gate
+
+These gates filter exceptional boundary crossings; they are not a checklist of
+approvals for ordinary work. Continue through reversible, in-repo decisions
+inside the current Mission Packet. Pause only when the action would materially
+change a destructive operation, dependency, database, authentication, public
+API/serialization contract, product invariant, or unresolved expensive creative
+direction. Name the hazard, consequence, and decision when pausing.
+
+If a check fails, spend one bounded pass distinguishing product failure from
+tool/environment failure. Record the blocker and continue work that does not
+depend on that check; do not make safety diagnosis the next mission by default.
+
 ## Active Artifact and Change Relation
 
 Each block must know:
@@ -87,6 +100,10 @@ If the project depends on a human-authored or editor-driven production workflow,
 do not jump to quantity expansion before the workflow has been proven once
 end-to-end.
 
+This gate explicitly permits the one representative proof slice named by an
+approved Mission Packet. It blocks premature scaling, not the evidence needed to
+make the direction reviewable.
+
 Examples:
 
 - author -> validate -> generate -> preview
@@ -126,3 +143,4 @@ Before asking:
 - keep one intent per ask
 - do not mix manual verification with next-direction choice
 - do not use procedural yes/no traps as the main options
+- batch non-blocking uncertainty and continue on a stated reversible assumption

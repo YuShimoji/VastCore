@@ -42,6 +42,15 @@ implementation block that needs the write.
   belong in project docs.
 - When a prompt and repo docs differ, update or ignore the prompt; do not
   override repo docs with prompt text.
+- A supervisor prompt should be one Mission Packet: outcome, bottleneck, scope,
+  acceptance evidence, autonomy, concrete stop conditions, creative checkpoint,
+  sync targets, and start commit/docs. It is not a command transcript.
+- The packet must authorize implementation, adjacent narrow fixes, verification,
+  state sync, commit, and push inside its outcome. Do not issue a new prompt for
+  each of those steps.
+- Continue without a new prompt while the next action remains inside outcome,
+  scope, and autonomy. Re-prompt only after outcome closure, a stop condition,
+  or a user direction change.
 
 ## Scout Requirements
 
@@ -77,6 +86,11 @@ Each major option should show:
 
 Avoid options whose main meaning is merely commit / not commit / cleanup only /
 end.
+
+For user-visible creative work, generate two or three directions before broad
+production. Vary the underlying information hierarchy, interaction model, or
+visual/content strategy rather than producing cosmetic variants. After a route
+is selected, implement one representative proof slice before scaling.
 
 ## Commit and Push Hygiene
 

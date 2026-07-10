@@ -43,6 +43,42 @@ exception, not progress by itself.
 - Do not present documentation cleanup as product progress unless it makes the
   active artifact path easier, safer, or more verifiable.
 
+## Execution Default And Stops
+
+- Treat one supervisor prompt as authority to complete one coherent outcome,
+  including related narrow fixes, verification, state sync, commit, and push.
+  Do not stop after each file, command, or reversible implementation choice.
+- For safe in-repo uncertainty, state the assumption, take the smallest
+  reversible path, and verify it. A possible risk without a concrete harmful
+  consequence is not a stop reason.
+- Stop only when the next action would cross the approved outcome or materially
+  change a destructive operation, dependency, database, authentication, public
+  API/serialization contract, product invariant, or unresolved high-cost
+  creative direction.
+- A failed check is evidence, not an automatic new mission. Run one bounded
+  diagnostic pass, record the exact blocker, then continue any work that does
+  not depend on the failed check.
+- For costly user-visible UX, visual, or content work, establish direction with
+  two or three genuinely different routes before broad implementation. Once a
+  route and proof slice are selected, execute that slice without asking again
+  for routine details inside the agreed intent.
+
+## State Sync Is Part Of Completion
+
+- Update `docs/runtime-state.md` in the same block when the branch, active
+  outcome/artifact, bottleneck, trust evidence, acceptance state, or next action
+  changes.
+- Record durable user corrections in `docs/USER_REQUEST_LEDGER.md`; update
+  `docs/OPERATOR_WORKFLOW.md` when the human/AI working agreement changes.
+- The public Project Pulse is a generated projection of `runtime-state`, not a
+  second source of truth. Never maintain its status text by hand.
+- Only the branch that owns the declared current outcome may rewrite the global
+  `runtime-state` position and publish Project Pulse. Parallel branches update
+  their owning task/spec/PR until an explicit handoff makes one of them current.
+- Repository variable `PROJECT_PULSE_BRANCH` names that single publishing branch.
+  A branch handoff updates the variable and `runtime-state` together; validation
+  remains read-only on all other branches.
+
 ## Unity Engineering Rules
 
 - Before code changes, identify the owning assembly and check
@@ -92,5 +128,7 @@ evidence, residual risk, recommended default, and next owner.
 - Do not ask broad questions when repo evidence can decide the next move.
 - Offer options only when they solve different bottlenecks.
 - Do not mix manual verification with next-direction choice in one ask.
+- Batch non-blocking uncertainties. Ask mid-block only when the answer changes
+  the outcome, crosses a stop condition, or prevents meaningful progress.
 - When corrected, verify against repo evidence and make the smallest safe fix in
   the same block.
