@@ -48,6 +48,8 @@ Completed or verified in this block:
   the Unity test job was correctly skipped because no license secret exists.
 - Opened draft PR #49 against the preceding Cockpit UX branch so review contains
   only this workflow refresh rather than 349 commits from obsolete `master`.
+- Added the remote-resume procedure to this canonical state file so another
+  terminal can recover without a new one-off handoff document.
 - Restored the canonical `docs/INVARIANTS.md` from mojibake to readable Japanese.
 - Removed stale "current" claims from `docs/project-context.md`; historical
   handoffs remain evidence only.
@@ -118,3 +120,37 @@ Repository variable `PROJECT_PULSE_BRANCH` currently assigns publication to
 `codex/vc-ai-workflow-refresh-20260710` and must move with an explicit branch
 handoff. The active review surface is draft PR
 [#49](https://github.com/YuShimoji/VastCore/pull/49).
+
+## Remote Resume
+
+Do not start from GitHub's default `master`; it is obsolete. The current remote
+handoff is the branch and draft PR named above.
+
+For an existing clone that already has the local branch:
+
+```powershell
+git fetch origin --prune
+git switch codex/vc-ai-workflow-refresh-20260710
+git pull --ff-only
+```
+
+For a clone that does not yet have the local branch:
+
+```powershell
+git fetch origin --prune
+git switch --track origin/codex/vc-ai-workflow-refresh-20260710
+```
+
+Then read only the normal restart set and validate the recovered state:
+
+```powershell
+Get-Content AGENTS.md
+Get-Content docs/REPO_LOCAL_RULES.md
+Get-Content docs/runtime-state.md
+.\scripts\check-project-state.ps1 -ExpectedBranch codex/vc-ai-workflow-refresh-20260710
+```
+
+Resume from `## Next Action`. Use PR #49 for the workflow diff and Issue #48 for
+the public current-state projection. Do not merge old draft PR #47, apply the
+five historical stashes, modify the two other worktrees, or restart the old UPM
+diagnostic chain unless new evidence changes the current bottleneck.
