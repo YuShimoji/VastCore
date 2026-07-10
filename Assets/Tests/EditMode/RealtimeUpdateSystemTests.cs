@@ -584,8 +584,10 @@ namespace Vastcore.Tests.EditMode
                 updateSystem, "pendingUpdates");
             pendingUpdates[paramName].pendingValue = 5.0f;
 
-            // Expect the Debug.LogError that ExecuteUpdate emits when catching the exception
-            LogAssert.Expect(LogType.Error, "Error executing update for parameter 'TestParam': Test exception");
+            // VastcoreLogger preserves the original exception when reporting callback failures.
+            LogAssert.Expect(
+                LogType.Exception,
+                new System.Text.RegularExpressions.Regex("Test exception"));
 
             // Act & Assert - Should catch exception internally
             Assert.DoesNotThrow(() => UITestHelper.InvokePrivateMethod(

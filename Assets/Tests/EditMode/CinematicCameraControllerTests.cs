@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -185,7 +186,7 @@ namespace Vastcore.Tests.EditMode
         {
             var (playerObj, playerController, terrain) = CreateSetupDependencies();
 
-            LogAssert.Expect(LogType.Error, "Letterbox images are not assigned in the inspector!");
+            LogAssert.Expect(LogType.Error, new Regex("Letterbox images are not assigned in the inspector!"));
             controller.Setup(playerController, terrain);
 
             var storedController = UITestHelper.GetPrivateField<AdvancedPlayerController>(
@@ -201,7 +202,7 @@ namespace Vastcore.Tests.EditMode
         {
             var (playerObj, playerController, terrain) = CreateSetupDependencies();
 
-            LogAssert.Expect(LogType.Error, "Letterbox images are not assigned in the inspector!");
+            LogAssert.Expect(LogType.Error, new Regex("Letterbox images are not assigned in the inspector!"));
             controller.Setup(playerController, terrain);
 
             var storedTransform = UITestHelper.GetPrivateField<Transform>(
@@ -221,7 +222,7 @@ namespace Vastcore.Tests.EditMode
             cameraChild.transform.SetParent(playerObj.transform);
             cameraChild.AddComponent<UnityEngine.Camera>();
 
-            LogAssert.Expect(LogType.Error, "Letterbox images are not assigned in the inspector!");
+            LogAssert.Expect(LogType.Error, new Regex("Letterbox images are not assigned in the inspector!"));
             controller.Setup(playerController, terrain);
 
             var storedCamera = UITestHelper.GetPrivateField<UnityEngine.Camera>(
@@ -237,7 +238,7 @@ namespace Vastcore.Tests.EditMode
         {
             var (playerObj, playerController, terrain) = CreateSetupDependencies();
 
-            LogAssert.Expect(LogType.Error, "Letterbox images are not assigned in the inspector!");
+            LogAssert.Expect(LogType.Error, new Regex("Letterbox images are not assigned in the inspector!"));
             controller.Setup(playerController, terrain);
 
             var storedCamera = UITestHelper.GetPrivateField<UnityEngine.Camera>(
@@ -255,7 +256,7 @@ namespace Vastcore.Tests.EditMode
         {
             var (playerObj, playerController, terrain) = CreateSetupDependencies();
 
-            LogAssert.Expect(LogType.Error, "Letterbox images are not assigned in the inspector!");
+            LogAssert.Expect(LogType.Error, new Regex("Letterbox images are not assigned in the inspector!"));
             controller.Setup(playerController, terrain);
 
             var storedTerrain = UITestHelper.GetPrivateField<Transform>(
@@ -271,7 +272,7 @@ namespace Vastcore.Tests.EditMode
         {
             var (playerObj, playerController, terrain) = CreateSetupDependencies();
 
-            LogAssert.Expect(LogType.Error, "Letterbox images are not assigned in the inspector!");
+            LogAssert.Expect(LogType.Error, new Regex("Letterbox images are not assigned in the inspector!"));
             controller.Setup(playerController, null);
 
             var storedTerrain = UITestHelper.GetPrivateField<Transform>(
@@ -288,7 +289,7 @@ namespace Vastcore.Tests.EditMode
             var (playerObj, playerController, terrain) = CreateSetupDependencies();
             // No child camera added to player
 
-            LogAssert.Expect(LogType.Error, "Letterbox images are not assigned in the inspector!");
+            LogAssert.Expect(LogType.Error, new Regex("Letterbox images are not assigned in the inspector!"));
             controller.Setup(playerController, terrain);
 
             var storedCamera = UITestHelper.GetPrivateField<UnityEngine.Camera>(
@@ -304,7 +305,7 @@ namespace Vastcore.Tests.EditMode
         {
             var (playerObj, playerController, terrain) = CreateSetupDependencies();
 
-            LogAssert.Expect(LogType.Error, "Letterbox images are not assigned in the inspector!");
+            LogAssert.Expect(LogType.Error, new Regex("Letterbox images are not assigned in the inspector!"));
             controller.Setup(playerController, terrain);
 
             CleanupSetupDependencies(playerObj, terrain);

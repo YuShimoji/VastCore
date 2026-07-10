@@ -81,12 +81,15 @@ namespace Vastcore.Utilities
             {
                 if (instance == null)
                 {
-                    var existingLogger = FindFirstObjectByType<VastcoreLogger>();
+                    instance = FindFirstObjectByType<VastcoreLogger>();
                     if (instance == null)
                     {
                         GameObject go = new GameObject("VastcoreLogger");
                         instance = go.AddComponent<VastcoreLogger>();
-                        DontDestroyOnLoad(go);
+                        if (Application.isPlaying)
+                        {
+                            DontDestroyOnLoad(go);
+                        }
                     }
                 }
                 return instance;
@@ -142,7 +145,10 @@ namespace Vastcore.Utilities
             if (instance == null)
             {
                 instance = this;
-                DontDestroyOnLoad(gameObject);
+                if (Application.isPlaying)
+                {
+                    DontDestroyOnLoad(gameObject);
+                }
                 InitializeLogger();
             }
             else if (instance != this)

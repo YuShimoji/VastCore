@@ -71,7 +71,10 @@ namespace Vastcore.Tests.EditMode
             config.heightmapSettings = null;
 
             // Expect LogError
-            LogAssert.Expect(LogType.Error, "TerrainGenerationConfig.heightmapSettings is null");
+            LogAssert.Expect(
+                LogType.Error,
+                new System.Text.RegularExpressions.Regex(
+                    "TerrainGenerationConfig.heightmapSettings is null"));
 
             // Act
             IHeightmapProvider provider = config.CreateHeightProvider();

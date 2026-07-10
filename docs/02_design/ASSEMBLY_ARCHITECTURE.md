@@ -209,6 +209,9 @@ This addendum documents the new runtime assembly introduced for the volumetric w
 - `Vastcore.Testing` now references `Vastcore.WorldGen`
 - `Vastcore.Tests.EditMode` now references `Vastcore.WorldGen` (M3 follow-up test coverage)
 - `Vastcore.Testing` is configured as test assembly (`optionalUnityReferences: TestAssemblies`) and runs on `Editor` platform for EditMode test discovery
+- `Vastcore.Tests.PlayMode` remains a test-only assembly but must not exclude the
+  `Editor` platform; Unity's Editor-based PlayMode runner needs that platform to
+  discover and execute the suite in local batchmode and CI.
 
 ### 6.3 Dependency Direction
 

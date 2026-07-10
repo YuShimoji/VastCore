@@ -161,7 +161,7 @@ namespace Vastcore.UI
         
         private void CreateSliderFillArea(GameObject sliderObject)
         {
-            GameObject fillAreaObject = new GameObject("Fill Area");
+            GameObject fillAreaObject = new GameObject("Fill Area", typeof(RectTransform));
             fillAreaObject.transform.SetParent(sliderObject.transform, false);
             
             RectTransform fillAreaRect = fillAreaObject.GetComponent<RectTransform>();
@@ -188,7 +188,9 @@ namespace Vastcore.UI
         
         private void CreateSliderHandle(GameObject sliderObject)
         {
-            GameObject handleSlideAreaObject = new GameObject("Handle Slide Area");
+            GameObject handleSlideAreaObject = new GameObject(
+                "Handle Slide Area",
+                typeof(RectTransform));
             handleSlideAreaObject.transform.SetParent(sliderObject.transform, false);
             
             RectTransform handleSlideAreaRect = handleSlideAreaObject.GetComponent<RectTransform>();

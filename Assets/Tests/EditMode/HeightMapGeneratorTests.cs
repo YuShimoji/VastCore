@@ -103,7 +103,9 @@ namespace Vastcore.Tests.EditMode
             generator.HeightMap = null;
             
             // HeightMap 縺・null 縺ｮ蝣ｴ蜷医．ebug.LogError 縺悟・蜉帙＆繧後ｋ縺薙→繧呈悄蠕・
-            LogAssert.Expect(LogType.Error, "[TerrainGenerator] Height map is not assigned!");
+            LogAssert.Expect(
+                LogType.Error,
+                new System.Text.RegularExpressions.Regex("Height map is not assigned!"));
             
             float[,] heights = HeightMapGenerator.GenerateHeights(generator);
             

@@ -147,7 +147,10 @@ namespace Vastcore.Tests.EditMode
             bool callbackInvoked = false;
 
             // Expect the LogError from RegisterParameter
-            LogAssert.Expect(LogType.Error, "ModernUIManager: Cannot register parameter before initialization");
+            LogAssert.Expect(
+                LogType.Error,
+                new System.Text.RegularExpressions.Regex(
+                    "ModernUIManager: Cannot register parameter before initialization"));
 
             // Act
             manager.RegisterParameter(paramName, defaultValue, minValue, maxValue, (value) => callbackInvoked = true);

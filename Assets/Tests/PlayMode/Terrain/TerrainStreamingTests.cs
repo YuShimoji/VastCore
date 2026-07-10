@@ -40,7 +40,8 @@ namespace Vastcore.Tests.PlayMode.Terrain
         [TearDown]
         public void TearDown()
         {
-            foreach (var controller in Object.FindObjectsOfType<TerrainStreamingController>())
+            foreach (var controller in Object.FindObjectsByType<TerrainStreamingController>(
+                         FindObjectsSortMode.None))
             {
                 controller.ClearAll();
                 Object.DestroyImmediate(controller.gameObject);
@@ -51,7 +52,8 @@ namespace Vastcore.Tests.PlayMode.Terrain
         public void StreamingLoadsInitialRadius()
         {
             var controller = CreateController();
-            int expected = Mathf.Pow((DefaultRadius * 2) + 1, 2);
+            int diameter = (DefaultRadius * 2) + 1;
+            int expected = diameter * diameter;
             Assert.AreEqual(expected, controller.ActiveChunks.Count, "Initial active chunk count mismatch");
             Assert.AreEqual(expected, controller.Pool.ActiveCount, "Pool active count mismatch");
             Assert.AreEqual(expected, controller.Pool.TotalCreated, "Unexpected number of created chunks");
@@ -65,7 +67,8 @@ namespace Vastcore.Tests.PlayMode.Terrain
             controller.UpdateStreaming(new Vector3(moveDist, 0f, 0f));
 
             Assert.AreEqual(new Vector2Int(1, 0), controller.CurrentCenter, "Center should shift by one chunk on X axis");
-            int expected = Mathf.Pow((DefaultRadius * 2) + 1, 2);
+            int diameter = (DefaultRadius * 2) + 1;
+            int expected = diameter * diameter;
             Assert.AreEqual(expected, controller.ActiveChunks.Count, "Active chunk count should remain constant after move");
         }
 
@@ -73,7 +76,8 @@ namespace Vastcore.Tests.PlayMode.Terrain
         public void PoolReusesChunksWhenMovingBackAndForth()
         {
             var controller = CreateController();
-            int expected = Mathf.Pow((DefaultRadius * 2) + 1, 2);
+            int diameter = (DefaultRadius * 2) + 1;
+            int expected = diameter * diameter;
             int initialCreated = controller.Pool.TotalCreated;
             Assert.AreEqual(expected, initialCreated, "Initial created chunks should match required ring");
 
