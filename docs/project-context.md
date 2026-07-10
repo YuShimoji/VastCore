@@ -8,6 +8,17 @@ evidence, but they are not current acceptance unless re-verified.
 
 ## Decision Log
 
+- 2026-07-11: The current `thank` workstation is accepted as a valid local
+  development environment for source work: Unity 6000.3.6f1 compile passed,
+  EditMode passed 596/596, and PlayMode passed 9/9 after repairing test asset,
+  discovery, logger, and UI creation defects. The earlier UPM `path undefined`
+  result remains provenance-specific historical evidence, not the current local
+  bottleneck.
+- 2026-07-11: Development-readiness repairs continue on
+  `codex/vc-development-readiness-20260711` from `f145df6`. This preserves draft
+  PR #49 as a workflow-only review. The next product gate is the batched Designer
+  Cockpit Editor acceptance, followed by one end-to-end structure-to-DualGrid
+  proof before broad Phase D expansion.
 - 2026-07-10: Supervisor-to-developer work is outcome-based. A Mission Packet
   authorizes one coherent implementation/verification/state-sync batch; only
   concrete destructive or contract boundaries and unresolved expensive creative
