@@ -82,6 +82,12 @@ Issue は通知、履歴、コメントによる判断回収に向き、`GITHUB_
 切り替える。これにより同一commitの昇格をbranch名検査で妨げず、未受入枝もPulseを
 奪えない。
 
+初回GitHub Actions
+[#29082183177](https://github.com/YuShimoji/VastCore/actions/runs/29082183177) では、
+canonical state検証とIssue #48へのpublishがともに成功した。そこで検出された旧Node
+runtime警告は、公式release上の現行majorである `actions/checkout@v7` と
+`actions/github-script@v9` へ更新して解消する。
+
 Wiki は今後、用語集、長期設計、確定した意思決定など更新頻度の低い読み物へ使う。
 視覚的ダッシュボードが必要になった時は、同じ正本から GitHub Pages を生成し、
 Pulse本文の手動コピーは行わない。
@@ -101,10 +107,15 @@ Pulse本文の手動コピーは行わない。
 スライスでは参照graphを検査し、current owner へ必要情報を昇格してから archive/delete
 を分けて実施する。
 
-同様に、既存の `markdownlint` / CodeQL は `develop` のみを対象とし、Unity workflow
-はプロジェクトと異なる Editor version を指定している。これらは「赤いcheckを増やす」
-ためではなく、`main` 切替と一緒に実行可能な最小CIへ直すべきで、今回の文書契約とは
-別スライスに残した。
+同じ初回pushでは、既存 `unity-tests.yml` がjob開始前に即失敗した。secretをjob-level
+`if` から直接参照する無効なgateと、プロジェクトと異なるEditor versionを修正し、
+license-gateのboolean output経由でテストjobをskipできる構造にした。Editor指定も
+6000.3.6f1へ合わせた。repositoryに `UNITY_LICENSE` は未設定なので、これはworkflowを
+有効化する修正であり、Unityテスト成功の証拠ではない。
+
+既存の `markdownlint` / CodeQL が `develop` のみを対象とする問題と、`main` 切替後の
+branch protection/CI全体設計は別スライスに残した。「赤いcheckを増やす」のではなく、
+実行可能な検証だけを意味の分かる状態で表示するためである。
 
 ## Cockpitで先に比較する創造方向
 

@@ -13,7 +13,7 @@ Last Updated: 2026-07-10
 | Active artifact | `docs/04_reports/REPORT_AI_COLLABORATION_WORKFLOW_REFRESH_2026-07-10.md` |
 | Product artifact | `docs/DESIGNER_COCKPIT_SMOKE_TEST.md` |
 | Current bottleneck | Git and source editing are ready; Unity batchmode still exits before C# compile with UPM `path undefined`, and the Designer Cockpit has not received its in-Editor manual smoke/layout acceptance |
-| Batch boundary | Workflow docs, state validation, and external Project Pulse only; no `Assets`, `Packages`, `ProjectSettings`, dependency, or product-code change in this branch |
+| Batch boundary | Workflow docs/automation, state validation, and external Project Pulse only; no `Assets`, `Packages`, `ProjectSettings`, dependency, or product-code change in this branch |
 | Change relation | unblocker |
 
 ## Current Block
@@ -36,6 +36,12 @@ Completed or verified in this block:
   plus GitHub Project Pulse automation.
 - Created and pinned Project Pulse Issue #48; repository variables identify its
   issue number and this branch as the single authorized publishing source.
+- Verified GitHub Actions run `29082183177`: canonical state validation and
+  Project Pulse publication both passed, and Issue #48 was updated from this
+  branch. The new workflow now uses the current checkout/github-script majors.
+- The same push exposed an existing invalid Unity workflow before any job ran.
+  Replaced the direct secret-in-job-condition with a license-gate output and
+  aligned its configured Editor from 6000.2.2f1 to project version 6000.3.6f1.
 - Restored the canonical `docs/INVARIANTS.md` from mojibake to readable Japanese.
 - Removed stale "current" claims from `docs/project-context.md`; historical
   handoffs remain evidence only.
@@ -61,8 +67,12 @@ Deliberately not changed:
 - Trusted: Unity Editor 6000.3.6f1, Git 2.50.1, and Node 22.19.0 are installed.
 - Trusted: the latest batch log at `artifacts/logs/compile-check.log` reproduces
   the known UPM failure before package load and before C# compilation.
+- Trusted: GitHub Actions run `29082183177` passed both Project State and Pulse
+  jobs and updated the pinned external issue from the configured owner branch.
 - Not accepted: current C# compile, EditMode/PlayMode tests, Cockpit layout,
   Random Variation Apply/Undo, and session save/load in the Editor.
+- Not configured: repository secret `UNITY_LICENSE`; the repaired Actions
+  workflow must report Unity test jobs as skipped until that secret exists.
 - External visibility risk: GitHub still defaults to obsolete `master`; Project
   Pulse mitigates current-state visibility but does not replace baseline repair.
 

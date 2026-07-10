@@ -5,21 +5,40 @@ on:
   workflow_dispatch:
 
 jobs:
+  license-gate:
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.check.outputs.available }}
+    steps:
+      - name: Check Unity license
+        id: check
+        shell: bash
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        run: |
+          if [ -n "$UNITY_LICENSE" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Unity tests not run::UNITY_LICENSE is not configured for this repository."
+          fi
+
   unity-tests:
-    if: ${{ secrets.UNITY_LICENSE != '' }}
+    needs: license-gate
+    if: needs.license-gate.outputs.available == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
         testMode: [editmode, playmode]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run Unity ${{ matrix.testMode }} tests
         uses: game-ci/unity-test-runner@v4
         with:
           projectPath: .
-          unityVersion: 6000.2.2f1
+          unityVersion: 6000.3.6f1
           testMode: ${{ matrix.testMode }}
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
