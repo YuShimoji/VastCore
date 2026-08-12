@@ -1,6 +1,6 @@
 # VastCore Runtime State
 
-Last Updated: 2026-07-11
+Last Updated: 2026-08-12
 
 ## Current Position
 
@@ -8,39 +8,36 @@ Last Updated: 2026-07-11
 |---|---|
 | Project | VastCore Terrain Engine |
 | Branch | `codex/vc-development-readiness-20260711` |
-| Integrated baseline | `f145df6` from `origin/codex/vc-ai-workflow-refresh-20260710` |
-| Active outcome | Keep the latest remote workflow/Cockpit baseline intact, restore trustworthy local Unity compile and non-zero test gates, and hand the next supervisor a long-range product path |
-| Active artifact | `docs/04_reports/REPORT_REMOTE_SYNC_DEVELOPMENT_READINESS_AND_LONG_RANGE_GOALS_2026-07-11.md` |
+| Integrated baseline | `fbf8c9a` equal to `origin/codex/vc-development-readiness-20260711` |
+| Active outcome | Preserve the latest remote handoff, re-establish trustworthy Unity gates on the PLANNER007 checkout, and keep Cockpit acceptance as the next product gate |
+| Active artifact | `docs/04_reports/REPORT_DEVELOPMENT_RESUME_CHECKOUT_AUDIT_2026-08-12.md` |
 | Product artifact | `docs/DESIGNER_COCKPIT_SMOKE_TEST.md` |
-| Current bottleneck | Local Unity compile, EditMode 596/596, and PlayMode 9/9 now pass; the remaining immediate product gate is the Designer Cockpit in-Editor layout, Apply/Undo, and session Save/New/Load acceptance |
-| Batch boundary | Remote sync, narrow development-gate repairs, local Unity validation, and supervisor handoff; no `Packages`, `ProjectSettings`, terrain/DualGrid algorithm, broad visual production, or release change |
-| Change relation | unblocker |
+| Current bottleneck | On the PLANNER007 profile, Unity 6000.3.6f1 UPM exits before C# compile with `path undefined / No packages loaded`; compile, current tests, and Cockpit acceptance are blocked here even though the same commit passed on the prior checkout/machine |
+| Batch boundary | Saved-checkout remote sync, read-only environment audit, local validation, and supervisor handoff; no dependency/global Unity repair, `Packages`, `ProjectSettings`, terrain/DualGrid algorithm, broad visual production, or publication change |
+| Change relation | blocker isolation |
 
 ## Current Block
 
 Completed or verified in this block:
 
-- Started from a clean, upstream-equal `ccc6822`, fetched with prune, and proved
-  that `origin/codex/vc-ai-workflow-refresh-20260710` at `f145df6` is its strict
-  six-commit descendant with no divergence.
-- Switched to that latest remote handoff, pulled with `--ff-only`, and verified
-  `HEAD...@{u} = 0 0` before starting local repairs.
-- Created `codex/vc-development-readiness-20260711` from `f145df6` so draft PR
-  #49 remains a workflow-only review instead of absorbing product/test repairs.
-- Repaired two blank Unity `.meta` GUIDs that caused 21 EditMode tests to be
-  silently ignored; all 21 restored tests now pass.
-- Made `VastcoreLogger` safe in EditMode and aligned tests with its timestamped,
-  categorized, exception-preserving console contract.
-- Restored PlayMode discovery by removing the stale Editor exclusion from the
-  test-only asmdef and documented that platform boundary in assembly SSOT.
-- Fixed the three test compile errors exposed by real discovery and updated one
-  obsolete Unity 6 test API.
-- Fixed `SliderUIElement` child creation so Fill/Handle areas own
-  `RectTransform` before layout access.
-- Ran Unity 6000.3.6f1 compile successfully with no `error CS`, invalid GUID,
-  `path undefined`, or `No packages loaded` markers.
-- Ran EditMode `596 / 596` and PlayMode `9 / 9`, with failed and skipped both 0.
-- Added a supervisor-facing current-state, acceptance, and G0-G9 goal report.
+- Started from clean `codex/vc-ai-workflow-refresh-20260710` at `f145df6`,
+  fetched `origin` with prune and tags, and confirmed its upstream parity was
+  0 ahead / 0 behind.
+- Found the strict two-commit descendant and current remote handoff
+  `origin/codex/vc-development-readiness-20260711` at `fbf8c9a`; switched from
+  the clean checkout to a local tracking branch and verified 0 / 0 parity.
+- Confirmed there are no Git commits dated 2026-08-11 or 2026-08-12. The 15
+  tracked files with an August 12 filesystem mtime were materialized by branch
+  switching and have blobs identical to `HEAD`.
+- Preserved 30 ignored roots, five stashes, and two other worktrees. Tracked,
+  staged, and untracked counts remained zero through sync and Unity execution.
+- Verified Unity 6000.3.6f1, the complete 52-direct / 71-total manifest-lock
+  mapping, Project State, Git diff hygiene, and 210 / 210 materialized LFS files.
+- Ran the canonical compile script into a new ignored evidence directory. On
+  this profile UPM failed before C# compilation with `path undefined / No
+  packages loaded`; current EditMode and PlayMode tests were therefore not run.
+- Added a supervisor-facing checkout audit that separates current local facts,
+  prior-machine test evidence, Drive/Sheets acceptance, and the E0-G9 path.
 
 Deliberately not changed:
 
@@ -50,33 +47,40 @@ Deliberately not changed:
 - Five existing stashes and two other worktrees.
 - The divergent remote-handoff branch with mixed package/settings/deletion work.
 - Broad deletion/archive of old workflow SSOT, indexes, and restart reports.
-- GitHub default branch, branch protection, or the existing conflicting draft PR.
+- GitHub default branch, branch protection, Project Pulse, remote branches, PRs,
+  Drive, or Sheets.
 
 ## Current Trust Assessment
 
-- Trusted: baseline `f145df6b1866f72da043be8244f99bbd4f62b95a`
-  exactly matched `origin/codex/vc-ai-workflow-refresh-20260710` before repair.
-- Trusted: repair commit `e14a0dbbfc105bfbb258945bfa4afbb803603a97`
-  contains only the narrow Unity/test-gate repairs and assembly-owner update.
-- Trusted on this machine: Unity Editor 6000.3.6f1 registered 71 packages,
-  completed C#/IL post-processing/Tundra, and exited batchmode with code 0.
-- Trusted on this machine: `editmode-results.xml` is 596/596 and
-  `playmode-results.xml` is 9/9; both have failed 0 and skipped 0.
-- Trusted: restored `.meta` test suites contributed 21/21 passing tests.
-- Trusted: Project State/Pulse checks on ancestor `f145df6` are green and draft
-  PR #49 is open, clean, and based on the Cockpit UX branch.
+- Trusted: local `fbf8c9ae994adbf78e020dcdcfd2f130cd3c9621` exactly
+  matches `origin/codex/vc-development-readiness-20260711`; its ancestor
+  `e14a0db` contains the narrow Unity/test-gate repairs.
+- Trusted on this checkout: canonical state validation, manifest-lock mapping,
+  Git diff check, clean tracked status, and LFS 210 / 210 all pass.
+- Trusted as historical evidence from the prior checkout/machine: this commit
+  registered 71 packages, compiled, and passed EditMode 596 / 596 plus PlayMode
+  9 / 9. Those results are not current-machine acceptance.
+- Blocked on this machine: Unity 6000.3.6f1 reaches licensing and initial Asset
+  Database refresh, then UPM exits with `path undefined / No packages loaded`
+  before C# compilation. The new local evidence is under
+  `artifacts/resume-20260812-019ff3b6/`.
 - Not accepted: Cockpit layout, Random Variation Apply/Undo, and session
   Save/New/Load in a live Editor.
 - Not configured: repository secret `UNITY_LICENSE`; the repaired Actions
   workflow must report Unity test jobs as skipped until that secret exists.
-- Local-only evidence boundary: `artifacts/logs/` and `artifacts/test-results/`
-  are ignored; another machine or CI must not inherit these pass claims.
+- Local-only evidence boundary: existing test XML is from March 2026 and does
+  not represent current HEAD; another machine or CI must not inherit pass claims.
 - External visibility risk: GitHub still defaults to obsolete `master`; Project
-  Pulse mitigates current-state visibility but does not replace baseline repair.
+  Pulse remains a remote projection of the last pushed state because this local
+  audit is intentionally not published in the current authorization.
 
 ## Open Decisions
 
-- Run the one-batch Cockpit acceptance and choose accept or revise from evidence.
+- Choose a safe E0 environment route: after other Unity work is closed, either
+  authorize a scoped Unity 6000.3.6f1 / embedded UPM repair or use the known-good
+  host to revalidate the same commit.
+- After packages and compile succeed, run non-zero EditMode and PlayMode gates,
+  then run the one-batch Cockpit acceptance and choose accept or revise.
 - After Cockpit acceptance, fast-forward the accepted tip to `main`, change the
   GitHub default from `master` to `main`, and align protections/workflows.
 - After the current screen is captured, choose Operations Console, Generative
@@ -87,18 +91,18 @@ Deliberately not changed:
 
 ## Next Action
 
-Use `docs/DESIGNER_COCKPIT_SMOKE_TEST.md` as one batched manual acceptance pass:
+Do not restart the historical cache, ACL, path, or network micro-diagnostic
+chain. The PLANNER007 profile has reproduced the same UPM failure in VastCore
+and earlier clean controls, while the same commit passed on another checkout.
 
-1. Open `Tools/VastCore/Designer Cockpit` and inspect the top summary, primary
-   actions, mode selector, mode panels, and Diagnostics drawer.
-2. Apply Random Variation to selected objects and verify Undo.
-3. Save, create a new session, reload, and verify restored fields.
-4. Capture the layout result and all functional checks together, update the
-   Cockpit evidence, and choose accept or revise before starting G1/G2.
-
-This machine no longer reproduces the earlier UPM failure. If an interactive
-Editor session does reproduce it, record the exact environment once and treat it
-as a new evidence boundary rather than restarting the old micro-diagnostic chain.
+1. Finish or safely close other Unity project work before any global Editor/UPM
+   action.
+2. With explicit approval, repair Unity 6000.3.6f1 / embedded UPM or compare its
+   installed state with the known-good host; test a clean control first.
+3. Only after the control resolves packages, run `scripts/check-compile.ps1`,
+   non-zero EditMode, and non-zero PlayMode tests in VastCore.
+4. Then use `docs/DESIGNER_COCKPIT_SMOKE_TEST.md` for the batched layout,
+   Apply/Undo, Save/New/Load, screenshot, and accept/revise decision.
 
 ## External Pulse
 
@@ -110,6 +114,7 @@ Repository variable `PROJECT_PULSE_BRANCH` assigns publication to
 `codex/vc-development-readiness-20260711` as the active handoff branch. Draft PR
 [#49](https://github.com/YuShimoji/VastCore/pull/49) remains the narrow workflow
 review surface for ancestor `f145df6`; it is not the tip of the readiness repair.
+The August 12 audit is local-only and has not updated Issue #48.
 
 ## Remote Resume
 
@@ -143,7 +148,7 @@ Get-Content docs/runtime-state.md
 Then read the active report and resume from `## Next Action`:
 
 ```powershell
-Get-Content docs/04_reports/REPORT_REMOTE_SYNC_DEVELOPMENT_READINESS_AND_LONG_RANGE_GOALS_2026-07-11.md
+Get-Content docs/04_reports/REPORT_DEVELOPMENT_RESUME_CHECKOUT_AUDIT_2026-08-12.md
 ```
 
 Use PR #49 only for the ancestor workflow diff and Issue #48 for the public
