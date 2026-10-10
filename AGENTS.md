@@ -12,6 +12,7 @@ Normal restart / continue reads only:
 
 Use `docs/NAV.md` when you are unsure where a specific spec, guide, task, or
 report lives. Read additional docs only when the current task needs them.
+For Cloud Codex setup and available checks, use `docs/CLOUD_CODEX.md`.
 
 ## Authority
 

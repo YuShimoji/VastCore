@@ -81,4 +81,6 @@
 *.anim text
 *.overrideController text
 *.mask text
-*.playable text 
+*.playable text
+scripts/codex/*.sh text eol=lf
+scripts/codex/*.mjs text eol=lf
