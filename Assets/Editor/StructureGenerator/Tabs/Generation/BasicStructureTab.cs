@@ -309,16 +309,21 @@ namespace Vastcore.Editor.Generation
             int backOuterStart = ringCount * 2;
             int backInnerStart = ringCount * 3;
 
+            // ProBuilder Face expects triangle indices, even for a logical quad.
+            // Keep the perimeter winding and share the same diagonal on both triangles.
+            Face QuadFace(int a, int b, int c, int d)
+                => new Face(new[] { a, b, c, a, c, d });
+
             for (int i = 0; i < segments; i++)
             {
-                faces.Add(new Face(new int[] { frontOuterStart + i, frontOuterStart + i + 1, frontInnerStart + i + 1, frontInnerStart + i }));
-                faces.Add(new Face(new int[] { backOuterStart + i, backInnerStart + i, backInnerStart + i + 1, backOuterStart + i + 1 }));
-                faces.Add(new Face(new int[] { frontOuterStart + i, backOuterStart + i, backOuterStart + i + 1, frontOuterStart + i + 1 }));
-                faces.Add(new Face(new int[] { frontInnerStart + i, frontInnerStart + i + 1, backInnerStart + i + 1, backInnerStart + i }));
+                faces.Add(QuadFace(frontOuterStart + i, frontOuterStart + i + 1, frontInnerStart + i + 1, frontInnerStart + i));
+                faces.Add(QuadFace(backOuterStart + i, backInnerStart + i, backInnerStart + i + 1, backOuterStart + i + 1));
+                faces.Add(QuadFace(frontOuterStart + i, backOuterStart + i, backOuterStart + i + 1, frontOuterStart + i + 1));
+                faces.Add(QuadFace(frontInnerStart + i, frontInnerStart + i + 1, backInnerStart + i + 1, backInnerStart + i));
             }
 
-            faces.Add(new Face(new int[] { frontOuterStart, frontInnerStart, backInnerStart, backOuterStart }));
-            faces.Add(new Face(new int[] { frontOuterStart + segments, backOuterStart + segments, backInnerStart + segments, frontInnerStart + segments }));
+            faces.Add(QuadFace(frontOuterStart, frontInnerStart, backInnerStart, backOuterStart));
+            faces.Add(QuadFace(frontOuterStart + segments, backOuterStart + segments, backInnerStart + segments, frontInnerStart + segments));
 
             ProBuilderMesh pbMesh = ProBuilderMesh.Create(vertices, faces);
             float scale = _parent.GlobalSettings.GlobalStructureScale;
@@ -374,4 +379,4 @@ namespace Vastcore.Editor.Generation
         public void OnTabSelected() { }
         public void OnTabDeselected() { }
     }
-} 
+}

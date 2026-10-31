@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEditor;
+using UnityEngine.ProBuilder;
+using System.Collections.Generic;
 using Vastcore.Generation;
 using Vastcore.Terrain.DualGrid;
 
@@ -16,6 +18,7 @@ namespace Vastcore.Editor.Generation
         private const string k_DefaultStampFolder = "Assets/Resources/Stamps";
         private const string k_PrefabSubfolder = "Prefabs";
         private const string k_DefinitionSubfolder = "Definitions";
+        private const string k_MeshSubfolder = "Meshes";
 
         #endregion
 
@@ -49,6 +52,7 @@ namespace Vastcore.Editor.Generation
             EnsureFolder(k_DefaultStampFolder);
             EnsureFolder($"{k_DefaultStampFolder}/{k_PrefabSubfolder}");
             EnsureFolder($"{k_DefaultStampFolder}/{k_DefinitionSubfolder}");
+            EnsureFolder($"{k_DefaultStampFolder}/{k_MeshSubfolder}");
 
             string safeName = SanitizeName(_target.name);
 
@@ -58,12 +62,19 @@ namespace Vastcore.Editor.Generation
 
             // 位置をリセットしたコピーを作成
             GameObject tempCopy = Object.Instantiate(_target);
-            tempCopy.name = safeName;
-            tempCopy.transform.position = Vector3.zero;
-            tempCopy.transform.rotation = Quaternion.identity;
-
-            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(tempCopy, prefabPath);
-            Object.DestroyImmediate(tempCopy);
+            GameObject prefab;
+            try
+            {
+                tempCopy.name = safeName;
+                tempCopy.transform.position = Vector3.zero;
+                tempCopy.transform.rotation = Quaternion.identity;
+                PreparePersistentMeshes(_target, tempCopy, safeName);
+                prefab = PrefabUtility.SaveAsPrefabAsset(tempCopy, prefabPath);
+            }
+            finally
+            {
+                Object.DestroyImmediate(tempCopy);
+            }
 
             if (prefab == null)
             {
@@ -128,6 +139,47 @@ namespace Vastcore.Editor.Generation
         #endregion
 
         #region Private Methods
+
+        private static void PreparePersistentMeshes(GameObject sourceObject, GameObject copy, string safeName)
+        {
+            // A cloned ProBuilder component initially shares the source mesh. Its
+            // OnDestroy must not destroy that mesh, including on an export failure.
+            var builders = copy.GetComponentsInChildren<ProBuilderMesh>(true);
+            foreach (var builder in builders) builder.preserveMeshAssetOnDestroy = true;
+            foreach (var builder in builders) Object.DestroyImmediate(builder);
+
+            // Export a regular mesh prefab; the editable ProBuilder source stays
+            // in the scene. Transient meshes need their own persistent assets.
+            var savedMeshes = new Dictionary<Mesh, Mesh>();
+            Mesh PersistMesh(Mesh source)
+            {
+                if (source == null || AssetDatabase.Contains(source)) return source;
+                if (!savedMeshes.TryGetValue(source, out var saved))
+                {
+                    saved = Object.Instantiate(source);
+                    saved.name = $"{safeName}_Mesh{savedMeshes.Count}";
+                    saved.hideFlags = HideFlags.None;
+                    string meshPath = AssetDatabase.GenerateUniqueAssetPath(
+                        $"{k_DefaultStampFolder}/{k_MeshSubfolder}/{saved.name}.asset");
+                    AssetDatabase.CreateAsset(saved, meshPath);
+                    savedMeshes.Add(source, saved);
+                }
+                return saved;
+            }
+
+            // Read the original references: ProBuilder can rebuild the clone's
+            // mesh during OnEnable, even when the original mesh is already an asset.
+            var sourceFilters = sourceObject.GetComponentsInChildren<MeshFilter>(true);
+            var copyFilters = copy.GetComponentsInChildren<MeshFilter>(true);
+            var sourceColliders = sourceObject.GetComponentsInChildren<MeshCollider>(true);
+            var copyColliders = copy.GetComponentsInChildren<MeshCollider>(true);
+            if (sourceFilters.Length != copyFilters.Length || sourceColliders.Length != copyColliders.Length)
+                throw new System.InvalidOperationException("Stamp export copy changed its mesh component hierarchy.");
+            for (int i = 0; i < copyFilters.Length; i++)
+                copyFilters[i].sharedMesh = PersistMesh(sourceFilters[i].sharedMesh);
+            for (int i = 0; i < copyColliders.Length; i++)
+                copyColliders[i].sharedMesh = PersistMesh(sourceColliders[i].sharedMesh);
+        }
 
         /// <summary>
         /// Assets 配下のフォルダが存在しない場合に作成する

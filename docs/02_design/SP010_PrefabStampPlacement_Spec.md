@@ -52,7 +52,7 @@ PrefabStampPlacer (MonoBehaviour Helper)
 | m_DisplayName | string | "" | 表示名 (空の場合はアセット名) |
 | m_RotationMode | StampRotationMode | Step90 | 回転モード |
 | m_HeightRule | StampHeightRule | TopOfStack | 高さ配置ルール |
-| m_ScaleRange | Vector2 | (0.8, 1.2) | スケールバリエーション範囲 |
+| m_ScaleRange | Vector2 | (0.8, 1.2) | 元PrefabのlocalScaleに掛ける倍率の範囲 |
 | m_FootprintOffsets | Vector2Int[] | 空配列 | マルチセル用 Hex オフセット |
 
 #### StampRotationMode

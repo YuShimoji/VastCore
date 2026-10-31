@@ -153,7 +153,7 @@ namespace Vastcore.Terrain.DualGrid
             position += _placement.Definition.GetRandomPositionOffset(variationRng);
 
             Quaternion rotation = Quaternion.Euler(0f, _placement.Rotation, 0f);
-            Vector3 scale = Vector3.one * _placement.Scale;
+            Vector3 scale = _placement.Definition.Prefab.transform.localScale * _placement.Scale;
 
             // Prefabをインスタンス化
             GameObject instance = Object.Instantiate(
@@ -346,6 +346,7 @@ namespace Vastcore.Terrain.DualGrid
         private Vector3 CalculateWorldPosition(Cell _cell, int _layer)
         {
             Vector3 center = _cell.GetCenter();
+            if (m_Parent != null) center = m_Parent.TransformPoint(center);
 
             float y;
             if (m_HeightSampler != null)
@@ -355,7 +356,7 @@ namespace Vastcore.Terrain.DualGrid
             }
             else
             {
-                y = _layer * c_LayerHeight;
+                y = center.y + _layer * c_LayerHeight;
             }
 
             return new Vector3(center.x, y, center.z);
