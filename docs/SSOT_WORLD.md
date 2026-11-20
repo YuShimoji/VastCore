@@ -21,26 +21,30 @@
 
 ## 2. SSOT 階層
 
+2026-11-21に現行の所有者へ揃えた。本書は目的・構造・優先順位を持ち、それ以外は下の各所有者が持つ。
+
 ```
-SSOT_WORLD.md                          ← 最上位仕様（本文書）
+SSOT_WORLD.md                          ← 最上位仕様（目的・構造。本文書）
   │
-  ├── DEVELOPMENT_ROADMAP_2026.md      ← ロードマップ SSOT（Phase A-E の計画と優先度）
-  │     従属先: docs/01_planning/DEVELOPMENT_ROADMAP_2026.md
-  │
-  ├── runtime-state.md                 ← **現在の実行状態（最優先アクティブ状態）**
+  ├── runtime-state.md                 ← **現在地・ボトルネック・次の作業**
   │     従属先: docs/runtime-state.md
   │
   ├── Agent operating rules            ← AI/Agent 入口と repo-local 運用ルール
-  │     従属先: AGENTS.md + docs/REPO_LOCAL_RULES.md
+  │     従属先: AGENTS.md → docs/REPO_LOCAL_RULES.md、docs/INVARIANTS.md、docs/ai/*.md
   │
-  ├── HANDOVER.md                      ← 成果物 SSOT（フェーズ完了と引き継ぎ）
-  │     従属先: docs/HANDOVER.md
+  ├── project-context.md               ← 決定と引継ぎの履歴
+  │     従属先: docs/project-context.md
   │
-  └── タスクチケット                    ← 個別実装チケット
-        従属先: docs/tasks/TASK_*.md
+  ├── 機能仕様                          ← 各機能の仕様と検証手順（現役はSP-017・SP-020）
+  │     従属先: docs/02_design/*.md、索引 docs/spec-index.json
+  │
+  └── DEVELOPMENT_ROADMAP_2026.md      ← Phase A-E の長期計画（2026-03-17時点）
+        従属先: docs/01_planning/DEVELOPMENT_ROADMAP_2026.md
 ```
 
-**矛盾解決ルール**: 上位文書が下位文書に優先する。
+HANDOVER.md、WORKFLOW_STATE_SSOT.md、MILESTONE_PLAN.md、docs/tasks/ は2026-03時点の履歴資料。文書の役割の一覧は [NAV.md](NAV.md)。
+
+**矛盾解決ルール**: 上位文書が下位文書に優先する。現在の状態はruntime-stateが、運用規則はAGENTS.mdが指す文書が持つ。
 
 ---
 

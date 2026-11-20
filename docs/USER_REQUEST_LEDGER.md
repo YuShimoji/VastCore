@@ -28,6 +28,10 @@
   direction checkpoint, a small proof slice, batched review, and return to the
   design principle when local tweaks do not converge after two rounds.
 
+- 2026-11-21: 「推奨で出ているSP-017を先に。間が開いてからの再開なので、まず何よりも
+  手を入れやすく整理のついた状態にしてほしい」。間を置いた再開では、実作業の前に
+  入口・状態文書・作業ツリーを整理し、次の作業へ直接入れる状態にする。
+
 ## Standing Reporting Preferences
 
 - Use Japanese for normal project reports.

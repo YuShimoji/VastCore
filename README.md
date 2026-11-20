@@ -1,5 +1,7 @@
 # Vastcore Terrain Engine
 
+> **2026-11-21 注記**: 下の「安定版リリース v1.0.0 (2025-10-27)」以降は当時の記述で、現在の状態ではありません。現在の開発branchは `codex/vc-development-readiness-20260711`、現在地と次の作業は [docs/runtime-state.md](docs/runtime-state.md)、文書地図は [docs/NAV.md](docs/NAV.md)、目的は [docs/SSOT_WORLD.md](docs/SSOT_WORLD.md) にあります。
+
 ## 🎉 **安定版リリース v1.0.0 (2025-10-27)**
 
 ### ✅ **完全安定版達成**

@@ -1,3 +1,6 @@
+<!-- history-banner-2026-11-21 -->
+> **履歴資料（本文は2026-03-17時点）**: 期限・進捗率は当時の計画値。現在地と次の作業は [runtime-state.md](runtime-state.md)、文書地図は [NAV.md](NAV.md) を使う。
+
 ﻿# Milestone Plan
 
 ## 基本情報

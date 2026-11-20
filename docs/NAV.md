@@ -1,7 +1,7 @@
 # NAV.md - VastCore document map
 
 Use this file when you are unsure where to look. It is an index, not a source of
-truth for rules, status, or implementation details.
+truth for rules, status, or implementation details. Updated 2026-11-21.
 
 ## Normal Restart
 
@@ -11,6 +11,20 @@ truth for rules, status, or implementation details.
 
 Stop there unless the task needs more evidence.
 
+## Next Work Entry
+
+The current technical exit is SP-017 (Arch → Prefab Stamp → reload → one-chunk
+terrain placement through the normal Editor GUI).
+
+1. `docs/runtime-state.md` - `Next Action` (steps 1-7)
+2. `docs/02_design/STAMP_EXPORT_PIPELINE_SPEC.md` - section
+   「2026-11-21 次回集中セッションの実行用依頼」 (mission text and fixed inputs),
+   then 「2026-11-01 最小検証仕様」 → 「操作と出口」 (steps and exits)
+3. `docs/02_design/DESIGNER_PIPELINE_SPEC.md` §8 - whole pipeline and what comes
+   after SP-017
+4. thank workstation only: `artifacts/restart-20261101/20261101-0430-arch-fix/`
+   (`RESULT.md`, `fixture-plan.md`; ignored, not on the remote)
+
 ## Core Owners
 
 - Product purpose and world-level priority: `docs/SSOT_WORLD.md`
@@ -18,14 +32,14 @@ Stop there unless the task needs more evidence.
 - Public current-state projection: pinned GitHub Issue
   [#48 Project Pulse](https://github.com/YuShimoji/VastCore/issues/48), generated
   from `docs/runtime-state.md`
+- Durable decisions and handoff history: `docs/project-context.md`
 - Assembly boundaries: `docs/02_design/ASSEMBLY_ARCHITECTURE.md`
 - Code standards: `docs/03_guides/UNITY_CODE_STANDARDS.md`
 - Compile diagnosis: `docs/03_guides/COMPILATION_GUARD_PROTOCOL.md`
 - Architecture overview: `docs/ARCHITECTURE.md`
-- Spec registry and viewer data: `docs/spec-index.json`
-- Task tickets: `docs/tasks/`
-- Reports and historical evidence: `docs/04_reports/`
-- Restart gates and current restoration evidence: `docs/restart/`
+- Spec registry and viewer data: `docs/spec-index.json` (`docs/spec-viewer.html`)
+- Designer Cockpit feature and checks: `docs/PROJECT_COCKPIT.md`,
+  `docs/DESIGNER_COCKPIT_SMOKE_TEST.md`, `docs/DESIGNER_COCKPIT_UX_NOTES.md`
 
 ## AI / Agent Rule Owners
 
@@ -36,12 +50,30 @@ Stop there unless the task needs more evidence.
 - User request ledger: `docs/USER_REQUEST_LEDGER.md`
 - Operator workflow: `docs/OPERATOR_WORKFLOW.md`
 - Interaction/reporting notes: `docs/INTERACTION_NOTES.md`
-- Durable decision history: `docs/project-context.md` when present
-- Current restart reports: `docs/restart/`
 - Claude Code pointer: `.claude/CLAUDE.md`
-- Codex local config: `.codex/config.toml`
+- Codex local config: `.codex/config.toml`; Cloud Codex: `docs/CLOUD_CODEX.md`
 - State validation and external projection: `scripts/check-project-state.ps1`
   and `.github/workflows/project-pulse.yml`
+
+## Folder Roles
+
+"History" means evidence from a past date. Do not read its status, test counts,
+branches, or next steps as current. Files stay in place because scripts, the
+spec viewer, Unity editor tools, and many docs link to them.
+
+| Path | Role |
+|---|---|
+| `docs/` root | Current owners listed above, plus history: `HANDOVER.md`, `WORKFLOW_STATE_SSOT.md`, `MILESTONE_PLAN.md`, `SESSION_SUMMARY_2026-03-04.md`, `DOCS_INDEX.md` (old index; use this file instead) |
+| `docs/01_planning/` | Plans up to 2026-03. `DEVELOPMENT_ROADMAP_2026.md` is the long-range plan (dated 2026-03-17); the rest is history |
+| `docs/02_design/` | Feature specs. Active: SP-017 `STAMP_EXPORT_PIPELINE_SPEC.md`, SP-020 `DESIGNER_PIPELINE_SPEC.md`, `ASSEMBLY_ARCHITECTURE.md`. Status per spec in `spec-index.json` |
+| `docs/03_guides/` | How-to guides. Active: `UNITY_CODE_STANDARDS.md`, `COMPILATION_GUARD_PROTOCOL.md` |
+| `docs/04_reports/` | History reports. `LEGACY_UI_MIGRATION_REPORT.md`, `A3-2_UI_MIGRATION_APPLY_REPORT.md`, `UI_MIGRATION_RULES_DRYRUN.md` are rewritten by Unity editor tools |
+| `docs/restart/` | History of restart and UPM investigations (2026-06 to 2026-07). `VC_RESTART_20261101_HISTORY.md` holds the moved 2026-11-01/16 state bodies and SP-017/SP-020 run records |
+| `docs/tasks/` | Task tickets frozen at 2026-03-17 (`TASK_INDEX.md`). SP-017/SP-020 work has no ticket here |
+| `docs/terrain/`, `docs/inbox/`, `docs/EXAMPLES/` | History (2026-01 to 2026-03) and samples |
+| `docs/architecture/` | 2026-06-15 compile and dependency risk evidence (M0) |
+| `docs/ai/` | Vendor-neutral gates (current) |
+| `Documentation/` (repo root) | Concept art images |
 
 ## Staleness Rule
 

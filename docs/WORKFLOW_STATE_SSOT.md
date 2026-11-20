@@ -1,3 +1,6 @@
+<!-- history-banner-2026-11-21 -->
+> **履歴資料（本文は2026-03-26時点）**: 旧「実行状態SSOT」。現在の状態の所有者ではない。現在地と次の作業は [runtime-state.md](runtime-state.md)、文書地図は [NAV.md](NAV.md) を使う。
+
 # WORKFLOW STATE SSOT
 
 Last Updated: 2026-03-26

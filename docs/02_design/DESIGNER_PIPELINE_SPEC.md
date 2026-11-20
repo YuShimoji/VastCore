@@ -3,7 +3,7 @@
 # SP-020: Designer Pipeline Specification
 
 **ステータス**: DRAFT
-**最終更新**: 2026-11-01（再開準備とSP-017最小検証結果。作品・表現方針の採用は含まない）
+**最終更新**: 2026-11-21（§9の実行記録を要約し、原文を再開履歴へ移した。作品・表現方針の採用は含まない）
 **関連仕様**: SP-010, SP-017, SP-018, SP-019
 
 ---
@@ -272,33 +272,9 @@ Newは新規session、Loadは既存assetそのものへの参照切替。Scene�
 
 今回の準備を終えるための質問はない。最小検証のArchは既存SP-017の技術fixtureであり、人工構造物の様式や基準作を選んだことにはならない。広い景観制作へ移る時は、保存往復した実物を用いて、巨大さを読む距離・地形との関係・形状の方向を具体的に比較し、本人の選択を得る。配布先を変える場合は必要な出力形式と端末を確認する。これらの将来判断で現在の技術観測を止めない。
 
-## 9. 2026-11-01 SP-017検証からの返却
+## 9. 2026-11-01 検証からの返却（要約）
 
-本人が実行用missionを発行し、同じaccd587と準備文書を入力にrun `20261101-0328-sp017` を開始した。証拠は `artifacts/restart-20261101/20261101-0328-sp017/RESULT.md`、現在の操作と保留理由はruntime-state。新規Scene/sessionのみを使い、実装・依存修復・commit/pushへ広げない。
+SP-017の二つのrunの結果。工程ごとの現状はSP-017「2026-11-01 の実行結果（要約）」の表にある。返却の原文（旧§9・§10）は [再開履歴](../restart/VC_RESTART_20261101_HISTORY.md) へ移した。
 
-| 全工程への返却 | 今回の実測 | 残る出口 |
-|---|---|---|
-| readiness | 6000.3.6f1 compile exit 0、EditMode 596/596、PlayMode 9/9。各一回、失敗/skip 0 | 通常GUIのUPM path undefined / offline package-list errorを別記。修復・全package機能の受入ではない |
-| Stage 1 形状制作 | **FAIL（一回）**。本人のGeneratorドッキング後、Arch既定寸法/分割数、scale5/spawn原点でGenerate。CreateManualArch:314の4インデックスFaceがProBuilder 6.0.8の長さ%3要求に反し例外 | Mesh作成前に失敗。ソース修正は今回範囲外。全quadの限定三角化と同条件再検証を未採用の次作業案として返す |
-| Stage 2 Export | 未実施 | unique Prefab/Definition、元対象不変、Mesh/Material/タグの保存往復 |
-| Stage 3 SO設定 | 未実施 | 新規Terrain設定、Definition設定、既存session読取互換。SP-018/019拡張へは進んでいない |
-| Stage 4 地形配置 | 未実施 | 一チャンク・実在明示セルの個数/位置/高さ/寸法を事前期待値と照合 |
-| 保存・再開 | 新Scene/session保存、新session Save/New/Loadの固有名/seed/notes復元。Cockpit Apply/Undoで対象一件復元・未選択対象不変 | Arch手編集・参照・Editor再起動後の再生成は未実施。sessionをScene/形状保存としない |
-| 利用先・採用 | 未実施 | 巨大景観、複数チャンク、build/性能、本人の形状・操作感・配布判断は今回のテスト成功から推定しない |
-
-区切り時点の前後照合で既存tracked 1,648ファイルの全hash一致、開始時のAssets/Packages/ProjectSettings全ファイルも変更/欠落0。新規Scene/session/metaは6件、構造error 0、project-state/diff検査成功。既存自動UI Migration処理によるレポート生成日時の変更、profile側GiCache作成、Library/Temp/Logs/UserSettings等の派生書込みを記録し保持した。指定書込み先との相違を含め無条件合格にはしない。独立窓の制約は本人によるCockpitドッキング後に解消した範囲だけを記録し、操作不能を製品コード欠陥と断定しない。技術未確認項目を未実装扱いして再実装しない。
-
-本人のGeneratorドッキング対応は完了し、現在の障害は上記のArch面インデックス。Editor PID16004は正常終了した。今回の検証バッチは範囲外の修正が必要な生成失敗に到達して閉じ、ソース/依存修正で延長しない。次は本人が修正を含む次作業を依頼した場合、担当する開発AIがCreateManualArchの三角化を検討し、同条件Arch→Export→一チャンク配置→保存/再開へ戻る。未採用案で次担当未割当。例外/該当行/入力/保存SceneはRESULT.mdから参照する。既存テスト成功からArchの通常生成が保証されるとはしない。今回の取得済み証拠を別の実行日/入力の新ゲート成功へ転記しない。
-
-## 10. 2026-11-01 Arch・保存・配置の限定修正
-
-本人の続行・方向修正依頼で、前節の未採用案を実装・検証へ進めた。ローカルcommit `af36a0e`、証拠は `artifacts/restart-20261101/20261101-0430-arch-fix/RESULT.md`。既存差分と前回runを保持し、push・依存/設定修復・巨大景観へは広げない。
-
-| 全工程への返却 | 今回の結果 | 残る確認 |
-|---|---|---|
-| Stage 1 | ArchのFace三角化後、通常GUIで同条件生成が成功。68頂点、Object Size(15,20,25)。分割数4/16/64の閉鎖性・向き・boundsテスト成功 | 空パレットのProBuilderDefaultはマゼンタ表示。本人の形状/素材/景観採用は未実施 |
-| Stage 2 | 最初のGUI Exportで元Mesh消失/Prefabの空Mesh参照を観測し、元Mesh保全・独立Mesh資産保存へ限定修正。再import後の参照/素材path、元対象・非表示の子・Colliderを回帰テストで確認 | 修正版の通常GUI Export、Editor再起動後の実物参照は未確認。旧失敗候補は保持 |
-| Stage 3/4 | 親座標を高さサンプラーへ渡し、元Prefab localScaleに配置倍率を掛ける修正。親(132,0,232)、観測cell0、期待XZ=(130.5927,231.4375)と倍率1/0.75のテスト成功 | 新Terrain SO/実地形一チャンク、手編集、Scene/Editor再読込と新Playでの再配置は未実施 |
-| ゲート・再開 | 最終compile成功、EditMode603/603、PlayMode9/9、失敗/skip0。修正は3既存C#、追加回帰7件 | 再起動Editor PID38072の画面取得/前面化が foreground window did not report a process id で失敗。本人へ前面化のみを依頼済み |
-
-次は前面化後に担当AIがEditorの保存状態を確認し、SP-017の別Scene/候補 `_MeshFix` から通常GUIの保存・配置を再開する。全体合格が出る前にSP-018/019拡張や巨大景観へ移らない。保存元の編集データとExport済み候補を区別し、手編集の自動伝播や反復Buildの置換安全性は未検証のままとする。
+- Stage 1〜4のコード上の断絶（Archの面、Export時の元Mesh破棄、配置の親座標とscale）は `af36a0e` で修正し、テストで確認した。通常GUIでの保存・配置・再起動往復が終わるまで、SP-017全体の合格は出さない。
+- 全体合格の前に、SP-018/019の拡張や巨大景観へは移らない。保存元の編集データとExport済み候補を区別する。手編集の自動伝播と反復Buildの置換安全性は未検証のまま。

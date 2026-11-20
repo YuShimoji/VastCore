@@ -1,3 +1,6 @@
+<!-- history-banner-2026-11-21 -->
+> **履歴資料（本文は2026-03-23時点）**: 更新が止まった旧索引で、restart/・ai/・architecture/ と2026-06以降の文書が載っていない。現在地と次の作業は [runtime-state.md](runtime-state.md)、文書地図は [NAV.md](NAV.md) を使う。
+
 # VastCore — ドキュメント索引
 
 > **上位SSOT**: [SSOT_WORLD.md](SSOT_WORLD.md)

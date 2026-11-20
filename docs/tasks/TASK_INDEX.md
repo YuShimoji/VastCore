@@ -1,3 +1,6 @@
+<!-- history-banner-2026-11-21 -->
+> **履歴資料（本文は2026-03-17時点）**: チケット一覧はここで止まっている。SP-017/SP-020の作業はtasks/にチケットがなく、runtime-stateと各仕様が持つ。現在地と次の作業は [runtime-state.md](../runtime-state.md)、文書地図は [NAV.md](../NAV.md) を使う。
+
 # Task Index
 
 > 最終更新: 2026-03-17

@@ -1,7 +1,7 @@
 # VastCore Documentation
 
 > **最上位SSOT**: [SSOT_WORLD.md](SSOT_WORLD.md) — プロジェクト全体の目的・構造・優先順位の最終権威
-> **全ドキュメント索引**: [DOCS_INDEX.md](DOCS_INDEX.md)
+> **文書地図**: [NAV.md](NAV.md)（[DOCS_INDEX.md](DOCS_INDEX.md) は2026-03-23で止まった旧索引）
 > **アーキテクチャ概観**: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## プロジェクト概要
@@ -23,7 +23,7 @@ VastCore は Unity 6 ベースの GPU 加速テレインエンジン。DualGrid 
 - **terrain/** - 地形システム仕様
 - **EXAMPLES/** - サンプルコード・テンプレート
 
-詳細な索引は [DOCS_INDEX.md](DOCS_INDEX.md) を参照。
+各フォルダが現役か履歴かは [NAV.md](NAV.md) を参照。
 
 ## 主要ドキュメント
 
@@ -34,7 +34,8 @@ VastCore は Unity 6 ベースの GPU 加速テレインエンジン。DualGrid 
 - **REPO_LOCAL_RULES.md** - AI/Agent の repo-local 運用 front-door
 - **NAV.md** - 迷ったときのドキュメント地図
 - **WORKFLOW_STATE_SSOT.md** - 旧実行状態SSOT（歴史資料）
-- **HANDOVER.md** - 成果物SSOT（完了タスク・進捗状況）
+- **HANDOVER.md** - 旧成果物記録（2026-03時点の履歴資料）
+- **project-context.md** - 決定と引継ぎの履歴
 - **CLAUDE.md** - プロジェクト文脈（運用ルールではない）
 
 ### アーキテクチャ

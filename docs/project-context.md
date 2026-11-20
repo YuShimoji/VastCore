@@ -8,7 +8,7 @@ evidence, but they are not current acceptance unless re-verified.
 
 ## Decision Log
 
-- 2026-11-21（再開準備・資料整理）: 本人が「現在のVastCoreを再起動したい。次の集中的に取り組むセッションのために事前準備・資料整理」を依頼した。thankのローカル系列（accd587→af36a0e、11-01文書をe810a50でcommit）と、PLANNER007が2026-11-16にpushしたde4d515（4c7f9fa基準、runtime-stateのみ、次の一手はCockpit受入）が分岐していたため統合した。runtime-stateは両版の観測を残して現在地へ書き換え、両版の状態本文は `docs/restart/VC_RESTART_20261101_HISTORY.md` へ原文のまま移した。次の技術出口はSP-017の通常GUI保存・再配置のまま維持し、Cockpitのaccept/reviseは本人判断として並べた。どちらを先にするかを本人が決めた記録はない。次回の依頼文はSP-017「2026-11-21 次回集中セッションの実行用依頼」（未発行）。Unity起動・コード変更・検証の実行はしていない。11-01の検証Editor PID38072は11-20の再起動で正常終了せずに消えており、lockfileが残る。
+- 2026-11-21（再開準備・資料整理）: 本人が「現在のVastCoreを再起動したい。次の集中的に取り組むセッションのために事前準備・資料整理」を依頼した。thankのローカル系列（accd587→af36a0e、11-01文書をe810a50でcommit）と、PLANNER007が2026-11-16にpushしたde4d515（4c7f9fa基準、runtime-stateのみ、次の一手はCockpit受入）が分岐していたため統合した。runtime-stateは両版の観測を残して現在地へ書き換え、両版の状態本文は `docs/restart/VC_RESTART_20261101_HISTORY.md` へ原文のまま移した。次の技術出口はSP-017の通常GUI保存・再配置のまま維持し、Cockpitのaccept/reviseは本人判断として並べた。同日、本人が「推奨で出ているSP-017を先に」と選んだ。Cockpit受入はその後。次回の依頼文はSP-017「2026-11-21 次回集中セッションの実行用依頼」（未発行）。Unity起動・コード変更・検証の実行はしていない。11-01の検証Editor PID38072は11-20の再起動で正常終了せずに消えており、lockfileが残る。
 
 - 2026-11-01（修正結果とGUI再開条件）: `af36a0e`をローカルcommit。Arch三角化で通常GUI生成が復旧し、続いてExportの一時コピー破棄が元Meshを失わせる実不具合を観測した。元Mesh保全と独立Mesh資産保存へ修正し、配置の親座標無視・元scale上書きも専用テストの実測から限定修正した。scaleは元Prefab localScaleに掛ける倍率と明記し、フィールド/asmdef/依存は変更しない。最終compile成功、EditMode603/603、PlayMode9/9。修正版GUI往復は再起動Editor PID38072の画面取得エラー `foreground window did not report a process id` で保留し、本人へ前面化のみを依頼した。旧失敗候補と新Scene、既存差分を保持。全体合格・作品採用・pushなし。結果と具体的な残操作は `artifacts/restart-20261101/20261101-0430-arch-fix/RESULT.md`。
 
