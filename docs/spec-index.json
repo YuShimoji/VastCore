@@ -105,7 +105,7 @@
     "pct": 75,
     "cat": "core",
     "file": "docs/02_design/STAMP_EXPORT_PIPELINE_SPEC.md",
-    "summary": "StructureGenerator→Prefab→PrefabStampDefinition変換。パイプライン貫通の最小ブリッジ。StampExporter実装済み、Unity実機検証待ち"
+    "summary": "StructureGenerator→Prefab→PrefabStampDefinition変換。実機未検証。2026-11-01に保存・再読込・一チャンク再配置の最小検証仕様と未発行の実行用依頼を追記"
   },
   {
     "id": "DS-001",
@@ -330,6 +330,6 @@
     "pct": 60,
     "cat": "system",
     "file": "docs/02_design/DESIGNER_PIPELINE_SPEC.md",
-    "summary": "End-to-endデザイナーワークフロー仕様。StructureGenerator→StampExporter→BuildingDefinition→DualGrid配置の4Stage定義。5件のGAP(断絶点)を特定。手動/自動境界の明文化"
+    "summary": "構造物制作・Stamp化・SO設定・DualGrid配置・保存再開・利用先の全工程。2026-11-01に既存GAPとソース接続を照合し再開準備を追記。実Editor・本人採用は未確認"
   }
 ]

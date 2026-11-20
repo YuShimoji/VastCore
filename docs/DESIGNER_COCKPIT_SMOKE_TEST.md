@@ -11,6 +11,16 @@ untested areas, and usable for a first designer session.
 
 ## Manual Smoke Checklist
 
+For the 2026-11-01 restart, this checklist is **NOT RUN** on HEAD accd587.
+Use a new validation scene and a new session; keep the existing
+`Designer_Session.asset` read-only. Check other editors and dirty assets first:
+cockpit Save calls `AssetDatabase.SaveAssets()` and can save unrelated dirty assets.
+Session Save/Load covers recipe fields, not scene geometry or selected targets.
+Record scene path, asset path/GUID, input HEAD, selection, before/after transforms,
+and actual checks. Keep technical observations separate from the user's layout /
+interaction accept-or-revise decision. The structure-to-terrain persistence proof
+is owned by [SP-017](02_design/STAMP_EXPORT_PIPELINE_SPEC.md#2026-11-01-最小検証仕様未実行).
+
 1. Open `Tools/VastCore/Designer Cockpit`.
 2. Confirm the compact top summary shows session name, seed, selected object
    count, last saved UTC, loaded asset path/status, short capability badges,
@@ -30,10 +40,16 @@ untested areas, and usable for a first designer session.
 11. Click `Apply`.
 12. Confirm selected transforms changed and Unity Undo restores the previous
    transforms.
+   Keep an unselected object unchanged. With Relative Position enabled, repeat
+   comparisons from the same baseline; repeated Apply adds an offset. Object
+   order uses name then InstanceID and is not a durable cross-restart identity.
 13. Click `Save` and confirm a `.asset` is created under
    `Assets/Data/VastCore/DesignerSessions`.
 14. Click `New`, then `Load`, and confirm the saved fields are
     restored.
+    Save/reopen the scene separately to check scene edits. New/Load does not
+    reset/restore the scene. Save selects the session asset, so reselect the scene
+    object explicitly before another Apply.
 15. Open Diagnostics and confirm Review Status details, class/package
     detection details, Terrain namespace detection, and raw status notes live
     there rather than in the main mode panels.
