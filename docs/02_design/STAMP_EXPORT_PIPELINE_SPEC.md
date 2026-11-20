@@ -98,7 +98,7 @@ Assets/Resources/Stamps/
 
 ## 2026-11-21 次回集中セッションの実行用依頼（未発行）
 
-2026-11-01の二つのrunの続き。生成の修正（`af36a0e`）までは済み、通常GUIでの修正版Export以降が残っている。検証の手順と許容差は下の「2026-11-01 最小検証仕様」と、thank端末の `artifacts/restart-20261101/20261101-0430-arch-fix/fixture-plan.md` を使う。別端末にはfixture-planが無いため、必要な固定入力を下に転記した。
+2026-11-01の二つのrunの続き。生成の修正（`af36a0e`）までは済み、通常GUIでの修正版Export以降が残っている。検証の手順と許容差は下の「2026-11-01 最小検証仕様」と、thank端末の `artifacts/restart-20261101/20261101-0430-arch-fix/fixture-plan.md` を使う。別端末にはfixture-planが無いため、必要な固定入力を下に転記した。編集元Scene `Assets/Data/VastCore/RestartValidation/20261101-0430-arch-fix/RestartValidation_20261101_0430_Arch.unity` は2026-11-21にcommit済みで、どの端末でも使える。
 
 | 固定入力 | 値（2026-11-01の実測・事前期待） |
 |---|---|

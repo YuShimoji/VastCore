@@ -20,9 +20,9 @@ Last Updated: 2026-11-21
 ## 再開時の現物（2026-11-21 thank観測）
 
 - Unityプロセスなし。`Temp/UnityLockfile`（2026-11-01 04:59）が残っている。Editor log `interactive-editor-v2.log` は2026-11-02 10:19のLicensing/UPM IPC切断で終わり、shutdownの記録がない。11-01 05:09以降に更新されたAssets・docs・Packages・ProjectSettingsのファイルは0件で、未保存作業の喪失は観測していない。PCの起動は2026-11-20 14:12。
-- 保存済みの編集元は `Assets/Data/VastCore/RestartValidation/20261101-0430-arch-fix/RestartValidation_20261101_0430_Arch.unity`（Export前のProBuilder形状）。旧失敗候補は `Assets/Resources/Stamps/Prefabs/RestartValidation_20261101_0430_Arch.prefab` と同名StampDef。どれもuntrackedでthank端末にだけある。上書き・削除しない。
+- 保存済みの編集元は `Assets/Data/VastCore/RestartValidation/20261101-0430-arch-fix/RestartValidation_20261101_0430_Arch.unity`（Export前のProBuilder形状）。旧失敗候補は `Assets/Resources/Stamps/Prefabs/RestartValidation_20261101_0430_Arch.prefab` と同名StampDef。2026-11-21に本人の選択で、`Assets/Data/VastCore/RestartValidation/` の検証Scene 2件と、`DesignerSessions/RestartValidation_20261101_0328_sp017.asset` をcommitした（Stampsを参照しない）。Stamps（旧失敗候補）は、buildに含まれる `Resources` 配下にあるためuntrackedのまま、thank端末にだけある。どれも上書き・削除しない。
 - 証拠はignoredの `artifacts/restart-20261101/`（run別の `RESULT.md`、`fixture-plan.md`）にあり、thank端末にだけある。
-- 未commitのまま保持するもの：`.serena/project.yml`（11-01開始前からの差分。Serenaの設定形式の更新で `languages: [csharp]` が消え、空の `language_servers:` が入っている。所有不明）、上記の検証Scene・session・Stamps（untracked）。
+- 未commitのまま保持するもの：`.serena/project.yml`（11-01開始前からの差分。Serenaの設定形式の更新で `languages: [csharp]` が消え、空の `language_servers:` が入っている。所有不明）、上記のStamps（untracked）。
 - 2026-11-21の整理：中身の無いAssetsフォルダ6件（`_Scripts`、`Docs`、`Documentation`、`Adaptive Performance`、`TerrainPresets`、`TerrainPresets 1`）とそのmetaを削除した（GUID参照0件。`TerrainPresets` は使用時に `TerrainPresetManager` が再作成する）。HEADへmerge済みのローカルbranch 5件を削除した。UIスキャンの再生成レポートはcommitした。
 - 残しているローカル限定の履歴：`master`（origin/masterに無い2025-10のcommit 28件）、`feature/mcp-verification`（commit 1件）、stash 2件（2026-02）。どれもリモートに無いので消していない。
 - worktreeは当checkoutと `.codex-tmp/cloud-codex-20261011/VastCore`。直近4日のCodex sessionに、このcheckoutへの書込みは見つからない。
@@ -41,7 +41,7 @@ Last Updated: 2026-11-21
 
 次回の集中セッションは、SP-017「2026-11-21 次回集中セッションの実行用依頼」を本人が発行して始める。2026-11-21に本人がSP-017をCockpit受入より先にすると選んだ。
 
-1. 実行端末を確かめる。thankなら上の編集元Sceneを使う。PLANNER007など別端末では `git pull --ff-only` の後に `af36a0e` 以降のcompile・EditMode・PlayModeを一度ずつ実行し、SP-017に転記した固定入力からArchを新規生成する。
+1. 実行端末を確かめる。どの端末でも、commit済みの編集元Scene `RestartValidation_20261101_0430_Arch.unity` を使う。PLANNER007など別端末では `git pull --ff-only` の後に、`af36a0e` 以降のcompile・EditMode・PlayModeを一度ずつ実行する。編集元が開けない場合だけ、SP-017に転記した固定入力からArchを新規生成する。
 2. Unityプロセスが無いことを確かめる。古いlockfileは削除せず、Unity 6000.3.6f1の起動に任せる。起動後のConsoleとdirty状態を記録する。
 3. 編集元を `_MeshFix` 付きの別Sceneへ保存し、Archを `_MeshFix` 候補名でExportする。元Meshの保持と、Prefab・Mesh・Materialの参照を確認する。
 4. 新しいTerrain SOとBootstrap（worldOrigin(100,200)、grid 1×1、cell0）で一チャンクに配置し、事前の期待XZ(130.5927, 231.4375)と照合する。
