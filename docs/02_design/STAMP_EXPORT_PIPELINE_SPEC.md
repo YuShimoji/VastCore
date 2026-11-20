@@ -98,6 +98,44 @@ Assets/Resources/Stamps/
 - バリエーション生成（パラメータ変異→複数Prefab→StampDefinition群）
 - StructureGenerator内でのプレビュー（配置シミュレーション表示）
 
+## 2026-11-21 次回集中セッションの実行用依頼（未発行）
+
+2026-11-01の二つのrunの続き。生成の修正（`af36a0e`）までは済み、通常GUIでの修正版Export以降が残っている。検証の手順と許容差は下の「2026-11-01 最小検証仕様」と、thank端末の `artifacts/restart-20261101/20261101-0430-arch-fix/fixture-plan.md` を使う。別端末にはfixture-planが無いため、必要な固定入力を下に転記した。
+
+| 固定入力 | 値（2026-11-01の実測・事前期待） |
+|---|---|
+| Arch生成 | segments 16、width 3、height 4、thickness 0.5、depth 1、count 1、Global scale 5、spawn原点、空のmaterial palette。期待はraw bounds (3,4,5)、root scale (5,5,5)、world bounds (15,20,25)、68頂点 |
+| 地形 | resolution 33、worldSize 64、heightScale 8、erosion null、noise既定seed 12345 |
+| Bootstrap | gridX/Z 1、worldOrigin (100,200)、dualGridRadius 1、dualGridSeed 42、jitter 0、stampSeed 42。Definitionは Fixed / scaleRange (1,1) / jitter 0 |
+| 期待位置 | terrain X[100,164] / Z[200,264]、grid親 (132,0,232)、cell0のcenter (-1.407291,0,-0.5625)、stamp XZ (130.592709, 231.4375)。Yはterrain height＋記録したlayer offset |
+| 許容差 | 位置・高さ・bounds 0.001m、回転0.01度、scale 0.0001。Meshの頂点/triangle数、素材の同一性、個数1は一致 |
+| 手編集 | Export後の元Archをx=2へ移動し、別に保存する。Export済み候補へ自動反映されたとは扱わない |
+
+```text
+[VASTCORE MISSION]
+Outcome: af36a0eで修正したArchを、通常GUIで編集元Scene → Prefab Stamp（_MeshFix候補）→ 再読込 → 原点以外の一チャンク地形へ同条件で再配置できるかを、保全証拠付きで項目別に判定する。
+Why now: 修正はテストで確認済みだが、通常GUIでの保存・配置・再起動の往復は未実施で、SP-017の技術出口が閉じていない。11-01のEditorは前面化されないまま11-20の再起動で消えた。
+Start from: C:/Users/thank/Storage/Game Projects/VastCore_TerrainEngine/VastCore（別端末なら同じrepoのcheckout）
+  branch codex/vc-development-readiness-20260711、2026-11-21の統合commit以降。開始時にHEAD・dirty一覧・Unityプロセス・lockfileを記録する。
+Read: AGENTS.md → docs/REPO_LOCAL_RULES.md → docs/runtime-state.md → 本SP-017のこの節と「最小検証仕様」の「操作と出口」。
+  thankなら artifacts/restart-20261101/20261101-0430-arch-fix/RESULT.md と fixture-plan.md も読む。
+Owner: 実行を受けた開発AI一名が検証・証拠・所有文書の更新を担当。本人は形状・素材・景観・操作感の採用と、Cockpitのaccept/reviseを担当。
+  .serena差分、LEGACY_UI_MIGRATION_REPORTの差分、既存Scene/session/Stamps、旧失敗候補、stash、他worktreeを保全する。
+Scope: Unity 6000.3.6f1の起動、別端末ならcompile/EditMode/PlayModeを一度ずつ、_MeshFix Scene/候補でのExport、新規Terrain SOとBootstrapでの一チャンク配置、手編集保存、Scene再読込、Editor再起動、新しいPlayでの再配置比較。
+  この出口を閉じるのに必要な限定修正は可（2026-11-01の二回目のrunと同じ扱い）。asmdef・依存・Packages・ProjectSettings・serialized名/enum/GUIDの変更、UPM/Unity修復、素材購入、外部AI送信、公開は含めない。
+Write: 新規 Assets/Data/VastCore/RestartValidation/<run>/ のScene・地形設定SO・meta、Exporter既定の Stamps/Prefabs・Definitions・Meshes へ _MeshFix 付きのunique新規asset。
+  修正する場合は該当C#と回帰テスト。docs/runtime-state.md、docs/project-context.md、本SP-017、SP-020の観測差分。
+Output: artifacts/restart-<日付>/<run>/ に入力一覧とhash、前後保全、compile/test logとXML、画面、RESULT.md。既存runを上書きしない。
+Checks: node scripts/codex/check.mjs --require-assets、scripts/check-project-state.ps1、git diff --check。
+  コードを変えたら scripts/check-compile.ps1 と scripts/run-tests.ps1 -RequireNonZeroTests を、6000.3.6f1の明示UnityPath・ProjectPath・固有出力先で実行する。
+Budget: 一担当、Export候補は一件（手編集後の比較で必要なら二件まで）、地形一チャンク、明示セル一件、再読込後の再生成一回。
+Failure: 画面操作ツールが対象Editorを取得できない場合は、その操作だけを止めて本人へ具体的な一操作を頼み、Editorを強制終了しない。
+  新しい失敗は対象と操作を限定して一度だけ切り分ける。拒否された操作をコマンド・保存先・担当を替えて取り直さない。
+Acceptance: 「最小検証仕様」の技術出口を項目別に判定する。本人の採用・操作感・配布は代筆しない。
+Git: 検証して読み戻したら同じbranchへcommitし、通常のpushまで行う。
+Next: 成功範囲と失敗工程をSP-020へ返す。URP素材の候補比較、SP-018/019、巨大景観は、この出口の後の別の成果として扱う。
+```
+
 ## 2026-11-01 最小検証仕様（未実行）
 
 全工程の所有者は [SP-020](DESIGNER_PIPELINE_SPEC.md#8-2026-11-01-再開準備採用済み経路と今回の差分)。本検証で最も先に崩したい前提は「既存の生成形状をPrefab Stampとして保存し、Editorを開き直しても同じ入力から地形上へ再配置できる」。UIの一操作だけでは、製品目的へ届くこの接続と永続化を確かめられないため選ぶ。既存SP-017のArchを技術fixtureとして使い、景観・様式の基準作には採用しない。
@@ -128,6 +166,8 @@ Assets/Resources/Stamps/
 技術合格の範囲は一件の編集元、Export依存、Scene/SO/session別保存、再読込と同条件再配置、対象外保全まで。巨大構造物、マルチセル、複数チャンク、Solverの規則効果、SP-018の素材/子切替、全旧データ移行、Player build、性能、人の採用、権利・公開はこの合格から推定しない。保存できない形状パラメータや手編集・再生成の断絶が見つかったら、不足項目と最小修正候補をSP-020へ返し、仕様やserializationを無断変更しない。
 
 ### 実行用依頼（未発行・未実行）
+
+2026-11-01に本人が発行し、run `20261101-0328-sp017` として実行済み（履歴）。次回の依頼は上の「2026-11-21 次回集中セッションの実行用依頼」を使う。
 
 以下は次回本人が検証を依頼する際にそのまま使える。今回の準備依頼では実行を開始しない。出力先・時間はこの検証に対する提案で、製品全体の予算・配布方針ではない。
 

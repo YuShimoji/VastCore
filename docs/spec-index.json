@@ -105,7 +105,7 @@
     "pct": 75,
     "cat": "core",
     "file": "docs/02_design/STAMP_EXPORT_PIPELINE_SPEC.md",
-    "summary": "StructureGenerator→Prefab→PrefabStampDefinition変換。実機未検証。2026-11-01に保存・再読込・一チャンク再配置の最小検証仕様と未発行の実行用依頼を追記"
+    "summary": "StructureGenerator→Prefab→PrefabStampDefinition変換。2026-11-01にArch生成・Export元Mesh保全・配置座標/scaleを修正しテスト成功。通常GUIでの修正版Export・一チャンク再配置・再起動往復は未実施。次回の依頼文は2026-11-21節"
   },
   {
     "id": "DS-001",
