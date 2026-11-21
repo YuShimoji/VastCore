@@ -1,7 +1,8 @@
-param(
+﻿param(
   # setup   : コンパイルし、探索シーンを用意し、Unity 経由で鳥瞰図を書き出す（バッチ、画面なし）
   # explore : 通常の Editor で探索シーンを再生し、決まった操作の画面を画像に残して終了する
-  [ValidateSet('setup','explore')] [string]$Mode = 'setup',
+  # play    : 通常の Editor で探索シーンを開いて再生を始める（人が触る用。終了は待たない）
+  [ValidateSet('setup','explore','play')] [string]$Mode = 'setup',
   [int]$Seed = 7,
   [int]$Resolution = 1024,
   [string]$Style = 'satellite',
@@ -35,6 +36,17 @@ if ($Mode -eq 'setup') {
     '-regionOut', "`"$png`"",
     '-logFile', "`"$log`""
   )
+} elseif ($Mode -eq 'play') {
+  $unityArgs = @(
+    '-projectPath', "`"$ProjectPath`"",
+    '-executeMethod', 'Vastcore.RegionMap.Editor.RegionExplorerSmoke.PlayFromCommandLine',
+    '-logFile', "`"$log`""
+  )
+  Write-Host "Unity: $UnityPath"
+  Write-Host "Log:   $log"
+  $started = Start-Process -FilePath $UnityPath -ArgumentList $unityArgs -PassThru
+  Write-Host "Unity を起動した（PID $($started.Id)）。地域の生成が終わると地図が出る。終了は Unity を閉じる。"
+  exit 0
 } else {
   $unityArgs = @(
     '-projectPath', "`"$ProjectPath`"",

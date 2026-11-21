@@ -64,6 +64,8 @@ namespace Vastcore.RegionMap
         private Text _signalText;
         private Text _listTitle;
         private Text _message;
+        private CanvasGroup _messageGroup;
+        private float _messageHideAt;
         private Text _styleLabel;
         private Image[] _signalBars;
         private Button _searchButton;
@@ -122,6 +124,12 @@ namespace Vastcore.RegionMap
 
         private void Update()
         {
+            FadeMessage();
+            // クリックしたボタンが選択されたままだと、Space と Enter がそのボタンの「決定」にもなり、
+            // 下の HandleKeys と合わせて 1 回の押下で 2 回動く。選択は毎フレーム外す
+            EventSystem events = EventSystem.current;
+            if (events != null && events.currentSelectedGameObject != null) events.SetSelectedGameObject(null);
+
             if (_task != null)
             {
                 if (!_task.IsCompleted) return;
@@ -130,7 +138,7 @@ namespace Vastcore.RegionMap
                 if (finished.IsFaulted)
                 {
                     Exception error = finished.Exception != null ? finished.Exception.GetBaseException() : null;
-                    _message.text = "地域を生成できませんでした: " + (error != null ? error.Message : "原因不明");
+                    ShowMessage("地域を生成できませんでした: " + (error != null ? error.Message : "原因不明"), 0f);
                     SetButtons(true);
                     return;
                 }
@@ -161,17 +169,17 @@ namespace Vastcore.RegionMap
             switch (result.Signal)
             {
                 case SearchSignal.Found:
-                    _message.text = "「" + result.Site.Name + "」を発見";
+                    ShowMessage("「" + result.Site.Name + "」を発見", 6f);
                     AddDiscovered(result.Site);
                     break;
                 case SearchSignal.Strong:
-                    _message.text = "強い反応。すぐ近くに何かある";
+                    ShowMessage("強い反応。すぐ近くに何かある", 4f);
                     break;
                 case SearchSignal.Faint:
-                    _message.text = "弱い反応。この辺りのどこかにある";
+                    ShowMessage("弱い反応。この辺りのどこかにある", 4f);
                     break;
                 default:
-                    _message.text = result.Distance < 0f ? "すべての地点を発見済み" : "反応なし";
+                    ShowMessage(result.Distance < 0f ? "すべての地点を発見済み" : "反応なし", 3f);
                     break;
             }
             RefreshReadout();
@@ -195,9 +203,26 @@ namespace Vastcore.RegionMap
             _styleLabel.text = "描き方：" + StyleName(_render.Style);
             RegionData data = _data;
             RegionRenderOptions options = CloneRender();
-            _message.text = "描き直しています…";
+            ShowMessage("描き直しています…", 0f);
             SetButtons(false);
             _task = Task.Run(() => new Generated { Data = data, Pixels = RegionMapRenderer.Render(data, options) });
+        }
+
+        /// <summary>地図の下端に知らせを出す。seconds が 0 以下なら、次の知らせまで出したままにする。</summary>
+        private void ShowMessage(string text, float seconds)
+        {
+            _message.text = text;
+            _messageGroup.alpha = 1f;
+            _messageHideAt = seconds > 0f ? Time.unscaledTime + seconds : -1f;
+        }
+
+        /// <summary>時間が来た知らせを薄くして消す。出したままだと地図の南端が読めない。</summary>
+        private void FadeMessage()
+        {
+            if (_messageHideAt < 0f || _messageGroup.alpha <= 0f) return;
+            float over = Time.unscaledTime - _messageHideAt;
+            if (over <= 0f) return;
+            _messageGroup.alpha = Mathf.Clamp01(1f - over / 0.5f);
         }
 
         // ---- 生成 ----
@@ -206,7 +231,7 @@ namespace Vastcore.RegionMap
         {
             RegionSpec spec = _spec.Clone();
             RegionRenderOptions options = CloneRender();
-            _message.text = message;
+            ShowMessage(message, 0f);
             SetButtons(false);
             _task = Task.Run(() =>
             {
@@ -255,11 +280,11 @@ namespace Vastcore.RegionMap
                 ClearDiscovered();
                 _title.text = "地域 seed " + _data.Spec.Seed;
                 _subtitle.text = string.Format("{0:0} km 四方 ・ 陸 {1:0}% ・ 最高 {2:0} m", _data.SizeKm, _data.LandFraction * 100f, _data.MaxHeight);
-                _message.text = "地図をクリックして位置を決め、サーチで調べる";
+                ShowMessage("地図をクリックして位置を決め、サーチで調べる", 8f);
             }
             else
             {
-                _message.text = "描き方：" + StyleName(_render.Style);
+                ShowMessage("描き方：" + StyleName(_render.Style), 3f);
             }
             SetButtons(true);
             RefreshReadout();
@@ -418,7 +443,7 @@ namespace Vastcore.RegionMap
             MoveCursor(site.MapX, site.MapY);
             _center = new Vector2(site.MapX / RegionData.MapUnits, 1f - site.MapY / RegionData.MapUnits);
             ClampView();
-            _message.text = string.Format("{0}　X {1:0.0}　Y {2:0.0}", site.Name, site.MapX, site.MapY);
+            ShowMessage(string.Format("{0}　X {1:0.0}　Y {2:0.0}", site.Name, site.MapX, site.MapY), 4f);
         }
 
         private void ClearDiscovered()
@@ -600,12 +625,15 @@ namespace Vastcore.RegionMap
             _markerRoot = CreateRect(frame, "Markers");
             _range = CreateImage(frame, "Search Range", new Color(1f, 1f, 1f, 0.85f), _ring).rectTransform;
             _range.GetComponent<Image>().raycastTarget = false;
+            AddDarkEdge(_range.gameObject);
 
             _cursor = CreateRect(frame, "Cursor");
             Image horizontal = CreateImage(_cursor, "Horizontal", Color.white, null);
             horizontal.rectTransform.sizeDelta = new Vector2(34f, 2f);
+            AddDarkEdge(horizontal.gameObject);
             Image vertical = CreateImage(_cursor, "Vertical", Color.white, null);
             vertical.rectTransform.sizeDelta = new Vector2(2f, 34f);
+            AddDarkEdge(vertical.gameObject);
 
             Image strip = CreateImage(frame, "Message", new Color32(12, 15, 20, 215), null);
             RectTransform stripRect = strip.rectTransform;
@@ -614,8 +642,20 @@ namespace Vastcore.RegionMap
             stripRect.pivot = new Vector2(0.5f, 0f);
             stripRect.sizeDelta = new Vector2(760f, 64f);
             stripRect.anchoredPosition = new Vector2(0f, 28f);
+            _messageGroup = strip.gameObject.AddComponent<CanvasGroup>();
+            _messageGroup.blocksRaycasts = false;
+            _messageGroup.interactable = false;
+            _messageHideAt = -1f;
             _message = CreateText(stripRect, "Text", "", 26, TextColor, TextAnchor.MiddleCenter);
             Stretch(_message.rectTransform);
+        }
+
+        /// <summary>白い印に暗い縁を付ける。雲・雪・地図帳風の淡い地色の上では、白だけの印が見えなくなる。</summary>
+        private static void AddDarkEdge(GameObject target)
+        {
+            Outline edge = target.AddComponent<Outline>();
+            edge.effectColor = new Color(0f, 0f, 0f, 0.75f);
+            edge.effectDistance = new Vector2(1.5f, -1.5f);
         }
 
         private static RectTransform CreateRect(Transform parent, string name)

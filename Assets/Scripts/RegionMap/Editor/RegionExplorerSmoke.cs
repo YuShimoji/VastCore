@@ -41,6 +41,20 @@ namespace Vastcore.RegionMap.Editor
             EditorApplication.isPlaying = true;
         }
 
+        /// <summary>
+        /// 探索シーンを開き、Game ビューを広げて再生を始める。自動の操作も終了もしない（人が触って確かめる時の入口）。
+        /// 起動例: Unity.exe -projectPath . -executeMethod Vastcore.RegionMap.Editor.RegionExplorerSmoke.PlayFromCommandLine
+        /// </summary>
+        public static void PlayFromCommandLine()
+        {
+            RegionMapMenu.EnsureExplorerScene();
+            EditorSceneManager.OpenScene(RegionMapMenu.ExplorerScenePath);
+            EditorApplication.ExecuteMenuItem("Window/General/Game");
+            System.Type gameView = typeof(EditorWindow).Assembly.GetType("UnityEditor.GameView");
+            if (gameView != null) EditorWindow.GetWindow(gameView).maximized = true;
+            EditorApplication.isPlaying = true;
+        }
+
         private static void Tick()
         {
             if (!EditorApplication.isPlaying) return;
