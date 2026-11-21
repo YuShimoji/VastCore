@@ -26,6 +26,22 @@ namespace Vastcore.RegionMap
         public float MapY;
         public float HeightMeters;
         public RegionBiome Biome;
+
+        /// <summary>地点そのものの仮の呼び名（例「山頂のモノリス」）。Name は「エリア名・この呼び名」。</summary>
+        public string Feature;
+
+        /// <summary>属するエリアの番号（RegionArea.Id）。外洋なら 0。</summary>
+        public int AreaId;
+
+        /// <summary>この場所がその種類に合う度合い（採点の値。種類ごとに尺度が違うので、種類をまたいで比べない）。</summary>
+        public float Score;
+
+        /// <summary>同じ種類の候補の中での順位（1 が最も合う）と、候補の総数。</summary>
+        public int Rank;
+        public int Candidates;
+
+        /// <summary>ここに置いた根拠（採点に使った地形の値を文にしたもの）。</summary>
+        public string Reason;
     }
 
     /// <summary>
@@ -95,6 +111,11 @@ namespace Vastcore.RegionMap
                             MapY = my,
                             HeightMeters = data.Height[candidate.Cell],
                             Biome = data.Biome[candidate.Cell],
+                            AreaId = data.Area[candidate.Cell],
+                            Score = candidate.Score,
+                            Rank = cursor[k],
+                            Candidates = list.Count,
+                            Reason = Explain(data, (RegionSiteKind)k, candidate.Cell),
                         });
                         progressed = true;
                         break;
@@ -107,7 +128,48 @@ namespace Vastcore.RegionMap
             {
                 RegionSite site = data.Sites[s];
                 site.Id = s + 1;
-                site.Name = Describe(site);
+                site.Feature = FeatureName(site.Kind);
+                RegionArea area = data.AreaById(site.AreaId);
+                if (area != null) area.SiteCount++;
+                site.Name = data.PlaceNameAtMap(site.MapX, site.MapY).Replace("の沖", "沖") + "・" + site.Feature;
+            }
+        }
+
+        /// <summary>
+        /// そのセルが探索地点に合うかを採点する。合う種類が無ければ false。
+        /// 規則は上から順に当てはめ、最初に合った 1 種類だけを返す（浅い海→川→高い山頂→雪原→海岸→乾燥地→森や草原の丘）。
+        /// </summary>
+        public static bool Rate(RegionData data, int x, int y, out RegionSiteKind kind, out float score)
+        {
+            return TryRate(data, x, y, out kind, out score);
+        }
+
+        /// <summary>採点に使った地形の値を、読める文にする。</summary>
+        private static string Explain(RegionData data, RegionSiteKind kind, int cell)
+        {
+            int n = data.Resolution;
+            int x = cell % n;
+            int y = cell / n;
+            float h = data.Height[cell];
+            float prominence = Prominence(data, x, y, Math.Max(3, n / 90));
+            var culture = System.Globalization.CultureInfo.InvariantCulture;
+            switch (kind)
+            {
+                case RegionSiteKind.Sunken:
+                    return "岸のそばの浅い海（水深 " + (-h).ToString("#,0", culture) + " m。水深 220 m 前後を最も高く採点）";
+                case RegionSiteKind.Terrace:
+                    return "川の上（上流から集まる水の量が多いほど高く採点）";
+                case RegionSiteKind.Monolith:
+                    return "標高 " + h.ToString("#,0", culture) + " m（地域の最高の " + (h / data.MaxHeight * 100f).ToString("0", culture)
+                        + "%）で、周りより " + prominence.ToString("#,0", culture) + " m 高い山頂";
+                case RegionSiteKind.Dome:
+                    return "雪原・ツンドラの中で、周りより " + prominence.ToString("#,0", culture) + " m 高い所";
+                case RegionSiteKind.Arch:
+                    return "標高 " + h.ToString("0", culture) + " m の、海のすぐそば（低いほど高く採点）";
+                case RegionSiteKind.Ring:
+                    return "乾いた土地（湿り気 " + data.Moisture[cell].ToString("0.00", culture) + "。乾くほど高く採点）";
+                default:
+                    return "森や草原の中で、周りより " + prominence.ToString("#,0", culture) + " m 高い丘";
             }
         }
 
@@ -227,34 +289,18 @@ namespace Vastcore.RegionMap
         /// <summary>
         /// 位置と地形から機械的に作る仮の呼び名。作品としての地名は人が決めるもので、ここでは決めない。
         /// </summary>
-        private static string Describe(RegionSite site)
+        private static string FeatureName(RegionSiteKind kind)
         {
-            string area = AreaName(site.MapX, site.MapY);
-            string feature;
-            switch (site.Kind)
+            switch (kind)
             {
-                case RegionSiteKind.Monolith: feature = "山頂のモノリス"; break;
-                case RegionSiteKind.Arch: feature = "海岸のアーチ"; break;
-                case RegionSiteKind.Ring: feature = "乾いた平原の環"; break;
-                case RegionSiteKind.Tower: feature = "丘の塔"; break;
-                case RegionSiteKind.Dome: feature = "雪原のドーム"; break;
-                case RegionSiteKind.Terrace: feature = "川辺の段丘"; break;
-                default: feature = "浅瀬に沈んだ遺構"; break;
+                case RegionSiteKind.Monolith: return "山頂のモノリス";
+                case RegionSiteKind.Arch: return "海岸のアーチ";
+                case RegionSiteKind.Ring: return "乾いた平原の環";
+                case RegionSiteKind.Tower: return "丘の塔";
+                case RegionSiteKind.Dome: return "雪原のドーム";
+                case RegionSiteKind.Terrace: return "川辺の段丘";
+                default: return "浅瀬に沈んだ遺構";
             }
-            return area + "・" + feature;
-        }
-
-        private static string AreaName(float mapX, float mapY)
-        {
-            int col = mapX < 33.4f ? 0 : (mapX < 66.7f ? 1 : 2);
-            int row = mapY < 33.4f ? 0 : (mapY < 66.7f ? 1 : 2);
-            string[] names =
-            {
-                "北西", "北", "北東",
-                "西", "中央", "東",
-                "南西", "南", "南東",
-            };
-            return names[col + row * 3];
         }
     }
 }

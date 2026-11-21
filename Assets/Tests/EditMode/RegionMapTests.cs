@@ -157,5 +157,74 @@ namespace Vastcore.Tests.EditMode
             Assert.Less(acrossX, inside * 2.5 + 0.01);
             Assert.Less(acrossY, inside * 2.5 + 0.01);
         }
+
+        /// <summary>雲の流れは場所ごとに違い、渦のずれは小さな上限に収まる（伸び続けると雲の絵が筋になる）。</summary>
+        [Test]
+        public void CloudFlow_DiffersByPlace_AndSwirlStaysBounded()
+        {
+            const float time = 90f;
+            const float cross = 420f;
+            for (int layer = RegionCloudFlow.Low; layer <= RegionCloudFlow.High; layer++)
+            {
+                float driftU;
+                float driftV;
+                RegionCloudFlow.Drift(layer, time, cross, out driftU, out driftV);
+                float least = float.MaxValue;
+                float most = float.MinValue;
+                for (int gy = 0; gy <= 16; gy++)
+                {
+                    for (int gx = 0; gx <= 16; gx++)
+                    {
+                        float du;
+                        float dv;
+                        float fade;
+                        RegionCloudFlow.Sample(layer, gx / 16f, gy / 16f, time, cross, out du, out dv, out fade);
+                        float swirlU = du - driftU;
+                        float swirlV = dv - driftV;
+                        Assert.Less(System.Math.Abs(swirlU), 0.05f);
+                        Assert.Less(System.Math.Abs(swirlV), 0.05f);
+                        Assert.That(fade, Is.InRange(0f, 1f));
+                        if (swirlU < least) least = swirlU;
+                        if (swirlU > most) most = swirlU;
+                    }
+                }
+                Assert.Greater(most - least, 0.002f);
+            }
+        }
+
+        /// <summary>エリア：陸のセルはどれかのエリアに入り、名前は重ならず、同じ seed なら同じ区分けになる。</summary>
+        [Test]
+        public void Areas_CoverLand_HaveUniqueNames_AndAreDeterministic()
+        {
+            RegionData a = RegionGenerator.Generate(SmallSpec(7));
+            RegionData b = RegionGenerator.Generate(SmallSpec(7));
+            CollectionAssert.AreEqual(a.Area, b.Area);
+            Assert.Greater(a.Areas.Count, 0);
+            Assert.AreEqual(a.Areas.Count, b.Areas.Count);
+
+            var names = new System.Collections.Generic.HashSet<string>();
+            for (int k = 0; k < a.Areas.Count; k++)
+            {
+                RegionArea area = a.Areas[k];
+                Assert.AreEqual(area.Name, b.Areas[k].Name);
+                Assert.IsTrue(names.Add(area.Name), "同じ名前のエリアがある: " + area.Name);
+                Assert.AreSame(area, a.AreaById(area.Id));
+                Assert.That(area.LabelX, Is.InRange(0f, RegionData.MapUnits));
+                Assert.That(area.LabelY, Is.InRange(0f, RegionData.MapUnits));
+            }
+
+            for (int i = 0; i < a.Height.Length; i++)
+            {
+                if (a.Height[i] > 0f) Assert.IsNotNull(a.AreaById(a.Area[i]), "エリアに入っていない陸のセルがある");
+            }
+
+            for (int s = 0; s < a.Sites.Count; s++)
+            {
+                RegionSite site = a.Sites[s];
+                Assert.IsFalse(string.IsNullOrEmpty(site.Reason));
+                Assert.GreaterOrEqual(site.Rank, 1);
+                if (site.AreaId != 0) Assert.IsNotNull(a.AreaById(site.AreaId));
+            }
+        }
     }
 }

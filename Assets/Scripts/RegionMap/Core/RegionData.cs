@@ -50,6 +50,14 @@ namespace Vastcore.RegionMap
 
         public readonly RegionBiome[] Biome;
 
+        /// <summary>
+        /// セルが属するエリアの番号（RegionArea.Id）。陸はどれかのエリアに入る。岸に近い海は最寄りの陸のエリアの番号を持ち
+        /// （そのエリアの「沖」）、それより遠い海は 0（外洋）。
+        /// </summary>
+        public readonly byte[] Area;
+
+        public readonly List<RegionArea> Areas = new List<RegionArea>();
+
         public readonly List<RegionSite> Sites = new List<RegionSite>();
 
         public float MaxHeight;
@@ -67,6 +75,7 @@ namespace Vastcore.RegionMap
             Moisture = new float[count];
             LakeDepth = new float[count];
             Biome = new RegionBiome[count];
+            Area = new byte[count];
         }
 
         /// <summary>1 セルの一辺（m）。</summary>
@@ -119,6 +128,27 @@ namespace Vastcore.RegionMap
         public RegionBiome BiomeAtMap(float mapX, float mapY)
         {
             return Biome[CellFromMap(mapX, mapY)];
+        }
+
+        /// <summary>番号からエリアを引く。0 や範囲外は null。</summary>
+        public RegionArea AreaById(int id)
+        {
+            return id >= 1 && id <= Areas.Count ? Areas[id - 1] : null;
+        }
+
+        /// <summary>その位置のエリア。外洋は null。海の上では、最寄りの陸のエリア（その沖）を返す。</summary>
+        public RegionArea AreaAtMap(float mapX, float mapY)
+        {
+            return AreaById(Area[CellFromMap(mapX, mapY)]);
+        }
+
+        /// <summary>その位置の呼び名。陸は「北東の山地」、岸に近い海は「北東の山地の沖」、遠い海は「北の外洋」。</summary>
+        public string PlaceNameAtMap(float mapX, float mapY)
+        {
+            int cell = CellFromMap(mapX, mapY);
+            RegionArea area = AreaById(Area[cell]);
+            if (area == null) return RegionAreaBuilder.Direction(mapX, mapY) + "の外洋";
+            return Height[cell] > 0f ? area.Name : area.Name + "の沖";
         }
     }
 }

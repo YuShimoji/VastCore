@@ -34,6 +34,8 @@ namespace Vastcore.RegionMap
             BuildRivers(data, land, router, scratch);
             if (phase != null) phase("土地の種類と探索地点");
             ClassifyBiomes(data, land);
+            // 川を作った時の流れ先（router）をそのまま使い、流域でエリアを分ける
+            RegionAreaBuilder.Build(data, router, land);
             RegionSiteGenerator.Populate(data);
             if (phase != null) phase("完了");
             return data;

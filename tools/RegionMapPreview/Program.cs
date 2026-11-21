@@ -21,6 +21,11 @@ namespace Vastcore.RegionMap.Preview
             int shrink = 1;
             string name = null;
             bool cloudTile = false;
+            bool areas = false;
+            bool suitability = false;
+            int cloudFrames = 0;
+            float cloudStep = 4f;
+            bool cloudBefore = false;
 
             for (int a = 0; a < args.Length; a++)
             {
@@ -53,6 +58,11 @@ namespace Vastcore.RegionMap.Preview
                     case "--scale": shrink = int.Parse(value); a++; break;
                     case "--sites": markSites = true; break;
                     case "--cloudtile": cloudTile = true; break;
+                    case "--areas": areas = true; break;
+                    case "--suitability": suitability = true; break;
+                    case "--cloudframes": cloudFrames = int.Parse(value); a++; break;
+                    case "--cloudstep": cloudStep = Float(value); a++; break;
+                    case "--cloudbefore": cloudBefore = true; break;
                     default:
                         Console.Error.WriteLine("不明な指定: " + key);
                         return 2;
@@ -105,7 +115,347 @@ namespace Vastcore.RegionMap.Preview
                 PngWriter.Write(file, pixels, size, size);
                 Console.WriteLine("描画=" + renderMs + "ms → " + Path.GetFullPath(file));
             }
+
+            string stem = Path.Combine(outDir, name ?? ("region-seed" + spec.Seed));
+            if (areas || suitability)
+            {
+                foreach (RegionArea area in data.Areas)
+                {
+                    Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "  エリア{0:00} {1}  {2:F0}km2 平均{3:F0}m 最高{4:F0}m 地点{5}  X{6:F1} Y{7:F1}  {8}",
+                        area.Id, area.Name, area.AreaKm2, area.MeanHeight, area.MaxHeight, area.SiteCount, area.LabelX, area.LabelY, area.Basis));
+                }
+                // 下地は、雲の無い衛星写真風を暗くしたもの
+                options.Style = RegionMapStyle.Satellite;
+                float cover = options.CloudCover;
+                options.CloudCover = 0f;
+                byte[] ground = RegionMapRenderer.Render(data, options);
+                options.CloudCover = cover;
+                if (areas) WriteAreas(data, ground, stem, shrink);
+                if (suitability) WriteSuitability(data, ground, stem, shrink);
+                File.WriteAllText(stem + "-areas.json", DescribeJson(data), new System.Text.UTF8Encoding(false));
+                Console.WriteLine("エリアと地点の一覧 → " + Path.GetFullPath(stem + "-areas.json"));
+            }
+            if (cloudFrames > 0)
+            {
+                WriteCloudFrames(data, options, stem, cloudFrames, cloudStep, shrink, false);
+                if (cloudBefore) WriteCloudFrames(data, options, stem, cloudFrames, cloudStep, shrink, true);
+            }
             return 0;
+        }
+
+        private static readonly byte[][] AreaColors =
+        {
+            new byte[] { 230, 92, 80 }, new byte[] { 90, 170, 240 }, new byte[] { 250, 200, 70 }, new byte[] { 120, 210, 130 },
+            new byte[] { 200, 130, 235 }, new byte[] { 250, 150, 70 }, new byte[] { 90, 215, 215 }, new byte[] { 240, 120, 180 },
+            new byte[] { 170, 200, 80 }, new byte[] { 150, 150, 245 }, new byte[] { 235, 235, 235 }, new byte[] { 200, 160, 110 },
+        };
+
+        /// <summary>エリアごとに色を重ね、境界線を引いた図。沖は薄く、外洋は色を付けない。</summary>
+        private static void WriteAreas(RegionData data, byte[] ground, string stem, int shrink)
+        {
+            int n = data.Resolution;
+            var pixels = (byte[])ground.Clone();
+            byte[] lines = RegionAreas.RenderBoundaries(data);
+            for (int i = 0; i < n * n; i++)
+            {
+                int p = i * 4;
+                int id = data.Area[i];
+                if (id > 0 && data.Height[i] > 0f)
+                {
+                    byte[] c = AreaColors[(id - 1) % AreaColors.Length];
+                    float t = 0.42f;
+                    for (int ch = 0; ch < 3; ch++) pixels[p + ch] = (byte)(pixels[p + ch] * (1f - t) + c[ch] * t);
+                }
+                float line = lines[p + 3] / 255f;
+                if (line > 0f)
+                {
+                    for (int ch = 0; ch < 3; ch++) pixels[p + ch] = (byte)(pixels[p + ch] * (1f - line) + 255f * line);
+                }
+            }
+            MarkSites(pixels, n, data);
+            int size = n;
+            if (shrink > 1) pixels = Shrink(pixels, n, shrink, out size);
+            PngWriter.Write(stem + "-areas.png", pixels, size, size);
+            Console.WriteLine("エリアの図 → " + Path.GetFullPath(stem + "-areas.png"));
+        }
+
+        private static readonly byte[][] KindColors =
+        {
+            new byte[] { 255, 80, 70 },   // Monolith 山頂
+            new byte[] { 255, 160, 40 },  // Arch 海岸
+            new byte[] { 250, 230, 70 },  // Ring 乾燥地
+            new byte[] { 90, 220, 110 },  // Tower 森や草原の丘
+            new byte[] { 235, 245, 255 }, // Dome 雪原
+            new byte[] { 70, 150, 255 },  // Terrace 川
+            new byte[] { 200, 110, 250 }, // Sunken 浅い海
+        };
+
+        /// <summary>
+        /// 探索地点の採点を地図にしたもの。暗くした地図の上に、その種類に合う所を色で塗り、合う度合いが高いほど濃くする。
+        /// 色の無い所は、どの種類の規則にも当てはまらない。丸は実際に選ばれた地点。
+        /// </summary>
+        private static void WriteSuitability(RegionData data, byte[] ground, string stem, int shrink)
+        {
+            int n = data.Resolution;
+            int kinds = KindColors.Length;
+            var kindAt = new sbyte[n * n];
+            var scoreAt = new float[n * n];
+            var min = new float[kinds];
+            var max = new float[kinds];
+            var cells = new int[kinds];
+            for (int k = 0; k < kinds; k++) { min[k] = float.MaxValue; max[k] = float.MinValue; }
+            int margin = Math.Max(2, n / 28);
+            for (int y = 0; y < n; y++)
+            {
+                for (int x = 0; x < n; x++)
+                {
+                    int i = x + y * n;
+                    kindAt[i] = -1;
+                    if (x < margin || y < margin || x >= n - margin || y >= n - margin) continue;
+                    RegionSiteKind kind;
+                    float score;
+                    if (!RegionSiteGenerator.Rate(data, x, y, out kind, out score)) continue;
+                    int k = (int)kind;
+                    kindAt[i] = (sbyte)k;
+                    scoreAt[i] = score;
+                    cells[k]++;
+                    if (score < min[k]) min[k] = score;
+                    if (score > max[k]) max[k] = score;
+                }
+            }
+            var pixels = new byte[n * n * 4];
+            for (int i = 0; i < n * n; i++)
+            {
+                int p = i * 4;
+                float gray = (ground[p] * 0.3f + ground[p + 1] * 0.5f + ground[p + 2] * 0.2f) * 0.5f + 12f;
+                float r = gray, g = gray, b = gray + 6f;
+                int k = kindAt[i];
+                if (k >= 0)
+                {
+                    float t = max[k] > min[k] ? (scoreAt[i] - min[k]) / (max[k] - min[k]) : 1f;
+                    float alpha = 0.18f + 0.72f * t * t;
+                    r += (KindColors[k][0] - r) * alpha;
+                    g += (KindColors[k][1] - g) * alpha;
+                    b += (KindColors[k][2] - b) * alpha;
+                }
+                pixels[p] = (byte)r; pixels[p + 1] = (byte)g; pixels[p + 2] = (byte)b; pixels[p + 3] = 255;
+            }
+            for (int k = 0; k < kinds; k++)
+            {
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "  採点 {0,-9} 当てはまるセル {1:P1}  値 {2:F2}〜{3:F2}",
+                    (RegionSiteKind)k, cells[k] / (double)(n * n), cells[k] > 0 ? min[k] : 0f, cells[k] > 0 ? max[k] : 0f));
+            }
+            MarkSites(pixels, n, data, true);
+            int size = n;
+            if (shrink > 1) pixels = Shrink(pixels, n, shrink, out size);
+            PngWriter.Write(stem + "-suitability.png", pixels, size, size);
+            Console.WriteLine("採点の図 → " + Path.GetFullPath(stem + "-suitability.png"));
+        }
+
+        /// <summary>
+        /// 雲の動きを連番の画像にする（探索画面と同じ計算：32×32 の升目の角でずれを求め、間をなめらかにつなぐ）。
+        /// uniform が true の時は、前の動き（1 枚の雲を一様に流す）を同じ条件で書き出す。
+        /// </summary>
+        private static void WriteCloudFrames(RegionData data, RegionRenderOptions options, string stem, int frames, float step, int shrink, bool uniform)
+        {
+            int n = data.Resolution;
+            float cover = options.CloudCover > 0f ? options.CloudCover : 0.58f;
+            options.Style = RegionMapStyle.Satellite;
+            options.CloudCover = 0f;
+            byte[] ground = RegionMapRenderer.Render(data, options);
+            options.CloudCover = cover;
+            int size = n;
+            if (shrink > 1) ground = Shrink(ground, n, shrink, out size);
+
+            int cs = (n + 1) / 2;
+            float[] low;
+            float[] high;
+            RegionClouds.BuildLayerFields(cs, data.Spec.Seed, cover, out low, out high);
+            if (uniform)
+            {
+                low = RegionClouds.BuildField(cs, data.Spec.Seed, cover);
+                high = new float[cs * cs];
+            }
+            byte[] lowPixels, lowShadow, highPixels, unused;
+            RegionClouds.RenderLayers(low, cs, out lowPixels, out lowShadow);
+            RegionClouds.RenderLayers(high, cs, out highPixels, out unused);
+
+            const int grid = 32;
+            const float cross = 420f;
+            string dir = stem + (uniform ? "-clouds-before" : "-clouds");
+            Directory.CreateDirectory(dir);
+            var du = new float[2][];
+            var dv = new float[2][];
+            var fade = new float[2][];
+            for (int l = 0; l < 2; l++)
+            {
+                du[l] = new float[(grid + 1) * (grid + 1)];
+                dv[l] = new float[(grid + 1) * (grid + 1)];
+                fade[l] = new float[(grid + 1) * (grid + 1)];
+            }
+            if (!uniform) PrintFlowStats(cross);
+            var pixels = new byte[size * size * 4];
+            for (int f = 0; f < frames; f++)
+            {
+                float time = f * step;
+                for (int l = 0; l < 2; l++)
+                {
+                    for (int gy = 0; gy <= grid; gy++)
+                    {
+                        for (int gx = 0; gx <= grid; gx++)
+                        {
+                            int g = gx + gy * (grid + 1);
+                            if (uniform)
+                            {
+                                RegionCloudFlow.Drift(RegionCloudFlow.Low, time, cross, out du[l][g], out dv[l][g]);
+                                fade[l][g] = 1f;
+                            }
+                            else
+                            {
+                                RegionCloudFlow.Sample(l, gx / (float)grid, gy / (float)grid, time, cross, out du[l][g], out dv[l][g], out fade[l][g]);
+                            }
+                        }
+                    }
+                }
+                System.Threading.Tasks.Parallel.For(0, size, y =>
+                {
+                    float v = 1f - (y + 0.5f) / size;
+                    for (int x = 0; x < size; x++)
+                    {
+                        float u = (x + 0.5f) / size;
+                        int p = (x + y * size) * 4;
+                        float r = ground[p], g = ground[p + 1], b = ground[p + 2];
+                        float ou, ov, of;
+                        GridAt(du[0], dv[0], fade[0], grid, u, v, out ou, out ov, out of);
+                        float shade = Texel(lowShadow, cs, u - ou - RegionClouds.ShadowOffset, v - ov + RegionClouds.ShadowOffset, 3) / 255f * of;
+                        r *= 1f - shade; g *= 1f - shade; b = b * (1f - shade) + 8f * shade;
+                        Over(lowPixels, cs, u - ou, v - ov, of, ref r, ref g, ref b);
+                        GridAt(du[1], dv[1], fade[1], grid, u, v, out ou, out ov, out of);
+                        Over(highPixels, cs, u - ou, v - ov, of, ref r, ref g, ref b);
+                        pixels[p] = (byte)r; pixels[p + 1] = (byte)g; pixels[p + 2] = (byte)b; pixels[p + 3] = 255;
+                    }
+                });
+                PngWriter.Write(Path.Combine(dir, string.Format(CultureInfo.InvariantCulture, "f-{0:0000}.png", f)), pixels, size, size);
+            }
+            Console.WriteLine("雲の連番 " + frames + " 枚（1 枚あたり " + step.ToString(CultureInfo.InvariantCulture) + " 秒） → " + Path.GetFullPath(dir));
+        }
+
+        /// <summary>
+        /// 流れの数字を出す：場所ごとの速さの幅（一様な流れを 1 として）、向きの幅、絵の引き伸ばしの最大（隣り合う位置のずれの差）。
+        /// </summary>
+        private static void PrintFlowStats(float cross)
+        {
+            const int grid = 32;
+            for (int layer = 0; layer < 2; layer++)
+            {
+                float baseU, baseV, nextU, nextV;
+                RegionCloudFlow.Drift(layer, 100f, cross, out baseU, out baseV);
+                RegionCloudFlow.Drift(layer, 101f, cross, out nextU, out nextV);
+                double baseSpeed = Math.Sqrt((nextU - baseU) * (nextU - baseU) + (nextV - baseV) * (nextV - baseV));
+                double baseAngle = Math.Atan2(nextV - baseV, nextU - baseU);
+                double minSpeed = double.MaxValue, maxSpeed = 0, maxTurn = 0, maxStretch = 0, maxShift = 0, minFade = 1;
+                for (int t = 0; t < 6; t++)
+                {
+                    float time = 100f + t * 37f;
+                    for (int gy = 0; gy < grid; gy++)
+                    {
+                        for (int gx = 0; gx < grid; gx++)
+                        {
+                            float u = gx / (float)grid, v = gy / (float)grid;
+                            float du0, dv0, f0, du1, dv1, f1, du2, dv2, f2, d0u, d0v;
+                            RegionCloudFlow.Sample(layer, u, v, time, cross, out du0, out dv0, out f0);
+                            RegionCloudFlow.Sample(layer, u, v, time + 1f, cross, out du1, out dv1, out f1);
+                            RegionCloudFlow.Sample(layer, u + 1f / grid, v, time, cross, out du2, out dv2, out f2);
+                            RegionCloudFlow.Drift(layer, time, cross, out d0u, out d0v);
+                            double vu = du1 - du0, vv = dv1 - dv0;
+                            if (Math.Abs(vu) > 0.5 || Math.Abs(vv) > 0.5) continue; // 一周して 0 へ戻る瞬間は数えない
+                            double speed = Math.Sqrt(vu * vu + vv * vv) / baseSpeed;
+                            double turn = Math.Abs(Math.Atan2(vv, vu) - baseAngle) * 180.0 / Math.PI;
+                            if (turn > 180.0) turn = 360.0 - turn;
+                            double stretch = Math.Sqrt((du2 - du0) * (du2 - du0) + (dv2 - dv0) * (dv2 - dv0)) * grid;
+                            double shift = Math.Sqrt((du0 - d0u) * (du0 - d0u) + (dv0 - d0v) * (dv0 - d0v));
+                            if (speed < minSpeed) minSpeed = speed;
+                            if (speed > maxSpeed) maxSpeed = speed;
+                            if (turn > maxTurn) maxTurn = turn;
+                            if (stretch > maxStretch) maxStretch = stretch;
+                            if (shift > maxShift) maxShift = shift;
+                            if (f0 < minFade) minFade = f0;
+                        }
+                    }
+                }
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                    "  流れ {0}: 速さ {1:F2}〜{2:F2} 倍、向きの振れ 最大 {3:F0} 度、渦のずれ 最大 {4:P1}、引き伸ばし 最大 {5:P0}、濃さ {6:F2}〜1",
+                    layer == 0 ? "低い雲" : "高い雲", minSpeed, maxSpeed, maxTurn, maxShift, maxStretch, minFade));
+            }
+        }
+
+        private static void GridAt(float[] du, float[] dv, float[] fade, int grid, float u, float v, out float ou, out float ov, out float of)
+        {
+            float fx = u * grid;
+            float fy = v * grid;
+            int x0 = Math.Min(grid - 1, Math.Max(0, (int)fx));
+            int y0 = Math.Min(grid - 1, Math.Max(0, (int)fy));
+            float tx = fx - x0;
+            float ty = fy - y0;
+            int a = x0 + y0 * (grid + 1);
+            int c = a + grid + 1;
+            ou = RegionNoise.Lerp(RegionNoise.Lerp(du[a], du[a + 1], tx), RegionNoise.Lerp(du[c], du[c + 1], tx), ty);
+            ov = RegionNoise.Lerp(RegionNoise.Lerp(dv[a], dv[a + 1], tx), RegionNoise.Lerp(dv[c], dv[c + 1], tx), ty);
+            of = RegionNoise.Lerp(RegionNoise.Lerp(fade[a], fade[a + 1], tx), RegionNoise.Lerp(fade[c], fade[c + 1], tx), ty);
+        }
+
+        /// <summary>層の絵を (u, v)（v は北が正、端は反対側へ回り込む）で読む。</summary>
+        private static float Texel(byte[] layer, int size, float u, float v, int channel)
+        {
+            float fx = u * size - 0.5f;
+            float fy = (1f - v) * size - 0.5f;
+            int x0 = (int)Math.Floor(fx);
+            int y0 = (int)Math.Floor(fy);
+            float tx = fx - x0;
+            float ty = fy - y0;
+            x0 = ((x0 % size) + size) % size;
+            y0 = ((y0 % size) + size) % size;
+            int x1 = x0 + 1 < size ? x0 + 1 : 0;
+            int y1 = y0 + 1 < size ? y0 + 1 : 0;
+            float a = layer[(x0 + y0 * size) * 4 + channel];
+            float b = layer[(x1 + y0 * size) * 4 + channel];
+            float c = layer[(x0 + y1 * size) * 4 + channel];
+            float d = layer[(x1 + y1 * size) * 4 + channel];
+            return RegionNoise.Lerp(RegionNoise.Lerp(a, b, tx), RegionNoise.Lerp(c, d, tx), ty);
+        }
+
+        private static void Over(byte[] layer, int size, float u, float v, float opacity, ref float r, ref float g, ref float b)
+        {
+            float alpha = Texel(layer, size, u, v, 3) / 255f * opacity;
+            if (alpha <= 0f) return;
+            r += (Texel(layer, size, u, v, 0) - r) * alpha;
+            g += (Texel(layer, size, u, v, 1) - g) * alpha;
+            b += (Texel(layer, size, u, v, 2) - b) * alpha;
+        }
+
+        private static string DescribeJson(RegionData data)
+        {
+            var text = new System.Text.StringBuilder();
+            text.Append("{\n  \"seed\": ").Append(data.Spec.Seed).Append(",\n  \"areas\": [\n");
+            for (int a = 0; a < data.Areas.Count; a++)
+            {
+                RegionArea area = data.Areas[a];
+                text.Append(string.Format(CultureInfo.InvariantCulture,
+                    "    {{\"id\": {0}, \"name\": \"{1}\", \"kind\": \"{2}\", \"basis\": \"{3}\", \"x\": {4:F2}, \"y\": {5:F2}, \"km2\": {6:F0}, \"mean\": {7:F0}, \"max\": {8:F0}, \"sites\": {9}}}{10}\n",
+                    area.Id, area.Name, area.Kind, area.Basis, area.LabelX, area.LabelY, area.AreaKm2, area.MeanHeight, area.MaxHeight, area.SiteCount,
+                    a + 1 < data.Areas.Count ? "," : ""));
+            }
+            text.Append("  ],\n  \"sites\": [\n");
+            for (int s = 0; s < data.Sites.Count; s++)
+            {
+                RegionSite site = data.Sites[s];
+                text.Append(string.Format(CultureInfo.InvariantCulture,
+                    "    {{\"id\": {0}, \"name\": \"{1}\", \"kind\": \"{2}\", \"x\": {3:F2}, \"y\": {4:F2}, \"height\": {5:F0}, \"area\": {6}, \"score\": {7:F3}, \"rank\": {8}, \"candidates\": {9}, \"reason\": \"{10}\"}}{11}\n",
+                    site.Id, site.Name, site.Kind, site.MapX, site.MapY, site.HeightMeters, site.AreaId, site.Score, site.Rank, site.Candidates, site.Reason,
+                    s + 1 < data.Sites.Count ? "," : ""));
+            }
+            text.Append("  ]\n}\n");
+            return text.ToString();
         }
 
         /// <summary>
@@ -156,7 +506,7 @@ namespace Vastcore.RegionMap.Preview
             return float.Parse(value, CultureInfo.InvariantCulture);
         }
 
-        private static void MarkSites(byte[] pixels, int n, RegionData data)
+        private static void MarkSites(byte[] pixels, int n, RegionData data, bool byKind = false)
         {
             int radius = Math.Max(4, n / 110);
             foreach (RegionSite site in data.Sites)
@@ -173,9 +523,10 @@ namespace Vastcore.RegionMap.Preview
                         int y = cy + dy;
                         if (x < 0 || y < 0 || x >= n || y >= n) continue;
                         int p = (x + y * n) * 4;
+                        // 採点の図では白い丸（色は下の塗りが示す）。ほかの図では赤い丸
                         pixels[p] = 255;
-                        pixels[p + 1] = 70;
-                        pixels[p + 2] = 60;
+                        pixels[p + 1] = byKind ? (byte)255 : (byte)70;
+                        pixels[p + 2] = byKind ? (byte)255 : (byte)60;
                     }
                 }
             }

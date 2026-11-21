@@ -144,16 +144,26 @@ namespace Vastcore.RegionMap.Editor
                     Capture(output, "explorer-6-whole.png");
                     break;
                 case 5:
+                    // 地名を「名前と境界」にして、全体表示のまま撮る
+                    explorer.NextAreaDisplay();
+                    break;
+                case 6:
+                    Capture(output, "explorer-7-areas.png");
+                    break;
+                case 7:
+                    // 地名を「名前」へ戻す（名前と境界 → なし → 名前）
+                    explorer.NextAreaDisplay();
+                    explorer.NextAreaDisplay();
                     explorer.ShowFullWidth();
                     explorer.NextCloudOpacity();
                     break;
-                case 6:
+                case 8:
                     Capture(output, "explorer-4-clouds-thin.png");
                     break;
-                case 7:
+                case 9:
                     explorer.NextStyle();
                     break;
-                case 8:
+                case 10:
                     Capture(output, "explorer-5-atlas.png");
                     break;
                 default:

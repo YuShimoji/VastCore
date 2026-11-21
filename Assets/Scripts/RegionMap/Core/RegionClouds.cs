@@ -18,8 +18,28 @@ namespace Vastcore.RegionMap
         /// </summary>
         public static float[] BuildField(int size, int regionSeed, float cover)
         {
+            float[] low;
+            float[] high;
+            BuildLayerFields(size, regionSeed, cover, out low, out high);
+            for (int i = 0; i < low.Length; i++)
+            {
+                if (high[i] > low[i]) low[i] = high[i];
+            }
+            return low;
+        }
+
+        /// <summary>
+        /// 雲を高さで 2 枚に分けて作る。low は低い所の塊の雲、high は高い所の薄い筋雲。
+        /// 探索画面では 2 枚を別の風で流す（高さで風の向きと速さが違うので、重なり方が時間で変わる）。
+        /// 2 枚の濃い方を取ると BuildField と同じになる。
+        /// </summary>
+        public static void BuildLayerFields(int size, int regionSeed, float cover, out float[] low, out float[] high)
+        {
             var field = new float[size * size];
-            if (cover <= 0f) return field;
+            var veils = new float[size * size];
+            low = field;
+            high = veils;
+            if (cover <= 0f) return;
             uint seed = unchecked((uint)regionSeed * 2246822519u + 3266489917u);
             float inv = 1f / size;
             float amount = (cover - 0.5f) * 1.5f;
@@ -54,10 +74,10 @@ namespace Vastcore.RegionMap
                     float sheet = RegionNoise.Smooth(0.05f, 0.75f, patch * 1.1f + streak * 0.55f + amount * 0.7f);
                     float veil = sheet * (0.72f + 0.28f * RegionNoise.Smooth(-0.5f, 0.5f, fibre)) * 0.21f;
 
-                    field[x + y * size] = thick > veil ? thick : veil;
+                    field[x + y * size] = thick;
+                    veils[x + y * size] = veil;
                 }
             });
-            return field;
         }
 
         /// <summary>雲の濃さを、セルの間をなめらかにつないで読む。範囲の外は反対側へ回り込む。</summary>
