@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -8,9 +9,10 @@ using UnityEngine.UI;
 namespace Vastcore.RegionMap
 {
     /// <summary>
-    /// 自動生成した地域の鳥瞰図を表示し、位置を指定してサーチする探索画面。
+    /// 自動生成した地域の鳥瞰図を画面全体に表示し、位置を指定してサーチする探索画面。
+    /// 情報とボタンは、半透明の小さな部品として地図の上に重ねる。
     /// 空のシーンにこのコンポーネントを 1 つ置けば動く（画面部品は起動時に組み立てる）。
-    /// 操作: 地図を左クリックでカーソル移動、サーチボタンか Space でサーチ、ホイールで拡大、右ドラッグで移動。
+    /// 操作: 地図を左クリックでカーソル移動、サーチボタンか Space でサーチ、ホイールで拡大・縮小、右ドラッグで移動。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class RegionExplorer : MonoBehaviour
@@ -24,18 +26,32 @@ namespace Vastcore.RegionMap
         [Tooltip("雲が地図の幅を横切るのにかかる秒数。0 にすると雲は動かない。")]
         [SerializeField] private float _cloudCrossSeconds = 420f;
 
-        private const float PanelWidth = 560f;
-        private const float MapSize = 1016f;
-        private const float Gap = 32f;
+        // 寸法は Canvas の単位（高さ 1080 を基準に画面へ合わせる）
+        private const float Margin = 28f;
+        private const float PartWidth = 392f;
+        private const float PartGap = 10f;
+        private const float PartPad = 18f;
+        private const float PartInner = PartWidth - PartPad * 2f;
+        // 左の部品が覆う幅。地図の西端は、この幅だけ画面の内側へ引き出せる
+        private const float LeftInset = Margin + PartWidth + Margin;
+        private const float ToolHeight = 42f;
+        private const float ListHeader = 44f;
+        private const float ListRow = 27f;
+        private const float CardWidth = 380f;
+        private const float CardHeight = 150f;
         private const float MaxZoom = 8f;
 
-        private static readonly Color PanelColor = new Color32(18, 22, 28, 235);
-        private static readonly Color BoxColor = new Color32(34, 40, 48, 255);
-        private static readonly Color TextColor = new Color32(236, 233, 226, 255);
-        private static readonly Color MutedColor = new Color32(150, 156, 162, 255);
+        // 重ねる部品の面は半透明。下の地図と雲が透けて見える
+        private static readonly Color PartColor = new Color(10f / 255f, 13f / 255f, 18f / 255f, 0.56f);
+        private static readonly Color CardColor = new Color(10f / 255f, 13f / 255f, 18f / 255f, 0.64f);
+        private static readonly Color LineColor = new Color(1f, 1f, 1f, 0.22f);
+        private static readonly Color ShadowColor = new Color(0f, 0f, 0f, 0.85f);
+        private static readonly Color TextColor = new Color32(240, 238, 232, 255);
+        private static readonly Color MutedColor = new Color32(198, 204, 211, 255);
         private static readonly Color AccentColor = new Color32(232, 170, 70, 255);
+        private static readonly Color AccentLightColor = new Color32(255, 207, 122, 255);
         private static readonly Color AccentTextColor = new Color32(40, 28, 8, 255);
-        private static readonly Color OffColor = new Color32(62, 68, 76, 255);
+        private static readonly Color OffColor = new Color(1f, 1f, 1f, 0.22f);
 
         // 雲の濃さの段（ボタンで順に切り替える）
         private static readonly float[] CloudOpacity = { 1f, 0.45f, 0f };
@@ -60,37 +76,59 @@ namespace Vastcore.RegionMap
         private Texture2D _cloudTexture;
         private Texture2D _shadowTexture;
         private Font _font;
+        private Font _numberFont;
         private Sprite _ring;
+        private Sprite _markRing;
         private Sprite _dot;
         private Sprite _crosshair;
 
+        private RectTransform _viewRect;
+        private RectTransform _content;
         private RawImage _map;
         private RawImage _clouds;
         private RawImage _cloudShadows;
-        private RectTransform _mapRect;
         private RectTransform _cursor;
         private RectTransform _range;
         private RectTransform _markerRoot;
-        private RectTransform _listRoot;
         private readonly List<RectTransform> _markers = new List<RectTransform>();
         private readonly List<RegionSite> _markerSites = new List<RegionSite>();
 
         private Text _title;
         private Text _subtitle;
-        private Text _coordinates;
-        private Text _detail;
+        private Text _positionLabel;
+        private Text _coordinateX;
+        private Text _coordinateY;
+        private Text _groundLabel;
+        private Text _groundValue;
+        private Text _biomeValue;
         private Text _signalText;
-        private Text _listTitle;
+        private Image[] _signalBars;
+        private RectTransform _listPart;
+        private RectTransform _listRoot;
+        private float _listTop;
+        private readonly List<RectTransform> _listRows = new List<RectTransform>();
+        private Text _listCount;
+        private Text _searchCount;
         private Text _message;
         private CanvasGroup _messageGroup;
         private float _messageHideAt;
         private Text _styleLabel;
         private Text _cloudLabel;
-        private Image[] _signalBars;
         private Button _searchButton;
         private Button _regionButton;
         private Button _styleButton;
         private Button _cloudButton;
+
+        // 発見した地点のカード（印のそばに出る）
+        private RectTransform _card;
+        private RectTransform _cardLine;
+        private Text _cardEyebrow;
+        private Text _cardTitle;
+        private Text _cardKind;
+        private Text _cardPosition;
+        private Text _cardHeight;
+        private RegionSite _cardSite;
+
         private int _cloudLevel;
         private Vector2 _cloudDrift;
         // 生成中の工程名。別スレッドから書き、Update で読んで知らせに出す
@@ -98,6 +136,7 @@ namespace Vastcore.RegionMap
         private string _phaseShown;
         private string _phaseMessage = string.Empty;
 
+        // _zoom が 1 の時、地図の幅が画面の幅に合う。_center は画面の中央に来る地図上の位置（0〜1、v は北が正）
         private float _zoom = 1f;
         private Vector2 _center = new Vector2(0.5f, 0.5f);
         private Vector2 _cursorMap = new Vector2(50f, 50f);
@@ -128,21 +167,31 @@ namespace Vastcore.RegionMap
             get { return _cursorMap; }
         }
 
-        /// <summary>雲の濃さの段（0 濃い、1 薄い、2 なし）。</summary>
         /// <summary>雲の層が流れた量（地図の幅を 1 とした割合。1 で一周して 0 へ戻る）。</summary>
         public Vector2 CloudDrift { get { return _cloudDrift; } }
 
+        /// <summary>雲の濃さの段（0 濃い、1 薄い、2 なし）。</summary>
         public int CloudLevel
         {
             get { return _cloudLevel; }
         }
 
+        /// <summary>表示の倍率。1 で地図の幅が画面の幅に合う。</summary>
+        public float Zoom
+        {
+            get { return _zoom; }
+        }
+
         private void Awake()
         {
             _font = Font.CreateDynamicFontFromOSFont(new[] { "Yu Gothic UI", "Meiryo UI", "Meiryo", "MS Gothic", "Arial" }, 28);
+            // 数字は幅の揃った書体で出す（座標が動いても桁が揺れにくい）
+            _numberFont = Font.CreateDynamicFontFromOSFont(new[] { "Bahnschrift", "Consolas", "Segoe UI", "Arial" }, 28);
             _ring = RegionMapTexture.CreateRingSprite(128, 3f, false);
+            _markRing = RegionMapTexture.CreateRingSprite(96, 6f, false);
             _dot = RegionMapTexture.CreateRingSprite(32, 0f, true);
-            _crosshair = RegionMapTexture.CreateCrosshairSprite(96, 9f, 4f, 2.5f);
+            // 十字の腕は、発見した地点の輪（半径 27）の外に出す。発見した地点に重ねても、輪と腕が重ならない
+            _crosshair = RegionMapTexture.CreateCrosshairSprite(176, 68f, 5f, 2.5f);
             EnsureCamera();
             EnsureEventSystem();
             BuildScreen();
@@ -201,10 +250,11 @@ namespace Vastcore.RegionMap
 
         // ---- 外から呼べる操作（ボタンとテストの両方が使う） ----
 
-        /// <summary>カーソルを地図座標（0〜100）へ動かす。</summary>
+        /// <summary>カーソルを地図座標（0〜100）へ動かす。画面の外や部品の下になる時は、見える位置まで地図を送る。</summary>
         public void MoveCursor(float mapX, float mapY)
         {
             _cursorMap = new Vector2(Mathf.Clamp(mapX, 0f, RegionData.MapUnits), Mathf.Clamp(mapY, 0f, RegionData.MapUnits));
+            EnsureVisible(_cursorMap);
             RefreshReadout();
         }
 
@@ -212,13 +262,15 @@ namespace Vastcore.RegionMap
         public SearchResult SearchAtCursor()
         {
             if (!IsReady) return new SearchResult();
+            HideCard();
             SearchResult result = _session.Search(_cursorMap.x, _cursorMap.y);
             _lastSignal = result.Signal;
             switch (result.Signal)
             {
                 case SearchSignal.Found:
-                    ShowMessage("「" + result.Site.Name + "」を発見", 6f);
                     AddDiscovered(result.Site);
+                    ShowCard(result.Site);
+                    HideMessage();
                     break;
                 case SearchSignal.Strong:
                     ShowMessage("強い反応。すぐ近くに何かある", 4f);
@@ -265,7 +317,24 @@ namespace Vastcore.RegionMap
             if (IsReady) ShowMessage("雲：" + CloudOpacityName[_cloudLevel], 3f);
         }
 
-        /// <summary>地図の下端に知らせを出す。seconds が 0 以下なら、次の知らせまで出したままにする。</summary>
+        /// <summary>地域の全体が画面に入る倍率まで縮める。</summary>
+        public void ShowWholeRegion()
+        {
+            _zoom = MinZoom();
+            _center = new Vector2(0.5f, 0.5f);
+            ClampView();
+        }
+
+        /// <summary>地図の幅を画面の幅に合わせる（起動時の見え方）。カーソルが見える位置へ地図を送る。</summary>
+        public void ShowFullWidth()
+        {
+            _zoom = 1f;
+            _center = new Vector2(0.5f, 1f - _cursorMap.y / RegionData.MapUnits);
+            ClampView();
+            EnsureVisible(_cursorMap);
+        }
+
+        /// <summary>画面の下に知らせを出す。seconds が 0 以下なら、次の知らせまで出したままにする。</summary>
         private void ShowMessage(string text, float seconds)
         {
             _message.text = text;
@@ -273,7 +342,13 @@ namespace Vastcore.RegionMap
             _messageHideAt = seconds > 0f ? Time.unscaledTime + seconds : -1f;
         }
 
-        /// <summary>時間が来た知らせを薄くして消す。出したままだと地図の南端が読めない。</summary>
+        private void HideMessage()
+        {
+            _messageGroup.alpha = 0f;
+            _messageHideAt = -1f;
+        }
+
+        /// <summary>時間が来た知らせを薄くして消す。出したままだと下の地図が読めない。</summary>
         private void FadeMessage()
         {
             if (_messageHideAt < 0f || _messageGroup.alpha <= 0f) return;
@@ -343,7 +418,7 @@ namespace Vastcore.RegionMap
             {
                 RegionMapTexture.Apply(_texture, generated.Pixels, size);
             }
-            _map.color = Color.white;
+            _map.enabled = true;
 
             if (generated.CloudPixels != null)
             {
@@ -364,14 +439,17 @@ namespace Vastcore.RegionMap
                 _center = new Vector2(0.5f, 0.5f);
                 _cursorMap = new Vector2(50f, 50f);
                 ClearDiscovered();
+                ClampView();
                 _title.text = "地域 seed " + _data.Spec.Seed;
-                _subtitle.text = string.Format("{0:0} km 四方 ・ 陸 {1:0}% ・ 最高 {2:0} m", _data.SizeKm, _data.LandFraction * 100f, _data.MaxHeight);
+                _subtitle.text = string.Format("{0:0} km 四方 ・ 陸 {1:0}% ・ 最高 {2} m", _data.SizeKm, _data.LandFraction * 100f, Meters(_data.MaxHeight));
                 ShowMessage("地図をクリックして位置を決め、サーチで調べる", 8f);
             }
             else
             {
                 ShowMessage("描き方：" + StyleName(_render.Style), 3f);
             }
+            _cursor.gameObject.SetActive(true);
+            _range.gameObject.SetActive(true);
             SetButtons(true);
             RefreshCloudLayers();
             RefreshReadout();
@@ -382,15 +460,25 @@ namespace Vastcore.RegionMap
         private void HandlePointer()
         {
             Vector2 local;
-            _hovering = RectTransformUtility.ScreenPointToLocalPointInRectangle(_mapRect, Input.mousePosition, null, out local)
-                && Mathf.Abs(local.x) <= MapSize * 0.5f && Mathf.Abs(local.y) <= MapSize * 0.5f;
+            bool inside = RectTransformUtility.ScreenPointToLocalPointInRectangle(_viewRect, Input.mousePosition, null, out local)
+                && _viewRect.rect.Contains(local);
+            // 部品とボタンの上では地図を操作しない（面の下の地図は、右ドラッグで引き出して触る）
+            EventSystem events = EventSystem.current;
+            bool free = inside && !(events != null && events.IsPointerOverGameObject());
+            Vector2 uv = LocalToUv(local);
+            _hovering = free && uv.x >= 0f && uv.x <= 1f && uv.y >= 0f && uv.y <= 1f;
 
             if (_hovering)
             {
                 _hoverMap = LocalToMap(local);
+                // クリックした位置は必ず見えているので、地図は送らない
+                if (Input.GetMouseButtonDown(0)) _cursorMap = _hoverMap;
+            }
+
+            if (free)
+            {
                 float wheel = Input.mouseScrollDelta.y;
                 if (Mathf.Abs(wheel) > 0.01f) ZoomAt(local, wheel > 0f ? 1.25f : 0.8f);
-                if (Input.GetMouseButtonDown(0)) MoveCursor(_hoverMap.x, _hoverMap.y);
                 if (Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2))
                 {
                     _panning = true;
@@ -404,8 +492,7 @@ namespace Vastcore.RegionMap
                 {
                     Vector2 delta = local - _panLastLocal;
                     _panLastLocal = local;
-                    float width = 1f / _zoom;
-                    _center -= new Vector2(delta.x, delta.y) / MapSize * width;
+                    _center -= delta / MapSide();
                     ClampView();
                 }
                 else
@@ -419,6 +506,11 @@ namespace Vastcore.RegionMap
         private void HandleKeys()
         {
             if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return)) SearchAtCursor();
+            if (Input.GetKeyDown(KeyCode.Escape)) HideCard();
+            if (Input.GetKeyDown(KeyCode.Home))
+            {
+                if (_zoom > MinZoom() + 0.001f) ShowWholeRegion(); else ShowFullWidth();
+            }
 
             float step = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) ? 0.1f : 0.5f;
             float dx = 0f;
@@ -433,27 +525,83 @@ namespace Vastcore.RegionMap
         private void ZoomAt(Vector2 local, float factor)
         {
             Vector2 before = LocalToUv(local);
-            _zoom = Mathf.Clamp(_zoom * factor, 1f, MaxZoom);
+            _zoom = Mathf.Clamp(_zoom * factor, MinZoom(), MaxZoom);
             Vector2 after = LocalToUv(local);
             _center += before - after;
             ClampView();
         }
 
+        // ---- 表示範囲（地図の板を、画面の中央を原点にして動かす） ----
+
+        private Vector2 ViewSize()
+        {
+            Rect rect = _viewRect.rect;
+            return rect.width > 1f && rect.height > 1f ? rect.size : new Vector2(1920f, 1080f);
+        }
+
+        /// <summary>画面上の地図の 1 辺（Canvas の単位）。</summary>
+        private float MapSide()
+        {
+            return ViewSize().x * _zoom;
+        }
+
+        /// <summary>地域の全体が縦に収まる倍率。これより小さくは縮めない。</summary>
+        private float MinZoom()
+        {
+            Vector2 view = ViewSize();
+            return Mathf.Min(1f, view.y / view.x);
+        }
+
         private void ClampView()
         {
-            float half = 0.5f / _zoom;
-            _center.x = Mathf.Clamp(_center.x, half, 1f - half);
-            _center.y = Mathf.Clamp(_center.y, half, 1f - half);
+            Vector2 view = ViewSize();
+            float side = view.x * _zoom;
+
+            // 横：地図の西端は、左の部品の右端までしか内側へ入れない。東端は画面の右端より内側へ入れない
+            float open = view.x - LeftInset;
+            float west = -_center.x * side;
+            if (side <= open) west = -view.x * 0.5f + LeftInset + (open - side) * 0.5f;
+            else west = Mathf.Clamp(west, view.x * 0.5f - side, -view.x * 0.5f + LeftInset);
+            _center.x = -west / side;
+
+            // 縦：地図が画面より低い時は中央に置く
+            if (side <= view.y)
+            {
+                _center.y = 0.5f;
+            }
+            else
+            {
+                float half = view.y * 0.5f / side;
+                _center.y = Mathf.Clamp(_center.y, half, 1f - half);
+            }
+        }
+
+        /// <summary>地図上の位置が、画面の端や左の部品の下にある時、見える位置まで地図を送る。</summary>
+        private void EnsureVisible(Vector2 map)
+        {
+            if (_data == null) return;
+            Vector2 view = ViewSize();
+            Vector2 local = MapToLocal(map);
+            float left = -view.x * 0.5f + LeftInset + 60f;
+            float right = view.x * 0.5f - 140f;
+            float bottom = -view.y * 0.5f + 190f;
+            float top = view.y * 0.5f - 150f;
+            Vector2 shift = Vector2.zero;
+            if (local.x < left) shift.x = local.x - left;
+            else if (local.x > right) shift.x = local.x - right;
+            if (local.y < bottom) shift.y = local.y - bottom;
+            else if (local.y > top) shift.y = local.y - top;
+            if (shift == Vector2.zero) return;
+            _center += shift / MapSide();
+            ClampView();
         }
 
         // ---- 座標の換算（地図座標は Y が南向き、テクスチャは V が上向き） ----
 
         private Vector2 LocalToUv(Vector2 local)
         {
-            float width = 1f / _zoom;
-            return new Vector2(
-                _center.x - width * 0.5f + (local.x / MapSize + 0.5f) * width,
-                _center.y - width * 0.5f + (local.y / MapSize + 0.5f) * width);
+            float side = MapSide();
+            return new Vector2(_center.x + local.x / side, _center.y + local.y / side);
         }
 
         private Vector2 LocalToMap(Vector2 local)
@@ -464,20 +612,19 @@ namespace Vastcore.RegionMap
 
         private Vector2 MapToLocal(Vector2 map)
         {
-            float width = 1f / _zoom;
+            float side = MapSide();
             float u = map.x / RegionData.MapUnits;
             float v = 1f - map.y / RegionData.MapUnits;
-            return new Vector2(
-                ((u - (_center.x - width * 0.5f)) / width - 0.5f) * MapSize,
-                ((v - (_center.y - width * 0.5f)) / width - 0.5f) * MapSize);
+            return new Vector2((u - _center.x) * side, (v - _center.y) * side);
         }
 
         // ---- 表示の更新 ----
 
         private void RefreshOverlay()
         {
-            float width = 1f / _zoom;
-            _map.uvRect = new Rect(_center.x - width * 0.5f, _center.y - width * 0.5f, width, width);
+            float side = MapSide();
+            _content.sizeDelta = new Vector2(side, side);
+            _content.anchoredPosition = new Vector2((0.5f - _center.x) * side, (0.5f - _center.y) * side);
 
             // 雲は風下へ少しずつずらす。影は雲より南東（u は東、v は北が正なので +u, -v）に落ちる
             if (_cloudCrossSeconds > 0f)
@@ -486,18 +633,19 @@ namespace Vastcore.RegionMap
                 _cloudDrift.x = Mathf.Repeat(_cloudDrift.x, 1f);
                 _cloudDrift.y = Mathf.Repeat(_cloudDrift.y, 1f);
             }
-            var cloudView = new Rect(_map.uvRect.x - _cloudDrift.x, _map.uvRect.y - _cloudDrift.y, width, width);
-            _clouds.uvRect = cloudView;
-            _cloudShadows.uvRect = new Rect(cloudView.x - RegionClouds.ShadowOffset, cloudView.y + RegionClouds.ShadowOffset, width, width);
+            _clouds.uvRect = new Rect(-_cloudDrift.x, -_cloudDrift.y, 1f, 1f);
+            _cloudShadows.uvRect = new Rect(-_cloudDrift.x - RegionClouds.ShadowOffset, -_cloudDrift.y + RegionClouds.ShadowOffset, 1f, 1f);
+
             _cursor.anchoredPosition = MapToLocal(_cursorMap);
             _range.anchoredPosition = _cursor.anchoredPosition;
-            float diameter = _session.FoundRadius / RegionData.MapUnits * MapSize * _zoom * 2f;
+            float diameter = _session.FoundRadius / RegionData.MapUnits * side * 2f;
             _range.sizeDelta = new Vector2(diameter, diameter);
             for (int m = 0; m < _markers.Count; m++)
             {
                 RegionSite site = _markerSites[m];
                 _markers[m].anchoredPosition = MapToLocal(new Vector2(site.MapX, site.MapY));
             }
+            PlaceCard();
         }
 
         /// <summary>雲と影の層の見え方を、描き方と濃さの段に合わせる。雲があるのは衛星写真の時だけ。</summary>
@@ -517,44 +665,81 @@ namespace Vastcore.RegionMap
         {
             if (_data == null) return;
             Vector2 at = _hovering ? _hoverMap : _cursorMap;
-            _coordinates.text = string.Format("X {0:00.0}　Y {1:00.0}", at.x, at.y);
+            _positionLabel.text = _hovering ? "ポインター位置" : "カーソル位置";
+            _coordinateX.text = at.x.ToString("00.0", CultureInfo.InvariantCulture);
+            _coordinateY.text = at.y.ToString("00.0", CultureInfo.InvariantCulture);
             float height = _data.HeightAtMap(at.x, at.y);
-            string ground = height > 0f ? string.Format("標高 {0:0} m", height) : string.Format("水深 {0:0} m", -height);
-            _detail.text = (_hovering ? "ポインター位置 ・ " : "カーソル位置 ・ ") + ground + " ・ " + BiomeName(_data.BiomeAtMap(at.x, at.y));
+            _groundLabel.text = height > 0f ? "標高" : "水深";
+            _groundValue.text = Meters(Mathf.Abs(height)) + " m";
+            _biomeValue.text = BiomeName(_data.BiomeAtMap(at.x, at.y));
 
             SearchSignal signal = _liveSignal ? _session.Sense(_cursorMap.x, _cursorMap.y).Signal : _lastSignal;
             int level = (int)signal;
             for (int b = 0; b < _signalBars.Length; b++) _signalBars[b].color = b < level ? AccentColor : OffColor;
             _signalText.text = SignalName(signal);
-            _listTitle.text = string.Format("発見した地点 {0} / {1}　（サーチ {2} 回）", _session.Discovered.Count, _session.TotalSites, _session.SearchCount);
+            _listCount.text = _session.Discovered.Count + " / " + _session.TotalSites;
+            _searchCount.text = "サーチ " + _session.SearchCount + " 回";
+        }
+
+        private static string Meters(float value)
+        {
+            return Mathf.RoundToInt(value).ToString("#,0", CultureInfo.InvariantCulture);
         }
 
         private void AddDiscovered(RegionSite site)
         {
+            // 印は橙の輪と中心の点。輪には暗い縁を付け、雲や雪の上でも読めるようにする
             RectTransform marker = CreateImage(_markerRoot, "Marker " + site.Id, AccentColor, _dot).rectTransform;
-            marker.sizeDelta = new Vector2(18f, 18f);
-            RectTransform halo = CreateImage(marker, "Halo", AccentColor, _ring).rectTransform;
-            halo.sizeDelta = new Vector2(40f, 40f);
+            marker.sizeDelta = new Vector2(14f, 14f);
+            AddDarkEdge(marker.gameObject);
+            RectTransform halo = CreateImage(marker, "Halo", AccentColor, _markRing).rectTransform;
+            halo.sizeDelta = new Vector2(54f, 54f);
+            AddDarkEdge(halo.gameObject);
             _markers.Add(marker);
             _markerSites.Add(site);
 
-            int row = _markers.Count - 1;
-            Button entry = CreateButton(_listRoot, site.Name, BoxColor, TextColor, 20, TextAnchor.MiddleLeft);
-            RectTransform rect = (RectTransform)entry.transform;
-            rect.anchorMin = new Vector2(0f, 1f);
-            rect.anchorMax = new Vector2(1f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.sizeDelta = new Vector2(0f, 24f);
-            rect.anchoredPosition = new Vector2(0f, -row * 25f);
+            int number = _markers.Count;
+            Button entry = CreateRowButton(_listRoot, "Row " + number);
+            RectTransform row = (RectTransform)entry.transform;
+            Text index = CreateText(row, "Number", number.ToString("00", CultureInfo.InvariantCulture), 18, AccentLightColor, TextAnchor.MiddleLeft, _numberFont);
+            Place(index.rectTransform, 0f, 0f, 30f, ListRow - 1f);
+            Text name = CreateText(row, "Name", site.Name, 18, TextColor, TextAnchor.MiddleLeft, _font);
+            Place(name.rectTransform, 34f, 0f, PartInner - 34f - 112f, ListRow - 1f);
+            string where = site.MapX.ToString("0.0", CultureInfo.InvariantCulture) + " , " + site.MapY.ToString("0.0", CultureInfo.InvariantCulture);
+            Text position = CreateText(row, "Position", where, 16, MutedColor, TextAnchor.MiddleRight, _numberFont);
+            Place(position.rectTransform, PartInner - 110f, 0f, 110f, ListRow - 1f);
             entry.onClick.AddListener(() => FocusSite(site));
+            _listRows.Add(row);
+            LayoutList();
+        }
+
+        /// <summary>発見した地点の一覧を、件数に合わせた高さにする。空の時は見出しだけの小さな部品になる。</summary>
+        private void LayoutList()
+        {
+            int count = _listRows.Count;
+            float room = ViewSize().y - _listTop - ListHeader - 10f - (Margin + ToolHeight + 14f);
+            float pitch = count > 0 ? Mathf.Min(ListRow, room / count) : ListRow;
+            for (int r = 0; r < count; r++)
+            {
+                RectTransform row = _listRows[r];
+                row.anchorMin = new Vector2(0f, 1f);
+                row.anchorMax = new Vector2(1f, 1f);
+                row.pivot = new Vector2(0.5f, 1f);
+                row.sizeDelta = new Vector2(0f, ListRow - 1f);
+                row.anchoredPosition = new Vector2(0f, -r * pitch);
+            }
+            float height = count > 0 ? ListHeader + (count - 1) * pitch + ListRow + 8f : ListHeader;
+            _listPart.sizeDelta = new Vector2(PartWidth, height);
         }
 
         private void FocusSite(RegionSite site)
         {
-            MoveCursor(site.MapX, site.MapY);
+            _cursorMap = new Vector2(site.MapX, site.MapY);
             _center = new Vector2(site.MapX / RegionData.MapUnits, 1f - site.MapY / RegionData.MapUnits);
             ClampView();
-            ShowMessage(string.Format("{0}　X {1:0.0}　Y {2:0.0}", site.Name, site.MapX, site.MapY), 4f);
+            EnsureVisible(_cursorMap);
+            ShowCard(site);
+            RefreshReadout();
         }
 
         private void ClearDiscovered()
@@ -562,7 +747,55 @@ namespace Vastcore.RegionMap
             for (int m = 0; m < _markers.Count; m++) Destroy(_markers[m].gameObject);
             _markers.Clear();
             _markerSites.Clear();
-            for (int c = _listRoot.childCount - 1; c >= 0; c--) Destroy(_listRoot.GetChild(c).gameObject);
+            for (int r = 0; r < _listRows.Count; r++) Destroy(_listRows[r].gameObject);
+            _listRows.Clear();
+            LayoutList();
+            HideCard();
+        }
+
+        // ---- 発見した地点のカード ----
+
+        private void ShowCard(RegionSite site)
+        {
+            _cardSite = site;
+            int number = _markerSites.IndexOf(site) + 1;
+            _cardEyebrow.text = "発見　" + number.ToString("00", CultureInfo.InvariantCulture) + " / " + _session.TotalSites;
+            _cardTitle.text = site.Name;
+            _cardKind.text = KindName(site.Kind);
+            _cardPosition.text = site.MapX.ToString("0.0", CultureInfo.InvariantCulture) + " , " + site.MapY.ToString("0.0", CultureInfo.InvariantCulture);
+            _cardHeight.text = Meters(site.HeightMeters) + " m";
+            _card.gameObject.SetActive(true);
+            _cardLine.gameObject.SetActive(true);
+            PlaceCard();
+        }
+
+        private void HideCard()
+        {
+            _cardSite = null;
+            _card.gameObject.SetActive(false);
+            _cardLine.gameObject.SetActive(false);
+        }
+
+        /// <summary>カードを印の右下に置く。画面の右や下にはみ出す時は、反対側へ回す。印とカードは細い線でつなぐ。</summary>
+        private void PlaceCard()
+        {
+            if (_cardSite == null) return;
+            Vector2 view = ViewSize();
+            Vector2 at = MapToLocal(new Vector2(_cardSite.MapX, _cardSite.MapY));
+            bool right = at.x + 64f + CardWidth <= view.x * 0.5f - Margin;
+            bool below = at.y - 44f - CardHeight >= -view.y * 0.5f + Margin + ToolHeight + 14f;
+            float x = right ? at.x + 64f : at.x - 64f - CardWidth;
+            float y = below ? at.y - 44f : at.y + 44f + CardHeight;
+            _card.anchoredPosition = new Vector2(x, y);
+
+            // 線は、印の輪の外から、カードの印に近い角まで
+            var corner = new Vector2(right ? x : x + CardWidth, below ? y : y - CardHeight);
+            Vector2 direction = (corner - at).normalized;
+            Vector2 start = at + direction * 30f;
+            Vector2 span = corner - start;
+            _cardLine.anchoredPosition = start;
+            _cardLine.sizeDelta = new Vector2(span.magnitude, 1.5f);
+            _cardLine.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(span.y, span.x) * Mathf.Rad2Deg);
         }
 
         private void SetButtons(bool enabled)
@@ -591,6 +824,20 @@ namespace Vastcore.RegionMap
                 case RegionMapStyle.Atlas: return "地図帳";
                 case RegionMapStyle.Relief: return "陰影";
                 default: return "衛星写真";
+            }
+        }
+
+        private static string KindName(RegionSiteKind kind)
+        {
+            switch (kind)
+            {
+                case RegionSiteKind.Monolith: return "モノリス";
+                case RegionSiteKind.Arch: return "アーチ";
+                case RegionSiteKind.Ring: return "環";
+                case RegionSiteKind.Tower: return "塔";
+                case RegionSiteKind.Dome: return "ドーム";
+                case RegionSiteKind.Terrace: return "段丘";
+                default: return "遺構";
             }
         }
 
@@ -645,127 +892,278 @@ namespace Vastcore.RegionMap
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 1f;
 
-            RectTransform root = CreateRect(canvasObject.transform, "Root");
-            root.sizeDelta = new Vector2(PanelWidth + Gap + MapSize, MapSize);
-
-            BuildPanel(root);
-            BuildMap(root);
+            // 下から順に、地図 → 左の部品 → 下端のボタンと操作の案内 → 知らせ
+            BuildMap(canvasObject.transform);
+            BuildParts(canvasObject.transform);
+            BuildTools(canvasObject.transform);
+            BuildHints(canvasObject.transform);
+            BuildMessage(canvasObject.transform);
         }
 
-        private void BuildPanel(RectTransform root)
+        private void BuildMap(Transform canvas)
         {
-            Image panel = CreateImage(root, "Panel", PanelColor, null);
-            RectTransform rect = panel.rectTransform;
-            rect.anchorMin = new Vector2(0f, 0f);
-            rect.anchorMax = new Vector2(0f, 1f);
-            rect.pivot = new Vector2(0f, 0.5f);
-            rect.sizeDelta = new Vector2(PanelWidth, 0f);
-            rect.anchoredPosition = Vector2.zero;
+            // 画面全体が地図の表示範囲。地図の外（縮めた時の左右）は、暗い地色がそのまま見える
+            _viewRect = CreateRect(canvas, "Map View");
+            Stretch(_viewRect);
+            Image backing = CreateImage(_viewRect, "Backing", new Color32(10, 13, 18, 255), null);
+            Stretch(backing.rectTransform);
 
-            const float pad = 28f;
-            float inner = PanelWidth - pad * 2f;
-            float y = -pad;
+            // 地図の板。この板を動かし、大きさを変えて、拡大と移動を表す。雲と影は板の子なので地図とずれない
+            _content = CreateRect(_viewRect, "Map");
+            _content.sizeDelta = new Vector2(1920f, 1920f);
+            _map = CreateLayer(_content, "Image");
+            _cloudShadows = CreateLayer(_content, "Cloud Shadows");
+            _clouds = CreateLayer(_content, "Clouds");
 
-            _title = CreateText(rect, "Title", "地域", 34, TextColor, TextAnchor.UpperLeft);
-            Place(_title.rectTransform, pad, y, inner, 44f);
-            y -= 46f;
-            _subtitle = CreateText(rect, "Subtitle", "", 21, MutedColor, TextAnchor.UpperLeft);
-            Place(_subtitle.rectTransform, pad, y, inner, 30f);
-            y -= 44f;
+            _markerRoot = CreateRect(_viewRect, "Markers");
+            _range = CreateImage(_viewRect, "Search Range", new Color(1f, 1f, 1f, 0.85f), _ring).rectTransform;
+            AddDarkEdge(_range.gameObject);
+            _range.gameObject.SetActive(false);
 
-            RectTransform positionBox = CreateBox(rect, "Position", pad, y, inner, 138f);
-            _coordinates = CreateText(positionBox, "Coordinates", "X --.-　Y --.-", 42, TextColor, TextAnchor.UpperLeft);
-            Place(_coordinates.rectTransform, 18f, -14f, inner - 36f, 56f);
-            _detail = CreateText(positionBox, "Detail", "", 21, MutedColor, TextAnchor.UpperLeft);
-            Place(_detail.rectTransform, 18f, -84f, inner - 36f, 34f);
-            y -= 138f + 16f;
+            // 十字は 1 枚の画像（表示の 2 倍の細かさで作り、縮めて出す）
+            _cursor = CreateImage(_viewRect, "Cursor", Color.white, _crosshair).rectTransform;
+            _cursor.sizeDelta = new Vector2(88f, 88f);
+            _cursor.gameObject.SetActive(false);
 
-            RectTransform signalBox = CreateBox(rect, "Signal", pad, y, inner, 96f);
-            Text signalLabel = CreateText(signalBox, "Label", "反応", 21, MutedColor, TextAnchor.UpperLeft);
-            Place(signalLabel.rectTransform, 18f, -12f, 120f, 30f);
-            _signalText = CreateText(signalBox, "Value", "反応なし", 21, TextColor, TextAnchor.UpperRight);
-            Place(_signalText.rectTransform, inner - 18f - 240f, -12f, 240f, 30f);
+            BuildCard(_viewRect);
+        }
+
+        private void BuildCard(RectTransform parent)
+        {
+            _cardLine = CreateImage(parent, "Found Line", AccentColor, null).rectTransform;
+            _cardLine.pivot = new Vector2(0f, 0.5f);
+
+            Image card = CreateImage(parent, "Found Card", CardColor, null);
+            _card = card.rectTransform;
+            _card.pivot = new Vector2(0f, 1f);
+            _card.sizeDelta = new Vector2(CardWidth, CardHeight);
+            AddFrame(_card, AccentColor);
+
+            _cardEyebrow = CreateText(_card, "Eyebrow", "発見", 15, AccentLightColor, TextAnchor.UpperLeft, _font);
+            Place(_cardEyebrow.rectTransform, PartPad, -10f, CardWidth - PartPad * 2f, 22f);
+            _cardTitle = CreateText(_card, "Title", "", 25, TextColor, TextAnchor.UpperLeft, _font);
+            Place(_cardTitle.rectTransform, PartPad, -30f, CardWidth - PartPad * 2f, 36f);
+            _cardKind = CreateFact(_card, "種類", PartPad, -74f, 96f, _font);
+            _cardPosition = CreateFact(_card, "座標", PartPad + 100f, -74f, 128f, _numberFont);
+            _cardHeight = CreateFact(_card, "標高", PartPad + 232f, -74f, 110f, _numberFont);
+            Text close = CreateText(_card, "Close", "次のサーチか Esc で閉じる", 15, MutedColor, TextAnchor.UpperLeft, _font);
+            Place(close.rectTransform, PartPad, -122f, CardWidth - PartPad * 2f, 22f);
+
+            _card.gameObject.SetActive(false);
+            _cardLine.gameObject.SetActive(false);
+        }
+
+        /// <summary>小さな見出しと、その下の値。値の Text を返す。</summary>
+        private Text CreateFact(RectTransform parent, string label, float x, float y, float width, Font valueFont)
+        {
+            Text caption;
+            return CreateFact(parent, label, x, y, width, valueFont, out caption);
+        }
+
+        /// <summary>見出しの文字を後から変える時（標高／水深）は、見出しの Text も受け取る。</summary>
+        private Text CreateFact(RectTransform parent, string label, float x, float y, float width, Font valueFont, out Text caption)
+        {
+            caption = CreateText(parent, label, label, 14, MutedColor, TextAnchor.UpperLeft, _font);
+            Place(caption.rectTransform, x, y, width, 20f);
+            // 日本語の書体は数字の書体より字面が大きく、行の中で低い位置に出る。大きさと位置を書体ごとに変えて、横に並べた時に揃える
+            bool numeric = valueFont == _numberFont;
+            Text value = CreateText(parent, label + " Value", "", numeric ? 20 : 18, TextColor, TextAnchor.UpperLeft, valueFont);
+            Place(value.rectTransform, x, numeric ? y - 19f : y - 15f, width, 28f);
+            return value;
+        }
+
+        private void BuildParts(Transform canvas)
+        {
+            float y = -Margin;
+
+            // 地域
+            RectTransform region = CreatePart(canvas, "Region", y, 88f);
+            _title = CreateText(region, "Title", "地域", 27, TextColor, TextAnchor.UpperLeft, _font);
+            Place(_title.rectTransform, PartPad, -11f, PartInner, 36f);
+            _subtitle = CreateText(region, "Subtitle", "", 17, MutedColor, TextAnchor.UpperLeft, _font);
+            Place(_subtitle.rectTransform, PartPad, -52f, PartInner, 24f);
+            y -= 88f + PartGap;
+
+            // カーソル位置
+            RectTransform position = CreatePart(canvas, "Position", y, 148f);
+            _positionLabel = CreateText(position, "Label", "カーソル位置", 15, MutedColor, TextAnchor.UpperLeft, _font);
+            Place(_positionLabel.rectTransform, PartPad, -10f, PartInner, 22f);
+            Text labelX = CreateText(position, "X", "X", 20, MutedColor, TextAnchor.LowerLeft, _numberFont);
+            Place(labelX.rectTransform, PartPad, -32f, 20f, 46f);
+            _coordinateX = CreateText(position, "X Value", "--.-", 44, TextColor, TextAnchor.LowerLeft, _numberFont);
+            Place(_coordinateX.rectTransform, PartPad + 22f, -32f, 130f, 52f);
+            Text labelY = CreateText(position, "Y", "Y", 20, MutedColor, TextAnchor.LowerLeft, _numberFont);
+            Place(labelY.rectTransform, PartPad + 164f, -32f, 20f, 46f);
+            _coordinateY = CreateText(position, "Y Value", "--.-", 44, TextColor, TextAnchor.LowerLeft, _numberFont);
+            Place(_coordinateY.rectTransform, PartPad + 186f, -32f, 130f, 52f);
+            _groundValue = CreateFact(position, "標高", PartPad, -92f, 120f, _numberFont, out _groundLabel);
+            _biomeValue = CreateFact(position, "土地", PartPad + 132f, -92f, PartInner - 132f, _font);
+            y -= 148f + PartGap;
+
+            // 反応とサーチ
+            RectTransform signal = CreatePart(canvas, "Signal", y, 134f);
+            Text signalLabel = CreateText(signal, "Label", "反応", 15, MutedColor, TextAnchor.UpperLeft, _font);
+            Place(signalLabel.rectTransform, PartPad, -10f, 120f, 22f);
+            _signalText = CreateText(signal, "Value", "反応なし", 19, TextColor, TextAnchor.UpperRight, _font);
+            Place(_signalText.rectTransform, PartPad + PartInner - 240f, -8f, 240f, 28f);
             _signalBars = new Image[3];
-            float barWidth = (inner - 36f - 16f) / 3f;
+            float barWidth = (PartInner - 12f) / 3f;
             for (int b = 0; b < 3; b++)
             {
-                _signalBars[b] = CreateImage(signalBox, "Bar " + b, OffColor, null);
-                Place(_signalBars[b].rectTransform, 18f + b * (barWidth + 8f), -56f, barWidth, 20f);
+                _signalBars[b] = CreateImage(signal, "Bar " + b, OffColor, null);
+                Place(_signalBars[b].rectTransform, PartPad + b * (barWidth + 6f), -44f, barWidth, 8f);
             }
-            y -= 96f + 16f;
-
-            _searchButton = CreateButton(rect, "サーチ（Space）", AccentColor, AccentTextColor, 30, TextAnchor.MiddleCenter);
-            Place((RectTransform)_searchButton.transform, pad, y, inner, 84f);
+            _searchButton = CreateButton(signal, "Search", new Color(AccentColor.r, AccentColor.g, AccentColor.b, 0.92f));
+            RectTransform searchRect = (RectTransform)_searchButton.transform;
+            Place(searchRect, PartPad, -66f, PartInner, 50f);
             _searchButton.onClick.AddListener(() => SearchAtCursor());
-            y -= 84f + 16f;
+            BuildSearchLabel(searchRect);
+            y -= 134f + PartGap;
 
-            // 下端のボタンは 2 段（上: 描き方と雲、下: 別の地域を生成）
-            float bottomButtons = 52f;
-            float listHeight = MapSize + y - pad - bottomButtons * 2f - 12f - 16f;
-            RectTransform listBox = CreateBox(rect, "Discovered", pad, y, inner, listHeight);
-            _listTitle = CreateText(listBox, "Title", "発見した地点 0 / 0", 21, MutedColor, TextAnchor.UpperLeft);
-            Place(_listTitle.rectTransform, 18f, -12f, inner - 36f, 30f);
-            _listRoot = CreateRect(listBox, "List");
-            Place(_listRoot, 18f, -48f, inner - 36f, listHeight - 60f);
+            // 発見した地点（件数に合わせて下へ伸びる）
+            _listTop = -y;
+            _listPart = CreatePart(canvas, "Discovered", y, ListHeader);
+            Text listLabel = CreateText(_listPart, "Label", "発見した地点", 15, MutedColor, TextAnchor.UpperLeft, _font);
+            Place(listLabel.rectTransform, PartPad, -10f, 160f, 22f);
+            _searchCount = CreateText(_listPart, "Searches", "", 15, MutedColor, TextAnchor.UpperRight, _font);
+            Place(_searchCount.rectTransform, PartPad + PartInner - 110f, -10f, 110f, 22f);
+            _listCount = CreateText(_listPart, "Count", "", 19, TextColor, TextAnchor.UpperRight, _numberFont);
+            Place(_listCount.rectTransform, PartPad + PartInner - 110f - 12f - 90f, -8f, 90f, 28f);
+            _listRoot = CreateRect(_listPart, "List");
+            _listRoot.anchorMin = new Vector2(0f, 1f);
+            _listRoot.anchorMax = new Vector2(0f, 1f);
+            _listRoot.pivot = new Vector2(0f, 1f);
+            _listRoot.sizeDelta = new Vector2(PartInner, 0f);
+            _listRoot.anchoredPosition = new Vector2(PartPad, -ListHeader + 4f);
+        }
 
-            float half = (inner - 12f) * 0.5f;
-            float upperRow = -MapSize + pad + bottomButtons * 2f + 12f;
-            _styleButton = CreateButton(rect, "描き方：" + StyleName(_render.Style), BoxColor, TextColor, 21, TextAnchor.MiddleCenter);
-            Place((RectTransform)_styleButton.transform, pad, upperRow, half, bottomButtons);
+        /// <summary>サーチボタンの中身。「サーチ」と、キーの名前を枠で囲んだ札を、中央に並べる。</summary>
+        private void BuildSearchLabel(RectTransform button)
+        {
+            Text label = CreateText(button, "Label", "サーチ", 22, AccentTextColor, TextAnchor.MiddleLeft, _font, false);
+            label.fontStyle = FontStyle.Bold;
+            Text key = CreateText(button, "Key", "Space", 16, AccentTextColor, TextAnchor.MiddleCenter, _numberFont, false);
+            float labelWidth = label.preferredWidth;
+            float keyWidth = key.preferredWidth + 18f;
+            float start = (PartInner - (labelWidth + 12f + keyWidth)) * 0.5f;
+            Place(label.rectTransform, start, 0f, labelWidth, 50f);
+            RectTransform cap = CreateRect(button, "Key Cap");
+            Place(cap, start + labelWidth + 12f, -12f, keyWidth, 26f);
+            AddFrame(cap, new Color(AccentTextColor.r, AccentTextColor.g, AccentTextColor.b, 0.85f));
+            key.rectTransform.SetParent(cap, false);
+            Stretch(key.rectTransform);
+        }
+
+        private void BuildTools(Transform canvas)
+        {
+            // 左下：描き方、雲、別の地域
+            float x = Margin;
+            _styleButton = CreateToolButton(canvas, "描き方：" + StyleName(_render.Style), ref x, 208f, out _styleLabel);
             _styleButton.onClick.AddListener(NextStyle);
-            _styleLabel = _styleButton.GetComponentInChildren<Text>();
-            _cloudButton = CreateButton(rect, "雲：" + CloudOpacityName[_cloudLevel], BoxColor, TextColor, 21, TextAnchor.MiddleCenter);
-            Place((RectTransform)_cloudButton.transform, pad + half + 12f, upperRow, half, bottomButtons);
+            _cloudButton = CreateToolButton(canvas, "雲：" + CloudOpacityName[_cloudLevel], ref x, 184f, out _cloudLabel);
             _cloudButton.onClick.AddListener(NextCloudOpacity);
-            _cloudLabel = _cloudButton.GetComponentInChildren<Text>();
-            _regionButton = CreateButton(rect, "別の地域を生成", BoxColor, TextColor, 21, TextAnchor.MiddleCenter);
-            Place((RectTransform)_regionButton.transform, pad, -MapSize + pad + bottomButtons, inner, bottomButtons);
+            Text regionLabel;
+            _regionButton = CreateToolButton(canvas, "別の地域", ref x, 124f, out regionLabel);
             _regionButton.onClick.AddListener(NextRegion);
         }
 
-        private void BuildMap(RectTransform root)
+        private Button CreateToolButton(Transform canvas, string label, ref float x, float width, out Text text)
         {
-            RectTransform frame = CreateRect(root, "Map");
-            frame.anchorMin = new Vector2(1f, 0.5f);
-            frame.anchorMax = new Vector2(1f, 0.5f);
-            frame.pivot = new Vector2(1f, 0.5f);
-            frame.sizeDelta = new Vector2(MapSize, MapSize);
-            frame.anchoredPosition = Vector2.zero;
-            frame.gameObject.AddComponent<RectMask2D>();
+            Button button = CreateButton(canvas, label, PartColor);
+            RectTransform rect = (RectTransform)button.transform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.zero;
+            rect.pivot = Vector2.zero;
+            rect.sizeDelta = new Vector2(width, ToolHeight);
+            rect.anchoredPosition = new Vector2(x, Margin);
+            AddFrame(rect, LineColor);
+            text = CreateText(rect, "Label", label, 18, TextColor, TextAnchor.MiddleCenter, _font);
+            Stretch(text.rectTransform);
+            x += width + 8f;
+            return button;
+        }
 
-            var mapObject = new GameObject("Image", typeof(RectTransform), typeof(RawImage));
-            mapObject.transform.SetParent(frame, false);
-            _map = mapObject.GetComponent<RawImage>();
-            _map.color = new Color32(14, 18, 24, 255);
-            _mapRect = _map.rectTransform;
-            _mapRect.sizeDelta = new Vector2(MapSize, MapSize);
+        private void BuildHints(Transform canvas)
+        {
+            // 右下：操作の案内。キーの名前は枠で囲む
+            string[] keys = { "クリック", "矢印", "ホイール", "右ドラッグ", "Home" };
+            string[] actions = { "位置", "微調整", "拡大・縮小", "移動", "全体" };
+            Image strip = CreateImage(canvas, "Hints", PartColor, null);
+            RectTransform rect = strip.rectTransform;
+            rect.anchorMin = new Vector2(1f, 0f);
+            rect.anchorMax = new Vector2(1f, 0f);
+            rect.pivot = new Vector2(1f, 0f);
+            rect.anchoredPosition = new Vector2(-Margin, Margin);
+            AddFrame(rect, LineColor);
 
-            // 地図の上に、雲の影、雲の順で重ねる（印とカーソルはその上）
-            _cloudShadows = CreateLayer(frame, "Cloud Shadows");
-            _clouds = CreateLayer(frame, "Clouds");
+            float x = 14f;
+            for (int k = 0; k < keys.Length; k++)
+            {
+                Text key = CreateText(rect, keys[k], keys[k], 15, TextColor, TextAnchor.MiddleCenter, _font);
+                float keyWidth = key.preferredWidth + 14f;
+                RectTransform cap = CreateRect(rect, keys[k] + " Cap");
+                Place(cap, x, -9f, keyWidth, 24f);
+                AddFrame(cap, new Color(1f, 1f, 1f, 0.55f));
+                key.rectTransform.SetParent(cap, false);
+                Stretch(key.rectTransform);
+                x += keyWidth + 7f;
 
-            _markerRoot = CreateRect(frame, "Markers");
-            _range = CreateImage(frame, "Search Range", new Color(1f, 1f, 1f, 0.85f), _ring).rectTransform;
-            _range.GetComponent<Image>().raycastTarget = false;
-            AddDarkEdge(_range.gameObject);
+                Text action = CreateText(rect, actions[k], actions[k], 16, TextColor, TextAnchor.MiddleLeft, _font);
+                float actionWidth = action.preferredWidth;
+                Place(action.rectTransform, x, 0f, actionWidth, ToolHeight);
+                x += actionWidth + (k < keys.Length - 1 ? 20f : 14f);
+            }
+            rect.sizeDelta = new Vector2(x, ToolHeight);
+        }
 
-            // 十字は 1 枚の画像（表示の 2 倍の細かさで作り、縮めて出す）
-            _cursor = CreateImage(frame, "Cursor", Color.white, _crosshair).rectTransform;
-            _cursor.sizeDelta = new Vector2(48f, 48f);
-
-            Image strip = CreateImage(frame, "Message", new Color32(12, 15, 20, 215), null);
-            RectTransform stripRect = strip.rectTransform;
-            stripRect.anchorMin = new Vector2(0.5f, 0f);
-            stripRect.anchorMax = new Vector2(0.5f, 0f);
-            stripRect.pivot = new Vector2(0.5f, 0f);
-            stripRect.sizeDelta = new Vector2(760f, 64f);
-            stripRect.anchoredPosition = new Vector2(0f, 28f);
+        private void BuildMessage(Transform canvas)
+        {
+            // 知らせは、下端のボタンの列より上、画面の中央に出す
+            Image strip = CreateImage(canvas, "Message", new Color(PartColor.r, PartColor.g, PartColor.b, 0.74f), null);
+            RectTransform rect = strip.rectTransform;
+            rect.anchorMin = new Vector2(0.5f, 0f);
+            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.sizeDelta = new Vector2(720f, 52f);
+            rect.anchoredPosition = new Vector2(0f, Margin + ToolHeight + 14f);
+            AddFrame(rect, LineColor);
             _messageGroup = strip.gameObject.AddComponent<CanvasGroup>();
             _messageGroup.blocksRaycasts = false;
             _messageGroup.interactable = false;
             _messageHideAt = -1f;
-            _message = CreateText(stripRect, "Text", "", 26, TextColor, TextAnchor.MiddleCenter);
+            _message = CreateText(rect, "Text", "", 23, TextColor, TextAnchor.MiddleCenter, _font);
             Stretch(_message.rectTransform);
+        }
+
+        /// <summary>左に重ねる部品の面。面の上のクリックは地図へ通さない。</summary>
+        private RectTransform CreatePart(Transform parent, string name, float y, float height)
+        {
+            Image part = CreateImage(parent, name, PartColor, null);
+            part.raycastTarget = true;
+            Place(part.rectTransform, Margin, y, PartWidth, height);
+            AddFrame(part.rectTransform, LineColor);
+            return part.rectTransform;
+        }
+
+        /// <summary>
+        /// 細い枠線を上下左右に 1 本ずつ置く。Outline は面そのものをずらして重ね描きするので、
+        /// 半透明の面では内側まで濃くなる。枠は別の画像で描く。
+        /// </summary>
+        private void AddFrame(RectTransform target, Color color)
+        {
+            AddLine(target, "Line Top", color, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -1f), Vector2.zero);
+            AddLine(target, "Line Bottom", color, new Vector2(0f, 0f), new Vector2(1f, 0f), Vector2.zero, new Vector2(0f, 1f));
+            AddLine(target, "Line Left", color, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(1f, -1f));
+            AddLine(target, "Line Right", color, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(-1f, 1f), new Vector2(0f, -1f));
+        }
+
+        private void AddLine(RectTransform target, string name, Color color, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+        {
+            RectTransform line = CreateImage(target, name, color, null).rectTransform;
+            line.anchorMin = anchorMin;
+            line.anchorMax = anchorMax;
+            line.offsetMin = offsetMin;
+            line.offsetMax = offsetMax;
         }
 
         private static RawImage CreateLayer(Transform parent, string name)
@@ -775,11 +1173,11 @@ namespace Vastcore.RegionMap
             var layer = created.GetComponent<RawImage>();
             layer.raycastTarget = false;
             layer.enabled = false;
-            layer.rectTransform.sizeDelta = new Vector2(MapSize, MapSize);
+            Stretch(layer.rectTransform);
             return layer;
         }
 
-        /// <summary>白い印に暗い縁を付ける。雲・雪・地図帳風の淡い地色の上では、白だけの印が見えなくなる。</summary>
+        /// <summary>印に暗い縁を付ける。雲・雪・地図帳風の淡い地色の上では、縁のない印が見えなくなる。</summary>
         private static void AddDarkEdge(GameObject target)
         {
             Outline edge = target.AddComponent<Outline>();
@@ -805,19 +1203,13 @@ namespace Vastcore.RegionMap
             return image;
         }
 
-        private RectTransform CreateBox(RectTransform parent, string name, float x, float y, float width, float height)
-        {
-            Image box = CreateImage(parent, name, BoxColor, null);
-            Place(box.rectTransform, x, y, width, height);
-            return box.rectTransform;
-        }
-
-        private Text CreateText(Transform parent, string name, string value, int size, Color color, TextAnchor anchor)
+        /// <summary>文字を作る。地図や雲が透ける面の上に置くので、既定では暗い影を付ける。</summary>
+        private Text CreateText(Transform parent, string name, string value, int size, Color color, TextAnchor anchor, Font font, bool shadow = true)
         {
             var created = new GameObject(name, typeof(RectTransform), typeof(Text));
             created.transform.SetParent(parent, false);
             var text = created.GetComponent<Text>();
-            text.font = _font;
+            text.font = font;
             text.fontSize = size;
             text.color = color;
             text.alignment = anchor;
@@ -825,26 +1217,51 @@ namespace Vastcore.RegionMap
             text.verticalOverflow = VerticalWrapMode.Overflow;
             text.raycastTarget = false;
             text.text = value;
+            if (shadow)
+            {
+                Shadow drop = created.AddComponent<Shadow>();
+                drop.effectColor = ShadowColor;
+                drop.effectDistance = new Vector2(1f, -1f);
+            }
             return text;
         }
 
-        private Button CreateButton(Transform parent, string label, Color background, Color foreground, int size, TextAnchor anchor)
+        private Button CreateButton(Transform parent, string name, Color background)
         {
-            Image image = CreateImage(parent, label, background, null);
+            Image image = CreateImage(parent, name, background, null);
             image.raycastTarget = true;
             var button = image.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
             ColorBlock colors = button.colors;
-            colors.highlightedColor = new Color(1.12f, 1.12f, 1.12f, 1f);
+            colors.highlightedColor = new Color(1.25f, 1.25f, 1.25f, 1.2f);
             colors.pressedColor = new Color(0.82f, 0.82f, 0.82f, 1f);
             colors.disabledColor = new Color(0.55f, 0.55f, 0.55f, 0.7f);
             button.colors = colors;
             var navigation = new Navigation();
             navigation.mode = Navigation.Mode.None;
             button.navigation = navigation;
-            Text text = CreateText(image.transform, "Label", label, size, foreground, anchor);
-            Stretch(text.rectTransform);
-            if (anchor == TextAnchor.MiddleLeft) text.rectTransform.offsetMin = new Vector2(8f, 0f);
+            return button;
+        }
+
+        /// <summary>一覧の 1 行。ふだんは面を持たず、ポインターを乗せた時だけ薄く明るくなる。</summary>
+        private Button CreateRowButton(Transform parent, string name)
+        {
+            Image image = CreateImage(parent, name, Color.white, null);
+            image.raycastTarget = true;
+            var button = image.gameObject.AddComponent<Button>();
+            button.targetGraphic = image;
+            ColorBlock colors = button.colors;
+            colors.normalColor = new Color(1f, 1f, 1f, 0f);
+            colors.highlightedColor = new Color(1f, 1f, 1f, 0.14f);
+            colors.pressedColor = new Color(1f, 1f, 1f, 0.24f);
+            colors.selectedColor = new Color(1f, 1f, 1f, 0f);
+            colors.disabledColor = new Color(1f, 1f, 1f, 0f);
+            button.colors = colors;
+            // 色の設定を変えると、Button は今の色（白）から 0.1 秒かけて移る。作った直後に白い帯が光らないよう、すぐ透明にする
+            image.CrossFadeColor(colors.normalColor, 0f, true, true);
+            var navigation = new Navigation();
+            navigation.mode = Navigation.Mode.None;
+            button.navigation = navigation;
             return button;
         }
 

@@ -138,15 +138,22 @@ namespace Vastcore.RegionMap.Editor
                     Capture(output, "explorer-3-found.png");
                     break;
                 case 3:
-                    explorer.NextCloudOpacity();
+                    explorer.ShowWholeRegion();
                     break;
                 case 4:
-                    Capture(output, "explorer-4-clouds-thin.png");
+                    Capture(output, "explorer-6-whole.png");
                     break;
                 case 5:
-                    explorer.NextStyle();
+                    explorer.ShowFullWidth();
+                    explorer.NextCloudOpacity();
                     break;
                 case 6:
+                    Capture(output, "explorer-4-clouds-thin.png");
+                    break;
+                case 7:
+                    explorer.NextStyle();
+                    break;
+                case 8:
                     Capture(output, "explorer-5-atlas.png");
                     break;
                 default:
