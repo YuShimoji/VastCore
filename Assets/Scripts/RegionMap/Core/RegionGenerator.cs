@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace Vastcore.RegionMap
 {
@@ -9,7 +10,8 @@ namespace Vastcore.RegionMap
     {
         private const float ReferenceResolution = 1024f;
 
-        public static RegionData Generate(RegionSpec spec)
+        /// <summary>地域を作る。phase には、各工程に入る時にその名前が渡る（進み具合の表示と時間の計測に使う）。</summary>
+        public static RegionData Generate(RegionSpec spec, Action<string> phase = null)
         {
             var data = new RegionData(spec.Clone());
             int n = data.Resolution;
@@ -22,12 +24,18 @@ namespace Vastcore.RegionMap
             var router = new FlowRouter(n) { Jitter = spec.FlowJitter, JitterSeed = seed + 61u };
             var scratch = new float[count];
 
+            if (phase != null) phase("海と陸の下地");
             BuildBase(data, seed, uplift, erodibility, land);
+            if (phase != null) phase("隆起と侵食");
             Evolve(data, seed, uplift, erodibility, land, router, scratch);
+            if (phase != null) phase("気候");
             BuildClimate(data, seed, land, scratch);
+            if (phase != null) phase("川");
             BuildRivers(data, land, router, scratch);
+            if (phase != null) phase("土地の種類と探索地点");
             ClassifyBiomes(data, land);
             RegionSiteGenerator.Populate(data);
+            if (phase != null) phase("完了");
             return data;
         }
 
@@ -45,7 +53,8 @@ namespace Vastcore.RegionMap
             float inv = 1f / (n - 1);
             float[] h = data.Height;
 
-            for (int y = 0; y < n; y++)
+            // 行ごとに独立なので並列に計算する（どのセルも自分の位置と seed だけで決まる）
+            Parallel.For(0, n, y =>
             {
                 float v = y * inv;
                 for (int x = 0; x < n; x++)
@@ -97,7 +106,7 @@ namespace Vastcore.RegionMap
                         h[i] = -(6f + 4800f * RegionNoise.Smooth(0f, 0.62f, depth) + 260f * depth);
                     }
                 }
-            }
+            });
         }
 
         /// <summary>
@@ -306,7 +315,7 @@ namespace Vastcore.RegionMap
             BoxBlur(rain, temp, n, radius);
             BoxBlur(rain, temp, n, radius);
 
-            for (int y = 0; y < n; y++)
+            Parallel.For(0, n, y =>
             {
                 float v = y * inv;
                 for (int x = 0; x < n; x++)
@@ -322,7 +331,7 @@ namespace Vastcore.RegionMap
                     float wobble = RegionNoise.Fbm(u * 2.2f + 3.1f, v * 2.2f + 27.5f, 3, seed + 22u) * 3.5f;
                     data.Temperature[i] = warm + wobble - 6.5f * ground / 1000f;
                 }
-            }
+            });
         }
 
         private static void BuildRivers(RegionData data, bool[] land, FlowRouter router, float[] weight)

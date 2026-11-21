@@ -20,6 +20,7 @@ namespace Vastcore.RegionMap.Preview
             bool markSites = false;
             int shrink = 1;
             string name = null;
+            bool cloudTile = false;
 
             for (int a = 0; a < args.Length; a++)
             {
@@ -51,6 +52,7 @@ namespace Vastcore.RegionMap.Preview
                     case "--name": name = value; a++; break;
                     case "--scale": shrink = int.Parse(value); a++; break;
                     case "--sites": markSites = true; break;
+                    case "--cloudtile": cloudTile = true; break;
                     default:
                         Console.Error.WriteLine("不明な指定: " + key);
                         return 2;
@@ -59,8 +61,19 @@ namespace Vastcore.RegionMap.Preview
 
             Directory.CreateDirectory(outDir);
             var watch = Stopwatch.StartNew();
-            RegionData data = RegionGenerator.Generate(spec);
+            if (cloudTile) return WriteCloudTile(spec, options, outDir, name);
+            string phaseName = null;
+            long phaseStart = 0;
+            var phaseLog = new System.Text.StringBuilder();
+            RegionData data = RegionGenerator.Generate(spec, next =>
+            {
+                long now = watch.ElapsedMilliseconds;
+                if (phaseName != null) phaseLog.Append("  ").Append(phaseName).Append("=").Append(now - phaseStart).Append("ms");
+                phaseName = next;
+                phaseStart = now;
+            });
             long generateMs = watch.ElapsedMilliseconds;
+            Console.WriteLine("工程:" + phaseLog);
             Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
                 "seed={0} res={1} 生成={2}ms 陸={3:P1} 最高={4:F0}m 地点={5}",
                 spec.Seed, spec.Resolution, generateMs, data.LandFraction, data.MaxHeight, data.Sites.Count));
@@ -92,6 +105,49 @@ namespace Vastcore.RegionMap.Preview
                 PngWriter.Write(file, pixels, size, size);
                 Console.WriteLine("描画=" + renderMs + "ms → " + Path.GetFullPath(file));
             }
+            return 0;
+        }
+
+        /// <summary>
+        /// 地形を作らずに、雲の層だけを 2×2 に並べて書き出す。量と、端のつながり（継ぎ目が見えないこと）を確かめる。
+        /// 左半分は海の色、右半分は陸の色の上に重ねる。
+        /// </summary>
+        private static int WriteCloudTile(RegionSpec spec, RegionRenderOptions options, string outDir, string name)
+        {
+            int size = spec.Resolution / 2;
+            var watch = Stopwatch.StartNew();
+            float[] field = RegionClouds.BuildField(size, spec.Seed, options.CloudCover);
+            byte[] clouds;
+            byte[] shadows;
+            RegionClouds.RenderLayers(field, size, out clouds, out shadows);
+            long ms = watch.ElapsedMilliseconds;
+            int n = size * 2;
+            var pixels = new byte[n * n * 4];
+            int offset = (int)(RegionClouds.ShadowOffset * size);
+            for (int y = 0; y < n; y++)
+            {
+                for (int x = 0; x < n; x++)
+                {
+                    float r = x < n / 2 ? 14f : 62f;
+                    float g = x < n / 2 ? 40f : 84f;
+                    float b = x < n / 2 ? 74f : 52f;
+                    int sx = ((x - offset) % size + size) % size;
+                    int sy = ((y - offset) % size + size) % size;
+                    float dim = 1f - shadows[(sx + sy * size) * 4 + 3] / 255f;
+                    r *= dim; g *= dim; b *= dim;
+                    int c = (x % size + (y % size) * size) * 4;
+                    float alpha = clouds[c + 3] / 255f;
+                    r += (clouds[c] - r) * alpha;
+                    g += (clouds[c + 1] - g) * alpha;
+                    b += (clouds[c + 2] - b) * alpha;
+                    int p = (x + y * n) * 4;
+                    pixels[p] = (byte)r; pixels[p + 1] = (byte)g; pixels[p + 2] = (byte)b; pixels[p + 3] = 255;
+                }
+            }
+            string file = Path.Combine(outDir, (name ?? ("clouds-seed" + spec.Seed)) + "-tile.png");
+            PngWriter.Write(file, pixels, n, n);
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "雲 seed={0} 量={1:F2} 作成={2}ms 薄い雲を含む割合={3:P0} はっきり白い割合={4:P0} → {5}",
+                spec.Seed, options.CloudCover, ms, RegionClouds.Coverage(field, 0.05f), RegionClouds.Coverage(field, 0.25f), Path.GetFullPath(file)));
             return 0;
         }
 

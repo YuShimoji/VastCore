@@ -21,6 +21,9 @@ namespace Vastcore.RegionMap
         [Tooltip("オンにすると、サーチしなくてもカーソル位置の反応を常に表示する。")]
         [SerializeField] private bool _liveSignal;
 
+        [Tooltip("雲が地図の幅を横切るのにかかる秒数。0 にすると雲は動かない。")]
+        [SerializeField] private float _cloudCrossSeconds = 420f;
+
         private const float PanelWidth = 560f;
         private const float MapSize = 1016f;
         private const float Gap = 32f;
@@ -34,21 +37,36 @@ namespace Vastcore.RegionMap
         private static readonly Color AccentTextColor = new Color32(40, 28, 8, 255);
         private static readonly Color OffColor = new Color32(62, 68, 76, 255);
 
+        // 雲の濃さの段（ボタンで順に切り替える）
+        private static readonly float[] CloudOpacity = { 1f, 0.45f, 0f };
+        private static readonly string[] CloudOpacityName = { "濃い", "薄い", "なし" };
+        // 雲が流れる向き（東へ、少し南へ）。x は東、y は北が正
+        private static readonly Vector2 CloudWind = new Vector2(1f, -0.22f);
+
         private sealed class Generated
         {
             public RegionData Data;
             public byte[] Pixels;
+            // 雲と影の層。地域が変わらない描き直しでは null（前の層をそのまま使う）
+            public byte[] CloudPixels;
+            public byte[] ShadowPixels;
+            public int CloudSize;
         }
 
         private Task<Generated> _task;
         private RegionData _data;
         private ExplorationSession _session;
         private Texture2D _texture;
+        private Texture2D _cloudTexture;
+        private Texture2D _shadowTexture;
         private Font _font;
         private Sprite _ring;
         private Sprite _dot;
+        private Sprite _crosshair;
 
         private RawImage _map;
+        private RawImage _clouds;
+        private RawImage _cloudShadows;
         private RectTransform _mapRect;
         private RectTransform _cursor;
         private RectTransform _range;
@@ -67,10 +85,18 @@ namespace Vastcore.RegionMap
         private CanvasGroup _messageGroup;
         private float _messageHideAt;
         private Text _styleLabel;
+        private Text _cloudLabel;
         private Image[] _signalBars;
         private Button _searchButton;
         private Button _regionButton;
         private Button _styleButton;
+        private Button _cloudButton;
+        private int _cloudLevel;
+        private Vector2 _cloudDrift;
+        // 生成中の工程名。別スレッドから書き、Update で読んで知らせに出す
+        private volatile string _phase;
+        private string _phaseShown;
+        private string _phaseMessage = string.Empty;
 
         private float _zoom = 1f;
         private Vector2 _center = new Vector2(0.5f, 0.5f);
@@ -102,11 +128,21 @@ namespace Vastcore.RegionMap
             get { return _cursorMap; }
         }
 
+        /// <summary>雲の濃さの段（0 濃い、1 薄い、2 なし）。</summary>
+        /// <summary>雲の層が流れた量（地図の幅を 1 とした割合。1 で一周して 0 へ戻る）。</summary>
+        public Vector2 CloudDrift { get { return _cloudDrift; } }
+
+        public int CloudLevel
+        {
+            get { return _cloudLevel; }
+        }
+
         private void Awake()
         {
             _font = Font.CreateDynamicFontFromOSFont(new[] { "Yu Gothic UI", "Meiryo UI", "Meiryo", "MS Gothic", "Arial" }, 28);
             _ring = RegionMapTexture.CreateRingSprite(128, 3f, false);
             _dot = RegionMapTexture.CreateRingSprite(32, 0f, true);
+            _crosshair = RegionMapTexture.CreateCrosshairSprite(96, 9f, 4f, 2.5f);
             EnsureCamera();
             EnsureEventSystem();
             BuildScreen();
@@ -120,6 +156,8 @@ namespace Vastcore.RegionMap
         private void OnDestroy()
         {
             if (_texture != null) Destroy(_texture);
+            if (_cloudTexture != null) Destroy(_cloudTexture);
+            if (_shadowTexture != null) Destroy(_shadowTexture);
         }
 
         private void Update()
@@ -132,7 +170,17 @@ namespace Vastcore.RegionMap
 
             if (_task != null)
             {
-                if (!_task.IsCompleted) return;
+                if (!_task.IsCompleted)
+                {
+                    // 生成は別スレッドで進む。今どの工程かを、待っている間の知らせに出す
+                    string phase = _phase;
+                    if (!ReferenceEquals(phase, _phaseShown))
+                    {
+                        _phaseShown = phase;
+                        if (!string.IsNullOrEmpty(phase)) ShowMessage(_phaseMessage + "（" + phase + "）", 0f);
+                    }
+                    return;
+                }
                 Task<Generated> finished = _task;
                 _task = null;
                 if (finished.IsFaulted)
@@ -203,9 +251,18 @@ namespace Vastcore.RegionMap
             _styleLabel.text = "描き方：" + StyleName(_render.Style);
             RegionData data = _data;
             RegionRenderOptions options = CloneRender();
+            options.CloudCover = 0f;
             ShowMessage("描き直しています…", 0f);
             SetButtons(false);
             _task = Task.Run(() => new Generated { Data = data, Pixels = RegionMapRenderer.Render(data, options) });
+        }
+
+        /// <summary>雲の濃さを次の段へ切り替える（濃い → 薄い → なし）。描き直しは要らない。</summary>
+        public void NextCloudOpacity()
+        {
+            _cloudLevel = (_cloudLevel + 1) % CloudOpacity.Length;
+            RefreshCloudLayers();
+            if (IsReady) ShowMessage("雲：" + CloudOpacityName[_cloudLevel], 3f);
         }
 
         /// <summary>地図の下端に知らせを出す。seconds が 0 以下なら、次の知らせまで出したままにする。</summary>
@@ -231,12 +288,30 @@ namespace Vastcore.RegionMap
         {
             RegionSpec spec = _spec.Clone();
             RegionRenderOptions options = CloneRender();
+            // 雲は地図へ焼き込まず、上に重ねる層として別に作る（濃さの切替と、流れる動きのため）
+            float cloudCover = options.CloudCover;
+            options.CloudCover = 0f;
             ShowMessage(message, 0f);
             SetButtons(false);
+            _phaseMessage = message.TrimEnd('…');
+            _phase = null;
+            _phaseShown = null;
             _task = Task.Run(() =>
             {
-                RegionData data = RegionGenerator.Generate(spec);
-                return new Generated { Data = data, Pixels = RegionMapRenderer.Render(data, options) };
+                // 雲の層は地形を使わないので、地域の生成と同時に作り始める
+                int cloudSize = (spec.Resolution + 1) / 2;
+                byte[] cloudPixels = null;
+                byte[] shadowPixels = null;
+                Task clouds = Task.Run(() =>
+                {
+                    float[] field = RegionClouds.BuildField(cloudSize, spec.Seed, cloudCover);
+                    RegionClouds.RenderLayers(field, cloudSize, out cloudPixels, out shadowPixels);
+                });
+                RegionData data = RegionGenerator.Generate(spec, phase => _phase = phase);
+                _phase = "地図を描く";
+                byte[] pixels = RegionMapRenderer.Render(data, options);
+                clouds.Wait();
+                return new Generated { Data = data, Pixels = pixels, CloudSize = cloudSize, CloudPixels = cloudPixels, ShadowPixels = shadowPixels };
             });
         }
 
@@ -270,6 +345,17 @@ namespace Vastcore.RegionMap
             }
             _map.color = Color.white;
 
+            if (generated.CloudPixels != null)
+            {
+                if (_cloudTexture != null) Destroy(_cloudTexture);
+                if (_shadowTexture != null) Destroy(_shadowTexture);
+                _cloudTexture = RegionMapTexture.Create(generated.CloudPixels, generated.CloudSize, true);
+                _shadowTexture = RegionMapTexture.Create(generated.ShadowPixels, generated.CloudSize, true);
+                _clouds.texture = _cloudTexture;
+                _cloudShadows.texture = _shadowTexture;
+                _cloudDrift = Vector2.zero;
+            }
+
             if (!sameRegion)
             {
                 _session = new ExplorationSession(_data);
@@ -287,6 +373,7 @@ namespace Vastcore.RegionMap
                 ShowMessage("描き方：" + StyleName(_render.Style), 3f);
             }
             SetButtons(true);
+            RefreshCloudLayers();
             RefreshReadout();
         }
 
@@ -391,6 +478,17 @@ namespace Vastcore.RegionMap
         {
             float width = 1f / _zoom;
             _map.uvRect = new Rect(_center.x - width * 0.5f, _center.y - width * 0.5f, width, width);
+
+            // 雲は風下へ少しずつずらす。影は雲より南東（u は東、v は北が正なので +u, -v）に落ちる
+            if (_cloudCrossSeconds > 0f)
+            {
+                _cloudDrift += CloudWind * (Time.deltaTime / _cloudCrossSeconds);
+                _cloudDrift.x = Mathf.Repeat(_cloudDrift.x, 1f);
+                _cloudDrift.y = Mathf.Repeat(_cloudDrift.y, 1f);
+            }
+            var cloudView = new Rect(_map.uvRect.x - _cloudDrift.x, _map.uvRect.y - _cloudDrift.y, width, width);
+            _clouds.uvRect = cloudView;
+            _cloudShadows.uvRect = new Rect(cloudView.x - RegionClouds.ShadowOffset, cloudView.y + RegionClouds.ShadowOffset, width, width);
             _cursor.anchoredPosition = MapToLocal(_cursorMap);
             _range.anchoredPosition = _cursor.anchoredPosition;
             float diameter = _session.FoundRadius / RegionData.MapUnits * MapSize * _zoom * 2f;
@@ -400,6 +498,19 @@ namespace Vastcore.RegionMap
                 RegionSite site = _markerSites[m];
                 _markers[m].anchoredPosition = MapToLocal(new Vector2(site.MapX, site.MapY));
             }
+        }
+
+        /// <summary>雲と影の層の見え方を、描き方と濃さの段に合わせる。雲があるのは衛星写真の時だけ。</summary>
+        private void RefreshCloudLayers()
+        {
+            bool satellite = _render.Style == RegionMapStyle.Satellite;
+            float opacity = satellite && _cloudTexture != null ? CloudOpacity[_cloudLevel] : 0f;
+            _clouds.enabled = opacity > 0f;
+            _cloudShadows.enabled = opacity > 0f;
+            _clouds.color = new Color(1f, 1f, 1f, opacity);
+            _cloudShadows.color = new Color(1f, 1f, 1f, opacity);
+            _cloudLabel.text = satellite ? "雲：" + CloudOpacityName[_cloudLevel] : "雲：衛星写真のみ";
+            _cloudButton.interactable = satellite && _task == null;
         }
 
         private void RefreshReadout()
@@ -459,6 +570,7 @@ namespace Vastcore.RegionMap
             _searchButton.interactable = enabled;
             _regionButton.interactable = enabled;
             _styleButton.interactable = enabled;
+            _cloudButton.interactable = enabled && _render.Style == RegionMapStyle.Satellite;
         }
 
         private static string SignalName(SearchSignal signal)
@@ -587,8 +699,9 @@ namespace Vastcore.RegionMap
             _searchButton.onClick.AddListener(() => SearchAtCursor());
             y -= 84f + 16f;
 
+            // 下端のボタンは 2 段（上: 描き方と雲、下: 別の地域を生成）
             float bottomButtons = 52f;
-            float listHeight = MapSize + y - pad - bottomButtons - 16f;
+            float listHeight = MapSize + y - pad - bottomButtons * 2f - 12f - 16f;
             RectTransform listBox = CreateBox(rect, "Discovered", pad, y, inner, listHeight);
             _listTitle = CreateText(listBox, "Title", "発見した地点 0 / 0", 21, MutedColor, TextAnchor.UpperLeft);
             Place(_listTitle.rectTransform, 18f, -12f, inner - 36f, 30f);
@@ -596,13 +709,18 @@ namespace Vastcore.RegionMap
             Place(_listRoot, 18f, -48f, inner - 36f, listHeight - 60f);
 
             float half = (inner - 12f) * 0.5f;
-            _regionButton = CreateButton(rect, "別の地域を生成", BoxColor, TextColor, 21, TextAnchor.MiddleCenter);
-            Place((RectTransform)_regionButton.transform, pad, -MapSize + pad + bottomButtons, half, bottomButtons);
-            _regionButton.onClick.AddListener(NextRegion);
+            float upperRow = -MapSize + pad + bottomButtons * 2f + 12f;
             _styleButton = CreateButton(rect, "描き方：" + StyleName(_render.Style), BoxColor, TextColor, 21, TextAnchor.MiddleCenter);
-            Place((RectTransform)_styleButton.transform, pad + half + 12f, -MapSize + pad + bottomButtons, half, bottomButtons);
+            Place((RectTransform)_styleButton.transform, pad, upperRow, half, bottomButtons);
             _styleButton.onClick.AddListener(NextStyle);
             _styleLabel = _styleButton.GetComponentInChildren<Text>();
+            _cloudButton = CreateButton(rect, "雲：" + CloudOpacityName[_cloudLevel], BoxColor, TextColor, 21, TextAnchor.MiddleCenter);
+            Place((RectTransform)_cloudButton.transform, pad + half + 12f, upperRow, half, bottomButtons);
+            _cloudButton.onClick.AddListener(NextCloudOpacity);
+            _cloudLabel = _cloudButton.GetComponentInChildren<Text>();
+            _regionButton = CreateButton(rect, "別の地域を生成", BoxColor, TextColor, 21, TextAnchor.MiddleCenter);
+            Place((RectTransform)_regionButton.transform, pad, -MapSize + pad + bottomButtons, inner, bottomButtons);
+            _regionButton.onClick.AddListener(NextRegion);
         }
 
         private void BuildMap(RectTransform root)
@@ -622,18 +740,18 @@ namespace Vastcore.RegionMap
             _mapRect = _map.rectTransform;
             _mapRect.sizeDelta = new Vector2(MapSize, MapSize);
 
+            // 地図の上に、雲の影、雲の順で重ねる（印とカーソルはその上）
+            _cloudShadows = CreateLayer(frame, "Cloud Shadows");
+            _clouds = CreateLayer(frame, "Clouds");
+
             _markerRoot = CreateRect(frame, "Markers");
             _range = CreateImage(frame, "Search Range", new Color(1f, 1f, 1f, 0.85f), _ring).rectTransform;
             _range.GetComponent<Image>().raycastTarget = false;
             AddDarkEdge(_range.gameObject);
 
-            _cursor = CreateRect(frame, "Cursor");
-            Image horizontal = CreateImage(_cursor, "Horizontal", Color.white, null);
-            horizontal.rectTransform.sizeDelta = new Vector2(34f, 2f);
-            AddDarkEdge(horizontal.gameObject);
-            Image vertical = CreateImage(_cursor, "Vertical", Color.white, null);
-            vertical.rectTransform.sizeDelta = new Vector2(2f, 34f);
-            AddDarkEdge(vertical.gameObject);
+            // 十字は 1 枚の画像（表示の 2 倍の細かさで作り、縮めて出す）
+            _cursor = CreateImage(frame, "Cursor", Color.white, _crosshair).rectTransform;
+            _cursor.sizeDelta = new Vector2(48f, 48f);
 
             Image strip = CreateImage(frame, "Message", new Color32(12, 15, 20, 215), null);
             RectTransform stripRect = strip.rectTransform;
@@ -648,6 +766,17 @@ namespace Vastcore.RegionMap
             _messageHideAt = -1f;
             _message = CreateText(stripRect, "Text", "", 26, TextColor, TextAnchor.MiddleCenter);
             Stretch(_message.rectTransform);
+        }
+
+        private static RawImage CreateLayer(Transform parent, string name)
+        {
+            var created = new GameObject(name, typeof(RectTransform), typeof(RawImage));
+            created.transform.SetParent(parent, false);
+            var layer = created.GetComponent<RawImage>();
+            layer.raycastTarget = false;
+            layer.enabled = false;
+            layer.rectTransform.sizeDelta = new Vector2(MapSize, MapSize);
+            return layer;
         }
 
         /// <summary>白い印に暗い縁を付ける。雲・雪・地図帳風の淡い地色の上では、白だけの印が見えなくなる。</summary>

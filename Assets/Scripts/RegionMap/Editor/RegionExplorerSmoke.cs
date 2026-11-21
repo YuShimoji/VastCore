@@ -20,6 +20,14 @@ namespace Vastcore.RegionMap.Editor
 
         private static int _wait;
         private static double _startedAt;
+        private static double _readyAt;
+        // 連続撮影（-regionClip 秒数）。開始直後の画面を 1 秒に ClipFps 枚ずつ clip/ へ残す
+        private const string ClipKey = "Vastcore.RegionMap.ExplorerSmoke.Clip";
+        private const double ClipFps = 10.0;
+        private static double _clipUntil;
+        private static double _clipNext;
+        private static int _clipFrame;
+        private static Vector2 _driftAtReady;
 
         static RegionExplorerSmoke()
         {
@@ -34,6 +42,7 @@ namespace Vastcore.RegionMap.Editor
             EditorSceneManager.OpenScene(RegionMapMenu.ExplorerScenePath);
             SessionState.SetString(OutputKey, output);
             SessionState.SetInt(StepKey, 0);
+            SessionState.SetFloat(ClipKey, float.Parse(RegionMapMenu.Argument("-regionClip", "0"), System.Globalization.CultureInfo.InvariantCulture));
             EditorApplication.ExecuteMenuItem("Window/General/Game");
             // Game ビューの枠の大きさに関係なく、基準の画面サイズで描かせて撮る
             PlayModeWindow.SetCustomRenderingResolution(1920, 1080, "RegionExplorer 1920x1080");
@@ -69,10 +78,31 @@ namespace Vastcore.RegionMap.Editor
                 return;
             }
 
+            if (_readyAt <= 0.0)
+            {
+                _readyAt = EditorApplication.timeSinceStartup;
+                _driftAtReady = explorer.CloudDrift;
+                Debug.Log(string.Format("[RegionMap] 再生を始めてから地図が出るまで {0:0.0} 秒", _readyAt - _startedAt));
+            }
+
             if (_wait > 0)
             {
                 _wait--;
                 return;
+            }
+
+            if (_clipUntil > 0.0)
+            {
+                double now = EditorApplication.timeSinceStartup;
+                if (now >= _clipNext)
+                {
+                    _clipFrame++;
+                    Capture(output, string.Format("clip/f-{0:0000}.png", _clipFrame));
+                    _clipNext += 1.0 / ClipFps;
+                }
+                if (now < _clipUntil) return;
+                _clipUntil = 0.0;
+                Debug.Log("[RegionMap] 連続撮影 " + _clipFrame + " 枚");
             }
 
             RegionSite target = explorer.Region.Sites.Count > 0 ? explorer.Region.Sites[0] : null;
@@ -80,6 +110,14 @@ namespace Vastcore.RegionMap.Editor
             {
                 case 0:
                     Capture(output, "explorer-1-start.png");
+                    float clipSeconds = SessionState.GetFloat(ClipKey, 0f);
+                    if (clipSeconds > 0f)
+                    {
+                        Directory.CreateDirectory(Path.Combine(output, "clip"));
+                        _clipFrame = 0;
+                        _clipNext = EditorApplication.timeSinceStartup + 0.5;
+                        _clipUntil = _clipNext + clipSeconds;
+                    }
                     break;
                 case 1:
                     if (target != null)
@@ -100,14 +138,22 @@ namespace Vastcore.RegionMap.Editor
                     Capture(output, "explorer-3-found.png");
                     break;
                 case 3:
-                    explorer.NextStyle();
+                    explorer.NextCloudOpacity();
                     break;
                 case 4:
-                    Capture(output, "explorer-4-atlas.png");
+                    Capture(output, "explorer-4-clouds-thin.png");
+                    break;
+                case 5:
+                    explorer.NextStyle();
+                    break;
+                case 6:
+                    Capture(output, "explorer-5-atlas.png");
                     break;
                 default:
-                    Finish(output, string.Format("PASS: 発見 {0} / {1}、サーチ {2} 回、画面 {3}x{4}",
-                        explorer.Session.Discovered.Count, explorer.Session.TotalSites, explorer.Session.SearchCount, Screen.width, Screen.height), 0);
+                    Vector2 drift = explorer.CloudDrift - _driftAtReady;
+                    Finish(output, string.Format("PASS: 発見 {0} / {1}、サーチ {2} 回、画面 {3}x{4}、地図が出るまで {5:0.0} 秒、雲は {6:0.0} 秒で東へ {7:0.0000}・南へ {8:0.0000}（地図の幅を 1 として）",
+                        explorer.Session.Discovered.Count, explorer.Session.TotalSites, explorer.Session.SearchCount, Screen.width, Screen.height,
+                        _readyAt - _startedAt, EditorApplication.timeSinceStartup - _readyAt, drift.x, -drift.y), 0);
                     return;
             }
             SessionState.SetInt(StepKey, step + 1);
@@ -124,6 +170,7 @@ namespace Vastcore.RegionMap.Editor
             EditorApplication.update -= Tick;
             SessionState.EraseString(OutputKey);
             SessionState.EraseInt(StepKey);
+            SessionState.EraseFloat(ClipKey);
             File.WriteAllText(Path.Combine(output, "explorer-smoke-result.txt"), result);
             Debug.Log("[RegionMap] " + result);
             EditorApplication.Exit(exitCode);

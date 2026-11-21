@@ -166,7 +166,7 @@ MonoBehaviour:
     SiteCount: 18
   _render:
     Style: 0
-    CloudCover: 0.35
+    CloudCover: 0.58
     Exaggeration: 2.6
     CastShadow: 0.3
     SunAltitude: 38

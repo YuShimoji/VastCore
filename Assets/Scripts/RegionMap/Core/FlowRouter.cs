@@ -6,6 +6,8 @@ namespace Vastcore.RegionMap
     /// 陸のセルを「海に近い順（下流から上流）」に並べ、各セルの水の流れ先を決める。
     /// Priority-Flood（Barnes ほか 2014）で窪地を埋めた水面を作り、その水面を下る向きへ流す。
     /// 海と地図の外周が出口になる。
+    /// 「低い順に取り出す」待ち行列は、高さで区切った箱（バケット）の列で持つ。新しく入るセルは必ず今のセルより
+    /// 少し高いので、箱を低い方から順に空けていけば低い順になる。二分ヒープより 1 セルあたりの手間が小さい。
     /// </summary>
     internal sealed class FlowRouter
     {
@@ -16,9 +18,19 @@ namespace Vastcore.RegionMap
 
         private readonly int _n;
         private readonly bool[] _closed;
-        private float[] _heapKey;
-        private int[] _heapValue;
-        private int _heapCount;
+        // 海と陸の配置は侵食の途中で変わらないので、出口になるセルの一覧と最初の状態は 1 回だけ作って使い回す
+        private bool[] _seedLand;
+        private bool[] _closedAtStart;
+        private int[] _seeds;
+        private int _seedCount;
+        private uint[] _jitterBits;
+        // 箱 1 つの高さの幅は 1 / BucketsPerMeter（5 mm）。箱の中は、取り出す時に高さの順へ並べ直す
+        private const float BucketsPerMeter = 200f;
+        private int[] _bucketHead;
+        private readonly int[] _bucketNext;
+        private int _maxBucket;
+        private int[] _run = new int[256];
+        private float[] _runKey = new float[256];
 
         /// <summary>陸のセルを下流から上流の順に並べたもの。</summary>
         public readonly int[] Order;
@@ -46,68 +58,69 @@ namespace Vastcore.RegionMap
             Order = new int[count];
             Receiver = new int[count];
             Filled = new float[count];
-            _heapKey = new float[1024];
-            _heapValue = new int[1024];
+            _bucketNext = new int[count];
+            _bucketHead = new int[1 << 16];
+            for (int b = 0; b < _bucketHead.Length; b++) _bucketHead[b] = -1;
         }
 
         public void Route(float[] height, bool[] land)
         {
             int n = _n;
             int count = n * n;
-            Array.Clear(_closed, 0, count);
-            _heapCount = 0;
+            if (!ReferenceEquals(_seedLand, land)) PrepareSeeds(land);
+            Array.Copy(_closedAtStart, _closed, count);
+            _maxBucket = -1;
             Count = 0;
 
-            for (int y = 0; y < n; y++)
+            // 出口（陸に接する海と、地図の外周の陸）を、セルの並び順のまま積む
+            for (int s = 0; s < _seedCount; s++)
             {
-                for (int x = 0; x < n; x++)
-                {
-                    int i = x + y * n;
-                    Receiver[i] = -1;
-                    if (!land[i])
-                    {
-                        _closed[i] = true;
-                        Filled[i] = 0f;
-                        bool coastal = false;
-                        for (int k = 0; k < 8 && !coastal; k++)
-                        {
-                            int nx = x + Dx[k];
-                            int ny = y + Dy[k];
-                            if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
-                            coastal = land[nx + ny * n];
-                        }
-                        if (coastal) Push(0f, i);
-                    }
-                    else if (x == 0 || y == 0 || x == n - 1 || y == n - 1)
-                    {
-                        _closed[i] = true;
-                        Filled[i] = height[i];
-                        Push(height[i], i);
-                    }
-                }
+                int i = _seeds[s];
+                if (land[i]) Filled[i] = height[i];
+                Push(Filled[i], i, 0);
             }
 
-            while (_heapCount > 0)
+            // 箱を低い方から順に空ける。処理中に入るセルは必ず後ろの箱へ入る（_maxBucket は途中で伸びる）
+            for (int bucket = 0; bucket <= _maxBucket; bucket++)
             {
-                float key;
-                int c;
-                Pop(out key, out c);
-                if (land[c]) Order[Count++] = c;
-                int cx = c % n;
-                int cy = c / n;
-                for (int k = 0; k < 8; k++)
+                int head = _bucketHead[bucket];
+                if (head < 0) continue;
+                _bucketHead[bucket] = -1;
+                int length = 0;
+                for (int c = head; c >= 0; c = _bucketNext[c])
                 {
-                    int nx = cx + Dx[k];
-                    int ny = cy + Dy[k];
-                    if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
-                    int j = nx + ny * n;
-                    if (_closed[j]) continue;
-                    _closed[j] = true;
-                    float min = key + ((k & 1) == 0 ? Epsilon : Epsilon * Diagonal);
-                    float f = height[j];
-                    if (f < min) f = min;
-                    Filled[j] = f;
-                    Push(f, j);
+                    if (length == _run.Length)
+                    {
+                        Array.Resize(ref _run, length * 2);
+                        Array.Resize(ref _runKey, length * 2);
+                    }
+                    _run[length] = c;
+                    _runKey[length] = Filled[c];
+                    length++;
+                }
+                if (length > 1) SortRun(length);
+
+                for (int q = 0; q < length; q++)
+                {
+                    int c = _run[q];
+                    float key = _runKey[q];
+                    if (land[c]) Order[Count++] = c;
+                    int cx = c % n;
+                    int cy = c / n;
+                    for (int k = 0; k < 8; k++)
+                    {
+                        int nx = cx + Dx[k];
+                        int ny = cy + Dy[k];
+                        if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+                        int j = nx + ny * n;
+                        if (_closed[j]) continue;
+                        _closed[j] = true;
+                        float min = key + ((k & 1) == 0 ? Epsilon : Epsilon * Diagonal);
+                        float f = height[j];
+                        if (f < min) f = min;
+                        Filled[j] = f;
+                        Push(f, j, bucket + 1);
+                    }
                 }
             }
 
@@ -119,7 +132,7 @@ namespace Vastcore.RegionMap
                 float fi = Filled[i];
                 int best = -1;
                 float bestSlope = 0f;
-                uint bits = Jitter > 0f ? RegionNoise.Hash(cx, cy, JitterSeed) : 0u;
+                uint bits = Jitter > 0f ? _jitterBits[i] : 0u;
                 for (int k = 0; k < 8; k++)
                 {
                     int nx = cx + Dx[k];
@@ -145,6 +158,46 @@ namespace Vastcore.RegionMap
             }
         }
 
+        private void PrepareSeeds(bool[] land)
+        {
+            int n = _n;
+            int count = n * n;
+            _seedLand = land;
+            _closedAtStart = new bool[count];
+            _seeds = new int[count];
+            _seedCount = 0;
+            if (Jitter > 0f) _jitterBits = new uint[count];
+
+            for (int y = 0; y < n; y++)
+            {
+                for (int x = 0; x < n; x++)
+                {
+                    int i = x + y * n;
+                    Receiver[i] = -1;
+                    if (_jitterBits != null) _jitterBits[i] = RegionNoise.Hash(x, y, JitterSeed);
+                    if (!land[i])
+                    {
+                        _closedAtStart[i] = true;
+                        Filled[i] = 0f;
+                        bool coastal = false;
+                        for (int k = 0; k < 8 && !coastal; k++)
+                        {
+                            int nx = x + Dx[k];
+                            int ny = y + Dy[k];
+                            if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+                            coastal = land[nx + ny * n];
+                        }
+                        if (coastal) _seeds[_seedCount++] = i;
+                    }
+                    else if (x == 0 || y == 0 || x == n - 1 || y == n - 1)
+                    {
+                        _closedAtStart[i] = true;
+                        _seeds[_seedCount++] = i;
+                    }
+                }
+            }
+        }
+
         /// <summary>各セルへ上流から集まる量を求める。weight が null なら 1 セル = 1。</summary>
         public void Accumulate(float[] weight, bool[] land, float[] result)
         {
@@ -162,47 +215,49 @@ namespace Vastcore.RegionMap
             }
         }
 
-        private void Push(float key, int value)
+        /// <summary>セルを、その高さの箱へ入れる。floor は入れてよい最も低い箱（今空けている箱より後ろ）。</summary>
+        private void Push(float key, int cell, int floor)
         {
-            if (_heapCount == _heapKey.Length)
+            int bucket = (int)(key * BucketsPerMeter);
+            if (bucket < floor) bucket = floor;
+            if (bucket >= _bucketHead.Length)
             {
-                Array.Resize(ref _heapKey, _heapCount * 2);
-                Array.Resize(ref _heapValue, _heapCount * 2);
+                int old = _bucketHead.Length;
+                int size = old;
+                while (size <= bucket) size *= 2;
+                Array.Resize(ref _bucketHead, size);
+                for (int b = old; b < size; b++) _bucketHead[b] = -1;
             }
-            int i = _heapCount++;
-            while (i > 0)
-            {
-                int parent = (i - 1) >> 1;
-                if (_heapKey[parent] <= key) break;
-                _heapKey[i] = _heapKey[parent];
-                _heapValue[i] = _heapValue[parent];
-                i = parent;
-            }
-            _heapKey[i] = key;
-            _heapValue[i] = value;
+            _bucketNext[cell] = _bucketHead[bucket];
+            _bucketHead[bucket] = cell;
+            if (bucket > _maxBucket) _maxBucket = bucket;
         }
 
-        private void Pop(out float key, out int value)
+        /// <summary>
+        /// 取り出した箱の中身を高さの順に並べる（シェルソート）。実行環境の並べ替えに頼らないので、
+        /// 同じ高さ同士の順番も、Unity とコンソールで同じになる。
+        /// </summary>
+        private void SortRun(int length)
         {
-            key = _heapKey[0];
-            value = _heapValue[0];
-            _heapCount--;
-            if (_heapCount == 0) return;
-            float lastKey = _heapKey[_heapCount];
-            int lastValue = _heapValue[_heapCount];
-            int i = 0;
-            while (true)
+            int gap = 1;
+            while (gap < length / 3) gap = gap * 3 + 1;
+            for (; gap >= 1; gap /= 3)
             {
-                int child = i * 2 + 1;
-                if (child >= _heapCount) break;
-                if (child + 1 < _heapCount && _heapKey[child + 1] < _heapKey[child]) child++;
-                if (_heapKey[child] >= lastKey) break;
-                _heapKey[i] = _heapKey[child];
-                _heapValue[i] = _heapValue[child];
-                i = child;
+                for (int i = gap; i < length; i++)
+                {
+                    float key = _runKey[i];
+                    int cell = _run[i];
+                    int j = i;
+                    while (j >= gap && _runKey[j - gap] > key)
+                    {
+                        _runKey[j] = _runKey[j - gap];
+                        _run[j] = _run[j - gap];
+                        j -= gap;
+                    }
+                    _runKey[j] = key;
+                    _run[j] = cell;
+                }
             }
-            _heapKey[i] = lastKey;
-            _heapValue[i] = lastValue;
         }
     }
 }

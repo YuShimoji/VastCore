@@ -7,6 +7,8 @@
   [int]$Resolution = 1024,
   [string]$Style = 'satellite',
   [string]$OutDir = 'artifacts/region-map',
+  # explore の時だけ: 開始直後の画面を、この秒数ぶん連続で <OutDir>/clip/ へ撮る（雲の流れを動画にする材料）
+  [int]$ClipSeconds = 0,
   [string]$UnityPath = ''
 )
 
@@ -52,6 +54,7 @@ if ($Mode -eq 'setup') {
     '-projectPath', "`"$ProjectPath`"",
     '-executeMethod', 'Vastcore.RegionMap.Editor.RegionExplorerSmoke.RunFromCommandLine',
     '-regionOut', "`"$OutFull`"",
+    '-regionClip', $ClipSeconds,
     '-logFile', "`"$log`""
   )
 }

@@ -136,6 +136,99 @@ namespace Vastcore.RegionMap
             return sum / norm;
         }
 
+        private static int Wrap(int i, int period)
+        {
+            int m = i % period;
+            return m < 0 ? m + period : m;
+        }
+
+        /// <summary>
+        /// 格子の番号を周期で折り返す勾配ノイズ。x を periodX、y を periodY だけ進めると同じ値に戻るので、
+        /// 継ぎ目なく繰り返せる模様（流れる雲など）を作れる。
+        /// </summary>
+        public static float GradientWrapped(float x, float y, int periodX, int periodY, uint seed)
+        {
+            int x0 = FastFloor(x);
+            int y0 = FastFloor(y);
+            float fx = x - x0;
+            float fy = y - y0;
+            int xa = Wrap(x0, periodX);
+            int xb = Wrap(x0 + 1, periodX);
+            int ya = Wrap(y0, periodY);
+            int yb = Wrap(y0 + 1, periodY);
+            float u = fx * fx * fx * (fx * (fx * 6f - 15f) + 10f);
+            float v = fy * fy * fy * (fy * (fy * 6f - 15f) + 10f);
+            float n00 = Corner(xa, ya, fx, fy, seed);
+            float n10 = Corner(xb, ya, fx - 1f, fy, seed);
+            float n01 = Corner(xa, yb, fx, fy - 1f, seed);
+            float n11 = Corner(xb, yb, fx - 1f, fy - 1f, seed);
+            float a = n00 + (n10 - n00) * u;
+            float b = n01 + (n11 - n01) * u;
+            return (a + (b - a) * v) * 1.4142135f;
+        }
+
+        /// <summary>繰り返せる fBm。細かさを 2 倍にするたびに周期も 2 倍にする。大きくゆるやかな模様に使う。</summary>
+        public static float FbmWrapped(float x, float y, int octaves, int periodX, int periodY, uint seed, float gain = 0.5f)
+        {
+            float sum = 0f;
+            float amp = 1f;
+            float norm = 0f;
+            for (int i = 0; i < octaves; i++)
+            {
+                sum += GradientWrapped(x, y, periodX, periodY, seed + (uint)i * 1013u) * amp;
+                norm += amp;
+                amp *= gain;
+                x = x * 2f + 17.13f;
+                y = y * 2f + 5.71f;
+                periodX *= 2;
+                periodY *= 2;
+            }
+            return sum / norm;
+        }
+
+        /// <summary>
+        /// 繰り返せて、重ねるたびに向きも回す fBm。回転を整数の行列 (2,-1; 1,2) にすると、格子点が格子点へ移るので
+        /// 周期が保たれる（1 回で 26.6 度回り、約 2.24 倍細かくなる）。細かさがそのまま目に入る模様に使う。
+        /// </summary>
+        public static float FbmTurnedWrapped(float x, float y, int octaves, int period, uint seed, float gain = 0.5f)
+        {
+            float sum = 0f;
+            float amp = 1f;
+            float norm = 0f;
+            for (int i = 0; i < octaves; i++)
+            {
+                sum += GradientWrapped(x, y, period, period, seed + (uint)i * 1013u) * amp;
+                norm += amp;
+                amp *= gain;
+                float nx = 2f * x - y + 17.13f;
+                y = x + 2f * y + 5.71f;
+                x = nx;
+            }
+            return sum / norm;
+        }
+
+        /// <summary>繰り返せる尾根状のノイズ（0〜1、1 が尾根）。向きの回し方は FbmTurnedWrapped と同じ。</summary>
+        public static float RidgedWrapped(float x, float y, int octaves, int period, uint seed, float gain = 0.5f)
+        {
+            float sum = 0f;
+            float amp = 1f;
+            float norm = 0f;
+            float weight = 1f;
+            for (int i = 0; i < octaves; i++)
+            {
+                float n = 1f - Math.Abs(GradientWrapped(x, y, period, period, seed + (uint)i * 2029u));
+                n *= n;
+                sum += n * amp * weight;
+                norm += amp;
+                weight = n < 1f ? n : 1f;
+                amp *= gain;
+                float nx = 2f * x - y + 9.37f;
+                y = x + 2f * y + 23.9f;
+                x = nx;
+            }
+            return sum / norm;
+        }
+
         public static float Smooth(float edge0, float edge1, float x)
         {
             float t = (x - edge0) / (edge1 - edge0);

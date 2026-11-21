@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace Vastcore.RegionMap
 {
@@ -20,8 +21,8 @@ namespace Vastcore.RegionMap
     {
         public RegionMapStyle Style = RegionMapStyle.Satellite;
 
-        /// <summary>雲の量（0 で無し、1 で多い）。</summary>
-        public float CloudCover = 0.35f;
+        /// <summary>雲の量（0 で無し、0.5 前後で空の半分ほど、1 でほぼ全面）。</summary>
+        public float CloudCover = 0.58f;
 
         /// <summary>起伏の強調。大きいほど陰影が強い。</summary>
         public float Exaggeration = 2.6f;
@@ -72,13 +73,15 @@ namespace Vastcore.RegionMap
             bool satellite = options.Style == RegionMapStyle.Satellite;
             bool clouds = satellite && options.CloudCover > 0f;
             int cloudSize = (n + 1) / 2;
-            float[] cloud = clouds ? BuildClouds(cloudSize, seed, options.CloudCover) : null;
-            float cloudOffset = 0.012f * n;
-            float cloudRim = Math.Max(1.5f, n / 400f);
+            float[] cloud = clouds ? RegionClouds.BuildField(cloudSize, data.Spec.Seed, options.CloudCover) : null;
+            float cloudScale = cloudSize / (float)n;
+            float cloudOffset = RegionClouds.ShadowOffset * cloudSize;
+            float cloudRim = Math.Max(0.75f, cloudSize / 400f);
             float[] river = satellite && options.Rivers ? BuildRiverCoverage(data, riverThreshold) : null;
             float castStrength = Math.Min(1f, options.CastShadow * 2.2f);
 
-            for (int y = 0; y < n; y++)
+            // 行ごとに独立なので並列に描く
+            Parallel.For(0, n, y =>
             {
                 float v = y * inv;
                 int yu = y > 0 ? y - 1 : y;
@@ -192,21 +195,16 @@ namespace Vastcore.RegionMap
                     if (clouds)
                     {
                         // 雲の影は、北西から来る光の向きへずらした位置の雲から落ちる
-                        float shade = SampleField(cloud, cloudSize, (x - cloudOffset) * 0.5f, (y - cloudOffset) * 0.5f);
-                        float dim = 1f - RegionNoise.Smooth(0.03f, 0.6f, shade) * 0.46f;
+                        float cx = x * cloudScale;
+                        float cy = y * cloudScale;
+                        float dim = 1f - RegionClouds.ShadowStrength(RegionClouds.Sample(cloud, cloudSize, cx - cloudOffset, cy - cloudOffset));
                         r *= dim;
                         g *= dim;
                         b *= dim * 1.03f;
-                        float cover = SampleField(cloud, cloudSize, x * 0.5f, y * 0.5f);
-                        if (cover > 0.01f)
+                        float tone;
+                        float alpha = RegionClouds.Shade(cloud, cloudSize, cx, cy, cloudRim, out tone);
+                        if (alpha > 0f)
                         {
-                            // 厚い所ほど白く、薄い縁は地表が透ける。北西の縁が明るく、南東の縁が陰る
-                            float towardSun = SampleField(cloud, cloudSize, (x - cloudRim) * 0.5f, (y - cloudRim) * 0.5f);
-                            float awayFromSun = SampleField(cloud, cloudSize, (x + cloudRim) * 0.5f, (y + cloudRim) * 0.5f);
-                            float relief = awayFromSun - towardSun;
-                            if (relief < -0.25f) relief = -0.25f; else if (relief > 0.25f) relief = 0.25f;
-                            float tone = 214f + 36f * RegionNoise.Smooth(0.1f, 0.7f, cover) + 150f * relief;
-                            float alpha = RegionNoise.Smooth(0f, 0.42f, cover) * 0.93f;
                             r += (tone - 3f - r) * alpha;
                             g += (tone - g) * alpha;
                             b += (tone + 4f - b) * alpha;
@@ -219,7 +217,7 @@ namespace Vastcore.RegionMap
                     pixels[p + 2] = ToByte(b);
                     pixels[p + 3] = 255;
                 }
-            }
+            });
             return pixels;
         }
 
@@ -387,54 +385,6 @@ namespace Vastcore.RegionMap
             float top = a + (b - a) * fx;
             float bottom = c + (d - c) * fx;
             return top + (bottom - top) * fy;
-        }
-
-        /// <summary>
-        /// 雲の濃さ（0〜1）を size × size の配列で作る。雲は輪郭がやわらかいので、地図の半分の細かさで足りる。
-        /// 大きな雲のまとまり（低気圧のような塊）の中に、もこもこした粒と、ちぎれた縁を作る。
-        /// </summary>
-        private static float[] BuildClouds(int size, uint seed, float cover)
-        {
-            var field = new float[size * size];
-            float inv = 1f / (size - 1);
-            for (int y = 0; y < size; y++)
-            {
-                float v = y * inv;
-                for (int x = 0; x < size; x++)
-                {
-                    float u = x * inv;
-                    float wx = RegionNoise.FbmTurned(u * 3f + 5.2f, v * 3f + 1.3f, 3, seed + 51u);
-                    float wy = RegionNoise.FbmTurned(u * 3f + 9.7f, v * 3f + 6.1f, 3, seed + 52u);
-                    float cu = u + wx * 0.035f;
-                    float cv = v + wy * 0.035f;
-                    float system = RegionNoise.FbmTurned(cu * 1.5f, cv * 1.5f, 3, seed + 53u);
-                    float bias = system * 1.1f + (cover - 0.5f) * 0.9f - 0.3f;
-                    // 雲が出ない所では計算を省く
-                    if (bias < -0.85f) continue;
-                    float puffs = RegionNoise.FbmTurned(cu * 17f, cv * 17f, 5, seed + 54u, 0.55f);
-                    float billow = 1f - RegionNoise.Ridged(cu * 34f + 3.3f, cv * 34f + 8.8f, 3, seed + 55u);
-                    float density = bias + puffs * 0.9f + (billow - 0.7f) * 0.35f;
-                    // 厚い雲の中でも濃淡が残るように、上限へゆっくり近づく形にする
-                    if (density > 0f) field[x + y * size] = density / (density + 0.3f);
-                }
-            }
-            return field;
-        }
-
-        /// <summary>配列を、セルの間をなめらかにつないで読む。範囲外は端の値。</summary>
-        private static float SampleField(float[] field, int size, float fx, float fy)
-        {
-            if (fx < 0f) fx = 0f; else if (fx > size - 1) fx = size - 1;
-            if (fy < 0f) fy = 0f; else if (fy > size - 1) fy = size - 1;
-            int x0 = (int)fx;
-            int y0 = (int)fy;
-            int x1 = x0 + 1 < size ? x0 + 1 : x0;
-            int y1 = y0 + 1 < size ? y0 + 1 : y0;
-            float tx = fx - x0;
-            float ty = fy - y0;
-            float top = field[x0 + y0 * size] + (field[x1 + y0 * size] - field[x0 + y0 * size]) * tx;
-            float bottom = field[x0 + y1 * size] + (field[x1 + y1 * size] - field[x0 + y1 * size]) * tx;
-            return top + (bottom - top) * ty;
         }
 
         /// <summary>

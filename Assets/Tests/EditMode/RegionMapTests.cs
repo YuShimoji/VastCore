@@ -123,5 +123,39 @@ namespace Vastcore.Tests.EditMode
                 Assert.AreEqual(255, pixels[pixels.Length - 1]);
             }
         }
+
+        [Test]
+        public void Clouds_SameSeedSameLayer_AndMoreCoverMeansMoreCloud()
+        {
+            const int size = 96;
+            CollectionAssert.AreEqual(RegionClouds.BuildField(size, 7, 0.58f), RegionClouds.BuildField(size, 7, 0.58f));
+            Assert.AreEqual(0f, RegionClouds.Coverage(RegionClouds.BuildField(size, 7, 0f), 0f));
+            float few = RegionClouds.Coverage(RegionClouds.BuildField(size, 7, 0.3f), 0.2f);
+            float many = RegionClouds.Coverage(RegionClouds.BuildField(size, 7, 0.7f), 0.2f);
+            Assert.Greater(many, few);
+        }
+
+        /// <summary>探索画面は雲の層をずらして繰り返すので、左右と上下の端がつながっていること。</summary>
+        [Test]
+        public void Clouds_LayerRepeatsWithoutSeam()
+        {
+            const int size = 128;
+            float[] field = RegionClouds.BuildField(size, 7, 0.58f);
+            double inside = 0;
+            double acrossX = 0;
+            double acrossY = 0;
+            for (int k = 0; k < size; k++)
+            {
+                for (int x = 1; x < size; x++) inside += System.Math.Abs(field[x + k * size] - field[x - 1 + k * size]);
+                acrossX += System.Math.Abs(field[k * size] - field[size - 1 + k * size]);
+                acrossY += System.Math.Abs(field[k] - field[k + (size - 1) * size]);
+            }
+            inside /= size * (size - 1);
+            acrossX /= size;
+            acrossY /= size;
+            // 端をまたぐ隣どうしの差が、中の隣どうしの差と同じくらいに収まる（継ぎ目があると何倍にもなる）
+            Assert.Less(acrossX, inside * 2.5 + 0.01);
+            Assert.Less(acrossY, inside * 2.5 + 0.01);
+        }
     }
 }
