@@ -41,6 +41,12 @@ namespace Vastcore.RegionMap
         /// <summary>斜面のならし。</summary>
         public float HillslopeDiffusion = 0.012f;
 
+        /// <summary>水の流れ先を選ぶときのゆらぎ（0〜0.9）。0 だと谷が平行な直線になり、大きいほど枝分かれする。</summary>
+        public float FlowJitter = 0.8f;
+
+        /// <summary>侵食の前に地面へ足す細かな凹凸（m）。流れを合流させるきっかけになる。</summary>
+        public float RoughnessMeters = 14f;
+
         /// <summary>北端・南端の海面気温（℃）。</summary>
         public float TemperatureNorth = -3f;
         public float TemperatureSouth = 25f;

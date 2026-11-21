@@ -44,10 +44,10 @@ namespace Vastcore.RegionMap
         // 気温（行: -8, 5, 17, 30 ℃）と湿り気（列: 0, 1/3, 2/3, 1）から地表の色を引く表
         private static readonly float[] ClimateColors =
         {
-            150, 143, 132,   140, 138, 122,   122, 130, 112,   114, 126, 110,
-            152, 141, 106,   120, 128,  84,    64,  90,  62,    50,  80,  58,
-            188, 166, 120,   138, 144,  82,    72, 106,  58,    48,  92,  54,
-            216, 190, 140,   172, 160,  94,    86, 120,  58,    40,  94,  48,
+            134, 127, 116,   124, 121, 107,   106, 111,  96,    98, 106,  94,
+            146, 133, 102,   116, 117,  80,    60,  80,  54,    45,  69,  49,
+            180, 160, 118,   132, 132,  80,    66,  95,  53,    43,  79,  47,
+            208, 184, 138,   164, 152,  92,    80, 109,  55,    37,  83,  43,
         };
 
         public static byte[] Render(RegionData data, RegionRenderOptions options)
@@ -69,8 +69,14 @@ namespace Vastcore.RegionMap
             float ly = -horizontal;
 
             float[] shadow = options.CastShadow > 0f ? BuildShadow(data, options, altitude) : null;
-            bool clouds = options.Style == RegionMapStyle.Satellite && options.CloudCover > 0f;
-            float cloudOffset = 0.014f;
+            bool satellite = options.Style == RegionMapStyle.Satellite;
+            bool clouds = satellite && options.CloudCover > 0f;
+            int cloudSize = (n + 1) / 2;
+            float[] cloud = clouds ? BuildClouds(cloudSize, seed, options.CloudCover) : null;
+            float cloudOffset = 0.012f * n;
+            float cloudRim = Math.Max(1.5f, n / 400f);
+            float[] river = satellite && options.Rivers ? BuildRiverCoverage(data, riverThreshold) : null;
+            float castStrength = Math.Min(1f, options.CastShadow * 2.2f);
 
             for (int y = 0; y < n; y++)
             {
@@ -88,7 +94,7 @@ namespace Vastcore.RegionMap
 
                     if (height <= 0f)
                     {
-                        OceanColor(options.Style, -height, u, v, n, seed, out r, out g, out b);
+                        OceanColor(options.Style, -height, x, y, u, v, seed, out r, out g, out b);
                     }
                     else
                     {
@@ -118,20 +124,47 @@ namespace Vastcore.RegionMap
                                 ReliefLand(data, i, height, slope, out r, out g, out b);
                                 break;
                             default:
-                                SatelliteLand(data, i, x, y, height, slope, seed, out r, out g, out b);
+                                SatelliteLand(data, i, x, y, u, v, height, slope, seed, riverThreshold, out r, out g, out b);
                                 break;
                         }
 
-                        float contrast = options.Style == RegionMapStyle.Atlas ? 0.4f : (options.Style == RegionMapStyle.Relief ? 0.8f : 0.58f);
-                        float light = 1f + (lit - 1f) * contrast;
-                        if (light < 0.42f) light = 0.42f;
-                        if (light > 1.45f) light = 1.45f;
-                        if (shadow != null) light *= 1f - shadow[i] * options.CastShadow;
-                        r *= light;
-                        g *= light;
-                        b *= light;
+                        if (satellite)
+                        {
+                            // 直射光（やや暖かい色）と空からの光（青み）を分ける。日陰は黒く潰れず、青黒くなる
+                            float direct = lit;
+                            if (direct < 0f) direct = 0f;
+                            if (direct > 1.8f) direct = 1.8f;
+                            direct = 1f + (direct - 1f) * 0.82f;
+                            if (shadow != null) direct *= 1f - shadow[i] * castStrength;
+                            r *= 0.31f + 0.69f * direct * 1.03f;
+                            g *= 0.34f + 0.66f * direct;
+                            b *= 0.40f + 0.62f * direct * 0.96f;
 
-                        if (options.Rivers)
+                            if (river != null)
+                            {
+                                float water = river[i];
+                                if (data.LakeDepth[i] > 0f) water = 0.92f;
+                                if (water > 0f)
+                                {
+                                    r += (30f - r) * water;
+                                    g += (60f - g) * water;
+                                    b += (86f - b) * water;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            float contrast = options.Style == RegionMapStyle.Atlas ? 0.4f : 0.8f;
+                            float light = 1f + (lit - 1f) * contrast;
+                            if (light < 0.42f) light = 0.42f;
+                            if (light > 1.45f) light = 1.45f;
+                            if (shadow != null) light *= 1f - shadow[i] * options.CastShadow;
+                            r *= light;
+                            g *= light;
+                            b *= light;
+                        }
+
+                        if (!satellite && options.Rivers)
                         {
                             float water = 0f;
                             float flow = data.Flow[i];
@@ -158,21 +191,25 @@ namespace Vastcore.RegionMap
 
                     if (clouds)
                     {
-                        float shade = CloudAmount(u - cloudOffset, v - cloudOffset, seed, options.CloudCover);
-                        float dim = 1f - shade * 0.42f;
+                        // 雲の影は、北西から来る光の向きへずらした位置の雲から落ちる
+                        float shade = SampleField(cloud, cloudSize, (x - cloudOffset) * 0.5f, (y - cloudOffset) * 0.5f);
+                        float dim = 1f - RegionNoise.Smooth(0.03f, 0.6f, shade) * 0.46f;
                         r *= dim;
                         g *= dim;
-                        b *= dim;
-                        float cover = CloudAmount(u, v, seed, options.CloudCover);
-                        if (cover > 0f)
+                        b *= dim * 1.03f;
+                        float cover = SampleField(cloud, cloudSize, x * 0.5f, y * 0.5f);
+                        if (cover > 0.01f)
                         {
-                            // 雲の上面は北西が明るく、南東が少し暗い
-                            float inner = CloudAmount(u + 0.004f, v + 0.004f, seed, options.CloudCover);
-                            float tone = 236f + 16f * RegionNoise.Clamp01(cover - inner + 0.5f) - 14f * inner;
-                            float alpha = cover * 0.93f;
-                            r += (tone - r) * alpha;
+                            // 厚い所ほど白く、薄い縁は地表が透ける。北西の縁が明るく、南東の縁が陰る
+                            float towardSun = SampleField(cloud, cloudSize, (x - cloudRim) * 0.5f, (y - cloudRim) * 0.5f);
+                            float awayFromSun = SampleField(cloud, cloudSize, (x + cloudRim) * 0.5f, (y + cloudRim) * 0.5f);
+                            float relief = awayFromSun - towardSun;
+                            if (relief < -0.25f) relief = -0.25f; else if (relief > 0.25f) relief = 0.25f;
+                            float tone = 214f + 36f * RegionNoise.Smooth(0.1f, 0.7f, cover) + 150f * relief;
+                            float alpha = RegionNoise.Smooth(0f, 0.42f, cover) * 0.93f;
+                            r += (tone - 3f - r) * alpha;
                             g += (tone - g) * alpha;
-                            b += (tone + 3f - b) * alpha;
+                            b += (tone + 4f - b) * alpha;
                         }
                     }
 
@@ -193,7 +230,7 @@ namespace Vastcore.RegionMap
             return (byte)(v + 0.5f);
         }
 
-        private static void OceanColor(RegionMapStyle style, float depth, float u, float v, int n, uint seed, out float r, out float g, out float b)
+        private static void OceanColor(RegionMapStyle style, float depth, int x, int y, float u, float v, uint seed, out float r, out float g, out float b)
         {
             float deep = 1f - (float)Math.Exp(-depth / 1100f);
             float shelf = (float)Math.Exp(-depth / 90f);
@@ -213,10 +250,14 @@ namespace Vastcore.RegionMap
                 b = 96f - 34f * deep + 28f * shelf;
                 return;
             }
-            float ripple = RegionNoise.Fbm(u * 90f, v * 90f, 3, seed + 31u) * 3f;
-            r = 24f - 12f * deep + 58f * shelf + ripple;
-            g = 66f - 36f * deep + 92f * shelf + ripple;
-            b = 112f - 40f * deep + 46f * shelf + ripple;
+            // 深い海は暗い紺。浅瀬の明るい青緑は岸のごく近くだけに出す
+            float shallow = (float)Math.Exp(-depth / 34f);
+            float slopeWater = (float)Math.Exp(-depth / 320f);
+            float drift = RegionNoise.FbmTurned(u * 5f + 2.3f, v * 5f + 8.1f, 4, seed + 31u);
+            float grain = (RegionNoise.Hash01(x, y, seed + 32u) - 0.5f) * 1.6f;
+            r = 9f + 7f * slopeWater + 46f * shallow + drift * 2.5f + grain;
+            g = 29f + 24f * slopeWater + 98f * shallow + drift * 5f + grain;
+            b = 62f + 34f * slopeWater + 62f * shallow + drift * 6f + grain;
         }
 
         private static void RiverColor(RegionMapStyle style, out float r, out float g, out float b)
@@ -226,41 +267,48 @@ namespace Vastcore.RegionMap
             else { r = 38f; g = 74f; b = 98f; }
         }
 
-        private static void SatelliteLand(RegionData data, int i, int x, int y, float height, float slope, uint seed, out float r, out float g, out float b)
+        private static void SatelliteLand(RegionData data, int i, int x, int y, float u, float v, float height, float slope,
+            uint seed, float riverThreshold, out float r, out float g, out float b)
         {
             float t = data.Temperature[i];
             float m = data.Moisture[i];
-            ClimateColor(t, m, out r, out g, out b);
 
-            // 森は細かなむらで暗く、草地や砂地は淡く
+            // 植生のむら（広いまとまり、細かなまだら、1 セルごとの粒）と、谷底の湿り
+            float broad = RegionNoise.FbmTurned(u * 11f + 3.1f, v * 11f + 7.7f, 4, seed + 42u);
+            float fine = RegionNoise.FbmTurned(u * 64f + 1.9f, v * 64f + 4.3f, 3, seed + 43u);
             float grain = RegionNoise.Hash01(x, y, seed + 41u);
-            float patch = RegionNoise.Fbm(x * 0.045f, y * 0.045f, 3, seed + 42u);
-            float forest = RegionNoise.Smooth(0.42f, 0.7f, m) * RegionNoise.Smooth(1f, 8f, t);
-            float mottle = 1f - forest * (0.10f * grain + 0.07f) + patch * 0.07f;
-            r *= mottle;
-            g *= mottle;
-            b *= mottle;
+            float valley = RegionNoise.Smooth(riverThreshold * 0.03f, riverThreshold, data.Flow[i]);
+            float wet = m + broad * 0.2f + fine * 0.08f + valley * 0.12f;
+            ClimateColor(t + fine * 1.5f, wet, out r, out g, out b);
 
-            // 急な斜面は岩肌
-            float rock = RegionNoise.Smooth(0.3f, 0.56f, slope);
-            r += (128f - r) * rock * 0.7f;
-            g += (120f - g) * rock * 0.7f;
-            b += (110f - b) * rock * 0.7f;
+            // 森は木の粒で暗く、開けた土地は淡く
+            float forest = RegionNoise.Smooth(0.42f, 0.7f, wet) * RegionNoise.Smooth(1f, 8f, t);
+            float tone = 1.07f + broad * 0.05f + fine * 0.06f + (grain - 0.5f) * 0.05f - forest * (0.13f * grain + 0.03f);
+            r *= tone;
+            g *= tone;
+            b *= tone;
+
+            // 急な斜面は岩肌。森の斜面は木に覆われるので出にくい
+            float steep = RegionNoise.Smooth(0.3f, 0.62f, slope);
+            float rock = steep * (1f - 0.55f * forest);
+            r += (124f - r) * rock * 0.75f;
+            g += (116f - g) * rock * 0.75f;
+            b += (106f - b) * rock * 0.75f;
 
             // 暖かい海岸の砂浜
-            if (height < 9f)
+            if (height < 8f)
             {
-                float sand = (1f - height / 9f) * RegionNoise.Smooth(6f, 16f, t) * 0.6f;
-                r += (214f - r) * sand;
-                g += (200f - g) * sand;
+                float sand = (1f - height / 8f) * RegionNoise.Smooth(6f, 16f, t) * 0.55f;
+                r += (212f - r) * sand;
+                g += (198f - g) * sand;
                 b += (160f - b) * sand;
             }
 
-            // 雪は寒い所に積もり、急な斜面では薄い
-            float snow = 1f - RegionNoise.Smooth(-5f, 0.5f, t + (grain - 0.5f) * 1.5f);
-            snow *= 1f - rock * 0.45f;
-            r += (238f - r) * snow;
-            g += (242f - g) * snow;
+            // 雪は寒い所に積もる。境目はむらがあり、急な斜面では薄い
+            float snow = 1f - RegionNoise.Smooth(-4.5f, 1.5f, t + (grain - 0.5f) * 1.2f + fine * 1.6f + broad * 0.8f);
+            snow *= 1f - steep * 0.4f;
+            r += (240f - r) * snow;
+            g += (243f - g) * snow;
             b += (248f - b) * snow;
         }
 
@@ -341,15 +389,102 @@ namespace Vastcore.RegionMap
             return top + (bottom - top) * fy;
         }
 
-        /// <summary>雲の濃さ（0〜1）。大きな雲のまとまりの中に、細かな雲の粒を作る。</summary>
-        private static float CloudAmount(float u, float v, uint seed, float cover)
+        /// <summary>
+        /// 雲の濃さ（0〜1）を size × size の配列で作る。雲は輪郭がやわらかいので、地図の半分の細かさで足りる。
+        /// 大きな雲のまとまり（低気圧のような塊）の中に、もこもこした粒と、ちぎれた縁を作る。
+        /// </summary>
+        private static float[] BuildClouds(int size, uint seed, float cover)
         {
-            float wx = RegionNoise.Fbm(u * 3f + 5.2f, v * 3f + 1.3f, 3, seed + 51u);
-            float wy = RegionNoise.Fbm(u * 3f + 9.7f, v * 3f + 6.1f, 3, seed + 52u);
-            float system = RegionNoise.Fbm(u * 1.6f + wx * 0.3f, v * 1.6f + wy * 0.3f, 3, seed + 53u);
-            float puffs = RegionNoise.Fbm(u * 10f + wx * 0.3f, v * 10f + wy * 0.3f, 6, seed + 54u);
-            float density = puffs * 0.75f + system * 0.9f + (cover - 0.5f) * 0.7f;
-            return RegionNoise.Smooth(0.16f, 0.5f, density);
+            var field = new float[size * size];
+            float inv = 1f / (size - 1);
+            for (int y = 0; y < size; y++)
+            {
+                float v = y * inv;
+                for (int x = 0; x < size; x++)
+                {
+                    float u = x * inv;
+                    float wx = RegionNoise.FbmTurned(u * 3f + 5.2f, v * 3f + 1.3f, 3, seed + 51u);
+                    float wy = RegionNoise.FbmTurned(u * 3f + 9.7f, v * 3f + 6.1f, 3, seed + 52u);
+                    float cu = u + wx * 0.035f;
+                    float cv = v + wy * 0.035f;
+                    float system = RegionNoise.FbmTurned(cu * 1.5f, cv * 1.5f, 3, seed + 53u);
+                    float bias = system * 1.1f + (cover - 0.5f) * 0.9f - 0.3f;
+                    // 雲が出ない所では計算を省く
+                    if (bias < -0.85f) continue;
+                    float puffs = RegionNoise.FbmTurned(cu * 17f, cv * 17f, 5, seed + 54u, 0.55f);
+                    float billow = 1f - RegionNoise.Ridged(cu * 34f + 3.3f, cv * 34f + 8.8f, 3, seed + 55u);
+                    float density = bias + puffs * 0.9f + (billow - 0.7f) * 0.35f;
+                    // 厚い雲の中でも濃淡が残るように、上限へゆっくり近づく形にする
+                    if (density > 0f) field[x + y * size] = density / (density + 0.3f);
+                }
+            }
+            return field;
+        }
+
+        /// <summary>配列を、セルの間をなめらかにつないで読む。範囲外は端の値。</summary>
+        private static float SampleField(float[] field, int size, float fx, float fy)
+        {
+            if (fx < 0f) fx = 0f; else if (fx > size - 1) fx = size - 1;
+            if (fy < 0f) fy = 0f; else if (fy > size - 1) fy = size - 1;
+            int x0 = (int)fx;
+            int y0 = (int)fy;
+            int x1 = x0 + 1 < size ? x0 + 1 : x0;
+            int y1 = y0 + 1 < size ? y0 + 1 : y0;
+            float tx = fx - x0;
+            float ty = fy - y0;
+            float top = field[x0 + y0 * size] + (field[x1 + y0 * size] - field[x0 + y0 * size]) * tx;
+            float bottom = field[x0 + y1 * size] + (field[x1 + y1 * size] - field[x0 + y1 * size]) * tx;
+            return top + (bottom - top) * ty;
+        }
+
+        /// <summary>
+        /// 川が各セルを覆う割合（0〜1）。流量が多いほど太く濃くし、最後に軽くぼかして線の段々を消す。
+        /// 細い川は薄くしか写らないので、地図の線ではなく写真に写る川に見える。
+        /// </summary>
+        private static float[] BuildRiverCoverage(RegionData data, float riverThreshold)
+        {
+            int n = data.Resolution;
+            int count = n * n;
+            var raw = new float[count];
+            float[] flow = data.Flow;
+            float[] h = data.Height;
+            float logSpan = (float)Math.Log(80.0);
+            for (int y = 1; y < n - 1; y++)
+            {
+                for (int x = 1; x < n - 1; x++)
+                {
+                    int i = x + y * n;
+                    if (h[i] <= 0f || flow[i] <= riverThreshold) continue;
+                    float k = (float)Math.Log(flow[i] / riverThreshold) / logSpan;
+                    if (k > 1f) k = 1f;
+                    float width = 0.55f + 1.7f * k;
+                    float center = width < 1f ? width : 1f;
+                    if (raw[i] < center) raw[i] = center;
+                    if (width > 1f)
+                    {
+                        float side = (width - 1f) * 0.5f;
+                        if (raw[i - 1] < side) raw[i - 1] = side;
+                        if (raw[i + 1] < side) raw[i + 1] = side;
+                        if (raw[i - n] < side) raw[i - n] = side;
+                        if (raw[i + n] < side) raw[i + n] = side;
+                    }
+                }
+            }
+
+            var result = new float[count];
+            for (int y = 1; y < n - 1; y++)
+            {
+                for (int x = 1; x < n - 1; x++)
+                {
+                    int i = x + y * n;
+                    if (h[i] <= 0f) continue;
+                    float sum = raw[i] * 0.52f
+                        + (raw[i - 1] + raw[i + 1] + raw[i - n] + raw[i + n]) * 0.09f
+                        + (raw[i - n - 1] + raw[i - n + 1] + raw[i + n - 1] + raw[i + n + 1]) * 0.03f;
+                    result[i] = sum < 0.9f ? sum : 0.9f;
+                }
+            }
+            return result;
         }
 
         /// <summary>

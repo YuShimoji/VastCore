@@ -37,6 +37,8 @@ namespace Vastcore.RegionMap.Preview
                     case "--erosion": spec.ErosionStrength = Float(value); a++; break;
                     case "--maxslope": spec.MaxSlope = Float(value); a++; break;
                     case "--diffusion": spec.HillslopeDiffusion = Float(value); a++; break;
+                    case "--jitter": spec.FlowJitter = Float(value); a++; break;
+                    case "--rough": spec.RoughnessMeters = Float(value); a++; break;
                     case "--falloff": spec.EdgeFalloff = Float(value); a++; break;
                     case "--humidity": spec.Humidity = Float(value); a++; break;
                     case "--north": spec.TemperatureNorth = Float(value); a++; break;

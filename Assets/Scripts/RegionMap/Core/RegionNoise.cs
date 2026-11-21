@@ -94,6 +94,27 @@ namespace Vastcore.RegionMap
             return sum / norm;
         }
 
+        /// <summary>
+        /// 重ねるたびに向きを回す fBm。回さないと、細かい周波数で格子の向きが揃って縞や升目に見える。
+        /// 地表や海面の模様のように、細かさがそのまま目に入る用途に使う。
+        /// </summary>
+        public static float FbmTurned(float x, float y, int octaves, uint seed, float gain = 0.5f)
+        {
+            float sum = 0f;
+            float amp = 1f;
+            float norm = 0f;
+            for (int i = 0; i < octaves; i++)
+            {
+                sum += Gradient(x, y, seed + (uint)i * 1013u) * amp;
+                norm += amp;
+                amp *= gain;
+                float nx = (x * 0.8f - y * 0.6f) * 2.03f + 17.13f;
+                y = (x * 0.6f + y * 0.8f) * 2.03f + 5.71f;
+                x = nx;
+            }
+            return sum / norm;
+        }
+
         /// <summary>尾根状のノイズ。0〜1 で、1 が尾根。</summary>
         public static float Ridged(float x, float y, int octaves, uint seed, float lacunarity = 2f, float gain = 0.5f)
         {

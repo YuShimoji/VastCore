@@ -30,6 +30,14 @@ namespace Vastcore.RegionMap
         /// <summary>窪地を埋めた後の水面の高さ（m）。</summary>
         public readonly float[] Filled;
 
+        /// <summary>
+        /// 流れ先を選ぶときのゆらぎ（0 で無し）。8 方向から最も急な 1 つを選ぶだけだと、なめらかな斜面で
+        /// 流れが平行な直線の束になる。セルごとに決まった量だけ比べ方をずらすと、流れがふらついて合流し、枝分かれした谷になる。
+        /// </summary>
+        public float Jitter;
+
+        public uint JitterSeed;
+
         public FlowRouter(int resolution)
         {
             _n = resolution;
@@ -111,6 +119,7 @@ namespace Vastcore.RegionMap
                 float fi = Filled[i];
                 int best = -1;
                 float bestSlope = 0f;
+                uint bits = Jitter > 0f ? RegionNoise.Hash(cx, cy, JitterSeed) : 0u;
                 for (int k = 0; k < 8; k++)
                 {
                     int nx = cx + Dx[k];
@@ -118,7 +127,14 @@ namespace Vastcore.RegionMap
                     if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
                     int j = nx + ny * n;
                     float s = fi - (land[j] ? Filled[j] : 0f);
+                    if (s <= 0f) continue;
                     if ((k & 1) != 0) s *= 0.70710678f;
+                    if (Jitter > 0f)
+                    {
+                        // 8 方向それぞれに 4 ビットずつ使い、傾きの比べ方をセルごとに少しずらす
+                        float roll = (((bits >> (k * 4)) & 15u) + 0.5f) * (1f / 8f) - 1f;
+                        s *= 1f + Jitter * roll;
+                    }
                     if (s > bestSlope)
                     {
                         bestSlope = s;

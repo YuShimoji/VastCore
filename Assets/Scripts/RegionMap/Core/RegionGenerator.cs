@@ -19,11 +19,11 @@ namespace Vastcore.RegionMap
             var uplift = new float[count];
             var erodibility = new float[count];
             var land = new bool[count];
-            var router = new FlowRouter(n);
+            var router = new FlowRouter(n) { Jitter = spec.FlowJitter, JitterSeed = seed + 61u };
             var scratch = new float[count];
 
             BuildBase(data, seed, uplift, erodibility, land);
-            Evolve(data, uplift, erodibility, land, router, scratch);
+            Evolve(data, seed, uplift, erodibility, land, router, scratch);
             BuildClimate(data, seed, land, scratch);
             BuildRivers(data, land, router, scratch);
             ClassifyBiomes(data, land);
@@ -77,7 +77,7 @@ namespace Vastcore.RegionMap
                     {
                         land[i] = true;
                         float detail = RegionNoise.Fbm(qx * 22f, qy * 22f, 4, seed + 7u);
-                        h[i] = 4f + landness * 320f + (detail + 1f) * 14f;
+                        h[i] = 4f + landness * 320f + (detail + 1f) * 14f + RegionNoise.Hash01(x, y, seed + 12u) * spec.RoughnessMeters;
 
                         float belt = RegionNoise.Smooth(-0.18f, 0.32f, RegionNoise.Fbm(qx * 1.7f + 7.1f, qy * 1.7f + 3.3f, 4, seed + 5u));
                         float ridge = RegionNoise.Ridged(qx * 4.2f, qy * 4.2f, 5, seed + 6u);
@@ -104,7 +104,7 @@ namespace Vastcore.RegionMap
         /// 隆起と侵食を、まず半分の解像度で大半の回数だけ進め、その結果を元の解像度へ広げてから残りを進める。
         /// 大きな谷筋は粗い格子で決まり、細かな刻みだけを細かい格子で作るので、全部を細かい格子で回すより速い。
         /// </summary>
-        private static void Evolve(RegionData data, float[] uplift, float[] erodibility, bool[] land, FlowRouter router, float[] area)
+        private static void Evolve(RegionData data, uint seed, float[] uplift, float[] erodibility, bool[] land, FlowRouter router, float[] area)
         {
             RegionSpec spec = data.Spec;
             int n = data.Resolution;
@@ -135,7 +135,7 @@ namespace Vastcore.RegionMap
                 int coarseIterations = spec.ErosionIterations * 3 / 4;
                 fineIterations = spec.ErosionIterations - coarseIterations;
                 EvolveGrid(coarseHeight, coarseUplift, coarseErodibility, coarseLand, half, data.SizeKm * 1000f / half,
-                    spec, coarseIterations, new FlowRouter(half), new float[halfCount]);
+                    spec, coarseIterations, new FlowRouter(half) { Jitter = spec.FlowJitter, JitterSeed = seed + 62u }, new float[halfCount]);
 
                 for (int y = 0; y < n; y++)
                 {
@@ -161,7 +161,8 @@ namespace Vastcore.RegionMap
                         if (d < 0f) d = 0f;
                         float top = a + (b - a) * tx;
                         float bottom = c + (d - c) * tx;
-                        float value = top + (bottom - top) * ty;
+                        // 広げた面はなめらかなので、細かい格子でも流れが合流するように凹凸を足す
+                        float value = top + (bottom - top) * ty + RegionNoise.Hash01(x, y, seed + 13u) * spec.RoughnessMeters;
                         h[i] = value > 0.5f ? value : 0.5f;
                     }
                 }
