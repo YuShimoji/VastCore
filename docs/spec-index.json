@@ -331,5 +331,14 @@
     "cat": "system",
     "file": "docs/02_design/DESIGNER_PIPELINE_SPEC.md",
     "summary": "構造物制作・Stamp化・SO設定・DualGrid配置・保存再開・利用先の全工程。2026-11-01に既存GAPとソース接続を照合し再開準備を追記。実Editor・本人採用は未確認"
+  },
+  {
+    "id": "SP-021",
+    "title": "Region Map and Exploration Foundation",
+    "status": "partial",
+    "pct": 50,
+    "cat": "core",
+    "file": "docs/02_design/REGION_MAP_EXPLORATION_SPEC.md",
+    "summary": "seedから地域データ(海陸・侵食・気候・川)を生成し、鳥瞰図(3様式)に描き、探索地点を置き、座標サーチで発見する画面まで。2026-11-21の本人依頼による現行の主作業。段1-4実装済み、見え方と操作感の本人採否は未記録。段5(地点のローカル表示)・段6(ゲーム)は未着手"
   }
 ]

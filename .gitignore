@@ -33,6 +33,8 @@
 ExportedObj/
 .consulo/
 *.csproj
+# Unity が生成しない手書きのプロジェクト（確認用コンソール）は管理する
+!tools/**/*.csproj
 *.unityproj
 *.sln
 *.suo

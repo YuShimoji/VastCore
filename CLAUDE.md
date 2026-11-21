@@ -11,7 +11,11 @@ landscapes with distinctive procedural artificial structures.
 
 - Engine: Unity 6000.3.x / URP
 - Language constraints: C# / .NET Standard 2.1 / C# 9.0 limitations
-- Main architecture: DualGrid + HeightMap + designer Prefab Stamp placement
+- Current work (2026-11-21, user direction): region bird's-eye map generation
+  and point-and-search exploration, `Assets/Scripts/RegionMap/`, spec SP-021
+  `docs/02_design/REGION_MAP_EXPLORATION_SPEC.md`
+- Earlier main architecture (on hold): DualGrid + HeightMap + designer Prefab
+  Stamp placement
 - Normal source root: `Assets/Scripts/`
 - Normal tests root: `Assets/Tests/EditMode/`
 
@@ -31,7 +35,11 @@ infer current acceptance or compile status from historical notes in this file.
 
 ## Architecture Anchors
 
-- DualGrid is the active grid/placement foundation.
+These anchors and the Decision Anchors below describe the structure-placement
+route, which is on hold since 2026-11-21. The region map (`Vastcore.RegionMap`)
+does not depend on it.
+
+- DualGrid is the grid/placement foundation of that route.
 - HeightMap supplies terrain height data and sampling paths.
 - Prefab Stamp placement is the designer-facing structure placement route.
 - Structure generation should stay compatible with assembly boundaries and

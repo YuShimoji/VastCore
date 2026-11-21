@@ -13,17 +13,19 @@ Stop there unless the task needs more evidence.
 
 ## Next Work Entry
 
-The current technical exit is SP-017 (Arch → Prefab Stamp → reload → one-chunk
-terrain placement through the normal Editor GUI).
+The current work is SP-021: generate a region from a seed, draw it as a bird's-eye
+map, and run a point-and-search exploration on top (user direction, 2026-11-21).
 
-1. `docs/runtime-state.md` - `Next Action` (steps 1-7)
-2. `docs/02_design/STAMP_EXPORT_PIPELINE_SPEC.md` - section
-   「2026-11-21 次回集中セッションの実行用依頼」 (mission text and fixed inputs),
-   then 「2026-11-01 最小検証仕様」 → 「操作と出口」 (steps and exits)
-3. `docs/02_design/DESIGNER_PIPELINE_SPEC.md` §8 - whole pipeline and what comes
-   after SP-017
-4. thank workstation only: `artifacts/restart-20261101/20261101-0430-arch-fix/`
-   (`RESULT.md`, `fixture-plan.md`; ignored, not on the remote)
+1. `docs/runtime-state.md` - `Next Action`
+2. `docs/02_design/REGION_MAP_EXPLORATION_SPEC.md` - user's original request,
+   whole-process table (§4), how to run (§7), open decisions (§9)
+3. Code: `Assets/Scripts/RegionMap/`, scene `Assets/Scenes/RegionExplorer.unity`,
+   preview console `tools/RegionMapPreview/`, batch entry `scripts/region-map.ps1`
+
+On hold (not the next work unless the user reopens it): SP-017 Arch round trip
+(`docs/02_design/STAMP_EXPORT_PIPELINE_SPEC.md`) and SP-020
+(`docs/02_design/DESIGNER_PIPELINE_SPEC.md`). Their last state is in
+`docs/restart/VC_RESTART_20261101_HISTORY.md`.
 
 ## Core Owners
 
@@ -65,10 +67,10 @@ spec viewer, Unity editor tools, and many docs link to them.
 |---|---|
 | `docs/` root | Current owners listed above, plus history: `HANDOVER.md`, `WORKFLOW_STATE_SSOT.md`, `MILESTONE_PLAN.md`, `SESSION_SUMMARY_2026-03-04.md`, `DOCS_INDEX.md` (old index; use this file instead) |
 | `docs/01_planning/` | Plans up to 2026-03. `DEVELOPMENT_ROADMAP_2026.md` is the long-range plan (dated 2026-03-17); the rest is history |
-| `docs/02_design/` | Feature specs. Active: SP-017 `STAMP_EXPORT_PIPELINE_SPEC.md`, SP-020 `DESIGNER_PIPELINE_SPEC.md`, `ASSEMBLY_ARCHITECTURE.md`. Status per spec in `spec-index.json` |
+| `docs/02_design/` | Feature specs. Active: SP-021 `REGION_MAP_EXPLORATION_SPEC.md`, `ASSEMBLY_ARCHITECTURE.md`. On hold: SP-017 `STAMP_EXPORT_PIPELINE_SPEC.md`, SP-020 `DESIGNER_PIPELINE_SPEC.md`. Status per spec in `spec-index.json` |
 | `docs/03_guides/` | How-to guides. Active: `UNITY_CODE_STANDARDS.md`, `COMPILATION_GUARD_PROTOCOL.md` |
 | `docs/04_reports/` | History reports. `LEGACY_UI_MIGRATION_REPORT.md`, `A3-2_UI_MIGRATION_APPLY_REPORT.md`, `UI_MIGRATION_RULES_DRYRUN.md` are rewritten by Unity editor tools |
-| `docs/restart/` | History of restart and UPM investigations (2026-06 to 2026-07). `VC_RESTART_20261101_HISTORY.md` holds the moved 2026-11-01/16 state bodies and SP-017/SP-020 run records |
+| `docs/restart/` | History of restart and UPM investigations (2026-06 to 2026-07). `VC_RESTART_20261101_HISTORY.md` holds the moved 2026-11-01/16/21 state bodies and SP-017/SP-020 run records |
 | `docs/tasks/` | Task tickets frozen at 2026-03-17 (`TASK_INDEX.md`). SP-017/SP-020 work has no ticket here |
 | `docs/terrain/`, `docs/inbox/`, `docs/EXAMPLES/` | History (2026-01 to 2026-03) and samples |
 | `docs/architecture/` | 2026-06-15 compile and dependency risk evidence (M0) |

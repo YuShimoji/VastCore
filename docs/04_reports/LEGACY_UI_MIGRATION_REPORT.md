@@ -1,14 +1,14 @@
 # Legacy UI Migration Report (Dry Run)
 
-- Generated: 2026-11-01 05:08 (local)
+- Generated: 2026-11-21 15:18 (local)
 - Tool: UIMigrationScannerWindow.cs
 - Options: ExcludeExamples=True, ScanScripts=True, ScanScenes=True, ScanPrefabs=True
 
 ## Summary
-- Scripts scanned: 380
-- Scenes scanned: 53
+- Scripts scanned: 393
+- Scenes scanned: 54
 - Prefabs scanned: 6
-- C# using UnityEngine.UI: 11
+- C# using UnityEngine.UI: 12
 - C# OnGUI occurrences: 18
 - C# TMPro references: 12
 - C# UI Toolkit references: 1
@@ -17,9 +17,10 @@
 - Prefabs with uGUI markers: 0
 - Prefabs with UI Toolkit: 0
 
-### C# files using UnityEngine.UI (11)
+### C# files using UnityEngine.UI (12)
 - Assets/Editor/Tools/UIMigration/UIMigrationScannerWindow.cs
 - Assets/Scripts/Camera/Cinematic/CinematicCameraController.cs
+- Assets/Scripts/RegionMap/View/RegionExplorer.cs
 - Assets/Scripts/UI/InGameDebugUI.cs
 - Assets/Scripts/UI/MenuManager.cs
 - Assets/Scripts/UI/ModernUIStyleSystem.cs

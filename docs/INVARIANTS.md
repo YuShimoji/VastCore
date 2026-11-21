@@ -5,8 +5,15 @@ VastCore の非交渉条件、責任境界、禁止ショートカットを保�
 ## Product Invariants
 
 - 目的関数は「広大な景観に映える、ユニークで巨大な人工構造物を
-  プロシージャルに生成する」こと。
-- 現行の主軸は DualGrid + HeightMap + designer Prefab Stamp placement。
+  プロシージャルに生成する」こと。プロシージャルなマップ生成とオブジェクト生成が軸。
+- 2026-11-21 本人指定の目標: 地域一帯の詳細な鳥瞰図を自動で作成できること。
+  開発区切りは、その上にポイントクリック的な宝探しの探索ゲームを載せられること。
+  仕様は SP-021（`docs/02_design/REGION_MAP_EXPLORATION_SPEC.md`）。
+- 開発を一つの構造物（Arch など）の往復検証へ局所化させない。次の作業は SP-021 の
+  全体工程表の不足から選ぶ。
+- 参照された既存作品の名称・画面の見た目・文言を再現しない。仕組みだけを参考にする。
+- DualGrid + HeightMap + designer Prefab Stamp placement は2026-11-21まで主軸だった経路。
+  コードと記録は残し、地点のローカル表示（SP-021 段5）に使うかは本人が決める。
 - 3D Voxel / Marching Cubes を主経路へ戻すには、ユーザーの明示的な再承認が必要。
 - Marching Squares を主経路へ戻すには、Prefab Stamp 方針との衝突を先に解決する。
 

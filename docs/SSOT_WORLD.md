@@ -1,7 +1,7 @@
 # VastCore — World SSOT (Single Source of Truth)
 
 **ステータス**: 最上位仕様（憲法）
-**最終更新**: 2026-03-23
+**最終更新**: 2026-11-21
 **スコープ**: プロジェクト全体の目的・構造・優先順位の最終権威
 
 > **本文書が VastCore プロジェクトの最上位 SSOT である。**
@@ -16,6 +16,15 @@
 生成される構造物は、ミニマルでありながら単体で芸術的価値を持ち、印象的な景観の一部となることを目指す。多様な幾何学形状の組み合わせによるユニークで複雑な形状の自動生成が中核である。
 
 この目的関数（aesthetic output）と、工学的制約条件（engineering constraints: コンパイル安定性、テストカバレッジ、CI/CD）は対立するものではなく、前者が「何を作るか」、後者が「どう作るか」を定義する。
+
+### 1.1 2026-11-21 の本人の方向（全体の作り直し）
+
+本人が、開発が Arch の往復検証に局所化していたとして全体の作り直しを依頼した。プロシージャルなマップ生成とオブジェクト生成という軸は変わらない。
+
+- **目標**: 地域一帯の詳細な鳥瞰図を自動で作成できること。
+- **開発区切り**: その鳥瞰図の上に、ポイントクリック的な宝探しの探索ゲームを載せられること（座標を指定してサーチし、隠れた地点を発見する仕組み）。
+
+原文・全体工程・実行方法は [SP-021](02_design/REGION_MAP_EXPLORATION_SPEC.md) が持つ。上の「巨大な人工構造物」は、地図の上で探し当てる地点として接続するという開発担当の解釈で進めており、構造物の形を地点へ結ぶ方式（SP-021 の段5）は本人が決める。DualGrid + HeightMap + Prefab Stamp（SP-017 / SP-020）のコードと記録は残し、段5の候補として保留している。
 
 ---
 
@@ -35,7 +44,7 @@ SSOT_WORLD.md                          ← 最上位仕様（目的・構造。�
   ├── project-context.md               ← 決定と引継ぎの履歴
   │     従属先: docs/project-context.md
   │
-  ├── 機能仕様                          ← 各機能の仕様と検証手順（現役はSP-017・SP-020）
+  ├── 機能仕様                          ← 各機能の仕様と検証手順（現役はSP-021。SP-017・SP-020は保留）
   │     従属先: docs/02_design/*.md、索引 docs/spec-index.json
   │
   └── DEVELOPMENT_ROADMAP_2026.md      ← Phase A-E の長期計画（2026-03-17時点）
@@ -63,6 +72,7 @@ HANDOVER.md、WORKFLOW_STATE_SSOT.md、MILESTONE_PLAN.md、docs/tasks/ は2026-0
 |---------|------|--------------|
 | **Generation** | プロシージャル生成、Deform統合、プリミティブ生成 | `Vastcore.Generation` |
 | **Terrain** | 地形メッシュ、DualGrid、Prefabスタンプ配置、LOD、チャンク管理 | `Vastcore.Terrain` |
+| **RegionMap** | 地域データ生成、鳥瞰図の描画、探索地点、探索の判定と画面（他のレイヤーに依存しない） | `Vastcore.RegionMap` |
 
 ### 3.3 プレゼンテーションレイヤー
 
@@ -100,7 +110,8 @@ HANDOVER.md、WORKFLOW_STATE_SSOT.md、MILESTONE_PLAN.md、docs/tasks/ は2026-0
 | **Phase A** | 安定化 (Stabilization) | 完了 | コンパイル安定性 95、ブロッカー解消 |
 | **Phase B** | 品質基盤 (Quality Foundation) | 完了 | EditMode 100+テスト、TODO 20→3 削減 |
 | **Phase C** | 機能完成 (Feature Completion) | **完了** | Deform統合、Prefabスタンプ(SG-1+SG-2)、CSG検証 |
-| **Phase D** | オーサリング + バリエーション | **進行中** | T1オーサリング主体 + V4段階的バリエーション。SP-018/019実装中 |
+| **Phase D** | オーサリング + バリエーション | 保留（2026-11-21） | T1オーサリング主体 + V4段階的バリエーション。SP-021 の段5の判断まで保留 |
+| **Region Map** | 地域鳥瞰図と探索の土台（SP-021） | **進行中**（2026-11-21〜） | seed から鳥瞰図を作り、探索ゲームを載せられる |
 | **Phase E** | 仕上げ (Polish) | 未着手 | ドキュメント整合性 75、UI 近代化 |
 
 ---

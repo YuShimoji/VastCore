@@ -223,3 +223,18 @@ Vastcore.Generation -> Vastcore.WorldGen -> Vastcore.Terrain
 
 `Vastcore.WorldGen` does not reference `Vastcore.Terrain`.
 Heightmap integration is injected through `IHeightmapFieldFactory` to avoid cyclic dependencies.
+
+---
+
+## 7. 2026-11-21 Addendum (RegionMap Assembly)
+
+地域鳥瞰図と探索（SP-021）のためのアセンブリ。既存のどのアセンブリにも依存せず、既存のどのランタイムアセンブリからも参照されない（依存グラフの独立した島）。
+
+| Assembly | Directory | rootNamespace | autoReferenced | References |
+|----------|-----------|---------------|----------------|------------|
+| `Vastcore.RegionMap` | `Assets/Scripts/RegionMap/` | `Vastcore.RegionMap` | false | `UnityEngine.UI` |
+| `Vastcore.RegionMap.Editor` (Editor only) | `Assets/Scripts/RegionMap/Editor/` | `Vastcore.RegionMap.Editor` | false | `Vastcore.RegionMap` |
+
+- `Vastcore.Tests.EditMode` に `Vastcore.RegionMap` への参照を追加した（`RegionMapTests.cs` のため）。
+- `Assets/Scripts/RegionMap/Core/` は UnityEngine を参照しない。同じソースを `tools/RegionMapPreview`（dotnet コンソール）からもコンパイルするので、ここへ UnityEngine の型を入れない。
+- `Vastcore.Terrain` などへ依存させない理由: Terrain は Deform・ProBuilder に依存しており、地図の生成と描画にそれらを巻き込まないため。既存アセンブリと結ぶ必要が出たら（SP-021 段5）、上位側（Game など）から `Vastcore.RegionMap` を参照する。

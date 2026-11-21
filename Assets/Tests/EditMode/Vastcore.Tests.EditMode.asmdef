@@ -8,6 +8,7 @@
     "Vastcore.Generation",
     "Vastcore.Terrain",
     "Vastcore.WorldGen",
+    "Vastcore.RegionMap",
     "Vastcore.Player",
     "Vastcore.Camera",
     "Vastcore.UI",
