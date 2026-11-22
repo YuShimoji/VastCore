@@ -60,6 +60,9 @@ namespace Vastcore.RegionMap
         /// <summary>エリアと探索地点の呼び名の作り方。</summary>
         public RegionNameStyle NameStyle = RegionNameStyle.Descriptive;
 
+        /// <summary>命名の規則のテキスト（RegionNameStyle.Systematic で使う）。null なら組み込みの既定。</summary>
+        public string NamingRulesText;
+
         public RegionSpec Clone()
         {
             return (RegionSpec)MemberwiseClone();

@@ -17,6 +17,11 @@ namespace Vastcore.RegionMap
 
         /// <summary>seed から作る漢字二字の地名（自然の語の組み合わせ）。</summary>
         Kanji = 3,
+
+        /// <summary>
+        /// 命名の規則（音・語根・型）から作る。固有名は意味を持つ語根の並びで、由来を NameOrigin に残す（RegionNaming）。
+        /// </summary>
+        Systematic = 4,
     }
 
     /// <summary>
@@ -87,6 +92,13 @@ namespace Vastcore.RegionMap
         /// <summary>地域のエリアと探索地点へ、指定の作り方で呼び名を付け直す。</summary>
         public static void Apply(RegionData data, RegionNameStyle style)
         {
+            for (int a = 0; a < data.Areas.Count; a++) data.Areas[a].NameOrigin = null;
+            for (int s = 0; s < data.Sites.Count; s++) data.Sites[s].NameOrigin = null;
+            if (style == RegionNameStyle.Systematic)
+            {
+                RegionNaming.Apply(data, RegionNamingRules.Parse(data.Spec.NamingRulesText));
+                return;
+            }
             if (style == RegionNameStyle.Descriptive)
             {
                 RegionAreaBuilder.NameByDirection(data.Areas);

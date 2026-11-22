@@ -31,6 +31,9 @@ namespace Vastcore.RegionMap
         /// </summary>
         public string Name;
 
+        /// <summary>名前の由来（使った型・語根と意味・選んだ根拠）。規則から作った名前（Systematic）の時だけ入る。</summary>
+        public string NameOrigin;
+
         /// <summary>このエリアを何で区切ったか（山地のまとまり・流域など）。</summary>
         public string Basis;
 

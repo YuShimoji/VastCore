@@ -71,6 +71,15 @@ namespace Vastcore.RegionMap.Preview
                     case "--cloudstep": cloudStep = Float(value); a++; break;
                     case "--cloudbefore": cloudBefore = true; break;
                     case "--names": names = true; break;
+                    case "--naming":
+                        spec.NamingRulesText = File.ReadAllText(value, System.Text.Encoding.UTF8);
+                        a++;
+                        break;
+                    case "--naming-export":
+                        File.WriteAllText(value, RegionNamingRules.DefaultText.Replace("\r\n", "\n"), new System.Text.UTF8Encoding(false));
+                        Console.WriteLine("命名の規則（既定）→ " + Path.GetFullPath(value));
+                        a++;
+                        break;
                     case "--namestyle": spec.NameStyle = (RegionNameStyle)Enum.Parse(typeof(RegionNameStyle), value, true); a++; break;
                     case "--detail": detailSites = value; a++; break;
                     case "--detailsize": detailSizes = value; a++; break;
@@ -166,12 +175,28 @@ namespace Vastcore.RegionMap.Preview
             return 0;
         }
 
+        private static string Json(string value)
+        {
+            return value == null ? "" : value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", " ");
+        }
+
         /// <summary>呼び名の作り方ごとに、エリアと地点の呼び名を並べて書き出す（比べるための一覧）。</summary>
         private static void WriteNames(RegionData data, string stem)
         {
             RegionNameStyle original = data.Spec.NameStyle;
             var text = new System.Text.StringBuilder();
-            text.Append("{\n  \"seed\": ").Append(data.Spec.Seed).Append(",\n  \"styles\": [\n");
+            RegionNamingRules rules = RegionNamingRules.Parse(data.Spec.NamingRulesText);
+            for (int p = 0; p < rules.Problems.Count; p++) Console.WriteLine("命名の規則の問題 " + rules.Problems[p]);
+            text.Append("{\n  \"seed\": ").Append(data.Spec.Seed).Append(",\n  \"problems\": [");
+            for (int p = 0; p < rules.Problems.Count; p++) text.Append(p > 0 ? ", " : "").Append("\"").Append(Json(rules.Problems[p])).Append("\"");
+            text.Append("],\n  \"roots\": [");
+            System.Collections.Generic.List<RegionNameRoot> roots = RegionNaming.Roots(rules, data.Spec.Seed);
+            for (int r = 0; r < roots.Count; r++)
+            {
+                text.Append(r > 0 ? ", " : "").Append("{\"meaning\": \"").Append(Json(roots[r].Meaning)).Append("\", \"sound\": \"").Append(Json(roots[r].Sound))
+                    .Append("\", \"written\": ").Append(roots[r].Written ? "true" : "false").Append(", \"mood\": ").Append(roots[r].Mood ? "true" : "false").Append("}");
+            }
+            text.Append("],\n  \"styles\": [\n");
             Array styles = Enum.GetValues(typeof(RegionNameStyle));
             for (int s = 0; s < styles.Length; s++)
             {
@@ -182,16 +207,16 @@ namespace Vastcore.RegionMap.Preview
                 for (int a = 0; a < data.Areas.Count; a++)
                 {
                     text.Append(a > 0 ? ", " : "").Append("{\"id\": ").Append(data.Areas[a].Id).Append(", \"kind\": \"").Append(data.Areas[a].Kind)
-                        .Append("\", \"name\": \"").Append(data.Areas[a].Name).Append("\"}");
-                    Console.WriteLine("  エリア" + data.Areas[a].Id.ToString("00") + " " + data.Areas[a].Name);
+                        .Append("\", \"name\": \"").Append(Json(data.Areas[a].Name)).Append("\", \"origin\": \"").Append(Json(data.Areas[a].NameOrigin)).Append("\"}");
+                    Console.WriteLine("  エリア" + data.Areas[a].Id.ToString("00") + " " + data.Areas[a].Name + (data.Areas[a].NameOrigin != null ? "  ← " + data.Areas[a].NameOrigin : ""));
                 }
                 text.Append("], \"sites\": [");
                 for (int k = 0; k < data.Sites.Count; k++)
                 {
                     RegionSite site = data.Sites[k];
                     text.Append(k > 0 ? ", " : "").Append("{\"id\": ").Append(site.Id).Append(", \"kind\": \"").Append(site.Kind)
-                        .Append("\", \"area\": ").Append(site.AreaId).Append(", \"name\": \"").Append(site.Name).Append("\"}");
-                    Console.WriteLine("  地点" + site.Id.ToString("00") + " " + site.Name);
+                        .Append("\", \"area\": ").Append(site.AreaId).Append(", \"name\": \"").Append(Json(site.Name)).Append("\", \"origin\": \"").Append(Json(site.NameOrigin)).Append("\"}");
+                    Console.WriteLine("  地点" + site.Id.ToString("00") + " " + site.Name + (site.NameOrigin != null ? "  ← " + site.NameOrigin : ""));
                 }
                 text.Append("]}").Append(s + 1 < styles.Length ? "," : "").Append("\n");
             }

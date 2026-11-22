@@ -30,6 +30,9 @@ namespace Vastcore.RegionMap
         /// <summary>地点そのものの仮の呼び名（例「山頂のモノリス」）。Name は「エリア名・この呼び名」。</summary>
         public string Feature;
 
+        /// <summary>名前の由来（使った型・語根と意味・選んだ根拠）。規則から作った名前（Systematic）の時だけ入る。</summary>
+        public string NameOrigin;
+
         /// <summary>属するエリアの番号（RegionArea.Id）。外洋なら 0。</summary>
         public int AreaId;
 
@@ -52,6 +55,12 @@ namespace Vastcore.RegionMap
     {
         private const float MinSpacing = 9f;
         private const int CandidateCount = 9000;
+
+        /// <summary>川の上に来た地点を、川の中心からどれだけ離すか（m）。構造物の差し渡しの半分と川幅の半分より大きくする。</summary>
+        private const float BankMeters = 520f;
+
+        /// <summary>川岸へ移した地点の周りで、川の升が 1 つも無いことを確かめる半径（m）。曲がった川が寄ってくる場所を避ける。</summary>
+        private const float BankClearMeters = 450f;
 
         private struct Candidate
         {
@@ -103,15 +112,18 @@ namespace Vastcore.RegionMap
                         Candidate candidate = list[cursor[k]++];
                         float mx = data.MapXFromCell(candidate.Cell);
                         float my = data.MapYFromCell(candidate.Cell);
+                        int stand = candidate.Cell;
+                        // 川の上の候補は川岸へ移す（置ける岸が無ければ、その候補は使わない）
+                        if (k == (int)RegionSiteKind.Terrace && !TryBank(data, candidate.Cell, out mx, out my, out stand)) continue;
                         if (!IsFarFromOthers(data.Sites, mx, my)) continue;
                         data.Sites.Add(new RegionSite
                         {
                             Kind = (RegionSiteKind)k,
                             MapX = mx,
                             MapY = my,
-                            HeightMeters = data.Height[candidate.Cell],
-                            Biome = data.Biome[candidate.Cell],
-                            AreaId = data.Area[candidate.Cell],
+                            HeightMeters = data.Height[stand],
+                            Biome = data.Biome[stand],
+                            AreaId = data.Area[stand],
                             Score = candidate.Score,
                             Rank = cursor[k],
                             Candidates = list.Count,
@@ -168,7 +180,7 @@ namespace Vastcore.RegionMap
                 case RegionSiteKind.Sunken:
                     return "岸のそばの浅い海（水深 " + (-h).ToString("#,0", culture) + " m。水深 220 m 前後を最も高く採点）";
                 case RegionSiteKind.Terrace:
-                    return "川の上（上流から集まる水の量が多いほど高く採点）";
+                    return "川岸（川の中心から約 " + BankMeters.ToString("0", culture) + " m。上流から集まる水の量が多いほど高く採点）";
                 case RegionSiteKind.Monolith:
                     return "標高 " + h.ToString("#,0", culture) + " m（地域の最高の " + (h / data.MaxHeight * 100f).ToString("0", culture)
                         + "%）で、周りより " + prominence.ToString("#,0", culture) + " m 高い山頂";
@@ -181,6 +193,98 @@ namespace Vastcore.RegionMap
                 default:
                     return "森や草原の中で、周りより " + prominence.ToString("#,0", culture) + " m 高い丘";
             }
+        }
+
+        /// <summary>
+        /// 川の上のセルから、流れに直交する向きへ BankMeters（1.5 升以上）離れた岸を探す。
+        /// 川・湖・海でない陸で、周り BankClearMeters の中に川の升（細い流れを含む）が無い場所だけを選ぶ。
+        /// 両岸とも置けるなら川面との高さの差が小さい側にする。見つからなければ少しずつ遠ざけ、それでも無ければ false。
+        /// </summary>
+        internal static bool TryBank(RegionData data, int cell, out float mapX, out float mapY, out int bankCell)
+        {
+            int n = data.Resolution;
+            int x = cell % n;
+            int y = cell / n;
+            float fx = 0f;
+            float fy = 0f;
+            int down = data.Downstream != null ? data.Downstream[cell] : -1;
+            if (down >= 0 && down != cell)
+            {
+                fx = down % n - x;
+                fy = down / n - y;
+                int next = data.Downstream[down];
+                if (next >= 0 && next != down)
+                {
+                    // 2 升先まで見て、升目の 8 方向より実際の流れに近い向きにする
+                    fx = next % n - x;
+                    fy = next / n - y;
+                }
+            }
+            float length = (float)Math.Sqrt(fx * fx + fy * fy);
+            if (length < 0.5f)
+            {
+                fx = 1f;
+                fy = 0f;
+                length = 1f;
+            }
+            float nx = -fy / length;
+            float ny = fx / length;
+            float baseDistance = Math.Max(1.5f, BankMeters / data.CellMeters);
+            float water = data.Height[cell];
+            mapX = 0f;
+            mapY = 0f;
+            bankCell = cell;
+            float clear = BankClearMeters / data.CellMeters;
+            // 拡大した地形は、広域で川と塗る升より細い流れ（流量がしきい値を超える升）も川として引く
+            float stream = RegionGenerator.RiverThreshold(data);
+            int reach = (int)Math.Ceiling(clear) + 1;
+            for (int step = 0; step < 6; step++)
+            {
+                float distance = baseDistance + step * 0.5f;
+                float best = float.MaxValue;
+                bool found = false;
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    float px = x + 0.5f + nx * distance * side;
+                    float py = y + 0.5f + ny * distance * side;
+                    int cx = (int)Math.Floor(px);
+                    int cy = (int)Math.Floor(py);
+                    if (cx < 1 || cy < 1 || cx >= n - 1 || cy >= n - 1) continue;
+                    int index = cx + cy * n;
+                    RegionBiome biome = data.Biome[index];
+                    if (data.Height[index] <= 0f || biome == RegionBiome.River || biome == RegionBiome.Lake || data.Flow[index] > stream) continue;
+                    bool nearWater = false;
+                    for (int oy = -reach; oy <= reach && !nearWater; oy++)
+                    {
+                        for (int ox = -reach; ox <= reach; ox++)
+                        {
+                            int wx = cx + ox;
+                            int wy = cy + oy;
+                            if (wx < 0 || wy < 0 || wx >= n || wy >= n) continue;
+                            int w = wx + wy * n;
+                            RegionBiome other = data.Biome[w];
+                            if (other != RegionBiome.River && other != RegionBiome.Lake && !(data.Height[w] > 0f && data.Flow[w] > stream)) continue;
+                            float ddx = wx + 0.5f - px;
+                            float ddy = wy + 0.5f - py;
+                            if (ddx * ddx + ddy * ddy < clear * clear)
+                            {
+                                nearWater = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (nearWater) continue;
+                    float rise = Math.Abs(data.Height[index] - water);
+                    if (rise >= best) continue;
+                    best = rise;
+                    found = true;
+                    mapX = px / n * RegionData.MapUnits;
+                    mapY = py / n * RegionData.MapUnits;
+                    bankCell = index;
+                }
+                if (found) return true;
+            }
+            return false;
         }
 
         private static bool IsFarFromOthers(List<RegionSite> sites, float mx, float my)
