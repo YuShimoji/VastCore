@@ -4,18 +4,45 @@ using System.Text;
 
 namespace Vastcore.RegionMap
 {
-    /// <summary>名付けの型の 1 行（重み・型・条件）。</summary>
-    public sealed class RegionNamePattern
+    /// <summary>名前の種類。1 つの場所が複数の名前を持てる。</summary>
+    public enum RegionNameKind
     {
-        public float Weight = 1f;
+        /// <summary>記号名（種類の記号と番号・座標で作る。文明が無くても付く）。</summary>
+        Designation = 0,
 
-        /// <summary>例「{特徴}{地形}{類}」「{エリア}の{構造物}」。</summary>
-        public string Template;
+        /// <summary>土地の名（その土地のことばの語根で作る）。</summary>
+        Proper = 1,
 
-        /// <summary>使える場面。空は「いつでも」。</summary>
-        public string Condition = "";
+        /// <summary>古い呼び名（前のことばの語根で作る）。</summary>
+        Old = 2,
 
-        public int Line;
+        /// <summary>人が決めた名前（規則の [決めた名前]）。</summary>
+        Decided = 3,
+    }
+
+    /// <summary>土地の経緯。付ける名前の種類を決める。</summary>
+    public enum RegionLandHistory
+    {
+        Unexplored = 0,
+        Settled = 1,
+        Ancient = 2,
+    }
+
+    /// <summary>場所に付いた名前 1 つ。</summary>
+    [Serializable]
+    public sealed class RegionPlaceName
+    {
+        public RegionNameKind Kind;
+        public string Text;
+
+        /// <summary>骨格（音を付け替えても変わらない部分）。例「[高い][山]山地」「〈エリア〉のモノリス」。記号名では型。</summary>
+        public string Skeleton;
+
+        /// <summary>由来（使った型、語根と意味、選んだ根拠、つなぎの音の変化）。</summary>
+        public string Origin;
+
+        /// <summary>画面に出す短い由来。例「カト（霧）＋ヨサ（山）」「エリア「コテデマ平野」から」「モノリス・座標 横 72 縦 56」。</summary>
+        public string Gloss;
     }
 
     /// <summary>語根の表の 1 行（確認用の一覧に出す）。</summary>
@@ -29,503 +56,431 @@ namespace Vastcore.RegionMap
 
         /// <summary>土地の事実に結びつかない語（型の {雰囲気} で使う）なら true。</summary>
         public bool Mood;
+
+        /// <summary>経緯に置く出来事の語（型の {出来事} で使う）なら true。</summary>
+        public bool Event;
+
+        /// <summary>この語根を使った名前の数。</summary>
+        public int Uses;
     }
 
-    /// <summary>
-    /// 命名の規則。音（語根を作る材料）、語根（意味と音の対応）、型（語根の並べ方と使える場面）、
-    /// 類の語（山地・塔など）、人が決めた名前を持つ。テキストから読む（<see cref="Parse"/>）。
-    /// 既定の中身（<see cref="DefaultText"/>）は仕組みを動かすための仮で、音・語・型の採否は人が決める。
-    /// </summary>
-    public sealed class RegionNamingRules
+    /// <summary>経緯に置いた人物（型の {人名} で使う）。</summary>
+    public sealed class RegionNamePerson
     {
-        public readonly List<string> Head = new List<string>();
-        public readonly List<string> Body = new List<string>();
-        public int RootMin = 2;
-        public int RootMax = 2;
-        public int NameMin = 3;
-        public int NameMax = 6;
-        public readonly List<string> Blocked = new List<string>();
-        public readonly Dictionary<string, string> Roots = new Dictionary<string, string>();
-        public readonly List<string> RootOrder = new List<string>();
-        public readonly List<string> Mood = new List<string>();
-        public readonly List<RegionNamePattern> AreaPatterns = new List<RegionNamePattern>();
-        public readonly List<RegionNamePattern> SitePatterns = new List<RegionNamePattern>();
-        public readonly Dictionary<string, string> Nouns = new Dictionary<string, string>();
-        public readonly Dictionary<string, string> Fixed = new Dictionary<string, string>();
+        public string Name;
+        public string Role;
+        public int Uses;
+    }
 
-        /// <summary>読み込みで見つけた問題（「行 12: …」）。空なら問題なし。</summary>
+    /// <summary>名前を付けた時の記録（使った音の質感、語根の表、人物、問題）。</summary>
+    public sealed class RegionNamingReport
+    {
+        public string Sound;
+        public string OldSound;
+        public readonly List<RegionNameRoot> Roots = new List<RegionNameRoot>();
+        public readonly List<RegionNameRoot> OldRoots = new List<RegionNameRoot>();
+        public readonly List<RegionNamePerson> People = new List<RegionNamePerson>();
         public readonly List<string> Problems = new List<string>();
-
-        /// <summary>土地の事実から選ぶ意味。規則の [語根] に無ければ seed から語根を作る。</summary>
-        public static readonly string[] FactMeanings =
-        {
-            "山", "丘", "野", "谷", "島", "川", "海", "岸", "雪", "砂", "森",
-            "高い", "低い", "深い", "白い", "赤い", "緑の", "乾いた", "大きい", "小さい", "北", "南", "東", "西", "中",
-        };
-
-        public static readonly string[] AreaSlots = { "特徴", "地形", "雰囲気", "類" };
-        public static readonly string[] SiteSlots = { "特徴", "地形", "雰囲気", "エリア", "構造物" };
-        public static readonly string[] Conditions = { "", "いつでも", "種類がエリアに1つ", "種類がエリアに複数", "エリアなし" };
-
-        public const string DefaultText = @"# VastCore 命名の規則（仕組みを動かすための仮の中身。音・語・型は人が書き換える）
-# 行頭の # は注記。「名前 = 値」の形で書く。並びは空白で区切る。
-
-[音]
-# 語根は「頭」の音 1 つに「続き」の音をつないで作る。
-頭 = ア イ ウ エ オ カ キ ク ケ コ サ シ ス セ ソ タ テ ト ナ ニ ネ ノ ハ ヒ フ ホ マ ミ ム メ モ ヤ ユ ヨ ラ リ ル レ ロ ワ ガ ギ グ ゴ ザ ジ ゼ ダ デ ド バ ビ ベ ボ
-続き = ア イ ウ エ オ カ キ ク ケ コ サ シ ス セ ソ タ テ ト ナ ニ ネ ノ マ ミ ム メ モ ラ リ ル レ ロ ン ガ グ ザ ジ ダ ド バ ビ
-語根の長さ = 2-2
-固有名の長さ = 3-6
-避ける並び = バカ アホ シネ クソ ウンコ チンコ マンコ エロ ハゲ デブ ゲロ キモ ウザ コロス シヌ ガン ゴミ ザコ ボケ カス サイレン バット
-# 日本語の語として読めて、表の意味と食い違って見える並び
-避ける並び = シロ クロ アカ アオ ヤマ カワ ウミ モリ ユキ スナ シマ オカ タニ キタ ニシ ナカ タカ ヒク イシ コケ クサ ハナ ソラ ホシ ツキ カゼ カゲ キリ ウタ テツ ムシ クモ アメ ヒト イヌ ネコ トリ サル ウシ ウマ
-
-[語根]
-# 意味 = 語根。右を空にすると seed から作る（同じ seed なら同じ語根）。人が決めた語根は右に書く。
-# 土地の事実から選ぶ意味
-山 =
-丘 =
-野 =
-谷 =
-島 =
-川 =
-海 =
-岸 =
-雪 =
-砂 =
-森 =
-高い =
-低い =
-深い =
-白い =
-赤い =
-緑の =
-乾いた =
-大きい =
-小さい =
-北 =
-南 =
-東 =
-西 =
-中 =
-
-[雰囲気]
-# 土地の事実に結びつかない語。型の {雰囲気} で使う。行を足し引きしてよい。
-霧 =
-星 =
-月 =
-風 =
-影 =
-光 =
-歌 =
-鉄 =
-古い =
-静かな =
-眠る =
-遠い =
-
-[エリアの型]
-# 重み : 型
-# {特徴}=そのエリアの事実から選ぶ語根 {地形}=エリアの種類の語根 {雰囲気}=上の表から選ぶ語根 {類}=山地・平野など
-4 : {特徴}{地形}{類}
-2 : {雰囲気}{地形}{類}
-1 : {特徴}{雰囲気}{類}
-
-[地点の型]
-# 重み : 型 : 条件
-# {エリア}=属するエリアの固有名 {構造物}=塔・環など
-# 条件 = いつでも / 種類がエリアに1つ / 種類がエリアに複数 / エリアなし
-5 : {エリア}の{構造物} : 種類がエリアに1つ
-3 : {特徴}{雰囲気}の{構造物} : いつでも
-3 : {雰囲気}{地形}の{構造物} : いつでも
-2 : {特徴}{地形}の{構造物} : いつでも
-
-[類の語]
-Mountains = 山地
-Highland = 高地
-Hills = 丘陵
-Plain = 平野
-Basin = 盆地
-Island = 島
-Snowfield = 雪原
-Desert = 砂漠
-Monolith = モノリス
-Arch = アーチ
-Ring = 環
-Tower = 塔
-Dome = ドーム
-Terrace = 段丘
-Sunken = 沈んだ遺構
-
-[決めた名前]
-# 人が決めた名前。「seed/エリア番号 = 名前」「seed/地点番号 = 名前」。例: 7/エリア3 = …
-";
-
-        private static RegionNamingRules _default;
-
-        /// <summary>既定の規則（<see cref="DefaultText"/> を読んだもの）。</summary>
-        public static RegionNamingRules Default
-        {
-            get { return _default ?? (_default = Parse(DefaultText)); }
-        }
-
-        /// <summary>規則のテキストを読む。null か空なら既定。問題は <see cref="Problems"/> に入る。</summary>
-        public static RegionNamingRules Parse(string text)
-        {
-            if (string.IsNullOrEmpty(text)) return Default;
-            var rules = new RegionNamingRules();
-            string[] lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
-            string section = null;
-            for (int l = 0; l < lines.Length; l++)
-            {
-                string line = lines[l].Replace('＝', '=').Replace('：', ':').Replace('　', ' ').Trim();
-                if (line.Length == 0 || line[0] == '#') continue;
-                if (line[0] == '[')
-                {
-                    section = line.Trim('[', ']', ' ');
-                    continue;
-                }
-                int number = l + 1;
-                switch (section)
-                {
-                    case "音": rules.ReadSound(line, number); break;
-                    case "語根": rules.ReadRoot(line, number, false); break;
-                    case "雰囲気": rules.ReadRoot(line, number, true); break;
-                    case "エリアの型": rules.ReadPattern(line, number, rules.AreaPatterns, AreaSlots); break;
-                    case "地点の型": rules.ReadPattern(line, number, rules.SitePatterns, SiteSlots); break;
-                    case "類の語": rules.ReadPair(line, number, rules.Nouns, false); break;
-                    case "決めた名前": rules.ReadPair(line, number, rules.Fixed, false); break;
-                    default: rules.Problems.Add("行 " + number + ": 知らない節「" + section + "」の中の行"); break;
-                }
-            }
-            if (rules.Head.Count == 0) rules.Problems.Add("[音] に「頭」が無い");
-            if (rules.Body.Count == 0) rules.Problems.Add("[音] に「続き」が無い");
-            if (rules.AreaPatterns.Count == 0) rules.Problems.Add("[エリアの型] が空");
-            if (rules.SitePatterns.Count == 0) rules.Problems.Add("[地点の型] が空");
-            bool always = false;
-            for (int p = 0; p < rules.SitePatterns.Count; p++)
-            {
-                string c = rules.SitePatterns[p].Condition;
-                if ((c.Length == 0 || c == "いつでも") && rules.SitePatterns[p].Template.IndexOf("{エリア}", StringComparison.Ordinal) < 0) always = true;
-            }
-            if (!always && rules.SitePatterns.Count > 0) rules.Problems.Add("[地点の型] に、条件が「いつでも」で {エリア} を使わない型が 1 つ要る");
-            return rules;
-        }
-
-        private void ReadSound(string line, int number)
-        {
-            string key;
-            string value;
-            if (!Split(line, '=', out key, out value))
-            {
-                Problems.Add("行 " + number + ": 「名前 = 値」の形でない");
-                return;
-            }
-            switch (key)
-            {
-                case "頭": AddWords(Head, value); break;
-                case "続き": AddWords(Body, value); break;
-                case "避ける並び": AddWords(Blocked, value); break;
-                case "語根の長さ":
-                    if (!ReadRange(value, out RootMin, out RootMax) || RootMin < 1) Problems.Add("行 " + number + ": 語根の長さは「2-3」の形で書く");
-                    break;
-                case "固有名の長さ":
-                    if (!ReadRange(value, out NameMin, out NameMax) || NameMin < 1) Problems.Add("行 " + number + ": 固有名の長さは「3-6」の形で書く");
-                    break;
-                default: Problems.Add("行 " + number + ": [音] に「" + key + "」という項目は無い"); break;
-            }
-        }
-
-        private void ReadRoot(string line, int number, bool mood)
-        {
-            string key;
-            string value;
-            if (!Split(line, '=', out key, out value) || key.Length == 0)
-            {
-                Problems.Add("行 " + number + ": 「意味 = 語根」の形でない");
-                return;
-            }
-            if (Roots.ContainsKey(key))
-            {
-                Problems.Add("行 " + number + ": 意味「" + key + "」が 2 回ある");
-                return;
-            }
-            Roots.Add(key, value);
-            RootOrder.Add(key);
-            if (mood) Mood.Add(key);
-        }
-
-        private void ReadPattern(string line, int number, List<RegionNamePattern> list, string[] slots)
-        {
-            string[] parts = line.Split(':');
-            float weight;
-            if (parts.Length < 2 || !float.TryParse(parts[0].Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out weight) || weight <= 0f)
-            {
-                Problems.Add("行 " + number + ": 「重み : 型」の形でない");
-                return;
-            }
-            var pattern = new RegionNamePattern { Weight = weight, Template = parts[1].Trim(), Line = number };
-            if (parts.Length > 2) pattern.Condition = parts[2].Trim();
-            if (Array.IndexOf(Conditions, pattern.Condition) < 0)
-            {
-                Problems.Add("行 " + number + ": 知らない条件「" + pattern.Condition + "」");
-                return;
-            }
-            List<string> tokens = RegionNaming.Tokens(pattern.Template);
-            bool named = false;
-            for (int t = 0; t < tokens.Count; t++)
-            {
-                if (tokens[t][0] != '{') continue;
-                string slot = tokens[t].Substring(1, tokens[t].Length - 2);
-                if (Array.IndexOf(slots, slot) < 0)
-                {
-                    Problems.Add("行 " + number + ": この型では使えない部品「" + tokens[t] + "」");
-                    return;
-                }
-                if (slot != "類" && slot != "構造物") named = true;
-            }
-            if (!named)
-            {
-                Problems.Add("行 " + number + ": 固有名になる部品（{特徴} {地形} {雰囲気} {エリア}）が 1 つも無い");
-                return;
-            }
-            list.Add(pattern);
-        }
-
-        private void ReadPair(string line, int number, Dictionary<string, string> into, bool allowEmpty)
-        {
-            string key;
-            string value;
-            if (!Split(line, '=', out key, out value) || key.Length == 0 || (!allowEmpty && value.Length == 0))
-            {
-                Problems.Add("行 " + number + ": 「名前 = 値」の形でない");
-                return;
-            }
-            into[key] = value;
-        }
-
-        private static bool Split(string line, char mark, out string key, out string value)
-        {
-            int at = line.IndexOf(mark);
-            if (at < 0)
-            {
-                key = line;
-                value = "";
-                return false;
-            }
-            key = line.Substring(0, at).Trim();
-            value = line.Substring(at + 1).Trim();
-            return true;
-        }
-
-        private static void AddWords(List<string> into, string value)
-        {
-            string[] words = value.Split(new[] { ' ', '\t', '、', ',' }, StringSplitOptions.RemoveEmptyEntries);
-            for (int w = 0; w < words.Length; w++)
-            {
-                if (!into.Contains(words[w])) into.Add(words[w]);
-            }
-        }
-
-        private static bool ReadRange(string value, out int min, out int max)
-        {
-            min = 0;
-            max = 0;
-            string[] parts = value.Split('-', '〜', '~');
-            if (parts.Length == 1) return int.TryParse(parts[0].Trim(), out min) && (max = min) > 0;
-            return parts.Length == 2 && int.TryParse(parts[0].Trim(), out min) && int.TryParse(parts[1].Trim(), out max) && max >= min;
-        }
     }
 
     /// <summary>
-    /// 規則から地名を作る。名前は「区別する部分（固有名）＋類を表す語」で組み、固有名は意味を持つ語根の並びにする。
-    /// 同じ地域では同じ意味に同じ語根を使うので、川に関わる名前はどれも川の語根を含む。
-    /// 名前ごとに、使った型・語根と意味・選んだ根拠を NameOrigin に残す。
+    /// 規則から地名を作る。順に、(1) 土地の経緯を決める、(2) 場所ごとに骨格（型と意味の並び）を決める、
+    /// (3) 音の質感から語根を割り当てる、(4) 名前と由来を組み立てる。
+    /// 骨格は音に依らないので、音の質感を付け替えても、どの意味がどの型で並ぶかは変わらない。
+    /// 1 つの場所は複数の名前（記号名・土地の名・古い呼び名）を持てる。どれを付けるかは土地の経緯で決まる。
     /// </summary>
     public static class RegionNaming
     {
         private struct Fact
         {
+            public string Key;
             public string Meaning;
             public string Why;
 
-            /// <summary>選ばれやすさ。同じ事実を持つ場所が少ないほど大きい（区別になる事実を優先する）。</summary>
+            /// <summary>選ばれやすさ。同じ意味の事実を持つ場所が少ないほど大きい（区別になる事実を優先する）。</summary>
             public float Weight;
         }
 
+        private sealed class Slot
+        {
+            /// <summary>L = 字、N = 類の語、R = 語根、P = 人名、A = エリアの固有名、F = 峰・川の固有名、O = 古い呼び名。</summary>
+            public char Type;
+            public string Text;
+            public Fact Fact;
+            public int Person;
+            public Place Ref;
+        }
+
+        private sealed class Skeleton
+        {
+            public RegionNamePattern Pattern;
+            public readonly List<Slot> Slots = new List<Slot>();
+        }
+
+        private sealed class Place
+        {
+            /// <summary>0 = 地域、1 = エリア、2 = 川、3 = 峰、4 = 湾、5 = 地点。</summary>
+            public int Type;
+            public int Number;
+            public int Key;
+            public string KindKey;
+            public string FixedKey;
+            public string DesignationKey;
+            public RegionArea Area;
+            public RegionSite Site;
+            public RegionFeature Feature;
+            public float MapX;
+            public float MapY;
+            public RegionLandHistory History;
+            public bool HasLand;
+            public Fact Land;
+            public readonly List<Fact> Traits = new List<Fact>();
+            public readonly HashSet<string> Conditions = new HashSet<string>();
+            public string Noun;
+            public string Code;
+            public Place AreaPlace;
+            public Place NearPeak;
+            public Place NearRiver;
+            public Skeleton Proper;
+            public Skeleton Old;
+            public string Decided;
+            public string FullText;
+            public string ProperText;
+            public string OldText;
+        }
+
+        /// <summary>1 つのことば（音の質感と、意味ごとの語根）。</summary>
         private sealed class Language
         {
             private readonly RegionNamingRules _rules;
             private readonly uint _seed;
+            private readonly bool _useWritten;
             private readonly Dictionary<string, string> _sounds = new Dictionary<string, string>();
             private readonly HashSet<string> _taken = new HashSet<string>();
+            private readonly List<string[]> _runs = new List<string[]>();
+            private readonly HashSet<string> _runKeys = new HashSet<string>();
+            private readonly List<string> _done = new List<string>();
+            private readonly List<string> _people = new List<string>();
+            public readonly RegionSoundProfile Profile;
+            public readonly List<string> Problems = new List<string>();
 
-            public Language(RegionNamingRules rules, int seed)
+            public Language(RegionNamingRules rules, RegionSoundProfile profile, uint seed, bool useWritten)
             {
                 _rules = rules;
-                _seed = unchecked((uint)seed * 2246822519u + 374761393u);
-                // 人が書いた語根を先に登録し、seed から作る語根が重ならないようにする
-                foreach (KeyValuePair<string, string> pair in rules.Roots)
+                Profile = profile;
+                _seed = seed;
+                _useWritten = useWritten;
+            }
+
+            /// <summary>名前の中で続けて並ぶ語根（意味の並び）を登録する。語根を作る時に、つないだ結果が読めるかを確かめる。</summary>
+            public void Watch(string[] meanings)
+            {
+                if (meanings.Length > 0 && _runKeys.Add(string.Join("|", meanings))) _runs.Add(meanings);
+            }
+
+            public void Build()
+            {
+                if (_useWritten)
                 {
-                    if (pair.Value.Length == 0) continue;
-                    _sounds[pair.Key] = pair.Value;
-                    _taken.Add(pair.Value);
+                    for (int r = 0; r < _rules.RootOrder.Count; r++)
+                    {
+                        string written = _rules.Roots[_rules.RootOrder[r]];
+                        if (written.Length == 0) continue;
+                        _sounds[_rules.RootOrder[r]] = written;
+                        _taken.Add(written);
+                    }
+                    for (int k = 0; k < _runs.Count; k++)
+                    {
+                        if (!Complete(_runs[k])) continue;
+                        string joined = Join(_runs[k], null);
+                        if (!Readable(joined, _rules, 1, _rules.NameMax)) Problems.Add("人が決めた語根の並び「" + joined + "」が、読みにくい並びか長さの外");
+                        _done.Add(joined);
+                    }
                 }
-                // 表に書かれた順に作る（どの名前から作り始めても同じ語根になる）
-                for (int r = 0; r < rules.RootOrder.Count; r++) Root(rules.RootOrder[r]);
-                for (int f = 0; f < RegionNamingRules.FactMeanings.Length; f++) Root(RegionNamingRules.FactMeanings[f]);
+                for (int r = 0; r < _rules.RootOrder.Count; r++) Assign(_rules.RootOrder[r]);
+                for (int p = 0; p < _rules.People; p++) _people.Add(MakePerson(p));
             }
 
             public bool IsWritten(string meaning)
             {
                 string written;
-                return _rules.Roots.TryGetValue(meaning, out written) && written.Length > 0;
+                return _useWritten && _rules.Roots.TryGetValue(meaning, out written) && written.Length > 0;
             }
 
             public string Root(string meaning)
             {
                 string sound;
                 if (_sounds.TryGetValue(meaning, out sound)) return sound;
+                Assign(meaning);
+                return _sounds[meaning];
+            }
+
+            public string Person(int index)
+            {
+                return index >= 0 && index < _people.Count ? _people[index] : "？";
+            }
+
+            /// <summary>意味の並びを語根にしてつなぐ。音が変わった継ぎ目は notes に入る。</summary>
+            public string Join(string[] meanings, List<string> notes)
+            {
+                string text = "";
+                for (int m = 0; m < meanings.Length; m++)
+                {
+                    string root = Root(meanings[m]);
+                    if (m == 0)
+                    {
+                        text = root;
+                        continue;
+                    }
+                    string note;
+                    string joined = Profile.Join(text, root, out note);
+                    if (note != null && notes != null) notes.Add(text + "＋" + root + "→" + joined + "（" + note + "）");
+                    text = joined;
+                }
+                return text;
+            }
+
+            private bool Complete(string[] run)
+            {
+                for (int m = 0; m < run.Length; m++)
+                {
+                    if (!_sounds.ContainsKey(run[m])) return false;
+                }
+                return true;
+            }
+
+            private void Assign(string meaning)
+            {
+                if (_sounds.ContainsKey(meaning)) return;
                 int key = StableHash(meaning);
+                string firstValid = null;
+                var pending = new List<string>();
                 for (int attempt = 0; attempt < 200; attempt++)
                 {
                     uint local = _seed + (uint)attempt * 40503u;
-                    int span = _rules.RootMax - _rules.RootMin + 1;
-                    int length = _rules.RootMin + Math.Min(span - 1, (int)(RegionNoise.Hash01(key, 1, local) * span));
-                    var text = new StringBuilder(Pick(_rules.Head, key, 2, local));
-                    for (int m = 1; m < length; m++) text.Append(Pick(_rules.Body, key, 2 + m, local));
-                    sound = text.ToString();
+                    string sound = Make(Profile.RootMin, Profile.RootMax, key, local);
                     if (_taken.Contains(sound) || !Readable(sound, _rules, 1, 99)) continue;
+                    if (firstValid == null) firstValid = sound;
+
+                    // この語根で全部そろう並びを、つないで確かめる
                     _sounds[meaning] = sound;
+                    pending.Clear();
+                    bool fits = true;
+                    for (int k = 0; k < _runs.Count && fits; k++)
+                    {
+                        string[] run = _runs[k];
+                        if (Array.IndexOf(run, meaning) < 0 || !Complete(run)) continue;
+                        string joined = Join(run, null);
+                        if (!Readable(joined, _rules, 1, _rules.NameMax) || _done.Contains(joined) || pending.Contains(joined)
+                            || TooClose(joined, _done) || TooClose(joined, pending))
+                        {
+                            fits = false;
+                        }
+                        else
+                        {
+                            pending.Add(joined);
+                        }
+                    }
+                    if (!fits)
+                    {
+                        _sounds.Remove(meaning);
+                        continue;
+                    }
                     _taken.Add(sound);
-                    return sound;
+                    _done.AddRange(pending);
+                    return;
                 }
-                sound = "？" + meaning;
-                _sounds[meaning] = sound;
-                return sound;
+                // 条件を満たす語根が見つからない時は、語根だけで読めるものを使う
+                string fallback = firstValid ?? ("？" + meaning);
+                _sounds[meaning] = fallback;
+                _taken.Add(fallback);
+                Problems.Add("意味「" + meaning + "」の語根「" + fallback + "」で、読みにくい並びか見分けにくい名前が残る");
+            }
+
+            private string MakePerson(int index)
+            {
+                for (int attempt = 0; attempt < 200; attempt++)
+                {
+                    uint local = _seed + 977u + (uint)attempt * 40503u;
+                    string name = Make(_rules.PersonMin, _rules.PersonMax, 50000 + index, local);
+                    if (_taken.Contains(name) || !Readable(name, _rules, 1, 99) || TooClose(name, _done) || TooClose(name, _people)) continue;
+                    return name;
+                }
+                return "人物" + (index + 1);
+            }
+
+            private string Make(int min, int max, int key, uint local)
+            {
+                int span = max - min + 1;
+                int length = min + Math.Min(span - 1, (int)(RegionNoise.Hash01(key, 1, local) * span));
+                var text = new StringBuilder(Pick(Profile.Head, key, 2, local));
+                for (int m = 1; m < length; m++) text.Append(Pick(Profile.Body, key, 2 + m, local));
+                return text.ToString();
             }
         }
 
-        /// <summary>地域のエリアと探索地点へ、規則から名前を付ける。</summary>
+        public static string KindLabel(RegionNameKind kind)
+        {
+            switch (kind)
+            {
+                case RegionNameKind.Designation: return "記号名";
+                case RegionNameKind.Proper: return "土地の名";
+                case RegionNameKind.Old: return "古い呼び名";
+                default: return "決めた名前";
+            }
+        }
+
+        public static string HistoryLabel(RegionLandHistory history)
+        {
+            return RegionNamingRules.Histories[(int)history];
+        }
+
+        /// <summary>地域そのもの・エリア・川・峰・湾・探索地点へ、規則から名前を付ける。記録は data.Naming に入る。</summary>
         public static void Apply(RegionData data, RegionNamingRules rules)
         {
             if (rules == null) rules = RegionNamingRules.Default;
-            var language = new Language(rules, data.Spec.Seed);
+            if (data.Features.Count == 0) RegionFeatureBuilder.Build(data);
+            var report = new RegionNamingReport();
+            report.Problems.AddRange(rules.Problems);
+
+            RegionSoundProfile sound = rules.Sound(rules.SoundName);
+            if (!string.IsNullOrEmpty(data.Spec.NamingSound))
+            {
+                RegionSoundProfile asked = rules.Sound(data.Spec.NamingSound);
+                if (asked != null) sound = asked;
+                else report.Problems.Add("音の質感「" + data.Spec.NamingSound + "」が規則に無い（規則の既定を使う）");
+            }
+            if (sound == null || sound.Head.Count == 0 || sound.Body.Count == 0) sound = RegionNamingRules.Default.Sounds[0];
+            RegionSoundProfile oldSound = rules.Sound(rules.OldSoundName);
+            if (oldSound == null || oldSound.Head.Count == 0 || oldSound.Body.Count == 0 || oldSound == sound)
+            {
+                oldSound = sound;
+                for (int s = 0; s < rules.Sounds.Count; s++)
+                {
+                    if (rules.Sounds[s] != sound && rules.Sounds[s].Head.Count > 0 && rules.Sounds[s].Body.Count > 0) oldSound = rules.Sounds[s];
+                }
+            }
+            report.Sound = sound.Name;
+            report.OldSound = oldSound.Name;
+
             uint seed = unchecked((uint)data.Spec.Seed * 3266489917u + 2654435761u);
-            var used = new HashSet<string>();
-            var proper = new Dictionary<int, string>();
+            AssignHistory(data, rules);
+            List<Place> places = BuildPlaces(data, rules);
 
-            float largest = 0f;
-            float smallest = float.MaxValue;
-            for (int a = 0; a < data.Areas.Count; a++)
+            // (2) 骨格
+            var keys = new HashSet<string>();
+            for (int p = 0; p < places.Count; p++)
             {
-                largest = Math.Max(largest, data.Areas[a].AreaKm2);
-                smallest = Math.Min(smallest, data.Areas[a].AreaKm2);
-            }
-
-            var areaTraits = new List<List<Fact>>();
-            for (int a = 0; a < data.Areas.Count; a++) areaTraits.Add(AreaTraits(data, data.Areas[a], largest, smallest));
-            Weigh(areaTraits);
-
-            for (int a = 0; a < data.Areas.Count; a++)
-            {
-                RegionArea area = data.Areas[a];
-                string noun = Noun(rules, area.Kind.ToString(), RegionAreaBuilder.KindNoun(area.Kind));
+                Place place = places[p];
                 string decided;
-                if (rules.Fixed.TryGetValue(data.Spec.Seed + "/エリア" + area.Id, out decided))
+                if (rules.Fixed.TryGetValue(data.Spec.Seed + "/" + place.FixedKey, out decided))
                 {
-                    area.Name = decided;
-                    area.NameOrigin = "人が決めた名前";
-                    proper[area.Id] = decided.EndsWith(noun, StringComparison.Ordinal) && decided.Length > noun.Length
-                        ? decided.Substring(0, decided.Length - noun.Length)
-                        : decided;
-                    used.Add(proper[area.Id]);
+                    place.Decided = decided;
                     continue;
                 }
-                List<Fact> traits = areaTraits[a];
-                Fact land = AreaLand(area);
-                string own;
-                string full;
-                string origin;
-                if (!Compose(rules, language, rules.AreaPatterns, seed, area.Id, traits, land, null, noun, "", used, out own, out full, out origin))
-                {
-                    own = "エリア" + area.Id;
-                    full = own + noun;
-                    origin = "規則から名前を作れなかった（番号で代用）";
-                }
-                used.Add(own);
-                proper[area.Id] = own;
-                area.Name = full;
-                area.NameOrigin = origin;
+                List<string> kinds = Kinds(rules, place.History);
+                List<RegionNamePattern> patterns = Patterns(rules, place.Type);
+                if (kinds.Contains("古い呼び名")) place.Old = Compose(rules, place, patterns, seed ^ 0x9e3779b9u, true, keys);
+                if (kinds.Contains("土地の名")) place.Proper = Compose(rules, place, patterns, seed, false, keys);
             }
 
-            var sameKind = new Dictionary<int, int>();
-            for (int s = 0; s < data.Sites.Count; s++)
+            // (3) 音
+            var language = new Language(rules, sound, unchecked((uint)data.Spec.Seed * 2246822519u + 374761393u), true);
+            var oldLanguage = new Language(rules, oldSound, unchecked((uint)data.Spec.Seed * 668265263u + 1013904223u), false);
+            for (int p = 0; p < places.Count; p++)
             {
-                int key = data.Sites[s].AreaId * 16 + (int)data.Sites[s].Kind;
+                if (places[p].Proper != null)
+                {
+                    foreach (string[] run in Runs(places[p].Proper)) language.Watch(run);
+                }
+                if (places[p].Old != null) oldLanguage.Watch(Meanings(places[p].Old));
+            }
+            language.Build();
+            oldLanguage.Build();
+            report.Problems.AddRange(language.Problems);
+            report.Problems.AddRange(oldLanguage.Problems);
+
+            // (4) 名前と由来
+            var uses = new Dictionary<string, int>();
+            var oldUses = new Dictionary<string, int>();
+            var personUses = new int[Math.Max(0, rules.People)];
+            var texts = new HashSet<string>();
+            for (int p = 0; p < places.Count; p++)
+            {
+                Place place = places[p];
+                var names = new List<RegionPlaceName>();
+                RegionPlaceName old = null;
+                if (place.Old != null)
+                {
+                    old = RenderOld(place, oldLanguage, oldUses);
+                    if (!texts.Add("古:" + old.Text)) old = null;
+                    else place.OldText = old.Text;
+                }
+                if (place.Decided != null)
+                {
+                    place.FullText = place.Decided;
+                    place.ProperText = place.Decided.EndsWith(place.Noun, StringComparison.Ordinal) && place.Decided.Length > place.Noun.Length
+                        ? place.Decided.Substring(0, place.Decided.Length - place.Noun.Length)
+                        : place.Decided;
+                    texts.Add(place.Decided);
+                    names.Add(new RegionPlaceName { Kind = RegionNameKind.Decided, Text = place.Decided, Skeleton = "", Origin = "人が決めた名前", Gloss = "人が決めた名前" });
+                }
+                List<string> kinds = Kinds(rules, place.History);
+                for (int k = 0; k < kinds.Count; k++)
+                {
+                    if (kinds[k] == "土地の名" && place.Decided == null && place.Proper != null && (place.Proper.Slots.Find(s => s.Type == 'O') == null || place.OldText != null))
+                    {
+                        string own;
+                        RegionPlaceName proper = RenderProper(rules, place, language, uses, personUses, out own);
+                        if (!texts.Add(proper.Text)) continue;
+                        place.FullText = proper.Text;
+                        place.ProperText = own;
+                        names.Add(proper);
+                    }
+                    else if (kinds[k] == "古い呼び名" && old != null)
+                    {
+                        names.Add(old);
+                    }
+                    else if (kinds[k] == "記号名")
+                    {
+                        names.Add(Designation(rules, place, data.Spec.Seed, texts, null));
+                    }
+                }
+                if (names.Count == 0) names.Add(Designation(rules, place, data.Spec.Seed, texts, "規則から土地の名を作れなかったので、記号名だけを付けた"));
+                WriteBack(place, names);
+            }
+
+            for (int r = 0; r < rules.RootOrder.Count; r++)
+            {
+                string meaning = rules.RootOrder[r];
                 int count;
-                sameKind.TryGetValue(key, out count);
-                sameKind[key] = count + 1;
-            }
-
-            var siteTraits = new List<List<Fact>>();
-            for (int s = 0; s < data.Sites.Count; s++) siteTraits.Add(SiteTraits(data, data.Sites[s]));
-            Weigh(siteTraits);
-
-            for (int s = 0; s < data.Sites.Count; s++)
-            {
-                RegionSite site = data.Sites[s];
-                string noun = Noun(rules, site.Kind.ToString(), RegionNames.StructureNoun(site.Kind));
-                string decided;
-                if (rules.Fixed.TryGetValue(data.Spec.Seed + "/地点" + site.Id, out decided))
+                uses.TryGetValue(meaning, out count);
+                report.Roots.Add(new RegionNameRoot
                 {
-                    site.Feature = decided;
-                    site.Name = decided;
-                    site.NameOrigin = "人が決めた名前";
-                    used.Add(decided);
-                    continue;
-                }
-                string areaName;
-                proper.TryGetValue(site.AreaId, out areaName);
-                string condition = areaName == null ? "エリアなし" : (sameKind[site.AreaId * 16 + (int)site.Kind] == 1 ? "種類がエリアに1つ" : "種類がエリアに複数");
-                string own;
-                string full;
-                string origin;
-                if (!Compose(rules, language, rules.SitePatterns, seed, 1000 + site.Id, siteTraits[s], SiteLand(site), areaName, noun, condition, used, out own, out full, out origin))
+                    Meaning = meaning,
+                    Sound = language.Root(meaning),
+                    Written = language.IsWritten(meaning),
+                    Mood = rules.Mood.Contains(meaning),
+                    Event = rules.Events.Contains(meaning),
+                    Uses = count,
+                });
+                if (oldUses.TryGetValue(meaning, out count))
                 {
-                    full = "地点" + site.Id + "の" + noun;
-                    origin = "規則から名前を作れなかった（番号で代用）";
+                    report.OldRoots.Add(new RegionNameRoot
+                    {
+                        Meaning = meaning,
+                        Sound = oldLanguage.Root(meaning),
+                        Mood = rules.Mood.Contains(meaning),
+                        Event = rules.Events.Contains(meaning),
+                        Uses = count,
+                    });
                 }
-                used.Add(full);
-                if (own != null) used.Add(own);
-                site.Feature = full;
-                site.Name = full;
-                site.NameOrigin = origin;
             }
-        }
-
-        /// <summary>その地域で使う語根の表（意味と音）。確認用の一覧に出す。</summary>
-        public static List<RegionNameRoot> Roots(RegionNamingRules rules, int seed)
-        {
-            if (rules == null) rules = RegionNamingRules.Default;
-            var language = new Language(rules, seed);
-            var list = new List<RegionNameRoot>();
-            var seen = new HashSet<string>();
-            for (int r = 0; r < rules.RootOrder.Count; r++) AddRoot(list, seen, rules, language, rules.RootOrder[r]);
-            for (int f = 0; f < RegionNamingRules.FactMeanings.Length; f++) AddRoot(list, seen, rules, language, RegionNamingRules.FactMeanings[f]);
-            return list;
-        }
-
-        private static void AddRoot(List<RegionNameRoot> list, HashSet<string> seen, RegionNamingRules rules, Language language, string meaning)
-        {
-            if (!seen.Add(meaning)) return;
-            list.Add(new RegionNameRoot
+            for (int i = 0; i < personUses.Length; i++)
             {
-                Meaning = meaning,
-                Sound = language.Root(meaning),
-                Written = language.IsWritten(meaning),
-                Mood = rules.Mood.Contains(meaning),
-            });
+                report.People.Add(new RegionNamePerson { Name = language.Person(i), Role = Role(rules, i), Uses = personUses[i] });
+            }
+            data.Naming = report;
         }
 
         /// <summary>型を「{部品}」とそれ以外の字の並びに分ける。</summary>
@@ -554,33 +509,457 @@ Sunken = 沈んだ遺構
             return tokens;
         }
 
-        /// <summary>
-        /// 条件に合う型から重みで 1 つ選び、部品へ語根を入れて名前にする。
-        /// 読みにくい並び・長さの外・既にある名前になったら、別の型や語根で作り直す。
-        /// own は語根で作った固有の部分（{エリア} だけの型では null）、full は表示する名前。
-        /// </summary>
-        private static bool Compose(RegionNamingRules rules, Language language, List<RegionNamePattern> patterns, uint seed, int key,
-            List<Fact> traits, Fact land, string areaName, string noun, string condition, HashSet<string> used,
-            out string own, out string full, out string origin)
+        // ---- (1) 土地の経緯 ----
+
+        private static void AssignHistory(RegionData data, RegionNamingRules rules)
         {
-            own = null;
-            full = null;
-            origin = null;
+            int n = data.Areas.Count;
+            var order = new List<RegionArea>(data.Areas);
+            order.Sort((a, b) =>
+            {
+                float ha = Habitability(a);
+                float hb = Habitability(b);
+                return ha != hb ? hb.CompareTo(ha) : a.Id.CompareTo(b.Id);
+            });
+            RegionLandHistory highest = RegionLandHistory.Unexplored;
+            for (int r = 0; r < n; r++)
+            {
+                RegionArea area = order[r];
+                RegionLandHistory history;
+                int fixedIndex = Array.IndexOf(RegionNamingRules.Histories, rules.RegionHistory);
+                if (fixedIndex >= 0)
+                {
+                    history = (RegionLandHistory)fixedIndex;
+                }
+                else
+                {
+                    float position = (r + 0.5f) / n;
+                    history = position < rules.AncientShare ? RegionLandHistory.Ancient
+                        : (position < rules.SettledShare ? RegionLandHistory.Settled : RegionLandHistory.Unexplored);
+                }
+                string decided;
+                if (rules.HistoryFixed.TryGetValue(data.Spec.Seed + "/エリア" + area.Id, out decided))
+                {
+                    history = (RegionLandHistory)Array.IndexOf(RegionNamingRules.Histories, decided);
+                }
+                area.History = history;
+                if (history > highest) highest = history;
+            }
+            for (int s = 0; s < data.Sites.Count; s++)
+            {
+                RegionArea area = data.AreaById(data.Sites[s].AreaId);
+                data.Sites[s].History = area != null ? area.History : RegionLandHistory.Unexplored;
+            }
+            for (int f = 0; f < data.Features.Count; f++)
+            {
+                RegionFeature feature = data.Features[f];
+                RegionArea area = data.AreaById(feature.AreaId);
+                feature.History = feature.Kind == RegionFeatureKind.Region ? highest : (area != null ? area.History : RegionLandHistory.Unexplored);
+            }
+        }
+
+        /// <summary>
+        /// 住みやすさの目安（仮）。平野・盆地・丘陵が高く、雪原・砂漠・山地が低い。草原と森で上がり、標高で下がる。
+        /// 経緯を「混在」にした時に、エリアを文明のある側から並べるためだけに使う。
+        /// </summary>
+        private static float Habitability(RegionArea area)
+        {
+            float value;
+            switch (area.Kind)
+            {
+                case RegionAreaKind.Plain: value = 1f; break;
+                case RegionAreaKind.Basin: value = 0.9f; break;
+                case RegionAreaKind.Hills: value = 0.7f; break;
+                case RegionAreaKind.Island: value = 0.5f; break;
+                case RegionAreaKind.Highland: value = 0.4f; break;
+                case RegionAreaKind.Mountains: value = 0.25f; break;
+                case RegionAreaKind.Desert: value = 0.15f; break;
+                default: value = 0.1f; break;
+            }
+            switch (area.MainBiome)
+            {
+                case RegionBiome.Grassland:
+                case RegionBiome.Forest:
+                    value += 0.15f;
+                    break;
+                case RegionBiome.Rainforest:
+                case RegionBiome.Savanna:
+                    value += 0.05f;
+                    break;
+                case RegionBiome.Tundra:
+                case RegionBiome.Snow:
+                case RegionBiome.Desert:
+                case RegionBiome.Rock:
+                    value -= 0.15f;
+                    break;
+            }
+            return value - area.MeanHeight / 4000f;
+        }
+
+        private static List<string> Kinds(RegionNamingRules rules, RegionLandHistory history)
+        {
+            List<string> kinds;
+            return rules.NameKinds.TryGetValue(RegionNamingRules.Histories[(int)history], out kinds) ? kinds : DesignationOnly;
+        }
+
+        private static readonly List<string> DesignationOnly = new List<string> { "記号名" };
+
+        private static List<RegionNamePattern> Patterns(RegionNamingRules rules, int type)
+        {
+            switch (type)
+            {
+                case 0: return rules.RegionPatterns;
+                case 1: return rules.AreaPatterns;
+                case 2: return rules.RiverPatterns;
+                case 3: return rules.PeakPatterns;
+                case 4: return rules.BayPatterns;
+                default: return rules.SitePatterns;
+            }
+        }
+
+        // ---- 場所と事実 ----
+
+        private static List<Place> BuildPlaces(RegionData data, RegionNamingRules rules)
+        {
+            var places = new List<Place>();
+            var areaPlaces = new Dictionary<int, Place>();
+
+            float largest = 0f;
+            float smallest = float.MaxValue;
+            RegionArea widest = null;
+            for (int a = 0; a < data.Areas.Count; a++)
+            {
+                if (data.Areas[a].AreaKm2 > largest)
+                {
+                    largest = data.Areas[a].AreaKm2;
+                    widest = data.Areas[a];
+                }
+                smallest = Math.Min(smallest, data.Areas[a].AreaKm2);
+            }
+
+            RegionFeature regionFeature = data.Features.Find(f => f.Kind == RegionFeatureKind.Region);
+            if (regionFeature != null)
+            {
+                var region = new Place
+                {
+                    Type = 0, Number = 0, Key = 1, KindKey = "Region", FixedKey = "地域", DesignationKey = "地域",
+                    Feature = regionFeature, MapX = 50f, MapY = 50f, History = regionFeature.History,
+                };
+                if (widest != null)
+                {
+                    region.HasLand = Land(rules, RegionAreaBuilder.KindNoun(widest.Kind), "最も広いエリアが" + RegionAreaBuilder.KindNoun(widest.Kind), out region.Land);
+                    AddBiome(rules, region.Traits, widest.MainBiome, "最も広いエリアで最も広い");
+                }
+                if (data.LandFraction < 0.4f) Emit(rules, region.Traits, "海が広い", "陸が地図の 4 割未満");
+                if (data.LandFraction >= 0.6f) Emit(rules, region.Traits, "陸が広い", "陸が地図の 6 割以上");
+                places.Add(region);
+            }
+
+            var group = new List<Place>();
+            for (int a = 0; a < data.Areas.Count; a++)
+            {
+                RegionArea area = data.Areas[a];
+                var place = new Place
+                {
+                    Type = 1, Number = area.Id, Key = 100 + area.Id, KindKey = area.Kind.ToString(), FixedKey = "エリア" + area.Id, DesignationKey = "エリア",
+                    Area = area, MapX = area.LabelX, MapY = area.LabelY, History = area.History,
+                };
+                string kind = RegionAreaBuilder.KindNoun(area.Kind);
+                place.HasLand = Land(rules, kind, kind, out place.Land);
+                AddDirection(rules, place.Traits, area.LabelX, area.LabelY, "エリアの位置");
+                if (area.MaxHeight >= data.MaxHeight * 0.7f) Emit(rules, place.Traits, "最高点が高い", "最高点が地域の最高の 7 割以上");
+                if (area.MeanHeight < 150f && area.Kind != RegionAreaKind.Island) Emit(rules, place.Traits, "標高が低い", "平均の標高が 150 m 未満");
+                AddBiome(rules, place.Traits, area.MainBiome, "最も広い");
+                if (data.Areas.Count > 1 && area.AreaKm2 >= largest) Emit(rules, place.Traits, "最も広い", "地域で最も広い");
+                if (data.Areas.Count > 1 && area.AreaKm2 <= smallest) Emit(rules, place.Traits, "最も狭い", "地域で最も狭い");
+                areaPlaces[area.Id] = place;
+                group.Add(place);
+            }
+            Finish(rules, group, places);
+
+            var rivers = new List<Place>();
+            var peaks = new List<Place>();
+            var bays = new List<Place>();
+            int riverCount = 0;
+            int peakCount = 0;
+            int bayCount = 0;
+            float longest = 0f;
+            for (int f = 0; f < data.Features.Count; f++)
+            {
+                RegionFeature feature = data.Features[f];
+                if (feature.Kind == RegionFeatureKind.River)
+                {
+                    riverCount++;
+                    longest = Math.Max(longest, feature.LengthKm);
+                }
+                if (feature.Kind == RegionFeatureKind.Peak) peakCount++;
+                if (feature.Kind == RegionFeatureKind.Bay) bayCount++;
+            }
+            for (int f = 0; f < data.Features.Count; f++)
+            {
+                RegionFeature feature = data.Features[f];
+                if (feature.Kind == RegionFeatureKind.Region) continue;
+                var place = new Place { Number = feature.Id, Feature = feature, MapX = feature.MapX, MapY = feature.MapY, History = feature.History };
+                areaPlaces.TryGetValue(feature.AreaId, out place.AreaPlace);
+                switch (feature.Kind)
+                {
+                    case RegionFeatureKind.River:
+                        place.Type = 2;
+                        place.Key = 300 + feature.Id;
+                        place.KindKey = "River";
+                        place.FixedKey = "川" + feature.Id;
+                        place.DesignationKey = "川";
+                        place.HasLand = Land(rules, "川である", "川", out place.Land);
+                        AddDirection(rules, place.Traits, feature.MapX, feature.MapY, "本流の中ほど");
+                        if (riverCount > 1 && feature.LengthKm >= longest) Emit(rules, place.Traits, "最も長い川", "本流が地域で最も長い（約 " + Math.Round(feature.LengthKm) + " km）");
+                        rivers.Add(place);
+                        break;
+                    case RegionFeatureKind.Peak:
+                        place.Type = 3;
+                        place.Key = 400 + feature.Id;
+                        place.KindKey = "Peak";
+                        place.FixedKey = "山" + feature.Id;
+                        place.DesignationKey = "山";
+                        place.HasLand = Land(rules, "峰である", "峰", out place.Land);
+                        AddDirection(rules, place.Traits, feature.MapX, feature.MapY, "頂");
+                        if (peakCount > 1 && feature.Id == 1) Emit(rules, place.Traits, "最も高い峰", "地域で最も高い（" + Math.Round(feature.HeightMeters) + " m）");
+                        AddBiome(rules, place.Traits, data.BiomeAtMap(feature.MapX, feature.MapY), "頂が");
+                        peaks.Add(place);
+                        break;
+                    default:
+                        place.Type = 4;
+                        place.Key = 500 + feature.Id;
+                        place.KindKey = "Bay";
+                        place.FixedKey = "湾" + feature.Id;
+                        place.DesignationKey = "湾";
+                        place.HasLand = Land(rules, "湾である", "湾", out place.Land);
+                        AddDirection(rules, place.Traits, feature.MapX, feature.MapY, "湾の位置");
+                        if (bayCount > 1 && feature.Id == 1) Emit(rules, place.Traits, "最も広い", "地域で最も広い湾");
+                        bays.Add(place);
+                        break;
+                }
+            }
+            Finish(rules, rivers, places);
+            Finish(rules, peaks, places);
+            Finish(rules, bays, places);
+
+            var sameKind = new Dictionary<int, int>();
+            var lead = new Dictionary<int, RegionSite>();
+            for (int s = 0; s < data.Sites.Count; s++)
+            {
+                RegionSite site = data.Sites[s];
+                int key = site.AreaId * 16 + (int)site.Kind;
+                int count;
+                sameKind.TryGetValue(key, out count);
+                sameKind[key] = count + 1;
+                RegionSite best;
+                if (site.AreaId > 0 && (!lead.TryGetValue(site.AreaId, out best) || site.Rank < best.Rank)) lead[site.AreaId] = site;
+            }
+
+            group = new List<Place>();
+            for (int s = 0; s < data.Sites.Count; s++)
+            {
+                RegionSite site = data.Sites[s];
+                var place = new Place
+                {
+                    Type = 5, Number = site.Id, Key = 1000 + site.Id, KindKey = site.Kind.ToString(), FixedKey = "地点" + site.Id, DesignationKey = "地点",
+                    Site = site, MapX = site.MapX, MapY = site.MapY, History = site.History,
+                };
+                areaPlaces.TryGetValue(site.AreaId, out place.AreaPlace);
+                switch (site.Kind)
+                {
+                    case RegionSiteKind.Monolith: place.HasLand = Land(rules, "山頂に立つ", "山頂に立つ", out place.Land); break;
+                    case RegionSiteKind.Arch: place.HasLand = Land(rules, "海のそばに立つ", "海のそばに立つ", out place.Land); break;
+                    case RegionSiteKind.Ring: place.HasLand = Land(rules, "乾いた土地に立つ", "乾いた土地に立つ", out place.Land); break;
+                    case RegionSiteKind.Tower: place.HasLand = Land(rules, "丘に立つ", "丘に立つ", out place.Land); break;
+                    case RegionSiteKind.Dome: place.HasLand = Land(rules, "雪原に立つ", "雪原に立つ", out place.Land); break;
+                    case RegionSiteKind.Terrace: place.HasLand = Land(rules, "川のそばに立つ", "川のそばに立つ", out place.Land); break;
+                    default: place.HasLand = Land(rules, "浅い海に沈む", "浅い海に沈む", out place.Land); break;
+                }
+                AddDirection(rules, place.Traits, site.MapX, site.MapY, "地点の位置");
+                if (site.Kind == RegionSiteKind.Sunken) Emit(rules, place.Traits, "海の中にある", "海の中");
+                else if (site.HeightMeters >= data.MaxHeight * 0.5f) Emit(rules, place.Traits, "最高点が高い", "標高が地域の最高の 5 割以上");
+                else if (site.HeightMeters < 60f) Emit(rules, place.Traits, "標高が低い", "標高 60 m 未満");
+                AddBiome(rules, place.Traits, site.Biome, "立つ場所が");
+
+                if (site.AreaId == 0) place.Conditions.Add("エリアなし");
+                else place.Conditions.Add(sameKind[site.AreaId * 16 + (int)site.Kind] == 1 ? "種類がエリアに1つ" : "種類がエリアに複数");
+                RegionSite first;
+                if (lead.TryGetValue(site.AreaId, out first) && first == site) place.Conditions.Add("エリアの代表");
+
+                place.NearPeak = Nearest(peaks, site.MapX, site.MapY, 2.5f);
+                float riverDistance = 2f;
+                for (int r = 0; r < rivers.Count; r++)
+                {
+                    RegionFeature river = rivers[r].Feature;
+                    for (int i = 0; i < river.PathX.Length; i++)
+                    {
+                        float dx = river.PathX[i] - site.MapX;
+                        float dy = river.PathY[i] - site.MapY;
+                        float distance = (float)Math.Sqrt(dx * dx + dy * dy);
+                        if (distance < riverDistance)
+                        {
+                            riverDistance = distance;
+                            place.NearRiver = rivers[r];
+                        }
+                    }
+                }
+                group.Add(place);
+            }
+            Finish(rules, group, places);
+            for (int p = 0; p < places.Count; p++)
+            {
+                string word;
+                places[p].Noun = rules.Nouns.TryGetValue(places[p].KindKey, out word) ? word : places[p].KindKey;
+                places[p].Code = rules.Codes.TryGetValue(places[p].KindKey, out word) ? word : places[p].KindKey;
+            }
+            return places;
+        }
+
+        /// <summary>同じ種類の場所の中で事実の重みを付け、全体の並びへ足す。</summary>
+        private static void Finish(RegionNamingRules rules, List<Place> group, List<Place> places)
+        {
+            var counts = new Dictionary<string, int>();
+            for (int p = 0; p < group.Count; p++)
+            {
+                for (int f = 0; f < group[p].Traits.Count; f++)
+                {
+                    int count;
+                    counts.TryGetValue(group[p].Traits[f].Meaning, out count);
+                    counts[group[p].Traits[f].Meaning] = count + 1;
+                }
+            }
+            for (int p = 0; p < group.Count; p++)
+            {
+                Place place = group[p];
+                for (int f = 0; f < place.Traits.Count; f++)
+                {
+                    Fact fact = place.Traits[f];
+                    fact.Weight = 1f / counts[fact.Meaning];
+                    place.Traits[f] = fact;
+                }
+            }
+            places.AddRange(group);
+        }
+
+        private static Place Nearest(List<Place> candidates, float mapX, float mapY, float within)
+        {
+            Place nearest = null;
+            for (int c = 0; c < candidates.Count; c++)
+            {
+                float dx = candidates[c].MapX - mapX;
+                float dy = candidates[c].MapY - mapY;
+                float distance = (float)Math.Sqrt(dx * dx + dy * dy);
+                if (distance >= within) continue;
+                within = distance;
+                nearest = candidates[c];
+            }
+            return nearest;
+        }
+
+        private static void Emit(RegionNamingRules rules, List<Fact> into, string key, string why)
+        {
+            List<string> meanings;
+            if (!rules.Facts.TryGetValue(key, out meanings)) return;
+            for (int m = 0; m < meanings.Count; m++) into.Add(new Fact { Key = key, Meaning = meanings[m], Why = why });
+        }
+
+        private static bool Land(RegionNamingRules rules, string key, string why, out Fact fact)
+        {
+            List<string> meanings;
+            if (!rules.Facts.TryGetValue(key, out meanings) || meanings.Count == 0)
+            {
+                fact = default(Fact);
+                return false;
+            }
+            fact = new Fact { Key = key, Meaning = meanings[0], Why = why };
+            return true;
+        }
+
+        private static void AddDirection(RegionNamingRules rules, List<Fact> traits, float mapX, float mapY, string what)
+        {
+            int col = mapX < 38f ? 0 : (mapX < 62f ? 1 : 2);
+            int row = mapY < 38f ? 0 : (mapY < 62f ? 1 : 2);
+            if (row == 0) Emit(rules, traits, "北にある", what + "が地域の北");
+            if (row == 2) Emit(rules, traits, "南にある", what + "が地域の南");
+            if (col == 0) Emit(rules, traits, "西にある", what + "が地域の西");
+            if (col == 2) Emit(rules, traits, "東にある", what + "が地域の東");
+            if (row == 1 && col == 1) Emit(rules, traits, "中央にある", what + "が地域の中央");
+        }
+
+        private static void AddBiome(RegionNamingRules rules, List<Fact> traits, RegionBiome biome, string what)
+        {
+            switch (biome)
+            {
+                case RegionBiome.Snow:
+                case RegionBiome.Tundra:
+                    Emit(rules, traits, "雪とツンドラが広い", what + "雪・ツンドラ");
+                    break;
+                case RegionBiome.Desert:
+                case RegionBiome.Savanna:
+                    Emit(rules, traits, "砂漠とサバンナが広い", what + "砂漠・サバンナ");
+                    break;
+                case RegionBiome.Forest:
+                case RegionBiome.Taiga:
+                case RegionBiome.Rainforest:
+                    Emit(rules, traits, "森が広い", what + "森");
+                    break;
+            }
+        }
+
+        // ---- (2) 骨格 ----
+
+        private static bool HasProper(Place place)
+        {
+            return place != null && (place.Proper != null || place.Decided != null);
+        }
+
+        /// <summary>
+        /// 条件に合う型から重みで 1 つ選び、部品へ意味を入れて骨格にする。音は使わない。
+        /// 同じ骨格・同じ固有の部分が既にあれば、別の型や意味で作り直す。old は古い呼び名の骨格（語根の並びだけ）。
+        /// </summary>
+        private static Skeleton Compose(RegionNamingRules rules, Place place, List<RegionNamePattern> patterns, uint seed, bool old, HashSet<string> keys)
+        {
+            var events = new List<string>();
+            for (int e = 0; e < rules.Events.Count; e++)
+            {
+                List<string> needs = rules.EventNeeds[rules.Events[e]];
+                bool fits = needs.Count == 0 || (place.HasLand && needs.Contains(place.Land.Meaning));
+                for (int f = 0; f < place.Traits.Count && !fits; f++) fits = needs.Contains(place.Traits[f].Meaning);
+                if (fits) events.Add(rules.Events[e]);
+            }
+
             var usable = new List<RegionNamePattern>();
             float total = 0f;
             for (int p = 0; p < patterns.Count; p++)
             {
                 RegionNamePattern pattern = patterns[p];
                 bool always = pattern.Condition.Length == 0 || pattern.Condition == "いつでも";
-                if (!always && pattern.Condition != condition) continue;
-                if (areaName == null && pattern.Template.IndexOf("{エリア}", StringComparison.Ordinal) >= 0) continue;
-                if (traits.Count == 0 && pattern.Template.IndexOf("{特徴}", StringComparison.Ordinal) >= 0) continue;
-                if (rules.Mood.Count == 0 && pattern.Template.IndexOf("{雰囲気}", StringComparison.Ordinal) >= 0) continue;
+                if (!always && !(pattern.Condition == "古い文明" ? place.History == RegionLandHistory.Ancient : place.Conditions.Contains(pattern.Condition))) continue;
+                bool fits = true;
+                List<string> tokens = Tokens(pattern.Template);
+                for (int t = 0; t < tokens.Count && fits; t++)
+                {
+                    switch (tokens[t])
+                    {
+                        case "{特徴}": fits = place.Traits.Count > 0; break;
+                        case "{地形}": fits = place.HasLand; break;
+                        case "{雰囲気}": fits = rules.Mood.Count > 0; break;
+                        case "{人名}": fits = !old && rules.People > 0; break;
+                        case "{出来事}": fits = !old && events.Count > 0; break;
+                        case "{古名}": fits = !old && place.Old != null; break;
+                        case "{エリア}": fits = !old && HasProper(place.AreaPlace); break;
+                        case "{山}": fits = !old && HasProper(place.NearPeak); break;
+                        case "{川}": fits = !old && HasProper(place.NearRiver); break;
+                    }
+                }
+                if (!fits) continue;
                 usable.Add(pattern);
                 total += pattern.Weight;
             }
-            if (usable.Count == 0) return false;
+            if (usable.Count == 0) return null;
 
+            int key = place.Key;
             for (int attempt = 0; attempt < 96; attempt++)
             {
                 uint local = seed + (uint)attempt * 40503u;
@@ -596,186 +975,307 @@ Sunken = 沈んだ遺構
                     }
                 }
 
-                var shown = new StringBuilder();
-                var made = new StringBuilder();
-                var parts = new StringBuilder();
-                var reasons = new StringBuilder();
-                bool fromArea = false;
+                var skeleton = new Skeleton { Pattern = chosen };
                 List<string> tokens = Tokens(chosen.Template);
                 for (int t = 0; t < tokens.Count; t++)
                 {
                     string token = tokens[t];
                     if (token[0] != '{')
                     {
-                        shown.Append(token);
+                        if (!old) skeleton.Slots.Add(new Slot { Type = 'L', Text = token });
                         continue;
                     }
                     switch (token)
                     {
                         case "{類}":
                         case "{構造物}":
-                            shown.Append(noun);
+                            if (!old) skeleton.Slots.Add(new Slot { Type = 'N', Text = place.Noun });
                             break;
-                        case "{エリア}":
-                            shown.Append(areaName);
-                            fromArea = true;
+                        case "{地形}": skeleton.Slots.Add(new Slot { Type = 'R', Fact = place.Land }); break;
+                        case "{特徴}": skeleton.Slots.Add(new Slot { Type = 'R', Fact = PickFact(place.Traits, key, 10 + t, local) }); break;
+                        case "{雰囲気}":
+                            skeleton.Slots.Add(new Slot { Type = 'R', Fact = new Fact { Key = "雰囲気", Meaning = rules.Mood[Index(rules.Mood.Count, key, 20 + t, local)] } });
                             break;
-                        case "{地形}":
-                            Add(language, land, shown, made, parts, reasons);
+                        case "{出来事}":
+                            skeleton.Slots.Add(new Slot { Type = 'R', Fact = new Fact { Key = "出来事", Meaning = events[Index(events.Count, key, 30 + t, local)] } });
                             break;
-                        case "{特徴}":
-                            Add(language, PickFact(traits, key, 10 + t, local), shown, made, parts, reasons);
-                            break;
-                        default:
-                            string mood = rules.Mood[Index(rules.Mood.Count, key, 20 + t, local)];
-                            Add(language, new Fact { Meaning = mood, Why = null }, shown, made, parts, reasons);
-                            break;
+                        case "{人名}": skeleton.Slots.Add(new Slot { Type = 'P', Person = Index(rules.People, key, 40 + t, local) }); break;
+                        case "{古名}": skeleton.Slots.Add(new Slot { Type = 'O' }); break;
+                        case "{エリア}": skeleton.Slots.Add(new Slot { Type = 'A', Ref = place.AreaPlace }); break;
+                        case "{山}": skeleton.Slots.Add(new Slot { Type = 'F', Ref = place.NearPeak }); break;
+                        case "{川}": skeleton.Slots.Add(new Slot { Type = 'F', Ref = place.NearRiver }); break;
                     }
                 }
 
-                string candidate = shown.ToString();
-                string proper = made.Length > 0 ? made.ToString() : null;
-                if (used.Contains(candidate)) continue;
-                if (proper != null && (TooClose(proper, used) || !Readable(proper, rules, rules.NameMin, rules.NameMax))) continue;
-                own = proper;
-                full = candidate;
-                var text = new StringBuilder("型「").Append(chosen.Template).Append("」");
-                if (parts.Length > 0) text.Append("。").Append(parts);
-                if (fromArea) text.Append("。エリアの固有名「").Append(areaName).Append("」から（このエリアにこの種類は 1 つ）");
-                if (reasons.Length > 0) text.Append("。").Append(reasons);
-                origin = text.ToString();
-                return true;
-            }
-            return false;
-        }
-
-        private static void Add(Language language, Fact fact, StringBuilder shown, StringBuilder made, StringBuilder parts, StringBuilder reasons)
-        {
-            string sound = language.Root(fact.Meaning);
-            shown.Append(sound);
-            made.Append(sound);
-            if (parts.Length > 0) parts.Append("＋");
-            parts.Append(sound).Append("（").Append(fact.Meaning).Append("）");
-            if (fact.Why != null)
-            {
-                if (reasons.Length > 0) reasons.Append("、");
-                reasons.Append(fact.Meaning).Append("＝").Append(fact.Why);
-            }
-        }
-
-        private static string Noun(RegionNamingRules rules, string key, string fallback)
-        {
-            string noun;
-            return rules.Nouns.TryGetValue(key, out noun) ? noun : fallback;
-        }
-
-        private static Fact AreaLand(RegionArea area)
-        {
-            switch (area.Kind)
-            {
-                case RegionAreaKind.Mountains: return new Fact { Meaning = "山", Why = "山地" };
-                case RegionAreaKind.Highland: return new Fact { Meaning = "山", Why = "高地" };
-                case RegionAreaKind.Hills: return new Fact { Meaning = "丘", Why = "丘陵" };
-                case RegionAreaKind.Basin: return new Fact { Meaning = "谷", Why = "盆地" };
-                case RegionAreaKind.Island: return new Fact { Meaning = "島", Why = "島" };
-                case RegionAreaKind.Snowfield: return new Fact { Meaning = "雪", Why = "雪原" };
-                case RegionAreaKind.Desert: return new Fact { Meaning = "砂", Why = "砂漠" };
-                default: return new Fact { Meaning = "野", Why = "平野" };
-            }
-        }
-
-        private static List<Fact> AreaTraits(RegionData data, RegionArea area, float largest, float smallest)
-        {
-            var traits = new List<Fact>();
-            AddDirection(traits, area.LabelX, area.LabelY, "エリアの位置");
-            if (area.MaxHeight >= data.MaxHeight * 0.7f) traits.Add(new Fact { Meaning = "高い", Why = "最高点が地域の最高の 7 割以上" });
-            if (area.MeanHeight < 150f && area.Kind != RegionAreaKind.Island) traits.Add(new Fact { Meaning = "低い", Why = "平均の標高が 150 m 未満" });
-            AddBiome(traits, area.MainBiome, "最も広い");
-            if (data.Areas.Count > 1 && area.AreaKm2 >= largest) traits.Add(new Fact { Meaning = "大きい", Why = "地域で最も広い" });
-            if (data.Areas.Count > 1 && area.AreaKm2 <= smallest) traits.Add(new Fact { Meaning = "小さい", Why = "地域で最も狭い" });
-            return traits;
-        }
-
-        private static Fact SiteLand(RegionSite site)
-        {
-            switch (site.Kind)
-            {
-                case RegionSiteKind.Monolith: return new Fact { Meaning = "山", Why = "山頂に立つ" };
-                case RegionSiteKind.Arch: return new Fact { Meaning = "岸", Why = "海のそばに立つ" };
-                case RegionSiteKind.Ring: return new Fact { Meaning = "砂", Why = "乾いた土地に立つ" };
-                case RegionSiteKind.Tower: return new Fact { Meaning = "丘", Why = "丘に立つ" };
-                case RegionSiteKind.Dome: return new Fact { Meaning = "雪", Why = "雪原に立つ" };
-                case RegionSiteKind.Terrace: return new Fact { Meaning = "川", Why = "川のそばに立つ" };
-                default: return new Fact { Meaning = "海", Why = "浅い海に沈む" };
-            }
-        }
-
-        private static List<Fact> SiteTraits(RegionData data, RegionSite site)
-        {
-            var traits = new List<Fact>();
-            AddDirection(traits, site.MapX, site.MapY, "地点の位置");
-            if (site.Kind == RegionSiteKind.Sunken) traits.Add(new Fact { Meaning = "深い", Why = "海の中" });
-            else if (site.HeightMeters >= data.MaxHeight * 0.5f) traits.Add(new Fact { Meaning = "高い", Why = "標高が地域の最高の 5 割以上" });
-            else if (site.HeightMeters < 60f) traits.Add(new Fact { Meaning = "低い", Why = "標高 60 m 未満" });
-            AddBiome(traits, site.Biome, "立つ場所が");
-            return traits;
-        }
-
-        private static void AddDirection(List<Fact> traits, float mapX, float mapY, string what)
-        {
-            int col = mapX < 38f ? 0 : (mapX < 62f ? 1 : 2);
-            int row = mapY < 38f ? 0 : (mapY < 62f ? 1 : 2);
-            if (row == 0) traits.Add(new Fact { Meaning = "北", Why = what + "が地域の北" });
-            if (row == 2) traits.Add(new Fact { Meaning = "南", Why = what + "が地域の南" });
-            if (col == 0) traits.Add(new Fact { Meaning = "西", Why = what + "が地域の西" });
-            if (col == 2) traits.Add(new Fact { Meaning = "東", Why = what + "が地域の東" });
-            if (row == 1 && col == 1) traits.Add(new Fact { Meaning = "中", Why = what + "が地域の中央" });
-        }
-
-        private static void AddBiome(List<Fact> traits, RegionBiome biome, string what)
-        {
-            switch (biome)
-            {
-                case RegionBiome.Snow:
-                case RegionBiome.Tundra:
-                    traits.Add(new Fact { Meaning = "白い", Why = what + "雪・ツンドラ" });
-                    break;
-                case RegionBiome.Desert:
-                case RegionBiome.Savanna:
-                    traits.Add(new Fact { Meaning = "赤い", Why = what + "砂漠・サバンナ" });
-                    traits.Add(new Fact { Meaning = "乾いた", Why = what + "砂漠・サバンナ" });
-                    break;
-                case RegionBiome.Forest:
-                case RegionBiome.Taiga:
-                case RegionBiome.Rainforest:
-                    traits.Add(new Fact { Meaning = "緑の", Why = what + "森" });
-                    traits.Add(new Fact { Meaning = "森", Why = what + "森" });
-                    break;
-            }
-        }
-
-        /// <summary>同じ意味の事実を持つ場所の数を数え、少ない事実ほど選ばれやすくする。</summary>
-        private static void Weigh(List<List<Fact>> all)
-        {
-            var counts = new Dictionary<string, int>();
-            for (int i = 0; i < all.Count; i++)
-            {
-                for (int f = 0; f < all[i].Count; f++)
+                // 同じ意味を 2 回並べない
+                bool repeated = false;
+                for (int a = 0; a < skeleton.Slots.Count && !repeated; a++)
                 {
-                    int count;
-                    counts.TryGetValue(all[i][f].Meaning, out count);
-                    counts[all[i][f].Meaning] = count + 1;
+                    for (int b = a + 1; b < skeleton.Slots.Count; b++)
+                    {
+                        if (skeleton.Slots[a].Type == 'R' && skeleton.Slots[b].Type == 'R' && skeleton.Slots[a].Fact.Meaning == skeleton.Slots[b].Fact.Meaning) repeated = true;
+                    }
+                }
+                if (repeated) continue;
+
+                string full = (old ? "古:" : "名:") + Describe(skeleton, place, true);
+                if (keys.Contains(full)) continue;
+                // エリア・川・峰・湾・地域は、固有の部分（類の語を除いた部分）も重ならないようにする（{エリア} などで参照されるため）
+                string own = (old ? "古固有:" : "固有:") + Describe(skeleton, place, false);
+                if (place.Type != 5 && keys.Contains(own)) continue;
+                keys.Add(full);
+                if (place.Type != 5) keys.Add(own);
+                return skeleton;
+            }
+            return null;
+        }
+
+        /// <summary>骨格を文字にする。withNoun が false なら、類の語とその直前の字（「の」）を除く。</summary>
+        private static string Describe(Skeleton skeleton, Place place, bool withNoun)
+        {
+            var text = new StringBuilder();
+            for (int s = 0; s < skeleton.Slots.Count; s++)
+            {
+                Slot slot = skeleton.Slots[s];
+                bool beforeNoun = s + 1 < skeleton.Slots.Count && skeleton.Slots[s + 1].Type == 'N';
+                switch (slot.Type)
+                {
+                    case 'L':
+                        if (withNoun || !beforeNoun) text.Append(slot.Text);
+                        break;
+                    case 'N':
+                        if (withNoun) text.Append(slot.Text);
+                        break;
+                    case 'R': text.Append('[').Append(slot.Fact.Meaning).Append(']'); break;
+                    case 'P': text.Append("〈人名").Append(slot.Person + 1).Append('〉'); break;
+                    case 'O': text.Append("〈古名〉"); break;
+                    case 'A': text.Append("〈エリア").Append(slot.Ref.Number).Append('〉'); break;
+                    default: text.Append(slot.Ref.Type == 3 ? "〈山" : "〈川").Append(slot.Ref.Number).Append('〉'); break;
                 }
             }
-            for (int i = 0; i < all.Count; i++)
+            return text.ToString();
+        }
+
+        /// <summary>骨格の中で、続けて並ぶ語根の意味の並び。</summary>
+        private static List<string[]> Runs(Skeleton skeleton)
+        {
+            var runs = new List<string[]>();
+            var run = new List<string>();
+            for (int s = 0; s <= skeleton.Slots.Count; s++)
             {
-                for (int f = 0; f < all[i].Count; f++)
+                if (s < skeleton.Slots.Count && skeleton.Slots[s].Type == 'R')
                 {
-                    Fact fact = all[i][f];
-                    fact.Weight = 1f / counts[fact.Meaning];
-                    all[i][f] = fact;
+                    run.Add(skeleton.Slots[s].Fact.Meaning);
+                    continue;
+                }
+                if (run.Count > 0) runs.Add(run.ToArray());
+                run.Clear();
+            }
+            return runs;
+        }
+
+        private static string[] Meanings(Skeleton skeleton)
+        {
+            var list = new List<string>();
+            for (int s = 0; s < skeleton.Slots.Count; s++)
+            {
+                if (skeleton.Slots[s].Type == 'R') list.Add(skeleton.Slots[s].Fact.Meaning);
+            }
+            return list.ToArray();
+        }
+
+        // ---- (4) 名前と由来 ----
+
+        private static RegionPlaceName RenderProper(RegionNamingRules rules, Place place, Language language, Dictionary<string, int> uses, int[] personUses, out string own)
+        {
+            Skeleton skeleton = place.Proper;
+            var shown = new StringBuilder();
+            var proper = new StringBuilder();
+            var parts = new List<string>();
+            var reasons = new List<string>();
+            var notes = new List<string>();
+            var joins = new List<string>();
+            var gloss = new List<string>();
+            for (int s = 0; s < skeleton.Slots.Count; s++)
+            {
+                Slot slot = skeleton.Slots[s];
+                bool beforeNoun = s + 1 < skeleton.Slots.Count && skeleton.Slots[s + 1].Type == 'N';
+                string piece;
+                switch (slot.Type)
+                {
+                    case 'L':
+                        shown.Append(slot.Text);
+                        if (!beforeNoun) proper.Append(slot.Text);
+                        continue;
+                    case 'N':
+                        shown.Append(slot.Text);
+                        continue;
+                    case 'R':
+                        var run = new List<string>();
+                        var runGloss = new List<string>();
+                        int end = s;
+                        while (end < skeleton.Slots.Count && skeleton.Slots[end].Type == 'R')
+                        {
+                            Fact fact = skeleton.Slots[end].Fact;
+                            run.Add(fact.Meaning);
+                            parts.Add(language.Root(fact.Meaning) + "（" + fact.Meaning + "）");
+                            runGloss.Add(language.Root(fact.Meaning) + "（" + (fact.Key == "出来事" ? "出来事・" : "") + fact.Meaning + "）");
+                            if (fact.Key == "出来事") reasons.Add("経緯に置いた出来事「" + fact.Meaning + "」に由来");
+                            else if (fact.Why != null && fact.Why != fact.Meaning) reasons.Add(fact.Meaning + "＝" + fact.Why);
+                            Count(uses, fact.Meaning);
+                            end++;
+                        }
+                        s = end - 1;
+                        piece = language.Join(run.ToArray(), joins);
+                        gloss.Add(string.Join("＋", runGloss.ToArray()));
+                        break;
+                    case 'P':
+                        piece = language.Person(slot.Person);
+                        parts.Add(piece + "（人名）");
+                        string role = Role(rules, slot.Person);
+                        notes.Add("経緯に置いた人物「" + piece + "」" + (role != null ? "（" + role + "）" : "") + "に由来");
+                        gloss.Add("人物「" + piece + "」" + (role != null ? "（" + role + "）" : "") + "から");
+                        if (slot.Person < personUses.Length) personUses[slot.Person]++;
+                        break;
+                    case 'O':
+                        piece = place.OldText;
+                        notes.Add("古い呼び名「" + piece + "」に、今のことばの類の語を付けた");
+                        gloss.Add("古い呼び名「" + piece + "」から");
+                        break;
+                    case 'A':
+                        piece = slot.Ref.ProperText;
+                        notes.Add("エリア「" + slot.Ref.FullText + "」の固有名から" + (place.Conditions.Contains("エリアの代表") ? "（このエリアで種類に最も合う地点）" : ""));
+                        gloss.Add("エリア「" + slot.Ref.FullText + "」から");
+                        break;
+                    default:
+                        piece = slot.Ref.ProperText;
+                        notes.Add((slot.Ref.Type == 3 ? "そばの峰「" : "そばの川「") + slot.Ref.FullText + "」の固有名から");
+                        gloss.Add((slot.Ref.Type == 3 ? "峰「" : "川「") + slot.Ref.FullText + "」から");
+                        break;
+                }
+                shown.Append(piece);
+                proper.Append(piece);
+            }
+
+            var origin = new StringBuilder("型「").Append(skeleton.Pattern.Template).Append("」");
+            if (parts.Count > 0) origin.Append("。").Append(string.Join("＋", parts.ToArray()));
+            if (notes.Count > 0) origin.Append("。").Append(string.Join("。", notes.ToArray()));
+            if (reasons.Count > 0) origin.Append("。").Append(string.Join("、", reasons.ToArray()));
+            if (joins.Count > 0) origin.Append("。つなぎの音: ").Append(string.Join("、", joins.ToArray()));
+            own = proper.ToString();
+            return new RegionPlaceName
+            {
+                Kind = RegionNameKind.Proper, Text = shown.ToString(), Skeleton = Describe(skeleton, place, true), Origin = origin.ToString(),
+                Gloss = string.Join("、", gloss.ToArray()),
+            };
+        }
+
+        private static RegionPlaceName RenderOld(Place place, Language language, Dictionary<string, int> uses)
+        {
+            var parts = new List<string>();
+            var reasons = new List<string>();
+            var joins = new List<string>();
+            string[] meanings = Meanings(place.Old);
+            for (int s = 0; s < place.Old.Slots.Count; s++)
+            {
+                Fact fact = place.Old.Slots[s].Fact;
+                parts.Add(language.Root(fact.Meaning) + "（" + fact.Meaning + "）");
+                if (fact.Why != null && fact.Why != fact.Meaning) reasons.Add(fact.Meaning + "＝" + fact.Why);
+                Count(uses, fact.Meaning);
+            }
+            var origin = new StringBuilder("前のことば（音の質感「").Append(language.Profile.Name).Append("」）の語根。").Append(string.Join("＋", parts.ToArray()));
+            if (reasons.Count > 0) origin.Append("。").Append(string.Join("、", reasons.ToArray()));
+            string text = language.Join(meanings, joins);
+            if (joins.Count > 0) origin.Append("。つなぎの音: ").Append(string.Join("、", joins.ToArray()));
+            return new RegionPlaceName
+            {
+                Kind = RegionNameKind.Old, Text = text, Skeleton = Describe(place.Old, place, true), Origin = origin.ToString(),
+                Gloss = "前のことば: " + string.Join("＋", parts.ToArray()),
+            };
+        }
+
+        private static RegionPlaceName Designation(RegionNamingRules rules, Place place, int seed, HashSet<string> texts, string remark)
+        {
+            string template;
+            if (!rules.Designations.TryGetValue(place.DesignationKey, out template)) template = "{種}-{番}";
+            int x = Math.Max(0, Math.Min(99, (int)Math.Round(place.MapX)));
+            int y = Math.Max(0, Math.Min(99, (int)Math.Round(place.MapY)));
+            var text = new StringBuilder();
+            var notes = new List<string>();
+            List<string> tokens = Tokens(template);
+            bool coordinates = false;
+            for (int t = 0; t < tokens.Count; t++)
+            {
+                switch (tokens[t])
+                {
+                    case "{種}":
+                        text.Append(place.Code);
+                        notes.Add(place.Code + "＝" + place.Noun);
+                        break;
+                    case "{番}":
+                        text.Append(place.Number.ToString("00"));
+                        notes.Add(place.Number.ToString("00") + "＝番号");
+                        break;
+                    case "{横}":
+                        text.Append(x.ToString("00"));
+                        coordinates = true;
+                        break;
+                    case "{縦}":
+                        text.Append(y.ToString("00"));
+                        coordinates = true;
+                        break;
+                    case "{seed}":
+                        text.Append(seed);
+                        notes.Add(seed + "＝地域の seed");
+                        break;
+                    default: text.Append(tokens[t]); break;
                 }
             }
+            if (coordinates) notes.Add("数字＝地図の座標（横 " + x + "・縦 " + y + "）");
+            string gloss = place.Noun + (coordinates ? "・座標 横 " + x + " 縦 " + y : (place.Type == 0 ? "・seed " + seed : "・番号 " + place.Number));
+            string made = text.ToString();
+            string unique = made;
+            for (int suffix = 0; !texts.Add(unique); suffix++) unique = made + (char)('b' + suffix);
+            string origin = "型「" + template + "」。" + string.Join("、", notes.ToArray());
+            if (remark != null) origin += "。" + remark;
+            return new RegionPlaceName { Kind = RegionNameKind.Designation, Text = unique, Skeleton = template, Origin = origin, Gloss = gloss };
+        }
+
+        private static void WriteBack(Place place, List<RegionPlaceName> names)
+        {
+            RegionPlaceName first = names[0];
+            if (place.FullText == null) place.FullText = first.Text;
+            if (place.Area != null)
+            {
+                place.Area.Names = names;
+                place.Area.Name = first.Text;
+                place.Area.NameOrigin = first.Origin;
+            }
+            else if (place.Site != null)
+            {
+                place.Site.Names = names;
+                place.Site.Feature = first.Text;
+                place.Site.Name = first.Text;
+                place.Site.NameOrigin = first.Origin;
+            }
+            else
+            {
+                place.Feature.Names = names;
+                place.Feature.Name = first.Text;
+                place.Feature.NameOrigin = first.Origin;
+            }
+        }
+
+        private static string Role(RegionNamingRules rules, int person)
+        {
+            return rules.Roles.Count > 0 ? rules.Roles[person % rules.Roles.Count] : null;
+        }
+
+        private static void Count(Dictionary<string, int> uses, string meaning)
+        {
+            int count;
+            uses.TryGetValue(meaning, out count);
+            uses[meaning] = count + 1;
         }
 
         private static Fact PickFact(List<Fact> facts, int key, int slot, uint seed)
@@ -792,10 +1292,11 @@ Sunken = 沈んだ遺構
         }
 
         /// <summary>既にある名前と同じか、同じ長さで 1 字だけ違う（見分けにくい）か。</summary>
-        private static bool TooClose(string name, HashSet<string> used)
+        private static bool TooClose(string name, List<string> used)
         {
-            foreach (string other in used)
+            for (int u = 0; u < used.Count; u++)
             {
+                string other = used[u];
                 if (other.Length != name.Length) continue;
                 int different = 0;
                 for (int i = 0; i < name.Length && different < 2; i++)
@@ -826,7 +1327,7 @@ Sunken = 沈んだ遺構
             return (int)(hash & 0x7fffffff);
         }
 
-        /// <summary>読める並びか（長さ、同じ字の連続、「ン」「ー」の重なり、避ける並び）。</summary>
+        /// <summary>読める並びか（長さ、同じ字の連続、「ン」「ー」「ッ」の重なり、避ける並び）。</summary>
         private static bool Readable(string name, RegionNamingRules rules, int min, int max)
         {
             if (name.Length < min || name.Length > max) return false;
@@ -837,7 +1338,7 @@ Sunken = 沈んだ遺構
                 if (c == p) return false;
                 if (c == 'ー' && (p == 'ン' || p == 'ッ')) return false;
                 if (c == 'ッ' && (p == 'ー' || p == 'ン')) return false;
-                if (c == 'ン' && p == 'ー') return false;
+                if (c == 'ン' && (p == 'ー' || p == 'ッ')) return false;
             }
             char last = name[name.Length - 1];
             if (last == 'ー' || last == 'ッ') return false;

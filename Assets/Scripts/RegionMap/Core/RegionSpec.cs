@@ -63,6 +63,9 @@ namespace Vastcore.RegionMap
         /// <summary>命名の規則のテキスト（RegionNameStyle.Systematic で使う）。null なら組み込みの既定。</summary>
         public string NamingRulesText;
 
+        /// <summary>音の質感の名前（規則の [音 …]）。null なら規則の [全体] に書かれた質感。骨格は変えずに音だけを付け替える。</summary>
+        public string NamingSound;
+
         public RegionSpec Clone()
         {
             return (RegionSpec)MemberwiseClone();

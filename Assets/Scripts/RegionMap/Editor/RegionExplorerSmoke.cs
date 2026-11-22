@@ -316,6 +316,31 @@ namespace Vastcore.RegionMap.Editor
                 case 33:
                     Capture(output, "detail-12-panned-ready-x64.png");
                     break;
+                case 34:
+                    // 名前の確認の準備: 描き方を衛星写真へ戻す（地図帳 → 立体 → 衛星写真）
+                    explorer.NextStyle();
+                    break;
+                case 35:
+                    explorer.NextStyle();
+                    break;
+                case 36:
+                    // 名前が 2 つ以上ある地点（土地の名と、古い呼び名や記号名）を発見して、カードの別名と由来を撮る
+                    RegionSite named = NamedSite(explorer);
+                    if (named != null)
+                    {
+                        explorer.SetView(1f, named.MapX, named.MapY);
+                        explorer.MoveCursor(named.MapX, named.MapY);
+                        SearchResult foundNamed = explorer.SearchAtCursor();
+                        Debug.Log("[RegionMap] 名前が複数ある地点のサーチ: " + foundNamed.Signal + " / " + named.Name + "（名前 " + named.Names.Count + " つ）");
+                    }
+                    else
+                    {
+                        Debug.Log("[RegionMap] 名前が複数ある未発見の地点は無い");
+                    }
+                    break;
+                case 37:
+                    Capture(output, "explorer-8-named.png");
+                    break;
                 default:
                     Vector2 drift = explorer.CloudDrift - _driftAtReady;
                     DetailLog.Append("作っていない間の更新の最長間隔 ").Append((_idleLongestGap * 1000.0).ToString("0")).Append(" ms").Append('\n');
@@ -328,6 +353,18 @@ namespace Vastcore.RegionMap.Editor
             }
             SessionState.SetInt(StepKey, step + 1);
             _wait = FramesBetweenSteps;
+        }
+
+        /// <summary>まだ発見していない地点のうち、名前がいちばん多い物（2 つ以上ある時だけ）。</summary>
+        private static RegionSite NamedSite(RegionExplorer explorer)
+        {
+            RegionSite best = null;
+            foreach (RegionSite site in explorer.Region.Sites)
+            {
+                if (site.Names.Count < 2 || explorer.Session.IsDiscovered(site)) continue;
+                if (best == null || site.Names.Count > best.Names.Count) best = site;
+            }
+            return best;
         }
 
         private static void Capture(string output, string name)

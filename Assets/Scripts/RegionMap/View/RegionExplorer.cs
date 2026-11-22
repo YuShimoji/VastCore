@@ -17,7 +17,8 @@ namespace Vastcore.RegionMap
     [DisallowMultipleComponent]
     public sealed class RegionExplorer : MonoBehaviour
     {
-        [SerializeField] private RegionSpec _spec = new RegionSpec();
+        // 探索画面の呼び名は、規則から作った名前（記号名・土地の名・古い呼び名）を既定にする
+        [SerializeField] private RegionSpec _spec = new RegionSpec { NameStyle = RegionNameStyle.Systematic };
         [SerializeField] private RegionRenderOptions _render = new RegionRenderOptions();
 
         [Tooltip("オンにすると、サーチしなくてもカーソル位置の反応を常に表示する。")]
@@ -37,8 +38,10 @@ namespace Vastcore.RegionMap
         private const float ToolHeight = 42f;
         private const float ListHeader = 44f;
         private const float ListRow = 27f;
+        // 一覧の行に由来の小さな行を出す時の高さ。行が多くて入らない時は 1 行（ListRow）へ戻す
+        private const float ListRowWithGloss = 42f;
         private const float CardWidth = 380f;
-        private const float CardHeight = 150f;
+        private const float CardHeight = 218f;
         // 細部の地形（RegionDetailLayer）へ切り替わる拡大率から、窓が地図の幅 4 km になる 64 倍まで拡大できる
         private const float MaxZoom = 64f;
         private const float DetailBadgeWidth = 360f;
@@ -56,6 +59,8 @@ namespace Vastcore.RegionMap
         private static readonly Color AccentTextColor = new Color32(40, 28, 8, 255);
         private static readonly Color OffColor = new Color(1f, 1f, 1f, 0.22f);
         private static readonly Color AreaNameColor = new Color(1f, 1f, 1f, 0.95f);
+        // 川と湾の名前は、陸の名前と見分けられるよう水色へ寄せる
+        private static readonly Color FeatureWaterColor = new Color(0.78f, 0.9f, 1f, 0.95f);
 
         // 雲の濃さの段（ボタンで順に切り替える）
         private static readonly float[] CloudOpacity = { 1f, 0.45f, 0f };
@@ -109,6 +114,9 @@ namespace Vastcore.RegionMap
         private RawImage _areaLines;
         private RectTransform _areaLabelRoot;
         private readonly List<RectTransform> _areaLabels = new List<RectTransform>();
+        private readonly List<RectTransform> _featureLabels = new List<RectTransform>();
+        private readonly List<RegionFeature> _featureLabelOwners = new List<RegionFeature>();
+        private readonly List<Text> _listGloss = new List<Text>();
         private RectTransform _cursor;
         private RectTransform _range;
         private RectTransform _markerRoot;
@@ -149,6 +157,8 @@ namespace Vastcore.RegionMap
         private RectTransform _cardLine;
         private Text _cardEyebrow;
         private Text _cardTitle;
+        private Text _cardAlias;
+        private Text _cardOrigin;
         private Text _cardKind;
         private Text _cardPosition;
         private Text _cardHeight;
@@ -551,7 +561,8 @@ namespace Vastcore.RegionMap
                 ClearDiscovered();
                 BuildAreaLabels();
                 ClampView();
-                _title.text = "地域 seed " + _data.Spec.Seed;
+                RegionFeature region = _data.Features.Find(f => f.Kind == RegionFeatureKind.Region);
+                _title.text = (region != null && !string.IsNullOrEmpty(region.Name) ? region.Name : "地域") + "　seed " + _data.Spec.Seed;
                 _subtitle.text = string.Format("{0:0} km 四方 ・ 陸 {1:0}% ・ 最高 {2} m", _data.SizeKm, _data.LandFraction * 100f, Meters(_data.MaxHeight));
                 ShowMessage("地図をクリックして位置を決め、サーチで調べる", 8f);
             }
@@ -813,6 +824,13 @@ namespace Vastcore.RegionMap
                 RegionArea area = _data.Areas[a];
                 _areaLabels[a].anchoredPosition = MapToLocal(new Vector2(area.LabelX, area.LabelY));
             }
+            for (int f = 0; f < _featureLabels.Count; f++)
+            {
+                RegionFeature feature = _featureLabelOwners[f];
+                // 峰は頂の印に重ならないよう、名前を少し下へずらす
+                Vector2 at = MapToLocal(new Vector2(feature.MapX, feature.MapY));
+                _featureLabels[f].anchoredPosition = feature.Kind == RegionFeatureKind.Peak ? at + new Vector2(0f, -16f) : at;
+            }
 
             _cursor.anchoredPosition = MapToLocal(_cursorMap);
             _range.anchoredPosition = _cursor.anchoredPosition;
@@ -824,6 +842,47 @@ namespace Vastcore.RegionMap
                 _markers[m].anchoredPosition = MapToLocal(new Vector2(site.MapX, site.MapY));
             }
             PlaceCard();
+            RefreshLabelCover();
+        }
+
+        /// <summary>
+        /// 読めなくなる地名を隠す。カードの下に入る地名（カードは半透明なので、字が透けて重なる）、
+        /// カードを出している地点の輪に重なる地名、下端の案内の帯に掛かる地名、エリアの名前や先に置いた名前に重なる川・峰・湾の名前。
+        /// 拡大して離れれば、また出る。
+        /// </summary>
+        private void RefreshLabelCover()
+        {
+            bool card = _cardSite != null;
+            Vector2 corner = _card.anchoredPosition;
+            Vector2 ring = card ? MapToLocal(new Vector2(_cardSite.MapX, _cardSite.MapY)) : Vector2.zero;
+            float floor = -ViewSize().y * 0.5f + Margin + ToolHeight + 18f;
+            for (int a = 0; a < _areaLabels.Count; a++)
+            {
+                Vector2 at = _areaLabels[a].anchoredPosition;
+                _areaLabels[a].gameObject.SetActive(at.y >= floor && !(card && (UnderCard(at, corner, 76f, 14f) || Near(at, ring, 96f, 44f))));
+            }
+            for (int f = 0; f < _featureLabels.Count; f++)
+            {
+                Vector2 at = _featureLabels[f].anchoredPosition;
+                bool hidden = at.y < floor || (card && (UnderCard(at, corner, 60f, 12f) || Near(at, ring, 84f, 42f)));
+                for (int a = 0; a < _areaLabels.Count && !hidden; a++)
+                    hidden = _areaLabels[a].gameObject.activeSelf && Near(at, _areaLabels[a].anchoredPosition, 132f, 24f);
+                for (int g = 0; g < f && !hidden; g++)
+                    hidden = _featureLabels[g].gameObject.activeSelf && Near(at, _featureLabels[g].anchoredPosition, 104f, 18f);
+                _featureLabels[f].gameObject.SetActive(!hidden);
+            }
+        }
+
+        /// <summary>中心が at で、半分の幅と高さが halfWidth・halfHeight の字が、カード（左上の角が corner）に掛かるか。</summary>
+        private static bool UnderCard(Vector2 at, Vector2 corner, float halfWidth, float halfHeight)
+        {
+            return at.x + halfWidth > corner.x && at.x - halfWidth < corner.x + CardWidth
+                && at.y - halfHeight < corner.y && at.y + halfHeight > corner.y - CardHeight;
+        }
+
+        private static bool Near(Vector2 a, Vector2 b, float width, float height)
+        {
+            return Mathf.Abs(a.x - b.x) < width && Mathf.Abs(a.y - b.y) < height;
         }
 
         /// <summary>雲と影の層の見え方を、描き方と濃さの段に合わせる。雲があるのは衛星写真の時だけ。</summary>
@@ -865,6 +924,26 @@ namespace Vastcore.RegionMap
                 edge.effectDistance = new Vector2(1.5f, -1.5f);
                 label.rectTransform.sizeDelta = new Vector2(240f, 30f);
                 _areaLabels.Add(label.rectTransform);
+            }
+
+            // 川・峰・湾の名前（規則から名前を付けた時だけある）。エリアの名前より小さく、記号名だけの物はさらに薄くする
+            for (int f = 0; f < _featureLabels.Count; f++) Destroy(_featureLabels[f].gameObject);
+            _featureLabels.Clear();
+            _featureLabelOwners.Clear();
+            for (int f = 0; f < _data.Features.Count; f++)
+            {
+                RegionFeature feature = _data.Features[f];
+                if (feature.Kind == RegionFeatureKind.Region || string.IsNullOrEmpty(feature.Name)) continue;
+                bool codeOnly = feature.Names.Count > 0 && feature.Names[0].Kind == RegionNameKind.Designation;
+                Color color = feature.Kind == RegionFeatureKind.Peak ? AreaNameColor : FeatureWaterColor;
+                if (codeOnly) color.a = 0.62f;
+                Text label = CreateText(_areaLabelRoot, feature.Kind + " " + feature.Id, feature.Name, codeOnly ? 13 : 15, color, TextAnchor.MiddleCenter, codeOnly ? _numberFont : _font);
+                Outline edge = label.gameObject.AddComponent<Outline>();
+                edge.effectColor = new Color(0f, 0f, 0f, 0.9f);
+                edge.effectDistance = new Vector2(1.2f, -1.2f);
+                label.rectTransform.sizeDelta = new Vector2(200f, 24f);
+                _featureLabels.Add(label.rectTransform);
+                _featureLabelOwners.Add(feature);
             }
         }
 
@@ -920,6 +999,15 @@ namespace Vastcore.RegionMap
             Place(index.rectTransform, 0f, 0f, 30f, ListRow - 1f);
             Text name = CreateText(row, "Name", site.Name, 18, TextColor, TextAnchor.MiddleLeft, _font);
             Place(name.rectTransform, 34f, 0f, PartInner - 34f - 112f, ListRow - 1f);
+            // 名前の下に、由来を小さく出す（規則から作った名前の時だけ中身がある）
+            Text gloss = CreateText(row, "Origin", site.Names.Count > 0 ? site.Names[0].Gloss : "", 13, MutedColor, TextAnchor.UpperLeft, _font, false);
+            Place(gloss.rectTransform, 34f, -(ListRow - 3f), PartInner - 34f, 17f);
+            gloss.horizontalOverflow = HorizontalWrapMode.Wrap;
+            gloss.verticalOverflow = VerticalWrapMode.Truncate;
+            gloss.resizeTextForBestFit = true;
+            gloss.resizeTextMinSize = 10;
+            gloss.resizeTextMaxSize = 13;
+            _listGloss.Add(gloss);
             // 「南東の第二平野・川辺」のような長い名前は、座標に重ねず、枠の幅に収まるまで字を小さくする
             name.horizontalOverflow = HorizontalWrapMode.Wrap;
             name.resizeTextForBestFit = true;
@@ -938,17 +1026,21 @@ namespace Vastcore.RegionMap
         {
             int count = _listRows.Count;
             float room = ViewSize().y - _listTop - ListHeader - 10f - (Margin + ToolHeight + 14f);
-            float pitch = count > 0 ? Mathf.Min(ListRow, room / count) : ListRow;
+            // 由来の行は、全部の行が重ならずに入る時だけ出す。入らなければ名前だけの行へ戻す
+            bool withGloss = count > 0 && room / count >= ListRowWithGloss && _listGloss.Exists(g => g.text.Length > 0);
+            float rowHeight = withGloss ? ListRowWithGloss : ListRow;
+            float pitch = count > 0 ? Mathf.Min(rowHeight, room / count) : rowHeight;
             for (int r = 0; r < count; r++)
             {
                 RectTransform row = _listRows[r];
                 row.anchorMin = new Vector2(0f, 1f);
                 row.anchorMax = new Vector2(1f, 1f);
                 row.pivot = new Vector2(0.5f, 1f);
-                row.sizeDelta = new Vector2(0f, ListRow - 1f);
+                row.sizeDelta = new Vector2(0f, rowHeight - 1f);
                 row.anchoredPosition = new Vector2(0f, -r * pitch);
+                _listGloss[r].gameObject.SetActive(withGloss);
             }
-            float height = count > 0 ? ListHeader + (count - 1) * pitch + ListRow + 8f : ListHeader;
+            float height = count > 0 ? ListHeader + (count - 1) * pitch + rowHeight + 8f : ListHeader;
             _listPart.sizeDelta = new Vector2(PartWidth, height);
         }
 
@@ -969,6 +1061,7 @@ namespace Vastcore.RegionMap
             _markerSites.Clear();
             for (int r = 0; r < _listRows.Count; r++) Destroy(_listRows[r].gameObject);
             _listRows.Clear();
+            _listGloss.Clear();
             LayoutList();
             HideCard();
         }
@@ -983,12 +1076,18 @@ namespace Vastcore.RegionMap
             string where = area != null ? area.Name : _data.PlaceNameAtMap(site.MapX, site.MapY);
             _cardEyebrow.text = "発見　" + number.ToString("00", CultureInfo.InvariantCulture) + " / " + _session.TotalSites + "　・　" + where;
             _cardTitle.text = site.Feature;
+            // 別名＝表に出ている名前の他に付いている名前（古い呼び名・記号名）。由来＝表に出ている名前の成り立ち
+            var others = new List<string>();
+            for (int n = 1; n < site.Names.Count; n++) others.Add(site.Names[n].Text + "（" + RegionNaming.KindLabel(site.Names[n].Kind) + "）");
+            _cardAlias.text = site.Names.Count == 0 ? "" : "別名　" + (others.Count > 0 ? string.Join(" ・ ", others.ToArray()) : "なし");
+            _cardOrigin.text = site.Names.Count == 0 ? "" : RegionNaming.KindLabel(site.Names[0].Kind) + "。" + site.Names[0].Gloss;
             _cardKind.text = KindName(site.Kind);
             _cardPosition.text = site.MapX.ToString("0.0", CultureInfo.InvariantCulture) + " , " + site.MapY.ToString("0.0", CultureInfo.InvariantCulture);
             _cardHeight.text = Meters(site.HeightMeters) + " m";
             _card.gameObject.SetActive(true);
             _cardLine.gameObject.SetActive(true);
             PlaceCard();
+            RefreshLabelCover();
         }
 
         private void HideCard()
@@ -996,6 +1095,7 @@ namespace Vastcore.RegionMap
             _cardSite = null;
             _card.gameObject.SetActive(false);
             _cardLine.gameObject.SetActive(false);
+            RefreshLabelCover();
         }
 
         /// <summary>カードを印の右下に置く。画面の右や下にはみ出す時は、反対側へ回す。印とカードは細い線でつなぐ。</summary>
@@ -1196,14 +1296,32 @@ namespace Vastcore.RegionMap
             Place(_cardEyebrow.rectTransform, PartPad, -10f, CardWidth - PartPad * 2f, 22f);
             _cardTitle = CreateText(_card, "Title", "", 25, TextColor, TextAnchor.UpperLeft, _font);
             Place(_cardTitle.rectTransform, PartPad, -30f, CardWidth - PartPad * 2f, 36f);
-            _cardKind = CreateFact(_card, "種類", PartPad, -74f, 96f, _font);
-            _cardPosition = CreateFact(_card, "座標", PartPad + 100f, -74f, 128f, _numberFont);
-            _cardHeight = CreateFact(_card, "標高", PartPad + 232f, -74f, 110f, _numberFont);
+            _cardAlias = CreateText(_card, "Alias", "", 15, MutedColor, TextAnchor.UpperLeft, _font);
+            Place(_cardAlias.rectTransform, PartPad, -66f, CardWidth - PartPad * 2f, 20f);
+            FitText(_cardAlias, 11, 15);
+            _cardKind = CreateFact(_card, "種類", PartPad, -92f, 96f, _font);
+            _cardPosition = CreateFact(_card, "座標", PartPad + 100f, -92f, 128f, _numberFont);
+            _cardHeight = CreateFact(_card, "標高", PartPad + 232f, -92f, 110f, _numberFont);
+            Text originLabel = CreateText(_card, "Origin Label", "由来", 14, MutedColor, TextAnchor.UpperLeft, _font);
+            Place(originLabel.rectTransform, PartPad, -144f, 40f, 20f);
+            _cardOrigin = CreateText(_card, "Origin", "", 15, TextColor, TextAnchor.UpperLeft, _font);
+            Place(_cardOrigin.rectTransform, PartPad + 44f, -143f, CardWidth - PartPad * 2f - 44f, 42f);
+            FitText(_cardOrigin, 11, 15);
             Text close = CreateText(_card, "Close", "次のサーチか Esc で閉じる", 15, MutedColor, TextAnchor.UpperLeft, _font);
-            Place(close.rectTransform, PartPad, -122f, CardWidth - PartPad * 2f, 22f);
+            Place(close.rectTransform, PartPad, -190f, CardWidth - PartPad * 2f, 22f);
 
             _card.gameObject.SetActive(false);
             _cardLine.gameObject.SetActive(false);
+        }
+
+        /// <summary>枠に収まるまで字を小さくし、枠の幅で折り返す（長い別名・由来のため）。</summary>
+        private static void FitText(Text text, int min, int max)
+        {
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
+            text.resizeTextForBestFit = true;
+            text.resizeTextMinSize = min;
+            text.resizeTextMaxSize = max;
         }
 
         /// <summary>小さな見出しと、その下の値。値の Text を返す。</summary>

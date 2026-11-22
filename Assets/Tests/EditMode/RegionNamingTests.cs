@@ -6,14 +6,39 @@ namespace Vastcore.Tests.EditMode
 {
     /// <summary>
     /// 命名の規則と、川の上の地点を川岸へ移す処理の、後から依存される約束だけを確かめる
-    /// （同じ seed は同じ名前、名前は重ならない、同じ意味は同じ語根、規則の書き換えが効く、由来が残る）。
-    /// 名前の響きの良し悪しは対象外。
+    /// （同じ seed は同じ名前、名前は重ならない、同じ意味は同じ語根、音を付け替えても骨格は同じ、
+    /// 土地の経緯で名前の種類が変わる、規則の書き換えが効く、由来が残る）。名前の響きの良し悪しは対象外。
     /// </summary>
     public class RegionNamingTests
     {
         private static RegionSpec SmallSpec(int seed)
         {
             return new RegionSpec { Seed = seed, Resolution = 128, ErosionIterations = 8, SiteCount = 10, NameStyle = RegionNameStyle.Systematic };
+        }
+
+        private static string Rules(string from, string to)
+        {
+            string text = RegionNamingRules.DefaultText.Replace("\r\n", "\n");
+            StringAssert.Contains(from, text);
+            return text.Replace(from, to);
+        }
+
+        private static RegionData Generate(int seed, string rules, string sound = null)
+        {
+            RegionSpec spec = SmallSpec(seed);
+            spec.NamingRulesText = rules;
+            spec.NamingSound = sound;
+            return RegionGenerator.Generate(spec);
+        }
+
+        /// <summary>地域・エリア・川・峰・湾・地点の、名前の並びを 1 列にする。</summary>
+        private static List<List<RegionPlaceName>> AllNames(RegionData data)
+        {
+            var all = new List<List<RegionPlaceName>>();
+            for (int k = 0; k < data.Features.Count; k++) all.Add(data.Features[k].Names);
+            for (int k = 0; k < data.Areas.Count; k++) all.Add(data.Areas[k].Names);
+            for (int k = 0; k < data.Sites.Count; k++) all.Add(data.Sites[k].Names);
+            return all;
         }
 
         [Test]
@@ -24,83 +49,204 @@ namespace Vastcore.Tests.EditMode
             var names = new HashSet<string>();
             Assert.Greater(a.Areas.Count, 0);
             Assert.Greater(a.Sites.Count, 0);
+            Assert.AreEqual(0, a.Naming.Problems.Count, string.Join(" / ", a.Naming.Problems.ToArray()));
             for (int k = 0; k < a.Areas.Count; k++)
             {
                 Assert.AreEqual(a.Areas[k].Name, b.Areas[k].Name);
                 Assert.IsTrue(names.Add(a.Areas[k].Name), "同じ名前のエリアがある: " + a.Areas[k].Name);
                 Assert.IsFalse(string.IsNullOrEmpty(a.Areas[k].NameOrigin), "由来が無い: " + a.Areas[k].Name);
-                StringAssert.DoesNotContain("番号で代用", a.Areas[k].NameOrigin);
             }
             for (int k = 0; k < a.Sites.Count; k++)
             {
                 Assert.AreEqual(a.Sites[k].Name, b.Sites[k].Name);
                 Assert.IsTrue(names.Add(a.Sites[k].Name), "同じ名前の地点がある: " + a.Sites[k].Name);
                 Assert.IsFalse(string.IsNullOrEmpty(a.Sites[k].NameOrigin), "由来が無い: " + a.Sites[k].Name);
-                StringAssert.DoesNotContain("番号で代用", a.Sites[k].NameOrigin);
             }
 
-            // 前の作り方へ戻すと、由来は消える
+            // 地域そのものにも名前が付く。どの名前にも、種類・骨格・由来・短い由来がある
+            Assert.AreEqual(RegionFeatureKind.Region, a.Features[0].Kind);
+            Assert.IsFalse(string.IsNullOrEmpty(a.Features[0].Name));
+            List<List<RegionPlaceName>> all = AllNames(a);
+            List<List<RegionPlaceName>> again = AllNames(b);
+            for (int p = 0; p < all.Count; p++)
+            {
+                Assert.Greater(all[p].Count, 0);
+                Assert.AreEqual(all[p].Count, again[p].Count);
+                for (int n = 0; n < all[p].Count; n++)
+                {
+                    Assert.AreEqual(all[p][n].Text, again[p][n].Text);
+                    Assert.IsFalse(string.IsNullOrEmpty(all[p][n].Text));
+                    Assert.IsFalse(string.IsNullOrEmpty(all[p][n].Origin), "由来が無い: " + all[p][n].Text);
+                    Assert.IsFalse(string.IsNullOrEmpty(all[p][n].Gloss), "短い由来が無い: " + all[p][n].Text);
+                    Assert.IsFalse(string.IsNullOrEmpty(all[p][n].Skeleton), "骨格が無い: " + all[p][n].Text);
+                }
+            }
+
+            // 前の作り方へ戻すと、由来と名前の並びは消える
             RegionNames.Apply(a, RegionNameStyle.Descriptive);
             Assert.IsNull(a.Areas[0].NameOrigin);
             Assert.IsNull(a.Sites[0].NameOrigin);
+            Assert.AreEqual(0, a.Areas[0].Names.Count);
+            Assert.IsNull(a.Naming);
         }
 
         [Test]
         public void Systematic_SameMeaning_UsesSameRoot_InEveryName()
         {
-            RegionData data = RegionGenerator.Generate(SmallSpec(7));
-            List<RegionNameRoot> roots = RegionNaming.Roots(RegionNamingRules.Default, 7);
+            RegionData data = Generate(7, Rules("地域 = 混在", "地域 = 文明あり"));
+            List<RegionNameRoot> roots = data.Naming.Roots;
             var sounds = new HashSet<string>();
             int checkedNames = 0;
+            List<List<RegionPlaceName>> all = AllNames(data);
             for (int r = 0; r < roots.Count; r++)
             {
                 Assert.IsTrue(sounds.Add(roots[r].Sound), "同じ音の語根が 2 つある: " + roots[r].Sound);
                 string mark = roots[r].Sound + "（" + roots[r].Meaning + "）";
-                for (int k = 0; k < data.Areas.Count; k++)
+                int used = 0;
+                for (int p = 0; p < all.Count; p++)
                 {
-                    if (data.Areas[k].NameOrigin.IndexOf("（" + roots[r].Meaning + "）", System.StringComparison.Ordinal) < 0) continue;
-                    StringAssert.Contains(mark, data.Areas[k].NameOrigin);
-                    StringAssert.Contains(roots[r].Sound, data.Areas[k].Name);
-                    checkedNames++;
+                    for (int n = 0; n < all[p].Count; n++)
+                    {
+                        if (all[p][n].Kind != RegionNameKind.Proper) continue;
+                        if (all[p][n].Origin.IndexOf("（" + roots[r].Meaning + "）", System.StringComparison.Ordinal) < 0) continue;
+                        StringAssert.Contains(mark, all[p][n].Origin);
+                        used++;
+                    }
                 }
-                for (int k = 0; k < data.Sites.Count; k++)
-                {
-                    if (data.Sites[k].NameOrigin.IndexOf("（" + roots[r].Meaning + "）", System.StringComparison.Ordinal) < 0) continue;
-                    StringAssert.Contains(mark, data.Sites[k].NameOrigin);
-                    StringAssert.Contains(roots[r].Sound, data.Sites[k].Name);
-                    checkedNames++;
-                }
+                Assert.AreEqual(roots[r].Uses, used, "語根「" + roots[r].Meaning + "」を使った名前の数");
+                checkedNames += used;
             }
             Assert.Greater(checkedNames, 0);
         }
 
         [Test]
-        public void Rules_WrittenRoot_FixedName_AndNoun_AreUsed()
+        public void Skeleton_StaysTheSame_WhenTheSoundIsSwapped()
         {
-            RegionData plain = RegionGenerator.Generate(SmallSpec(7));
-            string text = RegionNamingRules.DefaultText
-                .Replace("\n川 =", "\n川 = ミナ")
+            RegionData standard = Generate(7, null, "標準");
+            RegionData hard = Generate(7, null, "かたい");
+            Assert.AreEqual("標準", standard.Naming.Sound);
+            Assert.AreEqual("かたい", hard.Naming.Sound);
+            List<List<RegionPlaceName>> a = AllNames(standard);
+            List<List<RegionPlaceName>> b = AllNames(hard);
+            Assert.AreEqual(a.Count, b.Count);
+            int changed = 0;
+            for (int p = 0; p < a.Count; p++)
+            {
+                Assert.AreEqual(a[p].Count, b[p].Count);
+                for (int n = 0; n < a[p].Count; n++)
+                {
+                    Assert.AreEqual(a[p][n].Kind, b[p][n].Kind);
+                    Assert.AreEqual(a[p][n].Skeleton, b[p][n].Skeleton, "音を付け替えたら骨格が変わった: " + a[p][n].Text);
+                    if (a[p][n].Kind == RegionNameKind.Designation) Assert.AreEqual(a[p][n].Text, b[p][n].Text);
+                    if (a[p][n].Kind == RegionNameKind.Proper && a[p][n].Text != b[p][n].Text) changed++;
+                }
+            }
+            Assert.Greater(changed, 0, "音を付け替えても土地の名が 1 つも変わらなかった");
+        }
+
+        [Test]
+        public void History_Decides_WhichKindsOfNames_APlaceGets()
+        {
+            RegionData unexplored = Generate(7, Rules("地域 = 混在", "地域 = 未踏"));
+            foreach (List<RegionPlaceName> names in AllNames(unexplored))
+            {
+                Assert.AreEqual(1, names.Count);
+                Assert.AreEqual(RegionNameKind.Designation, names[0].Kind);
+            }
+            for (int k = 0; k < unexplored.Areas.Count; k++) Assert.AreEqual(RegionLandHistory.Unexplored, unexplored.Areas[k].History);
+
+            RegionData settled = Generate(7, Rules("地域 = 混在", "地域 = 文明あり"));
+            for (int k = 0; k < settled.Areas.Count; k++)
+            {
+                List<RegionPlaceName> names = settled.Areas[k].Names;
+                Assert.AreEqual(RegionNameKind.Proper, names[0].Kind, "文明のあるエリアの表の名前が土地の名でない: " + names[0].Text);
+                Assert.AreEqual(RegionNameKind.Designation, names[names.Count - 1].Kind);
+                Assert.IsFalse(names.Exists(n => n.Kind == RegionNameKind.Old));
+            }
+
+            RegionData ancient = Generate(7, Rules("地域 = 混在", "地域 = 古い文明"));
+            int old = 0;
+            foreach (List<RegionPlaceName> names in AllNames(ancient)) old += names.FindAll(n => n.Kind == RegionNameKind.Old).Count;
+            Assert.Greater(old, 0, "古い文明の土地に古い呼び名が 1 つも無い");
+
+            // エリアごとに決めた経緯は、地域の経緯より優先する
+            RegionData mixed = Generate(7, Rules("# エリアごとに決める時", "7/エリア1 = 未踏\n# エリアごとに決める時").Replace("地域 = 混在", "地域 = 文明あり"));
+            Assert.AreEqual(RegionLandHistory.Unexplored, mixed.Areas[0].History);
+            Assert.AreEqual(RegionNameKind.Designation, mixed.Areas[0].Names[0].Kind);
+            Assert.AreEqual(RegionLandHistory.Settled, mixed.Areas[1].History);
+        }
+
+        [Test]
+        public void Rules_WrittenRoot_FixedName_Noun_AndFacts_AreUsed()
+        {
+            string text = RegionNamingRules.DefaultText.Replace("\r\n", "\n")
+                .Replace("地域 = 混在", "地域 = 文明あり")
+                .Replace("[語根]\n", "[語根]\n川 = ミナ\n")
                 .Replace("Terrace = 段丘", "Terrace = 棚")
+                .Replace("森が広い = 緑の 森", "森が広い = 茂み")
                 + "\n7/エリア1 = 試しの名\n7/地点1 = 試しの地点\n";
             RegionNamingRules rules = RegionNamingRules.Parse(text);
             Assert.AreEqual(0, rules.Problems.Count, string.Join(" / ", rules.Problems.ToArray()));
 
-            RegionSpec spec = SmallSpec(7);
-            spec.NamingRulesText = text;
-            RegionData data = RegionGenerator.Generate(spec);
+            RegionData plain = RegionGenerator.Generate(SmallSpec(7));
+            RegionData data = Generate(7, text);
             Assert.AreEqual("試しの名", data.Areas[0].Name);
+            Assert.AreEqual(RegionNameKind.Decided, data.Areas[0].Names[0].Kind);
             Assert.AreEqual("試しの地点", data.Sites[0].Name);
             Assert.AreEqual(plain.Sites.Count, data.Sites.Count);
 
-            List<RegionNameRoot> roots = RegionNaming.Roots(rules, 7);
-            RegionNameRoot river = roots.Find(r => r.Meaning == "川");
+            RegionNameRoot river = data.Naming.Roots.Find(r => r.Meaning == "川");
             Assert.AreEqual("ミナ", river.Sound);
             Assert.IsTrue(river.Written);
-            for (int k = 0; k < data.Sites.Count; k++)
+            // 事実から意味への対応を書き換えると、新しい意味に語根が付き、外した意味は使われない
+            Assert.IsNotNull(data.Naming.Roots.Find(r => r.Meaning == "茂み"));
+            RegionNameRoot green = data.Naming.Roots.Find(r => r.Meaning == "緑の");
+            Assert.IsTrue(green == null || green.Uses == 0);
+
+            foreach (List<RegionPlaceName> names in AllNames(data))
             {
-                if (data.Sites[k].NameOrigin.IndexOf("（川）", System.StringComparison.Ordinal) >= 0) StringAssert.Contains("ミナ", data.Sites[k].Name);
-                if (data.Sites[k].Kind == RegionSiteKind.Terrace && k > 0) StringAssert.EndsWith("棚", data.Sites[k].Name);
+                for (int n = 0; n < names.Count; n++)
+                {
+                    if (names[n].Kind == RegionNameKind.Proper && names[n].Origin.IndexOf("（川）", System.StringComparison.Ordinal) >= 0) StringAssert.Contains("ミナ（川）", names[n].Origin);
+                }
             }
+            for (int k = 1; k < data.Sites.Count; k++)
+            {
+                RegionPlaceName first = data.Sites[k].Names[0];
+                if (data.Sites[k].Kind == RegionSiteKind.Terrace && first.Kind == RegionNameKind.Proper) StringAssert.EndsWith("棚", first.Text);
+            }
+        }
+
+        [Test]
+        public void Rules_WithOnlyOneSection_AreFilledFromTheDefault()
+        {
+            // 経緯だけを書いた規則。音・型・雰囲気・出来事は既定で補われ、問題は出ない
+            RegionNamingRules rules = RegionNamingRules.Parse("[土地の経緯]\n地域 = 古い文明\n");
+            Assert.AreEqual(0, rules.Problems.Count, string.Join(" / ", rules.Problems.ToArray()));
+            Assert.AreEqual(RegionNamingRules.Default.Sounds.Count, rules.Sounds.Count);
+            Assert.AreEqual(RegionNamingRules.Default.AreaPatterns.Count, rules.AreaPatterns.Count);
+            Assert.AreEqual(RegionNamingRules.Default.SitePatterns.Count, rules.SitePatterns.Count);
+            Assert.AreEqual(RegionNamingRules.Default.Mood.Count, rules.Mood.Count);
+            Assert.AreEqual(RegionNamingRules.Default.Events.Count, rules.Events.Count);
+
+            RegionData data = Generate(7, "[土地の経緯]\n地域 = 古い文明\n");
+            Assert.AreEqual(0, data.Naming.Problems.Count, string.Join(" / ", data.Naming.Problems.ToArray()));
+            for (int k = 0; k < data.Areas.Count; k++)
+            {
+                Assert.AreEqual(RegionNameKind.Proper, data.Areas[k].Names[0].Kind, "古い文明のエリアの表の名前が土地の名でない: " + data.Areas[k].Names[0].Text);
+                Assert.IsTrue(data.Areas[k].Names.Exists(n => n.Kind == RegionNameKind.Old), "古い呼び名が無い: " + data.Areas[k].Name);
+            }
+
+            // 見出しを書いて中身を空にした節は補わない（その部品を使わない、という指定）
+            RegionNamingRules noMood = RegionNamingRules.Parse("[雰囲気]\n");
+            Assert.AreEqual(0, noMood.Mood.Count);
+            Assert.AreEqual(RegionNamingRules.Default.Events.Count, noMood.Events.Count);
+
+            // 音の質感を 1 つだけ書いた規則。既定の質感も残り、付け替えられる
+            RegionNamingRules ownSound = RegionNamingRules.Parse("[全体]\n音の質感 = ためし\n[音 ためし]\n頭 = ア カ サ タ ナ ハ マ ヤ ラ ワ\n続き = イ キ シ チ ニ ヒ ミ リ ン\n");
+            Assert.AreEqual(0, ownSound.Problems.Count, string.Join(" / ", ownSound.Problems.ToArray()));
+            Assert.AreEqual("ためし", ownSound.SoundName);
+            Assert.IsNotNull(ownSound.Sound("かたい"));
         }
 
         [Test]
@@ -114,9 +260,26 @@ namespace Vastcore.Tests.EditMode
             StringAssert.Contains("行 10", all);
             Assert.AreEqual(1, rules.AreaPatterns.Count);
             Assert.AreEqual(0, rules.SitePatterns.Count);
+            // 書かれていない節（事実と意味、経緯、記号名など）は既定で補う
+            Assert.Greater(rules.Facts.Count, 0);
+            Assert.Greater(rules.NameKinds.Count, 0);
 
             Assert.AreEqual(0, RegionNamingRules.Default.Problems.Count, string.Join(" / ", RegionNamingRules.Default.Problems.ToArray()));
             Assert.AreSame(RegionNamingRules.Default, RegionNamingRules.Parse(null));
+            Assert.AreEqual(3, RegionNamingRules.Default.Sounds.Count);
+        }
+
+        [Test]
+        public void SoundProfile_Join_ChangesTheSound_AtTheSeam()
+        {
+            var profile = new RegionSoundProfile { MergeSame = true, VowelMode = 1, VoiceAfterN = true };
+            string note;
+            Assert.AreEqual("ケノラ", profile.Join("ケノ", "ノラ", out note));
+            Assert.IsNotNull(note);
+            Assert.AreEqual("ネローネ", profile.Join("ネロ", "オネ", out note));
+            Assert.AreEqual("カンガル", profile.Join("カン", "カル", out note));
+            Assert.AreEqual("ケノミナ", profile.Join("ケノ", "ミナ", out note));
+            Assert.IsNull(note);
         }
 
         [Test]

@@ -74,6 +74,12 @@ namespace Vastcore.RegionMap
 
         public readonly List<RegionSite> Sites = new List<RegionSite>();
 
+        /// <summary>名前を持てる地物（地域そのもの・川・峰・湾）。規則から名前を付けた時（RegionNaming）に作る。</summary>
+        public readonly List<RegionFeature> Features = new List<RegionFeature>();
+
+        /// <summary>規則から名前を付けた時の記録（音の質感、語根の表、人物、問題）。付けていなければ null。</summary>
+        public RegionNamingReport Naming;
+
         public float MaxHeight;
         public float LandFraction;
 

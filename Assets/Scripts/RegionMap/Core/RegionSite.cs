@@ -33,6 +33,12 @@ namespace Vastcore.RegionMap
         /// <summary>名前の由来（使った型・語根と意味・選んだ根拠）。規則から作った名前（Systematic）の時だけ入る。</summary>
         public string NameOrigin;
 
+        /// <summary>付いている名前の全部（先頭が Name）。規則から作った名前の時だけ入る。</summary>
+        public List<RegionPlaceName> Names = new List<RegionPlaceName>();
+
+        /// <summary>土地の経緯（属するエリアと同じ）。付ける名前の種類を決める。</summary>
+        public RegionLandHistory History;
+
         /// <summary>属するエリアの番号（RegionArea.Id）。外洋なら 0。</summary>
         public int AreaId;
 

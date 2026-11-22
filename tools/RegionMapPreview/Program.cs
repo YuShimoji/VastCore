@@ -80,6 +80,7 @@ namespace Vastcore.RegionMap.Preview
                         Console.WriteLine("命名の規則（既定）→ " + Path.GetFullPath(value));
                         a++;
                         break;
+                    case "--sound": spec.NamingSound = value; a++; break;
                     case "--namestyle": spec.NameStyle = (RegionNameStyle)Enum.Parse(typeof(RegionNameStyle), value, true); a++; break;
                     case "--detail": detailSites = value; a++; break;
                     case "--detailsize": detailSizes = value; a++; break;
@@ -180,50 +181,107 @@ namespace Vastcore.RegionMap.Preview
             return value == null ? "" : value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", " ");
         }
 
-        /// <summary>呼び名の作り方ごとに、エリアと地点の呼び名を並べて書き出す（比べるための一覧）。</summary>
+        /// <summary>
+        /// 規則から付けた名前を、音の質感ごとに書き出す（骨格は同じで音だけが変わることを比べるための一覧）。
+        /// 地域・エリア・川・峰・湾・地点のそれぞれに、付いた名前の全部（種類・骨格・由来）を入れる。
+        /// </summary>
         private static void WriteNames(RegionData data, string stem)
         {
-            RegionNameStyle original = data.Spec.NameStyle;
-            var text = new System.Text.StringBuilder();
+            RegionNameStyle originalStyle = data.Spec.NameStyle;
+            string originalSound = data.Spec.NamingSound;
             RegionNamingRules rules = RegionNamingRules.Parse(data.Spec.NamingRulesText);
-            for (int p = 0; p < rules.Problems.Count; p++) Console.WriteLine("命名の規則の問題 " + rules.Problems[p]);
-            text.Append("{\n  \"seed\": ").Append(data.Spec.Seed).Append(",\n  \"problems\": [");
-            for (int p = 0; p < rules.Problems.Count; p++) text.Append(p > 0 ? ", " : "").Append("\"").Append(Json(rules.Problems[p])).Append("\"");
-            text.Append("],\n  \"roots\": [");
-            System.Collections.Generic.List<RegionNameRoot> roots = RegionNaming.Roots(rules, data.Spec.Seed);
-            for (int r = 0; r < roots.Count; r++)
+            var text = new System.Text.StringBuilder();
+            text.Append("{\n  \"seed\": ").Append(data.Spec.Seed).Append(",\n  \"sounds\": [\n");
+            var order = new System.Collections.Generic.List<string>();
+            order.Add(string.IsNullOrEmpty(originalSound) ? rules.SoundName : originalSound);
+            for (int s = 0; s < rules.Sounds.Count; s++)
             {
-                text.Append(r > 0 ? ", " : "").Append("{\"meaning\": \"").Append(Json(roots[r].Meaning)).Append("\", \"sound\": \"").Append(Json(roots[r].Sound))
-                    .Append("\", \"written\": ").Append(roots[r].Written ? "true" : "false").Append(", \"mood\": ").Append(roots[r].Mood ? "true" : "false").Append("}");
+                if (!order.Contains(rules.Sounds[s].Name)) order.Add(rules.Sounds[s].Name);
             }
-            text.Append("],\n  \"styles\": [\n");
-            Array styles = Enum.GetValues(typeof(RegionNameStyle));
-            for (int s = 0; s < styles.Length; s++)
+            for (int s = 0; s < order.Count; s++)
             {
-                var style = (RegionNameStyle)styles.GetValue(s);
-                RegionNames.Apply(data, style);
-                Console.WriteLine("呼び名 " + style);
-                text.Append("    {\"style\": \"").Append(style).Append("\", \"areas\": [");
+                data.Spec.NamingSound = order[s];
+                RegionNames.Apply(data, RegionNameStyle.Systematic);
+                RegionNamingReport report = data.Naming;
+                Console.WriteLine("音の質感 " + report.Sound + "（古い呼び名は " + report.OldSound + "）");
+                for (int p = 0; p < report.Problems.Count; p++) Console.WriteLine("  問題 " + report.Problems[p]);
+                text.Append("    {\"sound\": \"").Append(Json(report.Sound)).Append("\", \"oldSound\": \"").Append(Json(report.OldSound)).Append("\", \"problems\": [");
+                for (int p = 0; p < report.Problems.Count; p++) text.Append(p > 0 ? ", " : "").Append("\"").Append(Json(report.Problems[p])).Append("\"");
+                text.Append("],\n      \"roots\": [");
+                AppendRoots(text, report.Roots);
+                text.Append("],\n      \"oldRoots\": [");
+                AppendRoots(text, report.OldRoots);
+                text.Append("],\n      \"people\": [");
+                for (int p = 0; p < report.People.Count; p++)
+                {
+                    text.Append(p > 0 ? ", " : "").Append("{\"name\": \"").Append(Json(report.People[p].Name)).Append("\", \"role\": \"").Append(Json(report.People[p].Role))
+                        .Append("\", \"uses\": ").Append(report.People[p].Uses).Append("}");
+                }
+                text.Append("],\n      \"places\": [\n");
+                bool any = false;
+                for (int f = 0; f < data.Features.Count; f++)
+                {
+                    RegionFeature feature = data.Features[f];
+                    if (feature.Kind != RegionFeatureKind.Region) continue;
+                    AppendPlace(text, ref any, "地域", 0, "Region", feature.History, 0, feature.MapX, feature.MapY, "", feature.Names);
+                }
                 for (int a = 0; a < data.Areas.Count; a++)
                 {
-                    text.Append(a > 0 ? ", " : "").Append("{\"id\": ").Append(data.Areas[a].Id).Append(", \"kind\": \"").Append(data.Areas[a].Kind)
-                        .Append("\", \"name\": \"").Append(Json(data.Areas[a].Name)).Append("\", \"origin\": \"").Append(Json(data.Areas[a].NameOrigin)).Append("\"}");
-                    Console.WriteLine("  エリア" + data.Areas[a].Id.ToString("00") + " " + data.Areas[a].Name + (data.Areas[a].NameOrigin != null ? "  ← " + data.Areas[a].NameOrigin : ""));
+                    RegionArea area = data.Areas[a];
+                    AppendPlace(text, ref any, "エリア", area.Id, area.Kind.ToString(), area.History, area.Id, area.LabelX, area.LabelY, Math.Round(area.AreaKm2) + " km²", area.Names);
                 }
-                text.Append("], \"sites\": [");
+                for (int f = 0; f < data.Features.Count; f++)
+                {
+                    RegionFeature feature = data.Features[f];
+                    if (feature.Kind == RegionFeatureKind.Region) continue;
+                    string type = feature.Kind == RegionFeatureKind.River ? "川" : (feature.Kind == RegionFeatureKind.Peak ? "山" : "湾");
+                    string size = feature.Kind == RegionFeatureKind.River ? "本流 約 " + Math.Round(feature.LengthKm) + " km"
+                        : (feature.Kind == RegionFeatureKind.Peak ? Math.Round(feature.HeightMeters) + " m" : "約 " + Math.Round(feature.AreaKm2) + " km²");
+                    AppendPlace(text, ref any, type, feature.Id, feature.Kind.ToString(), feature.History, feature.AreaId, feature.MapX, feature.MapY, size, feature.Names);
+                }
                 for (int k = 0; k < data.Sites.Count; k++)
                 {
                     RegionSite site = data.Sites[k];
-                    text.Append(k > 0 ? ", " : "").Append("{\"id\": ").Append(site.Id).Append(", \"kind\": \"").Append(site.Kind)
-                        .Append("\", \"area\": ").Append(site.AreaId).Append(", \"name\": \"").Append(Json(site.Name)).Append("\", \"origin\": \"").Append(Json(site.NameOrigin)).Append("\"}");
-                    Console.WriteLine("  地点" + site.Id.ToString("00") + " " + site.Name + (site.NameOrigin != null ? "  ← " + site.NameOrigin : ""));
+                    AppendPlace(text, ref any, "地点", site.Id, site.Kind.ToString(), site.History, site.AreaId, site.MapX, site.MapY, "順位 " + site.Rank + "/" + site.Candidates, site.Names);
                 }
-                text.Append("]}").Append(s + 1 < styles.Length ? "," : "").Append("\n");
+                text.Append("\n      ]}").Append(s + 1 < order.Count ? "," : "").Append("\n");
             }
             text.Append("  ]\n}\n");
-            RegionNames.Apply(data, original);
+            data.Spec.NamingSound = originalSound;
+            RegionNames.Apply(data, originalStyle);
             File.WriteAllText(stem + "-names.json", text.ToString(), new System.Text.UTF8Encoding(false));
-            Console.WriteLine("呼び名の一覧 → " + Path.GetFullPath(stem + "-names.json"));
+            Console.WriteLine("名前の一覧 → " + Path.GetFullPath(stem + "-names.json"));
+        }
+
+        private static void AppendRoots(System.Text.StringBuilder text, System.Collections.Generic.List<RegionNameRoot> roots)
+        {
+            for (int r = 0; r < roots.Count; r++)
+            {
+                text.Append(r > 0 ? ", " : "").Append("{\"meaning\": \"").Append(Json(roots[r].Meaning)).Append("\", \"sound\": \"").Append(Json(roots[r].Sound))
+                    .Append("\", \"written\": ").Append(roots[r].Written ? "true" : "false").Append(", \"mood\": ").Append(roots[r].Mood ? "true" : "false")
+                    .Append(", \"event\": ").Append(roots[r].Event ? "true" : "false").Append(", \"uses\": ").Append(roots[r].Uses).Append("}");
+            }
+        }
+
+        private static void AppendPlace(System.Text.StringBuilder text, ref bool any, string type, int id, string kind, RegionLandHistory history, int area,
+            float mapX, float mapY, string size, System.Collections.Generic.List<RegionPlaceName> names)
+        {
+            var invariant = System.Globalization.CultureInfo.InvariantCulture;
+            text.Append(any ? ",\n" : "").Append("        {\"type\": \"").Append(type).Append("\", \"id\": ").Append(id).Append(", \"kind\": \"").Append(kind)
+                .Append("\", \"history\": \"").Append(RegionNaming.HistoryLabel(history)).Append("\", \"area\": ").Append(area)
+                .Append(", \"x\": ").Append(mapX.ToString("0.0", invariant)).Append(", \"y\": ").Append(mapY.ToString("0.0", invariant))
+                .Append(", \"size\": \"").Append(Json(size)).Append("\", \"names\": [");
+            any = true;
+            var line = new System.Text.StringBuilder("  " + type + id.ToString("00") + " [" + RegionNaming.HistoryLabel(history) + "] ");
+            for (int n = 0; n < names.Count; n++)
+            {
+                text.Append(n > 0 ? ", " : "").Append("{\"kind\": \"").Append(RegionNaming.KindLabel(names[n].Kind)).Append("\", \"text\": \"").Append(Json(names[n].Text))
+                    .Append("\", \"skeleton\": \"").Append(Json(names[n].Skeleton)).Append("\", \"gloss\": \"").Append(Json(names[n].Gloss)).Append("\", \"origin\": \"").Append(Json(names[n].Origin)).Append("\"}");
+                line.Append(n > 0 ? " ／ " : "").Append(names[n].Text);
+            }
+            text.Append("]}");
+            if (names.Count > 0) line.Append("  ← ").Append(names[0].Skeleton);
+            Console.WriteLine(line.ToString());
         }
 
         /// <summary>

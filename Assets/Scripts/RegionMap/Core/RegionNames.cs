@@ -19,7 +19,8 @@ namespace Vastcore.RegionMap
         Kanji = 3,
 
         /// <summary>
-        /// 命名の規則（音・語根・型）から作る。固有名は意味を持つ語根の並びで、由来を NameOrigin に残す（RegionNaming）。
+        /// 命名の規則から作る（RegionNaming）。土地の経緯に応じて記号名・土地の名・古い呼び名を付け、由来を残す。
+        /// 地域そのもの・川・峰・湾にも名前を付ける（RegionData.Features）。
         /// </summary>
         Systematic = 4,
     }
@@ -92,8 +93,23 @@ namespace Vastcore.RegionMap
         /// <summary>地域のエリアと探索地点へ、指定の作り方で呼び名を付け直す。</summary>
         public static void Apply(RegionData data, RegionNameStyle style)
         {
-            for (int a = 0; a < data.Areas.Count; a++) data.Areas[a].NameOrigin = null;
-            for (int s = 0; s < data.Sites.Count; s++) data.Sites[s].NameOrigin = null;
+            for (int a = 0; a < data.Areas.Count; a++)
+            {
+                data.Areas[a].NameOrigin = null;
+                data.Areas[a].Names = new List<RegionPlaceName>();
+            }
+            for (int s = 0; s < data.Sites.Count; s++)
+            {
+                data.Sites[s].NameOrigin = null;
+                data.Sites[s].Names = new List<RegionPlaceName>();
+            }
+            for (int f = 0; f < data.Features.Count; f++)
+            {
+                data.Features[f].Name = null;
+                data.Features[f].NameOrigin = null;
+                data.Features[f].Names = new List<RegionPlaceName>();
+            }
+            data.Naming = null;
             if (style == RegionNameStyle.Systematic)
             {
                 RegionNaming.Apply(data, RegionNamingRules.Parse(data.Spec.NamingRulesText));
