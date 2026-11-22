@@ -26,6 +26,13 @@ namespace Vastcore.RegionMap.Preview
             int cloudFrames = 0;
             float cloudStep = 4f;
             bool cloudBefore = false;
+            bool names = false;
+            string detailSites = null;
+            var detailSpec = new RegionDetailSpec();
+            bool forms = false;
+            float formScale = 1f;
+            string detailSizes = "8";
+            float detailExaggeration = 1.5f;
 
             for (int a = 0; a < args.Length; a++)
             {
@@ -63,6 +70,16 @@ namespace Vastcore.RegionMap.Preview
                     case "--cloudframes": cloudFrames = int.Parse(value); a++; break;
                     case "--cloudstep": cloudStep = Float(value); a++; break;
                     case "--cloudbefore": cloudBefore = true; break;
+                    case "--names": names = true; break;
+                    case "--namestyle": spec.NameStyle = (RegionNameStyle)Enum.Parse(typeof(RegionNameStyle), value, true); a++; break;
+                    case "--detail": detailSites = value; a++; break;
+                    case "--detailsize": detailSizes = value; a++; break;
+                    case "--detailexag": detailExaggeration = Float(value); a++; break;
+                    case "--detailres": detailSpec.Resolution = int.Parse(value); a++; break;
+                    case "--detailrough": detailSpec.Roughness = Float(value); a++; break;
+                    case "--gully": detailSpec.GullyPasses = int.Parse(value); a++; break;
+                    case "--forms": forms = true; break;
+                    case "--formscale": formScale = Float(value); a++; break;
                     default:
                         Console.Error.WriteLine("不明な指定: " + key);
                         return 2;
@@ -140,7 +157,162 @@ namespace Vastcore.RegionMap.Preview
                 WriteCloudFrames(data, options, stem, cloudFrames, cloudStep, shrink, false);
                 if (cloudBefore) WriteCloudFrames(data, options, stem, cloudFrames, cloudStep, shrink, true);
             }
+            if (names) WriteNames(data, stem);
+            if (detailSites != null)
+            {
+                options.Exaggeration = detailExaggeration;
+                WriteDetails(data, options, stem, detailSites, detailSizes, detailSpec, forms, formScale);
+            }
             return 0;
+        }
+
+        /// <summary>呼び名の作り方ごとに、エリアと地点の呼び名を並べて書き出す（比べるための一覧）。</summary>
+        private static void WriteNames(RegionData data, string stem)
+        {
+            RegionNameStyle original = data.Spec.NameStyle;
+            var text = new System.Text.StringBuilder();
+            text.Append("{\n  \"seed\": ").Append(data.Spec.Seed).Append(",\n  \"styles\": [\n");
+            Array styles = Enum.GetValues(typeof(RegionNameStyle));
+            for (int s = 0; s < styles.Length; s++)
+            {
+                var style = (RegionNameStyle)styles.GetValue(s);
+                RegionNames.Apply(data, style);
+                Console.WriteLine("呼び名 " + style);
+                text.Append("    {\"style\": \"").Append(style).Append("\", \"areas\": [");
+                for (int a = 0; a < data.Areas.Count; a++)
+                {
+                    text.Append(a > 0 ? ", " : "").Append("{\"id\": ").Append(data.Areas[a].Id).Append(", \"kind\": \"").Append(data.Areas[a].Kind)
+                        .Append("\", \"name\": \"").Append(data.Areas[a].Name).Append("\"}");
+                    Console.WriteLine("  エリア" + data.Areas[a].Id.ToString("00") + " " + data.Areas[a].Name);
+                }
+                text.Append("], \"sites\": [");
+                for (int k = 0; k < data.Sites.Count; k++)
+                {
+                    RegionSite site = data.Sites[k];
+                    text.Append(k > 0 ? ", " : "").Append("{\"id\": ").Append(site.Id).Append(", \"kind\": \"").Append(site.Kind)
+                        .Append("\", \"area\": ").Append(site.AreaId).Append(", \"name\": \"").Append(site.Name).Append("\"}");
+                    Console.WriteLine("  地点" + site.Id.ToString("00") + " " + site.Name);
+                }
+                text.Append("]}").Append(s + 1 < styles.Length ? "," : "").Append("\n");
+            }
+            text.Append("  ]\n}\n");
+            RegionNames.Apply(data, original);
+            File.WriteAllText(stem + "-names.json", text.ToString(), new System.Text.UTF8Encoding(false));
+            Console.WriteLine("呼び名の一覧 → " + Path.GetFullPath(stem + "-names.json"));
+        }
+
+        /// <summary>
+        /// 指定した探索地点の周りを拡大して書き出す。地点ごとに、拡大した絵（-detail-sNN.png）と、
+        /// 同じ範囲を広域の地図から切り出して引き伸ばした絵（-broad.png）を並べて比べられる。
+        /// forms を付けると、構造物の形の案を 3 通り置いた絵も書き出す。最後に、窓の位置を示す広域の図を書き出す。
+        /// </summary>
+        private static void WriteDetails(RegionData data, RegionRenderOptions options, string stem, string list, string sizes,
+            RegionDetailSpec detailSpec, bool forms, float formScale)
+        {
+            // 拡大した絵は雲を描かない。起伏の強調は広域より弱くする（広域の 2.6 倍のままだと影が実際の 2.6 倍に伸びる）
+            var render = new RegionRenderOptions
+            {
+                Style = RegionMapStyle.Satellite,
+                CloudCover = 0f,
+                Exaggeration = options.Exaggeration,
+                CastShadow = options.CastShadow,
+                SunAltitude = options.SunAltitude,
+            };
+            int n = data.Resolution;
+            byte[] ground = RegionMapRenderer.Render(data, new RegionRenderOptions { Style = RegionMapStyle.Satellite, CloudCover = 0f });
+            var locator = (byte[])ground.Clone();
+            var watch = new Stopwatch();
+
+            foreach (string part in list.Split(','))
+            foreach (string sizeText in sizes.Split(','))
+            {
+                int id = int.Parse(part);
+                RegionSite site = data.Sites[id - 1];
+                detailSpec.CenterMapX = site.MapX;
+                detailSpec.CenterMapY = site.MapY;
+                detailSpec.SizeKm = Float(sizeText);
+                watch.Restart();
+                RegionDetail detail = RegionDetailBuilder.Build(data, detailSpec);
+                long buildMs = watch.ElapsedMilliseconds;
+                int size = detail.Data.Resolution;
+                watch.Restart();
+                byte[] pixels = RegionMapRenderer.Render(detail.Data, render);
+                long renderMs = watch.ElapsedMilliseconds;
+                string file = string.Format(CultureInfo.InvariantCulture, "{0}-detail-s{1:00}-{2}km", stem, id, sizeText);
+                PngWriter.Write(file + ".png", pixels, size, size);
+
+                float low = float.MaxValue;
+                float high = float.MinValue;
+                for (int i = 0; i < detail.Data.Height.Length; i++)
+                {
+                    float value = detail.Data.Height[i];
+                    if (value < low) low = value;
+                    if (value > high) high = value;
+                }
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                    "拡大 地点{0:00} {1} X{2:F1} Y{3:F1} 窓{4:F1}km {5}px（1px={6:F1}m） 作成={7}ms 描画={8}ms 標高{9:F0}〜{10:F0}m 海陸の一致={11:P1} 標高の差の平均={12:F1}m 川の一致={13:P0} → {14}",
+                    id, site.Name, site.MapX, site.MapY, detailSpec.SizeKm, size, detail.Data.CellMeters, buildMs, renderMs, low, high,
+                    detail.CoastAgreement, detail.MeanHeightDifference, detail.RiverAgreement, Path.GetFullPath(file + ".png")));
+
+                // 同じ範囲を広域の地図から切り出す（引き伸ばすだけ。広域の 1 セルが四角に見える）
+                var broad = new byte[size * size * 4];
+                for (int y = 0; y < size; y++)
+                {
+                    int sy = Math.Min(n - 1, (int)((detail.OriginMapY + (y + 0.5f) / size * detail.SizeMap) / RegionData.MapUnits * n));
+                    for (int x = 0; x < size; x++)
+                    {
+                        int sx = Math.Min(n - 1, (int)((detail.OriginMapX + (x + 0.5f) / size * detail.SizeMap) / RegionData.MapUnits * n));
+                        Buffer.BlockCopy(ground, (sx + sy * n) * 4, broad, (x + y * size) * 4, 4);
+                    }
+                }
+                PngWriter.Write(file + "-broad.png", broad, size, size);
+
+                if (forms)
+                {
+                    Array all = Enum.GetValues(typeof(RegionStructureForm));
+                    for (int f = 0; f < all.Length; f++)
+                    {
+                        var form = (RegionStructureForm)all.GetValue(f);
+                        RegionDetail with = RegionDetailBuilder.Build(data, detailSpec);
+                        RegionStructure placed = RegionStructureStamp.Place(with, site.MapX, site.MapY, site.Kind, form, formScale);
+                        if (placed == null)
+                        {
+                            Console.WriteLine("  形 " + form + ": 置けない（海の上）");
+                            continue;
+                        }
+                        string formFile = file + "-form-" + form.ToString().ToLowerInvariant() + ".png";
+                        PngWriter.Write(formFile, RegionMapRenderer.Render(with.Data, render), size, size);
+                        Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "  形 {0}: 差し渡し {1:F0}m 高さ {2:F0}m 足元の標高 {3:F0}m → {4}",
+                            form, placed.SpanMeters, placed.HeightMeters, placed.BaseMeters, Path.GetFullPath(formFile)));
+                    }
+                }
+
+                // 広域の図へ窓の枠を描く
+                int x0 = (int)(detail.OriginMapX / RegionData.MapUnits * n);
+                int y0 = (int)(detail.OriginMapY / RegionData.MapUnits * n);
+                int span = Math.Max(2, (int)(detail.SizeMap / RegionData.MapUnits * n));
+                for (int t = -3; t < span + 3; t++)
+                {
+                    for (int k = 0; k < 3; k++)
+                    {
+                        Plot(locator, n, x0 + t, y0 - 1 - k);
+                        Plot(locator, n, x0 + t, y0 + span + k);
+                        Plot(locator, n, x0 - 1 - k, y0 + t);
+                        Plot(locator, n, x0 + span + k, y0 + t);
+                    }
+                }
+            }
+            PngWriter.Write(stem + "-detail-locator.png", locator, n, n);
+            Console.WriteLine("窓の位置 → " + Path.GetFullPath(stem + "-detail-locator.png"));
+        }
+
+        private static void Plot(byte[] pixels, int n, int x, int y)
+        {
+            if (x < 0 || y < 0 || x >= n || y >= n) return;
+            int p = (x + y * n) * 4;
+            pixels[p] = 255;
+            pixels[p + 1] = 236;
+            pixels[p + 2] = 90;
         }
 
         private static readonly byte[][] AreaColors =

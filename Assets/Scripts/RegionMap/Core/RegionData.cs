@@ -56,6 +56,20 @@ namespace Vastcore.RegionMap
         /// </summary>
         public readonly byte[] Area;
 
+        /// <summary>
+        /// 水の流れ先のセル（海や地図の外へ出るなら -1）。川を作った時の向きをそのまま持つ。
+        /// 拡大した地形で、川を広域の地図と同じ経路に通すために使う。拡大した地形のデータでは null。
+        /// </summary>
+        public int[] Downstream;
+
+        /// <summary>
+        /// 水面が各セルを覆う割合（0〜1）。拡大した地形だけが持ち、広域の地域では null（描画の時に流量から作る）。
+        /// </summary>
+        public float[] WaterCoverage;
+
+        /// <summary>構造物が各セルを覆う割合（0〜1）。拡大した地形に構造物を置いた時だけ持つ。</summary>
+        public float[] StructureCoverage;
+
         public readonly List<RegionArea> Areas = new List<RegionArea>();
 
         public readonly List<RegionSite> Sites = new List<RegionSite>();

@@ -57,6 +57,9 @@ namespace Vastcore.RegionMap
         /// <summary>探索地点の数。</summary>
         public int SiteCount = 18;
 
+        /// <summary>エリアと探索地点の呼び名の作り方。</summary>
+        public RegionNameStyle NameStyle = RegionNameStyle.Descriptive;
+
         public RegionSpec Clone()
         {
             return (RegionSpec)MemberwiseClone();

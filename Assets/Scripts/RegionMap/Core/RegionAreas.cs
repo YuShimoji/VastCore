@@ -416,7 +416,7 @@ namespace Vastcore.RegionMap
                 ordered[a].Area.Id = a + 1;
                 data.Areas.Add(ordered[a].Area);
             }
-            Name(data.Areas);
+            NameByDirection(data.Areas);
 
             byte[] result = data.Area;
             for (int i = 0; i < count; i++)
@@ -569,7 +569,7 @@ namespace Vastcore.RegionMap
         }
 
         /// <summary>「方角＋の＋地形」。同じ呼び名が重なる時は、広い順に 第二・第三 を付ける。</summary>
-        private static void Name(List<RegionArea> areas)
+        internal static void NameByDirection(List<RegionArea> areas)
         {
             var groups = new Dictionary<string, List<RegionArea>>();
             for (int a = 0; a < areas.Count; a++)

@@ -77,7 +77,10 @@ namespace Vastcore.RegionMap
             float cloudScale = cloudSize / (float)n;
             float cloudOffset = RegionClouds.ShadowOffset * cloudSize;
             float cloudRim = Math.Max(0.75f, cloudSize / 400f);
-            float[] river = satellite && options.Rivers ? BuildRiverCoverage(data, riverThreshold) : null;
+            // 拡大した地形は水面の割合を自分で持つ。広域の地域では流量から作る
+            float[] detailWater = options.Rivers ? data.WaterCoverage : null;
+            float[] river = detailWater != null ? detailWater : (satellite && options.Rivers ? BuildRiverCoverage(data, riverThreshold) : null);
+            float[] structure = data.StructureCoverage;
             float castStrength = Math.Min(1f, options.CastShadow * 2.2f);
 
             // 行ごとに独立なので並列に描く
@@ -131,6 +134,16 @@ namespace Vastcore.RegionMap
                                 break;
                         }
 
+                        if (structure != null && structure[i] > 0f)
+                        {
+                            // 構造物は石の色にする（仮の色。素材と色は人が決める）
+                            float cover = structure[i];
+                            float stone = 172f + (RegionNoise.Hash01(x, y, seed + 51u) - 0.5f) * 7f;
+                            r += (stone + 4f - r) * cover;
+                            g += (stone - g) * cover;
+                            b += (stone - 8f - b) * cover;
+                        }
+
                         if (satellite)
                         {
                             // 直射光（やや暖かい色）と空からの光（青み）を分ける。日陰は黒く潰れず、青黒くなる
@@ -171,7 +184,8 @@ namespace Vastcore.RegionMap
                         {
                             float water = 0f;
                             float flow = data.Flow[i];
-                            if (flow > riverThreshold) water = RegionNoise.Smooth(riverThreshold, riverThreshold * 5f, flow) * 0.55f + 0.35f;
+                            if (detailWater != null) water = detailWater[i];
+                            else if (flow > riverThreshold) water = RegionNoise.Smooth(riverThreshold, riverThreshold * 5f, flow) * 0.55f + 0.35f;
                             if (data.LakeDepth[i] > 0f) water = 0.92f;
                             if (water > 0f)
                             {

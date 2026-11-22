@@ -37,6 +37,7 @@ namespace Vastcore.RegionMap
             // 川を作った時の流れ先（router）をそのまま使い、流域でエリアを分ける
             RegionAreaBuilder.Build(data, router, land);
             RegionSiteGenerator.Populate(data);
+            if (spec.NameStyle != RegionNameStyle.Descriptive) RegionNames.Apply(data, spec.NameStyle);
             if (phase != null) phase("完了");
             return data;
         }
@@ -347,6 +348,8 @@ namespace Vastcore.RegionMap
             }
             router.Route(h, land);
             router.Accumulate(weight, land, data.Flow);
+            data.Downstream = new int[count];
+            Array.Copy(router.Receiver, data.Downstream, count);
             for (int i = 0; i < count; i++)
             {
                 float depth = land[i] ? router.Filled[i] - h[i] : 0f;
@@ -383,19 +386,25 @@ namespace Vastcore.RegionMap
                     RegionBiome biome;
                     if (data.LakeDepth[i] > 0f) biome = RegionBiome.Lake;
                     else if (data.Flow[i] > riverThreshold * 2.5f) biome = RegionBiome.River;
-                    else if (t < -3f) biome = RegionBiome.Snow;
-                    else if (slope > 0.42f) biome = RegionBiome.Rock;
-                    else if (h[i] < 10f) biome = RegionBiome.Coast;
-                    else if (t < 3f) biome = RegionBiome.Tundra;
-                    else if (t < 9f) biome = m > 0.38f ? RegionBiome.Taiga : RegionBiome.Tundra;
-                    else if (t < 20f) biome = m < 0.2f ? RegionBiome.Desert : (m < 0.45f ? RegionBiome.Grassland : RegionBiome.Forest);
-                    else biome = m < 0.22f ? RegionBiome.Desert : (m < 0.45f ? RegionBiome.Savanna : (m < 0.72f ? RegionBiome.Forest : RegionBiome.Rainforest));
+                    else biome = LandBiome(t, m, slope, h[i]);
                     data.Biome[i] = biome;
                 }
             }
 
             data.MaxHeight = max;
             data.LandFraction = landCount / (float)count;
+        }
+
+        /// <summary>気温・湿り気・傾き・標高から陸の土地の種類を決める（川と湖は呼ぶ側で先に分ける）。</summary>
+        internal static RegionBiome LandBiome(float t, float m, float slope, float height)
+        {
+            if (t < -3f) return RegionBiome.Snow;
+            if (slope > 0.42f) return RegionBiome.Rock;
+            if (height < 10f) return RegionBiome.Coast;
+            if (t < 3f) return RegionBiome.Tundra;
+            if (t < 9f) return m > 0.38f ? RegionBiome.Taiga : RegionBiome.Tundra;
+            if (t < 20f) return m < 0.2f ? RegionBiome.Desert : (m < 0.45f ? RegionBiome.Grassland : RegionBiome.Forest);
+            return m < 0.22f ? RegionBiome.Desert : (m < 0.45f ? RegionBiome.Savanna : (m < 0.72f ? RegionBiome.Forest : RegionBiome.Rainforest));
         }
 
         /// <summary>地面の傾き（高さ / 水平距離）。海は海面として扱う。</summary>

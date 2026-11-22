@@ -128,9 +128,19 @@ namespace Vastcore.RegionMap
             {
                 RegionSite site = data.Sites[s];
                 site.Id = s + 1;
-                site.Feature = FeatureName(site.Kind);
                 RegionArea area = data.AreaById(site.AreaId);
                 if (area != null) area.SiteCount++;
+            }
+            NameByFeature(data);
+        }
+
+        /// <summary>「エリア名・地形と種類」の機械的な呼び名を付ける（RegionNameStyle.Descriptive）。</summary>
+        internal static void NameByFeature(RegionData data)
+        {
+            for (int s = 0; s < data.Sites.Count; s++)
+            {
+                RegionSite site = data.Sites[s];
+                site.Feature = FeatureName(site.Kind);
                 site.Name = data.PlaceNameAtMap(site.MapX, site.MapY).Replace("の沖", "沖") + "・" + site.Feature;
             }
         }

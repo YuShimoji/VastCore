@@ -226,5 +226,75 @@ namespace Vastcore.Tests.EditMode
                 if (site.AreaId != 0) Assert.IsNotNull(a.AreaById(site.AreaId));
             }
         }
+
+        /// <summary>seed から作る呼び名：地域の中で重ならず、同じ seed なら同じ名前になり、機械的な呼び名へ戻せる。</summary>
+        [Test]
+        public void Names_GeneratedStyles_AreUniqueAndDeterministic_AndCanBeRestored()
+        {
+            RegionData a = RegionGenerator.Generate(SmallSpec(7));
+            RegionData b = RegionGenerator.Generate(SmallSpec(7));
+            string firstArea = a.Areas[0].Name;
+            string firstSite = a.Sites[0].Name;
+
+            var styles = new[] { RegionNameStyle.SoftKana, RegionNameStyle.HardKana, RegionNameStyle.Kanji };
+            for (int s = 0; s < styles.Length; s++)
+            {
+                RegionNames.Apply(a, styles[s]);
+                RegionNames.Apply(b, styles[s]);
+                var names = new System.Collections.Generic.HashSet<string>();
+                for (int k = 0; k < a.Areas.Count; k++)
+                {
+                    Assert.AreEqual(a.Areas[k].Name, b.Areas[k].Name);
+                    Assert.IsTrue(names.Add(a.Areas[k].Name), styles[s] + " で同じ名前のエリアがある: " + a.Areas[k].Name);
+                }
+                for (int k = 0; k < a.Sites.Count; k++)
+                {
+                    Assert.AreEqual(a.Sites[k].Name, b.Sites[k].Name);
+                    Assert.IsTrue(names.Add(a.Sites[k].Name), styles[s] + " で同じ名前の地点がある: " + a.Sites[k].Name);
+                }
+                Assert.AreNotEqual(firstArea, a.Areas[0].Name);
+            }
+
+            RegionNames.Apply(a, RegionNameStyle.Descriptive);
+            Assert.AreEqual(firstArea, a.Areas[0].Name);
+            Assert.AreEqual(firstSite, a.Sites[0].Name);
+        }
+
+        /// <summary>
+        /// 拡大した地形：同じ入力からは同じ地形になり、海か陸かは広域の同じ場所とほぼ一致し、広域の川は拡大しても水面として通る。
+        /// 構造物を置くと、その場所の地面が高くなる。
+        /// </summary>
+        [Test]
+        public void Detail_IsDeterministic_KeepsCoastAndRivers_AndTakesStructure()
+        {
+            RegionData region = RegionGenerator.Generate(SmallSpec(7));
+            Assert.IsNotNull(region.Downstream);
+            RegionSite onLand = null;
+            for (int s = 0; s < region.Sites.Count && onLand == null; s++)
+            {
+                if (region.Sites[s].HeightMeters > 20f) onLand = region.Sites[s];
+            }
+            Assert.IsNotNull(onLand, "陸の上の地点が無い");
+
+            var spec = new RegionDetailSpec { CenterMapX = onLand.MapX, CenterMapY = onLand.MapY, SizeKm = 24f, Resolution = 192 };
+            RegionDetail a = RegionDetailBuilder.Build(region, spec);
+            RegionDetail b = RegionDetailBuilder.Build(region, spec);
+            Assert.AreEqual(192 * 192, a.Data.Height.Length);
+            CollectionAssert.AreEqual(a.Data.Height, b.Data.Height);
+            CollectionAssert.AreEqual(a.Data.WaterCoverage, b.Data.WaterCoverage);
+            Assert.Greater(a.CoastAgreement, 0.9f, "海陸が広域と合っていない");
+            Assert.Greater(a.RiverAgreement, 0.9f, "広域の川が拡大した地形に通っていない");
+            Assert.IsTrue(a.Contains(onLand.MapX, onLand.MapY));
+
+            int n = a.Data.Resolution;
+            int center = (int)a.LocalX(onLand.MapX) + (int)a.LocalY(onLand.MapY) * n;
+            float before = a.Data.Height[center];
+            Assert.Greater(before, 0f);
+            RegionStructure placed = RegionStructureStamp.Place(a, onLand.MapX, onLand.MapY, onLand.Kind, RegionStructureForm.Stepped);
+            Assert.IsNotNull(placed);
+            Assert.Greater(a.Data.Height[center], before + 100f);
+            Assert.Greater(a.Data.StructureCoverage[center], 0f);
+            Assert.AreEqual(a.Data.Height.Length * 4, RegionMapRenderer.Render(a.Data, new RegionRenderOptions { CloudCover = 0f }).Length);
+        }
     }
 }
