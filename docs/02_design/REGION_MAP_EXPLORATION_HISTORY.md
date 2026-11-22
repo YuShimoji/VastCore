@@ -369,3 +369,23 @@ U.S. Copyright Office, Copyright Office Releases Part 2 of Artificial Intelligen
 回答前の SP-021 9節の行の最終欄（原文のまま）: `4枚の生成（未生成。経路は問い `01M821KYJMRRFKP1VY1F6Q1HS2`）。経過は [履歴](REGION_MAP_EXPLORATION_HISTORY.md)`
 
 回答後の確認（2026-11-23）: この作業の環境で接続済みの道具は Google Docs・Claude Docs・Gmail・Google Calendar・Google Drive・Google Slides・Google Sheets・Anthropic Economic Index・scheduled-tasks で、画像を生成するものは無い。Canva（`plugin:marketing:canva`）は未認証（needs_auth）で、使えるか・利用条件に合うかは未確認。コネクタの認証・追加、アカウント作成、利用規約への同意は本人の操作で、エージェントは行っていない。4枚は未生成のまま、準備済みの `artifacts/region-map/series/vc-monolith-direction-r1/`（生成前の検査 PASS）から、道具が使えた時点で始める。
+
+### 軸 E：動きの案を出す前の行（2026-11-23 に置き換え）
+
+動きの案（確認ページ `review-20261123-motion/`、Artifact `01M828SVEJ4PYCTE33XKD576WX`、問い `01M828W77SDBJKNBXA22T8XJ8B`）を出したので、次の行を書き換えた。原文のまま。
+
+SP-021 4.1節の行:
+
+| E UIエフェクト・アニメーション | 「UIエフェクト」「アニメーションやエフェクトなども加えます」 | 4・6 | 未着手。本人が「開発担当が動きの案を出し本人が選ぶ」を選んだ。案（短い動画で2〜3通り）はまだ出していない | 開発担当（案）→ 本人 |
+
+SP-021 9節の行:
+
+| UIエフェクト・アニメーション（軸 E）の動き | 開発担当が出す動きの案（短い動画で2〜3通り）から本人が選ぶ。案はまだ出していない | 発見した時・サーチの反応・部品の出入り・カーソルの動き | 軸 E の実装（先に案を出すのは開発担当） |
+
+runtime-state Next mission の行:
+
+| Next mission | 本人が、命名の第2版の受入（問い `01M825M5QZP791BTF91XA1FDAS`）と名前の出し方の方向（`01M825M7PECFN9BY6CFVJREM58`）に答える。開発担当は回答を読んで直す。回答を待たずに進められるのは、E 動きの案（短い動画で2〜3通り）→ F 仮の音で鳴る場所 |
+
+runtime-state Next Action 3 の行:
+
+3. 開発担当：拡大表示の指摘は6領域とも「軽微（余裕があれば）」なので、他の作業を止めず、余裕のある時に直す（`View/RegionExplorer.cs`・`View/RegionDetailLayer.cs`）。サーチの輪が ×40 以上で画面より大きい点は、反応の半径の見直しになるので、方式に関わる判断として本人へ返す（SP-021 8節）。回答を待たずに進められる作業は、E 動きの案（短い動画で2〜3通り）→ F 仮の音で鳴る場所。
