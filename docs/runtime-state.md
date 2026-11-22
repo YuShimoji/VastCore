@@ -29,7 +29,7 @@ Last Updated: 2026-11-22
 - 軸 G（2026-11-22）で `View/RegionMapSkin.cs` を足し、`View/RegionExplorer.cs`（画像の読み込みと4か所の描き方）、`Editor/RegionExplorerSmoke.cs`（差し替えの有無を1行ログに出す）、`Assets/Tests/EditMode/RegionMapTests.cs`（1件）を変えた。シーン・`ProjectSettings/`・`Packages/`・Terrain・StructureGenerator・Stamp は変更していない。画像を置く `Assets/Resources/RegionMapSkin/` は空のフォルダ（`.gitkeep` とフォルダの meta だけ）。
 - 命名の仕組みと川岸（2026-11-22）で足したのは `Core/RegionNaming.cs` と `Assets/Tests/EditMode/RegionNamingTests.cs`。変えたのは `Core/` の `RegionNames`・`RegionSite`・`RegionAreas`・`RegionSpec` と `tools/RegionMapPreview/Program.cs`。`View/` と `Editor/` は変えていない。
 - 未commitのまま保持するもの（前から同じ）：`.serena/project.yml`、`docs/04_reports/LEGACY_UI_MIGRATION_REPORT.md` の差分、untrackedの `Assets/Resources/Stamps/`（旧失敗候補）とそのmeta。どれも上書き・削除しない。
-- 生成物は ignored の `artifacts/region-map/`（鳥瞰図PNG、探索画面の画像 `explorer-*.png`、確認ページ `review-20261122-r8/`（命名の仕組み・川岸へ移した地点）・`review-20261122-r7/`（拡大した地形・形の案・呼び名の響き）・`review-20261122-r6/`（エリア・地点の根拠・雲の流れ）・`review-20261122-r5/`・`review-20261122-r4/`、ラフの元 `rough-20261122-screen/`）と `artifacts/logs/region-map-*.log`。thank端末にだけある。
+- 生成物は ignored の `artifacts/region-map/`（鳥瞰図PNG、探索画面の画像 `explorer-*.png`、確認ページ `review-20261122-r9/`（構造物の形を画像から起こす進め方）・`review-20261122-r8/`（命名の仕組み・川岸へ移した地点）・`review-20261122-r7/`（拡大した地形・形の案・呼び名の響き）・`review-20261122-r6/`（エリア・地点の根拠・雲の流れ）・`review-20261122-r5/`・`review-20261122-r4/`、ラフの元 `rough-20261122-screen/`）と `artifacts/logs/region-map-*.log`。thank端末にだけある。
 - Unityのバッチ起動は、Unity Hubが起動していないと `No valid Unity Editor license found`（exit 198）で失敗する。本人がこのプロジェクトを Editor で開いている間は、バッチも2つ目の Editor も起動できない（`another Unity instance is running`）。その間の確認用に、`D:\vcv\VastCore`（Assets・Packages・ProjectSettings・scripts の写しと、そこで取り込んだ Library。git 管理外）を残してある。要らなくなったらフォルダごと消してよい。
 - 残しているローカル限定の履歴（`master`、`feature/mcp-verification`、stash 2件）とworktree `.codex-tmp/cloud-codex-20261011/VastCore` は再開準備時のまま。
 
@@ -54,7 +54,7 @@ Last Updated: 2026-11-22
 1. 本人：Recordinatorの問いに答える（Project `pc96190c8a9`）。命名の仕組みの方向 `01M81SA3GF8YMRZRETVZCHBGE2`（名前の成り立ち、ことばの範囲、音と語根を誰が書くか、地点名の型の混ぜ方、由来を画面に出すか、足したいもの。添付は Artifact `01M81S8NDJ8B0J2DJ25PKPPW42`＝確認ページ `review-20261122-r8`）。答えられる設問だけでよい。回答済みで閉じた問いは [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md) にある。
 2. 開発担当：回答を読み、命名の仕組みを作り込む（`Core/RegionNaming.cs` と、規則の既定 `RegionNamingRules.DefaultText`）。土台が決まったら `RegionSpec.NameStyle` の既定を替え、探索画面の地図・発見カード・一覧に出す。使った回答IDと変えた箇所はRecordinatorのTask `8a96ef4f-2e5e-5a58-be66-08d8e485c523` へ1行残す。本人が Editor を開いている間のコード編集と確認は写しで行い、1回で戻す。
 3. 開発担当（回答を待たずに進められる）：拡大した地形を探索画面へ統合する（拡大した時に細かい絵へ切り替える。切り替える拡大率と、作成の待ち時間の見せ方は、着手時にラフを出す。調整の定数は `RegionDetail.cs` の `Build` と `CarveGullies`）。その後は E 動きの案（短い動画で2〜3通り）→ F 仮の音で鳴る場所。
-4. 本人：構造物の形を画像から作る進め方（画像の枚数・形式・誰が生成するか）を決める。開発担当は計画を出し、承認を得てから画像を作る（計画はまだ出していない）。軸 G のデザインの画像ができたら `Assets/Resources/RegionMapSkin/` に置く（SP-021 6節）。本人の判断待ちは SP-021 9節の表。段6（ゲームの内容）は本人の領分。
+4. 本人：構造物の形を画像から作る進め方を、Recordinator の問い `01M81TQZHW7EREG4FR38RDSVBE` で決める（枚数・形式・視点・生成の担当・参照・形へ起こす方式の6設問。添付は Artifact `01M81TNFXD3NTC02JFJP3B1WN7`＝確認ページ `review-20261122-r9`、比較と出典は [SP-021 履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md)）。開発担当は、枚数と形式の回答が出てから画像を作る（または受け取る）。画像は未生成。軸 G のデザインの画像ができたら `Assets/Resources/RegionMapSkin/` に置く（SP-021 6節）。本人の判断待ちは SP-021 9節の表。段6（ゲームの内容）は本人の領分。
 
 ## External Pulse And Remote Resume
 
