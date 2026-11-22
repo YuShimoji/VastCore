@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using UnityEngine;
 using Vastcore.RegionMap;
 
 namespace Vastcore.Tests.EditMode
@@ -295,6 +296,31 @@ namespace Vastcore.Tests.EditMode
             Assert.Greater(a.Data.Height[center], before + 100f);
             Assert.Greater(a.Data.StructureCoverage[center], 0f);
             Assert.AreEqual(a.Data.Height.Length * 4, RegionMapRenderer.Render(a.Data, new RegionRenderOptions { CloudCover = 0f }).Length);
+        }
+
+        [Test]
+        public void Skin_NothingPlaced_LoadsNull_AndTextureBecomesCenteredSprite()
+        {
+            // 差し替えの入口: 置いていない名前は null（探索画面は既定の絵を使う）
+            Assert.IsNull(RegionMapSkin.Load("NoSuchImage"));
+            Assert.IsNull(RegionMapSkin.FromTexture(null));
+            CollectionAssert.AllItemsAreUnique(RegionMapSkin.Names);
+            Assert.AreEqual(4, RegionMapSkin.Names.Length);
+
+            var texture = new Texture2D(8, 4, TextureFormat.RGBA32, false);
+            try
+            {
+                Sprite sprite = RegionMapSkin.FromTexture(texture);
+                Assert.AreEqual(8f, sprite.rect.width);
+                Assert.AreEqual(4f, sprite.rect.height);
+                Assert.AreEqual(4f, sprite.pivot.x, 0.001f);
+                Assert.AreEqual(2f, sprite.pivot.y, 0.001f);
+                Object.DestroyImmediate(sprite);
+            }
+            finally
+            {
+                Object.DestroyImmediate(texture);
+            }
         }
     }
 }

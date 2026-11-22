@@ -83,6 +83,7 @@ namespace Vastcore.RegionMap.Editor
                 _readyAt = EditorApplication.timeSinceStartup;
                 _driftAtReady = explorer.CloudDrift;
                 Debug.Log(string.Format("[RegionMap] 再生を始めてから地図が出るまで {0:0.0} 秒", _readyAt - _startedAt));
+                Debug.Log("[RegionMap] 差し替えた絵: " + (string.IsNullOrEmpty(explorer.CustomSkin) ? "なし（既定の絵）" : explorer.CustomSkin));
             }
 
             if (_wait > 0)

@@ -87,6 +87,11 @@ namespace Vastcore.RegionMap
         private Sprite _markRing;
         private Sprite _dot;
         private Sprite _crosshair;
+        // 外から差し替えた絵を使っているか（RegionMapSkin）。差し替えた絵は元の色のまま出し、コードで作った絵用の色付けと縁取りは付けない
+        private bool _skinCrosshair;
+        private bool _skinSearchRing;
+        private bool _skinFoundRing;
+        private bool _skinFoundDot;
 
         private RectTransform _viewRect;
         private RectTransform _content;
@@ -204,16 +209,39 @@ namespace Vastcore.RegionMap
             get { return _zoom; }
         }
 
+        /// <summary>外から差し替えた絵を使っている部品の名前（RegionMapSkin の名前をコンマで区切る）。差し替えが無ければ空。</summary>
+        public string CustomSkin
+        {
+            get
+            {
+                var used = new List<string>();
+                if (_skinCrosshair) used.Add(RegionMapSkin.Crosshair);
+                if (_skinSearchRing) used.Add(RegionMapSkin.SearchRing);
+                if (_skinFoundRing) used.Add(RegionMapSkin.FoundRing);
+                if (_skinFoundDot) used.Add(RegionMapSkin.FoundDot);
+                return string.Join(",", used.ToArray());
+            }
+        }
+
         private void Awake()
         {
             _font = Font.CreateDynamicFontFromOSFont(new[] { "Yu Gothic UI", "Meiryo UI", "Meiryo", "MS Gothic", "Arial" }, 28);
             // 数字は幅の揃った書体で出す（座標が動いても桁が揺れにくい）
             _numberFont = Font.CreateDynamicFontFromOSFont(new[] { "Bahnschrift", "Consolas", "Segoe UI", "Arial" }, 28);
-            _ring = RegionMapTexture.CreateRingSprite(128, 3f, false);
-            _markRing = RegionMapTexture.CreateRingSprite(96, 6f, false);
-            _dot = RegionMapTexture.CreateRingSprite(32, 0f, true);
+            // Resources/RegionMapSkin/ に画像があればそれを使い、無ければコードで作る既定の絵にする
+            _ring = RegionMapSkin.Load(RegionMapSkin.SearchRing);
+            _skinSearchRing = _ring != null;
+            if (_ring == null) _ring = RegionMapTexture.CreateRingSprite(128, 3f, false);
+            _markRing = RegionMapSkin.Load(RegionMapSkin.FoundRing);
+            _skinFoundRing = _markRing != null;
+            if (_markRing == null) _markRing = RegionMapTexture.CreateRingSprite(96, 6f, false);
+            _dot = RegionMapSkin.Load(RegionMapSkin.FoundDot);
+            _skinFoundDot = _dot != null;
+            if (_dot == null) _dot = RegionMapTexture.CreateRingSprite(32, 0f, true);
+            _crosshair = RegionMapSkin.Load(RegionMapSkin.Crosshair);
+            _skinCrosshair = _crosshair != null;
             // 十字の腕は、発見した地点の輪（半径 27）の外に出す。発見した地点に重ねても、輪と腕が重ならない
-            _crosshair = RegionMapTexture.CreateCrosshairSprite(176, 68f, 5f, 2.5f);
+            if (_crosshair == null) _crosshair = RegionMapTexture.CreateCrosshairSprite(176, 68f, 5f, 2.5f);
             EnsureCamera();
             EnsureEventSystem();
             BuildScreen();
@@ -791,12 +819,17 @@ namespace Vastcore.RegionMap
         private void AddDiscovered(RegionSite site)
         {
             // 印は橙の輪と中心の点。輪には暗い縁を付け、雲や雪の上でも読めるようにする
-            RectTransform marker = CreateImage(_markerRoot, "Marker " + site.Id, AccentColor, _dot).rectTransform;
+            // 差し替えた絵は元の色のまま出し、縁取りも付けない（縁は絵の側で決める）
+            Image markerImage = CreateImage(_markerRoot, "Marker " + site.Id, _skinFoundDot ? Color.white : AccentColor, _dot);
+            RectTransform marker = markerImage.rectTransform;
             marker.sizeDelta = new Vector2(14f, 14f);
-            AddDarkEdge(marker.gameObject);
-            RectTransform halo = CreateImage(marker, "Halo", AccentColor, _markRing).rectTransform;
+            markerImage.preserveAspect = _skinFoundDot;
+            if (!_skinFoundDot) AddDarkEdge(marker.gameObject);
+            Image haloImage = CreateImage(marker, "Halo", _skinFoundRing ? Color.white : AccentColor, _markRing);
+            RectTransform halo = haloImage.rectTransform;
             halo.sizeDelta = new Vector2(54f, 54f);
-            AddDarkEdge(halo.gameObject);
+            haloImage.preserveAspect = _skinFoundRing;
+            if (!_skinFoundRing) AddDarkEdge(halo.gameObject);
             _markers.Add(marker);
             _markerSites.Add(site);
 
@@ -1032,12 +1065,16 @@ namespace Vastcore.RegionMap
             // エリアの名前は板の子にせず、位置だけ毎フレーム合わせる（拡大しても字の大きさが変わらない）
             _areaLabelRoot = CreateRect(_viewRect, "Area Names");
             _markerRoot = CreateRect(_viewRect, "Markers");
-            _range = CreateImage(_viewRect, "Search Range", new Color(1f, 1f, 1f, 0.85f), _ring).rectTransform;
-            AddDarkEdge(_range.gameObject);
+            Image rangeImage = CreateImage(_viewRect, "Search Range", _skinSearchRing ? Color.white : new Color(1f, 1f, 1f, 0.85f), _ring);
+            _range = rangeImage.rectTransform;
+            rangeImage.preserveAspect = _skinSearchRing;
+            if (!_skinSearchRing) AddDarkEdge(_range.gameObject);
             _range.gameObject.SetActive(false);
 
             // 十字は 1 枚の画像（表示の 2 倍の細かさで作り、縮めて出す）
-            _cursor = CreateImage(_viewRect, "Cursor", Color.white, _crosshair).rectTransform;
+            Image cursorImage = CreateImage(_viewRect, "Cursor", Color.white, _crosshair);
+            cursorImage.preserveAspect = _skinCrosshair;
+            _cursor = cursorImage.rectTransform;
             _cursor.sizeDelta = new Vector2(88f, 88f);
             _cursor.gameObject.SetActive(false);
 
