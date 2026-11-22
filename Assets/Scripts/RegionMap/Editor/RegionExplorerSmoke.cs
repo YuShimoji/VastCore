@@ -28,6 +28,17 @@ namespace Vastcore.RegionMap.Editor
         private static double _clipNext;
         private static int _clipFrame;
         private static Vector2 _driftAtReady;
+        // 細部の地形（RegionDetailLayer）ができて見えるまで待つ。拡大してから見えるまでの秒数を記録する
+        private const double DetailTimeoutSeconds = 240.0;
+        private static bool _awaitDetail;
+        private static double _detailStartedAt;
+        private static double _detailDeadline;
+        private static string _detailLabel;
+        // 細部を作っている間の、更新と更新の最長の間隔（画面が止まっていないかの目安）
+        private static double _lastTickAt;
+        private static double _longestGap;
+        private static double _idleLongestGap;
+        private static readonly System.Text.StringBuilder DetailLog = new System.Text.StringBuilder();
 
         static RegionExplorerSmoke()
         {
@@ -67,6 +78,10 @@ namespace Vastcore.RegionMap.Editor
         private static void Tick()
         {
             if (!EditorApplication.isPlaying) return;
+            double tickAt = EditorApplication.timeSinceStartup;
+            if (_awaitDetail && _lastTickAt > 0.0) _longestGap = System.Math.Max(_longestGap, tickAt - _lastTickAt);
+            else if (!_awaitDetail && _lastTickAt > 0.0 && _readyAt > 0.0) _idleLongestGap = System.Math.Max(_idleLongestGap, tickAt - _lastTickAt);
+            _lastTickAt = tickAt;
             if (_startedAt <= 0.0) _startedAt = EditorApplication.timeSinceStartup;
             string output = SessionState.GetString(OutputKey, "");
             int step = SessionState.GetInt(StepKey, 0);
@@ -92,6 +107,28 @@ namespace Vastcore.RegionMap.Editor
                 return;
             }
 
+            if (_awaitDetail)
+            {
+                RegionDetailLayer layer = explorer.Detail;
+                bool done = layer.Phase == RegionDetailPhase.Ready && layer.Alpha >= 1f;
+                double now = EditorApplication.timeSinceStartup;
+                if (layer.Phase == RegionDetailPhase.Failed) Finish(output, "FAIL: 細部の作成に失敗した（" + layer.Failure + "）", 1);
+                if (!done)
+                {
+                    if (now > _detailDeadline) Finish(output, "FAIL: 細部が時間内に出なかった（" + _detailLabel + "）", 1);
+                    return;
+                }
+                _awaitDetail = false;
+                RegionDetail d = layer.Current;
+                string line = string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                    "{0}: 窓 {1:0.#} km・{2:0.0} m/セル、拡大してから見えるまで {3:0.0} 秒（作成 {4} ms、描画 {5} ms）、海陸の一致 {6:P1}、川の一致 {7:P0}、標高の差の平均 {8:0.0} m、待つ間の更新の最長間隔 {9:0} ms",
+                    _detailLabel, d.Data.SizeKm, d.Data.CellMeters, now - _detailStartedAt, layer.LastBuildMs, layer.LastRenderMs,
+                    d.CoastAgreement, d.RiverAgreement, d.MeanHeightDifference, _longestGap * 1000.0);
+                _longestGap = 0.0;
+                Debug.Log("[RegionMap] 細部 " + line);
+                DetailLog.Append(line).Append('\n');
+            }
+
             if (_clipUntil > 0.0)
             {
                 double now = EditorApplication.timeSinceStartup;
@@ -107,6 +144,8 @@ namespace Vastcore.RegionMap.Editor
             }
 
             RegionSite target = explorer.Region.Sites.Count > 0 ? explorer.Region.Sites[0] : null;
+            // 細部の確認は、まだ発見していない 2 つ目の地点の上で行う（拡大した表示でのサーチと発見を確かめるため）
+            RegionSite second = explorer.Region.Sites.Count > 1 ? explorer.Region.Sites[1] : target;
             switch (step)
             {
                 case 0:
@@ -167,8 +206,121 @@ namespace Vastcore.RegionMap.Editor
                 case 10:
                     Capture(output, "explorer-5-atlas.png");
                     break;
+                case 11:
+                    explorer.NextStyle();
+                    break;
+                case 12:
+                    explorer.NextStyle();
+                    break;
+                case 13:
+                    // 細部の確認の準備: 地点の上へ拡大 ×10。まず細部を切った広域の絵を撮る（比べる材料）
+                    if (second != null)
+                    {
+                        explorer.Detail.Enabled = false;
+                        explorer.MoveCursor(second.MapX, second.MapY);
+                        explorer.SetView(10f, second.MapX, second.MapY);
+                    }
+                    break;
+                case 14:
+                    Capture(output, "detail-0-broad-x10.png");
+                    break;
+                case 15:
+                    explorer.Detail.Enabled = true;
+                    _detailLabel = "×10";
+                    _detailStartedAt = EditorApplication.timeSinceStartup;
+                    break;
+                case 16:
+                    // 細部を作っている最中の画面（広域の絵のまま、札に作成中と出る）
+                    Capture(output, "detail-1-building-x10.png");
+                    _awaitDetail = true;
+                    _detailDeadline = EditorApplication.timeSinceStartup + DetailTimeoutSeconds;
+                    break;
+                case 17:
+                    Capture(output, "detail-2-ready-x10.png");
+                    break;
+                case 18:
+                    // 拡大した表示でも、サーチと発見が同じように働く
+                    if (second != null)
+                    {
+                        explorer.MoveCursor(second.MapX + 1.0f, second.MapY);
+                        SearchResult near2 = explorer.SearchAtCursor();
+                        Debug.Log("[RegionMap] 細部 ×10 で 1 離れた位置のサーチ: " + near2.Signal);
+                        Debug.Log("[RegionMap] 細部 ×10 で発見した地点: " + (near2.Site != null ? near2.Site.Name : "なし"));
+                    }
+                    break;
+                case 19:
+                    Capture(output, "detail-3-found-x10.png");
+                    break;
+                case 20:
+                    if (second != null) explorer.SetView(40f, second.MapX, second.MapY);
+                    _detailLabel = "×40";
+                    _detailStartedAt = EditorApplication.timeSinceStartup;
+                    break;
+                case 21:
+                    Capture(output, "detail-4-building-x40.png");
+                    _awaitDetail = true;
+                    _detailDeadline = EditorApplication.timeSinceStartup + DetailTimeoutSeconds;
+                    break;
+                case 22:
+                    Capture(output, "detail-5-ready-x40.png");
+                    break;
+                case 23:
+                    if (second != null) explorer.SetView(64f, second.MapX, second.MapY);
+                    _detailLabel = "×64";
+                    _detailStartedAt = EditorApplication.timeSinceStartup;
+                    break;
+                case 24:
+                    Capture(output, "detail-6-building-x64.png");
+                    _awaitDetail = true;
+                    _detailDeadline = EditorApplication.timeSinceStartup + DetailTimeoutSeconds;
+                    break;
+                case 25:
+                    Capture(output, "detail-7-ready-x64.png");
+                    break;
+                case 26:
+                    // 描き方を替えると、細部も同じ描き方に描き直される
+                    explorer.NextStyle();
+                    _detailLabel = "×64 地図帳";
+                    _detailStartedAt = EditorApplication.timeSinceStartup;
+                    _awaitDetail = true;
+                    _detailDeadline = EditorApplication.timeSinceStartup + DetailTimeoutSeconds;
+                    break;
+                case 27:
+                    Capture(output, "detail-8-atlas-x64.png");
+                    break;
+                case 28:
+                    // 縮めると広域へ戻る
+                    explorer.SetView(2f, 50f, 50f);
+                    break;
+                case 29:
+                    Capture(output, "detail-9-back-x2.png");
+                    Debug.Log("[RegionMap] 縮めた後の細部: " + explorer.Detail.Phase + "、濃さ " + explorer.Detail.Alpha.ToString("0.00"));
+                    break;
+                case 30:
+                    // 縮めてすぐ同じ場所を同じ拡大率へ戻すと、残っている窓がそのまま出る（作り直さない）
+                    explorer.SetView(64f, second.MapX, second.MapY);
+                    break;
+                case 31:
+                    Capture(output, "detail-10-again-x64.png");
+                    Debug.Log("[RegionMap] 縮めて拡大し直した後の細部: " + explorer.Detail.Phase + "、作成 " + explorer.Detail.BuildCount + " 回");
+                    // 窓の外へ動かすと、見える範囲が窓から出る分だけ作り直す
+                    explorer.SetView(64f, second.MapX + 1.6f, second.MapY);
+                    _detailLabel = "×64 動かした後";
+                    _detailStartedAt = EditorApplication.timeSinceStartup;
+                    break;
+                case 32:
+                    Capture(output, "detail-11-panned-building-x64.png");
+                    _awaitDetail = true;
+                    _detailDeadline = EditorApplication.timeSinceStartup + DetailTimeoutSeconds;
+                    break;
+                case 33:
+                    Capture(output, "detail-12-panned-ready-x64.png");
+                    break;
                 default:
                     Vector2 drift = explorer.CloudDrift - _driftAtReady;
+                    DetailLog.Append("作っていない間の更新の最長間隔 ").Append((_idleLongestGap * 1000.0).ToString("0")).Append(" ms").Append('\n');
+                    Debug.Log("[RegionMap] 作っていない間の更新の最長間隔 " + (_idleLongestGap * 1000.0).ToString("0") + " ms");
+                    File.WriteAllText(Path.Combine(output, "explorer-detail-result.txt"), DetailLog.ToString());
                     Finish(output, string.Format("PASS: 発見 {0} / {1}、サーチ {2} 回、画面 {3}x{4}、地図が出るまで {5:0.0} 秒、雲は {6:0.0} 秒で東へ {7:0.0000}・南へ {8:0.0000}（地図の幅を 1 として）",
                         explorer.Session.Discovered.Count, explorer.Session.TotalSites, explorer.Session.SearchCount, Screen.width, Screen.height,
                         _readyAt - _startedAt, EditorApplication.timeSinceStartup - _readyAt, drift.x, -drift.y), 0);

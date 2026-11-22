@@ -39,7 +39,10 @@ namespace Vastcore.RegionMap
         private const float ListRow = 27f;
         private const float CardWidth = 380f;
         private const float CardHeight = 150f;
-        private const float MaxZoom = 8f;
+        // 細部の地形（RegionDetailLayer）へ切り替わる拡大率から、窓が地図の幅 4 km になる 64 倍まで拡大できる
+        private const float MaxZoom = 64f;
+        private const float DetailBadgeWidth = 360f;
+        private const float DetailBadgeHeight = 66f;
 
         // 重ねる部品の面は半透明。下の地図と雲が透けて見える
         private static readonly Color PartColor = new Color(10f / 255f, 13f / 255f, 18f / 255f, 0.56f);
@@ -99,6 +102,10 @@ namespace Vastcore.RegionMap
         private RegionCloudLayer _clouds;
         private RegionCloudLayer _highClouds;
         private RegionCloudLayer _cloudShadows;
+        private RegionDetailLayer _detail;
+        private Text _zoomText;
+        private Text _detailText;
+        private RectTransform _detailBar;
         private RawImage _areaLines;
         private RectTransform _areaLabelRoot;
         private readonly List<RectTransform> _areaLabels = new List<RectTransform>();
@@ -209,6 +216,12 @@ namespace Vastcore.RegionMap
             get { return _zoom; }
         }
 
+        /// <summary>拡大した時に出す細部の地形の層。状態と作成時間を読める。</summary>
+        public RegionDetailLayer Detail
+        {
+            get { return _detail; }
+        }
+
         /// <summary>外から差し替えた絵を使っている部品の名前（RegionMapSkin の名前をコンマで区切る）。差し替えが無ければ空。</summary>
         public string CustomSkin
         {
@@ -231,7 +244,6 @@ namespace Vastcore.RegionMap
             // Resources/RegionMapSkin/ に画像があればそれを使い、無ければコードで作る既定の絵にする
             _ring = RegionMapSkin.Load(RegionMapSkin.SearchRing);
             _skinSearchRing = _ring != null;
-            if (_ring == null) _ring = RegionMapTexture.CreateRingSprite(128, 3f, false);
             _markRing = RegionMapSkin.Load(RegionMapSkin.FoundRing);
             _skinFoundRing = _markRing != null;
             if (_markRing == null) _markRing = RegionMapTexture.CreateRingSprite(96, 6f, false);
@@ -259,6 +271,7 @@ namespace Vastcore.RegionMap
             if (_highCloudTexture != null) Destroy(_highCloudTexture);
             if (_shadowTexture != null) Destroy(_shadowTexture);
             if (_areaTexture != null) Destroy(_areaTexture);
+            if (_detail != null) _detail.Dispose();
         }
 
         private void Update()
@@ -298,6 +311,7 @@ namespace Vastcore.RegionMap
             HandlePointer();
             HandleKeys();
             RefreshOverlay();
+            UpdateDetail();
         }
 
         // ---- 外から呼べる操作（ボタンとテストの両方が使う） ----
@@ -392,6 +406,14 @@ namespace Vastcore.RegionMap
             _center = new Vector2(0.5f, 1f - _cursorMap.y / RegionData.MapUnits);
             ClampView();
             EnsureVisible(_cursorMap);
+        }
+
+        /// <summary>拡大率と、画面の中央に来る地図座標（0〜100）を決める（確認用の入口）。</summary>
+        public void SetView(float zoom, float mapX, float mapY)
+        {
+            _zoom = Mathf.Clamp(zoom, MinZoom(), MaxZoom);
+            _center = new Vector2(mapX / RegionData.MapUnits, 1f - mapY / RegionData.MapUnits);
+            ClampView();
         }
 
         /// <summary>画面の下に知らせを出す。seconds が 0 以下なら、次の知らせまで出したままにする。</summary>
@@ -525,6 +547,7 @@ namespace Vastcore.RegionMap
                 _zoom = 1f;
                 _center = new Vector2(0.5f, 0.5f);
                 _cursorMap = new Vector2(50f, 50f);
+                _detail.Reset();
                 ClearDiscovered();
                 BuildAreaLabels();
                 ClampView();
@@ -601,7 +624,8 @@ namespace Vastcore.RegionMap
                 if (_zoom > MinZoom() + 0.001f) ShowWholeRegion(); else ShowFullWidth();
             }
 
-            float step = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) ? 0.1f : 0.5f;
+            // 矢印キーの 1 回分は、拡大しても画面上で同じ長さに近づける（細部へ拡大した画面で 1.3 km も飛ばない）
+            float step = (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) ? 0.1f : 0.5f) / Mathf.Max(1f, _zoom / 4f);
             float dx = 0f;
             float dy = 0f;
             if (Input.GetKeyDown(KeyCode.LeftArrow)) dx -= step;
@@ -707,6 +731,60 @@ namespace Vastcore.RegionMap
             return new Vector2((u - _center.x) * side, (v - _center.y) * side);
         }
 
+        // ---- 細部の地形 ----
+
+        /// <summary>見ている範囲を層へ渡し、札を更新する。</summary>
+        private void UpdateDetail()
+        {
+            Vector2 view = ViewSize();
+            float side = MapSide();
+            float centerX = _center.x * RegionData.MapUnits;
+            float centerY = (1f - _center.y) * RegionData.MapUnits;
+            float halfWidth = view.x / side * 0.5f * RegionData.MapUnits;
+            float halfHeight = view.y / side * 0.5f * RegionData.MapUnits;
+            _detail.Tick(_data, _render, centerX, centerY, halfWidth, halfHeight, _zoom, Time.unscaledDeltaTime);
+            RefreshDetailBadge();
+        }
+
+        private void RefreshDetailBadge()
+        {
+            _zoomText.text = "拡大 ×" + _zoom.ToString(_zoom < 10f ? "0.0" : "0", CultureInfo.InvariantCulture);
+            RegionDetail current = _detail.Current;
+            RegionDetailPhase phase = _detail.Phase;
+            bool building = phase == RegionDetailPhase.Building || phase == RegionDetailPhase.Waiting;
+            string text;
+            if (building)
+            {
+                text = "細部を作成中…" + (_detail.BuildSeconds > 0f ? " " + _detail.BuildSeconds.ToString("0.0", CultureInfo.InvariantCulture) + " 秒" : string.Empty);
+            }
+            else if (phase == RegionDetailPhase.Failed)
+            {
+                text = "細部を作成できませんでした";
+            }
+            else if (phase == RegionDetailPhase.Ready && current != null)
+            {
+                text = "地形：細部（" + current.Data.CellMeters.ToString("0", CultureInfo.InvariantCulture) + " m／セル）";
+            }
+            else
+            {
+                text = "地形：広域（" + _data.CellMeters.ToString("0", CultureInfo.InvariantCulture) + " m／セル）"
+                    + (_detail.Enabled && _zoom < RegionDetailLayer.MinZoom ? " ・ ×" + RegionDetailLayer.MinZoom.ToString("0", CultureInfo.InvariantCulture) + " から細部" : string.Empty);
+            }
+            _detailText.text = text;
+            _detailText.color = building ? AccentLightColor : MutedColor;
+
+            GameObject track = _detailBar.parent.gameObject;
+            if (track.activeSelf != building) track.SetActive(building);
+            if (building)
+            {
+                // 帯が左右を行き来する（作成の進み具合は分からないので、動いていることだけを見せる）
+                float width = DetailBadgeWidth - PartPad * 2f;
+                float travel = width - 96f;
+                float t = Mathf.PingPong(Time.unscaledTime * 0.9f, 1f);
+                _detailBar.anchoredPosition = new Vector2(travel * t, 0f);
+            }
+        }
+
         // ---- 表示の更新 ----
 
         private void RefreshOverlay()
@@ -798,6 +876,8 @@ namespace Vastcore.RegionMap
             _coordinateX.text = at.x.ToString("00.0", CultureInfo.InvariantCulture);
             _coordinateY.text = at.y.ToString("00.0", CultureInfo.InvariantCulture);
             float height = _data.HeightAtMap(at.x, at.y);
+            float fine;
+            if (_detail.TryHeightAt(at.x, at.y, out fine)) height = fine;
             _groundLabel.text = height > 0f ? "標高" : "水深";
             _groundValue.text = Meters(Mathf.Abs(height)) + " m";
             _biomeValue.text = BiomeName(_data.BiomeAtMap(at.x, at.y));
@@ -1040,6 +1120,7 @@ namespace Vastcore.RegionMap
             BuildParts(canvasObject.transform);
             BuildTools(canvasObject.transform);
             BuildHints(canvasObject.transform);
+            BuildDetailBadge(canvasObject.transform);
             BuildMessage(canvasObject.transform);
         }
 
@@ -1055,6 +1136,8 @@ namespace Vastcore.RegionMap
             _content = CreateRect(_viewRect, "Map");
             _content.sizeDelta = new Vector2(1920f, 1920f);
             _map = CreateLayer(_content, "Image");
+            // 細部の層は広域の絵のすぐ上、雲の下に置く（雲と影は細部の上も流れる）
+            _detail = new RegionDetailLayer(_content);
             _cloudShadows = CreateCloudLayer(_content, "Cloud Shadows");
             _clouds = CreateCloudLayer(_content, "Clouds");
             _highClouds = CreateCloudLayer(_content, "High Clouds");
@@ -1065,10 +1148,7 @@ namespace Vastcore.RegionMap
             // エリアの名前は板の子にせず、位置だけ毎フレーム合わせる（拡大しても字の大きさが変わらない）
             _areaLabelRoot = CreateRect(_viewRect, "Area Names");
             _markerRoot = CreateRect(_viewRect, "Markers");
-            Image rangeImage = CreateImage(_viewRect, "Search Range", _skinSearchRing ? Color.white : new Color(1f, 1f, 1f, 0.85f), _ring);
-            _range = rangeImage.rectTransform;
-            rangeImage.preserveAspect = _skinSearchRing;
-            if (!_skinSearchRing) AddDarkEdge(_range.gameObject);
+            _range = CreateSearchRange(_viewRect);
             _range.gameObject.SetActive(false);
 
             // 十字は 1 枚の画像（表示の 2 倍の細かさで作り、縮めて出す）
@@ -1079,6 +1159,26 @@ namespace Vastcore.RegionMap
             _cursor.gameObject.SetActive(false);
 
             BuildCard(_viewRect);
+        }
+
+        /// <summary>
+        /// サーチの範囲の輪。画像を差し替えた時はその画像、無ければ線の太さが一定の輪（RegionRingGraphic）。
+        /// 細部まで拡大すると輪の直径が画面の数倍になるので、画像を引き伸ばす輪は太い帯になってしまう。
+        /// </summary>
+        private RectTransform CreateSearchRange(RectTransform parent)
+        {
+            if (_skinSearchRing)
+            {
+                Image image = CreateImage(parent, "Search Range", Color.white, _ring);
+                image.preserveAspect = true;
+                return image.rectTransform;
+            }
+            var created = new GameObject("Search Range", typeof(RectTransform), typeof(RegionRingGraphic));
+            created.transform.SetParent(parent, false);
+            var ring = created.GetComponent<RegionRingGraphic>();
+            ring.raycastTarget = false;
+            ring.color = new Color(1f, 1f, 1f, 0.85f);
+            return ring.rectTransform;
         }
 
         private void BuildCard(RectTransform parent)
@@ -1270,6 +1370,33 @@ namespace Vastcore.RegionMap
                 x += actionWidth + (k < keys.Length - 1 ? 20f : 14f);
             }
             rect.sizeDelta = new Vector2(x, ToolHeight);
+        }
+
+        /// <summary>右上の札。拡大率と、地形が広域か細部か（作成中ならその経過）を出す。</summary>
+        private void BuildDetailBadge(Transform canvas)
+        {
+            Image badge = CreateImage(canvas, "Detail Badge", PartColor, null);
+            RectTransform rect = badge.rectTransform;
+            rect.anchorMin = new Vector2(1f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+            rect.sizeDelta = new Vector2(DetailBadgeWidth, DetailBadgeHeight);
+            rect.anchoredPosition = new Vector2(-Margin, -Margin);
+            AddFrame(rect, LineColor);
+            _zoomText = CreateText(rect, "Zoom", "", 18, TextColor, TextAnchor.UpperLeft, _numberFont);
+            Place(_zoomText.rectTransform, PartPad, -9f, DetailBadgeWidth - PartPad * 2f, 26f);
+            _detailText = CreateText(rect, "Terrain", "", 17, MutedColor, TextAnchor.UpperLeft, _font);
+            Place(_detailText.rectTransform, PartPad, -33f, DetailBadgeWidth - PartPad * 2f, 24f);
+            // 作成中だけ、札の下端を行き来する帯を出す
+            Image track = CreateImage(rect, "Progress Track", OffColor, null);
+            Place(track.rectTransform, PartPad, -DetailBadgeHeight + 7f, DetailBadgeWidth - PartPad * 2f, 3f);
+            Image bar = CreateImage(track.rectTransform, "Progress Bar", AccentColor, null);
+            _detailBar = bar.rectTransform;
+            _detailBar.anchorMin = new Vector2(0f, 0f);
+            _detailBar.anchorMax = new Vector2(0f, 1f);
+            _detailBar.pivot = new Vector2(0f, 0.5f);
+            _detailBar.sizeDelta = new Vector2(96f, 0f);
+            track.gameObject.SetActive(false);
         }
 
         private void BuildMessage(Transform canvas)
