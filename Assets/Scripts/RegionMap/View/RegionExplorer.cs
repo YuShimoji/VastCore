@@ -21,6 +21,9 @@ namespace Vastcore.RegionMap
         [SerializeField] private RegionSpec _spec = new RegionSpec { NameStyle = RegionNameStyle.Systematic };
         [SerializeField] private RegionRenderOptions _render = new RegionRenderOptions();
 
+        [Tooltip("サーチの規則。Expedition＝拠点から日数を使って足を伸ばし、手掛かりを読んで探す（SP-021 軸 H）。Signal＝反応の強さだけ（前の規則）。")]
+        [SerializeField] private SearchRules _rules = SearchRules.Expedition;
+
         [Tooltip("オンにすると、サーチしなくてもカーソル位置の反応を常に表示する。")]
         [SerializeField] private bool _liveSignal;
 
@@ -46,6 +49,14 @@ namespace Vastcore.RegionMap
         private const float MaxZoom = 64f;
         private const float DetailBadgeWidth = 360f;
         private const float DetailBadgeHeight = 66f;
+        // 遠征の規則の部品（左の「遠征の残り」と、右の「手掛かり」）
+        private const float SignalHeight = 134f;
+        private const float ExpeditionHeight = 118f;
+        private const int MaxClueCards = 4;
+        // 右の手掛かりの部品が覆う幅。遠征の規則では、地図の東端もこの幅だけ内側へ引き出せる
+        private const float RightInset = Margin + PartWidth + Margin;
+        private const float EndWidth = 560f;
+        private const float EndHeight = 236f;
 
         // 重ねる部品の面は半透明。下の地図と雲が透けて見える
         private static readonly Color PartColor = new Color(10f / 255f, 13f / 255f, 18f / 255f, 0.56f);
@@ -184,6 +195,36 @@ namespace Vastcore.RegionMap
         private Vector2 _panLastLocal;
         private SearchSignal _lastSignal = SearchSignal.None;
 
+        // 遠征の規則（RegionExpedition）
+        private RegionExpedition _expedition;
+        private CompassPoint _lastDirection = CompassPoint.None;
+        private Vector2 _lastSearchMap;
+        private ExpeditionCost _cursorCost;
+        private Vector2 _cursorCostAt = new Vector2(-1f, -1f);
+        private int _cursorCostVersion = -1;
+        private int _clueVersion = -1;
+        private Sprite _triangle;
+        private RectTransform _expeditionPart;
+        private RectTransform _signalPart;
+        private float _partsTop;
+        private Text _daysValue;
+        private Text _daysOf;
+        private Text _daysNote;
+        private RectTransform _daysFill;
+        private Text _costText;
+        private Text _searchLabel;
+        private RectTransform _searchKeyCap;
+        private RectTransform _cluePart;
+        private Text _clueHeader;
+        private readonly List<GameObject> _clueItems = new List<GameObject>();
+        private RegionRingGraphic _campRing;
+        private RectTransform _campLine;
+        private RectTransform _startCamp;
+        private RectTransform _arrow;
+        private RectTransform _endPanel;
+        private Text _endTitle;
+        private Text _endStats;
+
         public RegionData Region
         {
             get { return _data; }
@@ -192,6 +233,24 @@ namespace Vastcore.RegionMap
         public ExplorationSession Session
         {
             get { return _session; }
+        }
+
+        /// <summary>今のサーチの規則。</summary>
+        public SearchRules Rules
+        {
+            get { return _rules; }
+        }
+
+        /// <summary>遠征の規則の状態（日数・拠点・手掛かり）。地域を作るまでは null。</summary>
+        public RegionExpedition Expedition
+        {
+            get { return _expedition; }
+        }
+
+        /// <summary>直前のサーチで出た方角（強い・弱い反応の時）。</summary>
+        public CompassPoint LastDirection
+        {
+            get { return _lastDirection; }
         }
 
         /// <summary>地域の生成と描画が終わり、操作できる状態か。</summary>
@@ -264,6 +323,7 @@ namespace Vastcore.RegionMap
             _skinCrosshair = _crosshair != null;
             // 十字の腕は、発見した地点の輪（半径 27）の外に出す。発見した地点に重ねても、輪と腕が重ならない
             if (_crosshair == null) _crosshair = RegionMapTexture.CreateCrosshairSprite(176, 68f, 5f, 2.5f);
+            _triangle = CreateTriangleSprite(64);
             EnsureCamera();
             EnsureEventSystem();
             BuildScreen();
@@ -338,6 +398,7 @@ namespace Vastcore.RegionMap
         public SearchResult SearchAtCursor()
         {
             if (!IsReady) return new SearchResult();
+            if (_rules == SearchRules.Expedition) return SearchOnExpedition();
             HideCard();
             SearchResult result = _session.Search(_cursorMap.x, _cursorMap.y);
             _lastSignal = result.Signal;
@@ -360,6 +421,137 @@ namespace Vastcore.RegionMap
             }
             RefreshReadout();
             return result;
+        }
+
+        /// <summary>遠征の規則でサーチする。日数を使い、反応に方角が付き、発見した地点が拠点になる。</summary>
+        private SearchResult SearchOnExpedition()
+        {
+            if (_expedition.IsOver)
+            {
+                ShowEnd();
+                return new SearchResult();
+            }
+            ExpeditionStep step = _expedition.Search(_cursorMap.x, _cursorMap.y);
+            if (!step.Done)
+            {
+                ShowMessage(step.Refusal, 4f);
+                return new SearchResult();
+            }
+            HideCard();
+            SearchResult result = step.Result;
+            _lastSignal = result.Signal;
+            _lastDirection = step.Direction;
+            _lastSearchMap = _cursorMap;
+            string days = "（" + step.DaysSpent + " 日）";
+            string toward = RegionCompass.Label(step.Direction);
+            switch (result.Signal)
+            {
+                case SearchSignal.Found:
+                    AddDiscovered(result.Site);
+                    ShowCard(result.Site);
+                    ExpeditionReward reward = step.Reward;
+                    int opened = reward != null ? reward.OpenedClues.Count : 0;
+                    ShowMessage("拠点になった。日数 +" + (reward != null ? reward.Days : 0) + (opened > 0 ? "・手掛かりが " + opened + " 件読める" : string.Empty), 5f);
+                    break;
+                case SearchSignal.Strong:
+                    ShowMessage("強い反応。" + toward + "のすぐ近くに何かある" + days, 4f);
+                    break;
+                case SearchSignal.Faint:
+                    ShowMessage("弱い反応。" + toward + "の方に何かある" + days, 4f);
+                    break;
+                default:
+                    ShowMessage("反応なし" + days, 3f);
+                    break;
+            }
+            if (step.EndedNow) ShowEnd();
+            RefreshClues();
+            RefreshReadout();
+            return result;
+        }
+
+        /// <summary>サーチの規則を替える。発見済みと日数は消して、はじめからにする。</summary>
+        public void SetRules(SearchRules rules)
+        {
+            _rules = rules;
+            if (_session != null) RestartExpedition();
+            ApplyRules();
+            if (IsReady) ShowMessage(rules == SearchRules.Expedition ? "規則：遠征（日数・拠点・手掛かり）" : "規則：反応だけ（前の規則）", 4f);
+        }
+
+        /// <summary>同じ地域で、遠征をはじめからやり直す。</summary>
+        public void RestartExpedition()
+        {
+            if (_session == null) return;
+            if (_expedition != null) _expedition.Begin();
+            else _session.Reset();
+            ClearDiscovered();
+            _lastSignal = SearchSignal.None;
+            _lastDirection = CompassPoint.None;
+            HideEnd();
+            _clueVersion = -1;
+            RefreshClues();
+            RefreshReadout();
+        }
+
+        /// <summary>手掛かりを詳しく読む（日数を使う）。</summary>
+        public bool ReadClue(RegionClue clue)
+        {
+            if (_expedition == null || _rules != SearchRules.Expedition) return false;
+            bool done = _expedition.ReadClue(clue);
+            ShowMessage(done ? "手掛かりを読んだ（" + _expedition.ReadDays + " 日）" : "日数が足りない", 3f);
+            if (_expedition.IsOver) ShowEnd();
+            RefreshClues();
+            RefreshReadout();
+            return done;
+        }
+
+        /// <summary>遠征の終わりの結果を画面の中央に出す。</summary>
+        private void ShowEnd()
+        {
+            if (_expedition == null) return;
+            _endTitle.text = _expedition.Completed ? "すべての地点を見つけた" : "遠征の終わり";
+            _endStats.text = "発見 " + _session.Discovered.Count + " / " + _session.TotalSites
+                + "　・　サーチ " + _session.SearchCount + " 回　・　拠点 " + _expedition.Camps.Count + "\n"
+                + "使った日数 " + _expedition.DaysUsed + "　・　発見で戻った日数 " + _expedition.DaysGained + "　・　残り " + _expedition.DaysLeft + " 日";
+            _endPanel.gameObject.SetActive(true);
+            _arrow.gameObject.SetActive(false);
+        }
+
+        private void HideEnd()
+        {
+            if (_endPanel != null) _endPanel.gameObject.SetActive(false);
+        }
+
+        /// <summary>規則に合わせて、遠征の部品と地図の上の印を出し入れし、左の部品を並べ直す。</summary>
+        private void ApplyRules()
+        {
+            bool expedition = _rules == SearchRules.Expedition;
+            _expeditionPart.gameObject.SetActive(expedition);
+            _cluePart.gameObject.SetActive(expedition && _data != null);
+            if (!expedition)
+            {
+                HideEnd();
+                SetSearchLabel("サーチ");
+                if (_task == null && _data != null) _searchButton.interactable = true;
+            }
+            LayoutParts();
+            if (_data != null) ClampView();
+        }
+
+        /// <summary>左の部品を上から並べる（遠征の規則では、反応の部品の上に「遠征の残り」を入れる）。</summary>
+        private void LayoutParts()
+        {
+            float y = _partsTop;
+            if (_rules == SearchRules.Expedition)
+            {
+                _expeditionPart.anchoredPosition = new Vector2(Margin, y);
+                y -= ExpeditionHeight + PartGap;
+            }
+            _signalPart.anchoredPosition = new Vector2(Margin, y);
+            y -= SignalHeight + PartGap;
+            _listTop = -y;
+            _listPart.anchoredPosition = new Vector2(Margin, y);
+            LayoutList();
         }
 
         /// <summary>seed を 1 つ進めて別の地域を作る。</summary>
@@ -553,7 +745,12 @@ namespace Vastcore.RegionMap
             if (!sameRegion)
             {
                 _session = new ExplorationSession(_data);
+                _expedition = new RegionExpedition(_session);
                 _lastSignal = SearchSignal.None;
+                _lastDirection = CompassPoint.None;
+                _clueVersion = -1;
+                _cursorCostVersion = -1;
+                HideEnd();
                 _zoom = 1f;
                 _center = new Vector2(0.5f, 0.5f);
                 _cursorMap = new Vector2(50f, 50f);
@@ -564,7 +761,9 @@ namespace Vastcore.RegionMap
                 RegionFeature region = _data.Features.Find(f => f.Kind == RegionFeatureKind.Region);
                 _title.text = (region != null && !string.IsNullOrEmpty(region.Name) ? region.Name : "地域") + "　seed " + _data.Spec.Seed;
                 _subtitle.text = string.Format("{0:0} km 四方 ・ 陸 {1:0}% ・ 最高 {2} m", _data.SizeKm, _data.LandFraction * 100f, Meters(_data.MaxHeight));
-                ShowMessage("地図をクリックして位置を決め、サーチで調べる", 8f);
+                ShowMessage(_rules == SearchRules.Expedition
+                    ? "野営地から " + _expedition.StartDays + " 日の遠征。手掛かりを読み、地図をクリックしてサーチする"
+                    : "地図をクリックして位置を決め、サーチで調べる", 8f);
             }
             else
             {
@@ -573,8 +772,10 @@ namespace Vastcore.RegionMap
             _cursor.gameObject.SetActive(true);
             _range.gameObject.SetActive(true);
             SetButtons(true);
+            ApplyRules();
             RefreshCloudLayers();
             RefreshAreaLayers();
+            RefreshClues();
             RefreshReadout();
         }
 
@@ -682,10 +883,12 @@ namespace Vastcore.RegionMap
             float side = view.x * _zoom;
 
             // 横：地図の西端は、左の部品の右端までしか内側へ入れない。東端は画面の右端より内側へ入れない
-            float open = view.x - LeftInset;
+            // （遠征の規則では、右の手掛かりの部品の左端まで入れる。部品の下の地点を引き出して触れる）
+            float right = ClueShown() ? RightInset : 0f;
+            float open = view.x - LeftInset - right;
             float west = -_center.x * side;
             if (side <= open) west = -view.x * 0.5f + LeftInset + (open - side) * 0.5f;
-            else west = Mathf.Clamp(west, view.x * 0.5f - side, -view.x * 0.5f + LeftInset);
+            else west = Mathf.Clamp(west, view.x * 0.5f - right - side, -view.x * 0.5f + LeftInset);
             _center.x = -west / side;
 
             // 縦：地図が画面より低い時は中央に置く
@@ -707,7 +910,7 @@ namespace Vastcore.RegionMap
             Vector2 view = ViewSize();
             Vector2 local = MapToLocal(map);
             float left = -view.x * 0.5f + LeftInset + 60f;
-            float right = view.x * 0.5f - 140f;
+            float right = view.x * 0.5f - (ClueShown() ? RightInset + 60f : 140f);
             float bottom = -view.y * 0.5f + 190f;
             float top = view.y * 0.5f - 150f;
             Vector2 shift = Vector2.zero;
@@ -718,6 +921,12 @@ namespace Vastcore.RegionMap
             if (shift == Vector2.zero) return;
             _center += shift / MapSide();
             ClampView();
+        }
+
+        /// <summary>右の手掛かりの部品を出しているか（遠征の規則の時）。</summary>
+        private bool ClueShown()
+        {
+            return _rules == SearchRules.Expedition && _cluePart != null && _cluePart.gameObject.activeSelf;
         }
 
         // ---- 座標の換算（地図座標は Y が南向き、テクスチャは V が上向き） ----
@@ -841,8 +1050,66 @@ namespace Vastcore.RegionMap
                 RegionSite site = _markerSites[m];
                 _markers[m].anchoredPosition = MapToLocal(new Vector2(site.MapX, site.MapY));
             }
+            RefreshExpeditionMarks(side, diameter * 0.5f);
             PlaceCard();
             RefreshLabelCover();
+        }
+
+        /// <summary>
+        /// 遠征の印。出発の野営地、カーソルにいちばん近い拠点の輪（この中は移動の日数が 0）と、その拠点からカーソルへの線、
+        /// 直前のサーチの方角の矢印（サーチした位置の輪の外に出す）。
+        /// </summary>
+        private void RefreshExpeditionMarks(float side, float rangeRadius)
+        {
+            bool on = _rules == SearchRules.Expedition && _expedition != null;
+            bool live = on && !_expedition.IsOver;
+            _startCamp.gameObject.SetActive(on);
+            if (on) _startCamp.anchoredPosition = MapToLocal(new Vector2(_expedition.StartCamp.MapX, _expedition.StartCamp.MapY));
+
+            ExpeditionCost cost = live ? CursorCost() : null;
+            bool ring = cost != null && cost.Camp != null;
+            _campRing.gameObject.SetActive(ring);
+            _campLine.gameObject.SetActive(ring && cost.CampDistance > _session.FoundRadius);
+            if (ring)
+            {
+                Vector2 camp = MapToLocal(new Vector2(cost.Camp.MapX, cost.Camp.MapY));
+                float radius = _expedition.CampStep / RegionData.MapUnits * side;
+                _campRing.rectTransform.anchoredPosition = camp;
+                _campRing.rectTransform.sizeDelta = new Vector2(radius * 2f, radius * 2f);
+                // 線は拠点の印の外から、カーソルの輪の外まで
+                Vector2 to = _cursor.anchoredPosition;
+                Vector2 span = to - camp;
+                float length = span.magnitude;
+                Vector2 unit = length > 0.001f ? span / length : Vector2.right;
+                float trimmed = Mathf.Max(0f, length - 18f - rangeRadius);
+                _campLine.anchoredPosition = camp + unit * 18f;
+                _campLine.sizeDelta = new Vector2(trimmed, 2f);
+                _campLine.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(span.y, span.x) * Mathf.Rad2Deg);
+            }
+
+            bool arrow = live && _lastDirection != CompassPoint.None;
+            _arrow.gameObject.SetActive(arrow);
+            if (arrow)
+            {
+                float degrees = RegionCompass.Degrees(_lastDirection);
+                float radians = degrees * Mathf.Deg2Rad;
+                var unit = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
+                _arrow.anchoredPosition = MapToLocal(_lastSearchMap) + unit * (rangeRadius + 10f);
+                _arrow.localRotation = Quaternion.Euler(0f, 0f, degrees);
+            }
+        }
+
+        /// <summary>カーソル位置でサーチした時の日数。カーソルと遠征の状態が変わった時だけ数え直す。</summary>
+        private ExpeditionCost CursorCost()
+        {
+            if (_expedition == null) return null;
+            if (_cursorCost == null || _cursorCostAt != _cursorMap || _cursorCostVersion != _expedition.Version)
+            {
+                _cursorCost = _expedition.CostAt(_cursorMap.x, _cursorMap.y);
+                _cursorCostAt = _cursorMap;
+                _cursorCostVersion = _expedition.Version;
+            }
+            return _cursorCost;
         }
 
         /// <summary>
@@ -965,9 +1232,132 @@ namespace Vastcore.RegionMap
             SearchSignal signal = _liveSignal ? _session.Sense(_cursorMap.x, _cursorMap.y).Signal : _lastSignal;
             int level = (int)signal;
             for (int b = 0; b < _signalBars.Length; b++) _signalBars[b].color = b < level ? AccentColor : OffColor;
-            _signalText.text = SignalName(signal);
+            bool expedition = _rules == SearchRules.Expedition && _expedition != null;
+            string toward = expedition && !_liveSignal ? RegionCompass.Label(_lastDirection) : string.Empty;
+            _signalText.text = SignalName(signal) + (toward.Length > 0 ? "・" + toward : string.Empty);
             _listCount.text = _session.Discovered.Count + " / " + _session.TotalSites;
             _searchCount.text = "サーチ " + _session.SearchCount + " 回";
+            if (expedition) RefreshExpeditionReadout();
+        }
+
+        /// <summary>遠征の残りの日数、カーソル位置でサーチした時の日数と内訳、サーチボタンの文字。</summary>
+        private void RefreshExpeditionReadout()
+        {
+            RegionExpedition ex = _expedition;
+            _daysValue.text = ex.DaysLeft.ToString(CultureInfo.InvariantCulture);
+            float valueWidth = _daysValue.preferredWidth;
+            _daysValue.rectTransform.sizeDelta = new Vector2(valueWidth, _daysValue.rectTransform.sizeDelta.y);
+            _daysOf.rectTransform.anchoredPosition = new Vector2(PartPad + valueWidth + 6f, _daysOf.rectTransform.anchoredPosition.y);
+            _daysOf.text = "日　／ 始め " + ex.StartDays + " 日";
+            _daysNote.text = "発見で +" + ex.FindDays + " 日　・　拠点 " + ex.Camps.Count;
+            float fill = Mathf.Clamp01(ex.DaysLeft / (float)Mathf.Max(1, ex.StartDays));
+            _daysFill.sizeDelta = new Vector2(PartInner * fill, 0f);
+
+            if (ex.IsOver)
+            {
+                _costText.text = "遠征は終わった。下の結果から、もう一度か別の地域へ";
+                SetSearchLabel("遠征の終わり");
+                if (_task == null) _searchButton.interactable = false;
+                return;
+            }
+            ExpeditionCost cost = CursorCost();
+            var parts = new List<string>(cost.Parts.Count);
+            for (int p = 0; p < cost.Parts.Count; p++) parts.Add(cost.Parts[p].Label + " " + cost.Parts[p].Days);
+            bool enough = cost.Total <= ex.DaysLeft;
+            _costText.text = "カーソル位置は " + cost.Total + " 日＝" + string.Join(" ＋ ", parts.ToArray()) + (enough ? string.Empty : "（足りない）");
+            _costText.color = enough ? MutedColor : AccentLightColor;
+            SetSearchLabel("サーチ　" + cost.Total + " 日");
+            if (_task == null) _searchButton.interactable = enough;
+        }
+
+        /// <summary>サーチボタンの文字を替え、キーの札と一緒に中央へ並べ直す。</summary>
+        private void SetSearchLabel(string text)
+        {
+            if (_searchLabel == null || _searchLabel.text == text) return;
+            _searchLabel.text = text;
+            float labelWidth = _searchLabel.preferredWidth;
+            float keyWidth = _searchKeyCap.sizeDelta.x;
+            float start = (PartInner - (labelWidth + 12f + keyWidth)) * 0.5f;
+            Place(_searchLabel.rectTransform, start, 0f, labelWidth, 50f);
+            Place(_searchKeyCap, start + labelWidth + 12f, -12f, keyWidth, 26f);
+        }
+
+        // ---- 手掛かり ----
+
+        /// <summary>右の手掛かりの部品を、遠征の状態が変わった時だけ作り直す。</summary>
+        private void RefreshClues()
+        {
+            if (_cluePart == null) return;
+            bool show = _rules == SearchRules.Expedition && _expedition != null;
+            if (_cluePart.gameObject.activeSelf != show) _cluePart.gameObject.SetActive(show);
+            if (!show || _clueVersion == _expedition.Version) return;
+            _clueVersion = _expedition.Version;
+
+            for (int i = 0; i < _clueItems.Count; i++) Destroy(_clueItems[i]);
+            _clueItems.Clear();
+            List<RegionClue> open = _expedition.OpenClues();
+            _clueHeader.text = "手掛かり（読める " + open.Count + " 件）";
+            float y = -40f;
+            int shown = Mathf.Min(MaxClueCards, open.Count);
+            for (int c = 0; c < shown; c++)
+            {
+                RegionClue clue = open[c];
+                if (c > 0)
+                {
+                    Image rule = CreateImage(_cluePart, "Clue Rule", LineColor, null);
+                    Place(rule.rectTransform, PartPad, y, PartInner, 1f);
+                    _clueItems.Add(rule.gameObject);
+                    y -= 9f;
+                }
+                Text title = CreateText(_cluePart, "Clue Title", clue.Title, 19, TextColor, TextAnchor.UpperLeft, clue.Title.Contains("?") ? _numberFont : _font);
+                Place(title.rectTransform, PartPad, y, PartInner, 26f);
+                _clueItems.Add(title.gameObject);
+                y -= 28f;
+                y = AddClueText(clue.NameLine + "\n" + clue.PlaceLine, MutedColor, y);
+                if (clue.State == ClueState.Read)
+                {
+                    y = AddClueText(clue.DetailLine, AccentLightColor, y);
+                }
+                else
+                {
+                    y -= 2f;
+                    Button read = CreateButton(_cluePart, "Clue Read", new Color(PartColor.r, PartColor.g, PartColor.b, 0.2f));
+                    RectTransform rect = (RectTransform)read.transform;
+                    Text label = CreateText(rect, "Label", "詳しく読む　" + _expedition.ReadDays + " 日", 14, AccentLightColor, TextAnchor.MiddleCenter, _font);
+                    float width = label.preferredWidth + 24f;
+                    Place(rect, PartPad, y, width, 24f);
+                    Stretch(label.rectTransform);
+                    AddFrame(rect, new Color(AccentColor.r, AccentColor.g, AccentColor.b, 0.85f));
+                    RegionClue target = clue;
+                    read.onClick.AddListener(() => ReadClue(target));
+                    read.interactable = _expedition.DaysLeft >= _expedition.ReadDays && !_expedition.IsOver;
+                    _clueItems.Add(read.gameObject);
+                    y -= 30f;
+                }
+                y -= 6f;
+            }
+            string foot = open.Count == 0
+                ? "読める手掛かりは無い。発見すると、近くの地点の手掛かりが読める"
+                : open.Count > shown ? "ほか " + (open.Count - shown) + " 件（先に読めた順）" : "発見すると、近くの地点の手掛かりが増える";
+            Text footer = CreateText(_cluePart, "Clue Footer", foot, 13, MutedColor, TextAnchor.UpperLeft, _font, false);
+            Place(footer.rectTransform, PartPad, y - 2f, PartInner, 20f);
+            FitText(footer, 10, 13);
+            _clueItems.Add(footer.gameObject);
+            y -= 28f;
+            _cluePart.sizeDelta = new Vector2(PartWidth, -y);
+        }
+
+        /// <summary>手掛かりの文を、部品の幅で折り返して置き、次の行の位置を返す。</summary>
+        private float AddClueText(string value, Color color, float y)
+        {
+            Text text = CreateText(_cluePart, "Clue Text", value, 14, color, TextAnchor.UpperLeft, _font);
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.lineSpacing = 1.05f;
+            Place(text.rectTransform, PartPad, y, PartInner, 20f);
+            float height = Mathf.Ceil(text.preferredHeight) + 2f;
+            text.rectTransform.sizeDelta = new Vector2(PartInner, height);
+            _clueItems.Add(text.gameObject);
+            return y - height - 2f;
         }
 
         private static string Meters(float value)
@@ -1104,7 +1494,9 @@ namespace Vastcore.RegionMap
             if (_cardSite == null) return;
             Vector2 view = ViewSize();
             Vector2 at = MapToLocal(new Vector2(_cardSite.MapX, _cardSite.MapY));
-            bool right = at.x + 64f + CardWidth <= view.x * 0.5f - Margin;
+            // 右の手掛かりの部品に掛かる時は、印の左側へ出す
+            float rightEdge = view.x * 0.5f - (ClueShown() ? RightInset - Margin + PartGap : Margin);
+            bool right = at.x + 64f + CardWidth <= rightEdge;
             bool below = at.y - 44f - CardHeight >= -view.y * 0.5f + Margin + ToolHeight + 14f;
             float x = right ? at.x + 64f : at.x - 64f - CardWidth;
             float y = below ? at.y - 44f : at.y + 44f + CardHeight;
@@ -1222,6 +1614,7 @@ namespace Vastcore.RegionMap
             BuildHints(canvasObject.transform);
             BuildDetailBadge(canvasObject.transform);
             BuildMessage(canvasObject.transform);
+            BuildEndPanel(canvasObject.transform);
         }
 
         private void BuildMap(Transform canvas)
@@ -1247,6 +1640,7 @@ namespace Vastcore.RegionMap
 
             // エリアの名前は板の子にせず、位置だけ毎フレーム合わせる（拡大しても字の大きさが変わらない）
             _areaLabelRoot = CreateRect(_viewRect, "Area Names");
+            BuildExpeditionMarks(_viewRect);
             _markerRoot = CreateRect(_viewRect, "Markers");
             _range = CreateSearchRange(_viewRect);
             _range.gameObject.SetActive(false);
@@ -1279,6 +1673,95 @@ namespace Vastcore.RegionMap
             ring.raycastTarget = false;
             ring.color = new Color(1f, 1f, 1f, 0.85f);
             return ring.rectTransform;
+        }
+
+        /// <summary>遠征の印（拠点の輪、拠点からカーソルへの線、出発の野営地、方角の矢印）。発見した地点の印より下に置く。</summary>
+        private void BuildExpeditionMarks(RectTransform parent)
+        {
+            var ringObject = new GameObject("Camp Range", typeof(RectTransform), typeof(RegionRingGraphic));
+            ringObject.transform.SetParent(parent, false);
+            _campRing = ringObject.GetComponent<RegionRingGraphic>();
+            _campRing.raycastTarget = false;
+            _campRing.Thickness = 1.5f;
+            _campRing.Rim = 1f;
+            _campRing.RimColor = new Color(0f, 0f, 0f, 0.35f);
+            _campRing.color = new Color(1f, 1f, 1f, 0.55f);
+            ringObject.SetActive(false);
+
+            _campLine = CreateImage(parent, "Camp Line", new Color(AccentLightColor.r, AccentLightColor.g, AccentLightColor.b, 0.8f), null).rectTransform;
+            _campLine.pivot = new Vector2(0f, 0.5f);
+            AddDarkEdge(_campLine.gameObject);
+            _campLine.gameObject.SetActive(false);
+
+            // 出発の野営地：上向きの白い三角と、その右の小さな名前
+            _startCamp = CreateRect(parent, "Start Camp");
+            Image tent = CreateImage(_startCamp, "Mark", Color.white, _triangle);
+            tent.rectTransform.sizeDelta = new Vector2(24f, 24f);
+            tent.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            AddDarkEdge(tent.gameObject);
+            Text campName = CreateText(_startCamp, "Name", "野営地", 15, TextColor, TextAnchor.MiddleLeft, _font);
+            Outline edge = campName.gameObject.AddComponent<Outline>();
+            edge.effectColor = new Color(0f, 0f, 0f, 0.9f);
+            edge.effectDistance = new Vector2(1.2f, -1.2f);
+            Place(campName.rectTransform, 0f, 0f, 80f, 22f);
+            campName.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            campName.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            campName.rectTransform.pivot = new Vector2(0f, 0.5f);
+            campName.rectTransform.anchoredPosition = new Vector2(16f, 0f);
+            _startCamp.gameObject.SetActive(false);
+
+            // 方角の矢印：軸と三角の頭。右向きに作り、方位の角度だけ回す
+            _arrow = CreateRect(parent, "Direction");
+            _arrow.pivot = new Vector2(0f, 0.5f);
+            Image shaft = CreateImage(_arrow, "Shaft", AccentColor, null);
+            shaft.rectTransform.anchorMin = new Vector2(0f, 0.5f);
+            shaft.rectTransform.anchorMax = new Vector2(0f, 0.5f);
+            shaft.rectTransform.pivot = new Vector2(0f, 0.5f);
+            shaft.rectTransform.sizeDelta = new Vector2(30f, 5f);
+            shaft.rectTransform.anchoredPosition = Vector2.zero;
+            AddDarkEdge(shaft.gameObject);
+            Image head = CreateImage(_arrow, "Head", AccentColor, _triangle);
+            head.rectTransform.anchorMin = new Vector2(0f, 0.5f);
+            head.rectTransform.anchorMax = new Vector2(0f, 0.5f);
+            head.rectTransform.pivot = new Vector2(0f, 0.5f);
+            head.rectTransform.sizeDelta = new Vector2(24f, 24f);
+            head.rectTransform.anchoredPosition = new Vector2(24f, 0f);
+            AddDarkEdge(head.gameObject);
+            _arrow.gameObject.SetActive(false);
+        }
+
+        /// <summary>右向きの三角（矢印の頭と、上へ回して野営地の印に使う）。4×4 の点で縁をなめらかにする。</summary>
+        private static Sprite CreateTriangleSprite(int size)
+        {
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            texture.wrapMode = TextureWrapMode.Clamp;
+            texture.filterMode = FilterMode.Bilinear;
+            var pixels = new Color32[size * size];
+            float tip = size - 3f;
+            float back = 3f;
+            float half = size * 0.5f - 3f;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    int inside = 0;
+                    for (int sy = 0; sy < 4; sy++)
+                    {
+                        for (int sx = 0; sx < 4; sx++)
+                        {
+                            float px = x + (sx + 0.5f) / 4f;
+                            float py = y + (sy + 0.5f) / 4f - size * 0.5f;
+                            if (px < back || px > tip) continue;
+                            float allowed = half * (tip - px) / (tip - back);
+                            if (Mathf.Abs(py) <= allowed) inside++;
+                        }
+                    }
+                    pixels[x + y * size] = new Color32(255, 255, 255, (byte)(inside * 255 / 16));
+                }
+            }
+            texture.SetPixels32(pixels);
+            texture.Apply(false, true);
+            return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 100f);
         }
 
         private void BuildCard(RectTransform parent)
@@ -1371,9 +1854,32 @@ namespace Vastcore.RegionMap
             _biomeValue = CreateFact(position, "土地", PartPad + 132f, -92f, PartInner - 132f, _font);
             _areaValue = CreateFact(position, "エリア", PartPad, -140f, PartInner, _font);
             y -= 194f + PartGap;
+            _partsTop = y;
+
+            // 遠征の残り（遠征の規則の時だけ。位置は LayoutParts が決める）
+            _expeditionPart = CreatePart(canvas, "Expedition", y, ExpeditionHeight);
+            Text daysLabel = CreateText(_expeditionPart, "Label", "遠征の残り", 15, MutedColor, TextAnchor.UpperLeft, _font);
+            Place(daysLabel.rectTransform, PartPad, -10f, 140f, 22f);
+            _daysNote = CreateText(_expeditionPart, "Note", "", 15, MutedColor, TextAnchor.UpperRight, _font);
+            Place(_daysNote.rectTransform, PartPad + PartInner - 230f, -10f, 230f, 22f);
+            _daysValue = CreateText(_expeditionPart, "Days", "--", 40, TextColor, TextAnchor.LowerLeft, _numberFont);
+            Place(_daysValue.rectTransform, PartPad, -28f, 60f, 46f);
+            _daysOf = CreateText(_expeditionPart, "Days Of", "日", 16, MutedColor, TextAnchor.LowerLeft, _font);
+            Place(_daysOf.rectTransform, PartPad + 66f, -30f, 220f, 40f);
+            Image daysTrack = CreateImage(_expeditionPart, "Days Track", OffColor, null);
+            Place(daysTrack.rectTransform, PartPad, -80f, PartInner, 6f);
+            _daysFill = CreateImage(daysTrack.rectTransform, "Days Fill", AccentColor, null).rectTransform;
+            _daysFill.anchorMin = new Vector2(0f, 0f);
+            _daysFill.anchorMax = new Vector2(0f, 1f);
+            _daysFill.pivot = new Vector2(0f, 0.5f);
+            _daysFill.sizeDelta = new Vector2(PartInner, 0f);
+            _costText = CreateText(_expeditionPart, "Cost", "", 14, MutedColor, TextAnchor.UpperLeft, _font);
+            Place(_costText.rectTransform, PartPad, -92f, PartInner, 20f);
+            FitText(_costText, 10, 14);
 
             // 反応とサーチ
-            RectTransform signal = CreatePart(canvas, "Signal", y, 134f);
+            RectTransform signal = CreatePart(canvas, "Signal", y, SignalHeight);
+            _signalPart = signal;
             Text signalLabel = CreateText(signal, "Label", "反応", 15, MutedColor, TextAnchor.UpperLeft, _font);
             Place(signalLabel.rectTransform, PartPad, -10f, 120f, 22f);
             _signalText = CreateText(signal, "Value", "反応なし", 19, TextColor, TextAnchor.UpperRight, _font);
@@ -1390,7 +1896,7 @@ namespace Vastcore.RegionMap
             Place(searchRect, PartPad, -66f, PartInner, 50f);
             _searchButton.onClick.AddListener(() => SearchAtCursor());
             BuildSearchLabel(searchRect);
-            y -= 134f + PartGap;
+            y -= SignalHeight + PartGap;
 
             // 発見した地点（件数に合わせて下へ伸びる）
             _listTop = -y;
@@ -1407,6 +1913,64 @@ namespace Vastcore.RegionMap
             _listRoot.pivot = new Vector2(0f, 1f);
             _listRoot.sizeDelta = new Vector2(PartInner, 0f);
             _listRoot.anchoredPosition = new Vector2(PartPad, -ListHeader + 4f);
+
+            BuildCluePart(canvas);
+            _expeditionPart.gameObject.SetActive(_rules == SearchRules.Expedition);
+            LayoutParts();
+        }
+
+        /// <summary>右の手掛かりの部品。右上の札の下に置き、中身は RefreshClues が作る。</summary>
+        private void BuildCluePart(Transform canvas)
+        {
+            _cluePart = CreatePart(canvas, "Clues", 0f, 120f);
+            _cluePart.anchorMin = new Vector2(1f, 1f);
+            _cluePart.anchorMax = new Vector2(1f, 1f);
+            _cluePart.pivot = new Vector2(1f, 1f);
+            _cluePart.anchoredPosition = new Vector2(-Margin, -(Margin + DetailBadgeHeight + PartGap));
+            _clueHeader = CreateText(_cluePart, "Label", "手掛かり", 15, MutedColor, TextAnchor.UpperLeft, _font);
+            Place(_clueHeader.rectTransform, PartPad, -10f, 240f, 22f);
+            Text provisional = CreateText(_cluePart, "Provisional", "文は仮", 14, MutedColor, TextAnchor.UpperRight, _font);
+            Place(provisional.rectTransform, PartPad + PartInner - 100f, -10f, 100f, 22f);
+            _cluePart.gameObject.SetActive(false);
+        }
+
+        /// <summary>遠征の終わりの結果。画面の中央に出す。</summary>
+        private void BuildEndPanel(Transform canvas)
+        {
+            Image panel = CreateImage(canvas, "Expedition End", new Color(CardColor.r, CardColor.g, CardColor.b, 0.9f), null);
+            panel.raycastTarget = true;
+            _endPanel = panel.rectTransform;
+            _endPanel.anchorMin = new Vector2(0.5f, 0.5f);
+            _endPanel.anchorMax = new Vector2(0.5f, 0.5f);
+            _endPanel.pivot = new Vector2(0.5f, 0.5f);
+            _endPanel.sizeDelta = new Vector2(EndWidth, EndHeight);
+            _endPanel.anchoredPosition = new Vector2((LeftInset - RightInset) * 0.5f, 40f);
+            AddFrame(_endPanel, AccentColor);
+            Text eyebrow = CreateText(_endPanel, "Eyebrow", "遠征の結果", 15, AccentLightColor, TextAnchor.UpperLeft, _font);
+            Place(eyebrow.rectTransform, 24f, -16f, EndWidth - 48f, 22f);
+            _endTitle = CreateText(_endPanel, "Title", "遠征の終わり", 30, TextColor, TextAnchor.UpperLeft, _font);
+            Place(_endTitle.rectTransform, 24f, -40f, EndWidth - 48f, 42f);
+            _endStats = CreateText(_endPanel, "Stats", "", 17, TextColor, TextAnchor.UpperLeft, _font);
+            _endStats.lineSpacing = 1.25f;
+            Place(_endStats.rectTransform, 24f, -92f, EndWidth - 48f, 60f);
+
+            float buttonWidth = (EndWidth - 48f - 12f) * 0.5f;
+            Button again = CreateButton(_endPanel, "Again", new Color(AccentColor.r, AccentColor.g, AccentColor.b, 0.92f));
+            RectTransform againRect = (RectTransform)again.transform;
+            Place(againRect, 24f, -170f, buttonWidth, 44f);
+            Text againLabel = CreateText(againRect, "Label", "同じ地域でもう一度", 18, AccentTextColor, TextAnchor.MiddleCenter, _font, false);
+            againLabel.fontStyle = FontStyle.Bold;
+            Stretch(againLabel.rectTransform);
+            again.onClick.AddListener(RestartExpedition);
+
+            Button other = CreateButton(_endPanel, "Other Region", PartColor);
+            RectTransform otherRect = (RectTransform)other.transform;
+            Place(otherRect, 24f + buttonWidth + 12f, -170f, buttonWidth, 44f);
+            AddFrame(otherRect, LineColor);
+            Text otherLabel = CreateText(otherRect, "Label", "別の地域", 18, TextColor, TextAnchor.MiddleCenter, _font);
+            Stretch(otherLabel.rectTransform);
+            other.onClick.AddListener(NextRegion);
+            _endPanel.gameObject.SetActive(false);
         }
 
         /// <summary>サーチボタンの中身。「サーチ」と、キーの名前を枠で囲んだ札を、中央に並べる。</summary>
@@ -1424,6 +1988,9 @@ namespace Vastcore.RegionMap
             AddFrame(cap, new Color(AccentTextColor.r, AccentTextColor.g, AccentTextColor.b, 0.85f));
             key.rectTransform.SetParent(cap, false);
             Stretch(key.rectTransform);
+            // 遠征の規則では「サーチ　3 日」のように文字が替わる（SetSearchLabel が並べ直す）
+            _searchLabel = label;
+            _searchKeyCap = cap;
         }
 
         private void BuildTools(Transform canvas)

@@ -21,6 +21,9 @@ namespace Vastcore.RegionMap
 
         /// <summary>いちばん近い未発見地点までの距離（地図座標）。未発見が残っていなければ負の値。</summary>
         public float Distance;
+
+        /// <summary>いちばん近い未発見地点（反応の方角を出すため）。未発見が残っていなければ null。発見した時は Site と同じ。</summary>
+        public RegionSite Nearest;
     }
 
     /// <summary>
@@ -110,6 +113,7 @@ namespace Vastcore.RegionMap
 
             float distance = (float)Math.Sqrt(best);
             result.Distance = distance;
+            result.Nearest = nearest;
             if (distance <= FoundRadius)
             {
                 result.Signal = SearchSignal.Found;
@@ -119,6 +123,14 @@ namespace Vastcore.RegionMap
             else if (distance <= FaintRadius) result.Signal = SearchSignal.Faint;
             else result.Signal = SearchSignal.None;
             return result;
+        }
+
+        /// <summary>発見済みとサーチの回数を消して、始めの状態へ戻す（同じ地域でもう一度探す時）。</summary>
+        public void Reset()
+        {
+            _discoveredIds.Clear();
+            _discovered.Clear();
+            SearchCount = 0;
         }
 
         /// <summary>保存してあった発見済みの番号を戻す。</summary>

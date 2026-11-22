@@ -341,6 +341,94 @@ namespace Vastcore.RegionMap.Editor
                 case 37:
                     Capture(output, "explorer-8-named.png");
                     break;
+                case 38:
+                    // 遠征の規則（SP-021 軸 H）：同じ地域ではじめからやり直し、始めの画面を撮る
+                    explorer.SetRules(SearchRules.Expedition);
+                    explorer.RestartExpedition();
+                    explorer.ShowFullWidth();
+                    ExpeditionLine("始め: 野営地 " + explorer.Expedition.StartCamp.Name + "、残り " + explorer.Expedition.DaysLeft + " 日、読める手掛かり " + explorer.Expedition.OpenClues().Count + " 件");
+                    break;
+                case 39:
+                    Capture(output, "expedition-1-start.png");
+                    break;
+                case 40:
+                    {
+                        // 読める手掛かりの地点から東へ 5 ずらした所でサーチする（強い反応と方角）
+                        RegionClue clue = explorer.Expedition.OpenClues()[0];
+                        explorer.MoveCursor(clue.Site.MapX + 5f, clue.Site.MapY);
+                        SearchResult near = explorer.SearchAtCursor();
+                        ExpeditionLine("手掛かり「" + clue.Title + "」の東 5 でサーチ: " + near.Signal + "・" + RegionCompass.Label(explorer.LastDirection) + "、残り " + explorer.Expedition.DaysLeft + " 日");
+                    }
+                    break;
+                case 41:
+                    Capture(output, "expedition-2-direction.png");
+                    break;
+                case 42:
+                    {
+                        RegionClue clue = explorer.Expedition.OpenClues()[0];
+                        bool read = explorer.ReadClue(clue);
+                        ExpeditionLine("手掛かり「" + clue.Title + "」を詳しく読む: " + read + "「" + clue.DetailLine + "」、残り " + explorer.Expedition.DaysLeft + " 日");
+                    }
+                    break;
+                case 43:
+                    Capture(output, "expedition-3-clue-read.png");
+                    break;
+                case 44:
+                    {
+                        RegionClue clue = explorer.Expedition.OpenClues()[0];
+                        explorer.MoveCursor(clue.Site.MapX + 0.8f, clue.Site.MapY);
+                        SearchResult found = explorer.SearchAtCursor();
+                        ExpeditionLine("その地点でサーチ: " + found.Signal + "、拠点 " + explorer.Expedition.Camps.Count + "、残り " + explorer.Expedition.DaysLeft + " 日、読める手掛かり " + explorer.Expedition.OpenClues().Count + " 件");
+                    }
+                    break;
+                case 45:
+                    Capture(output, "expedition-4-found-camp.png");
+                    break;
+                case 46:
+                    {
+                        // 拠点から遠い所へカーソルだけ動かす（日数の内訳と、拠点からの線）
+                        ExpeditionCamp start = explorer.Expedition.StartCamp;
+                        explorer.MoveCursor(Mathf.Clamp(start.MapX + 30f, 5f, 95f), Mathf.Clamp(start.MapY - 22f, 5f, 95f));
+                        ExpeditionCost cost = explorer.Expedition.CostAt(explorer.CursorMapPosition.x, explorer.CursorMapPosition.y);
+                        ExpeditionLine("遠い所の日数: " + cost.Total + " 日（拠点「" + cost.Camp.Name + "」から " + explorer.Expedition.Km(cost.CampDistance) + " km）");
+                    }
+                    break;
+                case 47:
+                    Capture(output, "expedition-5-cost-far.png");
+                    break;
+                case 48:
+                    {
+                        // 日数が尽きるまでサーチする。足りない時は出発の野営地へ戻ってサーチする
+                        RegionExpedition ex = explorer.Expedition;
+                        for (int k = 0; k < 60 && !ex.IsOver; k++)
+                        {
+                            int before = ex.DaysLeft;
+                            explorer.SearchAtCursor();
+                            if (ex.DaysLeft == before && !ex.IsOver) explorer.MoveCursor(ex.StartCamp.MapX + 1f, ex.StartCamp.MapY);
+                        }
+                        ExpeditionLine("使い切り: 終わり " + ex.IsOver + "、発見 " + explorer.Session.Discovered.Count + "、サーチ " + explorer.Session.SearchCount + " 回、使った日数 " + ex.DaysUsed + "、残り " + ex.DaysLeft);
+                    }
+                    break;
+                case 49:
+                    Capture(output, "expedition-6-end.png");
+                    break;
+                case 50:
+                    // 前の規則（反応だけ）へ戻せる
+                    explorer.SetRules(SearchRules.Signal);
+                    if (target != null)
+                    {
+                        explorer.MoveCursor(target.MapX + 6f, target.MapY);
+                        ExpeditionLine("前の規則で 6 離れた位置のサーチ: " + explorer.SearchAtCursor().Signal + "、規則 " + explorer.Rules);
+                    }
+                    break;
+                case 51:
+                    Capture(output, "expedition-7-signal-rules.png");
+                    break;
+                case 52:
+                    // 画面の保存はフレームの終わりに行われるので、規則を戻すのは撮った次の段にする
+                    explorer.SetRules(SearchRules.Expedition);
+                    File.WriteAllText(Path.Combine(output, "expedition-result.txt"), ExpeditionLog.ToString());
+                    break;
                 default:
                     Vector2 drift = explorer.CloudDrift - _driftAtReady;
                     DetailLog.Append("作っていない間の更新の最長間隔 ").Append((_idleLongestGap * 1000.0).ToString("0")).Append(" ms").Append('\n');
@@ -365,6 +453,14 @@ namespace Vastcore.RegionMap.Editor
                 if (best == null || site.Names.Count > best.Names.Count) best = site;
             }
             return best;
+        }
+
+        private static readonly System.Text.StringBuilder ExpeditionLog = new System.Text.StringBuilder();
+
+        private static void ExpeditionLine(string line)
+        {
+            Debug.Log("[RegionMap] 遠征 " + line);
+            ExpeditionLog.Append(line).Append('\n');
         }
 
         private static void Capture(string output, string name)
