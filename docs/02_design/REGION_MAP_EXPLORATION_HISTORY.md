@@ -361,3 +361,11 @@ U.S. Copyright Office, Copyright Office Releases Part 2 of Artificial Intelligen
 ### runtime-state Next Action 3 の行
 
 3. 開発担当：拡大表示の受入の回答を読み、指摘を直す（`View/RegionExplorer.cs`・`View/RegionDetailLayer.cs`）。サーチの輪が ×40 以上で画面より大きい点は、反応の半径の見直しになるので、方式に関わる判断として本人へ返す（SP-021 8節）。回答を待たずに進められる作業は、E 動きの案（短い動画で2〜3通り）→ F 仮の音で鳴る場所。
+
+### 山頂のモノリス4枚：画像を作る経路の回答（2026-11-23）
+
+問い `01M821KYJMRRFKP1VY1F6Q1HS2` の回答（回答ID `01M822526C8GV69MY7C03S98GE`）。設問 route「4枚の画像を作る経路」は「この環境で、生成の道具を使えるようにする」（value `agent_tool`、記述なし）。設問 drop「生成前に外したい方向」は未回答（外す方向の指定なし。4枚とも生成する）。
+
+回答前の SP-021 9節の行の最終欄（原文のまま）: `4枚の生成（未生成。経路は問い `01M821KYJMRRFKP1VY1F6Q1HS2`）。経過は [履歴](REGION_MAP_EXPLORATION_HISTORY.md)`
+
+回答後の確認（2026-11-23）: この作業の環境で接続済みの道具は Google Docs・Claude Docs・Gmail・Google Calendar・Google Drive・Google Slides・Google Sheets・Anthropic Economic Index・scheduled-tasks で、画像を生成するものは無い。Canva（`plugin:marketing:canva`）は未認証（needs_auth）で、使えるか・利用条件に合うかは未確認。コネクタの認証・追加、アカウント作成、利用規約への同意は本人の操作で、エージェントは行っていない。4枚は未生成のまま、準備済みの `artifacts/region-map/series/vc-monolith-direction-r1/`（生成前の検査 PASS）から、道具が使えた時点で始める。
