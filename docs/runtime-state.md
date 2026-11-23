@@ -11,14 +11,14 @@ Last Updated: 2026-11-24
 | Integrated baseline | `2b398b0`（仮の音で鳴る場所、軸 F）。その前に名前の出し方の4点（`8644662`）、探索画面の動き（軸 E、`c12ba69`）、遠征の規則（軸 H、`e13924f`）、命名の第2版と名前・別名・由来の表示、拡大表示（`81e2b19`） |
 | Active outcome | seedから地域一帯の鳥瞰図を自動で作り、その上で座標を指定してサーチし隠れた地点を発見する探索を動かす（SP-021 段1〜4）。本人の回答で段5（拡大した地形と巨大構造物）に着手し、方式「地図をそのまま細かくする」の地形を探索画面へ統合した（×4 以上で細部の地形に切り替わる。構造物の形は止めている） |
 | Active artifact | `docs/02_design/REGION_MAP_EXPLORATION_SPEC.md` |
-| Next mission | 本人が段6の目的と見返りの案（`01M84QPNKRE5XXVTF20ZHEN8RF`、確認ページ `review-20261124-stage6-plan`）から選び、遠征の規則（`01M82V588FZE0C05C0YP34DNGN`）・動き（`01M831H77K6HV96N1BYM6J0JZK`）・名前の出し方（`01M847PRXSXYDYJC00SH7ZDYYS`）・鳴る場所（`01M84NE26VM5MZAYR7QNM4D2WB`）の受入を見る。音の方向と素材は本人。回答による直しと段6の実装は `View/RegionExplorer.cs` と写しの Unity を使うので、同時には進めず順に入れる。構造物の画像の道具の用意は本人 |
-| Current bottleneck | 遠征の規則・動き・名前の出し方・鳴る場所が本人の手触りに近いかが未確認（受入の問い `01M82V588FZE0C05C0YP34DNGN`・`01M831H77K6HV96N1BYM6J0JZK`・`01M847PRXSXYDYJC00SH7ZDYYS`・`01M84NE26VM5MZAYR7QNM4D2WB`）。音の方向と素材は本人が決める。段6の目的と見返り（資材・基地・通貨とストア・依頼・記録）は案3つを出し、本人の選択待ち（`01M84QPNKRE5XXVTF20ZHEN8RF`）。手掛かりの文（ナラティブ）は開発担当が案を出して本人が決める。構造物の形は、承認済みの4枚が出て本人が方向を選ぶまで作れない（4枚を作る道具は本人が用意する。`01M821KYJMRRFKP1VY1F6Q1HS2`） |
+| Next mission | 名前の出し方（`01M847PRXSXYDYJC00SH7ZDYYS`）と鳴る場所（`01M84NE26VM5MZAYR7QNM4D2WB`）の受入は、2026-11-24 に本人が差し戻した（原文は [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md)）。開発担当は命名の生成の仕組みを直す。音の質感の作業と設問は止める。音は本人が扱いを決めるまで変えない。本人は段6で案A を選んだ（`01M84QPNKRE5XXVTF20ZHEN8RF`、残り3設問は未回答）。遠征の規則（`01M82V588FZE0C05C0YP34DNGN`）と動き（`01M831H77K6HV96N1BYM6J0JZK`）の受入は回答待ち。直しと段6の実装は `View/RegionExplorer.cs` と写しの Unity を使うので順に入れる |
+| Current bottleneck | 命名の生成の仕組み。本人の差し戻しは「好き好みの問題でなく、生成システムの問題」。seed 1〜12 の書き出しでは、名前のある6地域の土地の名 284 件のうち 96 件で地形の語根と類の語が同じ意味で重なり（例「ミニモ（山）＋山」）、53 件が方角で区別され、1字違いの語根の組が地域ごとに 9〜17 あり、未踏の6地域は記号名だけ（数え方は [履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md)）。音は、開発担当が合成した音の扱いを本人が決めるまで止まる。段6は残りの設問（取り入れる要素・外す要素・最初の大きさ）の回答待ち。構造物の形は画像の道具待ち（`01M821KYJMRRFKP1VY1F6Q1HS2`） |
 | Change relation | 継続（2026-11-22、本人依頼「複数のタスクの軸が考えられるため整理して、そのまま可能なら開発を継続」「回答しました。命名のシステムについてはより体系的に構築したいです。」と、回答 `01M81JA2CC4WC37TF841JJ8ZEE`・`01M81JA6HWR4TJQXZA6T07TC6J`）。順は SP-021 4.1節。軸 G の入口の後に、命名の仕組みの最初の版と川岸への移動を作った。2026-11-22〜23 に、親の作業からの依頼（SP-021「地域鳥瞰図と探索」の拡大表示の統合）で拡大表示を作った。2026-11-23 に、命名の回答 `01M81SA3GF8YMRZRETVZCHBGE2` を受けて第2版を作った |
 
 目的は [SSOT_WORLD](SSOT_WORLD.md) 1節と1.1節。目標アンカー：
 
 - 開発目標：seedから地域一帯の詳細な鳥瞰図を自動で作り、その上にポイントクリック的な宝探しの探索ゲームを載せられる。
-- 今回の増分：探索画面の 17 の場面で仮の合成音が動きと同じ時刻に鳴り、「音」ボタンで切れて、音のファイルを置けば場面ごとに差し替わり、本人が確認ページで各音を聞いて、鳴る場所の近さ・足したい場面・音の用意の仕方を言える。
+- 今回の増分：別の地域を開いても、名前が同じ語根の繰り返しや方角だけの区別にならず、1つ1つの名前がその場所の何から付いたかを本人が由来で確かめられる。
 - 現在のボトルネック：上の表の Current bottleneck。
 
 全体工程（段1〜6）と現在地の表は [SP-021](02_design/REGION_MAP_EXPLORATION_SPEC.md) 4節が持つ。SP-017 / SP-020（Arch・Prefab Stamp・DualGridの経路）は未実施のまま保留で、2026-11-21再開準備時の状態本文は [再開履歴](restart/VC_RESTART_20261101_HISTORY.md) の「2026-11-21 thank版（SP-017再開準備）」へ原文のまま移した。
@@ -62,11 +62,11 @@ Last Updated: 2026-11-24
 
 次の作業は、本人の回答から決める。SP-017のArch往復検証を自動で次の作業にしない。
 
-1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）。未回答の Recordinator の問いは、遠征の規則の受入（Next Action 2）、動き・名前の出し方・鳴る場所の受入（Next Action 3）、段6の案の選択（Next Action 5）、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意。動きの受入の問いにも同じ設問がある）。回答済みで閉じた問いは [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md) にある。
+1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）、開発担当が合成した音の扱い（Next Action 3）。未回答の問いは、遠征の規則の受入（Next Action 2）、動きの受入（Next Action 3）、段6の残り3設問（Next Action 5）、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意）。回答済みと差し戻しの原文は [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md)。
 2. 本人（軸 H）：遠征の規則の受入（問い `01M82V588FZE0C05C0YP34DNGN`、確認ページ `artifacts/region-map/review-20261123-search-impl/`）。回答は開発担当が読み、`01M82CXPP4H2DKENWRZT0V0MGH` の続きとして SP-021 4.1節 H へ戻す。回答で直す所は、同じ `View/RegionExplorer.cs` を使うので、他の直しと順に入れる。
-3. 本人（軸 E・名前の出し方・軸 F）：動きの受入（問い `01M831H77K6HV96N1BYM6J0JZK`、確認ページ `artifacts/region-map/review-20261123-motion-impl/`）、名前の出し方の受入（問い `01M847PRXSXYDYJC00SH7ZDYYS`、確認ページ `artifacts/region-map/review-20261123-naming-display/`）、鳴る場所の受入（問い `01M84NE26VM5MZAYR7QNM4D2WB`、確認ページ `artifacts/region-map/review-20261124-sound/`。近さ・気になる場面・足したい場面・音の方向と素材の用意の仕方）。音の方向と素材は本人が決め、本人のファイルは `Assets/Resources/RegionMapSound/` に場面の名前で置く（SP-021 6節）。回答による直しは同じ `View/RegionExplorer.cs` を使うので順に入れる。命名と拡大表示の「軽微」の指摘、×40 以上のサーチの輪（SP-021 8節）はその後。本人が Editor を開いている間は写しで確かめて1回で戻し、写しの Unity が動いている間は写しの C# を編集しない。
+3. 軸 E・命名・軸 F：動きの受入（問い `01M831H77K6HV96N1BYM6J0JZK`、確認ページ `artifacts/region-map/review-20261123-motion-impl/`）は本人の回答待ち。命名は、開発担当が生成の仕組みを直す（`Core/RegionNaming.cs`・`Core/RegionNamingRules.cs`。直す欠陥は Current bottleneck。左上の「ことばの音」の表示も外す）。直した版は seed 1〜12 の同じ数え方で前後を比べ、音の響きの好みは聞かない。未踏の割合・峰の規則・記号名の体系は本人が決める。音は、本人が扱いを決めるまで `View/RegionSound.cs`・`View/RegionSoundPlayer.cs` と鳴らす場面を変えない。命名と拡大表示の「軽微」の指摘、×40 以上のサーチの輪（SP-021 8節）はその後。本人が Editor を開いている間は写しで確かめて1回で戻し、写しの Unity が動いている間は写しの C# を編集しない。
 4. 構造物の形（画像から）：問い `01M81TQZHW7EREG4FR38RDSVBE` は2026-11-23に6設問とも本人が回答済み（回答ID `01M81V4908J2FG0Y2N0TN51ND4` ほか5件）。承認は A＝4枚（山頂のモノリス1種類で形の方向を4通り）・段階式（第1段は単体）・斜め見下ろし約35°・エージェントが生成・起こし方は画像を見てから。参照資料は出典付きで揃え済み（[SP-021 履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md)）。4枚は未生成（この環境に画像の生成の道具が無い）。経路は本人が「この環境で、生成の道具を使えるようにする」を選んだ（問い `01M821KYJMRRFKP1VY1F6Q1HS2`、外す方向の指定なし）。本人：画像生成の道具をこの環境で使えるようにする（手順は Task へ記録）。使えたら開発担当が4枚を生成し、方向を選ぶ問いを送る。地形つきの画像と形への起こし方は、方向が決まった後。軸 G のデザインの画像は `Assets/Resources/RegionMapSkin/` に置く（SP-021 6節）。段6（ゲームの内容）は本人の領分。
-5. 本人（段6）：目的と見返りの案の選択（問い `01M84QPNKRE5XXVTF20ZHEN8RF`、確認ページ `artifacts/region-map/review-20261124-stage6-plan/`。どの案が近いか・取り入れたい要素・外したい要素・最初に作る大きさ）。遠征の受入の「次に足すもの」と食い違ったら新しい方を使う。回答を読んだら開発担当が選ばれた案の最小の実装（SP-021 4節の段6の行）を作り、実画面で受入の問いを出す。案の中の値・名前・品目・文は本人が決める。
+5. 本人（段6）：目的と見返りの案。本人は「案A 持ち帰って整える（通貨とストア）」を選んだ（2026-11-24）。残りは取り入れたい要素・外したい要素・最初に作る大きさ（問い `01M84QPNKRE5XXVTF20ZHEN8RF`、確認ページ `artifacts/region-map/review-20261124-stage6-plan/`）。遠征の受入の「次に足すもの」と食い違ったら新しい方を使う。回答を読んだら開発担当が選ばれた案の最小の実装（SP-021 4節の段6の行）を作り、実画面で受入の問いを出す。案の中の値・名前・品目・文は本人が決める。
 
 ## External Pulse And Remote Resume
 
