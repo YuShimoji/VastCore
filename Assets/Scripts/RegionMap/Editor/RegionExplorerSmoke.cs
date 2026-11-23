@@ -105,6 +105,8 @@ namespace Vastcore.RegionMap.Editor
                 _driftAtReady = explorer.CloudDrift;
                 Debug.Log(string.Format("[RegionMap] 再生を始めてから地図が出るまで {0:0.0} 秒", _readyAt - _startedAt));
                 Debug.Log("[RegionMap] 差し替えた絵: " + (string.IsNullOrEmpty(explorer.CustomSkin) ? "なし（既定の絵）" : explorer.CustomSkin));
+                Debug.Log("[RegionMap] 差し替えた音: " + (string.IsNullOrEmpty(explorer.CustomSound) ? "なし（仮の音）" : explorer.CustomSound));
+                WriteSoundFiles(output);
             }
 
             if (_wait > 0)
@@ -114,7 +116,8 @@ namespace Vastcore.RegionMap.Editor
             }
 
             // 動き（SP-021 軸 E）が落ち着いてから次の操作と撮影をする。入力は動きを待たないが、撮る画面は終わりの姿にそろえる
-            if (explorer.MotionBusy && _motionWait < MotionWaitFrames)
+            // 音（軸 F）の予約も、鳴り終わるまで待つ（動きと同じ時計で鳴る）
+            if ((explorer.MotionBusy || explorer.SoundPending) && _motionWait < MotionWaitFrames)
             {
                 _motionWait++;
                 return;
@@ -468,12 +471,72 @@ namespace Vastcore.RegionMap.Editor
                 case 59:
                     File.WriteAllText(Path.Combine(output, "naming-result.txt"), NamingLog.ToString());
                     break;
+                case 60:
+                    {
+                        // 音（SP-021 軸 F）：新しい地域の 1 つ目の地点を見つけ、Esc と同じ入口でカードを閉じる
+                        explorer.ShowFullWidth();
+                        RegionSite first = explorer.Region.Sites[0];
+                        explorer.MoveCursor(first.MapX, first.MapY);
+                        SoundLine("地点の位置でサーチ: " + explorer.SearchAtCursor().Signal);
+                    }
+                    break;
+                case 61:
+                    explorer.CloseCard();
+                    break;
+                case 62:
+                    // 一覧の行から開く（カードの開く音）
+                    explorer.OpenDiscovered(explorer.Region.Sites[0]);
+                    break;
+                case 63:
+                    {
+                        // 反応なしの位置（拠点から近く、どの未発見の地点からも反応が届かない所）でサーチする
+                        RegionExpedition ex = explorer.Expedition;
+                        Vector2 quiet = new Vector2(-1f, -1f);
+                        for (float y = 4f; y <= 96f && quiet.x < 0f; y += 2f)
+                        for (float x = 4f; x <= 96f && quiet.x < 0f; x += 2f)
+                            if (explorer.Session.Sense(x, y).Signal == SearchSignal.None && explorer.Region.HeightAtMap(x, y) > 0f
+                                && ex.CostAt(x, y).Total <= ex.DaysLeft) quiet = new Vector2(x, y);
+                        if (quiet.x >= 0f)
+                        {
+                            explorer.MoveCursor(quiet.x, quiet.y);
+                            SoundLine("反応の届かない位置 (" + quiet.x + ", " + quiet.y + ") でサーチ: " + explorer.SearchAtCursor().Signal);
+                        }
+                        else SoundLine("反応の届かない位置が見つからなかった");
+                    }
+                    break;
+                case 64:
+                    {
+                        // 「音」ボタンを「なし」まで押し、その間のサーチで鳴らないことを数で見る
+                        int guard = 0;
+                        while (explorer.SoundEnabled && guard++ < 4) explorer.NextSoundLevel();
+                        int before = TotalPlayed(explorer.Sounds);
+                        explorer.MoveCursor(explorer.Region.Sites[0].MapX + 30f, explorer.Region.Sites[0].MapY);
+                        explorer.SearchAtCursor();
+                        _mutedPlayedBefore = before;
+                        SoundLine("音なし: 入 " + explorer.SoundEnabled + "、音量 " + explorer.SoundVolume.ToString("0.0"));
+                    }
+                    break;
+                case 65:
+                    {
+                        int after = TotalPlayed(explorer.Sounds);
+                        SoundLine("音なしの間に鳴らした数 " + (after - _mutedPlayedBefore) + "（0 が正しい）");
+                        // 「大」→「中」へ戻す（なし → 大 → 中）
+                        explorer.NextSoundLevel();
+                        SoundLine("次の段: 入 " + explorer.SoundEnabled + "、音量 " + explorer.SoundVolume.ToString("0.0"));
+                        explorer.NextSoundLevel();
+                        SoundLine("次の段: 入 " + explorer.SoundEnabled + "、音量 " + explorer.SoundVolume.ToString("0.0"));
+                        _mutedSilentOk = after == _mutedPlayedBefore;
+                    }
+                    break;
+                case 66:
+                    WriteSoundResult(output, explorer);
+                    break;
                 default:
                     Vector2 drift = explorer.CloudDrift - _driftAtReady;
                     DetailLog.Append("作っていない間の更新の最長間隔 ").Append((_idleLongestGap * 1000.0).ToString("0")).Append(" ms").Append('\n');
                     Debug.Log("[RegionMap] 作っていない間の更新の最長間隔 " + (_idleLongestGap * 1000.0).ToString("0") + " ms");
                     File.WriteAllText(Path.Combine(output, "explorer-detail-result.txt"), DetailLog.ToString());
-                    Finish(output, string.Format("PASS: {0}、画面 {1}x{2}、地図が出るまで {3:0.0} 秒、雲は {4:0.0} 秒で東へ {5:0.0000}・南へ {6:0.0000}（地図の幅を 1 として）",
+                    Finish(output, string.Format("PASS: {0}、画面 {1}x{2}、地図が出るまで {3:0.0} 秒、雲は {4:0.0} 秒で東へ {5:0.0000}・南へ {6:0.0000}（地図の幅を 1 として）、" + _soundSummary,
                         _summary, Screen.width, Screen.height,
                         _readyAt - _firstStartedAt, EditorApplication.timeSinceStartup - _readyAt, drift.x, -drift.y), 0);
                     return;
@@ -514,6 +577,66 @@ namespace Vastcore.RegionMap.Editor
                 + "、峰 1 " + (peak != null ? peak.Name : "-");
             Debug.Log("[RegionMap] 名前の出し方 " + line);
             NamingLog.Append(line).Append('\n');
+        }
+
+        private static readonly System.Text.StringBuilder SoundLog = new System.Text.StringBuilder();
+        private static string _soundSummary = "";
+        private static int _mutedPlayedBefore;
+        private static bool _mutedSilentOk;
+        private static bool _soundFilesWritten;
+
+        private static void SoundLine(string line)
+        {
+            Debug.Log("[RegionMap] 音 " + line);
+            SoundLog.Append(line).Append('\n');
+        }
+
+        private static int TotalPlayed(RegionSoundPlayer sounds)
+        {
+            int total = 0;
+            foreach (RegionSoundSpec spec in RegionSound.All) total += sounds.PlayedCount(spec.Cue);
+            return total;
+        }
+
+        /// <summary>仮の音を WAV にして sound/ へ書く（確認ページで聞くため。鳴らす音と同じ合成）。</summary>
+        private static void WriteSoundFiles(string output)
+        {
+            if (_soundFilesWritten) return;
+            _soundFilesWritten = true;
+            string folder = Path.Combine(output, "sound");
+            Directory.CreateDirectory(folder);
+            foreach (RegionSoundSpec spec in RegionSound.All)
+                File.WriteAllBytes(Path.Combine(folder, spec.FileName + ".wav"), RegionSound.ToWav(RegionSound.Render(spec.Cue)));
+        }
+
+        /// <summary>場面ごとに、鳴らした回数・再生が進んだのを見た回数・音を切っていて鳴らさなかった回数と、鳴らした順の記録を書く。</summary>
+        private static void WriteSoundResult(string output, RegionExplorer explorer)
+        {
+            RegionSoundPlayer sounds = explorer.Sounds;
+            var text = new System.Text.StringBuilder();
+            text.Append("場面\t鳴らした\t再生が進んだ\t音なしで鳴らさず\t音の名前\t差し替え\n");
+            int heard = 0;
+            int confirmedCues = 0;
+            foreach (RegionSoundSpec spec in RegionSound.All)
+            {
+                int played = sounds.PlayedCount(spec.Cue);
+                int confirmed = sounds.ConfirmedCount(spec.Cue);
+                if (played > 0) heard++;
+                if (confirmed > 0) confirmedCues++;
+                AudioClip clip = sounds.Clip(spec.Cue);
+                text.Append(spec.FileName).Append('\t').Append(played).Append('\t').Append(confirmed).Append('\t').Append(sounds.SilencedCount(spec.Cue))
+                    .Append('\t').Append(clip != null ? clip.name : "-").Append('\t').Append(sounds.IsCustom(spec.Cue) ? "あり" : "なし").Append('\n');
+            }
+            text.Append("\n鳴らした順（時刻は動きの時計の秒。最新 ").Append(sounds.Records.Count).Append(" 件）\n");
+            foreach (RegionSoundRecord record in sounds.Records)
+                text.Append(record.Time.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)).Append('\t').Append(record.Cue)
+                    .Append("\t音量 ").Append(record.Volume.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))
+                    .Append("\t左右 ").Append(record.Pan.ToString("+0.00;-0.00;0", System.Globalization.CultureInfo.InvariantCulture))
+                    .Append(record.Confirmed ? "\t再生が進んだ" : "\t再生を見ていない").Append('\n');
+            text.Append('\n').Append(SoundLog);
+            File.WriteAllText(Path.Combine(output, "sound-result.txt"), text.ToString());
+            _soundSummary = "音は " + RegionSound.All.Count + " 場面のうち " + heard + " 場面で鳴らし、" + confirmedCues + " 場面で再生が進んだのを見た、音なしの間は " + (_mutedSilentOk ? "鳴らさなかった" : "鳴った");
+            Debug.Log("[RegionMap] " + _soundSummary);
         }
 
         private static void ExpeditionLine(string line)

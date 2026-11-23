@@ -42,6 +42,13 @@ namespace Vastcore.RegionMap
         [Tooltip("C の要素：一覧に入った行と、新しく読めるようになった手掛かりが、しばらく淡く光る。")]
         [SerializeField] private bool _motionRowGlow = true;
 
+        [Header("音（SP-021 軸 F。今の音はすべて仮。方向と素材は本人が決める）")]
+        [Tooltip("オフにすると、どの場面でも音を鳴らさない。下端の「音」ボタンの「なし」と同じ。")]
+        [SerializeField] private bool _sound = true;
+        [Tooltip("音量（0〜1）。既定の 0.6 は仮の値。下端の「音」ボタンで 大 1.0・中 0.6・小 0.3・なし を切り替える。")]
+        [Range(0f, 1f)]
+        [SerializeField] private float _soundVolume = 0.6f;
+
         // 寸法は Canvas の単位（高さ 1080 を基準に画面へ合わせる）
         private const float Margin = 28f;
         private const float PartWidth = 392f;
@@ -93,6 +100,9 @@ namespace Vastcore.RegionMap
         private static readonly string[] CloudOpacityName = { "濃い", "薄い", "なし" };
         // 地名の出し方の段（ボタンで順に切り替える）
         private static readonly string[] AreaDisplayName = { "名前", "名前と境界", "なし" };
+        // 音の段（「音」ボタンで順に切り替える。値は仮）。0 は音を切る
+        private static readonly float[] SoundLevel = { 0.6f, 0.3f, 0f, 1f };
+        private static readonly string[] SoundLevelName = { "中", "小", "なし", "大" };
 
         private sealed class Generated
         {
@@ -177,6 +187,11 @@ namespace Vastcore.RegionMap
         private Button _styleButton;
         private Button _cloudButton;
         private Button _areaButton;
+        private Text _soundLabel;
+
+        // 音（RegionSoundPlayer）。時刻は動きの時計で決める
+        private RegionSoundPlayer _sounds;
+        private RegionDetailPhase _detailPhaseHeard = RegionDetailPhase.Off;
 
         // 発見した地点のカード（印のそばに出る）
         private RectTransform _card;
@@ -390,6 +405,87 @@ namespace Vastcore.RegionMap
         /// <summary>false の時、マウスの位置とボタンを地図の操作に使わない（確認用の撮影で、画面の上にあるマウスが読み取りを替えないため）。</summary>
         public bool PointerEnabled { get; set; } = true;
 
+        /// <summary>音を鳴らすか（SP-021 軸 F）。false にすると、どの場面でも鳴らさない。</summary>
+        public bool SoundEnabled
+        {
+            get { return _sound; }
+            set
+            {
+                _sound = value;
+                if (_soundLabel != null) _soundLabel.text = "音：" + SoundLevelLabel();
+            }
+        }
+
+        /// <summary>音量（0〜1）。</summary>
+        public float SoundVolume
+        {
+            get { return _soundVolume; }
+            set
+            {
+                _soundVolume = Mathf.Clamp01(value);
+                if (_soundLabel != null) _soundLabel.text = "音：" + SoundLevelLabel();
+            }
+        }
+
+        /// <summary>音を鳴らす仕組み。鳴らした記録（Records、場面ごとの回数）と、差し替えた場面（CustomNames）を読める。</summary>
+        public RegionSoundPlayer Sounds
+        {
+            get { return _sounds; }
+        }
+
+        /// <summary>まだ鳴らしていない音の予約があるか（確認用。入力はこれを待たない）。</summary>
+        public bool SoundPending
+        {
+            get { return _sounds != null && _sounds.Pending; }
+        }
+
+        /// <summary>外から差し替えた音を使っている場面の名前（RegionSoundCue の名前をコンマで区切る）。差し替えが無ければ空。</summary>
+        public string CustomSound
+        {
+            get { return _sounds != null ? _sounds.CustomNames : string.Empty; }
+        }
+
+        /// <summary>「音」ボタン：音の段を次へ切り替える（中 → 小 → なし → 大 → 中）。</summary>
+        public void NextSoundLevel()
+        {
+            int now = System.Array.IndexOf(SoundLevelName, SoundLevelLabel());
+            int next = (now + 1) % SoundLevel.Length;
+            if (SoundLevel[next] <= 0f) _sound = false;
+            else
+            {
+                _sound = true;
+                _soundVolume = SoundLevel[next];
+            }
+            _soundLabel.text = "音：" + SoundLevelName[next];
+            if (_sounds != null)
+            {
+                _sounds.Enabled = _sound;
+                _sounds.Volume = _soundVolume;
+            }
+            PlaySound(RegionSoundCue.Toggle);
+            if (IsReady) ShowMessage("音：" + SoundLevelName[next] + "（今の音はすべて仮）", 3f);
+        }
+
+        /// <summary>今の入れ切りと音量に近い段の名前。</summary>
+        private string SoundLevelLabel()
+        {
+            if (!_sound || _soundVolume <= 0f) return "なし";
+            int best = 0;
+            for (int i = 1; i < SoundLevel.Length; i++)
+                if (SoundLevel[i] > 0f && Mathf.Abs(SoundLevel[i] - _soundVolume) < Mathf.Abs(SoundLevel[best] - _soundVolume)) best = i;
+            return SoundLevelName[best];
+        }
+
+        /// <summary>
+        /// 音を予約する。delay は動きの案の秒で、動きと同じく長さ（×1.6）を掛ける。動きを切ってある時は、遅れなしで鳴らす。
+        /// </summary>
+        private void PlaySound(RegionSoundCue cue, float delay = 0f, float pan = 0f)
+        {
+            if (_sounds == null) return;
+            float wait = _motion ? delay * Mathf.Max(0.05f, _motionLength) : 0f;
+            _sounds.Schedule(cue, _fx.Time + wait, pan);
+        }
+
         /// <summary>C から加えた要素を個別に入れ切りする（数えて変わる座標、ボタンと棒の光、一覧と手掛かりの光）。</summary>
         public void SetMotionExtras(bool countUp, bool glow, bool rowGlow)
         {
@@ -419,6 +515,9 @@ namespace Vastcore.RegionMap
             _triangle = CreateTriangleSprite(64);
             EnsureCamera();
             EnsureEventSystem();
+            EnsureAudioListener();
+            // Resources/RegionMapSound/ に音があればそれを使い、無ければコードで作る仮の音にする
+            _sounds = new RegionSoundPlayer(gameObject, RegionSoundBank.Load);
             BuildScreen();
         }
 
@@ -435,6 +534,7 @@ namespace Vastcore.RegionMap
             if (_shadowTexture != null) Destroy(_shadowTexture);
             if (_areaTexture != null) Destroy(_areaTexture);
             if (_detail != null) _detail.Dispose();
+            if (_sounds != null) _sounds.Dispose();
         }
 
         private void Update()
@@ -442,6 +542,9 @@ namespace Vastcore.RegionMap
             _fx.Enabled = _motion;
             _fx.Length = Mathf.Max(0.05f, _motionLength);
             _fx.Advance(MotionClockStep > 0f ? MotionClockStep : Time.unscaledDeltaTime);
+            _sounds.Enabled = _sound;
+            _sounds.Volume = _soundVolume;
+            _sounds.Tick(_fx.Time);
             FadeMessage();
             // クリックしたボタンが選択されたままだと、Space と Enter がそのボタンの「決定」にもなり、
             // 下の HandleKeys と合わせて 1 回の押下で 2 回動く。選択は毎フレーム外す
@@ -490,6 +593,20 @@ namespace Vastcore.RegionMap
             RefreshReadout();
         }
 
+        /// <summary>Esc：発見カードを閉じる（開いていた時は閉じる音を鳴らす）。</summary>
+        public void CloseCard()
+        {
+            if (_cardSite != null) PlaySound(RegionSoundCue.CardClose);
+            HideCard();
+        }
+
+        /// <summary>一覧の行のクリック：発見済みの地点へカーソルと地図を寄せ、カードを開く。</summary>
+        public void OpenDiscovered(RegionSite site)
+        {
+            if (site == null || _session == null || !_session.IsDiscovered(site)) return;
+            FocusSite(site);
+        }
+
         /// <summary>カーソル位置でサーチする。</summary>
         public SearchResult SearchAtCursor()
         {
@@ -527,12 +644,14 @@ namespace Vastcore.RegionMap
         {
             if (_expedition.IsOver)
             {
+                PlaySound(RegionSoundCue.Refused);
                 ShowEnd();
                 return new SearchResult();
             }
             ExpeditionStep step = _expedition.Search(_cursorMap.x, _cursorMap.y);
             if (!step.Done)
             {
+                PlaySound(RegionSoundCue.Refused);
                 ShowMessage(step.Refusal, 4f);
                 return new SearchResult();
             }
@@ -552,6 +671,8 @@ namespace Vastcore.RegionMap
                     ShowCard(result.Site);
                     ExpeditionReward reward = step.Reward;
                     int opened = reward != null ? reward.OpenedClues.Count : 0;
+                    // 拠点ができた音は、一覧の行と新しい手掛かりが滑り込む時（0.5 秒）
+                    PlaySound(RegionSoundCue.CampMade, 0.5f);
                     ShowMessage("拠点になった。日数 +" + (reward != null ? reward.Days : 0) + (opened > 0 ? "・手掛かりが " + opened + " 件読める" : string.Empty), 5f);
                     break;
                 case SearchSignal.Strong:
@@ -599,6 +720,7 @@ namespace Vastcore.RegionMap
         {
             if (_expedition == null || _rules != SearchRules.Expedition) return false;
             bool done = _expedition.ReadClue(clue);
+            PlaySound(done ? RegionSoundCue.ClueRead : RegionSoundCue.Refused);
             ShowMessage(done ? "手掛かりを読んだ（" + _expedition.ReadDays + " 日）" : "日数が足りない", 3f);
             if (_expedition.IsOver) ShowEnd();
             RefreshClues();
@@ -620,6 +742,7 @@ namespace Vastcore.RegionMap
             _arrow.gameObject.SetActive(false);
             // 発見のカードと同じ開き方（横に伸びてから縦に開く）。中央の結果なので、中心から開く
             if (!opening) return;
+            PlaySound(_expedition.Completed ? RegionSoundCue.ExpeditionComplete : RegionSoundCue.ExpeditionEnd, delay);
             if (delay > 0f && _motion)
             {
                 _endGroup.alpha = 0f;
@@ -671,6 +794,7 @@ namespace Vastcore.RegionMap
         public void NextRegion()
         {
             if (_task != null) return;
+            PlaySound(RegionSoundCue.NextRegion);
             _spec.Seed++;
             BeginGenerate("別の地域を生成しています…");
         }
@@ -679,6 +803,7 @@ namespace Vastcore.RegionMap
         public void NextStyle()
         {
             if (!IsReady) return;
+            PlaySound(RegionSoundCue.Toggle);
             int next = ((int)_render.Style + 1) % Enum.GetValues(typeof(RegionMapStyle)).Length;
             _render.Style = (RegionMapStyle)next;
             _styleLabel.text = "描き方：" + StyleName(_render.Style);
@@ -694,6 +819,7 @@ namespace Vastcore.RegionMap
         public void NextCloudOpacity()
         {
             _cloudLevel = (_cloudLevel + 1) % CloudOpacity.Length;
+            PlaySound(RegionSoundCue.Toggle);
             RefreshCloudLayers();
             if (IsReady) ShowMessage("雲：" + CloudOpacityName[_cloudLevel], 3f);
         }
@@ -702,6 +828,7 @@ namespace Vastcore.RegionMap
         public void NextAreaDisplay()
         {
             _areaLevel = (_areaLevel + 1) % AreaDisplayName.Length;
+            PlaySound(RegionSoundCue.Toggle);
             RefreshAreaLayers();
             if (IsReady) ShowMessage("地名：" + AreaDisplayName[_areaLevel], 3f);
         }
@@ -897,6 +1024,10 @@ namespace Vastcore.RegionMap
             {
                 // 前の地域の動きは終わりの姿にしてから作り直す。十字は新しい地域の中央へすぐ置く
                 _fx.FinishAll();
+                // 前の地域で予約したままの音は捨て、地図が出た音を鳴らす
+                _sounds.ClearPending();
+                PlaySound(RegionSoundCue.RegionReady);
+                _detailPhaseHeard = RegionDetailPhase.Off;
                 _cursorPlaced = false;
                 _barsLevel = -1;
                 _daysFillTarget = -1f;
@@ -996,7 +1127,7 @@ namespace Vastcore.RegionMap
         private void HandleKeys()
         {
             if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return)) SearchAtCursor();
-            if (Input.GetKeyDown(KeyCode.Escape)) HideCard();
+            if (Input.GetKeyDown(KeyCode.Escape)) CloseCard();
             if (Input.GetKeyDown(KeyCode.Home))
             {
                 if (_zoom > MinZoom() + 0.001f) ShowWholeRegion(); else ShowFullWidth();
@@ -1129,6 +1260,13 @@ namespace Vastcore.RegionMap
             float halfWidth = view.x / side * 0.5f * RegionData.MapUnits;
             float halfHeight = view.y / side * 0.5f * RegionData.MapUnits;
             _detail.Tick(_data, _render, centerX, centerY, halfWidth, halfHeight, _zoom, Time.unscaledDeltaTime);
+            // 細部の地形ができて切り替わった時に 1 回鳴らす
+            RegionDetailPhase phase = _detail.Phase;
+            if (phase != _detailPhaseHeard)
+            {
+                if (phase == RegionDetailPhase.Ready) PlaySound(RegionSoundCue.DetailReady);
+                _detailPhaseHeard = phase;
+            }
             RefreshDetailBadge();
         }
 
@@ -1757,7 +1895,7 @@ namespace Vastcore.RegionMap
             _center = new Vector2(site.MapX / RegionData.MapUnits, 1f - site.MapY / RegionData.MapUnits);
             ClampView();
             EnsureVisible(_cursorMap);
-            ShowCard(site);
+            ShowCard(site, true);
             RefreshReadout();
         }
 
@@ -1777,7 +1915,8 @@ namespace Vastcore.RegionMap
 
         // ---- 発見した地点のカード ----
 
-        private void ShowCard(RegionSite site)
+        /// <summary>発見カードを出す。sound は一覧の行から開いた時（発見の時は発見の音だけにする）。</summary>
+        private void ShowCard(RegionSite site, bool sound = false)
         {
             _cardSite = site;
             int number = _markerSites.IndexOf(site) + 1;
@@ -1803,6 +1942,7 @@ namespace Vastcore.RegionMap
             _fx.Cancel("card close");
             _fx.Cancel("card line close");
             if (reopen) return;
+            if (sound) PlaySound(RegionSoundCue.CardOpen, 0.46f);
 
             // 案 B：印から線が伸び、カードは印に近い角から横に伸びてから縦に開く。中の文字は開き終わってから出る
             if (_motion)
@@ -1888,7 +2028,7 @@ namespace Vastcore.RegionMap
         // ---- 動き（SP-021 軸 E） ----
 
         /// <summary>決まったカーソル位置が替わったら、十字を今見えている位置から滑らせる（案 B：0.34 秒、速く出てゆっくり止まる）。</summary>
-        private void SyncGlide()
+        private void SyncGlide(bool quiet = false)
         {
             if (!_cursorPlaced)
             {
@@ -1902,6 +2042,8 @@ namespace Vastcore.RegionMap
             Vector2 from = _cursorShown;
             Vector2 to = _cursorMap;
             _glideTo = to;
+            // サーチの直前に着かせる時（quiet）は鳴らさない。サーチの音と重なるため
+            if (!quiet) PlaySound(RegionSoundCue.CursorMove);
             _fx.Play("glide", 0f, 0.34f, t => _cursorShown = Vector2.LerpUnclamped(from, to, RegionMotion.Out(t)));
             // 位置の読み取りは、十字が着くころ（0.30 秒）に替わる。C の要素を入れた時は、標高・土地・エリアが順に薄く出る
             _fx.Play("readout", 0.30f, 0.01f, t =>
@@ -1920,7 +2062,7 @@ namespace Vastcore.RegionMap
         /// <summary>十字を決まった位置へすぐ着かせる（サーチの時。結果の波紋は着いた位置から出す）。</summary>
         private void ArriveCursor()
         {
-            SyncGlide();
+            SyncGlide(true);
             _fx.Finish("glide");
             _fx.Finish("readout");
         }
@@ -1946,6 +2088,16 @@ namespace Vastcore.RegionMap
         private void PlaySearch(SearchResult result)
         {
             Vector2 at = _cursorMap;
+            // 音：サーチの開始はすぐ、結果は反応の棒が点き始める時（発見 0.12 秒、他 0.2 秒）。遠征の規則では方角の向きへ左右に寄せる
+            float pan = _rules == SearchRules.Expedition ? RegionSound.Pan(_lastDirection) : 0f;
+            PlaySound(RegionSoundCue.SearchStart);
+            switch (result.Signal)
+            {
+                case SearchSignal.Found: PlaySound(RegionSoundCue.Found, 0.12f); break;
+                case SearchSignal.Strong: PlaySound(RegionSoundCue.SignalStrong, 0.2f, pan); break;
+                case SearchSignal.Faint: PlaySound(RegionSoundCue.SignalFaint, 0.2f, pan); break;
+                default: PlaySound(RegionSoundCue.SignalNone, 0.2f); break;
+            }
             switch (result.Signal)
             {
                 case SearchSignal.Faint:
@@ -2231,6 +2383,13 @@ namespace Vastcore.RegionMap
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color32(10, 13, 18, 255);
             camera.orthographic = true;
+        }
+
+        /// <summary>音を聞く AudioListener がシーンに無ければ、この部品に付ける（探索シーンのカメラには付いていない）。</summary>
+        private void EnsureAudioListener()
+        {
+            if (FindFirstObjectByType<AudioListener>() != null) return;
+            gameObject.AddComponent<AudioListener>();
         }
 
         private static void EnsureEventSystem()
@@ -2622,7 +2781,11 @@ namespace Vastcore.RegionMap
             Text againLabel = CreateText(againRect, "Label", "同じ地域でもう一度", 18, AccentTextColor, TextAnchor.MiddleCenter, _font, false);
             againLabel.fontStyle = FontStyle.Bold;
             Stretch(againLabel.rectTransform);
-            again.onClick.AddListener(RestartExpedition);
+            again.onClick.AddListener(() =>
+            {
+                PlaySound(RegionSoundCue.Toggle);
+                RestartExpedition();
+            });
 
             Button other = CreateButton(_endPanel, "Other Region", PartColor);
             RectTransform otherRect = (RectTransform)other.transform;
@@ -2667,6 +2830,9 @@ namespace Vastcore.RegionMap
             Text regionLabel;
             _regionButton = CreateToolButton(canvas, "別の地域", ref x, 124f, out regionLabel);
             _regionButton.onClick.AddListener(NextRegion);
+            // 音の段（中 → 小 → なし → 大）。今の音はすべて仮（SP-021 軸 F）
+            Button soundButton = CreateToolButton(canvas, "音：" + SoundLevelLabel(), ref x, 124f, out _soundLabel);
+            soundButton.onClick.AddListener(NextSoundLevel);
         }
 
         private Button CreateToolButton(Transform canvas, string label, ref float x, float width, out Text text)
