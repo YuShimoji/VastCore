@@ -69,6 +69,16 @@
 - Kelsey Beachum "Sparking Curiosity-Driven Exploration Through Narrative"（GDC 2021。https://gdcvault.com/play/1027008/Independent-Games-Summit-Sparking-Curiosity の概要を開いた。動画は未視聴）: 任務の指示ではなく世界の中の情報で、プレイヤーが自分で決める進み方を作り、好奇心に知ったことで報いる。案 B の「発見した地点の記録から次の手掛かりが開く」に反映した。
 - 未取得・未使用: Knuth "The Computer as Master Mind"（書誌のみ）、Koopman の探索理論、熱い／冷たい型の探索の一次資料、推理ゲームの開発者本人の講演の本文。特定の作品の画面・固有の仕掛けは使わず、仕組みの種類として扱った。
 
+### 出典（2026-11-24、段6 ゲームの目的と見返りの案のために開いたもの）
+
+問い：手に入れたものと使い道をどうつなぐと、探索の目的になるか。地域をまたいで何を残すか。通貨・店を置かない形に根拠はあるか。特定の作品の仕組みは写さず、原理として使った。
+
+- Daniel Cook「Value chains」Lostgarden、2021-12-12（https://lostgarden.com/2021/12/12/value-chains/ 。本文の前半約4割を原文で、残りは取得した要約で読んだ）: 行いと資源の連なりは、プレイヤーが本当に求めるもの（anchor）で終わる時に価値を持つ。使い道（sink）が弱いと資源が溜まり、それを生む行いをしなくなる。案A〜C の全てで、手に入れたものが次のサーチへ戻る形にし、案A の品目を買い尽くした後と案B の資材の余りを弱い所として書いた。
+- Daniel Cook「Loops and arcs」Lostgarden、2012-04-30（https://lostgarden.com/2012/04/30/loops-and-arcs/ ）: 繰り返すループは仕組みの理解を育て、1回で消費されるアークは飽きられやすく、並べ続けると作り続けが要る。1地域の18地点の発見を消費される側、地域をまたいで残るものを繰り返す遠征の側に置き、各案に「地域をまたいで残るもの」を設けた。
+- Machinations 公式資料「Framework Basics」「Converters & Traders」「Pools」（https://machinations.gitbook.io/docs/getting-started/framework-basics 。日付の表示なし。Adams と Dormans の内部経済の図式が元）: Source・Drain・Pool・Converter・Trader と、資源を作る・使う・交換する行いが内部経済を作るという定義。確認ページ3節の資源の流れの図の記号に使った。
+- 「Road to the IGF: Alex Beachum's Outer Wilds」Game Developer、2015-01-27（https://gamedeveloper.com/design/road-to-the-igf-alex-beachum-s-i-outer-wilds-i- 。作者への聞き取り）: 探索の目的を、能力や持ち物ではなく世界についての問いに答えることに置き、明示の目標なしに目的が無く感じない形を目指した。要素を減らした案C（通貨・店・資材なし、見返りは記録と次の遠征の手掛かり）の根拠にした。
+- 未取得: GDC 2021「Sparking Curiosity-Driven Exploration Through Narrative in 'Outer Wilds'」の本文（会員限定。概要は 2026-11-23 に開いた）、GDC 2019「The Design of 'Subnautica'」の本文。
+
 ## 1回目の進め方の回答と着手の順（2026-11-22 に SP-021 4.1節から移した）
 
 進め方の回答（`01M80219XNGW9T27XQMXDZJQFG`、2026-11-22）: 最初に着手する軸は D、方式は「地図をそのまま細かくする」。E は「開発担当が動きの案を出し本人が選ぶ」、F は「仮の音で鳴る場所を先に作る」、G は「差し替えの入口を今作る」、呼び名は「seed から固有の地名を自動で作る」。
@@ -858,3 +868,45 @@ runtime-state Next Action 3 の行:
 ### runtime-state Next Action 3 の行
 
 3. 本人（軸 E・名前の出し方）：動きの受入（問い `01M831H77K6HV96N1BYM6J0JZK`、確認ページ `artifacts/region-map/review-20261123-motion-impl/`。近さ・場面ごとの指摘・C の3要素の採否・長さ・削る動き）と、名前の出し方の受入（問い `01M847PRXSXYDYJC00SH7ZDYYS`、確認ページ `artifacts/region-map/review-20261123-naming-display/`。近さ・気になる所・未踏の地域の割合・峰の規則の扱い）。開発担当は回答を待たずに、F 仮の音で鳴る場所を作る（本人が「仮の音で鳴る場所を先に作る」を選んだ。音の素材と方向は本人）。回答による直しは同じ `View/RegionExplorer.cs` を使うので順に入れる。命名と拡大表示の「軽微」の指摘、×40 以上のサーチの輪（SP-021 8節）はその後。本人が Editor を開いている間は写しで確かめて1回で戻し、写しの Unity が動いている間は写しの C# を編集しない。
+
+## 2026-11-24 段6 ゲームの目的と見返りの案（確認ページ `review-20261124-stage6-plan`、問い `01M84QPNKRE5XXVTF20ZHEN8RF`）で書き換えた記載の原文（SP-021 と runtime-state から移した）
+
+### SP-021 状態の行
+
+状態: 段1〜4を実装済み。拡大表示と命名の第2版（5節）は 2026-11-23 に本人が「近い」と答えた。同じ日に、遠征の規則（軸 H）、動き（軸 E）、名前の出し方の4点を入れ、受入の問いを3件出した。2026-11-24 に、仮の音で鳴る場所（軸 F）を入れ、受入の問いを出した（4節）。構造物の形は画像の道具待ち（9節）。
+
+### SP-021 段6の行
+
+| 6 ゲームを載せる | 目的・報酬・進行・保存・演出 | 未着手（入口のみ） | 本人の言葉（2026-11-23）は、資材の獲得や基地の発見などの実利的な目的と、発見で得た通貨を使うストア（9節）。中身は本人の領分で、開発担当は案を出す | 開発担当（案）→ 本人 |
+
+### SP-021 9節 ゲームの目的と見返りの行
+
+| ゲームの目的と見返り（段6） | 本人の言葉は「資材獲得や何らかの基地発見など、より広範で実利的な目的」「発見により得た通貨を利用できるストア。探索のための資材、乗り物のパーツ、サーチシステムのパーツ」。開発担当が案を出す（まだ出していない） | 地点の種類、発見で得るもの、通貨とストアの作り | 段6の実装。軸 H の最小の実装は止めない |
+
+### runtime-state Next mission の行
+
+| Next mission | 本人が遠征の規則（`01M82V588FZE0C05C0YP34DNGN`）・動き（`01M831H77K6HV96N1BYM6J0JZK`）・名前の出し方（`01M847PRXSXYDYJC00SH7ZDYYS`）・鳴る場所（`01M84NE26VM5MZAYR7QNM4D2WB`）の受入を見る。音の方向と素材は本人。回答による直しは `View/RegionExplorer.cs` と写しの Unity を使うので、同時には進めず順に入れる。構造物の画像の道具の用意は本人 |
+
+### runtime-state Current bottleneck の行
+
+| Current bottleneck | 遠征の規則・動き・名前の出し方・鳴る場所が本人の手触りに近いかが未確認（受入の問い `01M82V588FZE0C05C0YP34DNGN`・`01M831H77K6HV96N1BYM6J0JZK`・`01M847PRXSXYDYJC00SH7ZDYYS`・`01M84NE26VM5MZAYR7QNM4D2WB`）。音の方向と素材は本人が決める。その先の資材・基地・通貨とストア（段6）と手掛かりの文（ナラティブ）は、開発担当が案を出して本人が決める。構造物の形は、承認済みの4枚が出て本人が方向を選ぶまで作れない（4枚を作る道具は本人が用意する。`01M821KYJMRRFKP1VY1F6Q1HS2`） |
+
+### runtime-state Next Action 1 の行
+
+1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）。未回答の Recordinator の問いは、遠征の規則の受入（Next Action 2）、動き・名前の出し方・鳴る場所の受入（Next Action 3）、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意。動きの受入の問いにも同じ設問がある）。回答済みで閉じた問いは [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md) にある。
+
+### runtime-state Current Trust Assessment 通常Editorの確認の行（上限に収めるため移した）
+
+- thank 通常Editor（2026-11-21、`-Mode play`、実マウス・キーボード、開発担当）：左クリックでのカーソル移動、Space・Enter・ボタンでのサーチ、矢印キー、ホイール、発見と一覧のクリック、描き方の切替、別の地域の生成を確認した。これは組み直す前の画面での結果で、`9cc6770` 以降の画面では実マウスの操作をまだ試していない（入力の受け方は書き直した）。
+
+### runtime-state Current Trust Assessment 十字カーソルの行（上限に収めるため移した）
+
+- 十字カーソル：2026-11-22、本人の所見（縦と横の重なり）を受け、中心を空けた1枚の画像に替えた。`9cc6770` で腕を発見の輪（半径27）の外へ出し、発見した地点に重ねても輪と腕が重ならない（実画面の拡大で確認）。
+
+### runtime-state Current Trust Assessment 移した確認の索引の行
+
+- 拡大表示（2026-11-22〜23。EditMode 627/627）、遠征の規則（2026-11-23。639/639、遠征の7場面）、動き（2026-11-23。639/639、3組の撮影）、命名の第2版（2026-11-23。631/631）、名前の出し方（2026-11-23。641/641）の Unity での確認と、.NET での拡大した地形・エリアと雲の測定（2026-11-22）は [履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md) へ原文のまま移した。
+
+### SP-021 段5の行（上限に収めるため短くした）
+
+| 5 地点のローカル表示 | 発見した地点を近くで見る（拡大した地形と巨大構造物） | 本人が方式「地図をそのまま細かくする」を選んだ（`01M80219XNGW9T27XQMXDZJQFG`）。1地点の周りを同じ海岸・川・山のまま細かく作り直す処理（`RegionDetailBuilder`）を、探索画面へ統合した（2026-11-22。`RegionDetailLayer`、5節）。×4 以上で細部の地形へ切り替わり、縮めると広域へ戻る。地形だけで、構造物の形は出さない | 拡大の絵と、探索画面に統合した版は、どちらも本人が「近い」・指摘は全て「軽微」と答えた（回答の内訳は [履歴](REGION_MAP_EXPLORATION_HISTORY.md)）。構造物の形の案3通りは「どれも違う。画像生成から逆算したい」で、この方式での形の作り込みは止めた（9節） | 本人（形の画像の進め方） |
