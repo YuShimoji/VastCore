@@ -77,6 +77,18 @@ namespace Vastcore.RegionMap
     {
         public string Sound;
         public string OldSound;
+
+        /// <summary>音の質感を、規則の「自動」で seed が選んだなら true。</summary>
+        public bool SoundFromSeed;
+
+        /// <summary>地域の経緯（「未踏」「文明あり」「古い文明」）。エリアごとに分かれる時は「混在」。</summary>
+        public string History;
+
+        /// <summary>地域の経緯を、規則の「地域ごと」で seed が選んだなら true。</summary>
+        public bool HistoryFromSeed;
+
+        /// <summary>未踏の土地にあるが、文明のあるエリアから近くて高いので土地の名も付けた峰の数。</summary>
+        public int PeaksNamedFromNearby;
         public readonly List<RegionNameRoot> Roots = new List<RegionNameRoot>();
         public readonly List<RegionNameRoot> OldRoots = new List<RegionNameRoot>();
         public readonly List<RegionNamePerson> People = new List<RegionNamePerson>();
@@ -141,6 +153,10 @@ namespace Vastcore.RegionMap
             public Place AreaPlace;
             public Place NearPeak;
             public Place NearRiver;
+
+            /// <summary>未踏の土地にある峰に土地の名を付けた時の、近くの文明のあるエリアと、そこまでの距離。</summary>
+            public Place Lender;
+            public float LenderKm;
             public Skeleton Proper;
             public Skeleton Old;
             public string Decided;
@@ -344,10 +360,28 @@ namespace Vastcore.RegionMap
             report.Problems.AddRange(rules.Problems);
 
             RegionSoundProfile sound = rules.Sound(rules.SoundName);
+            if (rules.SoundName == RegionNamingRules.AutoSound)
+            {
+                // 地域（seed）ごとに、使える音の質感から 1 つを選ぶ
+                var usable = new List<RegionSoundProfile>();
+                for (int s = 0; s < rules.Sounds.Count; s++)
+                {
+                    if (rules.Sounds[s].Head.Count > 0 && rules.Sounds[s].Body.Count > 0) usable.Add(rules.Sounds[s]);
+                }
+                if (usable.Count > 0)
+                {
+                    sound = usable[Math.Min(usable.Count - 1, (int)(RegionNoise.Hash01(data.Spec.Seed, 9173, 0x51ed270bu) * usable.Count))];
+                    report.SoundFromSeed = true;
+                }
+            }
             if (!string.IsNullOrEmpty(data.Spec.NamingSound))
             {
                 RegionSoundProfile asked = rules.Sound(data.Spec.NamingSound);
-                if (asked != null) sound = asked;
+                if (asked != null)
+                {
+                    sound = asked;
+                    report.SoundFromSeed = false;
+                }
                 else report.Problems.Add("音の質感「" + data.Spec.NamingSound + "」が規則に無い（規則の既定を使う）");
             }
             if (sound == null || sound.Head.Count == 0 || sound.Body.Count == 0) sound = RegionNamingRules.Default.Sounds[0];
@@ -364,8 +398,9 @@ namespace Vastcore.RegionMap
             report.OldSound = oldSound.Name;
 
             uint seed = unchecked((uint)data.Spec.Seed * 3266489917u + 2654435761u);
-            AssignHistory(data, rules);
-            List<Place> places = BuildPlaces(data, rules);
+            var loans = new Dictionary<RegionFeature, KeyValuePair<RegionArea, float>>();
+            AssignHistory(data, rules, report, loans);
+            List<Place> places = BuildPlaces(data, rules, loans);
 
             // (2) 骨格
             var keys = new HashSet<string>();
@@ -511,8 +546,28 @@ namespace Vastcore.RegionMap
 
         // ---- (1) 土地の経緯 ----
 
-        private static void AssignHistory(RegionData data, RegionNamingRules rules)
+        /// <summary>
+        /// 経緯を決める。規則の「地域」が「地域ごと」なら seed が 1 つ選び（人が「seed/地域 = …」と書けばそれ）、地域全体をその経緯にする。
+        /// 「混在」ならエリアを住みやすい順に並べて分ける。エリアごとに人が決めた経緯は、どちらよりも優先する。
+        /// 最後に、未踏の土地にある峰のうち、文明のあるエリアから近くて高いものを「文明あり」にする（loans に相手のエリアと距離が入る）。
+        /// </summary>
+        private static void AssignHistory(RegionData data, RegionNamingRules rules, RegionNamingReport report, Dictionary<RegionFeature, KeyValuePair<RegionArea, float>> loans)
         {
+            int regionIndex = Array.IndexOf(RegionNamingRules.Histories, rules.RegionHistory);
+            string decidedRegion;
+            if (rules.HistoryFixed.TryGetValue(data.Spec.Seed + "/地域", out decidedRegion))
+            {
+                regionIndex = Array.IndexOf(RegionNamingRules.Histories, decidedRegion);
+            }
+            else if (rules.RegionHistory == RegionNamingRules.PerRegion)
+            {
+                float pick = RegionNoise.Hash01(data.Spec.Seed, 4409, 0x2f6b1d93u);
+                regionIndex = pick < rules.AncientShare ? (int)RegionLandHistory.Ancient
+                    : (pick < rules.SettledShare ? (int)RegionLandHistory.Settled : (int)RegionLandHistory.Unexplored);
+                report.HistoryFromSeed = true;
+            }
+            report.History = regionIndex >= 0 ? RegionNamingRules.Histories[regionIndex] : RegionNamingRules.Mixed;
+
             int n = data.Areas.Count;
             var order = new List<RegionArea>(data.Areas);
             order.Sort((a, b) =>
@@ -526,7 +581,7 @@ namespace Vastcore.RegionMap
             {
                 RegionArea area = order[r];
                 RegionLandHistory history;
-                int fixedIndex = Array.IndexOf(RegionNamingRules.Histories, rules.RegionHistory);
+                int fixedIndex = regionIndex;
                 if (fixedIndex >= 0)
                 {
                     history = (RegionLandHistory)fixedIndex;
@@ -556,6 +611,47 @@ namespace Vastcore.RegionMap
                 RegionArea area = data.AreaById(feature.AreaId);
                 feature.History = feature.Kind == RegionFeatureKind.Region ? highest : (area != null ? area.History : RegionLandHistory.Unexplored);
             }
+
+            // 未踏の土地にある峰でも、文明のあるエリアから近くて高ければ、土地の名も付ける
+            if (rules.PeakNameDistance <= 0f) return;
+            for (int f = 0; f < data.Features.Count; f++)
+            {
+                RegionFeature peak = data.Features[f];
+                if (peak.Kind != RegionFeatureKind.Peak || peak.History != RegionLandHistory.Unexplored) continue;
+                if (peak.HeightMeters < data.MaxHeight * rules.PeakNameHeight) continue;
+                float distance;
+                RegionArea near = NearestSettledArea(data, peak.MapX, peak.MapY, rules.PeakNameDistance, out distance);
+                if (near == null) continue;
+                peak.History = RegionLandHistory.Settled;
+                loans[peak] = new KeyValuePair<RegionArea, float>(near, distance * data.SizeKm / 100f);
+                report.PeaksNamedFromNearby++;
+            }
+        }
+
+        /// <summary>その位置から reach（地図の座標）以内にある、未踏でないエリアの陸のうち最も近いもの。無ければ null。</summary>
+        private static RegionArea NearestSettledArea(RegionData data, float mapX, float mapY, float reach, out float distance)
+        {
+            const float Step = 0.5f;
+            RegionArea best = null;
+            distance = reach + Step;
+            int steps = (int)Math.Ceiling(reach / Step);
+            for (int oy = -steps; oy <= steps; oy++)
+            {
+                for (int ox = -steps; ox <= steps; ox++)
+                {
+                    float x = mapX + ox * Step;
+                    float y = mapY + oy * Step;
+                    if (x < 0f || y < 0f || x > 100f || y > 100f) continue;
+                    float d = (float)Math.Sqrt(ox * ox + oy * oy) * Step;
+                    if (d > reach || d >= distance) continue;
+                    if (data.Height[data.CellFromMap(x, y)] <= 0f) continue;
+                    RegionArea area = data.AreaAtMap(x, y);
+                    if (area == null || area.History == RegionLandHistory.Unexplored) continue;
+                    best = area;
+                    distance = d;
+                }
+            }
+            return best;
         }
 
         /// <summary>
@@ -619,7 +715,7 @@ namespace Vastcore.RegionMap
 
         // ---- 場所と事実 ----
 
-        private static List<Place> BuildPlaces(RegionData data, RegionNamingRules rules)
+        private static List<Place> BuildPlaces(RegionData data, RegionNamingRules rules, Dictionary<RegionFeature, KeyValuePair<RegionArea, float>> loans)
         {
             var places = new List<Place>();
             var areaPlaces = new Dictionary<int, Place>();
@@ -722,6 +818,8 @@ namespace Vastcore.RegionMap
                         place.DesignationKey = "山";
                         place.HasLand = Land(rules, "峰である", "峰", out place.Land);
                         AddDirection(rules, place.Traits, feature.MapX, feature.MapY, "頂");
+                        KeyValuePair<RegionArea, float> loan;
+                        if (loans.TryGetValue(feature, out loan) && areaPlaces.TryGetValue(loan.Key.Id, out place.Lender)) place.LenderKm = loan.Value;
                         if (peakCount > 1 && feature.Id == 1) Emit(rules, place.Traits, "最も高い峰", "地域で最も高い（" + Math.Round(feature.HeightMeters) + " m）");
                         AddBiome(rules, place.Traits, data.BiomeAtMap(feature.MapX, feature.MapY), "頂が");
                         peaks.Add(place);
@@ -1162,6 +1260,11 @@ namespace Vastcore.RegionMap
             if (notes.Count > 0) origin.Append("。").Append(string.Join("。", notes.ToArray()));
             if (reasons.Count > 0) origin.Append("。").Append(string.Join("、", reasons.ToArray()));
             if (joins.Count > 0) origin.Append("。つなぎの音: ").Append(string.Join("、", joins.ToArray()));
+            if (place.Lender != null && place.Feature != null)
+            {
+                origin.Append("。未踏の土地にあるが、文明のあるエリア「").Append(place.Lender.FullText).Append("」から約 ")
+                    .Append(Math.Max(1, (int)Math.Round(place.LenderKm))).Append(" km の高い峰（").Append((int)Math.Round(place.Feature.HeightMeters)).Append(" m）なので、土地の名も付けた");
+            }
             own = proper.ToString();
             return new RegionPlaceName
             {

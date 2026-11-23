@@ -84,7 +84,11 @@ namespace Vastcore.RegionMap.Editor
             if (_awaitDetail && _lastTickAt > 0.0) _longestGap = System.Math.Max(_longestGap, tickAt - _lastTickAt);
             else if (!_awaitDetail && _lastTickAt > 0.0 && _readyAt > 0.0) _idleLongestGap = System.Math.Max(_idleLongestGap, tickAt - _lastTickAt);
             _lastTickAt = tickAt;
-            if (_startedAt <= 0.0) _startedAt = EditorApplication.timeSinceStartup;
+            if (_startedAt <= 0.0)
+            {
+                _startedAt = EditorApplication.timeSinceStartup;
+                _firstStartedAt = _startedAt;
+            }
             string output = SessionState.GetString(OutputKey, "");
             int step = SessionState.GetInt(StepKey, 0);
 
@@ -439,15 +443,39 @@ namespace Vastcore.RegionMap.Editor
                     // 画面の保存はフレームの終わりに行われるので、規則を戻すのは撮った次の段にする
                     explorer.SetRules(SearchRules.Expedition);
                     File.WriteAllText(Path.Combine(output, "expedition-result.txt"), ExpeditionLog.ToString());
+                    // この後で別の地域へ移ると数え直しになるので、結果の行に出す数はここで控える
+                    _summary = string.Format("発見 {0} / {1}、サーチ {2} 回", explorer.Session.Discovered.Count, explorer.Session.TotalSites, explorer.Session.SearchCount);
+                    NamingLog.Length = 0;
+                    NamingLine(explorer);
+                    break;
+                case 53:
+                case 56:
+                    // 名前の出し方：土地の経緯と音の質感は地域ごとに 1 つ。別の地域を 2 つ続けて作り、全体表示で撮る
+                    explorer.NextRegion();
+                    _startedAt = EditorApplication.timeSinceStartup;
+                    break;
+                case 54:
+                case 57:
+                    explorer.ShowWholeRegion();
+                    NamingLine(explorer);
+                    break;
+                case 55:
+                    Capture(output, "naming-1-next-region.png");
+                    break;
+                case 58:
+                    Capture(output, "naming-2-next-region.png");
+                    break;
+                case 59:
+                    File.WriteAllText(Path.Combine(output, "naming-result.txt"), NamingLog.ToString());
                     break;
                 default:
                     Vector2 drift = explorer.CloudDrift - _driftAtReady;
                     DetailLog.Append("作っていない間の更新の最長間隔 ").Append((_idleLongestGap * 1000.0).ToString("0")).Append(" ms").Append('\n');
                     Debug.Log("[RegionMap] 作っていない間の更新の最長間隔 " + (_idleLongestGap * 1000.0).ToString("0") + " ms");
                     File.WriteAllText(Path.Combine(output, "explorer-detail-result.txt"), DetailLog.ToString());
-                    Finish(output, string.Format("PASS: 発見 {0} / {1}、サーチ {2} 回、画面 {3}x{4}、地図が出るまで {5:0.0} 秒、雲は {6:0.0} 秒で東へ {7:0.0000}・南へ {8:0.0000}（地図の幅を 1 として）",
-                        explorer.Session.Discovered.Count, explorer.Session.TotalSites, explorer.Session.SearchCount, Screen.width, Screen.height,
-                        _readyAt - _startedAt, EditorApplication.timeSinceStartup - _readyAt, drift.x, -drift.y), 0);
+                    Finish(output, string.Format("PASS: {0}、画面 {1}x{2}、地図が出るまで {3:0.0} 秒、雲は {4:0.0} 秒で東へ {5:0.0000}・南へ {6:0.0000}（地図の幅を 1 として）",
+                        _summary, Screen.width, Screen.height,
+                        _readyAt - _firstStartedAt, EditorApplication.timeSinceStartup - _readyAt, drift.x, -drift.y), 0);
                     return;
             }
             SessionState.SetInt(StepKey, step + 1);
@@ -467,6 +495,26 @@ namespace Vastcore.RegionMap.Editor
         }
 
         private static readonly System.Text.StringBuilder ExpeditionLog = new System.Text.StringBuilder();
+        private static readonly System.Text.StringBuilder NamingLog = new System.Text.StringBuilder();
+        private static string _summary = "";
+
+        /// <summary>再生を始めた時刻。_startedAt は別の地域を作るたびに取り直す（生成の待ち時間の上限に使う）ので、分けて持つ。</summary>
+        private static double _firstStartedAt;
+
+        /// <summary>今の地域の、経緯・音の質感・地域の名・最初のエリアと峰の名を 1 行にして残す。</summary>
+        private static void NamingLine(RegionExplorer explorer)
+        {
+            RegionData data = explorer.Region;
+            RegionFeature region = data.Features.Find(f => f.Kind == RegionFeatureKind.Region);
+            RegionFeature peak = data.Features.Find(f => f.Kind == RegionFeatureKind.Peak);
+            string line = "seed " + data.Spec.Seed + ": 経緯 " + (data.Naming != null ? data.Naming.History : "（規則から付けた名前でない）")
+                + "、ことばの音 " + (data.Naming != null ? data.Naming.Sound : "-")
+                + "、地域の名 " + (region != null ? region.Name : "-")
+                + "、エリア 1 " + (data.Areas.Count > 0 ? data.Areas[0].Name : "-")
+                + "、峰 1 " + (peak != null ? peak.Name : "-");
+            Debug.Log("[RegionMap] 名前の出し方 " + line);
+            NamingLog.Append(line).Append('\n');
+        }
 
         private static void ExpeditionLine(string line)
         {

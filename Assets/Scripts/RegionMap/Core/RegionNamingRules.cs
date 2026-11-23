@@ -120,11 +120,17 @@ namespace Vastcore.RegionMap
         public int NameMax = 7;
         public readonly List<string> Blocked = new List<string>();
 
-        /// <summary>地域の経緯（未踏／文明あり／古い文明／混在）。</summary>
+        /// <summary>地域の経緯（地域ごと／未踏／文明あり／古い文明／混在）。</summary>
         public string RegionHistory = "";
         public float AncientShare = -1f;
         public float SettledShare = -1f;
         public readonly Dictionary<string, string> HistoryFixed = new Dictionary<string, string>();
+
+        /// <summary>未踏の土地にある峰へ土地の名も付ける、文明のあるエリアからの距離（地図の座標）。0 で付けない。</summary>
+        public float PeakNameDistance = -1f;
+
+        /// <summary>その時に峰に要る高さ（地域の最高点に対する割合）。</summary>
+        public float PeakNameHeight = -1f;
 
         /// <summary>経緯ごとに付ける名前の種類（左が画面に出る名前）。</summary>
         public readonly Dictionary<string, List<string>> NameKinds = new Dictionary<string, List<string>>();
@@ -170,6 +176,15 @@ namespace Vastcore.RegionMap
         };
 
         public static readonly string[] Histories = { "未踏", "文明あり", "古い文明" };
+
+        /// <summary>[全体] の「音の質感」に書くと、地域（seed）ごとに [音 …] から 1 つを選ぶ。</summary>
+        public const string AutoSound = "自動";
+
+        /// <summary>[土地の経緯] の「地域」に書くと、地域（seed）ごとに経緯を 1 つ選び、地域全体をその経緯にする。</summary>
+        public const string PerRegion = "地域ごと";
+
+        /// <summary>1 つの地域の中で、エリアごとに経緯が分かれる。</summary>
+        public const string Mixed = "混在";
         public static readonly string[] KindNames = { "記号名", "土地の名", "古い呼び名" };
         public static readonly string[] AreaSlots = { "特徴", "地形", "雰囲気", "類", "人名", "出来事", "古名" };
         public static readonly string[] FeatureSlots = { "特徴", "地形", "雰囲気", "類", "エリア", "人名", "出来事", "古名" };
@@ -187,7 +202,8 @@ namespace Vastcore.RegionMap
 
 [全体]
 # 今のことばの音の質感と、古い呼び名に使う前のことばの音の質感（下の [音 …] の名前）
-音の質感 = 標準
+# 「自動」と書くと、地域（seed）ごとに下の [音 …] から 1 つを選ぶ
+音の質感 = 自動
 古い音の質感 = かたい
 人物の数 = 4
 人名の長さ = 3-4
@@ -223,12 +239,20 @@ namespace Vastcore.RegionMap
 ンの後の濁り = あり
 
 [土地の経緯]
-# 地域 = 未踏 / 文明あり / 古い文明 / 混在
-地域 = 混在
+# 地域 に書ける値: 地域ごと / 未踏 / 文明あり / 古い文明 / 混在
+#   地域ごと: 地域（seed）ごとに「未踏」「文明あり」「古い文明」のどれか 1 つを選び、地域全体をその経緯にする
+#   混在: 1 つの地域の中で、エリアごとに経緯が分かれる
+地域 = 地域ごと
+# 地域ごとの時: この割合の地域が「古い文明」、次のこの割合までの地域が「文明あり」、残りの地域が「未踏」になる
 # 混在の時: エリアを住みやすい順に並べ、上からこの割合までを「古い文明」、次のこの割合までを「文明あり」、残りを「未踏」にする
 古い文明の割合 = 0.25
 文明のある割合 = 0.65
+# 地域の経緯を人が決める時: 「seed/地域 = 古い文明」。例: 7/地域 = 古い文明
 # エリアごとに決める時: 「seed/エリア番号 = 未踏」。例: 7/エリア3 = 未踏
+# 未踏の土地にある峰でも、文明のあるエリアから近くて高ければ、土地の名も付ける
+# 距離は地図の座標（0〜100）で、0 と書くと付けない。高さは地域の最高点に対する割合
+峰に名を付ける距離 = 8
+峰に名を付ける高さ = 0.5
 
 [経緯と名前]
 # 経緯 = 付ける名前の種類（左が画面に出る名前、その右は別名）
@@ -513,7 +537,7 @@ Sunken = 沈んだ遺構
             if (!always && rules.SitePatterns.Count > 0) rules.Problems.Add("[地点の型] に、条件が「いつでも」で {特徴} {地形} {雰囲気} だけを使う型が 1 つ要る");
 
             if (rules.SoundName.Length == 0 && rules.Sounds.Count > 0) rules.SoundName = rules.Sounds[0].Name;
-            if (rules.SoundName.Length > 0 && rules.Sound(rules.SoundName) == null) rules.Problems.Add("[全体] の音の質感「" + rules.SoundName + "」に当たる [音 …] が無い");
+            if (rules.SoundName.Length > 0 && rules.SoundName != AutoSound && rules.Sound(rules.SoundName) == null) rules.Problems.Add("[全体] の音の質感「" + rules.SoundName + "」に当たる [音 …] が無い");
             if (rules.OldSoundName.Length == 0 || rules.Sound(rules.OldSoundName) == null)
             {
                 if (rules.OldSoundName.Length > 0) rules.Problems.Add("[全体] の古い音の質感「" + rules.OldSoundName + "」に当たる [音 …] が無い");
@@ -549,6 +573,10 @@ Sunken = 沈んだ遺構
             if (!written.Contains("エリアの型")) AreaPatterns.AddRange(source.AreaPatterns);
             if (!written.Contains("地点の型")) SitePatterns.AddRange(source.SitePatterns);
             if (Blocked.Count == 0) Blocked.AddRange(source.Blocked);
+            // [全体] も [音 …] も書いていない規則は、既定の音の質感の選び方（地域ごとに自動）を引き継ぐ
+            if (SoundName.Length == 0 && !written.Contains("全体") && !written.Contains("音")) SoundName = source.SoundName;
+            if (PeakNameDistance < 0f) PeakNameDistance = source.PeakNameDistance;
+            if (PeakNameHeight < 0f) PeakNameHeight = source.PeakNameHeight;
             if (RegionHistory.Length == 0) RegionHistory = source.RegionHistory;
             if (AncientShare < 0f) AncientShare = source.AncientShare;
             if (SettledShare < 0f) SettledShare = source.SettledShare;
@@ -684,7 +712,7 @@ Sunken = 沈んだ遺構
             switch (key)
             {
                 case "地域":
-                    if (value != "混在" && Array.IndexOf(Histories, value) < 0) Problems.Add("行 " + number + ": 地域の経緯は「未踏」「文明あり」「古い文明」「混在」のどれか");
+                    if (value != Mixed && value != PerRegion && Array.IndexOf(Histories, value) < 0) Problems.Add("行 " + number + ": 地域の経緯は「地域ごと」「未踏」「文明あり」「古い文明」「混在」のどれか");
                     else RegionHistory = value;
                     break;
                 case "古い文明の割合":
@@ -693,8 +721,16 @@ Sunken = 沈んだ遺構
                 case "文明のある割合":
                     if (!float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out SettledShare)) Problems.Add("行 " + number + ": 割合は 0〜1 の数で書く");
                     break;
+                case "峰に名を付ける距離":
+                    if (!float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out PeakNameDistance) || PeakNameDistance < 0f) Problems.Add("行 " + number + ": 距離は 0 以上の数で書く（地図の座標。0 で付けない）");
+                    break;
+                case "峰に名を付ける高さ":
+                    if (!float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out PeakNameHeight) || PeakNameHeight < 0f || PeakNameHeight > 1f) Problems.Add("行 " + number + ": 高さは 0〜1 の数で書く（地域の最高点に対する割合）");
+                    break;
                 default:
-                    if (key.IndexOf("/エリア", StringComparison.Ordinal) > 0 && Array.IndexOf(Histories, value) >= 0) HistoryFixed[key] = value;
+                    bool area = key.IndexOf("/エリア", StringComparison.Ordinal) > 0;
+                    bool region = key.Length > 3 && key.EndsWith("/地域", StringComparison.Ordinal);
+                    if ((area || region) && Array.IndexOf(Histories, value) >= 0) HistoryFixed[key] = value;
                     else Problems.Add("行 " + number + ": [土地の経緯] の行として読めない");
                     break;
             }

@@ -52,6 +52,9 @@ namespace Vastcore.RegionMap
         private const float LeftInset = Margin + PartWidth + Margin;
         private const float ToolHeight = 42f;
         private const float ListHeader = 44f;
+
+        /// <summary>地域の部品の高さ（名前、広さ・陸・最高点の行、経緯と音の質感の行）。</summary>
+        private const float RegionHeight = 112f;
         private const float ListRow = 27f;
         // 一覧の行に由来の小さな行を出す時の高さ。行が多くて入らない時は 1 行（ListRow）へ戻す
         private const float ListRowWithGloss = 42f;
@@ -915,6 +918,8 @@ namespace Vastcore.RegionMap
                 RegionFeature region = _data.Features.Find(f => f.Kind == RegionFeatureKind.Region);
                 _title.text = (region != null && !string.IsNullOrEmpty(region.Name) ? region.Name : "地域") + "　seed " + _data.Spec.Seed;
                 _subtitle.text = string.Format("{0:0} km 四方 ・ 陸 {1:0}% ・ 最高 {2} m", _data.SizeKm, _data.LandFraction * 100f, Meters(_data.MaxHeight));
+                // 地域ごとに 1 つ決まる、土地の経緯とことばの音の質感（規則から付けた名前の時だけ）
+                if (_data.Naming != null) _subtitle.text += "\n経緯：" + _data.Naming.History + " ・ ことばの音：" + _data.Naming.Sound;
                 ShowMessage(_rules == SearchRules.Expedition
                     ? "野営地から " + _expedition.StartDays + " 日の遠征。手掛かりを読み、地図をクリックしてサーチする"
                     : "地図をクリックして位置を決め、サーチで調べる", 8f);
@@ -2484,12 +2489,12 @@ namespace Vastcore.RegionMap
             float y = -Margin;
 
             // 地域
-            RectTransform region = CreatePart(canvas, "Region", y, 88f);
+            RectTransform region = CreatePart(canvas, "Region", y, RegionHeight);
             _title = CreateText(region, "Title", "地域", 27, TextColor, TextAnchor.UpperLeft, _font);
             Place(_title.rectTransform, PartPad, -11f, PartInner, 36f);
             _subtitle = CreateText(region, "Subtitle", "", 17, MutedColor, TextAnchor.UpperLeft, _font);
-            Place(_subtitle.rectTransform, PartPad, -52f, PartInner, 24f);
-            y -= 88f + PartGap;
+            Place(_subtitle.rectTransform, PartPad, -52f, PartInner, 48f);
+            y -= RegionHeight + PartGap;
 
             // カーソル位置
             RectTransform position = CreatePart(canvas, "Position", y, 194f);
