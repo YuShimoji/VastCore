@@ -30,6 +30,18 @@ namespace Vastcore.RegionMap
         [Tooltip("雲が地図の幅を横切るのにかかる秒数。0 にすると雲は動かない。")]
         [SerializeField] private float _cloudCrossSeconds = 420f;
 
+        [Header("動き（SP-021 軸 E。案 B を基にし、C の一部を加えた候補）")]
+        [Tooltip("オフにすると、動きなしの画面（状態が変わったらすぐ終わりの姿を出す）へ戻る。")]
+        [SerializeField] private bool _motion = true;
+        [Tooltip("案の秒数に掛ける倍率。本人の回答（2026-11-23）は「長く（×1.6）」。")]
+        [SerializeField] private float _motionLength = 1.6f;
+        [Tooltip("C の要素：カーソルが滑る間に座標の数字が数えて変わり、着いた所で標高・土地・エリアが順に出る。")]
+        [SerializeField] private bool _motionCountUp = true;
+        [Tooltip("C の要素：サーチすると、サーチボタンが一度明るくなり、点いた反応の棒が明るく光ってから落ち着く。")]
+        [SerializeField] private bool _motionGlow = true;
+        [Tooltip("C の要素：一覧に入った行と、新しく読めるようになった手掛かりが、しばらく淡く光る。")]
+        [SerializeField] private bool _motionRowGlow = true;
+
         // 寸法は Canvas の単位（高さ 1080 を基準に画面へ合わせる）
         private const float Margin = 28f;
         private const float PartWidth = 392f;
@@ -225,6 +237,45 @@ namespace Vastcore.RegionMap
         private Text _endTitle;
         private Text _endStats;
 
+        // 動き（RegionMotion）。状態は即座に変わり、ここにある「見えている姿」だけが時計で追いつく
+        private sealed class Ripple
+        {
+            public RectTransform Rect;
+            public RegionRingGraphic Ring;
+            public CanvasGroup Group;
+            public Vector2 Map;
+            // 地図の単位の半径（反応の届く範囲）か、画面の単位の半径（発見・反応なしの小さな波紋）
+            public float Radius;
+            public bool Pixels;
+            public float Scale;
+            public bool Busy;
+        }
+
+        private readonly RegionMotion _fx = new RegionMotion();
+        private readonly List<Ripple> _ripples = new List<Ripple>();
+        private RectTransform _rippleRoot;
+        private bool _cursorPlaced;
+        private Vector2 _cursorShown;
+        private Vector2 _glideTo;
+        private Vector2 _readoutAt;
+        private int _barsLevel = -1;
+        private bool _listCountHold;
+        private Image _searchFace;
+        private Color _searchFaceColor;
+        private RectTransform _messageRect;
+        private Vector2 _messageHome;
+        private CanvasGroup _cardGroup;
+        private CanvasGroup _cardBody;
+        private Vector2 _cardTopLeft;
+        private RegionSite _cardPlaced;
+        private CanvasGroup _arrowGroup;
+        private CanvasGroup _campGroup;
+        private ExpeditionCamp _campShown;
+        private CanvasGroup _endGroup;
+        private float _daysFillTarget = -1f;
+        private readonly HashSet<RegionClue> _cluesSeen = new HashSet<RegionClue>();
+        private readonly HashSet<RegionClue> _cluesRead = new HashSet<RegionClue>();
+
         public RegionData Region
         {
             get { return _data; }
@@ -305,6 +356,45 @@ namespace Vastcore.RegionMap
             }
         }
 
+        /// <summary>動きを出すか。false にすると、動いている物はすぐ終わりの姿になり、以後は動きなしの画面になる。</summary>
+        public bool MotionEnabled
+        {
+            get { return _motion; }
+            set
+            {
+                _motion = value;
+                _fx.Enabled = value;
+                if (!value) _fx.FinishAll();
+            }
+        }
+
+        /// <summary>案の秒数に掛ける倍率（1 で案のまま、1.6 で長く）。</summary>
+        public float MotionLength
+        {
+            get { return _motionLength; }
+            set { _motionLength = Mathf.Max(0.05f, value); }
+        }
+
+        /// <summary>動いている物があるか（確認用。入力はこれを待たない）。</summary>
+        public bool MotionBusy
+        {
+            get { return _fx.Busy; }
+        }
+
+        /// <summary>0 より大きい時、動きの時計を 1 フレームにこの秒数だけ進める（撮影で、描くのが遅れても動きを飛ばさないため）。</summary>
+        public float MotionClockStep { get; set; }
+
+        /// <summary>false の時、マウスの位置とボタンを地図の操作に使わない（確認用の撮影で、画面の上にあるマウスが読み取りを替えないため）。</summary>
+        public bool PointerEnabled { get; set; } = true;
+
+        /// <summary>C から加えた要素を個別に入れ切りする（数えて変わる座標、ボタンと棒の光、一覧と手掛かりの光）。</summary>
+        public void SetMotionExtras(bool countUp, bool glow, bool rowGlow)
+        {
+            _motionCountUp = countUp;
+            _motionGlow = glow;
+            _motionRowGlow = rowGlow;
+        }
+
         private void Awake()
         {
             _font = Font.CreateDynamicFontFromOSFont(new[] { "Yu Gothic UI", "Meiryo UI", "Meiryo", "MS Gothic", "Arial" }, 28);
@@ -346,6 +436,9 @@ namespace Vastcore.RegionMap
 
         private void Update()
         {
+            _fx.Enabled = _motion;
+            _fx.Length = Mathf.Max(0.05f, _motionLength);
+            _fx.Advance(MotionClockStep > 0f ? MotionClockStep : Time.unscaledDeltaTime);
             FadeMessage();
             // クリックしたボタンが選択されたままだと、Space と Enter がそのボタンの「決定」にもなり、
             // 下の HandleKeys と合わせて 1 回の押下で 2 回動く。選択は毎フレーム外す
@@ -398,10 +491,13 @@ namespace Vastcore.RegionMap
         public SearchResult SearchAtCursor()
         {
             if (!IsReady) return new SearchResult();
+            // 十字がまだ滑っている時は、サーチした位置へ着かせてから結果を出す（入力は待たせない）
+            ArriveCursor();
             if (_rules == SearchRules.Expedition) return SearchOnExpedition();
             HideCard();
             SearchResult result = _session.Search(_cursorMap.x, _cursorMap.y);
             _lastSignal = result.Signal;
+            PlaySearch(result);
             switch (result.Signal)
             {
                 case SearchSignal.Found:
@@ -442,6 +538,8 @@ namespace Vastcore.RegionMap
             _lastSignal = result.Signal;
             _lastDirection = step.Direction;
             _lastSearchMap = _cursorMap;
+            PlaySearch(result);
+            if (_lastDirection != CompassPoint.None) PlayArrow();
             string days = "（" + step.DaysSpent + " 日）";
             string toward = RegionCompass.Label(step.Direction);
             switch (result.Signal)
@@ -463,7 +561,7 @@ namespace Vastcore.RegionMap
                     ShowMessage("反応なし" + days, 3f);
                     break;
             }
-            if (step.EndedNow) ShowEnd();
+            if (step.EndedNow) ShowEnd(0.46f);
             RefreshClues();
             RefreshReadout();
             return result;
@@ -506,20 +604,32 @@ namespace Vastcore.RegionMap
         }
 
         /// <summary>遠征の終わりの結果を画面の中央に出す。</summary>
-        private void ShowEnd()
+        private void ShowEnd(float delay = 0f)
         {
             if (_expedition == null) return;
             _endTitle.text = _expedition.Completed ? "すべての地点を見つけた" : "遠征の終わり";
             _endStats.text = "発見 " + _session.Discovered.Count + " / " + _session.TotalSites
                 + "　・　サーチ " + _session.SearchCount + " 回　・　拠点 " + _expedition.Camps.Count + "\n"
                 + "使った日数 " + _expedition.DaysUsed + "　・　発見で戻った日数 " + _expedition.DaysGained + "　・　残り " + _expedition.DaysLeft + " 日";
+            bool opening = !_endPanel.gameObject.activeSelf;
             _endPanel.gameObject.SetActive(true);
+            _fx.Cancel("arrow");
             _arrow.gameObject.SetActive(false);
+            // 発見のカードと同じ開き方（横に伸びてから縦に開く）。中央の結果なので、中心から開く
+            if (!opening) return;
+            if (delay > 0f && _motion)
+            {
+                _endGroup.alpha = 0f;
+                _endPanel.localScale = new Vector3(0.2f, 0.04f, 1f);
+            }
+            _fx.Play("end", delay, 0.38f, t => OpenPanel(_endPanel, _endGroup, t));
         }
 
         private void HideEnd()
         {
-            if (_endPanel != null) _endPanel.gameObject.SetActive(false);
+            if (_endPanel == null) return;
+            _fx.Finish("end");
+            _endPanel.gameObject.SetActive(false);
         }
 
         /// <summary>規則に合わせて、遠征の部品と地図の上の印を出し入れし、左の部品を並べ直す。</summary>
@@ -622,22 +732,60 @@ namespace Vastcore.RegionMap
         private void ShowMessage(string text, float seconds)
         {
             _message.text = text;
-            _messageGroup.alpha = 1f;
-            _messageHideAt = seconds > 0f ? Time.unscaledTime + seconds : -1f;
+            // 出す秒数は読む時間なので、動きの倍率は掛けない。時刻は動きの時計で測る（撮影の時も同じ拍になる）
+            _messageHideAt = seconds > 0f ? _fx.Time + seconds : -1f;
+            if (_fx.IsPlaying("message in")) return;
+            bool shown = _messageGroup.alpha > 0.5f && !_fx.IsPlaying("message out");
+            _fx.Cancel("message out");
+            if (!_motion || shown)
+            {
+                _fx.Finish("message in");
+                _messageGroup.alpha = 1f;
+                _messageRect.anchoredPosition = _messageHome;
+                return;
+            }
+            // 案 B：下から 24 の高さだけせり上がって出る
+            _fx.Play("message in", 0f, 0.22f, t =>
+            {
+                float e = RegionMotion.Out(t);
+                _messageGroup.alpha = e;
+                _messageRect.anchoredPosition = _messageHome + new Vector2(0f, -24f * (1f - e));
+            });
         }
 
         private void HideMessage()
         {
-            _messageGroup.alpha = 0f;
             _messageHideAt = -1f;
+            _fx.Cancel("message in");
+            if (!_motion || _messageGroup.alpha <= 0f)
+            {
+                _fx.Cancel("message out");
+                _messageGroup.alpha = 0f;
+                _messageRect.anchoredPosition = _messageHome;
+                return;
+            }
+            if (_fx.IsPlaying("message out")) return;
+            float from = _messageGroup.alpha;
+            Vector2 start = _messageRect.anchoredPosition;
+            _fx.Play("message out", 0f, 0.22f, t =>
+            {
+                float e = RegionMotion.In(t);
+                _messageGroup.alpha = from * (1f - e);
+                _messageRect.anchoredPosition = Vector2.Lerp(start, _messageHome + new Vector2(0f, -24f), e);
+            }, () => _messageRect.anchoredPosition = _messageHome);
         }
 
-        /// <summary>時間が来た知らせを薄くして消す。出したままだと下の地図が読めない。</summary>
+        /// <summary>時間が来た知らせを消す。出したままだと下の地図が読めない。動きなしの時は 0.5 秒で薄くする（前からの消え方）。</summary>
         private void FadeMessage()
         {
             if (_messageHideAt < 0f || _messageGroup.alpha <= 0f) return;
-            float over = Time.unscaledTime - _messageHideAt;
+            float over = _fx.Time - _messageHideAt;
             if (over <= 0f) return;
+            if (_motion)
+            {
+                HideMessage();
+                return;
+            }
             _messageGroup.alpha = Mathf.Clamp01(1f - over / 0.5f);
         }
 
@@ -744,6 +892,12 @@ namespace Vastcore.RegionMap
 
             if (!sameRegion)
             {
+                // 前の地域の動きは終わりの姿にしてから作り直す。十字は新しい地域の中央へすぐ置く
+                _fx.FinishAll();
+                _cursorPlaced = false;
+                _barsLevel = -1;
+                _daysFillTarget = -1f;
+                _campShown = null;
                 _session = new ExplorationSession(_data);
                 _expedition = new RegionExpedition(_session);
                 _lastSignal = SearchSignal.None;
@@ -783,6 +937,13 @@ namespace Vastcore.RegionMap
 
         private void HandlePointer()
         {
+            if (!PointerEnabled)
+            {
+                _hovering = false;
+                _panning = false;
+                RefreshReadout();
+                return;
+            }
             Vector2 local;
             bool inside = RectTransformUtility.ScreenPointToLocalPointInRectangle(_viewRect, Input.mousePosition, null, out local)
                 && _viewRect.rect.Contains(local);
@@ -1009,6 +1170,7 @@ namespace Vastcore.RegionMap
 
         private void RefreshOverlay()
         {
+            SyncGlide();
             float side = MapSide();
             _content.sizeDelta = new Vector2(side, side);
             _content.anchoredPosition = new Vector2((0.5f - _center.x) * side, (0.5f - _center.y) * side);
@@ -1041,7 +1203,8 @@ namespace Vastcore.RegionMap
                 _featureLabels[f].anchoredPosition = feature.Kind == RegionFeatureKind.Peak ? at + new Vector2(0f, -16f) : at;
             }
 
-            _cursor.anchoredPosition = MapToLocal(_cursorMap);
+            // 十字と範囲の輪は「見えている位置」に置く（滑る途中）。日数や反応の計算は、決まった位置（_cursorMap）で行う
+            _cursor.anchoredPosition = MapToLocal(_cursorShown);
             _range.anchoredPosition = _cursor.anchoredPosition;
             float diameter = _session.FoundRadius / RegionData.MapUnits * side * 2f;
             _range.sizeDelta = new Vector2(diameter, diameter);
@@ -1049,6 +1212,15 @@ namespace Vastcore.RegionMap
             {
                 RegionSite site = _markerSites[m];
                 _markers[m].anchoredPosition = MapToLocal(new Vector2(site.MapX, site.MapY));
+            }
+            for (int r = 0; r < _ripples.Count; r++)
+            {
+                Ripple ripple = _ripples[r];
+                if (!ripple.Busy) continue;
+                float radius = ripple.Pixels ? ripple.Radius : ripple.Radius / RegionData.MapUnits * side;
+                float size = Mathf.Max(0f, radius * 2f * ripple.Scale);
+                ripple.Rect.anchoredPosition = MapToLocal(ripple.Map);
+                ripple.Rect.sizeDelta = new Vector2(size, size);
             }
             RefreshExpeditionMarks(side, diameter * 0.5f);
             PlaceCard();
@@ -1068,6 +1240,23 @@ namespace Vastcore.RegionMap
 
             ExpeditionCost cost = live ? CursorCost() : null;
             bool ring = cost != null && cost.Camp != null;
+            // 基にする拠点が替わった時（新しい拠点ができた時を含む）、輪が中心から広がって出る
+            ExpeditionCamp campNow = ring ? cost.Camp : null;
+            if (!ReferenceEquals(campNow, _campShown))
+            {
+                bool appear = _campShown != null || campNow != null;
+                _campShown = campNow;
+                if (ring && appear)
+                {
+                    RectTransform campRect = _campRing.rectTransform;
+                    _fx.Play("camp", 0f, 0.45f, t =>
+                    {
+                        float e = RegionMotion.Out(t);
+                        campRect.localScale = Vector3.one * Mathf.Lerp(0.6f, 1f, e);
+                        _campGroup.alpha = e;
+                    });
+                }
+            }
             _campRing.gameObject.SetActive(ring);
             _campLine.gameObject.SetActive(ring && cost.CampDistance > _session.FoundRadius);
             if (ring)
@@ -1119,19 +1308,29 @@ namespace Vastcore.RegionMap
         /// </summary>
         private void RefreshLabelCover()
         {
-            bool card = _cardSite != null;
-            Vector2 corner = _card.anchoredPosition;
-            Vector2 ring = card ? MapToLocal(new Vector2(_cardSite.MapX, _cardSite.MapY)) : Vector2.zero;
-            float floor = -ViewSize().y * 0.5f + Margin + ToolHeight + 18f;
+            // 閉じる動きの間も、カードが消えるまでは下の地名を隠す
+            RegionSite cardSite = _cardSite ?? (_card.gameObject.activeSelf ? _cardPlaced : null);
+            bool card = cardSite != null;
+            Vector2 corner = _cardTopLeft;
+            Vector2 ring = card ? MapToLocal(new Vector2(cardSite.MapX, cardSite.MapY)) : Vector2.zero;
+            Vector2 view = ViewSize();
+            float floor = -view.y * 0.5f + Margin + ToolHeight + 18f;
+            // 右の列（右上の札と手掛かりの部品）の下に入る地名も隠す。部品は半透明なので、字が透けて手掛かりの文に重なる
+            bool column = ClueShown();
+            var columnMin = new Vector2(view.x * 0.5f - Margin - PartWidth, view.y * 0.5f - Margin - DetailBadgeHeight - PartGap - (column ? _cluePart.sizeDelta.y : 0f));
+            var columnMax = new Vector2(view.x * 0.5f - Margin, view.y * 0.5f - Margin);
             for (int a = 0; a < _areaLabels.Count; a++)
             {
                 Vector2 at = _areaLabels[a].anchoredPosition;
-                _areaLabels[a].gameObject.SetActive(at.y >= floor && !(card && (UnderCard(at, corner, 76f, 14f) || Near(at, ring, 96f, 44f))));
+                bool hidden = at.y < floor || (card && (UnderCard(at, corner, 76f, 14f) || Near(at, ring, 96f, 44f)))
+                    || (column && InBox(at, columnMin, columnMax, 76f, 14f));
+                _areaLabels[a].gameObject.SetActive(!hidden);
             }
             for (int f = 0; f < _featureLabels.Count; f++)
             {
                 Vector2 at = _featureLabels[f].anchoredPosition;
-                bool hidden = at.y < floor || (card && (UnderCard(at, corner, 60f, 12f) || Near(at, ring, 84f, 42f)));
+                bool hidden = at.y < floor || (card && (UnderCard(at, corner, 60f, 12f) || Near(at, ring, 84f, 42f)))
+                    || (column && InBox(at, columnMin, columnMax, 60f, 12f));
                 for (int a = 0; a < _areaLabels.Count && !hidden; a++)
                     hidden = _areaLabels[a].gameObject.activeSelf && Near(at, _areaLabels[a].anchoredPosition, 132f, 24f);
                 for (int g = 0; g < f && !hidden; g++)
@@ -1145,6 +1344,12 @@ namespace Vastcore.RegionMap
         {
             return at.x + halfWidth > corner.x && at.x - halfWidth < corner.x + CardWidth
                 && at.y - halfHeight < corner.y && at.y + halfHeight > corner.y - CardHeight;
+        }
+
+        /// <summary>中心が at の字（半分の幅と高さ）が、min〜max の箱に掛かるか。</summary>
+        private static bool InBox(Vector2 at, Vector2 min, Vector2 max, float halfWidth, float halfHeight)
+        {
+            return at.x + halfWidth > min.x && at.x - halfWidth < max.x && at.y + halfHeight > min.y && at.y - halfHeight < max.y;
         }
 
         private static bool Near(Vector2 a, Vector2 b, float width, float height)
@@ -1217,10 +1422,13 @@ namespace Vastcore.RegionMap
         private void RefreshReadout()
         {
             if (_data == null) return;
-            Vector2 at = _hovering ? _hoverMap : _cursorMap;
+            // ポインターを乗せている時はその位置をすぐ出す。カーソル位置は、十字が滑り終わるころ（案 B の 0.30 / 0.34）に替わる。
+            // C の要素を入れた時は、座標の数字だけ滑る間も数えて変わる
+            Vector2 at = _hovering ? _hoverMap : (_cursorPlaced ? _readoutAt : _cursorMap);
+            Vector2 numbers = _hovering ? _hoverMap : (_cursorPlaced && _motionCountUp ? _cursorShown : at);
             _positionLabel.text = _hovering ? "ポインター位置" : "カーソル位置";
-            _coordinateX.text = at.x.ToString("00.0", CultureInfo.InvariantCulture);
-            _coordinateY.text = at.y.ToString("00.0", CultureInfo.InvariantCulture);
+            _coordinateX.text = numbers.x.ToString("00.0", CultureInfo.InvariantCulture);
+            _coordinateY.text = numbers.y.ToString("00.0", CultureInfo.InvariantCulture);
             float height = _data.HeightAtMap(at.x, at.y);
             float fine;
             if (_detail.TryHeightAt(at.x, at.y, out fine)) height = fine;
@@ -1231,11 +1439,20 @@ namespace Vastcore.RegionMap
 
             SearchSignal signal = _liveSignal ? _session.Sense(_cursorMap.x, _cursorMap.y).Signal : _lastSignal;
             int level = (int)signal;
-            for (int b = 0; b < _signalBars.Length; b++) _signalBars[b].color = b < level ? AccentColor : OffColor;
+            // 棒の色は、段が替わった時だけ決める（サーチの直後は PlaySearch が順に点ける）
+            if (level != _barsLevel)
+            {
+                _barsLevel = level;
+                for (int b = 0; b < _signalBars.Length; b++)
+                {
+                    _fx.Cancel(_signalBars[b]);
+                    _signalBars[b].color = b < level ? AccentColor : OffColor;
+                }
+            }
             bool expedition = _rules == SearchRules.Expedition && _expedition != null;
             string toward = expedition && !_liveSignal ? RegionCompass.Label(_lastDirection) : string.Empty;
             _signalText.text = SignalName(signal) + (toward.Length > 0 ? "・" + toward : string.Empty);
-            _listCount.text = _session.Discovered.Count + " / " + _session.TotalSites;
+            if (!_listCountHold) _listCount.text = _session.Discovered.Count + " / " + _session.TotalSites;
             _searchCount.text = "サーチ " + _session.SearchCount + " 回";
             if (expedition) RefreshExpeditionReadout();
         }
@@ -1250,8 +1467,18 @@ namespace Vastcore.RegionMap
             _daysOf.rectTransform.anchoredPosition = new Vector2(PartPad + valueWidth + 6f, _daysOf.rectTransform.anchoredPosition.y);
             _daysOf.text = "日　／ 始め " + ex.StartDays + " 日";
             _daysNote.text = "発見で +" + ex.FindDays + " 日　・　拠点 " + ex.Camps.Count;
+            // 残りの帯は、日数が替わった時に 0.5 秒で新しい長さへ縮む（数字はすぐ替わる）
             float fill = Mathf.Clamp01(ex.DaysLeft / (float)Mathf.Max(1, ex.StartDays));
-            _daysFill.sizeDelta = new Vector2(PartInner * fill, 0f);
+            if (!Mathf.Approximately(fill, _daysFillTarget))
+            {
+                bool first = _daysFillTarget < 0f;
+                _daysFillTarget = fill;
+                float from = _daysFill.sizeDelta.x;
+                float to = PartInner * fill;
+                if (first) _fx.Cancel("days");
+                if (first) _daysFill.sizeDelta = new Vector2(to, 0f);
+                else _fx.Play("days", 0f, 0.5f, t => _daysFill.sizeDelta = new Vector2(Mathf.Lerp(from, to, RegionMotion.Out(t)), 0f));
+            }
 
             if (ex.IsOver)
             {
@@ -1291,9 +1518,20 @@ namespace Vastcore.RegionMap
             bool show = _rules == SearchRules.Expedition && _expedition != null;
             if (_cluePart.gameObject.activeSelf != show) _cluePart.gameObject.SetActive(show);
             if (!show || _clueVersion == _expedition.Version) return;
+            // やり直し・新しい地域の後の最初の組み立てでは動かさない（全部が一度に滑り込むと、どれが新しいか分からない）
+            bool animate = _clueVersion != -1;
             _clueVersion = _expedition.Version;
+            if (!animate)
+            {
+                _cluesSeen.Clear();
+                _cluesRead.Clear();
+            }
 
-            for (int i = 0; i < _clueItems.Count; i++) Destroy(_clueItems[i]);
+            for (int i = 0; i < _clueItems.Count; i++)
+            {
+                _fx.Cancel(_clueItems[i]);
+                Destroy(_clueItems[i]);
+            }
             _clueItems.Clear();
             List<RegionClue> open = _expedition.OpenClues();
             _clueHeader.text = "手掛かり（読める " + open.Count + " 件）";
@@ -1302,6 +1540,8 @@ namespace Vastcore.RegionMap
             for (int c = 0; c < shown; c++)
             {
                 RegionClue clue = open[c];
+                int first = _clueItems.Count;
+                float top = y;
                 if (c > 0)
                 {
                     Image rule = CreateImage(_cluePart, "Clue Rule", LineColor, null);
@@ -1314,9 +1554,14 @@ namespace Vastcore.RegionMap
                 _clueItems.Add(title.gameObject);
                 y -= 28f;
                 y = AddClueText(clue.NameLine + "\n" + clue.PlaceLine, MutedColor, y);
+                bool fresh = animate && !_cluesSeen.Contains(clue);
                 if (clue.State == ClueState.Read)
                 {
+                    int detail = _clueItems.Count;
                     y = AddClueText(clue.DetailLine, AccentLightColor, y);
+                    // 読んだばかりの詳しい文は、その場で薄く出る
+                    if (animate && !fresh && !_cluesRead.Contains(clue)) FadeIn(_clueItems[detail], 0f, 0.3f);
+                    _cluesRead.Add(clue);
                 }
                 else
                 {
@@ -1335,6 +1580,9 @@ namespace Vastcore.RegionMap
                     y -= 30f;
                 }
                 y -= 6f;
+                // 新しく読めるようになった手掛かりは、一覧の行と同じく右から滑り込む（発見の 0.5 秒後）
+                if (fresh) SlideInClue(first, top, y);
+                _cluesSeen.Add(clue);
             }
             string foot = open.Count == 0
                 ? "読める手掛かりは無い。発見すると、近くの地点の手掛かりが読める"
@@ -1354,6 +1602,7 @@ namespace Vastcore.RegionMap
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.lineSpacing = 1.05f;
             Place(text.rectTransform, PartPad, y, PartInner, 20f);
+            text.text = KeepClosingMarks(text, value, PartInner);
             float height = Mathf.Ceil(text.preferredHeight) + 2f;
             text.rectTransform.sizeDelta = new Vector2(PartInner, height);
             _clueItems.Add(text.gameObject);
@@ -1409,6 +1658,69 @@ namespace Vastcore.RegionMap
             entry.onClick.AddListener(() => FocusSite(site));
             _listRows.Add(row);
             LayoutList();
+            PlayFound(site, marker, row);
+        }
+
+        /// <summary>
+        /// 案 B の発見：地点から橙の波紋が 2 つ広がり、印は大きめから縮んで止まる。一覧の行は 0.5 秒後に右から滑り込み、件数が一度ふくらむ。
+        /// C の要素を入れた時は、入った行がしばらく淡く光る。
+        /// </summary>
+        private void PlayFound(RegionSite site, RectTransform marker, RectTransform row)
+        {
+            var at = new Vector2(site.MapX, site.MapY);
+            for (int i = 0; i < 2; i++)
+            {
+                Ripple ripple = StartRipple(at, 70f, true, AccentColor, 3f - i);
+                _fx.Play(ripple, i * 0.16f, 0.65f, t =>
+                {
+                    ripple.Scale = Mathf.Lerp(0.35f, 1.25f, RegionMotion.OutStrong(t));
+                    ripple.Group.alpha = 1f - t;
+                }, () => EndRipple(ripple));
+            }
+
+            CanvasGroup markerGroup = marker.gameObject.AddComponent<CanvasGroup>();
+            markerGroup.blocksRaycasts = false;
+            _fx.Play(marker, 0f, 0.32f, t =>
+            {
+                marker.localScale = Vector3.one * Mathf.LerpUnclamped(1.7f, 1f, RegionMotion.OutBack(t));
+                markerGroup.alpha = Mathf.Clamp01(t * 2f);
+            });
+
+            CanvasGroup rowGroup = row.gameObject.AddComponent<CanvasGroup>();
+            if (_motion)
+            {
+                rowGroup.alpha = 0f;
+                _listCountHold = true;
+            }
+            _fx.Play(row, 0.5f, 0.32f, t =>
+            {
+                float e = RegionMotion.Out(t);
+                row.anchoredPosition = new Vector2(60f * (1f - e), row.anchoredPosition.y);
+                rowGroup.alpha = e;
+            });
+            string count = _session.Discovered.Count + " / " + _session.TotalSites;
+            _fx.Play("count", 0.5f, 0.36f, t =>
+            {
+                _listCount.text = count;
+                _listCount.rectTransform.localScale = Vector3.one * Mathf.Lerp(1.35f, 1f, RegionMotion.Out(t));
+                _listCount.color = Color.Lerp(AccentLightColor, TextColor, t);
+            }, () => _listCountHold = false);
+
+            if (_motionRowGlow) Glow(row, 0.5f);
+        }
+
+        /// <summary>C の要素：行や手掛かりの後ろに橙の面を敷き、1.8 秒かけて消す。</summary>
+        private void Glow(RectTransform target, float delay)
+        {
+            if (!_motion) return;
+            Image glow = CreateImage(target, "Glow", new Color(AccentColor.r, AccentColor.g, AccentColor.b, 0f), null);
+            glow.rectTransform.SetAsFirstSibling();
+            Stretch(glow.rectTransform);
+            glow.rectTransform.offsetMin = new Vector2(-6f, 0f);
+            glow.rectTransform.offsetMax = new Vector2(6f, 0f);
+            GameObject owner = glow.gameObject;
+            _fx.Play(owner, delay, 1.8f, t => glow.color = new Color(AccentColor.r, AccentColor.g, AccentColor.b, 0.3f * (1f - RegionMotion.Out(t))),
+                () => Destroy(owner));
         }
 
         /// <summary>発見した地点の一覧を、件数に合わせた高さにする。空の時は見出しだけの小さな部品になる。</summary>
@@ -1446,6 +1758,8 @@ namespace Vastcore.RegionMap
 
         private void ClearDiscovered()
         {
+            // 消す物に掛かった動きは、終わりの姿にしてから消す
+            _fx.FinishAll();
             for (int m = 0; m < _markers.Count; m++) Destroy(_markers[m].gameObject);
             _markers.Clear();
             _markerSites.Clear();
@@ -1474,42 +1788,367 @@ namespace Vastcore.RegionMap
             _cardKind.text = KindName(site.Kind);
             _cardPosition.text = site.MapX.ToString("0.0", CultureInfo.InvariantCulture) + " , " + site.MapY.ToString("0.0", CultureInfo.InvariantCulture);
             _cardHeight.text = Meters(site.HeightMeters) + " m";
+            // 閉じる途中の同じ地点なら、開き直さずに戻す
+            bool reopen = ReferenceEquals(_cardPlaced, site) && _card.gameObject.activeSelf && !_fx.IsPlaying("card close");
+            _cardPlaced = site;
             _card.gameObject.SetActive(true);
             _cardLine.gameObject.SetActive(true);
             PlaceCard();
             RefreshLabelCover();
+            _fx.Cancel("card close");
+            _fx.Cancel("card line close");
+            if (reopen) return;
+
+            // 案 B：印から線が伸び、カードは印に近い角から横に伸びてから縦に開く。中の文字は開き終わってから出る
+            if (_motion)
+            {
+                _cardLine.localScale = new Vector3(0f, 1f, 1f);
+                _card.localScale = new Vector3(0.2f, 0.04f, 1f);
+                _cardGroup.alpha = 0f;
+                _cardBody.alpha = 0f;
+            }
+            _fx.Play("card line", 0.28f, 0.2f, t => _cardLine.localScale = new Vector3(RegionMotion.Out(t), 1f, 1f));
+            _fx.Play("card", 0.46f, 0.38f, t => OpenPanel(_card, _cardGroup, t));
+            _fx.Play("card body", 0.8f, 0.18f, t => _cardBody.alpha = t);
         }
 
         private void HideCard()
         {
+            bool open = _cardSite != null || _card.gameObject.activeSelf;
             _cardSite = null;
-            _card.gameObject.SetActive(false);
-            _cardLine.gameObject.SetActive(false);
             RefreshLabelCover();
+            if (!open) return;
+            _fx.Cancel("card");
+            _fx.Cancel("card line");
+            _fx.Cancel("card body");
+            if (_fx.IsPlaying("card close")) return;
+            // 案 B：開いた時の逆。縦に畳んでから横に縮み、線は後から印へ戻る
+            Vector3 startScale = _card.localScale;
+            float startAlpha = _cardGroup.alpha;
+            _fx.Play("card close", 0f, 0.26f, t =>
+            {
+                float e = RegionMotion.In(t);
+                float sy = e < 0.6f ? Mathf.Lerp(startScale.y, 0.04f, e / 0.6f) : 0.04f;
+                float sx = e < 0.6f ? startScale.x : Mathf.Lerp(startScale.x, 0.2f, (e - 0.6f) / 0.4f);
+                _card.localScale = new Vector3(sx, sy, 1f);
+                _cardGroup.alpha = e < 0.6f ? startAlpha : Mathf.Lerp(startAlpha, 0f, (e - 0.6f) / 0.4f);
+            }, () => _card.gameObject.SetActive(false));
+            float lineFrom = _cardLine.localScale.x;
+            _fx.Play("card line close", 0.2f, 0.16f, t => _cardLine.localScale = new Vector3(lineFrom * (1f - RegionMotion.In(t)), 1f, 1f),
+                () =>
+                {
+                    _cardLine.gameObject.SetActive(false);
+                    _cardPlaced = null;
+                });
+        }
+
+        /// <summary>カードと遠征の結果の開き方。前半 45% で横に伸び、残りで縦に開く。</summary>
+        private static void OpenPanel(RectTransform panel, CanvasGroup group, float t)
+        {
+            float e = RegionMotion.Out(t);
+            float sx = e < 0.45f ? Mathf.Lerp(0.2f, 1f, e / 0.45f) : 1f;
+            float sy = e < 0.45f ? 0.04f : Mathf.Lerp(0.04f, 1f, (e - 0.45f) / 0.55f);
+            panel.localScale = new Vector3(sx, sy, 1f);
+            group.alpha = e < 0.45f ? Mathf.Lerp(0.4f, 1f, e / 0.45f) : 1f;
         }
 
         /// <summary>カードを印の右下に置く。画面の右や下にはみ出す時は、反対側へ回す。印とカードは細い線でつなぐ。</summary>
         private void PlaceCard()
         {
-            if (_cardSite == null) return;
+            // 閉じる途中も、閉じ終わるまで同じ地点のそばに置く
+            RegionSite site = _cardSite ?? _cardPlaced;
+            if (site == null) return;
             Vector2 view = ViewSize();
-            Vector2 at = MapToLocal(new Vector2(_cardSite.MapX, _cardSite.MapY));
+            Vector2 at = MapToLocal(new Vector2(site.MapX, site.MapY));
             // 右の手掛かりの部品に掛かる時は、印の左側へ出す
             float rightEdge = view.x * 0.5f - (ClueShown() ? RightInset - Margin + PartGap : Margin);
             bool right = at.x + 64f + CardWidth <= rightEdge;
             bool below = at.y - 44f - CardHeight >= -view.y * 0.5f + Margin + ToolHeight + 14f;
             float x = right ? at.x + 64f : at.x - 64f - CardWidth;
             float y = below ? at.y - 44f : at.y + 44f + CardHeight;
-            _card.anchoredPosition = new Vector2(x, y);
+            _cardTopLeft = new Vector2(x, y);
 
-            // 線は、印の輪の外から、カードの印に近い角まで
+            // 線は、印の輪の外から、カードの印に近い角まで。カードはその角を中心に開く（pivot をその角にする）
             var corner = new Vector2(right ? x : x + CardWidth, below ? y : y - CardHeight);
+            _card.pivot = new Vector2(right ? 0f : 1f, below ? 1f : 0f);
+            _card.anchoredPosition = corner;
             Vector2 direction = (corner - at).normalized;
             Vector2 start = at + direction * 30f;
             Vector2 span = corner - start;
             _cardLine.anchoredPosition = start;
             _cardLine.sizeDelta = new Vector2(span.magnitude, 1.5f);
             _cardLine.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(span.y, span.x) * Mathf.Rad2Deg);
+        }
+
+        // ---- 動き（SP-021 軸 E） ----
+
+        /// <summary>決まったカーソル位置が替わったら、十字を今見えている位置から滑らせる（案 B：0.34 秒、速く出てゆっくり止まる）。</summary>
+        private void SyncGlide()
+        {
+            if (!_cursorPlaced)
+            {
+                _cursorPlaced = true;
+                _cursorShown = _cursorMap;
+                _glideTo = _cursorMap;
+                _readoutAt = _cursorMap;
+                return;
+            }
+            if (_cursorMap == _glideTo) return;
+            Vector2 from = _cursorShown;
+            Vector2 to = _cursorMap;
+            _glideTo = to;
+            _fx.Play("glide", 0f, 0.34f, t => _cursorShown = Vector2.LerpUnclamped(from, to, RegionMotion.Out(t)));
+            // 位置の読み取りは、十字が着くころ（0.30 秒）に替わる。C の要素を入れた時は、標高・土地・エリアが順に薄く出る
+            _fx.Play("readout", 0.30f, 0.01f, t =>
+            {
+                if (t < 1f) return;
+                _readoutAt = to;
+                if (_motionCountUp && _motion)
+                {
+                    FadeText(_groundValue, 0f);
+                    FadeText(_biomeValue, 0.06f);
+                    FadeText(_areaValue, 0.12f);
+                }
+            });
+        }
+
+        /// <summary>十字を決まった位置へすぐ着かせる（サーチの時。結果の波紋は着いた位置から出す）。</summary>
+        private void ArriveCursor()
+        {
+            SyncGlide();
+            _fx.Finish("glide");
+            _fx.Finish("readout");
+        }
+
+        private void FadeText(Text text, float delay)
+        {
+            Color color = text.color;
+            color.a = 0f;
+            text.color = color;
+            _fx.Play(text, delay, 0.26f, t =>
+            {
+                Color c = text.color;
+                c.a = t;
+                text.color = c;
+            });
+        }
+
+        /// <summary>
+        /// 案 B のサーチの反応。弱い反応は、反応の届く範囲（半径 FaintRadius）まで白い波紋が 1 つ広がる。
+        /// 強い反応は、強い反応の範囲まで橙の波紋が 2 つ。反応なしは、十字の周りに小さく薄い波紋。発見は PlayFound。
+        /// 左の反応の棒は 0.2 秒後から順に点き、文字は薄く出る。C の要素を入れた時は、ボタンと点いた棒が一度光る。
+        /// </summary>
+        private void PlaySearch(SearchResult result)
+        {
+            Vector2 at = _cursorMap;
+            switch (result.Signal)
+            {
+                case SearchSignal.Faint:
+                {
+                    Ripple ripple = StartRipple(at, _session.FaintRadius, false, new Color(1f, 1f, 1f, 0.92f), 3f);
+                    _fx.Play(ripple, 0f, 1.3f, t =>
+                    {
+                        ripple.Scale = Mathf.Lerp(0.14f, 1f, RegionMotion.OutStrong(t));
+                        ripple.Group.alpha = RegionMotion.Keys(t, 0.55f, 1f, 0.85f, 0f);
+                    }, () => EndRipple(ripple));
+                    break;
+                }
+                case SearchSignal.Strong:
+                    for (int i = 0; i < 2; i++)
+                    {
+                        Ripple ripple = StartRipple(at, _session.StrongRadius, false, AccentColor, 3.5f);
+                        _fx.Play(ripple, i * 0.22f, 0.8f, t =>
+                        {
+                            ripple.Scale = Mathf.Lerp(0.3f, 1f, RegionMotion.OutStrong(t));
+                            ripple.Group.alpha = RegionMotion.Keys(t, 0.55f, 1f, 0.9f, 0f);
+                        }, () => EndRipple(ripple));
+                    }
+                    break;
+                case SearchSignal.None:
+                {
+                    Ripple ripple = StartRipple(at, 70f, true, new Color(1f, 1f, 1f, 0.5f), 1.5f);
+                    _fx.Play(ripple, 0f, 0.4f, t =>
+                    {
+                        ripple.Scale = Mathf.Lerp(0.7f, 1f, RegionMotion.Out(t));
+                        ripple.Group.alpha = 0.7f * (1f - t);
+                    }, () => EndRipple(ripple));
+                    break;
+                }
+            }
+
+            int level = (int)result.Signal;
+            _barsLevel = level;
+            float delay = result.Signal == SearchSignal.Found ? 0.12f : 0.2f;
+            for (int b = 0; b < _signalBars.Length; b++)
+            {
+                Image bar = _signalBars[b];
+                if (b >= level || !_motion)
+                {
+                    _fx.Cancel(bar);
+                    bar.color = b < level ? AccentColor : OffColor;
+                    continue;
+                }
+                bar.color = OffColor;
+                bool glow = _motionGlow;
+                _fx.Play(bar, delay + b * 0.09f, 0.12f, t => bar.color = Color.Lerp(OffColor, AccentColor, t), () =>
+                {
+                    if (!glow) return;
+                    // C の要素：点いた直後に明るく光り、1.7 秒かけて元の橙へ戻る
+                    _fx.Play(bar, 0f, 1.7f, t => bar.color = t < 0.15f
+                        ? Color.Lerp(AccentColor, AccentLightColor, t / 0.15f)
+                        : Color.Lerp(AccentLightColor, AccentColor, RegionMotion.Out((t - 0.15f) / 0.85f)));
+                });
+            }
+            if (_motion)
+            {
+                Color text = _signalText.color;
+                text.a = 0f;
+                _signalText.color = text;
+            }
+            _fx.Play(_signalText, delay, 0.16f, t =>
+            {
+                Color c = _signalText.color;
+                c.a = t;
+                _signalText.color = c;
+            });
+            if (_motionGlow && _searchFace != null)
+            {
+                Color bright = Color.Lerp(_searchFaceColor, Color.white, 0.35f);
+                bright.a = 1f;
+                _fx.Play(_searchFace, 0f, 0.7f, t => _searchFace.color = Color.Lerp(bright, _searchFaceColor, RegionMotion.Out(t)));
+            }
+        }
+
+        /// <summary>方角の矢印が、サーチした位置の輪の外から外向きに伸びて出る（遠征の規則）。</summary>
+        private void PlayArrow()
+        {
+            if (_motion)
+            {
+                _arrow.localScale = new Vector3(0f, 1f, 1f);
+                _arrowGroup.alpha = 0f;
+            }
+            _fx.Play("arrow", 0.2f, 0.32f, t =>
+            {
+                float e = RegionMotion.Out(t);
+                _arrow.localScale = new Vector3(e, 1f, 1f);
+                _arrowGroup.alpha = e;
+            });
+        }
+
+        /// <summary>波紋を 1 つ借りる。半径は、pixels が false なら地図の単位、true なら画面の単位。</summary>
+        private Ripple StartRipple(Vector2 map, float radius, bool pixels, Color color, float width)
+        {
+            Ripple ripple = null;
+            for (int i = 0; i < _ripples.Count && ripple == null; i++)
+                if (!_ripples[i].Busy) ripple = _ripples[i];
+            if (ripple == null)
+            {
+                var created = new GameObject("Ripple", typeof(RectTransform), typeof(RegionRingGraphic), typeof(CanvasGroup));
+                created.transform.SetParent(_rippleRoot, false);
+                ripple = new Ripple
+                {
+                    Rect = (RectTransform)created.transform,
+                    Ring = created.GetComponent<RegionRingGraphic>(),
+                    Group = created.GetComponent<CanvasGroup>(),
+                };
+                ripple.Ring.raycastTarget = false;
+                ripple.Ring.Rim = 1f;
+                ripple.Ring.RimColor = new Color(0f, 0f, 0f, 0.35f);
+                ripple.Group.blocksRaycasts = false;
+                ripple.Group.interactable = false;
+                _ripples.Add(ripple);
+            }
+            ripple.Busy = true;
+            ripple.Map = map;
+            ripple.Radius = radius;
+            ripple.Pixels = pixels;
+            ripple.Scale = 0f;
+            ripple.Group.alpha = 0f;
+            ripple.Ring.color = color;
+            ripple.Ring.Thickness = width;
+            ripple.Ring.SetVerticesDirty();
+            ripple.Rect.sizeDelta = Vector2.zero;
+            ripple.Rect.gameObject.SetActive(true);
+            return ripple;
+        }
+
+        private static void EndRipple(Ripple ripple)
+        {
+            ripple.Busy = false;
+            ripple.Group.alpha = 0f;
+            ripple.Rect.gameObject.SetActive(false);
+        }
+
+        /// <summary>手掛かりの部品の中の 1 つ（GameObject）を、遅れてから薄く出す。</summary>
+        private void FadeIn(GameObject item, float delay, float seconds)
+        {
+            CanvasGroup group = item.GetComponent<CanvasGroup>();
+            if (group == null) group = item.AddComponent<CanvasGroup>();
+            if (_motion) group.alpha = 0f;
+            _fx.Play(item, delay, seconds, t => group.alpha = t);
+        }
+
+        /// <summary>新しく読めるようになった 1 件（_clueItems の first 以降）を、右から 60 滑らせて出す。C の要素を入れた時は後ろが淡く光る。</summary>
+        private void SlideInClue(int first, float top, float bottom)
+        {
+            if (!_motion) return;
+            if (_motionRowGlow)
+            {
+                Image glow = CreateImage(_cluePart, "Clue Glow", new Color(AccentColor.r, AccentColor.g, AccentColor.b, 0f), null);
+                Place(glow.rectTransform, PartPad - 8f, top + 4f, PartInner + 16f, top - bottom);
+                glow.rectTransform.SetSiblingIndex(_clueItems.Count > first ? _clueItems[first].transform.GetSiblingIndex() : glow.rectTransform.GetSiblingIndex());
+                _clueItems.Add(glow.gameObject);
+                GameObject owner = glow.gameObject;
+                _fx.Play(owner, 0.5f, 1.8f, t => glow.color = new Color(AccentColor.r, AccentColor.g, AccentColor.b, 0.3f * (1f - RegionMotion.Out(t))));
+            }
+            for (int i = first; i < _clueItems.Count; i++)
+            {
+                GameObject item = _clueItems[i];
+                if (item.name == "Clue Glow") continue;
+                var rect = (RectTransform)item.transform;
+                CanvasGroup group = item.AddComponent<CanvasGroup>();
+                group.alpha = 0f;
+                float x = rect.anchoredPosition.x;
+                _fx.Play(item, 0.5f, 0.32f, t =>
+                {
+                    float e = RegionMotion.Out(t);
+                    rect.anchoredPosition = new Vector2(x + 60f * (1f - e), rect.anchoredPosition.y);
+                    group.alpha = e;
+                });
+            }
+        }
+
+        /// <summary>
+        /// 句点や閉じ括弧が 1 字だけ次の行の頭へ送られる時は、その前の字から次の行へ送る（手掛かりの文）。
+        /// 自分で入れた改行の直後は動かさない。
+        /// </summary>
+        private static string KeepClosingMarks(Text text, string value, float width)
+        {
+            const string closing = "。、，．）」』】〕！？：；・ー…";
+            if (string.IsNullOrEmpty(value)) return value;
+            TextGenerationSettings settings = text.GetGenerationSettings(new Vector2(width, 0f));
+            settings.verticalOverflow = VerticalWrapMode.Overflow;
+            var generator = new TextGenerator();
+            string result = value;
+            for (int pass = 0; pass < 4; pass++)
+            {
+                generator.Populate(result, settings);
+                IList<UILineInfo> lines = generator.lines;
+                int insert = -1;
+                for (int l = 1; l < lines.Count && insert < 0; l++)
+                {
+                    int start = lines[l].startCharIdx;
+                    if (start < 2 || start >= result.Length || result[start - 1] == '\n') continue;
+                    if (closing.IndexOf(result[start]) < 0) continue;
+                    // 「…ト」。」の「。」だけが送られた時は、前に続く閉じの記号（」）も越えて、「ト」から次の行へ送る
+                    int k = start - 1;
+                    while (k > 0 && closing.IndexOf(result[k]) >= 0) k--;
+                    if (k > 0 && result[k] != '\n' && result[k - 1] != '\n') insert = k;
+                }
+                if (insert < 0) break;
+                result = result.Insert(insert, "\n");
+            }
+            return result;
         }
 
         private void SetButtons(bool enabled)
@@ -1641,6 +2280,8 @@ namespace Vastcore.RegionMap
             // エリアの名前は板の子にせず、位置だけ毎フレーム合わせる（拡大しても字の大きさが変わらない）
             _areaLabelRoot = CreateRect(_viewRect, "Area Names");
             BuildExpeditionMarks(_viewRect);
+            // サーチの波紋（動き）。遠征の印より上、発見した地点の印より下
+            _rippleRoot = CreateRect(_viewRect, "Ripples");
             _markerRoot = CreateRect(_viewRect, "Markers");
             _range = CreateSearchRange(_viewRect);
             _range.gameObject.SetActive(false);
@@ -1686,6 +2327,9 @@ namespace Vastcore.RegionMap
             _campRing.Rim = 1f;
             _campRing.RimColor = new Color(0f, 0f, 0f, 0.35f);
             _campRing.color = new Color(1f, 1f, 1f, 0.55f);
+            // 縁の色は color の透明度に従わないので、出る動きは CanvasGroup で薄くする
+            _campGroup = ringObject.AddComponent<CanvasGroup>();
+            _campGroup.blocksRaycasts = false;
             ringObject.SetActive(false);
 
             _campLine = CreateImage(parent, "Camp Line", new Color(AccentLightColor.r, AccentLightColor.g, AccentLightColor.b, 0.8f), null).rectTransform;
@@ -1727,6 +2371,8 @@ namespace Vastcore.RegionMap
             head.rectTransform.sizeDelta = new Vector2(24f, 24f);
             head.rectTransform.anchoredPosition = new Vector2(24f, 0f);
             AddDarkEdge(head.gameObject);
+            _arrowGroup = _arrow.gameObject.AddComponent<CanvasGroup>();
+            _arrowGroup.blocksRaycasts = false;
             _arrow.gameObject.SetActive(false);
         }
 
@@ -1774,23 +2420,30 @@ namespace Vastcore.RegionMap
             _card.pivot = new Vector2(0f, 1f);
             _card.sizeDelta = new Vector2(CardWidth, CardHeight);
             AddFrame(_card, AccentColor);
+            _cardGroup = _card.gameObject.AddComponent<CanvasGroup>();
+            _cardGroup.blocksRaycasts = false;
 
-            _cardEyebrow = CreateText(_card, "Eyebrow", "発見", 15, AccentLightColor, TextAnchor.UpperLeft, _font);
+            // 中の文字は 1 つの入れ物に入れ、カードが開き終わってから薄く出す
+            RectTransform body = CreateRect(_card, "Body");
+            Stretch(body);
+            _cardBody = body.gameObject.AddComponent<CanvasGroup>();
+            _cardBody.blocksRaycasts = false;
+            _cardEyebrow = CreateText(body, "Eyebrow", "発見", 15, AccentLightColor, TextAnchor.UpperLeft, _font);
             Place(_cardEyebrow.rectTransform, PartPad, -10f, CardWidth - PartPad * 2f, 22f);
-            _cardTitle = CreateText(_card, "Title", "", 25, TextColor, TextAnchor.UpperLeft, _font);
+            _cardTitle = CreateText(body, "Title", "", 25, TextColor, TextAnchor.UpperLeft, _font);
             Place(_cardTitle.rectTransform, PartPad, -30f, CardWidth - PartPad * 2f, 36f);
-            _cardAlias = CreateText(_card, "Alias", "", 15, MutedColor, TextAnchor.UpperLeft, _font);
+            _cardAlias = CreateText(body, "Alias", "", 15, MutedColor, TextAnchor.UpperLeft, _font);
             Place(_cardAlias.rectTransform, PartPad, -66f, CardWidth - PartPad * 2f, 20f);
             FitText(_cardAlias, 11, 15);
-            _cardKind = CreateFact(_card, "種類", PartPad, -92f, 96f, _font);
-            _cardPosition = CreateFact(_card, "座標", PartPad + 100f, -92f, 128f, _numberFont);
-            _cardHeight = CreateFact(_card, "標高", PartPad + 232f, -92f, 110f, _numberFont);
-            Text originLabel = CreateText(_card, "Origin Label", "由来", 14, MutedColor, TextAnchor.UpperLeft, _font);
+            _cardKind = CreateFact(body, "種類", PartPad, -92f, 96f, _font);
+            _cardPosition = CreateFact(body, "座標", PartPad + 100f, -92f, 128f, _numberFont);
+            _cardHeight = CreateFact(body, "標高", PartPad + 232f, -92f, 110f, _numberFont);
+            Text originLabel = CreateText(body, "Origin Label", "由来", 14, MutedColor, TextAnchor.UpperLeft, _font);
             Place(originLabel.rectTransform, PartPad, -144f, 40f, 20f);
-            _cardOrigin = CreateText(_card, "Origin", "", 15, TextColor, TextAnchor.UpperLeft, _font);
+            _cardOrigin = CreateText(body, "Origin", "", 15, TextColor, TextAnchor.UpperLeft, _font);
             Place(_cardOrigin.rectTransform, PartPad + 44f, -143f, CardWidth - PartPad * 2f - 44f, 42f);
             FitText(_cardOrigin, 11, 15);
-            Text close = CreateText(_card, "Close", "次のサーチか Esc で閉じる", 15, MutedColor, TextAnchor.UpperLeft, _font);
+            Text close = CreateText(body, "Close", "次のサーチか Esc で閉じる", 15, MutedColor, TextAnchor.UpperLeft, _font);
             Place(close.rectTransform, PartPad, -190f, CardWidth - PartPad * 2f, 22f);
 
             _card.gameObject.SetActive(false);
@@ -1894,6 +2547,8 @@ namespace Vastcore.RegionMap
             _searchButton = CreateButton(signal, "Search", new Color(AccentColor.r, AccentColor.g, AccentColor.b, 0.92f));
             RectTransform searchRect = (RectTransform)_searchButton.transform;
             Place(searchRect, PartPad, -66f, PartInner, 50f);
+            _searchFace = _searchButton.image;
+            _searchFaceColor = _searchFace.color;
             _searchButton.onClick.AddListener(() => SearchAtCursor());
             BuildSearchLabel(searchRect);
             y -= SignalHeight + PartGap;
@@ -1946,6 +2601,7 @@ namespace Vastcore.RegionMap
             _endPanel.sizeDelta = new Vector2(EndWidth, EndHeight);
             _endPanel.anchoredPosition = new Vector2((LeftInset - RightInset) * 0.5f, 40f);
             AddFrame(_endPanel, AccentColor);
+            _endGroup = _endPanel.gameObject.AddComponent<CanvasGroup>();
             Text eyebrow = CreateText(_endPanel, "Eyebrow", "遠征の結果", 15, AccentLightColor, TextAnchor.UpperLeft, _font);
             Place(eyebrow.rectTransform, 24f, -16f, EndWidth - 48f, 22f);
             _endTitle = CreateText(_endPanel, "Title", "遠征の終わり", 30, TextColor, TextAnchor.UpperLeft, _font);
@@ -2099,6 +2755,8 @@ namespace Vastcore.RegionMap
             _messageGroup.blocksRaycasts = false;
             _messageGroup.interactable = false;
             _messageHideAt = -1f;
+            _messageRect = rect;
+            _messageHome = rect.anchoredPosition;
             _message = CreateText(rect, "Text", "", 23, TextColor, TextAnchor.MiddleCenter, _font);
             Stretch(_message.rectTransform);
         }

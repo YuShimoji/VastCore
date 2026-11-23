@@ -19,6 +19,8 @@ namespace Vastcore.RegionMap.Editor
         private const double TimeoutSeconds = 240.0;
 
         private static int _wait;
+        private const int MotionWaitFrames = 600;
+        private static int _motionWait;
         private static double _startedAt;
         private static double _readyAt;
         // 連続撮影（-regionClip 秒数）。開始直後の画面を 1 秒に ClipFps 枚ずつ clip/ へ残す
@@ -106,6 +108,15 @@ namespace Vastcore.RegionMap.Editor
                 _wait--;
                 return;
             }
+
+            // 動き（SP-021 軸 E）が落ち着いてから次の操作と撮影をする。入力は動きを待たないが、撮る画面は終わりの姿にそろえる
+            if (explorer.MotionBusy && _motionWait < MotionWaitFrames)
+            {
+                _motionWait++;
+                return;
+            }
+            if (_motionWait >= MotionWaitFrames) Debug.Log("[RegionMap] 動きが " + MotionWaitFrames + " フレームで落ち着かなかった（手順 " + step + "）");
+            _motionWait = 0;
 
             if (_awaitDetail)
             {
