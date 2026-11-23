@@ -43,6 +43,11 @@ style.
 - Safety language without a named hazard, consequence, and decision.
 - Micro-prompts for work that remains inside an approved outcome.
 - Broad visual implementation before direction intent is established.
+- An acceptance or direction form after every increment (2026-11-24 correction).
+  Send a question only when the answer selects between methods that repo
+  evidence cannot decide. Do not turn the "what to add next" field of an answer
+  into the next task without checking the SP-021 stage table.
+- Preference questions about defects the developer can count and fix.
 
 Durable user preferences belong in `docs/USER_REQUEST_LEDGER.md`; this file owns
 only interaction behavior.
