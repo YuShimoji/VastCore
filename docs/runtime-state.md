@@ -8,17 +8,17 @@ Last Updated: 2026-11-23
 |---|---|
 | Project | VastCore Terrain Engine |
 | Branch | `codex/vc-development-readiness-20260711` |
-| Integrated baseline | `81e2b19`（探索画面の拡大表示 `RegionDetailLayer` まで）の上に、命名の第2版（`Core/RegionNaming.cs`・`RegionNamingRules.cs`・`RegionFeatures.cs`）と、探索画面の名前・別名・由来の表示を足した（2026-11-23、本ファイルと同じ commit） |
+| Integrated baseline | `c12ba69`（探索画面の動き、SP-021 軸 E の最小の実装）。その前に遠征の規則（軸 H、`e13924f`）、命名の第2版と名前・別名・由来の表示、拡大表示（`81e2b19`） |
 | Active outcome | seedから地域一帯の鳥瞰図を自動で作り、その上で座標を指定してサーチし隠れた地点を発見する探索を動かす（SP-021 段1〜4）。本人の回答で段5（拡大した地形と巨大構造物）に着手し、方式「地図をそのまま細かくする」の地形を探索画面へ統合した（×4 以上で細部の地形に切り替わる。構造物の形は止めている） |
 | Active artifact | `docs/02_design/REGION_MAP_EXPLORATION_SPEC.md` |
-| Next mission | 本人が遠征の規則（サーチのゲーム性 C＋B の最小の実装）を受入の問い `01M82V588FZE0C05C0YP34DNGN` で見る。開発担当は続けて ②動き B を ×1.6 の長さで（`01M828W77SDBJKNBXA22T8XJ8B`）→ ③名前の出し方の4点（`01M825M7PECFN9BY6CFVJREM58`）を順に実装する（どちらも `View/RegionExplorer.cs` か写しの Unity を使うので、同時には進めない）。構造物の画像の道具の用意は本人 |
-| Current bottleneck | 遠征の規則が本人の手触りに近いかが未確認（受入の問い `01M82V588FZE0C05C0YP34DNGN`）。動き B と名前の出し方の4点はまだ探索画面に入っていない。その先の、資材・基地・通貨とストア（段6）と手掛かりの文（ナラティブ）は、開発担当が案を出して本人が決める。構造物の形は「画像生成から逆算したい」となり、承認済みの4枚が出て本人が方向を選ぶまで形を作れない。4枚を作る経路は本人が「この環境で、生成の道具を使えるようにする」を選んだ（`01M821KYJMRRFKP1VY1F6Q1HS2`。道具は本人が用意する） |
+| Next mission | 本人が遠征の規則（`01M82V588FZE0C05C0YP34DNGN`）と動き（`01M831H77K6HV96N1BYM6J0JZK`）の受入を見る。開発担当は続けて名前の出し方の4点（`01M825M7PECFN9BY6CFVJREM58`）を実装する。回答による直しも `View/RegionExplorer.cs` と写しの Unity を使うので、同時には進めず順に入れる。構造物の画像の道具の用意は本人 |
+| Current bottleneck | 遠征の規則と動きが本人の手触りに近いかが未確認（受入の問い `01M82V588FZE0C05C0YP34DNGN`・`01M831H77K6HV96N1BYM6J0JZK`）。名前の出し方の4点はまだ探索画面に入っていない。その先の資材・基地・通貨とストア（段6）と手掛かりの文（ナラティブ）は、開発担当が案を出して本人が決める。構造物の形は、承認済みの4枚が出て本人が方向を選ぶまで作れない（4枚を作る道具は本人が用意する。`01M821KYJMRRFKP1VY1F6Q1HS2`） |
 | Change relation | 継続（2026-11-22、本人依頼「複数のタスクの軸が考えられるため整理して、そのまま可能なら開発を継続」「回答しました。命名のシステムについてはより体系的に構築したいです。」と、回答 `01M81JA2CC4WC37TF841JJ8ZEE`・`01M81JA6HWR4TJQXZA6T07TC6J`）。順は SP-021 4.1節。軸 G の入口の後に、命名の仕組みの最初の版と川岸への移動を作った。2026-11-22〜23 に、親の作業からの依頼（SP-021「地域鳥瞰図と探索」の拡大表示の統合）で拡大表示を作った。2026-11-23 に、命名の回答 `01M81SA3GF8YMRZRETVZCHBGE2` を受けて第2版を作った |
 
 目的は [SSOT_WORLD](SSOT_WORLD.md) 1節と1.1節。目標アンカー：
 
 - 開発目標：seedから地域一帯の詳細な鳥瞰図を自動で作り、その上にポイントクリック的な宝探しの探索ゲームを載せられる。
-- 今回の増分：探索画面のサーチに、日数・拠点・手掛かり・方角の遠征の規則（C＋B の最小の実装）が入り、本人が実画面の確認ページで「近いか、気になる所、次に足すもの」を言える。
+- 今回の増分：探索画面のサーチ・反応・発見・カード・一覧・遠征の部品に、B を ×1.6 の長さにした動き（C の3要素つき、切れる）が入り、本人が実画面の動画で近さ・気になる所・C の採否・長さ・削る動きを言える。
 - 現在のボトルネック：上の表の Current bottleneck。
 
 全体工程（段1〜6）と現在地の表は [SP-021](02_design/REGION_MAP_EXPLORATION_SPEC.md) 4節が持つ。SP-017 / SP-020（Arch・Prefab Stamp・DualGridの経路）は未実施のまま保留で、2026-11-21再開準備時の状態本文は [再開履歴](restart/VC_RESTART_20261101_HISTORY.md) の「2026-11-21 thank版（SP-017再開準備）」へ原文のまま移した。
@@ -30,17 +30,19 @@ Last Updated: 2026-11-23
 - 命名（2026-11-22 の最初の版と川岸、2026-11-23 の第2版）で足したのは `Core/RegionNaming.cs`・`Core/RegionNamingRules.cs`・`Core/RegionFeatures.cs` と `Assets/Tests/EditMode/RegionNamingTests.cs`。変えたのは `Core/` の `RegionNames`・`RegionSite`・`RegionAreas`・`RegionSpec`・`RegionData`、`View/RegionExplorer.cs`、`Editor/RegionExplorerSmoke.cs`、`tools/RegionMapPreview/Program.cs`。
 - 拡大表示（2026-11-22〜23）で足したのは `View/RegionDetailLayer.cs`・`View/RegionRingGraphic.cs`・`Assets/Tests/EditMode/RegionDetailLayerTests.cs`（各 meta つき）。変えたのは `View/RegionExplorer.cs`（最大拡大 8→64、右上の札、サーチの輪、矢印キー1回分の移動量、標高の読み）と `Editor/RegionExplorerSmoke.cs`（拡大の確認の手順）。`Core/`・シーン・`ProjectSettings/`・`Packages/` は変更していない。
 - 遠征の規則（軸 H、2026-11-23）で足したのは `Core/RegionExpedition.cs` と `Assets/Tests/EditMode/RegionExpeditionTests.cs`（各 meta つき）。変えたのは `Core/ExplorationSession.cs`（最寄りの地点 `Nearest`、`Reset()`）、`View/RegionExplorer.cs`（規則の切替、左の「遠征の残り」、右の「手掛かり」、地図の野営地・拠点の輪・線・方角の矢印、終わりの結果）、`Editor/RegionExplorerSmoke.cs`（遠征の撮影7枚）。
+- 動き（軸 E、2026-11-23）で足したのは `View/RegionMotion.cs` と `Editor/RegionExplorerMotionCapture.cs`（各 meta つき）。変えたのは `View/RegionExplorer.cs`（部品ごとの動き、動きのスイッチ・長さ・C の3要素の入れ切り、右の手掛かりの下の地名を隠す、「。」などが行頭に1つだけ残る折り返しを防ぐ）と `Editor/RegionExplorerSmoke.cs`（動きが終わるまで待ってから撮る）。`Core/` は変えていない。
 - 未commitのまま保持するもの（前から同じ）：`.serena/project.yml`、`docs/04_reports/LEGACY_UI_MIGRATION_REPORT.md` の差分、untrackedの `Assets/Resources/Stamps/`（旧失敗候補）とそのmeta。どれも上書き・削除しない。
-- 生成物は ignored の `artifacts/region-map/`（鳥瞰図PNG、探索画面の画像 `explorer-*.png`、確認ページ `review-20261123-search-impl/`（軸 H の遠征の規則の実画面）・`review-20261123-search/`（軸 H のサーチの案）・`review-20261123-motion/`（軸 E の動きの案）・`review-20261123-naming/`（命名の第2版と探索画面の実画面）・`review-20261122-r10/`（探索画面の拡大表示の実画面）・`review-20261123-r1/`（山頂のモノリスの形の方向4通りの計画と参照資料）・`review-20261122-r9/`（構造物の形を画像から起こす進め方）・`review-20261122-r4/`〜`r8/`（エリア・地点の根拠・雲の流れ・拡大した地形・形の案・呼び名・命名の仕組み）、ラフの元 `rough-20261122-screen/`）と `artifacts/logs/region-map-*.log`。thank端末にだけある。
+- 生成物は ignored の `artifacts/region-map/`（鳥瞰図PNG、探索画面の画像 `explorer-*.png`、下の確認ページ、ラフの元 `rough-20261122-screen/`）と `artifacts/logs/region-map-*.log`。thank端末にだけある。
+- 確認ページ（`artifacts/region-map/` の下）：`review-20261123-motion-impl/`（軸 E の動きの実画面）・`review-20261123-search-impl/`（軸 H の遠征の規則の実画面）・`review-20261123-search/`（軸 H のサーチの案）・`review-20261123-motion/`（軸 E の動きの案）・`review-20261123-naming/`（命名の第2版と探索画面の実画面）・`review-20261122-r10/`（拡大表示の実画面）・`review-20261123-r1/`（山頂のモノリスの形の方向4通りの計画と参照資料）・`review-20261122-r9/`（構造物の形を画像から起こす進め方）・`review-20261122-r4/`〜`r8/`（エリア・地点の根拠・雲の流れ・拡大した地形・形の案・呼び名・命名の仕組み）。
 - Unityのバッチ起動は、Unity Hubが起動していないと `No valid Unity Editor license found`（exit 198）で失敗する。本人がこのプロジェクトを Editor で開いている間は、バッチも2つ目の Editor も起動できない（`another Unity instance is running`）。その間の確認用に、`D:\vcv\VastCore`（Assets・Packages・ProjectSettings・scripts の写しと、そこで取り込んだ Library。git 管理外）を残してある。要らなくなったらフォルダごと消してよい。
 - 残しているローカル限定の履歴（`master`、`feature/mcp-verification`、stash 2件）とworktree `.codex-tmp/cloud-codex-20261011/VastCore` は再開準備時のまま。
 
 ## Current Trust Assessment
 
+- thank / Unity 6000.3.6f1 / 2026-11-23（動き、軸 E。写し `D:\vcv\VastCore` で実行し、元のリポジトリへ戻した6ファイルとハッシュ一致。本人の Editor は開いたまま）：EditMode 639/639、失敗/skip 0。探索シーンの再生（`-Mode explore`）：PASS（遠征の7場面と前の規則。動きの終わりを待つ上限 600 フレームに達した所なし）。`RegionExplorerMotionCapture` で full・bonly・off の3組を 1/30 秒ごとに各 1140 枚（飛んだフレーム 0）撮り、場面1〜6を目で見た。前回の試作 B と発見の場面を同じ秒で並べ、線→カードの開き→文字の順と時刻が同じことを見た（発見の波紋は Unity の方が大きく濃い）。
 - thank / Unity 6000.3.6f1 / 2026-11-23（遠征の規則。写し `D:\vcv\VastCore` で実行し、元のリポジトリへ戻したファイルとハッシュ一致。本人の Editor は開いたまま）：EditMode 639/639、失敗/skip 0（遠征の規則のテスト8件）。探索シーンの再生（`-Mode explore`、1920×1080、seed 7）：PASS（地点の位置で発見・遠征の7場面・前の規則への切替、1920×1080、地図が出るまで 9.6 秒）。撮った画面（始め・方角・手掛かりを読む・発見と拠点・遠い所の日数・終わり・前の規則）を目で見た。規則の数値は .NET 9 の試し打ち（手掛かりを読んで探す遊び方、seed 7・3・21 各12回）で、18地点のうち平均 12.7〜14.5 を見つける値に合わせた（仮）。
 
-- thank / Unity 6000.3.6f1 / 2026-11-22〜23（探索画面の拡大表示。写し `D:\vcv\VastCore` で実行し、元のリポジトリへ戻した8ファイルとハッシュ一致。本人の Editor は開いたまま）：EditMode 627/627、失敗/skip 0（拡大のテスト5件を足した）。`-Mode explore`（1920×1080、seed 7）が PASS。実画面で、広域→作成中→細部（×10・×40・×64）→描き方の切替→縮めて広域へ戻る、を撮って見た。海岸線と川は広域と同じ位置。
-- 同上、拡大してから細部が見えるまで（`explorer-detail-result.txt`）：×10（窓 40 km・39 m/セル）6.9秒（作成 5.4秒・描画 0.67秒）、×40（10 km・9.8 m）8.6秒（7.1秒・0.62秒）、×64（5 km・4.9 m）8.0秒（6.4秒・0.72秒）。×64 で描き方だけ替えると 3.3秒、約 4 km 動かして作り直すと 8.3秒。海陸の一致 99.8〜100%、川の一致 100%、標高の差の平均 3.8〜8.7 m。作成中に画面の更新が空いた最長は 0.3〜0.6秒（作っていない間の最長は 0.8秒で、撮影と描き方の切替を含む）。
+- 拡大表示の Unity での確認（2026-11-22〜23。EditMode 627/627、拡大してから細部が見えるまでの時間）は [履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md) へ原文のまま移した。
 - 本人の回答（拡大表示、2026-11-23、`01M81W8NN4XG16SQXMV2R3NBKT`）：「近い」。6領域（広域から細部へ切り替わる見え方・右上の札・細部の地形・広域の地図との一致・拡大中のサーチと発見とカーソル・縮めて広域へ戻る見え方）は全て「軽微（余裕があれば）」。操作のしやすさは5項目とも7段階の4。前の版より「良くなった」。次は「今回の続き」。記述は無し。
 - 本人の回答（命名の第2版、2026-11-23、`01M825M5QZP791BTF91XA1FDAS`）：「近い」。9領域（骨格と音の質感の分け方・複数の名前の持ち方・土地の経緯の決まり方・記号名の形・土地の名の作り・発見カードの別名と由来・一覧の由来・地図上の名前・音の響き）は全て「軽微（余裕があれば）」。次は「別の方向へ」、記述「サーチシステムなどのゲーム性を向上させたい。」
 - 本人の回答（サーチのゲーム性、2026-11-23、`01M82CXPP4H2DKENWRZT0V0MGH`）：近い案は「組み合わせ」、記述「CとBがより近い。ゲームシステムとして。ナラティブについては要検討。」。足りないものは総当たり・見返り・目的と終わり・方角で、記述「モニュメント発見に寄っており、資材獲得や何らかの基地発見など、より広範で実利的な目的を持たせたい。」。「など」は地点の中身・探す目的と依頼・別の地域をまたぐ収集・拡大表示との連動で、ストアの記述は [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md)。最初に作る大きさは「選んだ案の最小の実装まで」。
@@ -56,14 +58,15 @@ Last Updated: 2026-11-23
 - 未確認（命名）：元のリポジトリを開いた本人の Unity での再生、実マウスで発見した時のカードの出方、発見数が増えて一覧の由来の行が名前だけの行へ戻る切替、seed 7 以外の探索画面での名前の見え方（名前の一覧は seed 3・21 も見た）、16:9 以外での地名の重なり、規則を人が書き換える時の使い勝手、確認ページ `review-20261123-naming` を本人のブラウザで開いた時の見え方、川岸へ移した地点の seed 7 以外での見え方（テストは seed 5〜9 の位置だけ確かめる）。
 - 未確認：差し替えの画像を本人が置いた時の見え方（仮の画像1組でだけ確認。PNG以外の形式、正方形でない画像、取り込み設定が Sprite の画像、1920×1080 以外の画面は未確認）、確認ページ `review-20261122-r7` を本人のブラウザで開いた時の表示（Recordinator の「開く」は応答200。添付18ファイルのハッシュは元と一致）、seed 7 以外の地域と地点 5・10・14 以外での拡大した地形、`9cc6770` 以降の画面での実マウスの操作（右・中ドラッグでの移動、ホイールの拡大・縮小、一覧の行とボタンのクリック、「地名」ボタン、部品の上のクリックが地図へ通らないこと）、雲の層を3枚に増やした後の実際の描画の速さ、拡大した時の地名の重なり、16:9 以外の画面の形での部品の重なり、元のリポジトリの Editor での再生（写しでだけ確認）、PlayMode、ビルドした Player、Windows以外でのフォント表示、1024²を超える解像度、PLANNER007でのSP-021のcompile/tests、残る見た目の制限（SP-021 8節）の解消。
 - 未確認（拡大表示）：実マウスでのホイール・右ドラッグの手触りと、細部を作っている最中の滑らかさ（更新の間隔の測定だけ）、元のリポジトリの Editor での再生（写しでだけ確認）、seed 7 以外と 1920×1080 以外の画面の形、ビルドした Player での作成時間、拡大 ×40 以上でのサーチの輪（画面より大きく見えない）、確認ページ `review-20261122-r10` を本人のブラウザで開いた時の画像の出方。
+- 未確認（動き）：実マウスでの操作感、1920×1080 以外、×4 以上の拡大中、ビルドした Player、画像の差し替え（軸 G）と組み合わせた見え方、元のリポジトリを開いた本人の Editor での再生（写しでだけ確認）。
 
 ## Next Action
 
 次の作業は、本人の回答から決める。SP-017のArch往復検証を自動で次の作業にしない。
 
-1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）。Recordinator の問いは、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意）だけが未回答。回答済みで閉じた問いは [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md) にある。
+1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）。未回答の Recordinator の問いは、遠征の規則の受入（Next Action 2）、動きの受入（Next Action 3）、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意。動きの受入の問いにも同じ設問がある）。回答済みで閉じた問いは [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md) にある。
 2. 本人（軸 H）：遠征の規則の受入（問い `01M82V588FZE0C05C0YP34DNGN`、確認ページ `artifacts/region-map/review-20261123-search-impl/`）。回答は開発担当が読み、`01M82CXPP4H2DKENWRZT0V0MGH` の続きとして SP-021 4.1節 H へ戻す。開発担当は回答を待たずに Next Action 3 へ進む（同じ `View/RegionExplorer.cs` を使うので、回答で直す所は 3 の後に順に入れる）。
-3. 開発担当（順に）：動き B を ×1.6 の長さで `View/RegionExplorer.cs` へ入れる（回答 `01M828W77SDBJKNBXA22T8XJ8B`、見本は確認ページ `review-20261123-motion`。遠征の野営地・拠点の輪・矢印・手掛かりの部品にも動きが要るかは実装の中で見る）。名前の出し方の4点を `Core/RegionNaming.cs`・`RegionNamingRules.cs`・土地の経緯の決め方へ入れる（回答 `01M825M7PECFN9BY6CFVJREM58`）。命名（9領域）と拡大表示（6領域）の指摘は全て「軽微」で、余裕のある時に直す。サーチの輪が ×40 以上で画面より大きい点は残っている（SP-021 8節）。F 仮の音で鳴る場所はその後。本人が Editor を開いている間のコード編集と確認は写しで行い、1回で戻す。写しの Unity が動いている間は、写しの C# も編集しない。
+3. 本人（軸 E）：動きの受入（問い `01M831H77K6HV96N1BYM6J0JZK`、確認ページ `artifacts/region-map/review-20261123-motion-impl/`）。近さ・場面ごとの指摘・C の3要素の採否・長さ・削る動きを聞いている。開発担当は回答を待たずに、名前の出し方の4点を `Core/RegionNaming.cs`・`RegionNamingRules.cs`・土地の経緯の決め方へ入れる（回答 `01M825M7PECFN9BY6CFVJREM58`）。回答による直しは同じ `View/RegionExplorer.cs` を使うので順に入れる。命名と拡大表示の「軽微」の指摘、×40 以上のサーチの輪（SP-021 8節）、F 仮の音で鳴る場所はその後。本人が Editor を開いている間は写しで確かめて1回で戻し、写しの Unity が動いている間は写しの C# を編集しない。
 4. 構造物の形（画像から）：問い `01M81TQZHW7EREG4FR38RDSVBE` は2026-11-23に6設問とも本人が回答済み（回答ID `01M81V4908J2FG0Y2N0TN51ND4` ほか5件）。承認は A＝4枚（山頂のモノリス1種類で形の方向を4通り）・段階式（第1段は単体）・斜め見下ろし約35°・エージェントが生成・起こし方は画像を見てから。参照資料は出典付きで揃え済み（[SP-021 履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md)）。4枚は未生成（この環境に画像の生成の道具が無い）。経路は本人が「この環境で、生成の道具を使えるようにする」を選んだ（問い `01M821KYJMRRFKP1VY1F6Q1HS2`、外す方向の指定なし）。本人：画像生成の道具をこの環境で使えるようにする（手順は Task へ記録）。使えたら開発担当が4枚を生成し、方向を選ぶ問いを送る。地形つきの画像と形への起こし方は、方向が決まった後。軸 G のデザインの画像は `Assets/Resources/RegionMapSkin/` に置く（SP-021 6節）。段6（ゲームの内容）は本人の領分。
 
 ## External Pulse And Remote Resume
