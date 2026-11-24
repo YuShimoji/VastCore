@@ -267,6 +267,9 @@ namespace Vastcore.RegionMap.Editor
             {
                 case 0:
                     Capture(output, "explorer-1-start.png");
+                    // 音の既定は「なし」（2026-11-25、本人が「既定で切る」と決めた）。開いた直後から次のサーチまで鳴らないことを数で見る
+                    _openPlayedBefore = TotalPlayed(explorer.Sounds);
+                    SoundLine("開いた直後: 入 " + explorer.SoundEnabled + "、ボタン「音：" + explorer.SoundLevelText + "」、ここまでに鳴らした数 " + _openPlayedBefore);
                     float clipSeconds = SessionState.GetFloat(ClipKey, 0f);
                     if (clipSeconds > 0f)
                     {
@@ -286,6 +289,16 @@ namespace Vastcore.RegionMap.Editor
                     Capture(output, "explorer-2-signal.png");
                     break;
                 case 2:
+                    {
+                        // 開いた直後のサーチ（手順 1）で鳴らした数を記録し、ボタンで音を入れる（なし → 大 → 中）。この後の場面は音を入れて測る
+                        _openPlayed = TotalPlayed(explorer.Sounds) - _openPlayedBefore;
+                        _openSilentOk = _openPlayedBefore == 0 && _openPlayed == 0 && !explorer.SoundEnabled;
+                        SoundLine("開いた直後のサーチで鳴らした数 " + _openPlayed + "（0 が正しい）、鳴らさなかった予約 " + TotalSilenced(explorer.Sounds));
+                        explorer.NextSoundLevel();
+                        SoundLine("ボタンで音を入れた: 入 " + explorer.SoundEnabled + "、音量 " + explorer.SoundVolume.ToString("0.0") + "、ボタン「音：" + explorer.SoundLevelText + "」");
+                        explorer.NextSoundLevel();
+                        SoundLine("次の段: 入 " + explorer.SoundEnabled + "、音量 " + explorer.SoundVolume.ToString("0.0") + "、ボタン「音：" + explorer.SoundLevelText + "」");
+                    }
                     if (target != null)
                     {
                         explorer.MoveCursor(target.MapX, target.MapY);
@@ -682,6 +695,9 @@ namespace Vastcore.RegionMap.Editor
         private static string _soundSummary = "";
         private static int _mutedPlayedBefore;
         private static bool _mutedSilentOk;
+        private static int _openPlayedBefore;
+        private static int _openPlayed;
+        private static bool _openSilentOk;
         private static bool _soundFilesWritten;
 
         private static void SoundLine(string line)
@@ -694,6 +710,13 @@ namespace Vastcore.RegionMap.Editor
         {
             int total = 0;
             foreach (RegionSoundSpec spec in RegionSound.All) total += sounds.PlayedCount(spec.Cue);
+            return total;
+        }
+
+        private static int TotalSilenced(RegionSoundPlayer sounds)
+        {
+            int total = 0;
+            foreach (RegionSoundSpec spec in RegionSound.All) total += sounds.SilencedCount(spec.Cue);
             return total;
         }
 
@@ -734,7 +757,8 @@ namespace Vastcore.RegionMap.Editor
                     .Append(record.Confirmed ? "\t再生が進んだ" : "\t再生を見ていない").Append('\n');
             text.Append('\n').Append(SoundLog);
             File.WriteAllText(Path.Combine(output, "sound-result.txt"), text.ToString());
-            _soundSummary = "音は " + RegionSound.All.Count + " 場面のうち " + heard + " 場面で鳴らし、" + confirmedCues + " 場面で再生が進んだのを見た、音なしの間は " + (_mutedSilentOk ? "鳴らさなかった" : "鳴った");
+            _soundSummary = "音は既定の「なし」で開いた直後のサーチまで " + (_openSilentOk ? "鳴らさなかった" : "鳴った（" + _openPlayed + " 回）")
+                + "、ボタンで入れた後に " + RegionSound.All.Count + " 場面のうち " + heard + " 場面で鳴らし、" + confirmedCues + " 場面で再生が進んだのを見た、音なしの間は " + (_mutedSilentOk ? "鳴らさなかった" : "鳴った");
             Debug.Log("[RegionMap] " + _soundSummary);
         }
 

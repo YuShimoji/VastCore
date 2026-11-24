@@ -43,9 +43,10 @@ namespace Vastcore.RegionMap
         [SerializeField] private bool _motionRowGlow = true;
 
         [Header("音（SP-021 軸 F。今の音はすべて仮。方向と素材は本人が決める）")]
-        [Tooltip("オフにすると、どの場面でも音を鳴らさない。下端の「音」ボタンの「なし」と同じ。")]
-        [SerializeField] private bool _sound = true;
-        [Tooltip("音量（0〜1）。既定の 0.6 は仮の値。下端の「音」ボタンで 大 1.0・中 0.6・小 0.3・なし を切り替える。")]
+        // 既定は切る（2026-11-25、本人が開発担当の合成した音を「既定で切る」と決めた）。鳴る場所と差し替えの入口は残す
+        [Tooltip("オンにすると、各場面で音を鳴らす。既定はオフ（開いた直後は下端の「音」ボタンが「なし」）。ボタンを押せば 大・中・小 で鳴る。")]
+        [SerializeField] private bool _sound = false;
+        [Tooltip("音を入れた時の音量（0〜1）。0.6 は仮の値。下端の「音」ボタンで 大 1.0・中 0.6・小 0.3・なし を切り替える。")]
         [Range(0f, 1f)]
         [SerializeField] private float _soundVolume = 0.6f;
 
@@ -449,7 +450,13 @@ namespace Vastcore.RegionMap
             get { return _sounds != null ? _sounds.CustomNames : string.Empty; }
         }
 
-        /// <summary>「音」ボタン：音の段を次へ切り替える（中 → 小 → なし → 大 → 中）。</summary>
+        /// <summary>下端の「音」ボタンに出る段の名前（大・中・小・なし）。既定は「なし」。</summary>
+        public string SoundLevelText
+        {
+            get { return SoundLevelLabel(); }
+        }
+
+        /// <summary>「音」ボタン：音の段を次へ切り替える（中 → 小 → なし → 大 → 中）。既定の「なし」からは 大 → 中 → 小 の順。</summary>
         public void NextSoundLevel()
         {
             int now = System.Array.IndexOf(SoundLevelName, SoundLevelLabel());

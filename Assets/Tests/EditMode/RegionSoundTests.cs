@@ -168,5 +168,26 @@ namespace Vastcore.Tests.EditMode
                 player.Dispose();
             }
         }
+
+        [Test]
+        public void Explorer_StartsWithSoundOff_AndTurnsOnAtTheKeptVolume()
+        {
+            // 2026-11-25、本人が開発担当の合成した音を「既定で切る」と決めた。開いた直後は「音：なし」
+            var host = new GameObject("RegionExplorer（音の既定）");
+            try
+            {
+                RegionExplorer explorer = host.AddComponent<RegionExplorer>();
+                Assert.IsFalse(explorer.SoundEnabled, "既定は音を鳴らさない");
+                Assert.AreEqual("なし", explorer.SoundLevelText);
+                Assert.Greater(explorer.SoundVolume, 0f, "入れた時の音量は残っている");
+
+                explorer.SoundEnabled = true;
+                Assert.AreEqual("中", explorer.SoundLevelText, "入れれば今までどおりの段で鳴る");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(host);
+            }
+        }
     }
 }
