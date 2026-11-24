@@ -102,6 +102,8 @@
 
   鳥瞰図の比較試作は `RegionMapPreview --weather-preview`。地域の風向と地形・湿り気から雲と地表の雨を求め、風向反転と渦を比較する。渦の構成は [NOAA/NHC](https://www.nhc.noaa.gov/marinersguide.pdf)、湿った風が斜面を上昇して雲と雨を生む点は [気象庁](https://www.jma.go.jp/jma/kids/kids/faq/a5_21.html) を参照。探索画面への統合と地上視点の要否は未決。
 
+- 2026-11-25（チャット、親の Game Projects で。鳴る場所の差し戻し `01M84NE26VM5MZAYR7QNM4D2WB` の後の音の扱い）: 開発担当の問い「開発担当が合成した音は、どう扱いますか？」（選択肢: 既定で切る（鳴る場所と差し替えの入口は残す）／コードごと外す／別の素材へ替える）に、本人は「既定で切る」。音を用意する経路は未決。同じ日に本人は、命名の生成の欠陥を直す提案カード（規則の案は開発担当）を自分で始めた。
+
 ## Standing Reporting Preferences
 
 - Use Japanese for normal project reports.
