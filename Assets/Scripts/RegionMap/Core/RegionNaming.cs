@@ -89,6 +89,12 @@ namespace Vastcore.RegionMap
 
         /// <summary>未踏の土地にあるが、文明のあるエリアから近くて高いので土地の名も付けた峰の数。</summary>
         public int PeaksNamedFromNearby;
+
+        /// <summary>語のつなぎの問題が残ったので、語根を作り直した回数（0 なら 1 回目で残らなかった）。</summary>
+        public int Rebuilds;
+
+        /// <summary>語根の作り直しで問題が消えなかったので、骨格から作り直した回数。</summary>
+        public int SkeletonRebuilds;
         public readonly List<RegionNameRoot> Roots = new List<RegionNameRoot>();
         public readonly List<RegionNameRoot> OldRoots = new List<RegionNameRoot>();
         public readonly List<RegionNamePerson> People = new List<RegionNamePerson>();
@@ -111,6 +117,15 @@ namespace Vastcore.RegionMap
 
             /// <summary>選ばれやすさ。同じ意味の事実を持つ場所が少ないほど大きい（区別になる事実を優先する）。</summary>
             public float Weight;
+
+            /// <summary>同じ種類の場所（峰どうし・川どうし・エリアどうしなど）の中で、この場所だけが持つ事実か。</summary>
+            public bool Distinct;
+
+            /// <summary>方角・中の事実か。</summary>
+            public bool Direction;
+
+            /// <summary>ほかに分ける事実が無いので、方角で分けるために選んだ。</summary>
+            public bool OnlyDirection;
         }
 
         private sealed class Slot
@@ -159,6 +174,9 @@ namespace Vastcore.RegionMap
             public float LenderKm;
             public Skeleton Proper;
             public Skeleton Old;
+
+            /// <summary>土地の名を方角で分けた時の、方角のほかの事実（由来に書く）。</summary>
+            public string DirectionNote;
             public string Decided;
             public string FullText;
             public string ProperText;
@@ -177,6 +195,9 @@ namespace Vastcore.RegionMap
             private readonly HashSet<string> _runKeys = new HashSet<string>();
             private readonly List<string> _done = new List<string>();
             private readonly List<string> _people = new List<string>();
+
+            /// <summary>このことばで作った語根。互いに 1 字違いにならないように作る。</summary>
+            private readonly List<string> _roots = new List<string>();
             public readonly RegionSoundProfile Profile;
             public readonly List<string> Problems = new List<string>();
 
@@ -204,6 +225,7 @@ namespace Vastcore.RegionMap
                         if (written.Length == 0) continue;
                         _sounds[_rules.RootOrder[r]] = written;
                         _taken.Add(written);
+                        _roots.Add(written);
                     }
                     for (int k = 0; k < _runs.Count; k++)
                     {
@@ -213,7 +235,12 @@ namespace Vastcore.RegionMap
                         _done.Add(joined);
                     }
                 }
-                for (int r = 0; r < _rules.RootOrder.Count; r++) Assign(_rules.RootOrder[r]);
+                // 名前に使う意味の語根を先に作り、使わない意味（記録に出すだけ）は後にする
+                for (int k = 0; k < _runs.Count; k++)
+                {
+                    for (int m = 0; m < _runs[k].Length; m++) Assign(_runs[k][m], true);
+                }
+                for (int r = 0; r < _rules.RootOrder.Count; r++) Assign(_rules.RootOrder[r], false);
                 for (int p = 0; p < _rules.People; p++) _people.Add(MakePerson(p));
             }
 
@@ -227,8 +254,14 @@ namespace Vastcore.RegionMap
             {
                 string sound;
                 if (_sounds.TryGetValue(meaning, out sound)) return sound;
-                Assign(meaning);
+                Assign(meaning, true);
                 return _sounds[meaning];
+            }
+
+            /// <summary>意味に語根があるか（名前に使わない意味は、1 字違いにならない音が残っていなければ語根を持たない）。</summary>
+            public bool HasRoot(string meaning)
+            {
+                return _sounds.ContainsKey(meaning);
             }
 
             public string Person(int index)
@@ -265,52 +298,74 @@ namespace Vastcore.RegionMap
                 return true;
             }
 
-            private void Assign(string meaning)
+            /// <summary>
+            /// 意味に語根を割り当てる。語根は、ほかの語根と同じでも 1 字違いでもなく、つないだ並びが読めて見分けられるものに限る。
+            /// seed から作った音で見つからない時は、作れる音を全部順に試す（2 字の語根では「頭」「続き」の音が重ならない組しか残らないので、
+            /// 互いに 1 字違いにならない語根は「頭」と「続き」の少ない方の数までしか作れない）。
+            /// used が false の意味（名前に使わず、記録に出すだけ）は、見つからなければ語根を作らない。
+            /// </summary>
+            private void Assign(string meaning, bool used)
             {
                 if (_sounds.ContainsKey(meaning)) return;
                 int key = StableHash(meaning);
                 string firstValid = null;
-                var pending = new List<string>();
                 for (int attempt = 0; attempt < 200; attempt++)
                 {
                     uint local = _seed + (uint)attempt * 40503u;
-                    string sound = Make(Profile.RootMin, Profile.RootMax, key, local);
-                    if (_taken.Contains(sound) || !Readable(sound, _rules, 1, 99)) continue;
-                    if (firstValid == null) firstValid = sound;
-
-                    // この語根で全部そろう並びを、つないで確かめる
-                    _sounds[meaning] = sound;
-                    pending.Clear();
-                    bool fits = true;
-                    for (int k = 0; k < _runs.Count && fits; k++)
-                    {
-                        string[] run = _runs[k];
-                        if (Array.IndexOf(run, meaning) < 0 || !Complete(run)) continue;
-                        string joined = Join(run, null);
-                        if (!Readable(joined, _rules, 1, _rules.NameMax) || _done.Contains(joined) || pending.Contains(joined)
-                            || TooClose(joined, _done) || TooClose(joined, pending))
-                        {
-                            fits = false;
-                        }
-                        else
-                        {
-                            pending.Add(joined);
-                        }
-                    }
-                    if (!fits)
-                    {
-                        _sounds.Remove(meaning);
-                        continue;
-                    }
-                    _taken.Add(sound);
-                    _done.AddRange(pending);
-                    return;
+                    if (TryRoot(meaning, Make(Profile.RootMin, Profile.RootMax, key, local), ref firstValid)) return;
                 }
+                for (int length = Profile.RootMin; length <= Profile.RootMax; length++)
+                {
+                    int total = Profile.Head.Count;
+                    for (int m = 1; m < length; m++) total *= Profile.Body.Count;
+                    int offset = (int)(RegionNoise.Hash01(key, 7, _seed) * total);
+                    for (int i = 0; i < total; i++)
+                    {
+                        int index = (i + offset) % total;
+                        var text = new StringBuilder();
+                        for (int m = length - 1; m >= 1; m--)
+                        {
+                            text.Insert(0, Profile.Body[index % Profile.Body.Count]);
+                            index /= Profile.Body.Count;
+                        }
+                        text.Insert(0, Profile.Head[index]);
+                        if (TryRoot(meaning, text.ToString(), ref firstValid)) return;
+                    }
+                }
+                if (!used) return;
                 // 条件を満たす語根が見つからない時は、語根だけで読めるものを使う
                 string fallback = firstValid ?? ("？" + meaning);
                 _sounds[meaning] = fallback;
                 _taken.Add(fallback);
+                _roots.Add(fallback);
                 Problems.Add("意味「" + meaning + "」の語根「" + fallback + "」で、読みにくい並びか見分けにくい名前が残る");
+            }
+
+            private bool TryRoot(string meaning, string sound, ref string firstValid)
+            {
+                if (_taken.Contains(sound) || !Readable(sound, _rules, 1, 99) || TooCloseRoot(sound, _roots) || TooCloseRoot(sound, _people)) return false;
+                if (firstValid == null) firstValid = sound;
+
+                // この語根で全部そろう並びを、つないで確かめる
+                _sounds[meaning] = sound;
+                var pending = new List<string>();
+                for (int k = 0; k < _runs.Count; k++)
+                {
+                    string[] run = _runs[k];
+                    if (Array.IndexOf(run, meaning) < 0 || !Complete(run)) continue;
+                    string joined = Join(run, null);
+                    if (!Readable(joined, _rules, 1, _rules.NameMax) || _done.Contains(joined) || pending.Contains(joined)
+                        || TooClose(joined, _done) || TooClose(joined, pending))
+                    {
+                        _sounds.Remove(meaning);
+                        return false;
+                    }
+                    pending.Add(joined);
+                }
+                _taken.Add(sound);
+                _roots.Add(sound);
+                _done.AddRange(pending);
+                return true;
             }
 
             private string MakePerson(int index)
@@ -319,7 +374,7 @@ namespace Vastcore.RegionMap
                 {
                     uint local = _seed + 977u + (uint)attempt * 40503u;
                     string name = Make(_rules.PersonMin, _rules.PersonMax, 50000 + index, local);
-                    if (_taken.Contains(name) || !Readable(name, _rules, 1, 99) || TooClose(name, _done) || TooClose(name, _people)) continue;
+                    if (_taken.Contains(name) || !Readable(name, _rules, 1, 99) || TooClose(name, _done) || TooCloseRoot(name, _people) || TooCloseRoot(name, _roots)) continue;
                     return name;
                 }
                 return "人物" + (index + 1);
@@ -334,6 +389,10 @@ namespace Vastcore.RegionMap
                 return text.ToString();
             }
         }
+
+        /// <summary>語のつなぎの問題が残る時に、語根を作り直す回数と、骨格から作り直す回数の上限。</summary>
+        private const int RootRounds = 8;
+        private const int SkeletonRounds = 4;
 
         public static string KindLabel(RegionNameKind kind)
         {
@@ -402,36 +461,56 @@ namespace Vastcore.RegionMap
             AssignHistory(data, rules, report, loans);
             List<Place> places = BuildPlaces(data, rules, loans);
 
-            // (2) 骨格
-            var keys = new HashSet<string>();
-            for (int p = 0; p < places.Count; p++)
+            // (2) 骨格と (3) 音。語のつなぎの問題（読みにくい並び・見分けにくい名前）が残る時は、まず語根だけを作り直す
+            // （骨格は音に依らないので、音の質感を付け替えても骨格は変わらない）。それでも残る時だけ、骨格から作り直す
+            Language language = null;
+            Language oldLanguage = null;
+            for (int round = 0; round < SkeletonRounds; round++)
             {
-                Place place = places[p];
-                string decided;
-                if (rules.Fixed.TryGetValue(data.Spec.Seed + "/" + place.FixedKey, out decided))
+                uint salt = unchecked((uint)round * 0x632be5abu);
+                var keys = new HashSet<string>();
+                var owned = new HashSet<string>();
+                var oldOwned = new HashSet<string>();
+                for (int p = 0; p < places.Count; p++)
                 {
-                    place.Decided = decided;
-                    continue;
+                    Place place = places[p];
+                    place.Old = null;
+                    place.Proper = null;
+                    place.DirectionNote = null;
+                    string decided;
+                    if (rules.Fixed.TryGetValue(data.Spec.Seed + "/" + place.FixedKey, out decided))
+                    {
+                        place.Decided = decided;
+                        continue;
+                    }
+                    List<string> kinds = Kinds(rules, place.History);
+                    List<RegionNamePattern> patterns = Patterns(rules, place.Type);
+                    if (kinds.Contains("古い呼び名")) place.Old = Compose(rules, place, patterns, (seed ^ 0x9e3779b9u) + salt, true, keys, oldOwned);
+                    if (kinds.Contains("土地の名")) place.Proper = Compose(rules, place, patterns, seed + salt, false, keys, owned);
                 }
-                List<string> kinds = Kinds(rules, place.History);
-                List<RegionNamePattern> patterns = Patterns(rules, place.Type);
-                if (kinds.Contains("古い呼び名")) place.Old = Compose(rules, place, patterns, seed ^ 0x9e3779b9u, true, keys);
-                if (kinds.Contains("土地の名")) place.Proper = Compose(rules, place, patterns, seed, false, keys);
-            }
 
-            // (3) 音
-            var language = new Language(rules, sound, unchecked((uint)data.Spec.Seed * 2246822519u + 374761393u), true);
-            var oldLanguage = new Language(rules, oldSound, unchecked((uint)data.Spec.Seed * 668265263u + 1013904223u), false);
-            for (int p = 0; p < places.Count; p++)
-            {
-                if (places[p].Proper != null)
+                bool clean = false;
+                for (int again = 0; again < RootRounds && !clean; again++)
                 {
-                    foreach (string[] run in Runs(places[p].Proper)) language.Watch(run);
+                    uint rootSalt = unchecked((uint)again * 0x2545f491u);
+                    language = new Language(rules, sound, unchecked((uint)data.Spec.Seed * 2246822519u + 374761393u + rootSalt), true);
+                    oldLanguage = new Language(rules, oldSound, unchecked((uint)data.Spec.Seed * 668265263u + 1013904223u + rootSalt), false);
+                    for (int p = 0; p < places.Count; p++)
+                    {
+                        if (places[p].Proper != null)
+                        {
+                            foreach (string[] run in Runs(places[p].Proper)) language.Watch(run);
+                        }
+                        if (places[p].Old != null) oldLanguage.Watch(Meanings(places[p].Old));
+                    }
+                    language.Build();
+                    oldLanguage.Build();
+                    report.Rebuilds = again;
+                    report.SkeletonRebuilds = round;
+                    clean = language.Problems.Count + oldLanguage.Problems.Count == 0;
                 }
-                if (places[p].Old != null) oldLanguage.Watch(Meanings(places[p].Old));
+                if (clean) break;
             }
-            language.Build();
-            oldLanguage.Build();
             report.Problems.AddRange(language.Problems);
             report.Problems.AddRange(oldLanguage.Problems);
 
@@ -478,7 +557,11 @@ namespace Vastcore.RegionMap
                     }
                     else if (kinds[k] == "記号名")
                     {
-                        names.Add(Designation(rules, place, data.Spec.Seed, texts, null));
+                        // 土地の名が付く経緯なのに付かなかった時は、その理由を由来に書く
+                        bool missing = kinds.Contains("土地の名") && place.Decided == null && place.FullText == null;
+                        names.Add(Designation(rules, place, data.Spec.Seed, texts, missing
+                            ? "土地の名を付ける経緯だが、土地の名を作れなかった（この場所を分ける事実・雰囲気・人物・出来事の意味がどれもほかの名付けの元に使われていて、名を負える場所も無いか、できた名前がほかと重なった）ので、記号名だけを付けた"
+                            : null));
                     }
                 }
                 if (names.Count == 0) names.Add(Designation(rules, place, data.Spec.Seed, texts, "規則から土地の名を作れなかったので、記号名だけを付けた"));
@@ -490,6 +573,7 @@ namespace Vastcore.RegionMap
                 string meaning = rules.RootOrder[r];
                 int count;
                 uses.TryGetValue(meaning, out count);
+                if (!language.HasRoot(meaning)) continue;
                 report.Roots.Add(new RegionNameRoot
                 {
                     Meaning = meaning,
@@ -748,7 +832,7 @@ namespace Vastcore.RegionMap
                 }
                 if (data.LandFraction < 0.4f) Emit(rules, region.Traits, "海が広い", "陸が地図の 4 割未満");
                 if (data.LandFraction >= 0.6f) Emit(rules, region.Traits, "陸が広い", "陸が地図の 6 割以上");
-                places.Add(region);
+                Finish(rules, new List<Place> { region }, places);
             }
 
             var group = new List<Place>();
@@ -934,10 +1018,34 @@ namespace Vastcore.RegionMap
                 {
                     Fact fact = place.Traits[f];
                     fact.Weight = 1f / counts[fact.Meaning];
+                    fact.Distinct = counts[fact.Meaning] == 1;
+                    fact.Direction = Array.IndexOf(DirectionKeys, fact.Key) >= 0;
                     place.Traits[f] = fact;
                 }
             }
             places.AddRange(group);
+        }
+
+        private static readonly string[] DirectionKeys = { "北にある", "南にある", "東にある", "西にある", "中央にある" };
+
+        /// <summary>
+        /// {特徴} に使える事実。同じ種類の場所の中でこの場所だけが持ち、まだどの名付けの元も使っていない意味に限る。
+        /// 方角・中は、ほかに分ける事実が無い時だけ使う。
+        /// </summary>
+        private static List<Fact> Distinguishing(Place place, HashSet<string> owned)
+        {
+            var facts = new List<Fact>();
+            for (int pass = 0; pass < 2 && facts.Count == 0; pass++)
+            {
+                for (int f = 0; f < place.Traits.Count; f++)
+                {
+                    Fact fact = place.Traits[f];
+                    if (!fact.Distinct || fact.Direction != (pass == 1) || owned.Contains(fact.Meaning)) continue;
+                    fact.OnlyDirection = pass == 1;
+                    facts.Add(fact);
+                }
+            }
+            return facts;
         }
 
         private static Place Nearest(List<Place> candidates, float mapX, float mapY, float within)
@@ -1015,17 +1123,28 @@ namespace Vastcore.RegionMap
         /// <summary>
         /// 条件に合う型から重みで 1 つ選び、部品へ意味を入れて骨格にする。音は使わない。
         /// 同じ骨格・同じ固有の部分が既にあれば、別の型や意味で作り直す。old は古い呼び名の骨格（語根の並びだけ）。
+        /// owned は、このことばで既にどこかの名付けの元が使った意味と人物。固有の部分は 1 つの名付けの元だけが持つので、
+        /// ここにある意味・人物は使わない（ほかの場所の名を負う {エリア} {山} {川} {古名} は、由来の関係として使える）。
         /// </summary>
-        private static Skeleton Compose(RegionNamingRules rules, Place place, List<RegionNamePattern> patterns, uint seed, bool old, HashSet<string> keys)
+        private static Skeleton Compose(RegionNamingRules rules, Place place, List<RegionNamePattern> patterns, uint seed, bool old, HashSet<string> keys, HashSet<string> owned)
         {
             var events = new List<string>();
             for (int e = 0; e < rules.Events.Count; e++)
             {
+                if (owned.Contains(rules.Events[e])) continue;
                 List<string> needs = rules.EventNeeds[rules.Events[e]];
                 bool fits = needs.Count == 0 || (place.HasLand && needs.Contains(place.Land.Meaning));
                 for (int f = 0; f < place.Traits.Count && !fits; f++) fits = needs.Contains(place.Traits[f].Meaning);
                 if (fits) events.Add(rules.Events[e]);
             }
+            List<Fact> distinguishing = Distinguishing(place, owned);
+            var moods = rules.Mood.FindAll(m => !owned.Contains(m));
+            var people = new List<int>();
+            for (int i = 0; i < rules.People; i++)
+            {
+                if (!owned.Contains(PersonKey(i))) people.Add(i);
+            }
+            bool landFree = place.HasLand && !owned.Contains(place.Land.Meaning);
 
             var usable = new List<RegionNamePattern>();
             float total = 0f;
@@ -1040,10 +1159,11 @@ namespace Vastcore.RegionMap
                 {
                     switch (tokens[t])
                     {
-                        case "{特徴}": fits = place.Traits.Count > 0; break;
-                        case "{地形}": fits = place.HasLand; break;
-                        case "{雰囲気}": fits = rules.Mood.Count > 0; break;
-                        case "{人名}": fits = !old && rules.People > 0; break;
+                        case "{特徴}": fits = distinguishing.Count > 0; break;
+                        // エリア・川・峰・湾では {類} が土地の種類を言うので、{地形} を並べない（読み込みでも弾く）
+                        case "{地形}": fits = landFree && !(place.Type >= 1 && place.Type <= 4 && tokens.Contains("{類}")); break;
+                        case "{雰囲気}": fits = moods.Count > 0; break;
+                        case "{人名}": fits = !old && people.Count > 0; break;
                         case "{出来事}": fits = !old && events.Count > 0; break;
                         case "{古名}": fits = !old && place.Old != null; break;
                         case "{エリア}": fits = !old && HasProper(place.AreaPlace); break;
@@ -1090,14 +1210,14 @@ namespace Vastcore.RegionMap
                             if (!old) skeleton.Slots.Add(new Slot { Type = 'N', Text = place.Noun });
                             break;
                         case "{地形}": skeleton.Slots.Add(new Slot { Type = 'R', Fact = place.Land }); break;
-                        case "{特徴}": skeleton.Slots.Add(new Slot { Type = 'R', Fact = PickFact(place.Traits, key, 10 + t, local) }); break;
+                        case "{特徴}": skeleton.Slots.Add(new Slot { Type = 'R', Fact = PickFact(distinguishing, key, 10 + t, local) }); break;
                         case "{雰囲気}":
-                            skeleton.Slots.Add(new Slot { Type = 'R', Fact = new Fact { Key = "雰囲気", Meaning = rules.Mood[Index(rules.Mood.Count, key, 20 + t, local)] } });
+                            skeleton.Slots.Add(new Slot { Type = 'R', Fact = new Fact { Key = "雰囲気", Meaning = moods[Index(moods.Count, key, 20 + t, local)] } });
                             break;
                         case "{出来事}":
                             skeleton.Slots.Add(new Slot { Type = 'R', Fact = new Fact { Key = "出来事", Meaning = events[Index(events.Count, key, 30 + t, local)] } });
                             break;
-                        case "{人名}": skeleton.Slots.Add(new Slot { Type = 'P', Person = Index(rules.People, key, 40 + t, local) }); break;
+                        case "{人名}": skeleton.Slots.Add(new Slot { Type = 'P', Person = people[Index(people.Count, key, 40 + t, local)] }); break;
                         case "{古名}": skeleton.Slots.Add(new Slot { Type = 'O' }); break;
                         case "{エリア}": skeleton.Slots.Add(new Slot { Type = 'A', Ref = place.AreaPlace }); break;
                         case "{山}": skeleton.Slots.Add(new Slot { Type = 'F', Ref = place.NearPeak }); break;
@@ -1123,9 +1243,35 @@ namespace Vastcore.RegionMap
                 if (place.Type != 5 && keys.Contains(own)) continue;
                 keys.Add(full);
                 if (place.Type != 5) keys.Add(own);
+                if (!old && skeleton.Slots.Exists(s => s.Type == 'R' && s.Fact.OnlyDirection)) place.DirectionNote = OtherFacts(place, owned);
+                // この名付けの元が使った意味と人物は、ほかの名付けの元では使わない
+                for (int s = 0; s < skeleton.Slots.Count; s++)
+                {
+                    if (skeleton.Slots[s].Type == 'R') owned.Add(skeleton.Slots[s].Fact.Meaning);
+                    if (skeleton.Slots[s].Type == 'P') owned.Add(PersonKey(skeleton.Slots[s].Person));
+                }
                 return skeleton;
             }
             return null;
+        }
+
+        /// <summary>方角で分けた場所が持っていた、方角のほかの事実と、それが分ける事実にならなかった理由。</summary>
+        private static string OtherFacts(Place place, HashSet<string> owned)
+        {
+            var notes = new List<string>();
+            for (int f = 0; f < place.Traits.Count; f++)
+            {
+                Fact fact = place.Traits[f];
+                if (fact.Direction) continue;
+                if (!fact.Distinct) notes.Add(fact.Meaning + "（同じ種類の " + Math.Max(2, (int)Math.Round(1f / fact.Weight)) + " か所が持つ）");
+                else if (owned.Contains(fact.Meaning)) notes.Add(fact.Meaning + "（ほかの名付けの元が先に使った）");
+            }
+            return notes.Count > 0 ? "ほかの事実: " + string.Join("、", notes.ToArray()) : "方角のほかの事実は無い";
+        }
+
+        private static string PersonKey(int person)
+        {
+            return "〈人名" + (person + 1) + "〉";
         }
 
         /// <summary>骨格を文字にする。withNoun が false なら、類の語とその直前の字（「の」）を除く。</summary>
@@ -1219,6 +1365,8 @@ namespace Vastcore.RegionMap
                             parts.Add(language.Root(fact.Meaning) + "（" + fact.Meaning + "）");
                             runGloss.Add(language.Root(fact.Meaning) + "（" + (fact.Key == "出来事" ? "出来事・" : "") + fact.Meaning + "）");
                             if (fact.Key == "出来事") reasons.Add("経緯に置いた出来事「" + fact.Meaning + "」に由来");
+                            else if (fact.OnlyDirection) reasons.Add(fact.Meaning + "＝" + fact.Why + "（同じ種類の中で、ほかに分ける事実が無いので方角で分けた。" + place.DirectionNote + "）");
+                            else if (fact.Distinct) reasons.Add(fact.Meaning + "＝" + fact.Why + "（同じ種類の中でここだけ）");
                             else if (fact.Why != null && fact.Why != fact.Meaning) reasons.Add(fact.Meaning + "＝" + fact.Why);
                             Count(uses, fact.Meaning);
                             end++;
@@ -1392,6 +1540,44 @@ namespace Vastcore.RegionMap
                 if (roll < 0f) return facts[f];
             }
             return facts[facts.Count - 1];
+        }
+
+        /// <summary>
+        /// 語根・人名の規則4（開発担当の案）: 同じことばの中で、同じか、1 字の置き換え・足し・抜きで同じになる
+        /// （例 ネロ/リロ、ジズ/ジズグ）か。つないだ名前どうしは TooClose で見る。
+        /// </summary>
+        private static bool TooCloseRoot(string name, List<string> used)
+        {
+            for (int u = 0; u < used.Count; u++)
+            {
+                if (OneEditApart(name, used[u])) return true;
+            }
+            return false;
+        }
+
+        private static bool OneEditApart(string a, string b)
+        {
+            if (a.Length == b.Length)
+            {
+                int different = 0;
+                for (int i = 0; i < a.Length && different < 2; i++)
+                {
+                    if (a[i] != b[i]) different++;
+                }
+                return different < 2;
+            }
+            if (Math.Abs(a.Length - b.Length) != 1) return false;
+            string shorter = a.Length < b.Length ? a : b;
+            string longer = a.Length < b.Length ? b : a;
+            int s = 0;
+            bool skipped = false;
+            for (int l = 0; l < longer.Length; l++)
+            {
+                if (s < shorter.Length && shorter[s] == longer[l]) { s++; continue; }
+                if (skipped) return false;
+                skipped = true;
+            }
+            return true;
         }
 
         /// <summary>既にある名前と同じか、同じ長さで 1 字だけ違う（見分けにくい）か。</summary>

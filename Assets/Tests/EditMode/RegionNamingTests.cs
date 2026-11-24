@@ -8,7 +8,9 @@ namespace Vastcore.Tests.EditMode
     /// 命名の規則と、川の上の地点を川岸へ移す処理の、後から依存される約束だけを確かめる
     /// （同じ seed は同じ名前、名前は重ならない、同じ意味は同じ語根、音を付け替えても骨格は同じ、
     /// 土地の経緯で名前の種類が変わる、規則の書き換えが効く、由来が残る、
-    /// 経緯と音の質感は地域ごとに 1 つ、文明のあるエリアから近い高い峰には土地の名も付く）。名前の響きの良し悪しは対象外。
+    /// 経緯と音の質感は地域ごとに 1 つ、文明のあるエリアから近い高い峰には土地の名も付く、
+    /// 名前の作りの規則 1〜5（類の語と同じ意味を重ねない・固有の部分は 1 つの名付けの元だけ・方角は他に分ける事実が無い時だけ・
+    /// 語根は 1 字違いにしない・つなぎの問題を残さない））。名前の響きの良し悪しは対象外。
     /// </summary>
     public class RegionNamingTests
     {
@@ -348,6 +350,12 @@ namespace Vastcore.Tests.EditMode
             StringAssert.Contains("行 10", all);
             Assert.AreEqual(1, rules.AreaPatterns.Count);
             Assert.AreEqual(0, rules.SitePatterns.Count);
+
+            // エリア・川・峰・湾の型に {地形} と {類} を並べると、同じ意味（土地の種類）が 2 回入るので弾く
+            RegionNamingRules doubled = RegionNamingRules.Parse("[川の型]\n2 : {特徴}{地形}{類}\n1 : {特徴}{類}\n[地点の型]\n1 : {特徴}{地形}の{構造物}\n");
+            StringAssert.Contains("行 2: {地形} と {類}", string.Join(" / ", doubled.Problems.ToArray()));
+            Assert.AreEqual(1, doubled.RiverPatterns.Count);
+            Assert.AreEqual(1, doubled.SitePatterns.Count, "地点の {構造物} は土地の種類を言わないので、{地形} と並べられる");
             // 書かれていない節（事実と意味、経緯、記号名など）は既定で補う
             Assert.Greater(rules.Facts.Count, 0);
             Assert.Greater(rules.NameKinds.Count, 0);
@@ -355,6 +363,147 @@ namespace Vastcore.Tests.EditMode
             Assert.AreEqual(0, RegionNamingRules.Default.Problems.Count, string.Join(" / ", RegionNamingRules.Default.Problems.ToArray()));
             Assert.AreSame(RegionNamingRules.Default, RegionNamingRules.Parse(null));
             Assert.AreEqual(3, RegionNamingRules.Default.Sounds.Count);
+        }
+
+        /// <summary>名前の骨格の中の、語根になる意味「[…]」と人物「〈人名n〉」。</summary>
+        private static List<string> OwnParts(string skeleton)
+        {
+            var parts = new List<string>();
+            foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(skeleton, @"\[[^\]]+\]|〈人名\d+〉")) parts.Add(m.Value);
+            return parts;
+        }
+
+        /// <summary>エリアの種類の呼び方（RegionAreaBuilder.KindNoun と同じ。そちらは internal なのでテストから呼べない）。</summary>
+        private static string KindNoun(RegionAreaKind kind)
+        {
+            switch (kind)
+            {
+                case RegionAreaKind.Mountains: return "山地";
+                case RegionAreaKind.Highland: return "高地";
+                case RegionAreaKind.Hills: return "丘陵";
+                case RegionAreaKind.Basin: return "盆地";
+                case RegionAreaKind.Island: return "島";
+                case RegionAreaKind.Snowfield: return "雪原";
+                case RegionAreaKind.Desert: return "砂漠";
+                default: return "平野";
+            }
+        }
+
+        /// <summary>1 字の置き換え（ネロ/リロ）か、1 字の足し・抜き（ジズ/ジズグ）で同じになるか。</summary>
+        private static bool OneKanaApart(string a, string b)
+        {
+            if (a == b) return false;
+            if (a.Length == b.Length)
+            {
+                int different = 0;
+                for (int i = 0; i < a.Length; i++)
+                {
+                    if (a[i] != b[i]) different++;
+                }
+                return different == 1;
+            }
+            if (System.Math.Abs(a.Length - b.Length) != 1) return false;
+            string shorter = a.Length < b.Length ? a : b;
+            string longer = a.Length < b.Length ? b : a;
+            for (int i = 0; i < longer.Length; i++)
+            {
+                if (longer.Remove(i, 1) == shorter) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 名前の作りの約束（開発担当の案の規則 1〜5）を seed 1〜12 で確かめる。既定の経緯（地域ごと）と、
+        /// 古い呼び名まで付く「古い文明」の両方で見る。
+        /// 1 類の語が言う土地の種類を、固有の部分に重ねない。2 1 つの意味・人物は 1 つの場所だけが固有の部分に使う
+        /// （ほかの場所の名を負う名前は骨格に 〈エリアn〉 などで出るので数えない）。3 方角・中を使った名前は、
+        /// ほかに分ける事実が無かったことを由来に書く。4 同じことばの語根は 1 字の置き換え・足し・抜きで同じにならない。5 語のつなぎの問題が残らない。
+        /// </summary>
+        [Test]
+        public void Generator_KeepsTheNamingRules_OnSeeds1To12()
+        {
+            RegionNamingRules rules = RegionNamingRules.Default;
+            var directions = new HashSet<string>();
+            foreach (string key in new[] { "北にある", "南にある", "東にある", "西にある", "中央にある" })
+            {
+                foreach (string meaning in rules.Facts[key]) directions.Add("[" + meaning + "]");
+            }
+            string ancient = Rules("地域 = 地域ごと", "地域 = 古い文明");
+            int named = 0;
+            int checkedDirections = 0;
+            for (int seed = 1; seed <= 12; seed++)
+            {
+                foreach (string text in new[] { null, ancient })
+                {
+                    var spec = new RegionSpec { Seed = seed, Resolution = 256, ErosionIterations = 12, SiteCount = 18, NameStyle = RegionNameStyle.Systematic, NamingRulesText = text };
+                    RegionData data = RegionGenerator.Generate(spec);
+                    string label = "seed " + seed + (text == null ? "" : "（古い文明）") + ": ";
+
+                    // 5 語のつなぎの問題が残らない
+                    foreach (string problem in data.Naming.Problems) Assert.IsFalse(problem.Contains("読みにくい並びか見分けにくい名前が残る"), label + problem);
+
+                    // 4 同じことばの語根・人名は、互いに 1 字違いにならない
+                    foreach (List<RegionNameRoot> list in new[] { data.Naming.Roots, data.Naming.OldRoots })
+                    {
+                        var sounds = list.ConvertAll(r => r.Sound);
+                        if (list == data.Naming.Roots) sounds.AddRange(data.Naming.People.ConvertAll(p => p.Name));
+                        for (int a = 0; a < sounds.Count; a++)
+                        {
+                            for (int b = a + 1; b < sounds.Count; b++) Assert.IsFalse(OneKanaApart(sounds[a], sounds[b]), label + "1 字違いの語根 " + sounds[a] + "/" + sounds[b]);
+                        }
+                    }
+
+                    // 場所ごとの名前と、その場所の類の語が言う意味
+                    var places = new List<KeyValuePair<string, List<RegionPlaceName>>>();
+                    var kindMeaning = new Dictionary<string, string>();
+                    for (int k = 0; k < data.Areas.Count; k++)
+                    {
+                        string key = "エリア" + data.Areas[k].Id;
+                        places.Add(new KeyValuePair<string, List<RegionPlaceName>>(key, data.Areas[k].Names));
+                        kindMeaning[key] = rules.Facts[KindNoun(data.Areas[k].Kind)][0];
+                    }
+                    foreach (RegionFeature f in data.Features)
+                    {
+                        string key = f.Kind + "" + f.Id;
+                        places.Add(new KeyValuePair<string, List<RegionPlaceName>>(key, f.Names));
+                        if (f.Kind == RegionFeatureKind.River) kindMeaning[key] = rules.Facts["川である"][0];
+                        if (f.Kind == RegionFeatureKind.Peak) kindMeaning[key] = rules.Facts["峰である"][0];
+                        if (f.Kind == RegionFeatureKind.Bay) kindMeaning[key] = rules.Facts["湾である"][0];
+                    }
+                    for (int s = 0; s < data.Sites.Count; s++) places.Add(new KeyValuePair<string, List<RegionPlaceName>>("地点" + data.Sites[s].Id, data.Sites[s].Names));
+
+                    var owners = new Dictionary<string, string>();
+                    foreach (KeyValuePair<string, List<RegionPlaceName>> place in places)
+                    {
+                        foreach (RegionPlaceName name in place.Value)
+                        {
+                            if (name.Kind != RegionNameKind.Proper && name.Kind != RegionNameKind.Old) continue;
+                            if (name.Kind == RegionNameKind.Proper) named++;
+                            string meaning;
+                            // 1 類の語が言う意味を、固有の部分（骨格の [ ]）に重ねない
+                            if (kindMeaning.TryGetValue(place.Key, out meaning)) StringAssert.DoesNotContain("[" + meaning + "]", name.Skeleton, label + name.Text + " の骨格 " + name.Skeleton);
+
+                            // 2 同じ意味・人物を、由来の関係の無い別の場所が固有の部分に使わない
+                            foreach (string part in OwnParts(name.Skeleton))
+                            {
+                                string mark = (name.Kind == RegionNameKind.Old ? "古:" : "今:") + part;
+                                string owner;
+                                if (owners.TryGetValue(mark, out owner)) Assert.AreEqual(owner, place.Key, label + part + " を " + owner + " と " + place.Key + " が使う（" + name.Text + "）");
+                                else owners[mark] = place.Key;
+
+                                // 3 方角・中を使った土地の名は、ほかに分ける事実が無かったことを由来に書く
+                                if (name.Kind == RegionNameKind.Proper && directions.Contains(part))
+                                {
+                                    StringAssert.Contains("ほかに分ける事実が無いので方角で分けた", name.Origin, label + name.Text);
+                                    checkedDirections++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Assert.Greater(named, 0, "確かめる土地の名が 1 つも無かった");
+            TestContext.WriteLine("方角で分けた土地の名: " + checkedDirections);
         }
 
         [Test]
