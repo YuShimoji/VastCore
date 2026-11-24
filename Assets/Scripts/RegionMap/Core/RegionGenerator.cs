@@ -13,6 +13,13 @@ namespace Vastcore.RegionMap
         /// <summary>地域を作る。phase には、各工程に入る時にその名前が渡る（進み具合の表示と時間の計測に使う）。</summary>
         public static RegionData Generate(RegionSpec spec, Action<string> phase = null)
         {
+            return Generate(spec, phase, null);
+        }
+
+        // 標高は同期で観測する。次の工程で同じ配列を更新するため、保存する側で複製する。
+        internal static RegionData Generate(RegionSpec spec, Action<string> phase, Action<string, int, float[]> terrain,
+            bool baselineTerrain = false)
+        {
             var data = new RegionData(spec.Clone());
             int n = data.Resolution;
             int count = n * n;
@@ -26,8 +33,10 @@ namespace Vastcore.RegionMap
 
             if (phase != null) phase("海と陸の下地");
             BuildBase(data, seed, uplift, erodibility, land);
+            terrain?.Invoke("base", n, data.Height);
             if (phase != null) phase("隆起と侵食");
-            Evolve(data, seed, uplift, erodibility, land, router, scratch);
+            Evolve(data, seed, uplift, erodibility, land, router, scratch, terrain, baselineTerrain);
+            terrain?.Invoke("final-erosion", n, data.Height);
             if (phase != null) phase("気候");
             BuildClimate(data, seed, land, scratch);
             if (phase != null) phase("川");
@@ -116,7 +125,8 @@ namespace Vastcore.RegionMap
         /// 隆起と侵食を、まず半分の解像度で大半の回数だけ進め、その結果を元の解像度へ広げてから残りを進める。
         /// 大きな谷筋は粗い格子で決まり、細かな刻みだけを細かい格子で作るので、全部を細かい格子で回すより速い。
         /// </summary>
-        private static void Evolve(RegionData data, uint seed, float[] uplift, float[] erodibility, bool[] land, FlowRouter router, float[] area)
+        private static void Evolve(RegionData data, uint seed, float[] uplift, float[] erodibility, bool[] land,
+            FlowRouter router, float[] area, Action<string, int, float[]> terrain, bool baselineTerrain)
         {
             RegionSpec spec = data.Spec;
             int n = data.Resolution;
@@ -148,6 +158,7 @@ namespace Vastcore.RegionMap
                 fineIterations = spec.ErosionIterations - coarseIterations;
                 EvolveGrid(coarseHeight, coarseUplift, coarseErodibility, coarseLand, half, data.SizeKm * 1000f / half,
                     spec, coarseIterations, new FlowRouter(half) { Jitter = spec.FlowJitter, JitterSeed = seed + 62u }, new float[halfCount]);
+                terrain?.Invoke("coarse-erosion", half, coarseHeight);
 
                 for (int y = 0; y < n; y++)
                 {
@@ -178,9 +189,14 @@ namespace Vastcore.RegionMap
                         h[i] = value > 0.5f ? value : 0.5f;
                     }
                 }
+                terrain?.Invoke("interpolated", n, h);
             }
 
-            EvolveGrid(h, uplift, erodibility, land, n, data.CellMeters, spec, fineIterations, router, area);
+            bool refineTerrain = !baselineTerrain && n >= 512 && fineIterations > 0;
+            RegionLake lake = refineTerrain ? RegionLake.Select(data) : null;
+            EvolveGrid(h, uplift, erodibility, land, n, data.CellMeters, spec, fineIterations, router, area,
+                lake == null ? null : data.LakeDepth, refineTerrain);
+            lake?.Finish(data);
         }
 
         /// <summary>
@@ -188,7 +204,8 @@ namespace Vastcore.RegionMap
         /// 1 回の変化を大きく取っても発散しない。
         /// </summary>
         private static void EvolveGrid(float[] h, float[] uplift, float[] erodibility, bool[] land, int n, float cell,
-            RegionSpec spec, int iterations, FlowRouter router, float[] area)
+            RegionSpec spec, int iterations, FlowRouter router, float[] area, float[] retainedLake = null,
+            bool softenPlains = false)
         {
             int count = n * n;
             float scale = n / ReferenceResolution;
@@ -200,7 +217,7 @@ namespace Vastcore.RegionMap
             {
                 for (int i = 0; i < count; i++)
                 {
-                    if (land[i]) h[i] += uplift[i] * spec.UpliftMeters;
+                    if (land[i] && (retainedLake == null || retainedLake[i] <= 0f)) h[i] += uplift[i] * spec.UpliftMeters;
                 }
 
                 router.Route(h, land);
@@ -209,9 +226,11 @@ namespace Vastcore.RegionMap
                 for (int o = 0; o < router.Count; o++)
                 {
                     int i = router.Order[o];
+                    if (retainedLake != null && retainedLake[i] > 0f) continue;
                     int r = router.Receiver[i];
                     if (r < 0) continue;
                     float downstream = land[r] ? h[r] : 0f;
+                    if (retainedLake != null) downstream += retainedLake[r];
                     if (h[i] <= downstream)
                     {
                         // 窪地は土砂で埋まったものとして、流れ先より少し高くする
@@ -238,7 +257,7 @@ namespace Vastcore.RegionMap
                         for (int x = 1; x < n - 1; x++)
                         {
                             int i = x + y * n;
-                            if (!land[i]) continue;
+                            if (!land[i] || retainedLake != null && retainedLake[i] > 0f) continue;
                             float a = previous[i - 1];
                             float b = previous[i + 1];
                             float c = previous[i - n];
@@ -247,7 +266,17 @@ namespace Vastcore.RegionMap
                             if (b < 0f) b = 0f;
                             if (c < 0f) c = 0f;
                             if (d < 0f) d = 0f;
-                            float next = previous[i] + diffusion * (a + b + c + d - 4f * previous[i]);
+                            float height = previous[i];
+                            float blend = diffusion;
+                            if (softenPlains && height < 350f && land[i - 1] && land[i + 1] && land[i - n] && land[i + n])
+                            {
+                                // 低地だけで薄い溝をならす。標高と傾きの境目には幅を持たせる。
+                                float slope = Math.Max(Math.Abs(b - a), Math.Abs(d - c)) / (2f * cell);
+                                float low = 1f - RegionNoise.Smooth(250f, 350f, height);
+                                float flat = 1f - RegionNoise.Smooth(0.035f, 0.065f, slope);
+                                blend = Math.Min(0.2f, diffusion * (1f + low * flat));
+                            }
+                            float next = height + blend * (a + b + c + d - 4f * height);
                             h[i] = next > 0.05f ? next : 0.05f;
                         }
                     }
@@ -347,9 +376,11 @@ namespace Vastcore.RegionMap
                 weight[i] = 0.25f + data.Moisture[i] * 1.3f;
             }
             router.Route(h, land);
+            RegionLake.ConstrainOutlet(data, router);
             router.Accumulate(weight, land, data.Flow);
             data.Downstream = new int[count];
             Array.Copy(router.Receiver, data.Downstream, count);
+            if (!float.IsNaN(data.LakeSurfaceLevel)) return;
             for (int i = 0; i < count; i++)
             {
                 float depth = land[i] ? router.Filled[i] - h[i] : 0f;

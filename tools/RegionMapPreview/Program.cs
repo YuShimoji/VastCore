@@ -24,6 +24,10 @@ namespace Vastcore.RegionMap.Preview
             bool areas = false;
             bool suitability = false;
             bool measure = false;
+            bool traceTerrain = false;
+            bool lakeDetail = false;
+            bool compareBaseline = false;
+            bool baselineTerrain = false;
             int cloudFrames = 0;
             float cloudStep = 4f;
             bool cloudBefore = false;
@@ -69,6 +73,10 @@ namespace Vastcore.RegionMap.Preview
                     case "--areas": areas = true; break;
                     case "--suitability": suitability = true; break;
                     case "--measure": measure = true; break;
+                    case "--trace-terrain": traceTerrain = true; break;
+                    case "--lake-detail": lakeDetail = true; break;
+                    case "--compare-baseline": compareBaseline = true; break;
+                    case "--baseline-terrain": baselineTerrain = true; break;
                     case "--cloudframes": cloudFrames = int.Parse(value); a++; break;
                     case "--cloudstep": cloudStep = Float(value); a++; break;
                     case "--cloudbefore": cloudBefore = true; break;
@@ -105,6 +113,7 @@ namespace Vastcore.RegionMap.Preview
             long phaseStart = 0;
             long erosionMs = 0;
             var phaseLog = new System.Text.StringBuilder();
+            var terrain = traceTerrain ? new TerrainMeasurements.Trace(spec) : null;
             RegionData data = RegionGenerator.Generate(spec, next =>
             {
                 long now = watch.ElapsedMilliseconds;
@@ -112,14 +121,17 @@ namespace Vastcore.RegionMap.Preview
                 if (phaseName == "隆起と侵食") erosionMs = now - phaseStart;
                 phaseName = next;
                 phaseStart = now;
-            });
+            }, terrain == null ? null : (Action<string, int, float[]>)terrain.Record, baselineTerrain);
             long generateMs = watch.ElapsedMilliseconds;
             Console.WriteLine("工程:" + phaseLog);
             Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
                 "seed={0} res={1} 生成={2}ms 陸={3:P1} 最高={4:F0}m 地点={5}",
                 spec.Seed, spec.Resolution, generateMs, data.LandFraction, data.MaxHeight, data.Sites.Count));
             string stem = Path.Combine(outDir, name ?? ("region-seed" + spec.Seed));
+            terrain?.Write(stem);
             if (measure) TerrainMeasurements.Write(data, stem, generateMs, erosionMs);
+            if (lakeDetail) TerrainMeasurements.WriteLakeDetail(data, stem);
+            if (compareBaseline) TerrainMeasurements.ComparePlains(data, stem);
 
             var biomeCount = new int[Enum.GetValues(typeof(RegionBiome)).Length];
             for (int i = 0; i < data.Biome.Length; i++) biomeCount[(int)data.Biome[i]]++;
@@ -145,8 +157,9 @@ namespace Vastcore.RegionMap.Preview
                 if (markSites) MarkSites(pixels, size, data);
                 if (shrink > 1) pixels = Shrink(pixels, size, shrink, out size);
                 string file = Path.Combine(outDir, (name ?? ("region-seed" + spec.Seed)) + "-" + options.Style.ToString().ToLowerInvariant() + ".png");
+                watch.Restart();
                 PngWriter.Write(file, pixels, size, size);
-                Console.WriteLine("描画=" + renderMs + "ms → " + Path.GetFullPath(file));
+                Console.WriteLine("描画=" + renderMs + "ms PNG保存=" + watch.ElapsedMilliseconds + "ms → " + Path.GetFullPath(file));
             }
 
             if (areas || suitability)
@@ -178,6 +191,8 @@ namespace Vastcore.RegionMap.Preview
                 options.Exaggeration = detailExaggeration;
                 WriteDetails(data, options, stem, detailSites, detailSizes, detailSpec, forms, formScale);
             }
+            using var process = Process.GetCurrentProcess();
+            Console.WriteLine("peak_working_set_bytes=" + process.PeakWorkingSet64);
             return 0;
         }
 

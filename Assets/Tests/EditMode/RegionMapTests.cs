@@ -55,6 +55,38 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
+        public void Lake_KeepsOneWaterLevelAcrossTheRegionAndTheDetailWindow()
+        {
+            RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = 8 });
+            int center = 0;
+            for (int i = 1; i < region.LakeDepth.Length; i++)
+                if (region.LakeDepth[i] > region.LakeDepth[center]) center = i;
+            Assert.Greater(region.LakeDepth[center], 2f);
+            float lakeLevel = region.Height[center] + region.LakeDepth[center];
+            for (int i = 0; i < region.LakeDepth.Length; i++)
+            {
+                if (region.LakeDepth[i] <= 0f) continue;
+                Assert.AreEqual(RegionBiome.Lake, region.Biome[i]);
+                Assert.AreEqual(lakeLevel, region.Height[i] + region.LakeDepth[i], 0.001f);
+                int receiver = region.Downstream[i];
+                if (receiver >= 0 && region.LakeDepth[receiver] <= 0f)
+                    Assert.LessOrEqual(region.Height[receiver], lakeLevel);
+            }
+
+            RegionDetail detail = RegionDetailBuilder.Build(region, new RegionDetailSpec
+            {
+                CenterMapX = region.MapXFromCell(center),
+                CenterMapY = region.MapYFromCell(center),
+                SizeKm = 8f,
+                Resolution = 256
+            });
+            int detailCenter = detail.Data.Index(128, 128);
+            Assert.AreEqual(RegionBiome.Lake, detail.Data.Biome[detailCenter]);
+            Assert.AreEqual(lakeLevel, detail.Data.Height[detailCenter] + detail.Data.LakeDepth[detailCenter], 0.001f);
+            Assert.AreEqual(RegionBiome.Ocean, region.Biome[0]);
+        }
+
+        [Test]
         public void Sites_AreSpacedApart_AndInsideMap()
         {
             RegionData data = RegionGenerator.Generate(SmallSpec(7));

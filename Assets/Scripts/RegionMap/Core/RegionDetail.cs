@@ -148,6 +148,8 @@ namespace Vastcore.RegionMap
             var moisture = new float[count];
             var isLand = new bool[count];
             var source = new int[count];
+            float lakeLevel = region.LakeSurfaceLevel;
+            float[] lakeBank = float.IsNaN(lakeLevel) ? null : new float[count];
             float riverThreshold = RegionGenerator.RiverThreshold(region);
 
             for (int y = 0; y < h; y++)
@@ -165,6 +167,8 @@ namespace Vastcore.RegionMap
                     landHeight[i] = value > 0f ? value : 0f;
                     seaDepth[i] = value > 0f ? 0f : -value;
                     ground[i] = value > 0f ? value : 0f;
+                    if (lakeBank != null)
+                        lakeBank[i] = region.LakeDepth[r] > 0f ? region.LakeDepth[r] : -Math.Max(0.1f, Math.Abs(value - lakeLevel));
                     temperature[i] = region.Temperature[r];
                     moisture[i] = region.Moisture[r];
                 }
@@ -196,6 +200,7 @@ namespace Vastcore.RegionMap
             float[] water = data.WaterCoverage;
             float detailThreshold = RegionGenerator.RiverThreshold(data);
             float roughness = spec.Roughness;
+            data.LakeSurfaceLevel = lakeLevel;
 
             Parallel.For(0, res, y =>
             {
@@ -280,6 +285,16 @@ namespace Vastcore.RegionMap
                         }
                     }
 
+                    if (coast > 0f && lakeBank != null)
+                    {
+                        float depth = Bilinear(lakeBank, w, h, qx, qy);
+                        if (depth > 0f)
+                        {
+                            value = lakeLevel - depth;
+                            data.LakeDepth[i] = depth;
+                            water[i] = 1f;
+                        }
+                    }
                     height[i] = value;
                     float groundNow = value > 0f ? value : 0f;
                     data.Temperature[i] = nearT - 6.5f * (groundNow - nearGround) / 1000f;
@@ -401,6 +416,11 @@ namespace Vastcore.RegionMap
                         continue;
                     }
                     landCount++;
+                    if (data.LakeDepth[i] > 0f)
+                    {
+                        data.Biome[i] = RegionBiome.Lake;
+                        continue;
+                    }
                     if (data.WaterCoverage[i] > 0.5f)
                     {
                         data.Biome[i] = RegionBiome.River;

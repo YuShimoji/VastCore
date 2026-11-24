@@ -6,11 +6,127 @@ namespace Vastcore.RegionMap.Preview
 {
     internal static class TerrainMeasurements
     {
+        internal sealed class Trace
+        {
+            private readonly RegionSpec _spec;
+            private readonly List<(string Phase, int Resolution, float[] Height)> _snapshots =
+                new List<(string, int, float[])>();
+
+            public Trace(RegionSpec spec) { _spec = spec; }
+
+            public void Record(string phase, int resolution, float[] height)
+            {
+                _snapshots.Add((phase, resolution, (float[])height.Clone()));
+            }
+
+            public void Write(string stem)
+            {
+                using var metrics = new StreamWriter(stem + "-terrain-trace.csv");
+                metrics.WriteLine("phase,resolution,outlets,land_basins,land_km2,max_depth_m,closed_sea_basins,closed_sea_km2,plain_km2,stripe_km2");
+                foreach (var snapshot in _snapshots)
+                {
+                    RegionSpec spec = _spec.Clone();
+                    spec.Resolution = snapshot.Resolution;
+                    var data = new RegionData(spec);
+                    Array.Copy(snapshot.Height, data.Height, snapshot.Height.Length);
+                    double cellKm = data.CellMeters / 1000.0;
+                    double cellArea = cellKm * cellKm;
+                    var (plain, striped) = FindStripes(data, new bool[data.Height.Length]);
+                    foreach (bool inlandSeaIsOutlet in new[] { false, true })
+                    {
+                        var basin = FindBasins(data, new byte[data.Height.Length], cellArea, inlandSeaIsOutlet);
+                        string outlets = inlandSeaIsOutlet ? "all-low-cells" : "boundary";
+                        metrics.WriteLine(FormattableString.Invariant($"{snapshot.Phase},{snapshot.Resolution},{outlets},{basin.Count},{basin.Cells * cellArea:F4},{basin.MaximumDepth:F3},{basin.SeaLevelCount},{basin.SeaLevelCells * cellArea:F4},{plain * cellArea:F4},{striped * cellArea:F4}"));
+                    }
+                }
+                WriteProfile(stem);
+            }
+
+            private void WriteProfile(string stem)
+            {
+                var snapshot = _snapshots.Find(row => row.Phase == "interpolated");
+                if (snapshot.Height == null) return;
+                var candidate = new RegionData(_spec);
+                Array.Copy(snapshot.Height, candidate.Height, snapshot.Height.Length);
+                if (RegionLake.Select(candidate) == null) return;
+                int center = 0;
+                for (int i = 1; i < candidate.LakeDepth.Length; i++)
+                    if (candidate.LakeDepth[i] > candidate.LakeDepth[center]) center = i;
+
+                float mapX = candidate.MapXFromCell(center);
+                float mapY = candidate.MapYFromCell(center);
+                float level = candidate.Height[center] + candidate.LakeDepth[center];
+                using var profile = new StreamWriter(stem + "-terrain-profile.csv");
+                profile.WriteLine("phase,axis,offset_km,map_x,map_y,height_m,proposed_lake_m");
+                foreach (var row in _snapshots)
+                for (int axis = 0; axis < 2; axis++)
+                for (int sample = -16; sample <= 16; sample++)
+                {
+                    float distance = sample * 0.25f;
+                    float offset = distance * RegionData.MapUnits / _spec.SizeKm;
+                    int x = Math.Clamp((int)((mapX + (axis == 0 ? offset : 0f)) * row.Resolution / RegionData.MapUnits), 0, row.Resolution - 1);
+                    int y = Math.Clamp((int)((mapY + (axis == 1 ? offset : 0f)) * row.Resolution / RegionData.MapUnits), 0, row.Resolution - 1);
+                    float h = row.Height[x + y * row.Resolution];
+                    float xMap = (x + 0.5f) * RegionData.MapUnits / row.Resolution;
+                    float yMap = (y + 0.5f) * RegionData.MapUnits / row.Resolution;
+                    profile.WriteLine(FormattableString.Invariant($"{row.Phase},{(axis == 0 ? 'x' : 'y')},{distance:F2},{xMap:F4},{yMap:F4},{h:F3},{level:F3}"));
+                }
+            }
+        }
+
         private const double MinimumBasinKm2 = 1.0;
         private const float MinimumBasinDepth = 2f;
         private const float PlainHeightLimit = 350f;
         private const float PlainSlopeLimit = 0.05f;
         private static readonly (int X, int Y)[] Directions = { (1, 0), (1, 1), (0, 1), (-1, 1) };
+
+        internal static void WriteLakeDetail(RegionData region, string stem)
+        {
+            if (float.IsNaN(region.LakeSurfaceLevel)) throw new InvalidOperationException("No retained lake in this region.");
+            int center = 0;
+            int lakeCells = 0;
+            for (int i = 0; i < region.LakeDepth.Length; i++)
+            {
+                if (region.LakeDepth[i] > 0f) lakeCells++;
+                if (region.LakeDepth[i] > region.LakeDepth[center]) center = i;
+            }
+            float mapX = region.MapXFromCell(center);
+            float mapY = region.MapYFromCell(center);
+            var detail = RegionDetailBuilder.Build(region, new RegionDetailSpec
+            {
+                CenterMapX = mapX,
+                CenterMapY = mapY,
+                SizeKm = 8f
+            });
+            double cellKm = region.CellMeters / 1000.0;
+            int detailLakeCells = Array.FindAll(detail.Data.Biome, biome => biome == RegionBiome.Lake).Length;
+            byte[] pixels = RegionMapRenderer.Render(detail.Data, new RegionRenderOptions { CloudCover = 0f });
+            int resolution = detail.Data.Resolution;
+            PngWriter.Write(stem + "-lake-detail.png", pixels, resolution, resolution);
+            Console.WriteLine(FormattableString.Invariant($"lake center={mapX:F2},{mapY:F2} level={region.LakeSurfaceLevel:F2}m area={lakeCells * cellKm * cellKm:F2}km2 depth={region.LakeDepth[center]:F2}m detail_lake_cells={detailLakeCells}"));
+        }
+
+        internal static void ComparePlains(RegionData data, string stem)
+        {
+            RegionData baseline = RegionGenerator.Generate(data.Spec, null, null, baselineTerrain: true);
+            var plain = new bool[data.Height.Length];
+            var stripes = new bool[data.Height.Length];
+            var (beforePlain, originalStripes) = FindStripes(baseline, stripes, collectPlain: plain);
+            for (int i = 0; i < plain.Length; i++)
+                plain[i] = plain[i] && data.Height[i] > 0f && data.Biome[i] != RegionBiome.Lake && data.Biome[i] != RegionBiome.River;
+
+            Array.Clear(stripes);
+            var (sharedPlain, beforeStripes) = FindStripes(baseline, stripes, fixedPlain: plain);
+            Array.Clear(stripes);
+            var (_, afterStripes) = FindStripes(data, stripes, fixedPlain: plain);
+            double cellKm = data.CellMeters / 1000.0;
+            double area = cellKm * cellKm;
+            File.WriteAllLines(stem + "-plain-comparison.csv", new[]
+            {
+                "seed,resolution,baseline_plain_km2,shared_plain_km2,excluded_km2,baseline_stripe_km2,shared_before_stripe_km2,shared_after_stripe_km2",
+                FormattableString.Invariant($"{data.Spec.Seed},{data.Resolution},{beforePlain * area:F4},{sharedPlain * area:F4},{(beforePlain - sharedPlain) * area:F4},{originalStripes * area:F4},{beforeStripes * area:F4},{afterStripes * area:F4}")
+            });
+        }
 
         internal static void Write(RegionData data, string stem, long generateMs, long erosionMs)
         {
@@ -42,46 +158,17 @@ namespace Vastcore.RegionMap.Preview
         }
 
         internal static (int Count, int Cells, float MaximumDepth, int SeaLevelCount, int SeaLevelCells)
-            FindBasins(RegionData data, byte[] mask, double cellKm2)
+            FindBasins(RegionData data, byte[] mask, double cellKm2, bool inlandSeaIsOutlet = false)
         {
-            int n = data.Resolution;
-            float[] height = data.Height;
-            float[] filled = FillToOutlet(height, n);
-            var component = new List<int>();
             int count = 0;
             int cells = 0;
             float maximumDepth = 0f;
             int seaLevelCount = 0;
             int seaLevelCells = 0;
 
-            for (int i = 0; i < height.Length; i++)
+            RegionLake.VisitBasins(data.Height, data.Resolution, inlandSeaIsOutlet, (_, component, depth, reachesSeaLevel) =>
             {
-                float spill = filled[i];
-                if (spill <= 0f || spill <= height[i]) continue;
-
-                component.Clear();
-                component.Add(i);
-                filled[i] = height[i];
-                float depth = spill - height[i];
-                for (int next = 0; next < component.Count; next++)
-                {
-                    int current = component[next];
-                    int x = current % n;
-                    int y = current / n;
-                    // 外周は流出口で、窪地に入るセルは内側に限られる。
-                    for (int dy = -1; dy <= 1; dy++)
-                    for (int dx = -1; dx <= 1; dx++)
-                    {
-                        int neighbor = x + dx + (y + dy) * n;
-                        if (filled[neighbor] != spill || height[neighbor] >= spill) continue;
-                        component.Add(neighbor);
-                        filled[neighbor] = height[neighbor];
-                        depth = Math.Max(depth, spill - height[neighbor]);
-                    }
-                }
-
-                if (depth < MinimumBasinDepth || component.Count * cellKm2 < MinimumBasinKm2) continue;
-                bool reachesSeaLevel = depth >= spill;
+                if (depth < MinimumBasinDepth || component.Count * cellKm2 < MinimumBasinKm2) return;
                 if (reachesSeaLevel)
                 {
                     seaLevelCount++;
@@ -94,50 +181,13 @@ namespace Vastcore.RegionMap.Preview
                     maximumDepth = Math.Max(maximumDepth, depth);
                 }
                 foreach (int index in component) mask[index] = reachesSeaLevel ? (byte)2 : (byte)1;
-            }
+            });
 
             return (count, cells, maximumDepth, seaLevelCount, seaLevelCells);
         }
 
-        // Barnes et al. (2014), Priority-Flood: 計測では流路用の微小勾配を加えず、流出口の標高で止める。
-        private static float[] FillToOutlet(float[] height, int n)
-        {
-            var open = new PriorityQueue<int, float>();
-            var pit = new Queue<int>();
-            var filled = new float[height.Length];
-            Array.Fill(filled, float.NaN);
-
-            for (int i = 0; i < height.Length; i++)
-            {
-                int x = i % n;
-                int y = i / n;
-                if (x != 0 && x != n - 1 && y != 0 && y != n - 1) continue;
-                filled[i] = height[i];
-                open.Enqueue(i, height[i]);
-            }
-
-            while (pit.Count > 0 || open.Count > 0)
-            {
-                int current = pit.Count > 0 ? pit.Dequeue() : open.Dequeue();
-                float level = filled[current];
-                int x = current % n;
-                int y = current / n;
-                for (int row = Math.Max(0, y - 1); row <= Math.Min(n - 1, y + 1); row++)
-                for (int col = Math.Max(0, x - 1); col <= Math.Min(n - 1, x + 1); col++)
-                {
-                    int neighbor = col + row * n;
-                    if (!float.IsNaN(filled[neighbor])) continue;
-                    float ground = height[neighbor];
-                    filled[neighbor] = Math.Max(ground, level);
-                    if (ground <= level) pit.Enqueue(neighbor);
-                    else open.Enqueue(neighbor, ground);
-                }
-            }
-
-            return filled;
-        }
-
-        internal static (int Plain, int Striped) FindStripes(RegionData data, bool[] stripes)
+        internal static (int Plain, int Striped) FindStripes(RegionData data, bool[] stripes, bool[] collectPlain = null,
+            bool[] fixedPlain = null)
         {
             int n = data.Resolution;
             float cell = data.CellMeters;
@@ -145,20 +195,28 @@ namespace Vastcore.RegionMap.Preview
             int slopeRadius = Math.Max(1, (int)Math.Round(1000 / cell));
             float slopeDistance = 2f * cell * slopeRadius;
             int north = slopeRadius * n;
-            var plain = new bool[height.Length];
+            var plain = fixedPlain ?? collectPlain ?? new bool[height.Length];
             int plainCount = 0;
-            for (int y = slopeRadius; y < n - slopeRadius; y++)
-            for (int x = slopeRadius; x < n - slopeRadius; x++)
+            if (fixedPlain != null)
             {
-                int i = x + y * n;
-                if (height[i] <= 0f || height[i] > PlainHeightLimit || data.Biome[i] == RegionBiome.River || data.Biome[i] == RegionBiome.Lake) continue;
-                if (height[i - slopeRadius] <= 0f || height[i + slopeRadius] <= 0f || height[i - north] <= 0f || height[i + north] <= 0f) continue;
-                float dx = height[i + slopeRadius] - height[i - slopeRadius];
-                float dy = height[i + north] - height[i - north];
-                float limit = slopeDistance * PlainSlopeLimit;
-                if (dx * dx + dy * dy > limit * limit) continue;
-                plain[i] = true;
-                plainCount++;
+                foreach (bool isPlain in fixedPlain)
+                    if (isPlain) plainCount++;
+            }
+            else
+            {
+                for (int y = slopeRadius; y < n - slopeRadius; y++)
+                for (int x = slopeRadius; x < n - slopeRadius; x++)
+                {
+                    int i = x + y * n;
+                    if (height[i] <= 0f || height[i] > PlainHeightLimit || data.Biome[i] == RegionBiome.River || data.Biome[i] == RegionBiome.Lake) continue;
+                    if (height[i - slopeRadius] <= 0f || height[i + slopeRadius] <= 0f || height[i - north] <= 0f || height[i + north] <= 0f) continue;
+                    float dx = height[i + slopeRadius] - height[i - slopeRadius];
+                    float dy = height[i + north] - height[i - north];
+                    float limit = slopeDistance * PlainSlopeLimit;
+                    if (dx * dx + dy * dy > limit * limit) continue;
+                    plain[i] = true;
+                    plainCount++;
+                }
             }
 
             var grooves = new bool[height.Length];
