@@ -71,16 +71,48 @@ namespace Vastcore.RegionMap
         private readonly float[] _b;
         private readonly float[] _a;
         private readonly float[] _h;
-        private readonly List<Road> _roads = new List<Road>();
+        private readonly List<Road> _roads;
+        // この写しが描く行の範囲（両端を含む）。全体を持つ写しは 0 〜 _m - 1
+        private readonly int _rowMin;
+        private readonly int _rowMax;
         private float _maxHeight;
+
+        // 1 本のスレッドが続けて描く行の数。帯が細いほどスレッドの手すきが減るが、物を並べる計算は帯ごとにやり直す
+        private const int BandRows = 32;
+
+        /// <summary>
+        /// 同じバッファの rowMin〜rowMax 行だけを描く写し。行の帯ごとに別スレッドで描く。
+        /// 1 つの画素へ重ねる物と順番は帯に分けても変わらないので、結果は 1 本で描いた時と一致する。
+        /// </summary>
+        private RegionDevelopmentSiteRendering(RegionDevelopmentSiteRendering whole, int rowMin, int rowMax)
+        {
+            _n = whole._n;
+            _pad = whole._pad;
+            _m = whole._m;
+            _cell = whole._cell;
+            _ox = whole._ox;
+            _oy = whole._oy;
+            _seed = whole._seed;
+            _r = whole._r;
+            _g = whole._g;
+            _b = whole._b;
+            _a = whole._a;
+            _h = whole._h;
+            _roads = whole._roads;
+            _rowMin = rowMin;
+            _rowMax = rowMax;
+        }
 
         private RegionDevelopmentSiteRendering(RegionData data)
         {
+            _roads = new List<Road>();
             _n = data.Resolution;
             _cell = data.CellMeters;
             // 窓の外の建物が窓の中へ落とす影のために、外側へ余白を取る
             _pad = Math.Min(192, (int)Math.Ceiling(150f / _cell));
             _m = _n + _pad * 2;
+            _rowMin = 0;
+            _rowMax = _m - 1;
             _ox = data.DevelopmentOrigin.X - _pad * _cell;
             _oy = data.DevelopmentOrigin.Y - _pad * _cell;
             _seed = unchecked((uint)data.Spec.Seed * 747796405u + 2891336453u);
@@ -98,12 +130,30 @@ namespace Vastcore.RegionMap
             RegionDevelopment plan = data.Development;
             var site = new RegionDevelopmentSiteRendering(data);
             site.CollectRoads(plan);
-            site.DrawBlocks(plan);
-            site.DrawRoads();
+            // 街の外の窓（近くに街区も道も無い）は何も描かない
+            if (site._roads.Count == 0 && !site.AnyBlockNear(plan)) return new byte[site._n * site._n * 4];
+            // 行の帯に分けて並列に描く（街区 → 道路の順は帯の中で保つ）
+            int bands = (site._m + BandRows - 1) / BandRows;
+            var tops = new float[bands];
+            Parallel.For(0, bands, band =>
+            {
+                var part = new RegionDevelopmentSiteRendering(site, band * BandRows, Math.Min(site._m, (band + 1) * BandRows) - 1);
+                part.DrawBlocks(plan);
+                part.DrawRoads();
+                tops[band] = part._maxHeight;
+            });
+            foreach (float top in tops) site._maxHeight = Math.Max(site._maxHeight, top);
             return site.Resolve(site.CastShadows());
         }
 
         // ---- 街区 ----
+
+        private bool AnyBlockNear(RegionDevelopment plan)
+        {
+            foreach (RegionDevelopmentFeature feature in plan.Features)
+                if (feature.Kind == RegionDevelopmentFeatureKind.Block && Near(feature.Center, 440f)) return true;
+            return false;
+        }
 
         private void DrawBlocks(RegionDevelopment plan)
         {
@@ -164,6 +214,8 @@ namespace Vastcore.RegionMap
                 float v0 = iy == 0 ? -hw + 3.5f : (iy - 1.5f) * SlotV + inner;
                 float v1 = iy == 2 ? hw - 3.5f : (iy - 0.5f) * SlotV - inner;
                 ToWorld(f, (u0 + u1) * 0.5f, (v0 + v1) * 0.5f, out float wx, out float wy);
+                // 区画の中身は区画の外へ出ない（樹冠のはみ出しは 12 m 以内）。受け持ちの行に掛からない区画は並べない
+                if (!InBuffer(wx, wy, 12f + 0.5f * (float)Math.Sqrt((u1 - u0) * (u1 - u0) + (v1 - v0) * (v1 - v0)))) continue;
                 uint key = RegionNoise.Hash((int)Math.Round(wx), (int)Math.Round(wy), _seed);
                 float mix = radial + (Unit(key, 1) - 0.5f) * 0.24f;
 
@@ -630,7 +682,7 @@ namespace Vastcore.RegionMap
         private void Tree(float wx, float wy, float radius, float height, uint key)
         {
             int x0 = PixelFloor(wx - radius - _cell, _ox), x1 = PixelCeil(wx + radius + _cell, _ox);
-            int y0 = PixelFloor(wy - radius - _cell, _oy), y1 = PixelCeil(wy + radius + _cell, _oy);
+            int y0 = RowFloor(wy - radius - _cell), y1 = RowCeil(wy + radius + _cell);
             float phase = Unit(key, 5) * 6.2832f;
             float tone = Unit(key, 6);
             float r = 46f + 26f * tone, g = 80f + 26f * tone, b = 38f + 16f * tone;
@@ -676,8 +728,8 @@ namespace Vastcore.RegionMap
             ToWorld(f, u0, v1, out float dx, out float dy);
             int x0 = PixelFloor(Math.Min(Math.Min(ax, bx), Math.Min(cx, dx)), _ox);
             int x1 = PixelCeil(Math.Max(Math.Max(ax, bx), Math.Max(cx, dx)), _ox);
-            int y0 = PixelFloor(Math.Min(Math.Min(ay, by), Math.Min(cy, dy)), _oy);
-            int y1 = PixelCeil(Math.Max(Math.Max(ay, by), Math.Max(cy, dy)), _oy);
+            int y0 = RowFloor(Math.Min(Math.Min(ay, by), Math.Min(cy, dy)));
+            int y1 = RowCeil(Math.Max(Math.Max(ay, by), Math.Max(cy, dy)));
             if (x0 > x1 || y0 > y1) return;
 
             // 枠の座標での太陽の向き（屋根の面の明暗に使う）
@@ -685,20 +737,28 @@ namespace Vastcore.RegionMap
             float sunV = SunY * f.Cos - SunX * f.Sin;
             float uc = (u0 + u1) * 0.5f, vc = (v0 + v1) * 0.5f;
             bool alongU = u1 - u0 >= v1 - v0;
+            // 4 つの標本は、枠の座標で画素の中心から最大 0.354 セルしか離れない。中心が縁からそれより遠ければ、
+            // 標本を取らなくても「全部入る」「全部外れる」が決まる（0.05 m は、大きな座標の丸めの分の余裕）
+            float rim = 0.36f * _cell + 0.05f;
             for (int y = y0; y <= y1; y++)
             for (int x = x0; x <= x1; x++)
             {
-                int hits = 0;
-                for (int s = 0; s < 4; s++)
-                {
-                    ToLocal(f, _ox + (x + 0.25f + 0.5f * (s & 1)) * _cell, _oy + (y + 0.25f + 0.5f * (s >> 1)) * _cell, out float su, out float sv);
-                    if (su >= u0 && su <= u1 && sv >= v0 && sv <= v1) hits++;
-                }
-                if (hits == 0) continue;
-
                 float wx = _ox + (x + 0.5f) * _cell;
                 float wy = _oy + (y + 0.5f) * _cell;
                 ToLocal(f, wx, wy, out float u, out float v);
+                if (u < u0 - rim || u > u1 + rim || v < v0 - rim || v > v1 + rim) continue;
+                int hits = 4;
+                if (u < u0 + rim || u > u1 - rim || v < v0 + rim || v > v1 - rim)
+                {
+                    hits = 0;
+                    for (int s = 0; s < 4; s++)
+                    {
+                        ToLocal(f, _ox + (x + 0.25f + 0.5f * (s & 1)) * _cell, _oy + (y + 0.25f + 0.5f * (s >> 1)) * _cell, out float su, out float sv);
+                        if (su >= u0 && su <= u1 && sv >= v0 && sv <= v1) hits++;
+                    }
+                    if (hits == 0) continue;
+                }
+
                 float grain = RegionNoise.Hash01((int)Math.Floor(wx * 1.7f), (int)Math.Floor(wy * 1.7f), _seed + 5u) - 0.5f;
                 float mul = 1f, add = 0f;
                 switch (surface)
@@ -768,22 +828,33 @@ namespace Vastcore.RegionMap
             float dx = bx - ax, dy = by - ay;
             float lengthSquared = dx * dx + dy * dy;
             int x0 = PixelFloor(Math.Min(ax, bx) - radius - _cell, _ox), x1 = PixelCeil(Math.Max(ax, bx) + radius + _cell, _ox);
-            int y0 = PixelFloor(Math.Min(ay, by) - radius - _cell, _oy), y1 = PixelCeil(Math.Max(ay, by) + radius + _cell, _oy);
+            int y0 = RowFloor(Math.Min(ay, by) - radius - _cell), y1 = RowCeil(Math.Max(ay, by) + radius + _cell);
+            // 斜めの長い線は、行ごとに線の近くの列だけを見る（線から radius + 0.5 セルより遠い画素は何も描かない）
+            float span = Math.Abs(dy) > 0.001f ? (radius + _cell) * (float)Math.Sqrt(lengthSquared) / Math.Abs(dy) + _cell : float.MaxValue;
             for (int y = y0; y <= y1; y++)
-            for (int x = x0; x <= x1; x++)
             {
-                float wx = _ox + (x + 0.5f) * _cell, wy = _oy + (y + 0.5f) * _cell;
-                float px = wx - ax, py = wy - ay;
-                float t = RegionNoise.Clamp01((px * dx + py * dy) / Math.Max(0.01f, lengthSquared));
-                float qx = px - t * dx, qy = py - t * dy;
-                // 画素より細い線は、幅に応じた薄さで写す
-                float coverage = RegionNoise.Clamp01(Math.Min(width / _cell, 0.5f + (radius - (float)Math.Sqrt(qx * qx + qy * qy)) / _cell));
-                if (coverage <= 0f) continue;
-                float add = 0f;
-                if (textured)
-                    add = (RegionNoise.Hash01((int)Math.Floor(wx * 1.7f), (int)Math.Floor(wy * 1.7f), _seed + 5u) - 0.5f) * 9f
-                        + RegionNoise.Fbm(wx * 0.05f, wy * 0.05f, 2, _seed + 7u) * 7f;
-                Put(x, y, r + add, g + add, b + add, coverage * opacity, height);
+                int rowX0 = x0, rowX1 = x1;
+                if (span < (x1 - x0) * _cell)
+                {
+                    float onLine = ax + (_oy + (y + 0.5f) * _cell - ay) * dx / dy;
+                    rowX0 = Math.Max(x0, PixelFloor(onLine - span, _ox));
+                    rowX1 = Math.Min(x1, PixelCeil(onLine + span, _ox));
+                }
+                for (int x = rowX0; x <= rowX1; x++)
+                {
+                    float wx = _ox + (x + 0.5f) * _cell, wy = _oy + (y + 0.5f) * _cell;
+                    float px = wx - ax, py = wy - ay;
+                    float t = RegionNoise.Clamp01((px * dx + py * dy) / Math.Max(0.01f, lengthSquared));
+                    float qx = px - t * dx, qy = py - t * dy;
+                    // 画素より細い線は、幅に応じた薄さで写す
+                    float coverage = RegionNoise.Clamp01(Math.Min(width / _cell, 0.5f + (radius - (float)Math.Sqrt(qx * qx + qy * qy)) / _cell));
+                    if (coverage <= 0f) continue;
+                    float add = 0f;
+                    if (textured)
+                        add = (RegionNoise.Hash01((int)Math.Floor(wx * 1.7f), (int)Math.Floor(wy * 1.7f), _seed + 5u) - 0.5f) * 9f
+                            + RegionNoise.Fbm(wx * 0.05f, wy * 0.05f, 2, _seed + 7u) * 7f;
+                    Put(x, y, r + add, g + add, b + add, coverage * opacity, height);
+                }
             }
         }
 
@@ -808,21 +879,54 @@ namespace Vastcore.RegionMap
             int limit = (int)Math.Ceiling(_maxHeight / rise);
             if (limit < 1) return shadow;
             float top = _maxHeight;
+
+            // 16 画素角の升ごとの、いちばん高い物。辿った先の升に今の光線より高い物が無ければ、升を出る所まで飛ばす。
+            // 光線は進むほど高くなるので、飛ばした画素が遮ることは無い（1 画素ずつ辿った時と同じ結果になる）
+            const int Tile = 16;
+            int tiles = (_m + Tile - 1) / Tile;
+            var tileTop = new float[tiles * tiles];
+            Parallel.For(0, tiles, ty =>
+            {
+                for (int tx = 0; tx < tiles; tx++)
+                {
+                    float highest = 0f;
+                    int yEnd = Math.Min(_m, (ty + 1) * Tile), xEnd = Math.Min(_m, (tx + 1) * Tile);
+                    for (int y = ty * Tile; y < yEnd; y++)
+                    for (int x = tx * Tile; x < xEnd; x++)
+                        if (_h[x + y * _m] > highest) highest = _h[x + y * _m];
+                    tileTop[tx + ty * tiles] = highest;
+                }
+            });
+
             Parallel.For(0, _m, y =>
             {
                 for (int x = 0; x < _m; x++)
                 {
                     float own = _h[x + y * _m];
-                    for (int k = 1; k <= limit; k++)
+                    int k = 1;
+                    while (k <= limit)
                     {
                         float clearance = own + k * rise + 0.25f;
                         if (clearance > top) break;
                         int sx = (int)(x + 0.5f + SunX * k);
                         int sy = (int)(y + 0.5f + SunY * k);
                         if (sx < 0 || sy < 0 || sx >= _m || sy >= _m) break;
-                        if (_h[sx + sy * _m] <= clearance) continue;
-                        shadow[x + y * _m] = true;
-                        break;
+                        int tx = sx / Tile, ty = sy / Tile;
+                        if (tileTop[tx + ty * tiles] <= clearance)
+                        {
+                            // 太陽は北西（SunX・SunY とも負）なので、升を西か北の辺から出る。出る手前の歩数まで飛ばす
+                            float exitX = (x + 0.5f - tx * Tile) / -SunX;
+                            float exitY = (y + 0.5f - ty * Tile) / -SunY;
+                            int next = (int)Math.Floor(Math.Min(exitX, exitY) - 0.01f) + 1;
+                            k = next > k ? next : k + 1;
+                            continue;
+                        }
+                        if (_h[sx + sy * _m] > clearance)
+                        {
+                            shadow[x + y * _m] = true;
+                            break;
+                        }
+                        k++;
                     }
                 }
             });
@@ -914,10 +1018,11 @@ namespace Vastcore.RegionMap
             return InBuffer(point.X, point.Y, margin);
         }
 
+        /// <summary>この写しが描く範囲（横はバッファ全体、縦は受け持ちの行）から margin 以内か。</summary>
         private bool InBuffer(float x, float y, float margin)
         {
-            float size = _m * _cell;
-            return x > _ox - margin && y > _oy - margin && x < _ox + size + margin && y < _oy + size + margin;
+            return x > _ox - margin && x < _ox + _m * _cell + margin
+                && y > _oy + _rowMin * _cell - margin && y < _oy + (_rowMax + 1) * _cell + margin;
         }
 
         private int PixelFloor(float position, float origin)
@@ -928,6 +1033,16 @@ namespace Vastcore.RegionMap
         private int PixelCeil(float position, float origin)
         {
             return Math.Min(_m - 1, (int)Math.Ceiling((position - origin) / _cell));
+        }
+
+        private int RowFloor(float y)
+        {
+            return Math.Max(_rowMin, (int)Math.Floor((y - _oy) / _cell));
+        }
+
+        private int RowCeil(float y)
+        {
+            return Math.Min(_rowMax, (int)Math.Ceiling((y - _oy) / _cell));
         }
 
         private static float Unit(uint key, int channel)

@@ -67,8 +67,12 @@ namespace Vastcore.RegionMap
         private const float ListRowWithGloss = 42f;
         private const float CardWidth = 380f;
         private const float CardHeight = 218f;
-        // 細部の地形（RegionDetailLayer）へ切り替わる拡大率から、窓が地図の幅 4 km になる 64 倍まで拡大できる
-        private const float MaxZoom = 64f;
+        // 細部の地形（RegionDetailLayer）へ切り替わる拡大率から、512 倍まで拡大できる（256 km の地域で画面の幅が 500 m）。
+        // 窓の 1 セルは ×64 で約 4.9 m、×128 で約 2.4 m、×512 で約 0.6 m。現代試作の街は 3 m 以下の窓（×128 以上）で
+        // 敷地・屋根・樹木・車まで描かれる（RegionDevelopmentSiteRendering）
+        private const float MaxZoom = 512f;
+        // この拡大率から雲と影を薄くし始め、2 倍の所で消す
+        private const float CloudClearFromZoom = 64f;
         private const float DetailBadgeWidth = 360f;
         private const float DetailBadgeHeight = 66f;
         // 遠征の規則の部品（左の「遠征の残り」と、右の「手掛かり」）
@@ -1290,7 +1294,9 @@ namespace Vastcore.RegionMap
             }
             else if (phase == RegionDetailPhase.Ready && current != null)
             {
-                text = "地形：細部（" + current.Data.CellMeters.ToString("0", CultureInfo.InvariantCulture) + " m／セル）";
+                // 10 m より細かい窓は小数 1 桁まで出す（0.6 m と 1.2 m が同じ「1 m」にならないように）
+                float cell = current.Data.CellMeters;
+                text = "地形：細部（" + cell.ToString(cell < 9.95f ? "0.0" : "0", CultureInfo.InvariantCulture) + " m／セル）";
             }
             else
             {
@@ -1326,10 +1332,13 @@ namespace Vastcore.RegionMap
             if (_cloudCrossSeconds > 0f) _cloudTime += Time.deltaTime;
             if (_cloudOpacity > 0f)
             {
+                // 写真の縮尺の細部（×128 以上）では雲の下まで寄ったことにして、×64 から ×128 の間で雲と影を消す。
+                // 消さないと、1 つの雲が画面の全部を覆って細部が霞む。×64 までの見え方は変えない
+                float opacity = _cloudOpacity * Mathf.Clamp01(1f - Mathf.Log(_zoom / CloudClearFromZoom, 2f));
                 var shadowShift = new Vector2(RegionClouds.ShadowOffset, -RegionClouds.ShadowOffset);
-                _cloudShadows.SetFlow(RegionCloudFlow.Low, _cloudTime, _cloudCrossSeconds, shadowShift, _cloudOpacity);
-                _clouds.SetFlow(RegionCloudFlow.Low, _cloudTime, _cloudCrossSeconds, Vector2.zero, _cloudOpacity);
-                _highClouds.SetFlow(RegionCloudFlow.High, _cloudTime, _cloudCrossSeconds, Vector2.zero, _cloudOpacity);
+                _cloudShadows.SetFlow(RegionCloudFlow.Low, _cloudTime, _cloudCrossSeconds, shadowShift, opacity);
+                _clouds.SetFlow(RegionCloudFlow.Low, _cloudTime, _cloudCrossSeconds, Vector2.zero, opacity);
+                _highClouds.SetFlow(RegionCloudFlow.High, _cloudTime, _cloudCrossSeconds, Vector2.zero, opacity);
             }
             float driftU;
             float driftV;

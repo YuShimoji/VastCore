@@ -7,6 +7,11 @@
   [int]$Resolution = 1024,
   [string]$Style = 'satellite',
   [string]$OutDir = 'artifacts/region-map',
+  # 現代試作（2都市・幹線・空港）を載せる。
+  #   setup   : 鳥瞰図と 4 か所の拡大図を書き出す
+  #   explore : 街を ×64〜×512 まで拡大した画面を撮る（通常の操作の手順の代わり）
+  #   play    : 現代試作の地域で探索シーンを開く（シーンは保存しない）
+  # explore / play では、-Seed を書いた時だけその seed に替える（書かなければシーンの seed のまま）
   [switch]$ModernDevelopment,
   # explore の時だけ: 開始直後の画面を、この秒数ぶん連続で <OutDir>/clip/ へ撮る（雲の流れを動画にする材料）
   [int]$ClipSeconds = 0,
@@ -14,8 +19,11 @@
 )
 
 $ErrorActionPreference = 'Stop'
-if ($ModernDevelopment -and $Mode -ne 'setup') { throw '-ModernDevelopment is available with -Mode setup.' }
 $ProjectPath = (Resolve-Path "$PSScriptRoot/..").Path
+# explore / play で探索シーンの地域を替える引数（RegionExplorerSmoke.ApplyRegionArguments が読む）
+$regionArgs = @()
+if ($PSBoundParameters.ContainsKey('Seed')) { $regionArgs += @('-regionSeed', $Seed) }
+if ($ModernDevelopment) { $regionArgs += @('-regionModern', 'true') }
 Set-Location -LiteralPath $ProjectPath
 
 if (-not $UnityPath) {
@@ -47,7 +55,7 @@ if ($Mode -eq 'setup') {
     '-projectPath', "`"$ProjectPath`"",
     '-executeMethod', 'Vastcore.RegionMap.Editor.RegionExplorerSmoke.PlayFromCommandLine',
     '-logFile', "`"$log`""
-  )
+  ) + $regionArgs
   Write-Host "Unity: $UnityPath"
   Write-Host "Log:   $log"
   $started = Start-Process -FilePath $UnityPath -ArgumentList $unityArgs -PassThru
@@ -60,7 +68,7 @@ if ($Mode -eq 'setup') {
     '-regionOut', "`"$OutFull`"",
     '-regionClip', $ClipSeconds,
     '-logFile', "`"$log`""
-  )
+  ) + $regionArgs
 }
 
 Write-Host "Unity: $UnityPath"

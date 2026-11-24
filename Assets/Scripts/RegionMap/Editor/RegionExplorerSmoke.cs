@@ -15,6 +15,9 @@ namespace Vastcore.RegionMap.Editor
     {
         private const string OutputKey = "Vastcore.RegionMap.Smoke.Output";
         private const string StepKey = "Vastcore.RegionMap.Smoke.Step";
+        // 撮る手順の種類。空なら通常の手順、DevelopmentMode なら現代試作の街の拡大
+        private const string ModeKey = "Vastcore.RegionMap.Smoke.Mode";
+        private const string DevelopmentMode = "development";
         private const int FramesBetweenSteps = 45;
         private const double TimeoutSeconds = 240.0;
 
@@ -53,6 +56,8 @@ namespace Vastcore.RegionMap.Editor
             Directory.CreateDirectory(output);
             RegionMapMenu.EnsureExplorerScene();
             EditorSceneManager.OpenScene(RegionMapMenu.ExplorerScenePath);
+            // 現代試作を指定した時は、街を写真の縮尺まで拡大して撮る短い手順に替える（DevelopmentStep）
+            SessionState.SetString(ModeKey, ApplyRegionArguments() ? DevelopmentMode : "");
             SessionState.SetString(OutputKey, output);
             SessionState.SetInt(StepKey, 0);
             SessionState.SetFloat(ClipKey, float.Parse(RegionMapMenu.Argument("-regionClip", "0"), System.Globalization.CultureInfo.InvariantCulture));
@@ -71,10 +76,89 @@ namespace Vastcore.RegionMap.Editor
         {
             RegionMapMenu.EnsureExplorerScene();
             EditorSceneManager.OpenScene(RegionMapMenu.ExplorerScenePath);
+            ApplyRegionArguments();
             EditorApplication.ExecuteMenuItem("Window/General/Game");
             System.Type gameView = typeof(EditorWindow).Assembly.GetType("UnityEditor.GameView");
             if (gameView != null) EditorWindow.GetWindow(gameView).maximized = true;
             EditorApplication.isPlaying = true;
+        }
+
+        /// <summary>
+        /// コマンドラインの -regionSeed と -regionModern を、開いた探索シーンの RegionExplorer へ入れる。
+        /// シーンは保存しない（値は再生へ持ち越される）。指定が無ければ何も変えない。現代試作を指定した時は true。
+        /// </summary>
+        private static bool ApplyRegionArguments()
+        {
+            string seed = RegionMapMenu.Argument("-regionSeed", "");
+            bool modern = bool.Parse(RegionMapMenu.Argument("-regionModern", "false"));
+            if (seed.Length == 0 && !modern) return false;
+            RegionExplorer explorer = Object.FindFirstObjectByType<RegionExplorer>();
+            if (explorer == null) return false;
+            var serialized = new SerializedObject(explorer);
+            if (seed.Length > 0) serialized.FindProperty("_spec.Seed").intValue = int.Parse(seed);
+            serialized.FindProperty("_spec.ModernDevelopment").boolValue = modern;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return modern;
+        }
+
+        // 現代試作の街を撮る場所（RegionDevelopment.Views の地点と、そこから東・南へのずれ m）と拡大率。
+        // ×64 は記号の層（1 セル 約 4.9 m）、×128 から写真の縮尺の細部（3 m 以下）
+        private static readonly (string View, float EastMeters, float SouthMeters, string Label)[] DevelopmentShots =
+        {
+            ("city-1", 0f, 0f, "city-1"),
+            ("city-1", 3200f, 0f, "city-1-east"),
+            ("city-2", 2800f, 0f, "city-2-east"),
+            ("airport", 0f, 0f, "airport"),
+        };
+
+        private static readonly float[] DevelopmentZooms = { 64f, 128f, 256f, 512f };
+
+        /// <summary>現代試作の街を拡大して撮る手順の 1 歩。終わった（Finish を呼んだ）時は false。</summary>
+        private static bool DevelopmentStep(RegionExplorer explorer, int step, string output)
+        {
+            RegionData data = explorer.Region;
+            if (data.Development == null)
+            {
+                Finish(output, "FAIL: seed " + data.Spec.Seed + " では都市・幹線・空港を配置できなかった", 1);
+                return false;
+            }
+            if (step == 0)
+            {
+                Capture(output, "development-0-region.png");
+                return true;
+            }
+
+            int shot = (step - 1) / 2;
+            int total = DevelopmentShots.Length * DevelopmentZooms.Length;
+            if (shot >= total)
+            {
+                File.WriteAllText(Path.Combine(output, "explorer-detail-result.txt"), DetailLog.ToString());
+                Finish(output, string.Format("PASS: 現代試作 seed {0} の {1} か所を ×{2:0}〜×{3:0} で撮った、画面 {4}x{5}",
+                    data.Spec.Seed, DevelopmentShots.Length, DevelopmentZooms[0], DevelopmentZooms[DevelopmentZooms.Length - 1], Screen.width, Screen.height), 0);
+                return false;
+            }
+
+            (string view, float east, float south, string label) = DevelopmentShots[shot / DevelopmentZooms.Length];
+            float zoom = DevelopmentZooms[shot % DevelopmentZooms.Length];
+            if ((step - 1) % 2 == 0)
+            {
+                foreach ((string name, RegionPosition center) in data.Development.Views())
+                {
+                    if (name != view) continue;
+                    float metersPerMapUnit = data.KmPerMapUnit * 1000f;
+                    explorer.SetView(zoom, (center.X + east) / metersPerMapUnit, (center.Y + south) / metersPerMapUnit);
+                }
+                _detailLabel = label + " ×" + zoom.ToString("0");
+                _detailStartedAt = EditorApplication.timeSinceStartup;
+                // 窓 1 つは 10〜20 秒でできる。出ない時に 16 場面ぶん待ち続けないよう、通常の手順より短く切る
+                _detailDeadline = _detailStartedAt + 120.0;
+                _awaitDetail = true;
+            }
+            else
+            {
+                Capture(output, string.Format("development-{0}-x{1:0}.png", label, zoom));
+            }
+            return true;
         }
 
         private static void Tick()
@@ -133,7 +217,14 @@ namespace Vastcore.RegionMap.Editor
                 if (layer.Phase == RegionDetailPhase.Failed) Finish(output, "FAIL: 細部の作成に失敗した（" + layer.Failure + "）", 1);
                 if (!done)
                 {
-                    if (now > _detailDeadline) Finish(output, "FAIL: 細部が時間内に出なかった（" + _detailLabel + "）", 1);
+                    if (now > _detailDeadline)
+                    {
+                        RegionDetail shown = layer.Current;
+                        Finish(output, string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                            "FAIL: 細部が時間内に出なかった（{0}。層の状態 {1}、濃さ {2:0.00}、作成 {3} 回、作成中 {4:0.0} 秒、拡大 ×{5:0.##}、出ている窓 {6}）",
+                            _detailLabel, layer.Phase, layer.Alpha, layer.BuildCount, layer.BuildSeconds, explorer.Zoom,
+                            shown != null ? shown.Data.SizeKm.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + " km" : "なし"), 1);
+                    }
                     return;
                 }
                 _awaitDetail = false;
@@ -159,6 +250,14 @@ namespace Vastcore.RegionMap.Editor
                 if (now < _clipUntil) return;
                 _clipUntil = 0.0;
                 Debug.Log("[RegionMap] 連続撮影 " + _clipFrame + " 枚");
+            }
+
+            if (SessionState.GetString(ModeKey, "") == DevelopmentMode)
+            {
+                if (!DevelopmentStep(explorer, step, output)) return;
+                SessionState.SetInt(StepKey, step + 1);
+                _wait = FramesBetweenSteps;
+                return;
             }
 
             RegionSite target = explorer.Region.Sites.Count > 0 ? explorer.Region.Sites[0] : null;
@@ -655,6 +754,7 @@ namespace Vastcore.RegionMap.Editor
             EditorApplication.update -= Tick;
             SessionState.EraseString(OutputKey);
             SessionState.EraseInt(StepKey);
+            SessionState.EraseString(ModeKey);
             SessionState.EraseFloat(ClipKey);
             File.WriteAllText(Path.Combine(output, "explorer-smoke-result.txt"), result);
             Debug.Log("[RegionMap] " + result);

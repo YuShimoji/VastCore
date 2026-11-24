@@ -166,10 +166,13 @@ namespace Vastcore.RegionMap
             return (int)Math.Floor(Math.Log(Math.Max(zoom, 0.0001f), 2.0));
         }
 
-        /// <summary>その段で作る窓の一辺（km）。段の下限の拡大率で見える幅の WindowMargin 倍。</summary>
+        /// <summary>
+        /// その段で作る窓の一辺（km）。段の下限の拡大率で見える幅の WindowMargin 倍。
+        /// RegionDetailBuilder が作れる下限（0.5 km）より狭くはしない（小さい地域を深く拡大した時）。
+        /// </summary>
         public static float WindowKmFor(float regionKm, int level)
         {
-            return Math.Min(regionKm, regionKm / (float)Math.Pow(2.0, level) * WindowMargin);
+            return Math.Min(regionKm, Math.Max(0.5f, regionKm / (float)Math.Pow(2.0, level) * WindowMargin));
         }
 
         /// <summary>見えている範囲（地図座標）が、窓の中に収まっているか。</summary>

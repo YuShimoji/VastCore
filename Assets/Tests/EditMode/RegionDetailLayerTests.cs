@@ -40,6 +40,23 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
+        public void Window_ReachesPhotoScaleCells_FromZoom128()
+        {
+            Assert.AreEqual(7, RegionDetailLayer.LevelOf(128f));
+            Assert.AreEqual(9, RegionDetailLayer.LevelOf(512f));
+            Assert.AreEqual(2.5f, RegionDetailLayer.WindowKmFor(256f, 7), 0.001f);
+            Assert.AreEqual(0.625f, RegionDetailLayer.WindowKmFor(256f, 9), 0.001f);
+
+            // 現代試作の街の細部（RegionDevelopmentSiteRendering）は 1 セル 3 m 以下の窓で働く。×64 の段は届かず、×128 の段から届く
+            const float SiteDetailCellMeters = 3f;
+            Assert.Greater(RegionDetailLayer.WindowKmFor(256f, 6) * 1000f / RegionDetailLayer.Resolution, SiteDetailCellMeters);
+            Assert.LessOrEqual(RegionDetailLayer.WindowKmFor(256f, 7) * 1000f / RegionDetailLayer.Resolution, SiteDetailCellMeters);
+
+            // 小さい地域を深く拡大しても、作れる下限（0.5 km）より狭い窓は求めない
+            Assert.AreEqual(0.5f, RegionDetailLayer.WindowKmFor(64f, 9), 0.001f);
+        }
+
+        [Test]
         public void Feather_FadesOnlyTheRim_AndKeepsTheInsideOpaque()
         {
             const int Size = 100;

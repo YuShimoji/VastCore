@@ -239,6 +239,7 @@ namespace Vastcore.RegionMap.Preview
                 }
             foreach ((string label, RegionPosition center) in views)
             {
+                var watch = Stopwatch.StartNew();
                 RegionDetail view = RegionDetailBuilder.Build(data, new RegionDetailSpec
                 {
                     CenterMapX = center.X / (data.KmPerMapUnit * 1000f),
@@ -246,10 +247,15 @@ namespace Vastcore.RegionMap.Preview
                     SizeKm = sizeKm,
                     Resolution = resolution
                 });
+                long buildMs = watch.ElapsedMilliseconds;
                 int n = view.Data.Resolution;
+                byte[] pixels = RegionMapRenderer.Render(view.Data, render);
+                long renderMs = watch.ElapsedMilliseconds - buildMs;
                 // 8 km は従来のファイル名のまま。他の一辺は名前に付ける
                 string suffix = sizeKm == 8f ? "" : FormattableString.Invariant($"-{sizeKm:0.##}km");
-                PngWriter.Write($"{stem}-{label}{suffix}.png", RegionMapRenderer.Render(view.Data, render), n, n);
+                PngWriter.Write($"{stem}-{label}{suffix}.png", pixels, n, n);
+                // 探索画面の窓（RegionDetailLayer.Make）と同じ 2 段の時間
+                Console.WriteLine(FormattableString.Invariant($"development_detail {label} {sizeKm:0.###}km cell={view.Data.CellMeters:0.00}m build={buildMs}ms render={renderMs}ms"));
             }
         }
 
