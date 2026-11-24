@@ -8,7 +8,7 @@ Last Updated: 2026-11-24
 |---|---|
 | Project | VastCore Terrain Engine |
 | Branch | `codex/vc-development-readiness-20260711` |
-| Integrated baseline | `2b398b0`（仮の音で鳴る場所、軸 F）。その前に名前の出し方の4点（`8644662`）、探索画面の動き（軸 E、`c12ba69`）、遠征の規則（軸 H、`e13924f`）、命名の第2版と名前・別名・由来の表示、拡大表示（`81e2b19`） |
+| Integrated baseline | `439a92b`（現代試作）。それ以前は `2b398b0`（仮の音で鳴る場所、軸 F）。その前に名前の出し方の4点（`8644662`）、探索画面の動き（軸 E、`c12ba69`）、遠征の規則（軸 H、`e13924f`）、命名の第2版と名前・別名・由来の表示、拡大表示（`81e2b19`） |
 | Active outcome | SP-021 の現代試作。2都市・都市間幹線・空港・郊外の建物を地域データから配置し、広域と拡大の同じ座標で描く。探索画面は ×4 以上で細部へ切り替わる。 |
 | Active artifact | `docs/02_design/REGION_MAP_EXPLORATION_SPEC.md` |
 | Next mission | 2026-11-24 の[人工地形の要望](USER_REQUEST_LEDGER.md)に対する初回試作を比較できるようにする。次段は工場・基地と中世・未来の都市への展開。 |
@@ -41,6 +41,7 @@ Last Updated: 2026-11-24
 
 ## Current Trust Assessment
 
+- thank / 2026-11-24：`439a92b` の正本・Git LFS・Unity 6000.3.6f1 コンパイルを確認。.NET で seed 9・1024² の広域図と拡大図4枚を書き出した（`artifacts/region-map/resume-20261124-thank/`）。
 - 現代試作（PLANNER007、256 km・1024²）。.NET の seed 7・8・9 で2都市・幹線・空港・郊外を生成。seed 9 の再生成は PNG の SHA-256 が一致。Unity 6000.3.6f1 で seed 9 の広域と4箇所の8 km拡大図を出力し、EditMode 651/651、PlayMode 9/9。同じ seed でも Unity と .NET で道路・空港位置に差が出た。画像は `artifacts/region-map/sp021-modern-20261124/`。
 - SP-021 の修正後（PLANNER007、256 km、1024²）。seed 1〜12の全てに湖が残り、seed 8 は1.19 km²・最大25.57 mで拡大しても同じ水面。共通の平野で筋候補の中央値は50.47→43.81 km²。生成時間の中央値は512²で0.707秒、1024²で2.316秒、2048²で9.814秒。2048² PNGは .NET・Unity で確認。EditMode 650/650、PlayMode 9/9。計測は `artifacts/region-map/sp021-terrain-20261124/`。
 - SP-021 の修正前（PLANNER007、地形コード `75ed960`、.NET 9.0.8、256 km、seed 1〜12）：1024² で陸上の窪地（1 km²・深さ2 m以上）と実際の湖は全 seed で0。海面以下を含む閉じた窪地は6〜18個。平野の筋候補は16.00〜75.44 km²（平野の0.21〜0.58%）。生成時間の中央値は512²で0.655秒、1024²で1.934秒、2048²で8.333秒。seed 7 の2048² PNGを .NET と Unity 6000.3.6f1 で書き出し、`artifacts/region-map/sp021-baseline-20261124/` に CSV と PNG を保存した。
