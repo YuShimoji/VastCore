@@ -30,6 +30,8 @@ namespace Vastcore.RegionMap.Preview
             bool compareBaseline = false;
             bool baselineTerrain = false;
             bool developmentDetails = false;
+            string developmentSizes = "8";
+            string developmentAt = null;
             int cloudFrames = 0;
             float cloudStep = 4f;
             bool cloudBefore = false;
@@ -82,6 +84,8 @@ namespace Vastcore.RegionMap.Preview
                     case "--baseline-terrain": baselineTerrain = true; break;
                     case "--modern-development": spec.ModernDevelopment = true; break;
                     case "--development-details": spec.ModernDevelopment = true; developmentDetails = true; break;
+                    case "--development-size": developmentSizes = value; a++; break;
+                    case "--development-at": developmentAt = value; a++; break;
                     case "--cloudframes": cloudFrames = int.Parse(value); a++; break;
                     case "--cloudstep": cloudStep = Float(value); a++; break;
                     case "--cloudbefore": cloudBefore = true; break;
@@ -204,7 +208,9 @@ namespace Vastcore.RegionMap.Preview
                 options.Exaggeration = detailExaggeration;
                 WriteDetails(data, options, stem, detailSites, detailSizes, detailSpec, forms, formScale);
             }
-            if (developmentDetails) WriteDevelopmentDetails(data, options.Style, stem, detailSpec.Resolution);
+            if (developmentDetails)
+                foreach (string size in developmentSizes.Split(','))
+                    WriteDevelopmentDetails(data, options.Style, stem, detailSpec.Resolution, Float(size), developmentAt);
             using var process = Process.GetCurrentProcess();
             Console.WriteLine("peak_working_set_bytes=" + process.PeakWorkingSet64);
             return 0;
@@ -220,20 +226,30 @@ namespace Vastcore.RegionMap.Preview
             Console.WriteLine(FormattableString.Invariant($"highway={length / 1000f:F2}km city_blocks={development.Features.Count(f => f.Kind == RegionDevelopmentFeatureKind.Block)} rural_buildings={development.Features.Count(f => f.Kind == RegionDevelopmentFeatureKind.RuralRoof)}"));
         }
 
-        private static void WriteDevelopmentDetails(RegionData data, RegionMapStyle style, string stem, int resolution)
+        private static void WriteDevelopmentDetails(RegionData data, RegionMapStyle style, string stem, int resolution, float sizeKm, string at)
         {
             var render = new RegionRenderOptions { Style = style, CloudCover = 0f };
-            foreach ((string label, RegionPosition center) in data.Development.Views())
+            // at: 追加で切り出す位置。「x:y;x:y」（地域の北西端からの km）
+            var views = new System.Collections.Generic.List<(string, RegionPosition)>(data.Development.Views());
+            if (!string.IsNullOrEmpty(at))
+                foreach (string pair in at.Split(';'))
+                {
+                    string[] xy = pair.Split(':');
+                    views.Add(("at-" + xy[0] + "-" + xy[1], new RegionPosition(Float(xy[0]) * 1000f, Float(xy[1]) * 1000f)));
+                }
+            foreach ((string label, RegionPosition center) in views)
             {
                 RegionDetail view = RegionDetailBuilder.Build(data, new RegionDetailSpec
                 {
                     CenterMapX = center.X / (data.KmPerMapUnit * 1000f),
                     CenterMapY = center.Y / (data.KmPerMapUnit * 1000f),
-                    SizeKm = 8f,
+                    SizeKm = sizeKm,
                     Resolution = resolution
                 });
                 int n = view.Data.Resolution;
-                PngWriter.Write($"{stem}-{label}.png", RegionMapRenderer.Render(view.Data, render), n, n);
+                // 8 km は従来のファイル名のまま。他の一辺は名前に付ける
+                string suffix = sizeKm == 8f ? "" : FormattableString.Invariant($"-{sizeKm:0.##}km");
+                PngWriter.Write($"{stem}-{label}{suffix}.png", RegionMapRenderer.Render(view.Data, render), n, n);
             }
         }
 

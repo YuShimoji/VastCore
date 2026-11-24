@@ -92,8 +92,8 @@ namespace Vastcore.RegionMap
 
     internal sealed class RegionDevelopmentBuilder
     {
-        private const float PrimaryRadius = 8600f;
-        private const float SecondaryRadius = 5500f;
+        internal const float PrimaryRadius = 8600f;
+        internal const float SecondaryRadius = 5500f;
         private const float HighwayReserve = 42f;
         private const float AccessReserve = 24f;
         private readonly RegionData _terrain;

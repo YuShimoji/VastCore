@@ -24,6 +24,27 @@ namespace Vastcore.RegionMap
             RegionDevelopment plan = data.Development;
             if (plan == null) return null;
             var layer = new RegionDevelopmentRendering(data);
+            if (data.CellMeters <= RegionDevelopmentSiteRendering.MaxCellMeters)
+            {
+                // 写真の縮尺：街区とその建物・道路は細部の描画へ任せ、空港と郊外だけ従来の面で描いて下に敷く
+                bool inBlock = false;
+                foreach (RegionDevelopmentFeature feature in plan.Features)
+                {
+                    if (feature.Kind == RegionDevelopmentFeatureKind.Block) { inBlock = true; continue; }
+                    if (feature.Kind != RegionDevelopmentFeatureKind.Roof) inBlock = false;
+                    else if (inBlock) continue;
+                    layer.DrawFeature(feature);
+                }
+                byte[] site = RegionDevelopmentSiteRendering.Draw(data);
+                for (int p = 0; p < site.Length; p += 4)
+                {
+                    int keep = 255 - site[p + 3];
+                    for (int c = 0; c < 4; c++)
+                        layer._pixels[p + c] = (byte)Math.Min(255, site[p + c] + (layer._pixels[p + c] * keep + 127) / 255);
+                }
+                return layer._pixels;
+            }
+
             foreach (RegionDevelopmentFeature feature in plan.Features)
                 layer.DrawFeature(feature);
 

@@ -88,6 +88,37 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
+        public void ModernDevelopment_DrawsSiteDetailWhenACellIsFinerThanThreeMeters()
+        {
+            RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = 9, ModernDevelopment = true });
+            RegionPosition city = region.Development.SecondaryCity;
+            var spec = new RegionDetailSpec
+            {
+                CenterMapX = (city.X + 2800f) / (region.KmPerMapUnit * 1000f),
+                CenterMapY = city.Y / (region.KmPerMapUnit * 1000f),
+                SizeKm = 0.6f,
+                Resolution = 256,
+            };
+            var options = new RegionRenderOptions { Style = RegionMapStyle.Satellite, CloudCover = 0f };
+            byte[] first = RegionMapRenderer.Render(RegionDetailBuilder.Build(region, spec).Data, options);
+            byte[] second = RegionMapRenderer.Render(RegionDetailBuilder.Build(region, spec).Data, options);
+            CollectionAssert.AreEqual(first, second);
+
+            // 同じ場所を 1 画素 3 m より粗く描くと、街区と屋根の面だけになる。細部の描画は色の種類が大きく増える
+            spec.SizeKm = 1.6f;
+            byte[] coarse = RegionMapRenderer.Render(RegionDetailBuilder.Build(region, spec).Data, options);
+            Assert.Greater(Colors(first), Colors(coarse) * 2);
+
+            int Colors(byte[] pixels)
+            {
+                var seen = new System.Collections.Generic.HashSet<int>();
+                for (int p = 0; p < pixels.Length; p += 4)
+                    seen.Add((pixels[p] >> 3) | (pixels[p + 1] >> 3) << 5 | (pixels[p + 2] >> 3) << 10);
+                return seen.Count;
+            }
+        }
+
+        [Test]
         public void ModernDevelopment_ConnectsTwoCitiesToAnAirportAndSurvivesZoom()
         {
             RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = 9, ModernDevelopment = true });

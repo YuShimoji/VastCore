@@ -9,16 +9,16 @@ Last Updated: 2026-11-24
 | Project | VastCore Terrain Engine |
 | Branch | `codex/vc-development-readiness-20260711` |
 | Integrated baseline | `439a92b`（現代試作）。それ以前は `2b398b0`（仮の音で鳴る場所、軸 F）。その前に名前の出し方の4点（`8644662`）、探索画面の動き（軸 E、`c12ba69`）、遠征の規則（軸 H、`e13924f`）、命名の第2版と名前・別名・由来の表示、拡大表示（`81e2b19`） |
-| Active outcome | SP-021 の現代試作。2都市・都市間幹線・空港・郊外の建物を地域データから配置し、広域と拡大の同じ座標で描く。探索画面は ×4 以上で細部へ切り替わる。 |
+| Active outcome | SP-021 の現代試作。2都市・都市間幹線・空港・郊外の建物を地域データから配置し、広域と拡大の同じ座標で描く。探索画面は ×4 以上で細部へ切り替わる。1 画素 3 m 未満の窓では、街区の中を敷地・屋根・屋上の設備・樹木・車・車線・影まで描く（写真の縮尺の細部。確認用ツールの PNG でだけ出せる）。 |
 | Active artifact | `docs/02_design/REGION_MAP_EXPLORATION_SPEC.md` |
-| Next mission | 2026-11-24 の[人工地形の要望](USER_REQUEST_LEDGER.md)に対する初回試作を比較できるようにする。次段は工場・基地と中世・未来の都市への展開。 |
-| Current bottleneck | 現代試作は鳥瞰図での配置・接続を確認する段階。建物の立体化と他時代・施設への展開が残る。地域の規模と採用解像度は未決（SP-021 8節・9節）。巨大構造物は形の画像の道具待ち（`01M821KYJMRRFKP1VY1F6Q1HS2`）。 |
+| Next mission | 写真の縮尺の細部（2026-11-24 の[建物の見え方の依頼](USER_REQUEST_LEDGER.md)）を探索画面の拡大へつなぎ、本人が寄って確かめられるようにする。その後は工場・基地と中世・未来の都市への展開（順は開発担当の整理）。 |
+| Current bottleneck | 写真の縮尺の細部は確認用ツールの PNG でだけ見られる。探索画面は ×64（1 画素 約4.9 m）までで、細部が出る 3 m 未満に届かない。街区は 570 m の格子、建物の枠は1街区に最大9個のままで、細部はその枠の中を展開している（曲がった道・不整形の敷地は無い）。空港・郊外の建物は従来の面のまま。他時代・施設への展開が残る。地域の規模と採用解像度は未決（SP-021 8節・9節）。巨大構造物は形の画像の道具待ち（`01M821KYJMRRFKP1VY1F6Q1HS2`）。 |
 | Change relation | 訂正（2026-11-24、本人「今現在のこのプロジェクトで間違った方向に進みつつあるので訂正してほしいです。」。本人が選んだ訂正は作業対象と進め方の2つ）。同日の差し戻し3件・動きの回答・段6の「保留」と所見「色々ゲーム部分を勝手に決めすぎ」も同じ向き。2026-11-22 の依頼「複数のタスクの軸が考えられるため整理して、そのまま可能なら開発を継続」で開発担当が作った軸 A〜H の順（SP-021 4.1節）は、次の作業の順として使わない |
 
 目的は [SSOT_WORLD](SSOT_WORLD.md) 1節と1.1節。目標アンカー：
 
 - 開発目標：seedから地域一帯の詳細な鳥瞰図を自動で作り、その上にポイントクリック的な宝探しの探索ゲームを載せられる。
-- 今回の増分：現代の土地利用を地形に重ね、鳥瞰図で2都市と幹線と空港を見分け、拡大して街区・道路・施設の接続を確かめられる。
+- 今回の増分：現代の土地利用を地形に重ね、鳥瞰図で2都市と幹線と空港を見分け、拡大して街区・道路・施設の接続を確かめられる。さらに寄ると、建物・屋根・樹木・車が航空写真の縮尺で見える。
 - 現在のボトルネック：上の表の Current bottleneck。
 
 全体工程（段1〜6）と現在地の表は [SP-021](02_design/REGION_MAP_EXPLORATION_SPEC.md) 4節が持つ。SP-017 / SP-020（Arch・Prefab Stamp・DualGridの経路）は未実施のまま保留で、2026-11-21再開準備時の状態本文は [再開履歴](restart/VC_RESTART_20261101_HISTORY.md) の「2026-11-21 thank版（SP-017再開準備）」へ原文のまま移した。
@@ -41,11 +41,10 @@ Last Updated: 2026-11-24
 
 ## Current Trust Assessment
 
+- thank / 2026-11-24（写真の縮尺の細部）：.NET で seed 9 の4か所と追加3地点を 8 km・1 km・0.5 km で書き出した（`artifacts/region-map/photo-detail-20261124/v3/`。変更前の描き方で 1 km まで寄った絵は同じ場所の `baseline/`）。広域と 8 km の5枚は変更前とバイト一致。Unity 6000.3.6f1 で EditMode 652/652（失敗・スキップ0、追加した細部のテスト1件を含む）。絵は開発担当が見て、中心部の舗装の空き・郊外の駐車場・戸建ての割り方・幹線の脇の4点を直した。本人の確認は未。探索画面では未確認（届かない）。
 - thank / 2026-11-24：`439a92b` の正本・Git LFS・Unity 6000.3.6f1 コンパイルを確認。.NET で seed 9・1024² の広域図と拡大図4枚を書き出した（`artifacts/region-map/resume-20261124-thank/`）。
 - 現代試作（PLANNER007、256 km・1024²）。.NET の seed 7・8・9 で2都市・幹線・空港・郊外を生成。seed 9 の再生成は PNG の SHA-256 が一致。Unity 6000.3.6f1 で seed 9 の広域と4箇所の8 km拡大図を出力し、EditMode 651/651、PlayMode 9/9。同じ seed でも Unity と .NET で道路・空港位置に差が出た。画像は `artifacts/region-map/sp021-modern-20261124/`。
-- SP-021 の修正後（PLANNER007、256 km、1024²）。seed 1〜12の全てに湖が残り、seed 8 は1.19 km²・最大25.57 mで拡大しても同じ水面。共通の平野で筋候補の中央値は50.47→43.81 km²。生成時間の中央値は512²で0.707秒、1024²で2.316秒、2048²で9.814秒。2048² PNGは .NET・Unity で確認。EditMode 650/650、PlayMode 9/9。計測は `artifacts/region-map/sp021-terrain-20261124/`。
-- SP-021 の修正前（PLANNER007、地形コード `75ed960`、.NET 9.0.8、256 km、seed 1〜12）：1024² で陸上の窪地（1 km²・深さ2 m以上）と実際の湖は全 seed で0。海面以下を含む閉じた窪地は6〜18個。平野の筋候補は16.00〜75.44 km²（平野の0.21〜0.58%）。生成時間の中央値は512²で0.655秒、1024²で1.934秒、2048²で8.333秒。seed 7 の2048² PNGを .NET と Unity 6000.3.6f1 で書き出し、`artifacts/region-map/sp021-baseline-20261124/` に CSV と PNG を保存した。
-- PLANNER007 / Unity 6000.3.6f1 / 2026-11-24：取り込み版 `9f7a732` の正本チェックと Git LFS 検査が通り、71 パッケージを登録してコンパイル成功。EditMode 649/649（Region Map 関連46件）、PlayMode 9/9、失敗・スキップ0。ログと結果 XML は `artifacts/logs/resume-20261124-planner007/`。`RegionMapPreview` で seed 7・1024² の衛星写真風 PNG を `artifacts/region-map/region-seed7-satellite.png` に書き出した。
+- SP-021 の地形の修正前・修正後の計測（PLANNER007、seed 1〜12、2行）と、PLANNER007 での取り込み版 `9f7a732` の確認（1行）は [履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-24 写真の縮尺の細部」へ原文のまま移した。
 - thank / Unity 6000.3.6f1 / 2026-11-24（仮の音で鳴る場所、軸 F。写し `D:\vcv\VastCore` で実行し、元のリポジトリへ戻した10ファイルとハッシュ一致）：EditMode 649/649、失敗/skip 0（音のテスト8件）。探索シーンの再生（`-Mode explore`）：PASS。17場面のうち16場面で鳴らし、16場面とも鳴らした後のフレームで AudioSource が再生中で再生位置が進んだのを見た（耳で聞いた確認ではない。0.03〜0.09秒の短い音は次のフレームまでに鳴り終わる回がある）。「音」ボタンを「なし」にした間のサーチでは鳴らした数0。遠征の強い反応（西）は左 -0.60 に寄った。全部見つけた終わり（`ExpeditionComplete`）は操作の台本で起きない。仮の音17個を WAV に書き出し、Windows の読み込みで17個とも読めた。元のリポジトリでは確認用ツールのビルド（0エラー）だけ行った。
 
 - 拡大表示（2026-11-22〜23。EditMode 627/627）、遠征の規則（2026-11-23。639/639、遠征の7場面）、動き（2026-11-23。639/639、3組の撮影）、命名の第2版（2026-11-23。631/631）、名前の出し方（2026-11-23。641/641）の Unity での確認、.NET での拡大した地形・エリアと雲の測定（2026-11-22）、通常Editorでの実マウス・キーボードの確認と十字カーソルの直し（2026-11-21〜22）は [履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md) へ原文のまま移した。
@@ -68,7 +67,8 @@ Last Updated: 2026-11-24
 
 次の作業は SP-021 4節の工程表の段1・2・5 の不足から選ぶ。本人の回答の「次に足したいもの」と表面の軸の受入を、工程表と照合せずに次の作業にしない。SP-017のArch往復検証も自動で次の作業にしない。
 
-1. 現代試作は `./scripts/region-map.ps1 -Mode setup -Seed 9 -ModernDevelopment` または RegionMapPreview の `--seed 9 --development-details` で広域・拡大を出す。Unity は `Vastcore > Region Map > Export Modern Development PNG...` でも広域を書き出せる。探索シーンは `RegionExplorer` の `Spec > Modern Development` で有効化する。開発担当はこの試作を基準に次段の配置と見え方を比較する。
+1. 写真の縮尺の細部は `dotnet run --project tools/RegionMapPreview -c Release -- --seed 9 --development-details --development-size 8,1,0.5 --development-at "110.8:202.5" --out <出力>` で出す（`--development-size` は窓の一辺 km の並び、`--development-at` は追加で切り出す位置 km を `x:y;x:y`）。次は探索画面の最大拡大（`RegionExplorer.MaxZoom` 64）を上げて細部へ届かせ、作成時間と実画面を確かめる。
+   - 現代試作は `./scripts/region-map.ps1 -Mode setup -Seed 9 -ModernDevelopment` または RegionMapPreview の `--seed 9 --development-details` で広域・拡大を出す。Unity は `Vastcore > Region Map > Export Modern Development PNG...` でも広域を書き出せる。探索シーンは `RegionExplorer` の `Spec > Modern Development` で有効化する。開発担当はこの試作を基準に次段の配置と見え方を比較する。
 2. 本人（段5）：巨大構造物の形の方向を決める4枚の画像のための、画像生成の道具の用意（記名ノート `01M826EJVYAQ286JCV61M303BM`）。使えたら開発担当が4枚を生成し、方向を選ぶ問いを1つ送る。地形つきの画像と形への起こし方は、方向が決まった後。それまで構造物の形は作らない（プリミティブからの案は不採用。承認済みの計画は [SP-021 履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md)）。
 3. 本人の判断（方式の分岐）：地域の規模と解像度（256km・1024² のまま／広げる／細かくする。SP-021 9節）。回答が無い間は今の規模のまま Next Action 1 を進める。
 4. 止めているもの（再開は本人の指示）：動き（軸 E）、音（軸 F）、サーチのゲーム性と遠征の規則（軸 H）、命名の響きと表示、段6。コード・確認ページ・回答の記録は残す。本人が挙げた直す点（波紋が距離に見える、矢印が答えの座標を指す、演出が機能に見える、発見物の分類を開発担当が決めた）は SP-021 4.1節と9節。命名の生成の欠陥（seed 1〜12 で数えた。[履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md)）は、段1・2 の後に開発担当が数え方を変えずに直す（順は開発担当の整理）。
