@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 
 namespace Vastcore.RegionMap.Preview
 {
@@ -28,6 +29,7 @@ namespace Vastcore.RegionMap.Preview
             bool lakeDetail = false;
             bool compareBaseline = false;
             bool baselineTerrain = false;
+            bool developmentDetails = false;
             int cloudFrames = 0;
             float cloudStep = 4f;
             bool cloudBefore = false;
@@ -77,6 +79,8 @@ namespace Vastcore.RegionMap.Preview
                     case "--lake-detail": lakeDetail = true; break;
                     case "--compare-baseline": compareBaseline = true; break;
                     case "--baseline-terrain": baselineTerrain = true; break;
+                    case "--modern-development": spec.ModernDevelopment = true; break;
+                    case "--development-details": spec.ModernDevelopment = true; developmentDetails = true; break;
                     case "--cloudframes": cloudFrames = int.Parse(value); a++; break;
                     case "--cloudstep": cloudStep = Float(value); a++; break;
                     case "--cloudbefore": cloudBefore = true; break;
@@ -123,11 +127,17 @@ namespace Vastcore.RegionMap.Preview
                 phaseStart = now;
             }, terrain == null ? null : (Action<string, int, float[]>)terrain.Record, baselineTerrain);
             long generateMs = watch.ElapsedMilliseconds;
+            if (spec.ModernDevelopment && data.Development == null)
+            {
+                Console.Error.WriteLine("この地形では2都市・幹線・空港を配置できる場所が見つかりませんでした。");
+                return 1;
+            }
             Console.WriteLine("工程:" + phaseLog);
             Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
                 "seed={0} res={1} 生成={2}ms 陸={3:P1} 最高={4:F0}m 地点={5}",
                 spec.Seed, spec.Resolution, generateMs, data.LandFraction, data.MaxHeight, data.Sites.Count));
             string stem = Path.Combine(outDir, name ?? ("region-seed" + spec.Seed));
+            if (data.Development != null) DescribeDevelopment(data.Development);
             terrain?.Write(stem);
             if (measure) TerrainMeasurements.Write(data, stem, generateMs, erosionMs);
             if (lakeDetail) TerrainMeasurements.WriteLakeDetail(data, stem);
@@ -191,9 +201,37 @@ namespace Vastcore.RegionMap.Preview
                 options.Exaggeration = detailExaggeration;
                 WriteDetails(data, options, stem, detailSites, detailSizes, detailSpec, forms, formScale);
             }
+            if (developmentDetails) WriteDevelopmentDetails(data, options.Style, stem, detailSpec.Resolution);
             using var process = Process.GetCurrentProcess();
             Console.WriteLine("peak_working_set_bytes=" + process.PeakWorkingSet64);
             return 0;
+        }
+
+        private static void DescribeDevelopment(RegionDevelopment development)
+        {
+            foreach ((string label, RegionPosition center) in development.Views())
+                Console.WriteLine(FormattableString.Invariant($"{label}: x={center.X / 1000f:F3}km y={center.Y / 1000f:F3}km"));
+            float length = 0f;
+            for (int i = 1; i < development.Highway.Count; i++)
+                length += development.Highway[i - 1].DistanceTo(development.Highway[i]);
+            Console.WriteLine(FormattableString.Invariant($"highway={length / 1000f:F2}km city_blocks={development.Features.Count(f => f.Kind == RegionDevelopmentFeatureKind.Block)} rural_buildings={development.Features.Count(f => f.Kind == RegionDevelopmentFeatureKind.RuralRoof)}"));
+        }
+
+        private static void WriteDevelopmentDetails(RegionData data, RegionMapStyle style, string stem, int resolution)
+        {
+            var render = new RegionRenderOptions { Style = style, CloudCover = 0f };
+            foreach ((string label, RegionPosition center) in data.Development.Views())
+            {
+                RegionDetail view = RegionDetailBuilder.Build(data, new RegionDetailSpec
+                {
+                    CenterMapX = center.X / (data.KmPerMapUnit * 1000f),
+                    CenterMapY = center.Y / (data.KmPerMapUnit * 1000f),
+                    SizeKm = 8f,
+                    Resolution = resolution
+                });
+                int n = view.Data.Resolution;
+                PngWriter.Write($"{stem}-{label}.png", RegionMapRenderer.Render(view.Data, render), n, n);
+            }
         }
 
         private static string Json(string value)

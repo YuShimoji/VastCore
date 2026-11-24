@@ -81,6 +81,7 @@ namespace Vastcore.RegionMap
             float[] detailWater = options.Rivers ? data.WaterCoverage : null;
             float[] river = detailWater != null ? detailWater : (satellite && options.Rivers ? BuildRiverCoverage(data, riverThreshold) : null);
             float[] structure = data.StructureCoverage;
+            byte[] development = RegionDevelopmentRendering.Draw(data);
             float castStrength = Math.Min(1f, options.CastShadow * 2.2f);
 
             // 行ごとに独立なので並列に描く
@@ -206,6 +207,15 @@ namespace Vastcore.RegionMap
                         }
                     }
 
+                    int p = i * 4;
+                    if (development != null && development[p + 3] > 0 && height > 0f && data.LakeDepth[i] <= 0f)
+                    {
+                        float keep = 1f - development[p + 3] / 255f;
+                        r = r * keep + development[p];
+                        g = g * keep + development[p + 1];
+                        b = b * keep + development[p + 2];
+                    }
+
                     if (clouds)
                     {
                         // 雲の影は、北西から来る光の向きへずらした位置の雲から落ちる
@@ -225,7 +235,6 @@ namespace Vastcore.RegionMap
                         }
                     }
 
-                    int p = i * 4;
                     pixels[p] = ToByte(r);
                     pixels[p + 1] = ToByte(g);
                     pixels[p + 2] = ToByte(b);

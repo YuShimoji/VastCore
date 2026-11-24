@@ -116,6 +116,9 @@ namespace Vastcore.RegionMap
             var data = new RegionData(windowSpec);
             data.WaterCoverage = new float[res * res];
             data.MaxHeight = region.MaxHeight;
+            data.Development = region.Development;
+            float metersPerMapUnit = region.SizeKm * 1000f / RegionData.MapUnits;
+            data.DevelopmentOrigin = new RegionPosition(originX * metersPerMapUnit, originY * metersPerMapUnit);
             float cell = data.CellMeters;
 
             var detail = new RegionDetail

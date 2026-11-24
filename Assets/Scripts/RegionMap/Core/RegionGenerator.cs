@@ -47,6 +47,11 @@ namespace Vastcore.RegionMap
             RegionAreaBuilder.Build(data, router, land);
             RegionSiteGenerator.Populate(data);
             if (spec.NameStyle != RegionNameStyle.Descriptive) RegionNames.Apply(data, spec.NameStyle);
+            if (spec.ModernDevelopment)
+            {
+                phase?.Invoke("都市・交通網・施設");
+                data.Development = RegionDevelopmentBuilder.Build(data);
+            }
             if (phase != null) phase("完了");
             return data;
         }

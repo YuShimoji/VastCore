@@ -7,12 +7,14 @@
   [int]$Resolution = 1024,
   [string]$Style = 'satellite',
   [string]$OutDir = 'artifacts/region-map',
+  [switch]$ModernDevelopment,
   # explore の時だけ: 開始直後の画面を、この秒数ぶん連続で <OutDir>/clip/ へ撮る（雲の流れを動画にする材料）
   [int]$ClipSeconds = 0,
   [string]$UnityPath = ''
 )
 
 $ErrorActionPreference = 'Stop'
+if ($ModernDevelopment -and $Mode -ne 'setup') { throw '-ModernDevelopment is available with -Mode setup.' }
 $ProjectPath = (Resolve-Path "$PSScriptRoot/..").Path
 Set-Location -LiteralPath $ProjectPath
 
@@ -29,7 +31,8 @@ $OutFull = (Resolve-Path $OutDir).Path
 $log = Join-Path $ProjectPath "artifacts/logs/region-map-$Mode.log"
 
 if ($Mode -eq 'setup') {
-  $png = Join-Path $OutFull "unity-region-seed$Seed-$Style.png"
+  $kind = if ($ModernDevelopment) { 'modern' } else { 'region' }
+  $png = Join-Path $OutFull "unity-$kind-seed$Seed-$Style.png"
   $unityArgs = @(
     '-batchmode', '-nographics', '-quit',
     '-projectPath', "`"$ProjectPath`"",
@@ -38,6 +41,7 @@ if ($Mode -eq 'setup') {
     '-regionOut', "`"$png`"",
     '-logFile', "`"$log`""
   )
+  if ($ModernDevelopment) { $unityArgs += @('-regionModern', 'true', '-regionDevelopmentDetails', 'true') }
 } elseif ($Mode -eq 'play') {
   $unityArgs = @(
     '-projectPath', "`"$ProjectPath`"",

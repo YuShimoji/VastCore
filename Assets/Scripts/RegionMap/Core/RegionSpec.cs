@@ -54,6 +54,9 @@ namespace Vastcore.RegionMap
         /// <summary>全体の湿り気（0〜1）。</summary>
         public float Humidity = 0.5f;
 
+        /// <summary>現代の2都市、幹線、空港、郊外の建物を配置する試作を有効にする。</summary>
+        public bool ModernDevelopment;
+
         /// <summary>探索地点の数。</summary>
         public int SiteCount = 18;
 

@@ -20,6 +20,7 @@ namespace Vastcore.Tests.EditMode
         {
             RegionData a = RegionGenerator.Generate(SmallSpec(11));
             RegionData b = RegionGenerator.Generate(SmallSpec(11));
+            Assert.IsNull(a.Development);
             CollectionAssert.AreEqual(a.Height, b.Height);
             Assert.AreEqual(a.Sites.Count, b.Sites.Count);
             for (int s = 0; s < a.Sites.Count; s++)
@@ -84,6 +85,69 @@ namespace Vastcore.Tests.EditMode
             Assert.AreEqual(RegionBiome.Lake, detail.Data.Biome[detailCenter]);
             Assert.AreEqual(lakeLevel, detail.Data.Height[detailCenter] + detail.Data.LakeDepth[detailCenter], 0.001f);
             Assert.AreEqual(RegionBiome.Ocean, region.Biome[0]);
+        }
+
+        [Test]
+        public void ModernDevelopment_ConnectsTwoCitiesToAnAirportAndSurvivesZoom()
+        {
+            RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = 9, ModernDevelopment = true });
+            RegionDevelopment plan = region.Development;
+            Assert.IsNotNull(plan);
+            Assert.AreEqual(plan.PrimaryCity, plan.Highway[0]);
+            Assert.AreEqual(plan.SecondaryCity, plan.Highway[plan.Highway.Count - 1]);
+            Assert.Contains(plan.AirportAccess[0], new System.Collections.Generic.List<RegionPosition>(plan.Highway));
+
+            bool primaryStreet = false;
+            bool secondaryStreet = false;
+            foreach (var street in plan.Streets)
+            {
+                primaryStreet |= street.Start.Equals(plan.PrimaryCity);
+                secondaryStreet |= street.Start.Equals(plan.SecondaryCity);
+            }
+            Assert.IsTrue(primaryStreet && secondaryStreet);
+            AssertDryPath(plan.Highway);
+            AssertDryPath(plan.AirportAccess);
+
+            int runways = 0;
+            int ruralBuildings = 0;
+            foreach (RegionDevelopmentFeature feature in plan.Features)
+            {
+                if (feature.Kind == RegionDevelopmentFeatureKind.Runway) runways++;
+                if (feature.Kind == RegionDevelopmentFeatureKind.RuralRoof) ruralBuildings++;
+                AssertDry(feature.Center);
+            }
+            Assert.AreEqual(1, runways);
+            Assert.Greater(ruralBuildings, 1);
+
+            float xMap = plan.Airport.Center.X / (region.KmPerMapUnit * 1000f);
+            float yMap = plan.Airport.Center.Y / (region.KmPerMapUnit * 1000f);
+            RegionDetail detail = RegionDetailBuilder.Build(region, new RegionDetailSpec
+            {
+                CenterMapX = xMap, CenterMapY = yMap, Resolution = 256,
+            });
+            Assert.AreSame(plan, detail.Data.Development);
+            Assert.IsTrue(detail.Contains(xMap, yMap));
+
+            void AssertDryPath(System.Collections.Generic.IReadOnlyList<RegionPosition> points)
+            {
+                for (int i = 1; i < points.Count; i++)
+                {
+                    RegionPosition a = points[i - 1], b = points[i];
+                    int steps = Mathf.CeilToInt(Vector2.Distance(new Vector2(a.X, a.Y), new Vector2(b.X, b.Y)) / 125f);
+                    for (int step = 0; step <= steps; step++)
+                    {
+                        float t = step / (float)steps;
+                        AssertDry(new RegionPosition(Mathf.Lerp(a.X, b.X, t), Mathf.Lerp(a.Y, b.Y, t)));
+                    }
+                }
+            }
+
+            void AssertDry(RegionPosition p)
+            {
+                int cell = region.Index((int)(p.X / region.CellMeters), (int)(p.Y / region.CellMeters));
+                Assert.Greater(region.Height[cell], 0f);
+                Assert.AreEqual(0f, region.LakeDepth[cell]);
+            }
         }
 
         [Test]

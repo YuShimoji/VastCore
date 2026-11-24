@@ -215,7 +215,7 @@ Unity（6000.3.6f1。Unity Hub を起動してサインイン済みであるこ�
 
 Editor のメニューは `Vastcore > Region Map > Open Explorer Scene` と `Export Bird's-Eye PNG...`。出力先 `artifacts/` は git 管理外。
 
-確認の記録は [runtime-state](../runtime-state.md) の Current Trust Assessment に置く。
+確認の記録と現代試作（`ModernDevelopment`）の再現手順は [runtime-state](../runtime-state.md) に置く。
 
 `--measure` は CSV と重ね図を出す（水色は陸上の窪地、黄色は海面以下を含む窪地、桃色は筋候補）。`--trace-terrain` は工程別の断面、`--compare-baseline` は共通の平野、`--lake-detail` は湖の拡大図を出す。判定は [TerrainMeasurements.cs](../../tools/RegionMapPreview/TerrainMeasurements.cs)。
 

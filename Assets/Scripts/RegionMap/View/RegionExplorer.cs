@@ -1051,9 +1051,12 @@ namespace Vastcore.RegionMap
                 _subtitle.text = string.Format("{0:0} km 四方 ・ 陸 {1:0}% ・ 最高 {2} m", _data.SizeKm, _data.LandFraction * 100f, Meters(_data.MaxHeight));
                 // 地域ごとに 1 つ決まる、土地の経緯とことばの音の質感（規則から付けた名前の時だけ）
                 if (_data.Naming != null) _subtitle.text += "\n経緯：" + _data.Naming.History + " ・ ことばの音：" + _data.Naming.Sound;
-                ShowMessage(_rules == SearchRules.Expedition
-                    ? "野営地から " + _expedition.StartDays + " 日の遠征。手掛かりを読み、地図をクリックしてサーチする"
-                    : "地図をクリックして位置を決め、サーチで調べる", 8f);
+                if (_data.Spec.ModernDevelopment && _data.Development == null)
+                    ShowMessage("都市・幹線・空港を配置できる場所が見つかりませんでした。「別の地域」で探せます。", 8f);
+                else
+                    ShowMessage(_rules == SearchRules.Expedition
+                        ? "野営地から " + _expedition.StartDays + " 日の遠征。手掛かりを読み、地図をクリックしてサーチする"
+                        : "地図をクリックして位置を決め、サーチで調べる", 8f);
             }
             else
             {

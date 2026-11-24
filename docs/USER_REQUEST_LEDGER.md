@@ -85,6 +85,8 @@
   > ・基地や空港や工場など、ある程度の高さから視認可能な施設
   > ・その他、散逸的に建物が存在する地帯など。
 
+  続く本人指示「上記推奨で進めてください。完了後にPushしてください。」初回の現代試作は2都市・都市間幹線・空港1か所・郊外の建物。
+
 ## Standing Reporting Preferences
 
 - Use Japanese for normal project reports.

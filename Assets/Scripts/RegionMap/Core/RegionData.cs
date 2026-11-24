@@ -73,6 +73,9 @@ namespace Vastcore.RegionMap
         /// <summary>構造物が各セルを覆う割合（0〜1）。拡大した地形に構造物を置いた時だけ持つ。</summary>
         public float[] StructureCoverage;
 
+        public RegionDevelopment Development { get; internal set; }
+        internal RegionPosition DevelopmentOrigin;
+
         public readonly List<RegionArea> Areas = new List<RegionArea>();
 
         public readonly List<RegionSite> Sites = new List<RegionSite>();

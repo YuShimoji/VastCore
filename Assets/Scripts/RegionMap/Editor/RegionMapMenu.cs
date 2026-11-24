@@ -25,13 +25,26 @@ namespace Vastcore.RegionMap.Editor
         [MenuItem("Vastcore/Region Map/Export Bird's-Eye PNG...")]
         public static void ExportPngWithDialog()
         {
-            var spec = new RegionSpec();
-            string path = EditorUtility.SaveFilePanel("鳥瞰図を書き出す", "", "region-seed" + spec.Seed + ".png", "png");
+            ExportWithDialog(new RegionSpec());
+        }
+
+        [MenuItem("Vastcore/Region Map/Export Modern Development PNG...")]
+        public static void ExportModernDevelopmentWithDialog()
+        {
+            ExportWithDialog(new RegionSpec { Seed = 9, ModernDevelopment = true });
+        }
+
+        private static void ExportWithDialog(RegionSpec spec)
+        {
+            string prefix = spec.ModernDevelopment ? "modern-seed" : "region-seed";
+            string path = EditorUtility.SaveFilePanel("鳥瞰図を書き出す", "", prefix + spec.Seed + ".png", "png");
             if (string.IsNullOrEmpty(path)) return;
             try
             {
                 EditorUtility.DisplayProgressBar("Region Map", "地域を生成しています…", 0.3f);
-                Export(spec, new RegionRenderOptions(), path);
+                var options = new RegionRenderOptions();
+                if (spec.ModernDevelopment) options.CloudCover = 0f;
+                Export(spec, options, path);
             }
             finally
             {
@@ -49,11 +62,26 @@ namespace Vastcore.RegionMap.Editor
             var options = new RegionRenderOptions();
             spec.Seed = int.Parse(Argument("-regionSeed", spec.Seed.ToString()));
             spec.Resolution = int.Parse(Argument("-regionRes", spec.Resolution.ToString()));
+            spec.ModernDevelopment = bool.Parse(Argument("-regionModern", "false"));
             options.Style = (RegionMapStyle)Enum.Parse(typeof(RegionMapStyle), Argument("-regionStyle", options.Style.ToString()), true);
+            if (spec.ModernDevelopment) options.CloudCover = 0f;
             string path = Argument("-regionOut", "artifacts/region-map/unity-region-seed" + spec.Seed + ".png");
             RegionData data = Export(spec, options, path);
             Debug.Log(string.Format("[RegionMap] 書き出し完了 seed={0} res={1} 陸={2:P1} 最高={3:F0}m 地点={4} → {5}",
                 spec.Seed, spec.Resolution, data.LandFraction, data.MaxHeight, data.Sites.Count, Path.GetFullPath(path)));
+            if (spec.ModernDevelopment && bool.Parse(Argument("-regionDevelopmentDetails", "false")))
+            {
+                string stem = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path)), Path.GetFileNameWithoutExtension(path));
+                foreach ((string label, RegionPosition center) in data.Development.Views())
+                {
+                    RegionDetail view = RegionDetailBuilder.Build(data, new RegionDetailSpec
+                    {
+                        CenterMapX = center.X / (data.KmPerMapUnit * 1000f),
+                        CenterMapY = center.Y / (data.KmPerMapUnit * 1000f)
+                    });
+                    WritePng(view.Data, RegionMapRenderer.Render(view.Data, options), stem + "-" + label + ".png");
+                }
+            }
         }
 
         /// <summary>コマンドライン用。探索シーンが無ければ作る。</summary>
@@ -74,10 +102,19 @@ namespace Vastcore.RegionMap.Editor
         {
             var watch = System.Diagnostics.Stopwatch.StartNew();
             RegionData data = RegionGenerator.Generate(spec);
+            if (spec.ModernDevelopment && data.Development == null)
+                throw new InvalidOperationException("この地形では2都市・幹線・空港を配置できる場所が見つかりませんでした。");
             long generateMs = watch.ElapsedMilliseconds;
             watch.Restart();
             byte[] pixels = RegionMapRenderer.Render(data, options);
             long renderMs = watch.ElapsedMilliseconds;
+            WritePng(data, pixels, path);
+            Debug.Log(string.Format("[RegionMap] 生成 {0}ms / 描画 {1}ms", generateMs, renderMs));
+            return data;
+        }
+
+        private static void WritePng(RegionData data, byte[] pixels, string path)
+        {
             Texture2D texture = RegionMapTexture.Create(pixels, data.Resolution);
             try
             {
@@ -89,8 +126,6 @@ namespace Vastcore.RegionMap.Editor
             {
                 UnityEngine.Object.DestroyImmediate(texture);
             }
-            Debug.Log(string.Format("[RegionMap] 生成 {0}ms / 描画 {1}ms", generateMs, renderMs));
-            return data;
         }
 
         /// <summary>探索シーンを作る。既にあれば何もしない。作ったら true。</summary>
