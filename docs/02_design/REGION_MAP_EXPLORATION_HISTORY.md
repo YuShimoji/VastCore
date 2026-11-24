@@ -1020,3 +1020,26 @@ runtime-state Next Action 3 の行:
 
 - thank / 2026-11-24（写真の縮尺の細部）：.NET で seed 9 の4か所と追加3地点を 8 km・1 km・0.5 km で書き出した（`artifacts/region-map/photo-detail-20261124/v3/`。変更前の描き方で 1 km まで寄った絵は同じ場所の `baseline/`）。広域と 8 km の5枚は変更前とバイト一致。Unity 6000.3.6f1 で EditMode 652/652（失敗・スキップ0、追加した細部のテスト1件を含む）。絵は開発担当が見て、中心部の舗装の空き・郊外の駐車場・戸建ての割り方・幹線の脇の4点を直した。本人の確認は未。探索画面では未確認（届かない）。
 - thank / 2026-11-24：`439a92b` の正本・Git LFS・Unity 6000.3.6f1 コンパイルを確認。.NET で seed 9・1024² の広域図と拡大図4枚を書き出した（`artifacts/region-map/resume-20261124-thank/`）。
+
+## 2026-11-25 音の既定を「なし」にした時（`8dc7729`）に書き換えた記載の原文（SP-021 と runtime-state から移した）
+
+- SP-021 4.1節 F の元の行:
+
+| F サウンド | 「サウンド」 | 4・6 | 17 の場面に開発担当が合成した音を鳴らす版（6節）の受入を、本人が差し戻した（「やっていること自体がズレている」）。開発担当は音の中身を作らない | 止めている（音の扱いは本人） |
+
+- SP-021 6節 音 の元の行:
+
+- 音（軸 F、`RegionSound`・`RegionSoundPlayer`。音はすべて仮）: 17 の場面（`RegionSoundCue`）に、素材ファイルを使わない短い合成音を、動きの時計で動きと同じ時刻（案の秒 ×1.6。動きを切ると遅れなし）に鳴らす。表は `RegionSound.All`。遠征の弱い・強い反応は方角の東を右・西を左へ寄せる。`RegionExplorer.SoundEnabled`・`SoundVolume`（既定 0.6、仮）・`NextSoundLevel()`（「音」ボタン。中→小→なし→大）・`Sounds`（鳴らした記録）。
+
+- SP-021 9節 サウンド の元の行:
+
+| サウンド（軸 F）の音 | 受入 `01M84NE26VM5MZAYR7QNM4D2WB` を本人が差し戻した。開発担当が合成した音の扱い（既定で切る／コードごと外す／別の素材へ替える）と用意の経路は本人が決める | 音の素材と鳴らし方 | 音の変更（止めている） |
+
+- runtime-state Trust Assessment 軸 F の元の行:
+
+- thank / Unity 6000.3.6f1 / 2026-11-24（仮の音で鳴る場所、軸 F。写し `D:\vcv\VastCore` で実行し、元のリポジトリへ戻した10ファイルとハッシュ一致）：EditMode 649/649、失敗/skip 0（音のテスト8件）。探索シーンの再生（`-Mode explore`）：PASS。17場面のうち16場面で鳴らし、16場面とも鳴らした後のフレームで AudioSource が再生中で再生位置が進んだのを見た（耳で聞いた確認ではない。0.03〜0.09秒の短い音は次のフレームまでに鳴り終わる回がある）。「音」ボタンを「なし」にした間のサーチでは鳴らした数0。遠征の強い反応（西）は左 -0.60 に寄った。全部見つけた終わり（`ExpeditionComplete`）は操作の台本で起きない。仮の音17個を WAV に書き出し、Windows の読み込みで17個とも読めた。元のリポジトリでは確認用ツールのビルド（0エラー）だけ行った。
+
+- runtime-state 作業ツリー 軸 F の元の行:
+
+- 仮の音で鳴る場所（軸 F、2026-11-24）で足したのは `View/RegionSound.cs`・`View/RegionSoundPlayer.cs`・`Assets/Tests/EditMode/RegionSoundTests.cs`（各 meta つき）と、空のフォルダ `Assets/Resources/RegionMapSound/`（`.gitkeep` とフォルダの meta）。変えたのは `View/RegionExplorer.cs`（各場面から鳴らす、「音」ボタン、`CloseCard`・`OpenDiscovered`、AudioListener を付ける）と `Editor/RegionExplorerSmoke.cs`（仮の音の WAV の書き出し、音の手順と `sound-result.txt`）。`Core/`・シーン・`ProjectSettings/`・`Packages/` は変えていない。
+
