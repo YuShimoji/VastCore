@@ -23,6 +23,7 @@ namespace Vastcore.RegionMap.Preview
             bool cloudTile = false;
             bool areas = false;
             bool suitability = false;
+            bool measure = false;
             int cloudFrames = 0;
             float cloudStep = 4f;
             bool cloudBefore = false;
@@ -67,6 +68,7 @@ namespace Vastcore.RegionMap.Preview
                     case "--cloudtile": cloudTile = true; break;
                     case "--areas": areas = true; break;
                     case "--suitability": suitability = true; break;
+                    case "--measure": measure = true; break;
                     case "--cloudframes": cloudFrames = int.Parse(value); a++; break;
                     case "--cloudstep": cloudStep = Float(value); a++; break;
                     case "--cloudbefore": cloudBefore = true; break;
@@ -101,11 +103,13 @@ namespace Vastcore.RegionMap.Preview
             if (cloudTile) return WriteCloudTile(spec, options, outDir, name);
             string phaseName = null;
             long phaseStart = 0;
+            long erosionMs = 0;
             var phaseLog = new System.Text.StringBuilder();
             RegionData data = RegionGenerator.Generate(spec, next =>
             {
                 long now = watch.ElapsedMilliseconds;
                 if (phaseName != null) phaseLog.Append("  ").Append(phaseName).Append("=").Append(now - phaseStart).Append("ms");
+                if (phaseName == "隆起と侵食") erosionMs = now - phaseStart;
                 phaseName = next;
                 phaseStart = now;
             });
@@ -114,6 +118,8 @@ namespace Vastcore.RegionMap.Preview
             Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
                 "seed={0} res={1} 生成={2}ms 陸={3:P1} 最高={4:F0}m 地点={5}",
                 spec.Seed, spec.Resolution, generateMs, data.LandFraction, data.MaxHeight, data.Sites.Count));
+            string stem = Path.Combine(outDir, name ?? ("region-seed" + spec.Seed));
+            if (measure) TerrainMeasurements.Write(data, stem, generateMs, erosionMs);
 
             var biomeCount = new int[Enum.GetValues(typeof(RegionBiome)).Length];
             for (int i = 0; i < data.Biome.Length; i++) biomeCount[(int)data.Biome[i]]++;
@@ -143,7 +149,6 @@ namespace Vastcore.RegionMap.Preview
                 Console.WriteLine("描画=" + renderMs + "ms → " + Path.GetFullPath(file));
             }
 
-            string stem = Path.Combine(outDir, name ?? ("region-seed" + spec.Seed));
             if (areas || suitability)
             {
                 foreach (RegionArea area in data.Areas)
