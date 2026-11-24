@@ -33,6 +33,7 @@ namespace Vastcore.RegionMap.Preview
             int cloudFrames = 0;
             float cloudStep = 4f;
             bool cloudBefore = false;
+            bool weatherPreview = false;
             bool names = false;
             string detailSites = null;
             var detailSpec = new RegionDetailSpec();
@@ -84,6 +85,7 @@ namespace Vastcore.RegionMap.Preview
                     case "--cloudframes": cloudFrames = int.Parse(value); a++; break;
                     case "--cloudstep": cloudStep = Float(value); a++; break;
                     case "--cloudbefore": cloudBefore = true; break;
+                    case "--weather-preview": weatherPreview = true; break;
                     case "--names": names = true; break;
                     case "--naming":
                         spec.NamingRulesText = File.ReadAllText(value, System.Text.Encoding.UTF8);
@@ -137,6 +139,7 @@ namespace Vastcore.RegionMap.Preview
                 "seed={0} res={1} 生成={2}ms 陸={3:P1} 最高={4:F0}m 地点={5}",
                 spec.Seed, spec.Resolution, generateMs, data.LandFraction, data.MaxHeight, data.Sites.Count));
             string stem = Path.Combine(outDir, name ?? ("region-seed" + spec.Seed));
+            if (weatherPreview) return WeatherPreview.Write(data, stem, Math.Max(1, cloudFrames));
             if (data.Development != null) DescribeDevelopment(data.Development);
             terrain?.Write(stem);
             if (measure) TerrainMeasurements.Write(data, stem, generateMs, erosionMs);

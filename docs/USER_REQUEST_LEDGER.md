@@ -87,6 +87,15 @@
 
   続く本人指示「上記推奨で進めてください。完了後にPushしてください。」初回の現代試作は2都市・都市間幹線・空港1か所・郊外の建物。
 
+- 2026-11-24（チャット、SP-021 の雲）。本人原文
+
+  > このプロジェクトの雲に関して、以下の仕様を実現したいです。
+  > ・地上の天気
+  > ・ハリケーンのような特殊な雲の流れ方
+  > ・地域や地形に特有の雲の流れ方が出来ているか
+
+  鳥瞰図の比較試作は `RegionMapPreview --weather-preview`。地域の風向と地形・湿り気から雲と地表の雨を求め、風向反転と渦を比較する。渦の構成は [NOAA/NHC](https://www.nhc.noaa.gov/marinersguide.pdf)、湿った風が斜面を上昇して雲と雨を生む点は [気象庁](https://www.jma.go.jp/jma/kids/kids/faq/a5_21.html) を参照。探索画面への統合と地上視点の要否は未決。
+
 ## Standing Reporting Preferences
 
 - Use Japanese for normal project reports.
