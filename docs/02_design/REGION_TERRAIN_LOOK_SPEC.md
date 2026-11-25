@@ -196,6 +196,12 @@ dotnet run --project tools/RegionMapPreview -c Release -- --seed 8 --res 1024 --
 3. 二つ目の地点では、同じ設定のまま始め、実寸の目印から崖・棚・岩屑を再び撮る。初回だけの素材準備時間と、地点ごとの手置き個数・カメラ調整回数・制作者の操作時間・生成待ちを分けて記録する。Unity メニューは現在 seed 9 用で、バッチの `-Seed` は中心と視点を自動で選び直さない。「手軽さ」を判断する材料は、二地点目で何を手で直したかにある。
 4. 採用を比べる成果物は、同条件の遠中近の組、崖の裾から棚へ視点を移した短い画面、二地点目での手間。製品に接続した段階では同じ機種・解像度の Player で移動時のちらつき、切替時の待ち、CPU・GPU のフレーム時間とメモリも比べる。画質と許容する手間の採否は本人。現時点で確認できたのは Editor の固定画と .NET の簡易描画まで。[Unity の URP 負荷計測](https://docs.unity3d.com/6000.3/Documentation/Manual/urp/understand-performance.html)
 
+### 5.5 崖下の洞窟入口
+
+seed 9 の X38.8・Y60.9 では、傾いた岩棚の下に通路を通し、片側に崩れた岩を寄せる。外からは砂利道が最初の曲がり角まで見え、手前の岩の下面には外光が届く。奥へ進むほどその光を弱める。形の参考は [Skyrim の制作者による洞窟の組み立て方](https://www.gamedeveloper.com/design/skyrim-s-modular-approach-to-level-design) と [米国国立公園局の Balconies Cave](https://www.nps.gov/places/balconies-cave.htm)、明暗の参考は [Carlsbad Caverns の自然入口](https://www.nps.gov/media/photo/gallery-item.htm?gid=D0D6F890-155D-451F-67AA7B66C2426F55&id=d17f1de2-155d-451f-67c5-e8e3e39ced39)。
+
+岩肌と転石には Poly Haven の CC0 素材 [Rock Face 03](https://polyhaven.com/a/rock_face_03) と [Boulder 01](https://polyhaven.com/a/boulder_01) を使用。通常の洞窟試作を Play し、プレイヤーの開始位置・入口のすぐ手前・屋外へ戻った位置から見え方を確認する。
+
 ## 6. 出典と、取れなかった物
 
 - 米国国立公園局の [地層の色と岩質](https://www.nps.gov/colm/learn/nature/rock-layers.htm)・[崖を流れる黒い筋](https://www.nps.gov/colm/learn/nature/geology-faq.htm)、Unity の [三方向投影](https://docs.unity3d.com/Packages/com.unity.shadergraph@17.0/manual/Triplanar-Node.html) を第2区切りの参照にした。先行調査は Zion Geology 2007 と Capitol Reef Geologic Features が全文、Canyonlands・Arches・Bryce・Mesa Verde・Glen Canyon・Natural Bridges・Colorado NM は要約として読めた範囲。

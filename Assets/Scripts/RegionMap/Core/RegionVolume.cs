@@ -66,6 +66,8 @@ namespace Vastcore.RegionMap
         public uint Seed;
 
         public readonly List<RegionVolumeCavity> Cavities = new List<RegionVolumeCavity>();
+        // Optional local formation, sampled by meshing, collision and light rays alike.
+        [NonSerialized] internal Func<float, float, float, float, float> LocalFormation;
 
         /// <summary>見どころの位置（m）と、そこを正面から見る時にカメラを置く方位（度。0 で南から北を見る）。置き方の規則が入れる。</summary>
         public float FocusX, FocusY, FocusZ;
@@ -227,7 +229,7 @@ namespace Vastcore.RegionMap
                 float wall = cavities[c].Distance(x, y, z, Spec.Seed);
                 if (wall < density) density = wall;
             }
-            return density;
+            return Spec.LocalFormation == null ? density : Spec.LocalFormation(x, y, z, density);
         }
 
         private void Extract(float[] density, float v)

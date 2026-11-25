@@ -39,8 +39,10 @@ namespace Vastcore.RegionMap.Editor
                 var camera = walk.GetComponent<Camera>();
                 var exterior = SceneManager.GetActiveScene();
                 Vector3 start = walk.Feet;
+                RegionTerrainViewMenu.Capture(camera, null, null);
                 Shot(camera, output, "01-mouth", camera.transform.forward);
                 Approach(walk);
+                Shot(camera, output, "01-threshold", camera.transform.forward);
                 if (System.Array.IndexOf(Environment.GetCommandLineArgs(), "-caveKeyboardCheck") >= 0)
                 {
                     Debug.Log("[CaveWalk] Ready for keyboard entry in Game view");

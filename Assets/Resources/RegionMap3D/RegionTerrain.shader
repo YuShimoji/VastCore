@@ -8,12 +8,20 @@ Shader "Vastcore/RegionTerrain"
 {
     Properties
     {
+        [HideInInspector] _Cull ("Cull", Float) = 2
         _BaseMap ("Ground Map (top-down)", 2D) = "white" {}
         _RockColor ("Rock Color", Color) = (0.59, 0.553, 0.502, 1)
         _RockStart ("Rock Starts (normal Y)", Range(0, 1)) = 0.766
         _RockFull ("Rock Only (normal Y)", Range(0, 1)) = 0.53
         _BandAmount ("Strata Band Amount", Range(0, 0.3)) = 0.1
         [HideInInspector] _LooseRock ("Detached rock", Float) = 0
+        [HideInInspector] _CliffPhoto ("Cliff", 2D) = "white" {}
+        [HideInInspector] _CliffNormal ("Cliff normal", 2D) = "bump" {}
+        [HideInInspector] _Gravel ("Cave gravel", 2D) = "white" {}
+        [HideInInspector] _Scree ("Loose grit", 2D) = "white" {}
+        [HideInInspector] _Mouth ("Tunnel mouth", Vector) = (0,0,0,0)
+        [HideInInspector] _Outward ("Towards daylight", Vector) = (0,0,1,0)
+        [HideInInspector] _Boulder ("Scanned boulder", Float) = 0
     }
 
     SubShader
@@ -23,12 +31,14 @@ Shader "Vastcore/RegionTerrain"
         Pass
         {
             Name "ForwardLit"
+            Cull [_Cull]
             Tags { "LightMode" = "UniversalForward" }
 
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_local_fragment _ REGION_SANDSTONE
+            #pragma multi_compile_local_fragment _ REGION_CAVE_MOUTH
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fog
@@ -46,10 +56,15 @@ Shader "Vastcore/RegionTerrain"
                 half _RockFull;
                 half _BandAmount;
                 half _LooseRock;
+                float4 _Mouth, _Outward;
+                half _Boulder;
             CBUFFER_END
 
             #if defined(REGION_SANDSTONE)
             #include "RegionSandstone.hlsl"
+            #endif
+            #if defined(REGION_CAVE_MOUTH)
+            #include "RegionCaveMouth.hlsl"
             #endif
 
             struct Attributes
@@ -111,6 +126,15 @@ Shader "Vastcore/RegionTerrain"
                 // 岩の下では、空からの光も減らす
                 half3 ambient = SampleSH(normal) * (0.35 + 0.65 * input.color.r);
                 half3 color = albedo * (light.color * direct + ambient);
+                #if defined(REGION_CAVE_MOUTH)
+                float3 relative = input.positionWS - _Mouth.xyz;
+                float influence = 1 - smoothstep(34, 62, length(relative));
+                if (influence > 0)
+                {
+                    half3 mouth = MouthSurface(relative, normal, input.uv, input.color.rg, light);
+                    color = lerp(color, mouth, influence);
+                }
+                #endif
                 color = MixFog(color, input.fogFactor);
                 return half4(color, 1);
             }

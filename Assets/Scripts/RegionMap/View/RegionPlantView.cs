@@ -12,7 +12,11 @@ namespace Vastcore.RegionMap
 
         public static int[] AddTo(Transform root, RegionLookScene scene)
         {
-            List<RegionPlant> plants = RegionPlantField.Build(scene);
+            return AddTo(root, RegionPlantField.Build(scene));
+        }
+
+        internal static int[] AddTo(Transform root, List<RegionPlant> plants)
+        {
             var counts = new int[4];
             if (plants.Count == 0) return counts;
             Shader shader = Resources.Load<Shader>("RegionMap3D/RegionPlants");

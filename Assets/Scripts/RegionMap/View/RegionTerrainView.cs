@@ -17,7 +17,7 @@ namespace Vastcore.RegionMap
         public float Strata = 1f;
 
         /// <summary>体積で作り直す部分の升目（m）。0 以下なら体積は作らない。</summary>
-        public float VoxelMeters = 1f;
+        public float VoxelMeters = 0.66f;
     }
 
     /// <summary>
@@ -54,6 +54,7 @@ namespace Vastcore.RegionMap
                 Strata = spec.Strata,
             }).Data;
             RegionVolumeSpec volume = spec.VoxelMeters > 0f ? RegionVolumeFeatures.CliffShelterAndCave(terrain, spec.VoxelMeters) : null;
+            if (volume != null && volume.Cavities.Count > 1) RegionCaveMouth.ShapeRecess(volume);
             RegionVolumePatch patch = volume != null ? RegionVolumePatch.Build(terrain, volume) : null;
 
             // 光は Unity が計算するので、貼る画像には陰影と落ち影を焼き込まない
@@ -74,6 +75,7 @@ namespace Vastcore.RegionMap
             {
                 result.Focus = new Vector3(volume.FocusX, volume.FocusY, -volume.FocusZ);
                 result.FacingYawDegrees = volume.FacingYawDegrees;
+                if (volume.Cavities.Count > 1) RegionCaveMouth.Build(result, material);
             }
             else
             {

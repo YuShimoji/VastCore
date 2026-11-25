@@ -205,7 +205,7 @@ dotnet run --project tools/RegionMapPreview -c Release --no-build -- --seed 7 --
 
 3D化の試作（`Core/RegionTerrainMesh`、段階 A。範囲の外の試作で、採否は本人）は、`--view3d "方位,見下ろす角,高さの倍率,距離km,幅,高さ"` で斜めから見た絵を出す。拡大した窓を見るときは `--view3d-focus "地図X,地図Y,窓の一辺km"` を足す。 段階 B〜D（2026-11-25。値は仮）: B `--strata 1`＝拡大した地形に地層の段（`RegionDetailSpec.Strata`。既定 0 は入れず、今までの地形とバイト一致）。C `--routes`＝通行の区分と道筋（`Core/RegionTraversal`）。D `--volume`＝崖を1つ選び、崖下のえぐれと洞窟を体積で作って、断面図も出す（`Core/RegionVolume`。面の取り出しは Surface Nets）。`--view3d-lit` は面の向きから光を計算する。B・C の細かい説明は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-25 3D化の試作・段階 D（正本から移した行）」。
 
-Unity では `./scripts/region-map.ps1 -Mode view3d` が、砂岩の台地の場面を 3 視点で撮る（[想定と結果](REGION_TERRAIN_LOOK_SPEC.md)）。崖の撮影は `-Mode view3d-cave`。歩くには Unity の `Vastcore > Region Map > Open 3D Cliff And Cave Prototype` を開き Play。seed 9 の X38.8・Y60.9 で崖下の横穴へ W で進み、E で別マップに入る。WASD で移動、右ドラッグ・矢印キーで視点を変える。石橋をくぐり、奥の右手の岩棚から橋を渡り、反対側を下って入口で E を押すと、同じ崖下へ戻る。試作はこの1地点。Unity の歩行検証で橋上と下道の足元の差は 6.9 m、通常の Game ビューでも E による往復を確認。
+Unity では `./scripts/region-map.ps1 -Mode view3d` が、砂岩の台地の場面を 3 視点で撮る（[想定と結果](REGION_TERRAIN_LOOK_SPEC.md)）。崖の撮影は `-Mode view3d-cave`。歩くには Unity の `Vastcore > Region Map > Open 3D Cliff And Cave Prototype` を開き Play。seed 9 の X38.8・Y60.9 で崖下の横穴へ W で進み、E で別マップに入る。WASD で移動、右ドラッグ・矢印キーで視点を変える。石橋をくぐり、奥の右手の岩棚から橋を渡り、反対側を下って入口で E を押すと、同じ崖下へ戻る。[洞口の岩と外光](REGION_TERRAIN_LOOK_SPEC.md#55-崖下の洞窟入口)の試作はこの1地点。Unity の歩行検証で橋上と下道の足元の差は 6.9 m、通常の Game ビューでも E による往復を確認。
 
 2行目は、エリアの図・エリアと地点の一覧（根拠と採点）・採点の図を書き出す。ファイル名と雲の連番のオプションは [履歴](REGION_MAP_EXPLORATION_HISTORY.md)。
 
