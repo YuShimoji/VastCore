@@ -53,6 +53,50 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
+        public void Detail_Strata_IsOffByDefault_AndAddsCliffFacesWithoutMovingWater()
+        {
+            RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = 9 });
+            var spec = new RegionDetailSpec { CenterMapX = 38.8f, CenterMapY = 60.9f, SizeKm = 2.5f, Resolution = 256 };
+            Assert.AreEqual(0f, spec.Strata);
+            RegionData plain = RegionDetailBuilder.Build(region, spec).Data;
+            Assert.IsNull(plain.Cliff);
+
+            spec.Strata = 1f;
+            RegionData layered = RegionDetailBuilder.Build(region, spec).Data;
+            Assert.IsNotNull(layered.Cliff);
+            CollectionAssert.AreEqual(plain.WaterCoverage, layered.WaterCoverage);
+
+            int faces = 0;
+            for (int i = 0; i < layered.Cliff.Length; i++)
+            {
+                Assert.AreEqual(plain.Height[i] > 0f, layered.Height[i] > 0f);
+                if (layered.Cliff[i] > 0.5f) faces++;
+            }
+            Assert.Greater(faces, 0);
+            Assert.Greater(SteepCells(layered), SteepCells(plain) * 2);
+
+            // 60 度より急なセルの数
+            int SteepCells(RegionData data)
+            {
+                int n = data.Resolution;
+                int steep = 0;
+                float span = 2f * data.CellMeters;
+                for (int y = 1; y < n - 1; y++)
+                {
+                    for (int x = 1; x < n - 1; x++)
+                    {
+                        int i = x + y * n;
+                        if (data.Height[i] <= 0f) continue;
+                        float gx = (data.Height[i + 1] - data.Height[i - 1]) / span;
+                        float gy = (data.Height[i + n] - data.Height[i - n]) / span;
+                        if (gx * gx + gy * gy > 3f) steep++;
+                    }
+                }
+                return steep;
+            }
+        }
+
+        [Test]
         public void Generate_DifferentSeed_ProducesDifferentRegion()
         {
             RegionData a = RegionGenerator.Generate(SmallSpec(11));

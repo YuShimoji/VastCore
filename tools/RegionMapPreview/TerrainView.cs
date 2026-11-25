@@ -29,6 +29,12 @@ namespace Vastcore.RegionMap.Preview
             public int Width = 1600;
             public int Height = 900;
             public int Supersample = 2;
+
+            /// <summary>
+            /// 地形の面の向きから光を計算する（太陽は北西、高さ 38 度）。貼る画像は陰影なしで描いたものを渡す。
+            /// 急な面は真上からの画像が引き伸ばされて縞になるので、岩の色へ寄せる。崖の形を見るための指定。
+            /// </summary>
+            public bool Lit = false;
         }
 
         internal static byte[] Render(RegionData data, RegionTerrainMesh mesh, byte[] albedo, Camera camera, out int width, out int height)
@@ -76,6 +82,12 @@ namespace Vastcore.RegionMap.Preview
                 sy[v] = h * 0.5f - (dx * ux + dy * uy + dz * uz) / cz * focal;
             });
 
+            float[] normals = camera.Lit ? BuildNormals(mesh) : null;
+            const float SunAltitude = 38f * (float)Math.PI / 180f;
+            float sunX = -(float)Math.Cos(SunAltitude) * 0.70710678f;
+            float sunY = (float)Math.Sin(SunAltitude);
+            float sunZ = -(float)Math.Cos(SunAltitude) * 0.70710678f;
+
             var zbuffer = new float[w * h];
             for (int i = 0; i < zbuffer.Length; i++) zbuffer[i] = float.MaxValue;
             var color = new float[w * h * 3];
@@ -120,6 +132,25 @@ namespace Vastcore.RegionMap.Preview
                         float u = (l0 * ua + l1 * ub + l2 * uc) * z;
                         float v = (l0 * va + l1 * vb + l2 * vc) * z;
                         Sample(albedo, n, u, v, out float r, out float g, out float b);
+                        if (normals != null)
+                        {
+                            float nx = l0 * normals[ia * 3] + l1 * normals[ib * 3] + l2 * normals[ic * 3];
+                            float ny = l0 * normals[ia * 3 + 1] + l1 * normals[ib * 3 + 1] + l2 * normals[ic * 3 + 1];
+                            float nz = l0 * normals[ia * 3 + 2] + l1 * normals[ib * 3 + 2] + l2 * normals[ic * 3 + 2];
+                            Normalize(nx, ny, nz, out nx, out ny, out nz);
+                            // 40 度より急な面から岩の色を混ぜ、58 度で岩だけにする
+                            float rock = (0.766f - ny) / 0.236f;
+                            if (rock > 0f)
+                            {
+                                if (rock > 1f) rock = 1f;
+                                r += (150f - r) * rock;
+                                g += (141f - g) * rock;
+                                b += (128f - b) * rock;
+                            }
+                            float facing = nx * sunX + ny * sunY + nz * sunZ;
+                            float light = 0.38f + 1.05f * (facing > 0f ? facing : 0f);
+                            r *= light; g *= light; b *= light;
+                        }
                         // 遠くを霞ませる
                         float haze = 1f - (float)Math.Exp(-z / (camera.Distance * 2.2f));
                         haze *= 0.75f;
@@ -166,6 +197,32 @@ namespace Vastcore.RegionMap.Preview
                 }
             }
             return output;
+        }
+
+        /// <summary>頂点ごとの面の向き（上向きの単位ベクトル）。格子の隣の頂点との差から作る。</summary>
+        private static float[] BuildNormals(RegionTerrainMesh mesh)
+        {
+            int cols = mesh.Columns;
+            int rows = mesh.Rows;
+            var normals = new float[cols * rows * 3];
+            float[] p = mesh.Positions;
+            Parallel.For(0, rows, j =>
+            {
+                for (int i = 0; i < cols; i++)
+                {
+                    int left = (i > 0 ? i - 1 : i) + j * cols;
+                    int right = (i < cols - 1 ? i + 1 : i) + j * cols;
+                    int up = i + (j > 0 ? j - 1 : j) * cols;
+                    int down = i + (j < rows - 1 ? j + 1 : j) * cols;
+                    float dx = p[right * 3] - p[left * 3];
+                    float dz = p[down * 3 + 2] - p[up * 3 + 2];
+                    float slopeX = dx > 0f ? (p[right * 3 + 1] - p[left * 3 + 1]) / dx : 0f;
+                    float slopeZ = dz > 0f ? (p[down * 3 + 1] - p[up * 3 + 1]) / dz : 0f;
+                    int v = (i + j * cols) * 3;
+                    Normalize(-slopeX, 1f, -slopeZ, out normals[v], out normals[v + 1], out normals[v + 2]);
+                }
+            });
+            return normals;
         }
 
         private static float SampleHeight(RegionTerrainMesh mesh, float worldX, float worldZ)

@@ -45,10 +45,8 @@
 | A エリア区分けと名前 | 行は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-25 命名の第3版」へ原文のまま移した | 1・3・4 | 5節「エリア」「命名の仕組み」 | 開発担当（余裕のある時） |
 | B・C 雲の流れの複雑さ、地点の位置の根拠 | 軸 B・C の行は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) へ原文のまま移した | 2・3・4 | 実装した（5節）。本人が「軽微」とした | 開発担当（余裕があれば） |
 | D 拡大した表示と巨大構造物 | 「より拡大した表示」「拡大したときに、巨大構造物などを表示できるか」 | 5 | 段5の行と同じ（拡大した地形は統合済みで本人は「近い」。形は画像から起こす） | 本人（形の画像の進め方） |
-| E UIエフェクト・アニメーション | 「UIエフェクト」「アニメーションやエフェクトなども加えます」 | 4・6 | 最小の実装（B を ×1.6、C から3つ。6節）に本人は「一部直したい」（`01M831H77K6HV96N1BYM6J0JZK`）。波紋が対象物との距離に見える、演出が機能を兼ねて見える、矢印が答えの座標を指す、「全体的に恣意的過ぎる」。C の3つと長さは「保留」。原文は [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md) | 止めている |
-| F サウンド | 「サウンド」 | 4・6 | 17 の場面に開発担当が合成した音を鳴らす版（6節）の受入を、本人が差し戻した（「やっていること自体がズレている」）。既定は切る（9節）。開発担当は音の中身を作らない | 止めている（音の扱いは本人） |
+| E・F・H UIエフェクト、サウンド、サーチのゲーム性 | 3行は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-25 3D化の試作・段階 B（正本から移した行）」 へ原文のまま移した | 4・6 | 3つとも止めている（再開は本人の指示。コードと回答の記録は残す） | 本人 |
 | G デザインの差し替え | 「カーソルのデザインなど差し替えがデザイン次第の箇所は今後差し替える可能性が高い」 | 4 | 入口を作った（`RegionMapSkin`、手順は6節）。デザインの画像は本人が用意する | 本人（デザインの画像） |
-| H サーチのゲーム性 | 「サーチシステムなどのゲーム性を向上させたい。」「CとBがより近い。ゲームシステムとして。ナラティブについては要検討。」 | 4・6 | 最小の実装＝遠征の規則（6節）の受入を、本人が差し戻した（「タスクがレガシー化しているため」、`01M82V588FZE0C05C0YP34DNGN`） | 止めている |
 
 1回目・2回目の回答（2026-11-22）の内容と着手の順は [履歴](REGION_MAP_EXPLORATION_HISTORY.md)。
 次の順は [runtime-state](../runtime-state.md) の Next Action（開発担当の整理）。
@@ -164,16 +162,13 @@ scripts/region-map.ps1                 Unity のバッチ入口（setup / explor
 - 地図座標は X・Y とも 0〜100。X は東へ、Y は南へ増える。高さ（m）は `RegionData.HeightAtMap`。
 - `ExplorationSession.Search(x, y)`: いちばん近い未発見の地点との距離で `Found`（2.5以内）/ `Strong`（8以内）/ `Faint`（18以内）/ `None` を返し、`Found` なら発見済みに加える。距離の値は調整用の公開フィールド。
 - `ExplorationSession.Sense(x, y)`: 回数を消費せずに反応だけを見る。
-- 遠征の規則（`RegionExpedition`、軸 H の最小の実装、2026-11-23。数値と文は仮、値は公開フィールド）: 始め30日。サーチ1回＝1日＋最寄りの拠点から距離10（約26 km）ごとに1日＋雪・岩・ツンドラ・標高1,500 m 超・海は1日。足りなければサーチしない。強い・弱い反応に、最寄りの未発見の地点への8方位が付く。発見した地点は拠点になり、日数 +2、近い2か所の手掛かり（`RegionClue`）が開く。「詳しく読む」（1日）で目印の名前からの方角と距離（記号名だけの地点は記号名の全体）が出る。始めは4件。どの拠点でもサーチできなくなるか全部見つけると終わる。土地の経緯は使わない。見返りの入れ物は `ExpeditionReward`。
-- 出発の野営地: 地点がいちばん多い陸のエリア（雪・岩・高地のエリアは後回し）の名前の位置の近く（seed 7 はブザロカラ平野）。
 - `SaveDiscoveredIds()` / `Restore(ids)`: 発見済みの地点 ID を保存・復元する（保存先は載せるゲームが決める）。
 - エリア: `RegionData.Areas`（一覧）、`Area`（セルごとの番号。0は外洋）、`AreaById(id)`、`AreaAtMap(x, y)`、`PlaceNameAtMap(x, y)`（陸は「中央の山地」、岸に近い海は「…の沖」、その外は「北の外洋」）。境界線の絵は `RegionAreas.RenderBoundaries(data)`。
 - 地点の根拠: `RegionSite.Score` / `Rank` / `Candidates` / `Reason` / `AreaId` / `Feature`、任意のセルの採点は `RegionSiteGenerator.Rate(data, x, y, out kind, out score)`。
 - 呼び名: `RegionSpec.NameStyle`、`RegionNames.Apply(data, style)`。拡大した地形: `RegionDetailBuilder.Build(region, spec)` → `RegionDetail`（`Data`、`LocalX` / `LocalY`、`Contains`、一致の測定値）。探索画面は `RegionDetailLayer`（5節）が使う。構造物: `RegionStructureStamp.Place(detail, mapX, mapY, kind, form, scale)` → `RegionStructure`。構造物は探索画面からは使っていない。
 - 画像の差し替え（軸 G、`RegionMapSkin`）: 下の手順で画像を置くと、探索画面の十字・輪・点の絵が替わる。`RegionMapSkin.Load(name)` は置いていなければ null、`RegionExplorer.CustomSkin` は差し替えた部品の名前を返す。
 - `RegionExplorer`（MonoBehaviour）: `IsReady`、`Region`、`Session`、`Rules`・`SetRules(SearchRules)`（`Expedition` 既定／`Signal` は前の反応だけの規則）、`Expedition`、`RestartExpedition()`、`ReadClue(clue)`、`LastDirection`、`CursorMapPosition`、`MoveCursor(x, y)`、`SearchAtCursor()`、`NextRegion()`、`NextStyle()`、`NextCloudOpacity()`、`NextAreaDisplay()`、`CloudLevel`、`AreaDisplay`、`CloudDrift`、`Detail`（`RegionDetailLayer`。状態 `Phase`・作成時間 `LastBuildMs`・`LastRenderMs`）、`SetView(zoom, mapX, mapY)`。
-- 動き（軸 E、`RegionMotion`。秒と色は候補）: 状態はすぐ変わり、絵だけが後から追う。入力は動きの終わりを待たない。`RegionExplorer.MotionEnabled`（false で全てを最後の姿にする。Inspector の「動き」）、`MotionLength`（既定 1.6。試作の秒に掛ける）、`MotionBusy`、`MotionClockStep`（0 は実時間。撮影は 1/30）、`PointerEnabled`、`SetMotionExtras(countUp, glow, rowGlow)`（C の3つ）。
-- 音（軸 F、`RegionSound`・`RegionSoundPlayer`。音はすべて仮）: 17 の場面（`RegionSoundCue`、表は `RegionSound.All`）に短い合成音（素材ファイルなし）を、動きの時計で動きと同じ時刻（案の秒 ×1.6。動きを切ると遅れなし）に鳴らす。遠征の反応は東を右・西を左へ寄せる。既定は切る（`RegionExplorer.SoundEnabled` false、ボタン「なし」）。`NextSoundLevel()`（なし→大→中→小）・`SoundVolume`（0.6、仮）・`SoundLevelText`・`Sounds`（鳴らした記録）。
+- 遠征の規則（軸 H、`RegionExpedition`）・動き（軸 E、`RegionMotion`）・音（軸 F、`RegionSound`）の説明は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-25 3D化の試作・段階 B（正本から移した行）」 へ原文のまま移した。3つとも止めている軸で、コードは残っており、説明は今も効く。
 - 探索画面の操作: 地図を左クリックでカーソル移動、Space / Enter / ボタンでサーチ、矢印キーで微調整（1回分は拡大に応じて小さくなる）、ホイールで拡大（最大 ×512。×4 以上で細部の地形、×128 以上で街の写真の縮尺の細部。雲は ×64〜×128 で消える＝開発担当の仮の扱い）、右または中ドラッグで地図を動かす。「雲」ボタンで 濃い → 薄い → なし（衛星写真の時だけ）。「地名」ボタンで 名前 → 名前と境界 → なし。カーソル位置の部品に、その場所のエリア名が出る。低い雲は東南東へ、地図の幅を420秒で横切る速さで流れる（`_cloudCrossSeconds`）。
 - 遠征の画面: 左に「遠征の残り」（日数と、カーソル位置の日数の内訳）、右に「手掛かり」（先に読めた4件と「詳しく読む」）。地図に出発の野営地（白い三角）、最寄りの拠点の輪と線、直前の反応の方角の矢印。終わると中央に結果。
 
@@ -209,7 +204,7 @@ dotnet run --project tools/RegionMapPreview -c Release --no-build -- --seed 7 --
 dotnet run --project tools/RegionMapPreview -c Release --no-build -- --seed 7 --res 1024 --style satellite --names --detail 14,5,10 --detailsize 8,2 --forms --out artifacts/region-map
 ```
 
-3D化の試作（`Core/RegionTerrainMesh`、段階 A。範囲の外の試作で、採否は本人）は、`--view3d "方位,見下ろす角,高さの倍率,距離km,幅,高さ"` で斜めから見た絵を出す。拡大した窓を見るときは `--view3d-focus "地図X,地図Y,窓の一辺km"` を足す。
+3D化の試作（`Core/RegionTerrainMesh`、段階 A。範囲の外の試作で、採否は本人）は、`--view3d "方位,見下ろす角,高さの倍率,距離km,幅,高さ"` で斜めから見た絵を出す。拡大した窓を見るときは `--view3d-focus "地図X,地図Y,窓の一辺km"` を足す。 段階 B（2026-11-25）は、拡大した地形に地層の段を入れる（`RegionDetailSpec.Strata`。既定 0 は入れず、今までの地形とバイト一致。ツールは `--strata 1`）。広域で傾きのある山地の斜面に、高さ数十 m の崖の帯と棚ができる。崖を作る層は半分弱で、同じ崖も横に途切れる。海岸と川の位置は変えない。海食崖は出ない（広域の岸のセルが低い。seed 9 で最高 23 m）。`--view3d-lit` は面の向きから光を計算した絵にし、`--steep-coasts` は岸のセルが高い場所を出す。
 
 2行目は、エリアの図・エリアと地点の一覧（根拠と採点）・採点の図を書き出す。ファイル名と雲の連番のオプションは [履歴](REGION_MAP_EXPLORATION_HISTORY.md)。
 
@@ -256,6 +251,7 @@ Editor のメニューは `Vastcore > Region Map > Open Explorer Scene` と `Exp
 | サウンド（軸 F）の音 | 受入 `01M84NE26VM5MZAYR7QNM4D2WB` を本人が差し戻し、2026-11-25 に「既定で切る」と決めた（`8dc7729`）。残る判断は音を用意する経路 | 音の素材と鳴らし方 | 音の変更（止めている） |
 | 地域の規模と解像度 | 256km・1024² のまま / 広げる / 細かくする | 生成時間、タイル分割の要否 | 段1の拡張 |
 | 写真の縮尺の細部の作り方 | 真上からの絵をコードで描き込む（今の版）/ 建物を立体にして Unity の光で描く / 本人が用意した屋根・地面の画像を貼る | 斜めから見られるか、探索画面が絵の板のままか3Dの場面になるか、素材を誰が作るか | 回答が無い間は今の描き込みを続ける（「地図をそのまま細かくする」の延長） |
+| 3D化（2026-11-25 の本人の相談。原文は [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md)） | ①地表へ降りる範囲（地点の周り 0.5〜1 km / 8 km 窓 / 地域全体）②洞窟・張り出しに局所の体積（等値面）を使うか（[INVARIANTS](../INVARIANTS.md) の再承認）③工程表のどこに置くか ④崖のある生成を広域にも入れるか | 解像度と待ち時間、洞窟・アーチが出るか、次の作業の順、本人が「近い」とした広域の絵が変わるか | 段階 B（地層の段）の採否、段階 C（通行の区分と道筋）、段階 D（局所の体積） |
 
 現在も効く決定: 描き方は衛星写真風。拡大した表示は「地図をそのまま細かくする」。呼び名は seed から自動で作り、命名は仕組みとして作る（第3版は5節）。川の上の地点は川岸へ移す。構造物の大きさは今のまま。サーチのゲーム性（C＋B）・動き（B、×1.6）・名前の出し方の4点・段6の案A は、止めた軸での本人の選択で、再開の時に読み直す。既存の構造物経路（SP-017・SP-020）は使わない（再開の判断はしていない）。
 決定の出所と、これまでの受入の回答の記録は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) へ原文のまま移した（2026-11-22）。2回目の回答は4.1節、原文は [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md)。
