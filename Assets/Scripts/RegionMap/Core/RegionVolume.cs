@@ -370,10 +370,14 @@ namespace Vastcore.RegionMap
                     sun = 0f;
                     break;
                 }
+                // 真上の判定は、面から 3 升目離れた所から始める（ほぼ垂直な崖で、壁の出っ張りを「頭上の岩」と数えないように）
+                float skyX = Positions[i * 3] + Normals[i * 3] * 3f * v;
+                float skyY = Positions[i * 3 + 1] + Normals[i * 3 + 1] * 3f * v;
+                float skyZ = Positions[i * 3 + 2] + Normals[i * 3 + 2] * 3f * v;
                 float sky = 1f;
-                for (int s = 1; s <= 48; s++)
+                for (int s = 0; s <= 48; s++)
                 {
-                    if (Density(x, y + s * v, z) <= 0f) continue;
+                    if (Density(skyX, skyY + s * v, skyZ) <= 0f) continue;
                     sky = 0f;
                     break;
                 }

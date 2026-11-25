@@ -260,8 +260,9 @@ namespace Vastcore.RegionMap.Preview
                             float open = 1f;
                             if (sun != null)
                             {
-                                direct = l0 * sun[ia] + l1 * sun[ib] + l2 * sun[ic];
                                 open = l0 * sky[ia] + l1 * sky[ib] + l2 * sky[ic];
+                                // 「近くの岩の影」は、岩の下でだけ使う（開けた崖の面は周りの地形と同じ明るさにする）
+                                direct = Math.Max(open, l0 * sun[ia] + l1 * sun[ib] + l2 * sun[ic]);
                             }
                             float facing = nx * frame.SunX + ny * frame.SunY + nz * frame.SunZ;
                             // 岩の下（張り出しの下・洞窟の中）は、空からの光も減らす

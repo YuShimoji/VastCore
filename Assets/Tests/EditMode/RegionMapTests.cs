@@ -177,6 +177,51 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
+        public void TerrainView_MeshesFaceOutward_AndTheTerrainIsCutWhereTheVolumeIs()
+        {
+            var data = new RegionData(new RegionSpec { Resolution = 64, SizeKm = 0.064f });
+            for (int y = 0; y < 64; y++)
+                for (int x = 0; x < 64; x++)
+                    data.Height[x + y * 64] = 20f + x;
+            var spec = new RegionVolumeSpec { CenterX = 32f, CenterZ = 32f, SizeMeters = 32f, VoxelMeters = 1f };
+            spec.Cavities.Add(new RegionVolumeCavity { Ax = 30f, Ay = 52f, Az = 32f, Bx = 44f, By = 52f, Bz = 32f, RadiusA = 2.5f, RadiusB = 2.5f });
+            RegionVolumePatch patch = RegionVolumePatch.Build(data, spec);
+            RegionTerrainMesh grid = RegionTerrainMesh.Build(data, 1, 1f);
+
+            UnityEngine.Mesh whole = RegionTerrainView.TerrainMesh(grid, null);
+            UnityEngine.Mesh cut = RegionTerrainView.TerrainMesh(grid, patch);
+            UnityEngine.Mesh volume = RegionTerrainView.PatchMesh(patch, 63f);
+            try
+            {
+                // 体積の箱の範囲は、地形から抜かれる
+                Assert.AreEqual(grid.TriangleCount * 3, whole.triangles.Length);
+                Assert.Less(cut.triangles.Length, whole.triangles.Length);
+                // 地形の面は上を向き、北（Core の Z が小さい側）が Unity の +Z になる
+                foreach (UnityEngine.Vector3 normal in whole.normals) Assert.Greater(normal.y, 0f);
+                Assert.AreEqual(0f, whole.vertices[0].z, 1e-4f);
+                Assert.Less(whole.vertices[whole.vertexCount - 1].z, 0f);
+
+                // 体積の面は、頂点の外向きと同じ側が表になる
+                int[] triangles = volume.triangles;
+                UnityEngine.Vector3[] vertices = volume.vertices;
+                UnityEngine.Vector3[] normals = volume.normals;
+                for (int t = 0; t < triangles.Length; t += 3)
+                {
+                    int a = triangles[t], b = triangles[t + 1], c = triangles[t + 2];
+                    UnityEngine.Vector3 face = UnityEngine.Vector3.Cross(vertices[b] - vertices[a], vertices[c] - vertices[a]);
+                    Assert.GreaterOrEqual(UnityEngine.Vector3.Dot(face, normals[a] + normals[b] + normals[c]), 0f);
+                }
+                Assert.AreEqual(patch.VertexCount, volume.colors32.Length);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(whole);
+                UnityEngine.Object.DestroyImmediate(cut);
+                UnityEngine.Object.DestroyImmediate(volume);
+            }
+        }
+
+        [Test]
         public void VolumeFeatures_PlaceAShelterAndACaveAtACliff()
         {
             RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = 9 });

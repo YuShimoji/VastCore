@@ -203,7 +203,9 @@ dotnet run --project tools/RegionMapPreview -c Release --no-build -- --seed 7 --
 dotnet run --project tools/RegionMapPreview -c Release --no-build -- --seed 7 --res 1024 --style satellite --names --detail 14,5,10 --detailsize 8,2 --forms --out artifacts/region-map
 ```
 
-3D化の試作（`Core/RegionTerrainMesh`、段階 A。範囲の外の試作で、採否は本人）は、`--view3d "方位,見下ろす角,高さの倍率,距離km,幅,高さ"` で斜めから見た絵を出す。拡大した窓を見るときは `--view3d-focus "地図X,地図Y,窓の一辺km"` を足す。 段階 B〜D（2026-11-25。値はどれも仮で、ゲームの規則ではない）: B `--strata 1`＝拡大した地形に地層の段（`RegionDetailSpec.Strata`。既定 0 は入れず、今までの地形とバイト一致）。C `--routes`＝通行の区分と道筋（`Core/RegionTraversal`）。D `--volume`＝崖を1つ選び、崖下のえぐれと洞窟を体積で作って、断面図も出す（`Core/RegionVolume`。面の取り出しは Surface Nets）。`--view3d-lit` は面の向きから光を計算する。B・C の細かい説明は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-25 3D化の試作・段階 D（正本から移した行）」。
+3D化の試作（`Core/RegionTerrainMesh`、段階 A。範囲の外の試作で、採否は本人）は、`--view3d "方位,見下ろす角,高さの倍率,距離km,幅,高さ"` で斜めから見た絵を出す。拡大した窓を見るときは `--view3d-focus "地図X,地図Y,窓の一辺km"` を足す。 段階 B〜D（2026-11-25。値は仮）: B `--strata 1`＝拡大した地形に地層の段（`RegionDetailSpec.Strata`。既定 0 は入れず、今までの地形とバイト一致）。C `--routes`＝通行の区分と道筋（`Core/RegionTraversal`）。D `--volume`＝崖を1つ選び、崖下のえぐれと洞窟を体積で作って、断面図も出す（`Core/RegionVolume`。面の取り出しは Surface Nets）。`--view3d-lit` は面の向きから光を計算する。B・C の細かい説明は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-25 3D化の試作・段階 D（正本から移した行）」。
+
+Unity では、メニュー `Vastcore > Region Map > Open 3D Cliff And Cave Prototype` か `./scripts/region-map.ps1 -Mode view3d`（3 視点を撮る）で見る（`View/RegionTerrainView`）。
 
 2行目は、エリアの図・エリアと地点の一覧（根拠と採点）・採点の図を書き出す。ファイル名と雲の連番のオプションは [履歴](REGION_MAP_EXPLORATION_HISTORY.md)。
 
@@ -250,7 +252,7 @@ Editor のメニューは `Vastcore > Region Map > Open Explorer Scene` と `Exp
 | サウンド（軸 F）の音 | 受入 `01M84NE26VM5MZAYR7QNM4D2WB` を本人が差し戻し、2026-11-25 に「既定で切る」と決めた（`8dc7729`）。残る判断は音を用意する経路 | 音の素材と鳴らし方 | 音の変更（止めている） |
 | 地域の規模と解像度 | 256km・1024² のまま / 広げる / 細かくする | 生成時間、タイル分割の要否 | 段1の拡張 |
 | 写真の縮尺の細部の作り方 | 真上からの絵をコードで描き込む（今の版）/ 建物を立体にして Unity の光で描く / 本人が用意した屋根・地面の画像を貼る | 斜めから見られるか、探索画面が絵の板のままか3Dの場面になるか、素材を誰が作るか | 回答が無い間は今の描き込みを続ける（「地図をそのまま細かくする」の延長） |
-| 3D化（2026-11-25 の本人の相談。原文は [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md)） | ①地表へ降りる範囲（地点の周り 0.5〜1 km / 8 km 窓 / 地域全体）②洞窟・張り出しの局所の体積（等値面）は、本人が「局所だけ承認」と答えた（2026-11-25、[INVARIANTS](../INVARIANTS.md)）③工程表のどこに置くか ④崖のある生成を広域にも入れるか | 解像度と待ち時間、洞窟・アーチが出るか、次の作業の順、本人が「近い」とした広域の絵が変わるか | 段階 B〜D は作った（D は崖1か所の試作）。Unity の画面での表示、継ぎ目の頂点合わせ、置く場所の規則の拡張。段階 B（地層の段）の崖の出方は、本人が「この方向でよい」と答えた（2026-11-25。既定は入れないまま） |
+| 3D化（2026-11-25 の本人の相談。原文は [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md)） | ①地表へ降りる範囲（地点の周り 0.5〜1 km / 8 km 窓 / 地域全体）②洞窟・張り出しの局所の体積（等値面）は、本人が「局所だけ承認」と答えた（2026-11-25、[INVARIANTS](../INVARIANTS.md)）③工程表のどこに置くか ④崖のある生成を広域にも入れるか | 解像度と待ち時間、洞窟・アーチが出るか、次の作業の順、本人が「近い」とした広域の絵が変わるか | 段階 B〜D と Unity での表示は作った（D は崖1か所の試作）。継ぎ目の頂点合わせ、置く場所の規則の拡張、岩の質感。段階 B（地層の段）の崖の出方は、本人が「この方向でよい」と答えた（2026-11-25。既定は入れないまま） |
 
 現在も効く決定: 描き方は衛星写真風。拡大した表示は「地図をそのまま細かくする」。呼び名は seed から自動で作り、命名は仕組みとして作る（第3版は5節）。川の上の地点は川岸へ移す。構造物の大きさは今のまま。サーチのゲーム性（C＋B）・動き（B、×1.6）・名前の出し方の4点・段6の案A は、止めた軸での本人の選択で、再開の時に読み直す。既存の構造物経路（SP-017・SP-020）は使わない（再開の判断はしていない）。
 決定の出所と、これまでの受入の回答の記録は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) へ原文のまま移した（2026-11-22）。2回目の回答は4.1節、原文は [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md)。
