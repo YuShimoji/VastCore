@@ -22,6 +22,7 @@
     <Compile Include="TerrainMeasurements.cs" />
     <Compile Include="WeatherPreview.cs" />
     <Compile Include="TerrainView.cs" />
+    <Compile Include="RouteView.cs" />
     <Compile Include="..\..\Assets\Scripts\RegionMap\Core\**\*.cs" LinkBase="Core" />
   </ItemGroup>
 

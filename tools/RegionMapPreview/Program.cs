@@ -48,6 +48,7 @@ namespace Vastcore.RegionMap.Preview
             string view3dFocus = null;
             bool view3dLit = false;
             bool steepCoasts = false;
+            bool routes = false;
 
             for (int a = 0; a < args.Length; a++)
             {
@@ -119,6 +120,7 @@ namespace Vastcore.RegionMap.Preview
                     case "--view3d-focus": view3dFocus = value; a++; break;
                     case "--view3d-lit": view3dLit = true; break;
                     case "--steep-coasts": steepCoasts = true; break;
+                    case "--routes": routes = true; break;
                     case "--forms": forms = true; break;
                     case "--formscale": formScale = Float(value); a++; break;
                     default:
@@ -223,7 +225,8 @@ namespace Vastcore.RegionMap.Preview
                 foreach (string size in developmentSizes.Split(','))
                     WriteDevelopmentDetails(data, options.Style, stem, detailSpec.Resolution, Float(size), developmentAt);
             if (steepCoasts) DescribeSteepCoasts(data);
-            if (view3d != null) Write3dView(data, options, stem, view3d, view3dFocus, detailSpec, view3dLit);
+            if (routes && view3dFocus == null) RouteView.WriteRegion(data, options.Style, stem);
+            if (view3d != null) Write3dView(data, options, stem, view3d, view3dFocus, detailSpec, view3dLit, routes);
             using var process = Process.GetCurrentProcess();
             Console.WriteLine("peak_working_set_bytes=" + process.PeakWorkingSet64);
             return 0;
@@ -233,9 +236,11 @@ namespace Vastcore.RegionMap.Preview
         /// 地形を斜めから見た絵を書き出す（3D化の試作、段階 A）。
         /// view は "方位,見下ろす角,高さの倍率,距離km,幅,高さ"（例 "0,32,3,220,1600,900"）。
         /// focus は "地図X,地図Y,窓の一辺km"。指定すると、その窓を拡大した地形で作り直して、その中心を見る。
+        /// routes を付けると、その窓の通行の区分と道筋（段階 C）を絵に重ね、数値を出す。
         /// </summary>
-        private static void Write3dView(RegionData data, RegionRenderOptions options, string stem, string view, string focus, RegionDetailSpec detailSpec, bool lit)
+        private static void Write3dView(RegionData data, RegionRenderOptions options, string stem, string view, string focus, RegionDetailSpec detailSpec, bool lit, bool routes)
         {
+            RouteView.Result route = null;
             bool strata = focus != null && detailSpec.Strata > 0f;
             string[] v = view.Split(',');
             float exaggeration = v.Length > 2 ? Float(v[2]) : 3f;
@@ -270,6 +275,19 @@ namespace Vastcore.RegionMap.Preview
                     "拡大した地形: 作成={0}ms 海陸の一致={1:P2} 標高の差の平均={2:F1}m 川の一致={3:P1}",
                     buildWatch.ElapsedMilliseconds, detail.CoastAgreement, detail.MeanHeightDifference, detail.RiverAgreement));
                 DescribeSlopes(terrain);
+                if (routes)
+                {
+                    // 出発点と行き先は段なしの地形で選ぶ（段あり・段なしを同じ場所で比べるため）
+                    RegionData plain = terrain;
+                    if (strata)
+                    {
+                        spec.Strata = 0f;
+                        plain = RegionDetailBuilder.Build(data, spec).Data;
+                    }
+                    RouteView.PickEnds(plain, out int source, out int target);
+                    if (strata) RouteView.Analyze(plain, source, target, "段なし");
+                    route = RouteView.Analyze(terrain, source, target, strata ? "段あり" : "段なし");
+                }
             }
 
             var render = new RegionRenderOptions { Style = options.Style, CloudCover = 0f, Exaggeration = options.Exaggeration };
@@ -277,19 +295,21 @@ namespace Vastcore.RegionMap.Preview
             if (lit) { render.Exaggeration = 0f; render.CastShadow = 0f; }
             var watch = Stopwatch.StartNew();
             byte[] albedo = RegionMapRenderer.Render(terrain, render);
+            if (route != null) RouteView.Paint(albedo, route);
             // 広域は半分の格子（約52万頂点）、拡大した地形は全セルで作る
             RegionTerrainMesh mesh = RegionTerrainMesh.Build(terrain, terrain.Resolution > 512 && focus == null ? 2 : 1, exaggeration);
             long meshMs = watch.ElapsedMilliseconds;
             watch.Restart();
             byte[] image = TerrainView.Render(terrain, mesh, albedo, camera, out int width, out int height);
-            string file = stem + "-3d" + (focus != null ? "-detail" : "") + (strata ? "-strata" : "") + (lit ? "-lit" : "") + "-" + view.Replace(',', '_') + ".png";
+            string file = stem + "-3d" + (focus != null ? "-detail" : "") + (strata ? "-strata" : "") + (lit ? "-lit" : "") + (route != null ? "-routes" : "") + "-" + view.Replace(',', '_') + ".png";
             PngWriter.Write(file, image, width, height);
             // 真上から見た絵も残す（地図の上で崖の帯がどう写るかを比べる）
             if (focus != null)
             {
                 byte[] top = albedo;
                 if (lit) top = RegionMapRenderer.Render(terrain, new RegionRenderOptions { Style = options.Style, CloudCover = 0f, Exaggeration = options.Exaggeration });
-                PngWriter.Write(stem + "-3d-detail" + (strata ? "-strata" : "") + "-top.png", top, terrain.Resolution, terrain.Resolution);
+                if (route != null && lit) RouteView.Paint(top, route);
+                PngWriter.Write(stem + "-3d-detail" + (strata ? "-strata" : "") + (route != null ? "-routes" : "-top") + ".png", top, terrain.Resolution, terrain.Resolution);
             }
             Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
                 "3D: 頂点={0} 三角形={1} 準備={2}ms 描画={3}ms → {4}", mesh.VertexCount, mesh.TriangleCount, meshMs, watch.ElapsedMilliseconds, Path.GetFullPath(file)));

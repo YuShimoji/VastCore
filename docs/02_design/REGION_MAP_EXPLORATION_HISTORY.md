@@ -1153,3 +1153,22 @@ runtime-state Next Action 3 の行:
 ### runtime-state の Current Trust Assessment から移した行
 
 - thank / Unity 6000.3.6f1 / 2026-11-25（音の既定を「なし」、軸 F、`8dc7729`。写し `D:\vcv\VastCore` を HEAD `82eb47a`＋音の3ファイルに揃えて実行し、元へ戻した3ファイルとハッシュ一致）：EditMode 654/654、失敗/skip 0（HEAD の653件＋既定の音のテスト1件）。探索シーンの再生（`-Mode explore`）：PASS。開いた直後は `SoundEnabled` false・ボタン「音：なし」（`explorer-1-start.png` で目視）で、サーチまでに鳴らした数0（切ってある間の予約3件は鳴らさず）。ボタンで「大」→「中」へ入れた後、17場面のうち16場面で鳴らし16場面とも再生が進んだ（耳では聞いていない。`ExpeditionComplete` は台本で起きない）。「なし」に戻した間は0。2026-11-24 の仮の音の検証（649/649、WAV 17個）は履歴へ移した。
+
+## 2026-11-25 3D化の試作・段階 C（正本から移した行と出典）
+
+### SP-021 6節から移した行（止めている軸 H の画面の説明。今も効く）
+
+- 遠征の画面: 左に「遠征の残り」（日数と、カーソル位置の日数の内訳）、右に「手掛かり」（先に読めた4件と「詳しく読む」）。地図に出発の野営地（白い三角）、最寄りの拠点の輪と線、直前の反応の方角の矢印。終わると中央に結果。
+
+### runtime-state の Current Trust Assessment から移した行
+
+- 3D化の試作・段階 A（PLANNER007、2026-11-25。範囲の外の試作で、採否は本人）：`Core/RegionTerrainMesh.cs`（標高→三角形メッシュ。海は高さ0）と確認用の簡易描画 `TerrainView.cs`（`--view3d`）。seed 9 の広域（頂点26万・三角形52万、高さ3倍）と、都市1・空港の8 km 拡大（頂点105万・三角形209万、高さ2倍）を斜めから出力。建物は地面に描かれたままで高さを持たない。
+- 3D化の試作・段階 B（PLANNER007、2026-11-25。本人は崖の出方に「この方向でよい」と答えた）：拡大した地形に地層の段（`RegionDetailSpec.Strata`、既定 0）。seed 9 の山（X38.8 Y60.9）で、60°を超える陸のセルが 8 km 窓 0.25%→2.23%、2.5 km 窓 0.12%→2.68%、0.5 km 窓 0.05%→4.42%。海陸と川の一致は 100% のまま。標高の差の平均は 8 km 窓 12.0→12.9 m、0.5 km 窓 7.0→20.0 m。段なしの絵は変更前とバイト一致（3視点）。海食崖は出ない（岸のセルが最高 23 m）。真上の地図では、崖は細い点線状の影にしか写らない。Unity 6000.3.6f1 で EditMode 657/657（失敗・skip 0。段階 A・B のテスト各1件を含む）。画像は `artifacts/region-map/3d-prototype-20261125/` と `3d-strata-20261125/`。Unity の Mesh へ渡す View 層は未作成。
+
+### 出典（2026-11-25 に開いて確かめたもの）
+
+- Paris ら「Terrain Amplification with Implicit 3D Features」（ACM TOG 2019）。著者のプロジェクトページ https://perso.liris.cnrs.fr/aparis/public_html/projects/paris2019_3D.html の抄録だけ読めた。既存の高さ場を取り込み、陰関数の部品を Poisson サンプリングで置いて張り出し・アーチ・洞窟を足す。段階 D の方式の根拠。
+- Unity 6000.3 マニュアル「Paint holes in the terrain」。Terrain の穴は洞窟の入口と張り出しのためで、洞窟の形は別の道具で作る前提。穴の縁はギザギザになり、URP では Terrain Holes を有効にしないとビルドで穴が消える。
+- Tobler のハイキング関数（速さ km/h = 6·exp(-3.5·|傾き + 0.05|)、道の無い所は 0.6 倍）。https://en.wikipedia.org/wiki/Tobler%27s_hiking_function と検索結果で式と倍率を確かめた。段階 C の歩く速さに使った。
+
+未取得: Paris ら 2019 の本文（PDF はサイズ超過、HAL は自動取得を拒否）、Tobler 1993 の原報告（NCGIA Technical Report 93-1）、Gamito・Musgrave 2001「Procedural landscapes with overhangs」の本文。

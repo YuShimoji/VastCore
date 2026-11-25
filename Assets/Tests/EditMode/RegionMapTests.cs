@@ -97,6 +97,57 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
+        public void Traversal_RoutesGoThroughTheGapInACliff_AndStopWhenItIsClosed()
+        {
+            // 西が 10 m、東が 40 m の台地。境は崖で、行 14〜17 にだけ、ゆるい坂（150 m で 30 m 登る）がある
+            RegionData data = Plateau(true);
+            RegionTraversal traversal = RegionTraversal.Build(data, null);
+            int n = data.Resolution;
+            Assert.AreEqual(RegionGround.Cliff, traversal.Ground[15 + 5 * n]);
+            Assert.AreEqual(RegionGround.Walk, traversal.Ground[4 + 4 * n]);
+
+            RegionTravelField west = traversal.Travel(2 + 16 * n);
+            RegionRoute up = west.RouteTo(29 + 16 * n);
+            Assert.IsNotNull(up);
+            Assert.GreaterOrEqual(up.AscentMeters, 29.9f);
+            foreach (int cell in up.Cells)
+            {
+                int x = cell % n;
+                if (x == 15 || x == 16) Assert.That(cell / n, Is.InRange(14, 17));
+            }
+
+            // 坂から離れた所どうしは、坂まで回り道をする
+            RegionRoute around = traversal.Travel(2 + 2 * n).RouteTo(29 + 2 * n);
+            Assert.IsNotNull(around);
+            Assert.Greater(around.Detour, 1.3f);
+
+            // 下りは上りより早い
+            RegionRoute down = traversal.Travel(29 + 16 * n).RouteTo(2 + 16 * n);
+            Assert.Less(down.Hours, up.Hours);
+
+            // 坂を崖でふさぐと、東へは着けない
+            RegionTravelField closed = RegionTraversal.Build(Plateau(false), null).Travel(2 + 16 * n);
+            Assert.IsFalse(closed.CanReach(29 + 16 * n));
+            Assert.IsNull(closed.RouteTo(29 + 16 * n));
+            Assert.Less(closed.Reached, west.Reached);
+
+            RegionData Plateau(bool withRamp)
+            {
+                var plateau = new RegionData(new RegionSpec { Resolution = 32, SizeKm = 0.32f });
+                for (int y = 0; y < 32; y++)
+                {
+                    for (int x = 0; x < 32; x++)
+                    {
+                        float height = x < 16 ? 10f : 40f;
+                        if (withRamp && y >= 14 && y <= 17 && x > 8 && x < 23) height = 10f + 30f * (x - 8) / 15f;
+                        plateau.Height[x + y * 32] = height;
+                    }
+                }
+                return plateau;
+            }
+        }
+
+        [Test]
         public void Generate_DifferentSeed_ProducesDifferentRegion()
         {
             RegionData a = RegionGenerator.Generate(SmallSpec(11));

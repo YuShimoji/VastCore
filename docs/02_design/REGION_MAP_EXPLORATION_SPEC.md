@@ -170,7 +170,6 @@ scripts/region-map.ps1                 Unity のバッチ入口（setup / explor
 - `RegionExplorer`（MonoBehaviour）: `IsReady`、`Region`、`Session`、`Rules`・`SetRules(SearchRules)`（`Expedition` 既定／`Signal` は前の反応だけの規則）、`Expedition`、`RestartExpedition()`、`ReadClue(clue)`、`LastDirection`、`CursorMapPosition`、`MoveCursor(x, y)`、`SearchAtCursor()`、`NextRegion()`、`NextStyle()`、`NextCloudOpacity()`、`NextAreaDisplay()`、`CloudLevel`、`AreaDisplay`、`CloudDrift`、`Detail`（`RegionDetailLayer`。状態 `Phase`・作成時間 `LastBuildMs`・`LastRenderMs`）、`SetView(zoom, mapX, mapY)`。
 - 遠征の規則（軸 H、`RegionExpedition`）・動き（軸 E、`RegionMotion`）・音（軸 F、`RegionSound`）の説明は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-25 3D化の試作・段階 B（正本から移した行）」 へ原文のまま移した。3つとも止めている軸で、コードは残っており、説明は今も効く。
 - 探索画面の操作: 地図を左クリックでカーソル移動、Space / Enter / ボタンでサーチ、矢印キーで微調整（1回分は拡大に応じて小さくなる）、ホイールで拡大（最大 ×512。×4 以上で細部の地形、×128 以上で街の写真の縮尺の細部。雲は ×64〜×128 で消える＝開発担当の仮の扱い）、右または中ドラッグで地図を動かす。「雲」ボタンで 濃い → 薄い → なし（衛星写真の時だけ）。「地名」ボタンで 名前 → 名前と境界 → なし。カーソル位置の部品に、その場所のエリア名が出る。低い雲は東南東へ、地図の幅を420秒で横切る速さで流れる（`_cloudCrossSeconds`）。
-- 遠征の画面: 左に「遠征の残り」（日数と、カーソル位置の日数の内訳）、右に「手掛かり」（先に読めた4件と「詳しく読む」）。地図に出発の野営地（白い三角）、最寄りの拠点の輪と線、直前の反応の方角の矢印。終わると中央に結果。
 
 ### 画像の差し替え手順
 
@@ -204,7 +203,7 @@ dotnet run --project tools/RegionMapPreview -c Release --no-build -- --seed 7 --
 dotnet run --project tools/RegionMapPreview -c Release --no-build -- --seed 7 --res 1024 --style satellite --names --detail 14,5,10 --detailsize 8,2 --forms --out artifacts/region-map
 ```
 
-3D化の試作（`Core/RegionTerrainMesh`、段階 A。範囲の外の試作で、採否は本人）は、`--view3d "方位,見下ろす角,高さの倍率,距離km,幅,高さ"` で斜めから見た絵を出す。拡大した窓を見るときは `--view3d-focus "地図X,地図Y,窓の一辺km"` を足す。 段階 B（2026-11-25）は、拡大した地形に地層の段を入れる（`RegionDetailSpec.Strata`。既定 0 は入れず、今までの地形とバイト一致。ツールは `--strata 1`）。広域で傾きのある山地の斜面に、高さ数十 m の崖の帯と棚ができる。崖を作る層は半分弱で、同じ崖も横に途切れる。海岸と川の位置は変えない。海食崖は出ない（広域の岸のセルが低い。seed 9 で最高 23 m）。`--view3d-lit` は面の向きから光を計算した絵にし、`--steep-coasts` は岸のセルが高い場所を出す。
+3D化の試作（`Core/RegionTerrainMesh`、段階 A。範囲の外の試作で、採否は本人）は、`--view3d "方位,見下ろす角,高さの倍率,距離km,幅,高さ"` で斜めから見た絵を出す。拡大した窓を見るときは `--view3d-focus "地図X,地図Y,窓の一辺km"` を足す。 段階 B（2026-11-25）は、拡大した地形に地層の段を入れる（`RegionDetailSpec.Strata`。既定 0 は入れず、今までの地形とバイト一致。ツールは `--strata 1`）。広域で傾きのある山地の斜面に、高さ数十 m の崖の帯と棚ができる。崖を作る層は半分弱で、同じ崖も横に途切れる。海岸と川の位置は変えない。海食崖は出ない（広域の岸のセルが低い。seed 9 で最高 23 m）。`--view3d-lit` は面の向きから光を計算した絵にし、`--steep-coasts` は岸のセルが高い場所を出す。 段階 C（`Core/RegionTraversal`、ツールは `--routes`）は、傾きから地面を「歩ける・急な斜面・手を使う・崖・川・水」に分け、最も早く着く道筋を求める（値は仮で、ゲームの規則ではない）。
 
 2行目は、エリアの図・エリアと地点の一覧（根拠と採点）・採点の図を書き出す。ファイル名と雲の連番のオプションは [履歴](REGION_MAP_EXPLORATION_HISTORY.md)。
 
@@ -251,7 +250,7 @@ Editor のメニューは `Vastcore > Region Map > Open Explorer Scene` と `Exp
 | サウンド（軸 F）の音 | 受入 `01M84NE26VM5MZAYR7QNM4D2WB` を本人が差し戻し、2026-11-25 に「既定で切る」と決めた（`8dc7729`）。残る判断は音を用意する経路 | 音の素材と鳴らし方 | 音の変更（止めている） |
 | 地域の規模と解像度 | 256km・1024² のまま / 広げる / 細かくする | 生成時間、タイル分割の要否 | 段1の拡張 |
 | 写真の縮尺の細部の作り方 | 真上からの絵をコードで描き込む（今の版）/ 建物を立体にして Unity の光で描く / 本人が用意した屋根・地面の画像を貼る | 斜めから見られるか、探索画面が絵の板のままか3Dの場面になるか、素材を誰が作るか | 回答が無い間は今の描き込みを続ける（「地図をそのまま細かくする」の延長） |
-| 3D化（2026-11-25 の本人の相談。原文は [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md)） | ①地表へ降りる範囲（地点の周り 0.5〜1 km / 8 km 窓 / 地域全体）②洞窟・張り出しに局所の体積（等値面）を使うか（[INVARIANTS](../INVARIANTS.md) の再承認）③工程表のどこに置くか ④崖のある生成を広域にも入れるか | 解像度と待ち時間、洞窟・アーチが出るか、次の作業の順、本人が「近い」とした広域の絵が変わるか | 段階 C（通行の区分と道筋）、段階 D（局所の体積）。段階 B（地層の段）の崖の出方は、本人が「この方向でよい」と答えた（2026-11-25。既定は入れないまま） |
+| 3D化（2026-11-25 の本人の相談。原文は [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md)） | ①地表へ降りる範囲（地点の周り 0.5〜1 km / 8 km 窓 / 地域全体）②洞窟・張り出しの局所の体積（等値面）は、本人が「局所だけ承認」と答えた（2026-11-25、[INVARIANTS](../INVARIANTS.md)）③工程表のどこに置くか ④崖のある生成を広域にも入れるか | 解像度と待ち時間、洞窟・アーチが出るか、次の作業の順、本人が「近い」とした広域の絵が変わるか | 段階 D（局所の体積。承認済みで未着手）。段階 C（通行の区分と道筋）は作った。段階 B（地層の段）の崖の出方は、本人が「この方向でよい」と答えた（2026-11-25。既定は入れないまま） |
 
 現在も効く決定: 描き方は衛星写真風。拡大した表示は「地図をそのまま細かくする」。呼び名は seed から自動で作り、命名は仕組みとして作る（第3版は5節）。川の上の地点は川岸へ移す。構造物の大きさは今のまま。サーチのゲーム性（C＋B）・動き（B、×1.6）・名前の出し方の4点・段6の案A は、止めた軸での本人の選択で、再開の時に読み直す。既存の構造物経路（SP-017・SP-020）は使わない（再開の判断はしていない）。
 決定の出所と、これまでの受入の回答の記録は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) へ原文のまま移した（2026-11-22）。2回目の回答は4.1節、原文は [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md)。
