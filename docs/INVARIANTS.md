@@ -23,6 +23,8 @@ VastCore の非交渉条件、責任境界、禁止ショートカットを保�
 - DualGrid + HeightMap + designer Prefab Stamp placement は2026-11-21まで主軸だった経路。
   コードと記録は残し、地点のローカル表示（SP-021 段5）に使うかは本人が決める。
 - 3D Voxel / Marching Cubes を主経路へ戻すには、ユーザーの明示的な再承認が必要。
+  2026-11-25 本人の承認: 洞窟・アーチのために、地点の周りの一部だけを体積（等値面）で作る
+  局所の方式（主データは高さ場のまま）。主経路へ戻す承認ではない。
 - Marching Squares を主経路へ戻すには、Prefab Stamp 方針との衝突を先に解決する。
 
 ## Engineering Invariants

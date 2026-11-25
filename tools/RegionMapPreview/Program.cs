@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -43,6 +44,17 @@ namespace Vastcore.RegionMap.Preview
             float formScale = 1f;
             string detailSizes = "8";
             float detailExaggeration = 1.5f;
+            string view3d = null;
+            string view3dFocus = null;
+            bool view3dLit = false;
+            bool steepCoasts = false;
+            bool routes = false;
+            bool volume = false;
+            float voxel = 1f;
+            bool mesaSites = false;
+            string look = null;
+            string lookAt = null;
+            string lookCenter = null;
 
             for (int a = 0; a < args.Length; a++)
             {
@@ -109,6 +121,21 @@ namespace Vastcore.RegionMap.Preview
                     case "--detailres": detailSpec.Resolution = int.Parse(value); a++; break;
                     case "--detailrough": detailSpec.Roughness = Float(value); a++; break;
                     case "--gully": detailSpec.GullyPasses = int.Parse(value); a++; break;
+                    case "--strata": detailSpec.Strata = Float(value); a++; break;
+                    case "--stratathick": detailSpec.StrataThickness = Float(value); a++; break;
+                    case "--view3d": view3d = value; a++; break;
+                    case "--view3d-focus": view3dFocus = value; a++; break;
+                    case "--view3d-lit": view3dLit = true; break;
+                    case "--steep-coasts": steepCoasts = true; break;
+                    case "--routes": routes = true; break;
+                    case "--volume": volume = true; break;
+                    case "--voxel": voxel = Float(value); a++; break;
+                    case "--mesa": detailSpec.Mesa = Float(value); a++; break;
+                    case "--mesa-any": detailSpec.MesaAnyClimate = true; break;
+                    case "--mesa-sites": mesaSites = true; break;
+                    case "--look": look = value; a++; break;
+                    case "--look-at": lookAt = value; a++; break;
+                    case "--look-center": lookCenter = value; a++; break;
                     case "--forms": forms = true; break;
                     case "--formscale": formScale = Float(value); a++; break;
                     default:
@@ -212,9 +239,252 @@ namespace Vastcore.RegionMap.Preview
             if (developmentDetails)
                 foreach (string size in developmentSizes.Split(','))
                     WriteDevelopmentDetails(data, options.Style, stem, detailSpec.Resolution, Float(size), developmentAt);
+            if (steepCoasts) DescribeSteepCoasts(data);
+            if (mesaSites) LookView.DescribeMesaSites(data);
+            if (look != null) LookView.Write(data, stem, look, lookAt, lookCenter);
+            if (routes && view3dFocus == null) RouteView.WriteRegion(data, options.Style, stem);
+            if (view3d != null) Write3dView(data, options, stem, view3d, view3dFocus, detailSpec, view3dLit, routes, volume ? voxel : 0f);
             using var process = Process.GetCurrentProcess();
             Console.WriteLine("peak_working_set_bytes=" + process.PeakWorkingSet64);
             return 0;
+        }
+
+        /// <summary>
+        /// 地形を斜めから見た絵を書き出す（3D化の試作、段階 A）。
+        /// view は "方位,見下ろす角,高さの倍率,距離km,幅,高さ"（例 "0,32,3,220,1600,900"）。
+        /// focus は "地図X,地図Y,窓の一辺km"。指定すると、その窓を拡大した地形で作り直して、その中心を見る。
+        /// routes を付けると、その窓の通行の区分と道筋（段階 C）を絵に重ね、数値を出す。
+        /// voxel が正なら、その窓の崖を 1 つ選んで体積で作り直し（段階 D。崖下のえぐれと洞窟）、そこを正面から見る。
+        /// この時、view の方位は「崖の正面」からのずれ、距離は崖の足もとからの距離になり、高さの倍率は 1 にする。
+        /// </summary>
+        private static void Write3dView(RegionData data, RegionRenderOptions options, string stem, string view, string focus, RegionDetailSpec detailSpec,
+            bool lit, bool routes, float voxel)
+        {
+            RouteView.Result route = null;
+            RegionVolumePatch patch = null;
+            bool strata = focus != null && detailSpec.Strata > 0f;
+            string[] v = view.Split(',');
+            float exaggeration = v.Length > 2 ? Float(v[2]) : 3f;
+            var camera = new TerrainView.Camera
+            {
+                Yaw = v.Length > 0 ? Float(v[0]) : 0f,
+                Pitch = v.Length > 1 ? Float(v[1]) : 32f,
+                Distance = (v.Length > 3 ? Float(v[3]) : 220f) * 1000f,
+                Width = v.Length > 4 ? int.Parse(v[4]) : 1600,
+                Height = v.Length > 5 ? int.Parse(v[5]) : 900,
+                Lit = lit,
+            };
+            RegionData terrain = data;
+            if (focus != null)
+            {
+                string[] f = focus.Split(',');
+                var spec = new RegionDetailSpec
+                {
+                    CenterMapX = Float(f[0]),
+                    CenterMapY = Float(f[1]),
+                    SizeKm = f.Length > 2 ? Float(f[2]) : 8f,
+                    Resolution = detailSpec.Resolution,
+                    Strata = detailSpec.Strata,
+                    StrataThickness = detailSpec.StrataThickness,
+                    Mesa = detailSpec.Mesa,
+                    MesaAnyClimate = detailSpec.MesaAnyClimate,
+                };
+                var buildWatch = Stopwatch.StartNew();
+                RegionDetail detail = RegionDetailBuilder.Build(data, spec);
+                terrain = detail.Data;
+                camera.TargetMapX = 50f;
+                camera.TargetMapY = 50f;
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                    "拡大した地形: 作成={0}ms 海陸の一致={1:P2} 標高の差の平均={2:F1}m 川の一致={3:P1}",
+                    buildWatch.ElapsedMilliseconds, detail.CoastAgreement, detail.MeanHeightDifference, detail.RiverAgreement));
+                DescribeSlopes(terrain);
+                LookView.DescribeMesa(terrain);
+                if (routes)
+                {
+                    // 出発点と行き先は段なしの地形で選ぶ（段あり・段なしを同じ場所で比べるため）
+                    RegionData plain = terrain;
+                    if (strata)
+                    {
+                        spec.Strata = 0f;
+                        plain = RegionDetailBuilder.Build(data, spec).Data;
+                    }
+                    RouteView.PickEnds(plain, out int source, out int target);
+                    if (strata) RouteView.Analyze(plain, source, target, "段なし");
+                    route = RouteView.Analyze(terrain, source, target, strata ? "段あり" : "段なし");
+                }
+                if (voxel > 0f)
+                {
+                    RegionVolumeSpec volume = RegionVolumeFeatures.CliffShelterAndCave(terrain, voxel);
+                    if (volume == null)
+                    {
+                        Console.WriteLine("体積: 置ける崖が見つからない（--strata 1 を付け、高さ 12 m 以上の崖がある窓を選ぶ）");
+                    }
+                    else
+                    {
+                        var volumeWatch = Stopwatch.StartNew();
+                        patch = RegionVolumePatch.Build(terrain, volume);
+                        Console.WriteLine("体積: " + volume.Note);
+                        Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                            "体積: 箱 {0:F0}×{1:F0}×{2:F0} m 升目 {3:F2} m 測った点 {4} 頂点 {5} 三角形 {6} 下を向いた面 {7:P1} 作成 {8}ms",
+                            patch.MaxX - patch.MinX, patch.MaxY - patch.MinY, patch.MaxZ - patch.MinZ, volume.VoxelMeters,
+                            (long)patch.SamplesX * patch.SamplesY * patch.SamplesZ, patch.VertexCount, patch.TriangleCount,
+                            patch.DownFacingShare, volumeWatch.ElapsedMilliseconds));
+                        float extentMeters = terrain.SizeKm * 1000f;
+                        camera.TargetMapX = volume.FocusX / extentMeters * RegionData.MapUnits;
+                        camera.TargetMapY = volume.FocusZ / extentMeters * RegionData.MapUnits;
+                        camera.TargetHeight = volume.FocusY;
+                        camera.Yaw += volume.FacingYawDegrees;
+                        exaggeration = 1f;
+                        WriteVolumeSection(patch, volume, stem + "-volume-section.png");
+                    }
+                }
+            }
+
+            var render = new RegionRenderOptions { Style = options.Style, CloudCover = 0f, Exaggeration = options.Exaggeration };
+            // 光を面の向きから計算する時は、貼る画像に陰影と落ち影を焼き込まない
+            if (lit) { render.Exaggeration = 0f; render.CastShadow = 0f; }
+            var watch = Stopwatch.StartNew();
+            byte[] albedo = RegionMapRenderer.Render(terrain, render);
+            if (route != null) RouteView.Paint(albedo, route);
+            // 広域は半分の格子（約52万頂点）、拡大した地形は全セルで作る
+            RegionTerrainMesh mesh = RegionTerrainMesh.Build(terrain, terrain.Resolution > 512 && focus == null ? 2 : 1, exaggeration);
+            long meshMs = watch.ElapsedMilliseconds;
+            watch.Restart();
+            byte[] image = TerrainView.Render(terrain, mesh, albedo, camera, patch, out int width, out int height);
+            string file = stem + "-3d" + (focus != null ? "-detail" : "") + (strata ? "-strata" : "") + (lit ? "-lit" : "") + (route != null ? "-routes" : "") + (patch != null ? "-volume" : "") + "-" + view.Replace(',', '_') + ".png";
+            PngWriter.Write(file, image, width, height);
+            // 真上から見た絵も残す（地図の上で崖の帯がどう写るかを比べる）
+            if (focus != null)
+            {
+                byte[] top = albedo;
+                if (lit) top = RegionMapRenderer.Render(terrain, new RegionRenderOptions { Style = options.Style, CloudCover = 0f, Exaggeration = options.Exaggeration });
+                if (route != null && lit) RouteView.Paint(top, route);
+                PngWriter.Write(stem + "-3d-detail" + (strata ? "-strata" : "") + (route != null ? "-routes" : "-top") + ".png", top, terrain.Resolution, terrain.Resolution);
+            }
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                "3D: 頂点={0} 三角形={1} 準備={2}ms 描画={3}ms → {4}", mesh.VertexCount, mesh.TriangleCount, meshMs, watch.ElapsedMilliseconds, Path.GetFullPath(file)));
+        }
+
+        /// <summary>
+        /// 体積で作り直した部分の断面図を書き出す。崖の外 30 m から、洞窟の道筋（横穴の入口 → 曲がり角 → 広間）に沿って縦に切る。
+        /// 1 m を 5 画素で描く。色：茶＝岩、水色＝空気（空と空洞）。左が崖の外、右が山の奥。
+        /// </summary>
+        private static void WriteVolumeSection(RegionVolumePatch patch, RegionVolumeSpec volume, string file)
+        {
+            double yaw = volume.FacingYawDegrees * Math.PI / 180.0;
+            float ux = -(float)Math.Sin(yaw), uz = -(float)Math.Cos(yaw);
+            var points = new List<(float x, float z)>();
+            points.Add((volume.FocusX - ux * 30f, volume.FocusZ - uz * 30f));
+            if (volume.Cavities.Count >= 2)
+            {
+                RegionVolumeCavity tunnel = volume.Cavities[1];
+                points.Add((tunnel.Ax, tunnel.Az));
+                points.Add((tunnel.Bx, tunnel.Bz));
+                RegionVolumeCavity last = volume.Cavities[volume.Cavities.Count - 1];
+                if (volume.Cavities.Count >= 3) points.Add((last.Bx, last.Bz));
+                float dx = last.Bx - last.Ax, dz = last.Bz - last.Az;
+                float length = Math.Max(1e-3f, (float)Math.Sqrt(dx * dx + dz * dz));
+                points.Add((last.Bx + dx / length * 16f, last.Bz + dz / length * 16f));
+            }
+            else
+            {
+                points.Add((volume.FocusX + ux * 34f, volume.FocusZ + uz * 34f));
+            }
+
+            const int Scale = 5;
+            var along = new List<(float x, float z)>();
+            for (int s = 1; s < points.Count; s++)
+            {
+                float dx = points[s].x - points[s - 1].x, dz = points[s].z - points[s - 1].z;
+                int steps = Math.Max(1, (int)Math.Round(Math.Sqrt(dx * dx + dz * dz) * Scale));
+                for (int k = 0; k < steps; k++) along.Add((points[s - 1].x + dx * k / steps, points[s - 1].z + dz * k / steps));
+            }
+            float low = float.MaxValue, high = float.MinValue;
+            foreach (var p in along)
+            {
+                float h = patch.HeightAt(p.x, p.z);
+                if (h < low) low = h;
+                if (h > high) high = h;
+            }
+            low -= 8f;
+            high = Math.Min(high + 6f, low + 90f);
+            int width = along.Count;
+            int height = (int)((high - low) * Scale);
+            var pixels = new byte[width * height * 4];
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    float worldY = high - (y + 0.5f) / Scale;
+                    bool rock = patch.Density(along[x].x, worldY, along[x].z) > 0f;
+                    // 岩には、高さに沿った縞を薄く入れる（傾きが読めるように）
+                    float band = 0.92f + 0.08f * (float)Math.Sin(worldY * 0.9f);
+                    int o = (x + y * width) * 4;
+                    pixels[o] = rock ? (byte)(128 * band) : (byte)196;
+                    pixels[o + 1] = rock ? (byte)(112 * band) : (byte)220;
+                    pixels[o + 2] = rock ? (byte)(94 * band) : (byte)240;
+                    pixels[o + 3] = 255;
+                }
+            }
+            PngWriter.Write(file, pixels, width, height);
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "体積: 断面図 横 {0:F0} m × 縦 {1:F0} m（1 m = {2} 画素）→ {3}",
+                width / (float)Scale, height / (float)Scale, Scale, Path.GetFullPath(file)));
+        }
+
+        /// <summary>海に接する陸のセルを標高の高い順に 8 つ出す（海食崖を確かめる場所を選ぶため。互いに 3 以上離す）。</summary>
+        private static void DescribeSteepCoasts(RegionData data)
+        {
+            int n = data.Resolution;
+            var found = new List<(float height, float x, float y)>();
+            for (int y = 1; y < n - 1; y++)
+            {
+                for (int x = 1; x < n - 1; x++)
+                {
+                    int i = x + y * n;
+                    if (data.Height[i] <= 0f) continue;
+                    if (data.Height[i - 1] > 0f && data.Height[i + 1] > 0f && data.Height[i - n] > 0f && data.Height[i + n] > 0f) continue;
+                    found.Add((data.Height[i], data.MapXFromCell(i), data.MapYFromCell(i)));
+                }
+            }
+            found.Sort((p, q) => q.height.CompareTo(p.height));
+            var kept = new List<(float height, float x, float y)>();
+            foreach (var c in found)
+            {
+                bool near = false;
+                foreach (var k in kept) if (Math.Abs(k.x - c.x) < 3f && Math.Abs(k.y - c.y) < 3f) near = true;
+                if (near) continue;
+                kept.Add(c);
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "急な海岸: X{0:F1} Y{1:F1} 岸のセルの標高 {2:F0}m", c.x, c.y, c.height));
+                if (kept.Count >= 8) break;
+            }
+        }
+
+        /// <summary>陸のセルの傾きの分布を出す（崖がどれだけあるかの目安。30°・45°・60° を超える割合と最大）。</summary>
+        internal static void DescribeSlopes(RegionData terrain)
+        {
+            int n = terrain.Resolution;
+            float cell = terrain.CellMeters;
+            int land = 0, over30 = 0, over45 = 0, over60 = 0, faces = 0;
+            float steepest = 0f;
+            for (int y = 1; y < n - 1; y++)
+            {
+                for (int x = 1; x < n - 1; x++)
+                {
+                    if (terrain.Height[x + y * n] <= 0f) continue;
+                    float slope = RegionGenerator.SlopeAt(terrain.Height, n, x, y, cell);
+                    land++;
+                    if (slope > 0.5774f) over30++;
+                    if (slope > 1f) over45++;
+                    if (slope > 1.7321f) over60++;
+                    if (slope > steepest) steepest = slope;
+                    if (terrain.Cliff != null && terrain.Cliff[x + y * n] > 0.5f) faces++;
+                }
+            }
+            if (land == 0) return;
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                "傾き: 1セル={0:F1}m 30°超={1:P2} 45°超={2:P2} 60°超={3:P2} 最大={4:F0}°",
+                cell, over30 / (double)land, over45 / (double)land, over60 / (double)land, Math.Atan(steepest) * 180.0 / Math.PI)
+                + (terrain.Cliff != null ? string.Format(CultureInfo.InvariantCulture, " 崖の面={0:P2}", faces / (double)land) : ""));
         }
 
         private static void DescribeDevelopment(RegionDevelopment development)

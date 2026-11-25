@@ -73,6 +73,23 @@ namespace Vastcore.RegionMap
         /// <summary>構造物が各セルを覆う割合（0〜1）。拡大した地形に構造物を置いた時だけ持つ。</summary>
         public float[] StructureCoverage;
 
+        /// <summary>
+        /// 崖の面にあたる度合い（0〜1）。地層の段を入れた拡大した地形（RegionDetailSpec.Strata）だけが持ち、それ以外は null。
+        /// </summary>
+        public float[] Cliff;
+
+        /// <summary>
+        /// 岩屑の斜面にあたる度合い（0〜1）。台地を入れた拡大した地形（RegionDetailSpec.Mesa）だけが持ち、それ以外は null。
+        /// 崖の足もとで 1、斜面の裾で 0.5、その先の転石が届く範囲で 0 へ薄れる。岩を置く密度（RegionRockField）に使う。
+        /// </summary>
+        public float[] Talus;
+
+        /// <summary>台地の帽子の岩（上面と崖）にあたるセルは 1。RegionDetailSpec.Mesa を入れた時だけ持つ。</summary>
+        public byte[] Caprock;
+
+        /// <summary>台地を作る窓での、帽子の砂岩と下の軟らかい層の境界標高（m）。材質に地形と同じ層準を渡す。</summary>
+        public float[] MesaContactHeight;
+
         public RegionDevelopment Development { get; internal set; }
         internal RegionPosition DevelopmentOrigin;
 

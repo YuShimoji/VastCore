@@ -8,7 +8,7 @@ Last Updated: 2026-11-25
 |---|---|
 | Project | VastCore Terrain Engine |
 | Branch | `codex/vc-development-readiness-20260711` |
-| Integrated baseline | `63e0fc9`（探索画面の拡大）。その前は `b8795a6`（写真の縮尺の細部）、`439a92b`（現代試作）。それ以前は `2b398b0`（仮の音で鳴る場所、軸 F）。その前に名前の出し方の4点（`8644662`）、探索画面の動き（軸 E、`c12ba69`）、遠征の規則（軸 H、`e13924f`）、命名の第2版と名前・別名・由来の表示、拡大表示（`81e2b19`） |
+| Integrated baseline | 湖と平野の筋 `9e825c5` と3D砂岩 `a7907cb` を統合。探索画面の拡大 `63e0fc9`、写真の縮尺の細部 `b8795a6`、現代試作 `439a92b`。以前の版は [履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md) |
 | Active outcome | SP-021 の現代試作。2都市・都市間幹線・空港・郊外の建物を地域データから配置し、広域と拡大の同じ座標で描く。探索画面は ×4 以上で細部へ切り替わる。1 画素 3 m 未満の窓では、街区の中を敷地・屋根・屋上の設備・樹木・車・車線・影まで描く（写真の縮尺の細部）。探索画面は ×512 まで拡大でき、×128 以上でこの細部へ切り替わる。 |
 | Active artifact | `docs/02_design/REGION_MAP_EXPLORATION_SPEC.md` |
 | Next mission | 探索画面で寄って見られるようにした写真の縮尺の細部（2026-11-24 の[建物の見え方の依頼](USER_REQUEST_LEDGER.md)）に、本人の確認を受ける。開発は工場・基地と中世・未来の都市への展開（順は開発担当の整理）。 |
@@ -26,7 +26,7 @@ Last Updated: 2026-11-25
 ## 作業ツリーと端末の現物（2026-11-22 thank観測）
 
 - SP-021で追加したもの：`Assets/Scripts/RegionMap/`（Core・View・Editor、asmdef 2件）、`Assets/Scenes/RegionExplorer.unity`、`Assets/Tests/EditMode/RegionMapTests.cs`、`tools/RegionMapPreview/`、`scripts/region-map.ps1`。`1982fdd` の後に足したのは `Core/RegionDetail.cs`（拡大した地形）・`Core/RegionStructures.cs`（構造物の形の案）・`Core/RegionNames.cs`（呼び名の響き）の3件。変えたのは `Core/` の `RegionData`・`RegionGenerator`・`RegionSite`・`RegionAreas`・`RegionSpec`・`RegionMapRenderer`、テスト、`tools/RegionMapPreview/Program.cs`。
-- 軸 G（2026-11-22）で `View/RegionMapSkin.cs` を足し、`View/RegionExplorer.cs`（画像の読み込みと4か所の描き方）、`Editor/RegionExplorerSmoke.cs`（差し替えの有無を1行ログに出す）、`Assets/Tests/EditMode/RegionMapTests.cs`（1件）を変えた。シーン・`ProjectSettings/`・`Packages/`・Terrain・StructureGenerator・Stamp は変更していない。画像を置く `Assets/Resources/RegionMapSkin/` は空のフォルダ（`.gitkeep` とフォルダの meta だけ）。
+- 砂岩の台地の骨格・転石・固定視点は `48974a3`、表面材質は `ddb06ac`、植生は `0f70616`。通常シーンの崖下のアルコーブは `RegionMesaAlcove` が地層の境目を選び、`RegionAlcoveView` が局所の体積・崩落岩・しみ出しの緑・追加視点を組み込む。軸 G の旧記録は履歴の「2026-11-25 3D化の見え方の第1区切り」。
 - 命名（2026-11-22 の最初の版と川岸、2026-11-23 の第2版）で足したのは `Core/RegionNaming.cs`・`Core/RegionNamingRules.cs`・`Core/RegionFeatures.cs` と `Assets/Tests/EditMode/RegionNamingTests.cs`。変えたのは `Core/` の `RegionNames`・`RegionSite`・`RegionAreas`・`RegionSpec`・`RegionData`、`View/RegionExplorer.cs`、`Editor/RegionExplorerSmoke.cs`、`tools/RegionMapPreview/Program.cs`。
 - 拡大表示（2026-11-22〜23）で足したのは `View/RegionDetailLayer.cs`・`View/RegionRingGraphic.cs`・`Assets/Tests/EditMode/RegionDetailLayerTests.cs`（各 meta つき）。変えたのは `View/RegionExplorer.cs`（最大拡大 8→64、右上の札、サーチの輪、矢印キー1回分の移動量、標高の読み）と `Editor/RegionExplorerSmoke.cs`（拡大の確認の手順）。`Core/`・シーン・`ProjectSettings/`・`Packages/` は変更していない。
 - 遠征の規則（軸 H、2026-11-23）で足したのは `Core/RegionExpedition.cs` と `Assets/Tests/EditMode/RegionExpeditionTests.cs`（各 meta つき）。変えたのは `Core/ExplorationSession.cs`（最寄りの地点 `Nearest`、`Reset()`）、`View/RegionExplorer.cs`（規則の切替、左の「遠征の残り」、右の「手掛かり」、地図の野営地・拠点の輪・線・方角の矢印、終わりの結果）、`Editor/RegionExplorerSmoke.cs`（遠征の撮影7枚）。
@@ -43,14 +43,15 @@ Last Updated: 2026-11-25
 
 ## Current Trust Assessment
 
-- thank / 2026-11-25（湖と平野の筋、SP-021 段1・2）：.NET で seed 1〜12 を変更前（HEAD の地形コード）と変更後で生成。1024²（前後を交互に、中央値）：湖 1→38 個・0.25→353 km²（最大 0.25→101 km²）、海へ出ない流れの行き止まり 合計7→0 セル、平野の筋 旧い数え方 45.7→38.2 km²・新しい数え方（起伏の向きがそろう所）158.6→173.1 km²、雪 0.74→0.74%、低地 48.5→42.8%、生成 13.7→17.0 秒（侵食 10.1→13.3 秒）。512²：湖 1→42、行き止まり 1→0。2048²：湖 1→35・440 km²、行き止まり 40→0、筋 104.3→90.4（旧）・35.6→47.5 km²（新）、生成 約96 秒・ピーク 0.58〜0.84 GB、PNG 5.7 MB。
-- 同（続き）：4096² は湖の上限を入れる前の版の seed 7 で 455 秒・1.45 GB・PNG 22 MB。seed 9 の現代試作は都市・空港の位置と街区 725 が変更前と一致。原因としきい値の数は SP-021 8節と[履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md)。Unity 6000.3.6f1 で EditMode 655/655。絵は `artifacts/region-map/terrain-detail-20261125/`（`before3/`・`after2/`・並べた `pairs/`）。未確認：探索画面（Unity）での湖の見え方と待ち時間、512²・2048² の時間の前後比較（EditMode と同時に走った）、4096² の最終の版、本人の確認。
+- 2026-11-25 統合版：Unity 6000.3.6f1 の EditMode 666/666・PlayMode 9/9。状態・素材検査と RegionMapPreview Release ビルドも通過。
+- thank / 2026-11-25（湖と平野の筋、SP-021 段1・2）：.NET で seed 1〜12 を変更前と変更後で生成。1024²（前後を交互に、中央値）：湖 1→38 個・0.25→353 km²（最大 0.25→101 km²）、海へ出ない流れの行き止まり 合計7→0 セル、平野の筋 旧い数え方 45.7→38.2 km²・新しい数え方（起伏の向きがそろう所）158.6→173.1 km²、雪 0.74→0.74%、低地 48.5→42.8%、生成 13.7→17.0 秒（侵食 10.1→13.3 秒）。512²：湖 1→42、行き止まり 1→0。2048²：湖 1→35・440 km²、行き止まり 40→0、筋 104.3→90.4（旧）・35.6→47.5 km²（新）、生成 約96 秒・ピーク 0.58〜0.84 GB、PNG 5.7 MB。
+- 同（続き）：4096² は湖の上限を入れる前の版の seed 7 で 455 秒・1.45 GB・PNG 22 MB。seed 9 の現代試作は都市・空港の位置と街区 725 が変更前と一致。原因としきい値の数は SP-021 8節と[履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md)。Unity 6000.3.6f1 で EditMode 655/655。絵は `artifacts/region-map/terrain-detail-20261125/`（`before3/`・`after2/`・`pairs/`）。未確認：探索画面（Unity）での湖の見え方と待ち時間、512²・2048² の時間の前後比較（EditMode と同時に走った）、4096² の最終の版、本人の確認。
 - thank / Unity 6000.3.6f1 / 2026-11-25（命名の第3版。写し `D:\vcv\vcn`）：EditMode 654/654（失敗・skip 0）、探索の再生 終了コード 0・画面 30 枚（seed 7・8・9 の地図の名前と発見カードの別名・由来を目視）。.NET の seed 1〜12（探索画面の設定）で、規則1 99→0、規則2 87→0（古い呼び名 103→0）、規則4 79→0（1字の足し・抜き 12→0）、規則5 0→0、方角入り 57→9（9つとも理由あり）。数え方は [履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-25 命名の第3版」。
 - thank / 2026-11-25（探索画面の拡大）：探索シーンで seed 9 の4か所を ×64・×128・×256・×512 で撮った（`artifacts/region-map/explorer-photo-20261125/unity-final/`）。×128 以上で敷地・屋根・車・並木の影が出る。描画を速くした後も絵は変更前とバイト一致（14枚）。Unity 6000.3.6f1 で EditMode 653/653（失敗・スキップ0、窓の段のテスト1件を追加）。撮影4回のうち2回は16場面すべて出た。1回は ×512 の窓が240秒出ず（原因は未特定）、1回は Unity が起動時に終了した（Package Manager へ未接続）。開発担当が見て、雲が画面を覆う点を直した（×64〜×128 で消す）。本人の確認は未。
 - SP-021 の地形の修正前・修正後の計測（PLANNER007、seed 1〜12、2行）と、PLANNER007 での取り込み版 `9f7a732` の確認（1行）は [履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-24 写真の縮尺の細部」へ、2026-11-24 の確認2行は「2026-11-25 探索画面の拡大」へ、現代試作（PLANNER007）の確認1行は「2026-11-25 湖と平野の筋」へ原文のまま移した。
-- thank / Unity 6000.3.6f1 / 2026-11-25（音の既定を「なし」、軸 F、`8dc7729`。写し `D:\vcv\VastCore` を HEAD `82eb47a`＋音の3ファイルに揃えて実行し、元へ戻した3ファイルとハッシュ一致）：EditMode 654/654、失敗/skip 0（HEAD の653件＋既定の音のテスト1件）。探索シーンの再生（`-Mode explore`）：PASS。開いた直後は `SoundEnabled` false・ボタン「音：なし」（`explorer-1-start.png` で目視）で、サーチまでに鳴らした数0（切ってある間の予約3件は鳴らさず）。ボタンで「大」→「中」へ入れた後、17場面のうち16場面で鳴らし16場面とも再生が進んだ（耳では聞いていない。`ExpeditionComplete` は台本で起きない）。「なし」に戻した間は0。2026-11-24 の仮の音の検証（649/649、WAV 17個）は履歴へ移した。
+- 3D砂岩（Unity 6000.3.6f1）。seed 9 の植生版は EditMode 665/665・PlayMode 9/9。アルコーブの変更範囲は EditMode 28/28。seed 9 と seed 8 の同視点の前後と裾から棚への各33コマで天井・奥壁・しみ出しの緑・接地を確認。通常 Editor の Game ビューでも中景を確認。変更前の固定3枚は植生版とRGB一致。写真材質は別試験。[二地点の実画面](../Documentation/mesa-alcove-comparison.jpg)・[移動](../Documentation/mesa-alcove-walk.mp4)。
 
-- 拡大表示（2026-11-22〜23。EditMode 627/627）、遠征の規則（2026-11-23。639/639、遠征の7場面）、動き（2026-11-23。639/639、3組の撮影）、命名の第2版（2026-11-23。631/631）、名前の出し方（2026-11-23。641/641）の Unity での確認、.NET での拡大した地形・エリアと雲の測定（2026-11-22）、通常Editorでの実マウス・キーボードの確認と十字カーソルの直し（2026-11-21〜22）は [履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md) へ原文のまま移した。
+- 拡大表示（2026-11-22〜23。EditMode 627/627）、遠征の規則（2026-11-23。639/639、遠征の7場面）、動き（2026-11-23。639/639、3組の撮影）、命名の第2版（2026-11-23。631/631）、名前の出し方（2026-11-23。641/641）の Unity での確認、.NET での拡大した地形・エリアと雲の測定（2026-11-22）、通常Editorでの実マウス・キーボードの確認と十字カーソルの直し（2026-11-21〜22）は [履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md) へ原文のまま移した。音の既定を「なし」にした確認（2026-11-25、654/654）は同じ履歴の「2026-11-25 3D化の試作・段階 B（正本から移した行）」へ移した。
 - 本人の回答（拡大表示、2026-11-23、`01M81W8NN4XG16SQXMV2R3NBKT`）：「近い」。6領域（広域から細部へ切り替わる見え方・右上の札・細部の地形・広域の地図との一致・拡大中のサーチと発見とカーソル・縮めて広域へ戻る見え方）は全て「軽微（余裕があれば）」。操作のしやすさは5項目とも7段階の4。前の版より「良くなった」。次は「今回の続き」。記述は無し。
 - 本人の回答（サーチのゲーム性、2026-11-23、`01M82CXPP4H2DKENWRZT0V0MGH`）：近い案は「組み合わせ」、記述「CとBがより近い。ゲームシステムとして。ナラティブについては要検討。」。足りないものは総当たり・見返り・目的と終わり・方角で、記述「モニュメント発見に寄っており、資材獲得や何らかの基地発見など、より広範で実利的な目的を持たせたい。」。「など」は地点の中身・探す目的と依頼・別の地域をまたぐ収集・拡大表示との連動で、ストアの記述は [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md)。最初に作る大きさは「選んだ案の最小の実装まで」。
 - 本人の回答（動きの案、2026-11-23、`01M828W77SDBJKNBXA22T8XJ8B`）：「B 地図で広がる」、記述「BとCを取り入れた動き方が良いです。」。4つの場面とも B。動きの長さは「長く（×1.6）」。進める範囲は「選んだ案の最小の実装まで」。削る動きは未回答。
@@ -73,6 +74,7 @@ Last Updated: 2026-11-25
    - 起動元（判断）：平野の筋を減らすしきい値 `RegionSpec.IncisionThreshold`（0／0.05／0.08／0.12、SP-021 8節・9節）。0.05 で seed 9 の都市が別の場所へ移り（Next Action 1 の `--development-at` も変わる）、0.08 以上では都市を置けない。決まるまで既定0。
 4. 止めているもの（再開は本人の指示）：動き（軸 E）、音（軸 F）、サーチのゲーム性と遠征の規則（軸 H）、命名の響きと表示、段6。コード・確認ページ・回答の記録は残す。本人が挙げた直す点（波紋が距離に見える、矢印が答えの座標を指す、演出が機能に見える、発見物の分類を開発担当が決めた）は SP-021 4.1節と9節。命名の数えられる生成の欠陥は第3版で直した（2026-11-25、`1c69f16`。数は履歴）。
 5. 進め方：問いは、答えで方式が分かれる時だけ送る（[INTERACTION_NOTES](INTERACTION_NOTES.md)、[INVARIANTS](INVARIANTS.md)）。本人が Unity Editor を開いている間は写し `D:\vcv\VastCore` で確かめて1回で戻し、写しの Unity が動いている間は写しの C# を編集しない。
+6. 3Dの砂岩試作は崖下のアルコーブまで。本人が二地点の見た目を確認する。seed 8 の指定中心では既定の近景が平地を向き、内側の岩塔は細い。広い帽岩の X82.93144 Y62.38425 に中心を移すと、同じ設定で岩壁の一部にくぼみ・崩落岩・緑が出る。岩壁全体の縦溝と丸い裾は残る。アーチ・細い峡谷・光と空気は後続。[撮り方・制作の手間](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)。
 
 ## External Pulse And Remote Resume
 

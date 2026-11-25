@@ -1,0 +1,314 @@
+using System;
+using System.IO;
+using System.Globalization;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+namespace Vastcore.RegionMap.Editor
+{
+    /// <summary>
+    /// 3D 表示（3D 化の試作）の入口。メニュー「Vastcore/Region Map」から開くと、新しいシーンに地形を並べる（シーンは保存しない前提）。
+    /// ・砂岩の台地の場面（見え方の想定 docs/02_design/REGION_TERRAIN_LOOK_SPEC.md と見比べる。視点は遠景・中景・近景の 3 つで固定）
+    /// ・崖と洞窟（局所の体積の試作）
+    /// コマンドライン（-executeMethod）からは、決まった 3 つの視点を画像に残す。
+    /// </summary>
+    public static class RegionTerrainViewMenu
+    {
+        [MenuItem("Vastcore/Region Map/Open 3D Mesa Look (far, mid, near)")]
+        public static void OpenLook()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            try
+            {
+                EditorUtility.DisplayProgressBar("Region Map", "地域と、砂岩の台地の場面を作っています…", 0.3f);
+                RegionTerrainView.LookResult look = CreateLookScene(new RegionSpec { Seed = 9 }, new RegionLookSpec(), out Camera camera);
+                RegionLookViewpoint mid = look.Scene.Spec.Mid;
+                RegionTerrainView.PlaceLook(camera.transform, look.Scene, mid);
+                camera.fieldOfView = mid.FovDegrees;
+                SceneView view = SceneView.lastActiveSceneView;
+                if (view != null) view.AlignViewToObject(camera.transform);
+                Selection.activeGameObject = look.Root;
+                Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + "。視点は「Region Terrain Look/Viewpoints」の far・mid・near と、適地がある場合は alcove-mid・alcove-near・alcove-shelf");
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+        }
+
+        [MenuItem("Vastcore/Region Map/Open 3D Cliff And Cave Prototype")]
+        public static void OpenPrototype()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            try
+            {
+                EditorUtility.DisplayProgressBar("Region Map", "地域と、崖・洞窟の地形を作っています…", 0.3f);
+                RegionTerrainView.Result result = CreateScene(new RegionSpec { Seed = 9 }, new RegionTerrainViewSpec(), out Camera camera);
+                RegionTerrainView.Place(camera.transform, result, 20f, 7f, 150f);
+                SceneView view = SceneView.lastActiveSceneView;
+                if (view != null) view.LookAt(result.Focus, camera.transform.rotation, 60f);
+                Selection.activeGameObject = result.Root;
+                Debug.Log("[RegionMap] 3D: " + Describe(result));
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+        }
+
+        /// <summary>新しいシーンに、地形・太陽・カメラを置く。</summary>
+        public static RegionTerrainView.Result CreateScene(RegionSpec regionSpec, RegionTerrainViewSpec viewSpec, out Camera camera)
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            RegionData region = RegionGenerator.Generate(regionSpec);
+            RegionTerrainView.Result result = RegionTerrainView.Build(region, viewSpec);
+            camera = CreateStage(5000f);
+            return result;
+        }
+
+        /// <summary>新しいシーンに、砂岩の台地の場面・太陽・カメラを置く。</summary>
+        public static RegionTerrainView.LookResult CreateLookScene(RegionSpec regionSpec, RegionLookSpec lookSpec, out Camera camera)
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            RegionData region = RegionGenerator.Generate(regionSpec);
+            RegionTerrainView.LookResult look = RegionTerrainView.BuildLook(region, lookSpec);
+            // 外側の地形の対角線（6 km 四方で約 8.5 km）が収まる距離まで描く
+            camera = CreateStage(lookSpec.OuterKm * 1000f * 1.5f + 1000f);
+            return look;
+        }
+
+        /// <summary>太陽・空からの光・カメラ（光と空気は仮の値。見え方の想定の次の区切りで決める）。</summary>
+        private static Camera CreateStage(float farClip)
+        {
+            Camera camera;
+            var sun = new GameObject("Sun");
+            Light light = sun.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.color = new Color(1f, 0.97f, 0.92f);
+            light.intensity = 1.1f;
+            light.shadows = LightShadows.Soft;
+            sun.transform.rotation = RegionTerrainView.SunRotation();
+
+            RenderSettings.ambientMode = AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = new Color(0.55f, 0.62f, 0.72f);
+            RenderSettings.ambientEquatorColor = new Color(0.42f, 0.44f, 0.46f);
+            RenderSettings.ambientGroundColor = new Color(0.22f, 0.21f, 0.19f);
+            RenderSettings.fog = false;
+
+            var cameraObject = new GameObject("Main Camera");
+            cameraObject.tag = "MainCamera";
+            camera = cameraObject.AddComponent<Camera>();
+            camera.fieldOfView = 40f;
+            camera.nearClipPlane = 0.3f;
+            camera.farClipPlane = farClip;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.55f, 0.68f, 0.86f);
+            return camera;
+        }
+
+        /// <summary>
+        /// コマンドライン用。砂岩の台地の場面を、決まった 3 つの視点（遠景・中景・近景）で撮り、
+        /// look-far.png・look-mid.png・look-near.png を -regionOut のフォルダへ書き出して終了する。毎回同じ 3 枚になる。
+        /// 指定: -regionSeed 9 -regionOut 出力先のフォルダ（画面を使うので -nographics は付けない）
+        /// </summary>
+        public static void CaptureFromCommandLine()
+        {
+            int exitCode = 0;
+            try
+            {
+                string output = Path.GetFullPath(RegionMapMenu.Argument("-regionOut", "artifacts/region-map/3d-look"));
+                Directory.CreateDirectory(output);
+                // 最初の 1 枚が、コンパイル待ちの仮の色で写らないようにする
+                ShaderUtil.allowAsyncCompilation = false;
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                var regionSpec = new RegionSpec { Seed = int.Parse(RegionMapMenu.Argument("-regionSeed", "9")) };
+                var spec = new RegionLookSpec();
+                string center = RegionMapMenu.Argument("-lookCenter", "");
+                if (center.Length > 0)
+                {
+                    string[] xy = center.Split(',');
+                    if (xy.Length != 2) throw new ArgumentException("-lookCenter X,Y");
+                    spec.CenterMapX = float.Parse(xy[0], CultureInfo.InvariantCulture);
+                    spec.CenterMapY = float.Parse(xy[1], CultureInfo.InvariantCulture);
+                }
+                RegionTerrainView.LookResult look = CreateLookScene(regionSpec, spec, out Camera camera);
+                Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + " 作成 " + watch.ElapsedMilliseconds + "ms");
+                // 作った直後の最初の 1 枚は、地面の画像が貼られる前の白い地面で写る（2026-11-25 に、最初と最後に同じ視点を撮って確かめた）。
+                // 捨てコマを 1 枚描いてから撮る
+                RegionTerrainView.PlaceLook(camera.transform, look.Scene, look.Scene.Spec.Far);
+                Capture(camera, null, null);
+                if (look.Alcove != null && RegionMapMenu.Argument("-alcoveReview", "false") == "true")
+                    CaptureAlcoveComparison(camera, look, output);
+                CaptureLookViews(camera, look, output);
+                if (look.Alcove == null) DescribeNearestCap(look.Scene);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError("[RegionMap] 3D の撮影に失敗: " + exception);
+                exitCode = 1;
+            }
+            EditorApplication.Exit(exitCode);
+        }
+
+        /// <summary>
+        /// コマンドライン用。崖と洞窟（局所の体積の試作）の、崖の正面・近く・引いた所の 3 枚を -regionOut のフォルダへ書き出して終了する。
+        /// 指定: -regionSeed 9 -regionOut 出力先のフォルダ（画面を使うので -nographics は付けない）
+        /// </summary>
+        public static void CaptureCaveFromCommandLine()
+        {
+            int exitCode = 0;
+            try
+            {
+                string output = Path.GetFullPath(RegionMapMenu.Argument("-regionOut", "artifacts/region-map/3d-unity"));
+                Directory.CreateDirectory(output);
+                // 最初の 1 枚が、コンパイル待ちの仮の色で写らないようにする
+                ShaderUtil.allowAsyncCompilation = false;
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                var regionSpec = new RegionSpec { Seed = int.Parse(RegionMapMenu.Argument("-regionSeed", "9")) };
+                RegionTerrainView.Result result = CreateScene(regionSpec, new RegionTerrainViewSpec(), out Camera camera);
+                Debug.Log("[RegionMap] 3D: " + Describe(result) + " 作成 " + watch.ElapsedMilliseconds + "ms");
+                Shot(camera, result, output, "unity-front.png", 20f, 7f, 150f);
+                Shot(camera, result, output, "unity-near.png", -25f, 3f, 50f);
+                Shot(camera, result, output, "unity-wide.png", 40f, 18f, 420f);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError("[RegionMap] 3D の撮影に失敗: " + exception);
+                exitCode = 1;
+            }
+            EditorApplication.Exit(exitCode);
+        }
+
+        private static void CaptureLookViews(Camera camera, RegionTerrainView.LookResult look, string output)
+        {
+            Directory.CreateDirectory(output);
+            foreach (RegionLookViewpoint viewpoint in look.Scene.Spec.Viewpoints())
+            {
+                RegionTerrainView.PlaceLook(camera.transform, look.Scene, viewpoint);
+                camera.fieldOfView = viewpoint.FovDegrees;
+                Capture(camera, output, "look-" + viewpoint.Name + ".png");
+            }
+            if (look.Alcove == null) return;
+            foreach (bool mid in new[] { true, false })
+            {
+                look.Alcove.Place(camera.transform, mid, 0.57f, true);
+                camera.fieldOfView = mid ? 48f : 67f;
+                Capture(camera, output, mid ? "alcove-mid.png" : "alcove-near.png");
+            }
+        }
+
+        private static void CaptureAlcoveComparison(Camera camera, RegionTerrainView.LookResult look, string output)
+        {
+            var alcove = look.Alcove;
+            var vegetation = look.Root.transform.Find("Vegetation");
+            alcove.Show(false, false);
+            CaptureLookViews(camera, look, Path.Combine(output, "original"));
+            if (vegetation) vegetation.gameObject.SetActive(false);
+            CaptureLookViews(camera, look, Path.Combine(output, "before"));
+            alcove.Show(true, false);
+            CaptureLookViews(camera, look, Path.Combine(output, "shape"));
+            alcove.Show(true, true);
+            if (vegetation) vegetation.gameObject.SetActive(true);
+            string walk = Path.Combine(output, "walk");
+            Directory.CreateDirectory(walk);
+            camera.fieldOfView = 67f;
+            for (int frame = 0; frame <= 32; frame++)
+            {
+                alcove.Place(camera.transform, false, frame / 32f);
+                Capture(camera, walk, frame.ToString("D3") + ".png", 960, 540);
+            }
+        }
+
+        private static void DescribeNearestCap(RegionLookScene scene)
+        {
+            var data = scene.Outer.Data;
+            int nearest = -1;
+            float distance = float.MaxValue;
+            if (data.Caprock == null) return;
+            int n = data.Resolution;
+            // A lone cap cell can be an isolated pinnacle. Look for a broad
+            // remnant (roughly 140 m across) before suggesting a new window.
+            const int radius = 12;
+            for (int z = radius; z < n - radius; z += 4)
+            for (int x = radius; x < n - radius; x += 4)
+            {
+                int i = x + z * n;
+                if (data.Caprock[i] == 0) continue;
+                float dx = (x + 0.5f) * scene.OuterCell - scene.CenterX;
+                float dz = (z + 0.5f) * scene.OuterCell - scene.CenterZ;
+                float d = dx * dx + dz * dz;
+                if (d >= distance) continue;
+                int coverage = 0;
+                for (int j = -radius; j <= radius; j += 2)
+                for (int k = -radius; k <= radius; k += 2)
+                    coverage += data.Caprock[i + k + j * n];
+                if (coverage < 140) continue;
+                nearest = i;
+                distance = d;
+            }
+            if (nearest < 0) return;
+            float mapCell = scene.Outer.SizeMap / data.Resolution;
+            Debug.Log("[RegionMap] broad outer cap X" + (scene.Outer.OriginMapX + (nearest % data.Resolution + 0.5f) * mapCell).ToString("F5", CultureInfo.InvariantCulture)
+                + " Y" + (scene.Outer.OriginMapY + (nearest / data.Resolution + 0.5f) * mapCell).ToString("F5", CultureInfo.InvariantCulture));
+        }
+
+        private static string DescribeLook(RegionTerrainView.LookResult look)
+        {
+            RegionLookScene scene = look.Scene;
+            string shader = RegionTerrainView.ShaderResource + (Resources.Load<Shader>(RegionTerrainView.ShaderResource) != null ? "" : "（見つからず、URP の Lit で代用）");
+            int rocks = scene.InnerRocks != null ? scene.InnerRocks.Rocks.Length + scene.OuterRocks.Rocks.Length : 0;
+            return "砂岩の台地の場面 中心 X" + scene.Spec.CenterMapX.ToString("F2") + " Y" + scene.Spec.CenterMapY.ToString("F2")
+                + " / 内側 " + scene.Inner.Data.SizeKm.ToString("F2") + " km（1 セル " + scene.InnerCell.ToString("F2") + " m）外側 " + scene.Outer.Data.SizeKm.ToString("F1") + " km"
+                + " / 広域の地図との標高の差の平均 内側 " + scene.Inner.MeanHeightDifference.ToString("F1") + " m 外側 " + scene.Outer.MeanHeightDifference.ToString("F1") + " m"
+                + " / 岩 " + rocks + " 個 / 草株・低木・針葉樹・谷筋の広葉樹 " + string.Join("/", look.PlantCounts) + " / シェーダー " + shader
+                + (look.Alcove == null ? " / アルコーブ適地なし" : " / アルコーブ 内側 X" + look.Alcove.Site.Volume.FocusX.ToString("F1")
+                + " Z" + look.Alcove.Site.Volume.FocusZ.ToString("F1") + " m 床 " + look.Alcove.Site.Floor.ToString("F1")
+                + " m 天井頂点率 " + look.Alcove.Patch.DownFacingShare.ToString("P2") + " しみ出し " + look.Alcove.SeepPlants
+                + " 株 崩落岩 " + look.Alcove.FallenBlocks + " 個");
+        }
+
+        private static string Describe(RegionTerrainView.Result result)
+        {
+            string shader = RegionTerrainView.ShaderResource + (Resources.Load<Shader>(RegionTerrainView.ShaderResource) != null ? "" : "（見つからず、URP の Lit で代用）");
+            if (result.Patch == null) return "体積で作る崖が見つからなかった（地形だけを並べた）。シェーダー " + shader;
+            return result.Volume.Note + " / 体積の頂点 " + result.Patch.VertexCount + " 三角形 " + result.Patch.TriangleCount
+                + " / シェーダー " + shader;
+        }
+
+        private static void Shot(Camera camera, RegionTerrainView.Result result, string output, string name, float yawOffset, float pitch, float distance)
+        {
+            RegionTerrainView.Place(camera.transform, result, yawOffset, pitch, distance);
+            Capture(camera, output, name);
+        }
+
+        /// <summary>カメラの絵を 1600×900 で描き、output のフォルダへ name で書き出す。name が null なら、描くだけで書き出さない。</summary>
+        private static void Capture(Camera camera, string output, string name, int width = 1600, int height = 900)
+        {
+            var target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
+            var image = new Texture2D(width, height, TextureFormat.RGB24, false);
+            try
+            {
+                camera.targetTexture = target;
+                camera.Render();
+                RenderTexture previous = RenderTexture.active;
+                RenderTexture.active = target;
+                image.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                image.Apply();
+                RenderTexture.active = previous;
+                if (name == null) return;
+                string path = Path.Combine(output, name);
+                File.WriteAllBytes(path, image.EncodeToPNG());
+                Debug.Log("[RegionMap] 3D の絵 → " + path);
+            }
+            finally
+            {
+                camera.targetTexture = null;
+                target.Release();
+                UnityEngine.Object.DestroyImmediate(target);
+                UnityEngine.Object.DestroyImmediate(image);
+            }
+        }
+    }
+}

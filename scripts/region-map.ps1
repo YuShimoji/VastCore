@@ -2,7 +2,10 @@
   # setup   : コンパイルし、探索シーンを用意し、Unity 経由で鳥瞰図を書き出す（バッチ、画面なし）
   # explore : 通常の Editor で探索シーンを再生し、決まった操作の画面を画像に残して終了する
   # play    : 通常の Editor で探索シーンを開いて再生を始める（人が触る用。終了は待たない）
-  [ValidateSet('setup','explore','play')] [string]$Mode = 'setup',
+  # view3d  : 砂岩の台地の 3D 表示（見え方の想定 docs/02_design/REGION_TERRAIN_LOOK_SPEC.md と見比べる場面）を Unity で作り、
+  #           決まった 3 つの視点の画像 look-far.png・look-mid.png・look-near.png を <OutDir> へ書き出す（バッチ。-Seed を書かなければ seed 9）
+  # view3d-cave : 崖と洞窟（局所の体積の試作）の 3 つの視点の画像を <OutDir> へ書き出す（バッチ）
+  [ValidateSet('setup','explore','play','view3d','view3d-cave')] [string]$Mode = 'setup',
   [int]$Seed = 7,
   [int]$Resolution = 1024,
   [string]$Style = 'satellite',
@@ -15,6 +18,9 @@
   [switch]$ModernDevelopment,
   # explore の時だけ: 開始直後の画面を、この秒数ぶん連続で <OutDir>/clip/ へ撮る（雲の流れを動画にする材料）
   [int]$ClipSeconds = 0,
+  # view3d: 地図上の中心 X,Y、アルコーブの前後・裾から棚への連続画像
+  [string]$LookCenter = '',
+  [switch]$AlcoveReview,
   [string]$UnityPath = ''
 )
 
@@ -50,6 +56,20 @@ if ($Mode -eq 'setup') {
     '-logFile', "`"$log`""
   )
   if ($ModernDevelopment) { $unityArgs += @('-regionModern', 'true', '-regionDevelopmentDetails', 'true') }
+} elseif ($Mode -eq 'view3d' -or $Mode -eq 'view3d-cave') {
+  # 画面を描くので -nographics は付けない
+  $method = if ($Mode -eq 'view3d') { 'CaptureFromCommandLine' } else { 'CaptureCaveFromCommandLine' }
+  $unityArgs = @(
+    '-batchmode', '-quit',
+    '-projectPath', "`"$ProjectPath`"",
+    '-executeMethod', "Vastcore.RegionMap.Editor.RegionTerrainViewMenu.$method",
+    '-regionOut', "`"$OutFull`"",
+    '-logFile', "`"$log`""
+  ) + $regionArgs
+  if ($Mode -eq 'view3d') {
+    if ($LookCenter) { $unityArgs += @('-lookCenter', $LookCenter) }
+    if ($AlcoveReview) { $unityArgs += @('-alcoveReview', 'true') }
+  }
 } elseif ($Mode -eq 'play') {
   $unityArgs = @(
     '-projectPath', "`"$ProjectPath`"",
@@ -77,6 +97,10 @@ $process = Start-Process -FilePath $UnityPath -ArgumentList $unityArgs -Wait -Pa
 Write-Host "exit code: $($process.ExitCode)"
 
 if (Test-Path $log) {
+  if ($Mode -in 'view3d', 'view3d-cave') {
+    $shaderFailure = Select-String -LiteralPath $log -Pattern "Shader error in 'Vastcore/Region(Terrain|Plants)'" | Select-Object -First 1
+    if ($shaderFailure) { throw $shaderFailure.Line }
+  }
   Select-String -Path $log -Pattern 'error CS\d+|\[RegionMap\]|Scripts have compiler errors' |
     Select-Object -First 30 | ForEach-Object { Write-Host $_.Line }
 }

@@ -24,6 +24,26 @@ namespace Vastcore.RegionMap
         /// <summary>細かい格子で谷を刻む回数（0 で刻まない）。</summary>
         public int GullyPasses = 5;
 
+        /// <summary>
+        /// 地層の段の強さ（3D 化の試作、段階 B）。0 で入れない（既定。今までの地形とバイト一致）。1 が標準。
+        /// 入れると、広域で傾きのある場所の斜面に、崖の帯と棚ができる。海岸と川の位置は変わらない。
+        /// 海食崖は出ない（広域の地形は岸のセルが低く、崖にする高さが無い）。
+        /// </summary>
+        public float Strata = 0f;
+
+        /// <summary>地層 1 枚の厚さ（m）。崖の高さはこの 4〜6 割ほどで、崖を作る層は半分弱。</summary>
+        public float StrataThickness = 120f;
+
+        /// <summary>
+        /// 砂岩の台地（3D 化、見え方の想定の第1区切り）。0 で入れない（既定。今までの地形とバイト一致）。1 が標準。
+        /// 入れると、乾いていて平らな内陸に、平らな上面・縦の割れ目のある崖・岩屑の斜面・棚・次の崖の断面を持つ台地が立つ。
+        /// 床（広域から引いた標高）・海岸・川は動かさず、その上に載せる。広域の地図より高くなる量は MeanHeightDifference に出る。
+        /// </summary>
+        public float Mesa = 0f;
+
+        /// <summary>台地を置く乾きの条件を外す（どの気候でも置く。試験と比較のため）。</summary>
+        public bool MesaAnyClimate = false;
+
         public RegionDetailSpec Clone()
         {
             return (RegionDetailSpec)MemberwiseClone();
@@ -82,11 +102,14 @@ namespace Vastcore.RegionMap
     ///    窓の中だけで水を流し直すと、窓の外から来る水量が分からず位置がずれるので、そうしない。
     /// 5. 谷の刻み：最後に、細かい格子で斜面の水を集め、集まった所を少し削る。海岸と川の水面は動かさない。
     /// </summary>
-    public static class RegionDetailBuilder
+    public static partial class RegionDetailBuilder
     {
         private const int Margin = 4;
         private const int RiverSteps = 6;
         private const float SmallStreamRatio = 0.12f;
+
+        // 地層の傾き（高さ / 水平距離。約 6 度）。傾けると、崖の帯が等高線に沿わず、斜面を斜めに横切る
+        private const double StrataDip = 0.10;
 
         private struct RiverPiece
         {
@@ -222,6 +245,15 @@ namespace Vastcore.RegionMap
             float roughness = spec.Roughness;
             data.RetainedLakes = anyLake;
 
+            // 地層の段（段階 B）。層は少し傾いていて、傾きの向きは地域ごとに seed で決まる
+            float strataAmount = spec.Strata;
+            float strataThickness = Math.Max(8f, spec.StrataThickness);
+            float[] cliff = strataAmount > 0f ? new float[res * res] : null;
+            data.Cliff = cliff;
+            double dipAngle = RegionNoise.Hash01(3, 7, seed + 230u) * Math.PI * 2.0;
+            double dipX = StrataDip * Math.Cos(dipAngle);
+            double dipY = StrataDip * Math.Sin(dipAngle);
+
             Parallel.For(0, res, y =>
             {
                 for (int x = 0; x < res; x++)
@@ -266,11 +298,21 @@ namespace Vastcore.RegionMap
                         float ramp = 1f - (1f - t) * (1f - t);
                         float baseHeight = Cubic(landHeight, w, h, qx, qy, true);
                         float localRelief = Bilinear(relief, w, h, qx, qy);
+                        float strata = cliff != null ? StrataStrength(strataAmount, localRelief / coarseCell, worldX, worldY, seed) : 0f;
                         float ridged = RegionNoise.Ridged((float)(worldX / 260.0), (float)(worldY / 260.0), 4, seed + 212u);
                         float fine = RegionNoise.Fbm((float)(worldX / 46.0), (float)(worldY / 46.0), 3, seed + 213u);
                         float amplitude = (1.0f + 0.30f * localRelief) * roughness;
                         float bumps = amplitude * (0.75f * broad + 0.7f * (ridged - 0.45f)) + (0.5f + 0.05f * localRelief) * roughness * fine;
-                        value = (baseHeight + bumps) * ramp;
+                        if (strata > 0.01f)
+                        {
+                            float riser;
+                            value = ApplyStrata(baseHeight + bumps, strata, strataThickness, worldX, worldY, dipX, dipY, seed, out riser) * ramp;
+                            cliff[i] = riser * ramp;
+                        }
+                        else
+                        {
+                            value = (baseHeight + bumps) * ramp;
+                        }
                         if (value < 0.15f) value = 0.15f;
 
                         // 川：いちばん近い川筋を探し、川床を掘って水面を置く
@@ -328,9 +370,84 @@ namespace Vastcore.RegionMap
             });
 
             if (spec.GullyPasses > 0) CarveGullies(data, spec.GullyPasses, seed);
+            if (spec.Mesa > 0f)
+            {
+                ApplyMesas(data, spec, new MesaInput
+                {
+                    Region = region, Sign = sign, LandHeight = landHeight, Ground = ground, Relief = relief, Moisture = moisture, Temperature = temperature,
+                    W = w, H = h, Cx0 = cx0, Cy0 = cy0, Gx0 = gx0, Gy0 = gy0, Step = step, CoarseCell = coarseCell, Seed = seed,
+                    Pieces = pieces, Bins = bins,
+                });
+            }
             Classify(data);
             Measure(detail, gx0, gy0, step);
             return detail;
+        }
+
+        /// <summary>
+        /// その場所に地層の段をどれだけ入れるか（0〜1）。広域で傾きのある場所にだけ入れ（平野と街には入れない）、
+        /// さらに数 km〜十数 km の斑で、段のはっきりした山地（7 割ほど）となだらかな山地に分ける。
+        /// slope は広域での傾き（高さ / 水平距離）。位置は地域全体の座標（m）なので、窓を変えても同じ場所は同じ値になる。
+        /// </summary>
+        private static float StrataStrength(float amount, float slope, double worldX, double worldY, uint seed)
+        {
+            float steep = RegionNoise.Smooth(0.05f, 0.20f, slope);
+            if (steep <= 0f) return 0f;
+            float province = RegionNoise.Smooth(-0.30f, 0.05f,
+                RegionNoise.Fbm((float)(worldX / 11000.0) + 5.3f, (float)(worldY / 11000.0) + 8.1f, 3, seed + 231u));
+            float strength = amount * steep * province;
+            return strength > 1f ? 1f : strength;
+        }
+
+        /// <summary>
+        /// 標高を、地層の段に沿って写し直す。層の座標 s = 標高 + 層の傾き + ゆらぎ を厚さで割り、崖を作る層では 1 枚の中を
+        /// 「崖の下の斜面 → 崖（硬い層の露頭）→ 崖の上の棚」の形に置き換える。崖の分だけ、上下の斜面は元よりゆるくなる。
+        /// s について順序を保つ写し方なので、谷と尾根のつながりは変わらず、層の境では元の標高と一致する。
+        /// 崖を作る層は半分弱で（崖の間隔が不揃いになる）、同じ層の崖も横方向に途切れる（途切れた所が崖を越える通り道になる）。
+        /// riser は、そのセルが崖の面にあたる度合い（0〜1）。
+        /// </summary>
+        private static float ApplyStrata(float value, float strength, float thickness, double worldX, double worldY,
+            double dipX, double dipY, uint seed, out float riser)
+        {
+            float warp = 45f * RegionNoise.Fbm((float)(worldX / 2500.0), (float)(worldY / 2500.0), 3, seed + 232u)
+                + 8f * RegionNoise.Fbm((float)(worldX / 300.0), (float)(worldY / 300.0), 2, seed + 233u)
+                + 2.5f * RegionNoise.Fbm((float)(worldX / 60.0), (float)(worldY / 60.0), 2, seed + 236u);
+            double q = (value + dipX * worldX + dipY * worldY + warp) / thickness;
+            double layerFloor = Math.Floor(q);
+            int layer = (int)layerFloor;
+            float f = (float)(q - layerFloor);
+
+            riser = 0f;
+            float pick = RegionNoise.Hash01(layer, 0, seed + 234u);
+            if (pick < 0.55f) return value;
+            float hardness = 0.6f + 0.4f * (pick - 0.55f) / 0.45f;
+
+            // 同じ層でも、崖がある区間と無い区間がある
+            float present = RegionNoise.Smooth(-0.10f, 0.22f,
+                RegionNoise.Fbm((float)(worldX / 1300.0) + layer * 13.7f, (float)(worldY / 1300.0) - layer * 7.1f, 2, seed + 235u));
+            float weight = strength * hardness * present;
+            if (weight <= 0.001f) return value;
+
+            // 崖の位置（層の中の高さ）と崖の高さは層ごとに違う。崖が占める s の幅は狭く、そこで層の厚さの 4〜6 割を登る
+            const float RiserSpan = 0.06f;
+            float a = 0.30f + 0.35f * RegionNoise.Hash01(layer, 1, seed + 234u);
+            float b = a + RiserSpan;
+            float rise = 0.38f + 0.27f * RegionNoise.Hash01(layer, 2, seed + 234u);
+            // 同じ崖でも、場所によって高さが 7 割〜13 割に変わる（壁のように一様な高さにしない）
+            rise *= 1f + 0.6f * RegionNoise.Fbm((float)(worldX / 420.0) - layer * 3.3f, (float)(worldY / 420.0) + layer * 5.9f, 2, seed + 237u);
+            if (rise < 0.2f) rise = 0.2f; else if (rise > 0.8f) rise = 0.8f;
+            // 残りの高さを、崖の下の斜面と上の棚で分ける（棚は下の斜面の 6 割の傾き）
+            float below = (1f - rise) / (a + 0.6f * (1f - b));
+            float above = 0.6f * below;
+            float g;
+            if (f < a) g = f * below;
+            else if (f < b) g = a * below + rise * (f - a) / RiserSpan;
+            else g = 1f - (1f - f) * above;
+
+            const float Fade = 0.02f;
+            float inside = f < a ? 1f - (a - f) / Fade : (f > b ? 1f - (f - b) / Fade : 1f);
+            riser = inside > 0f ? inside * weight : 0f;
+            return value + weight * thickness * (g - f);
         }
 
         /// <summary>
@@ -343,6 +460,7 @@ namespace Vastcore.RegionMap
             int count = n * n;
             float[] h = data.Height;
             float[] water = data.WaterCoverage;
+            float[] cliff = data.Cliff;
             float cell = data.CellMeters;
             var land = new bool[count];
             for (int i = 0; i < count; i++) land[i] = h[i] > 0f;
@@ -404,7 +522,10 @@ namespace Vastcore.RegionMap
                         float c = previous[i - n];
                         float d = previous[i + n];
                         if (a <= 0f || b <= 0f || c <= 0f || d <= 0f) continue;
-                        h[i] = previous[i] + 0.2f * (a + b + c + d - 4f * previous[i]);
+                        // 崖の面はならさない（地層の段を入れた時だけ。溝は崖に切れ込みとして残る）
+                        float keep = cliff != null ? 1f - cliff[i] : 1f;
+                        if (keep <= 0f) continue;
+                        h[i] = previous[i] + 0.2f * keep * (a + b + c + d - 4f * previous[i]);
                     }
                 });
             }
