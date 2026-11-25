@@ -260,12 +260,14 @@ namespace Vastcore.Tests.EditMode
             RegionData plain = plainDetail.Data;
             Assert.IsNull(plain.Caprock);
             Assert.IsNull(plain.Talus);
+            Assert.IsNull(plain.MesaContactHeight);
 
             spec.Mesa = 1f;
             RegionDetail mesaDetail = RegionDetailBuilder.Build(region, spec);
             RegionData mesa = mesaDetail.Data;
             Assert.IsNotNull(mesa.Caprock);
             Assert.IsNotNull(mesa.Talus);
+            Assert.AreEqual(mesa.Height.Length, mesa.MesaContactHeight.Length);
             // 海岸と川は動かず、広域の地図より高くなった分だけ、標高の差が増える
             CollectionAssert.AreEqual(plain.WaterCoverage, mesa.WaterCoverage);
             Assert.AreEqual(plainDetail.CoastAgreement, mesaDetail.CoastAgreement);
@@ -379,6 +381,26 @@ namespace Vastcore.Tests.EditMode
             }
             // 外側の地形は、内側の範囲を抜いてある
             Assert.Less(scene.OuterTerrain.TriangleCount, (outerN - 1) * (outerN - 1) * 2);
+
+            // 水を含む頂点では砂岩の材質を抑え、乾いた陸には地形と同じ崖錐と層の境界を渡す。
+            inner.Data.WaterCoverage[0] = 1f;
+            inner.Data.Moisture[1] = 0.24f;
+            inner.Data.WaterCoverage[1] = 0f;
+            Mesh terrainMesh = RegionTerrainView.LookMesh(inner);
+            try
+            {
+                var surface = new System.Collections.Generic.List<Vector4>();
+                terrainMesh.GetUVs(1, surface);
+                Assert.AreEqual(inner.VertexCount, surface.Count);
+                Assert.AreEqual(0f, surface[0].w);
+                Assert.AreEqual(1f, surface[1].w);
+                Assert.AreEqual(inner.Data.Talus[1], surface[1].x);
+                Assert.AreEqual(inner.Positions[4] - inner.Data.MesaContactHeight[1], surface[1].y);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(terrainMesh);
+            }
 
             foreach (RegionLookPart part in scene.Parts())
             {

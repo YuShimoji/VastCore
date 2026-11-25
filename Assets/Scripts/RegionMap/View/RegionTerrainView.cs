@@ -221,6 +221,11 @@ namespace Vastcore.RegionMap
                 material.name = part.Name;
                 material.SetColor("_RockColor", new Color(RegionLookScene.RockRed, RegionLookScene.RockGreen, RegionLookScene.RockBlue, 1f));
                 material.SetFloat("_BandAmount", RegionLookScene.BandAmount);
+                if (part.Data?.MesaContactHeight != null || (part.Data == null && scene.Spec.Mesa > 0f))
+                {
+                    material.EnableKeyword("REGION_SANDSTONE");
+                    material.SetFloat("_LooseRock", part.Data == null ? 1f : 0f);
+                }
                 MeshRenderer renderer = AddPart(root.transform, part.Name, LookMesh(part), material);
                 // 地形の影は頂点に持たせてある。Unity の影を落とすのは岩だけにする
                 if (part.Data != null) renderer.shadowCastingMode = ShadowCastingMode.Off;
@@ -287,6 +292,20 @@ namespace Vastcore.RegionMap
             mesh.SetVertices(vertices);
             mesh.SetNormals(normals);
             if (part.Uv != null) mesh.SetUVs(0, uv);
+            if (part.Data?.MesaContactHeight != null)
+            {
+                RegionData data = part.Data;
+                var surface = new Vector4[count];
+                for (int v = 0; v < count; v++)
+                {
+                    float wet = data.WaterCoverage != null ? data.WaterCoverage[v] : 0f;
+                    float dryLand = data.Height[v] <= 0f || data.LakeDepth[v] > 0f ? 0f
+                        : (1f - Mathf.Clamp01(wet)) * RegionNoise.Smooth(0.42f, 0.30f, data.Moisture[v]);
+                    float cover = Mathf.InverseLerp(0.10f, 0.32f, data.Moisture[v]);
+                    surface[v] = new Vector4(data.Talus[v], vertices[v].y - data.MesaContactHeight[v], cover, dryLand);
+                }
+                mesh.SetUVs(1, surface);
+            }
             mesh.SetColors(colors);
             mesh.SetTriangles(triangles, 0, true);
             return mesh;

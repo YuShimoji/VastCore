@@ -349,6 +349,7 @@ namespace Vastcore.RegionMap
             float[] water = data.WaterCoverage;
             var talus = new float[res * res];
             var caprock = new byte[res * res];
+            var contactHeight = new float[res * res];
             var changed = new bool[res * res];
             Parallel.For(0, res, y =>
             {
@@ -357,6 +358,7 @@ namespace Vastcore.RegionMap
                     int i = x + y * res;
                     int j = x + pad + (y + pad) * n;
                     float floor = height[i];
+                    contactHeight[i] = capLevel[j] - MesaCapThickness;
                     if (floor <= 0f || skirt[j] <= 0f) continue;
                     if (water[i] > 0f || data.LakeDepth[i] > 0f) continue;
                     double worldX = worldLeft + (x + pad) * (double)cell;
@@ -455,6 +457,7 @@ namespace Vastcore.RegionMap
             data.Cliff = cliff;
             data.Talus = talus;
             data.Caprock = caprock;
+            data.MesaContactHeight = contactHeight;
         }
 
         /// <summary>

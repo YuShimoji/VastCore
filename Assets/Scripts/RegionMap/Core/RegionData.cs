@@ -87,6 +87,9 @@ namespace Vastcore.RegionMap
         /// <summary>台地の帽子の岩（上面と崖）にあたるセルは 1。RegionDetailSpec.Mesa を入れた時だけ持つ。</summary>
         public byte[] Caprock;
 
+        /// <summary>台地を作る窓での、帽子の砂岩と下の軟らかい層の境界標高（m）。材質に地形と同じ層準を渡す。</summary>
+        public float[] MesaContactHeight;
+
         public RegionDevelopment Development { get; internal set; }
         internal RegionPosition DevelopmentOrigin;
 

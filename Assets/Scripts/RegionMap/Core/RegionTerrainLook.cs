@@ -117,7 +117,7 @@ namespace Vastcore.RegionMap
     /// </summary>
     public sealed class RegionLookScene
     {
-        /// <summary>岩肌の色（砂岩。仮の値で、材質の重ね分けは次の区切り）。</summary>
+        /// <summary>地形の簡易描画と、砂岩の表面材質を適用しない場所で使う岩肌の色。</summary>
         public const float RockRed = 0.77f, RockGreen = 0.45f, RockBlue = 0.30f;
 
         /// <summary>岩肌に入れる、高さに沿った縞の強さ（仮の値）。</summary>

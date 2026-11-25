@@ -261,7 +261,7 @@ namespace Vastcore.RegionMap.Preview
         }
 
         /// <summary>
-        /// 絵 1 枚ぶんの描画。色の決め方は Unity のシェーダー（Resources/RegionMap3D/RegionTerrain.shader）と揃える：
+        /// 地形と視点の確認用に絵 1 枚を簡易描画する。Unity の砂岩材質は固定視点の view3d 撮影で確認する。
         /// 地面は真上から見た画像、急な面と岩は岩肌の色。明るさ = 空からの光 × 空の開け具合 + 太陽 × 面の向き × 日当たり。
         /// 霞と空の色は入れない（光と空気は次の区切り）。
         /// </summary>
