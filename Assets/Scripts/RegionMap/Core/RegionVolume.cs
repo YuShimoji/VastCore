@@ -25,6 +25,9 @@ namespace Vastcore.RegionMap
         /// <summary>壁の凹凸の大きさ（m）。</summary>
         public float Roughness = 0f;
 
+        // A resistant bed forms a broad soffit above a gently draining shelf.
+        public bool Bedded;
+
         /// <summary>空洞の壁までの距離（m）。空洞の中は負。</summary>
         internal float Distance(float x, float y, float z, uint seed)
         {
@@ -36,6 +39,21 @@ namespace Vastcore.RegionMap
             float oy = (y - (Ay + dy * t)) / (Flatten > 0.05f ? Flatten : 0.05f);
             float oz = z - (Az + dz * t);
             float distance = (float)Math.Sqrt(ox * ox + oy * oy + oz * oz) - (RadiusA + (RadiusB - RadiusA) * t);
+            float floor = FloorY - y;
+            if (Bedded)
+            {
+                float radius = RadiusA + (RadiusB - RadiusA) * t;
+                float lateral = (float)Math.Sqrt(ox * ox + oz * oz);
+                float vertical = Math.Abs(oy);
+                // Rounded corners at the back, a flatter ceiling where the bed spans the mouth.
+                float bevel = radius * 0.32f;
+                float side = Math.Max(0f, lateral - radius + bevel);
+                float cap = Math.Max(0f, vertical - radius + bevel);
+                distance = (float)Math.Sqrt(side * side + cap * cap) - bevel
+                    + Math.Min(0f, Math.Max(lateral, vertical) - radius + bevel);
+                float across = (ox * dz - oz * dx) / (float)Math.Sqrt(Math.Max(1f, dx * dx + dz * dz));
+                floor += 0.10f * across + 0.42f * (float)Math.Sin(t * 6.4f + across * 0.22f);
+            }
             if (Roughness > 0f && distance > -4f && distance < 4f)
             {
                 // 3 つの面で引いた 2 次元のノイズを足して、3 次元の凹凸の代わりにする
@@ -44,7 +62,6 @@ namespace Vastcore.RegionMap
                     + RegionNoise.Fbm(z / 6f + 9.7f, x / 6f + 31.9f, 2, seed + 303u);
                 distance += Roughness * noise * 0.67f;
             }
-            float floor = FloorY - y;
             return floor > distance ? floor : distance;
         }
     }
@@ -63,6 +80,8 @@ namespace Vastcore.RegionMap
         /// <summary>密度を測る間隔（m）。</summary>
         public float VoxelMeters = 1f;
 
+        // Align the outer row of surface-net vertices to the terrain grid (mesa inset).
+        public bool JoinHeightGrid;
         public uint Seed;
 
         public readonly List<RegionVolumeCavity> Cavities = new List<RegionVolumeCavity>();
@@ -148,6 +167,7 @@ namespace Vastcore.RegionMap
                 for (int i = 0; i < nx; i++)
                 {
                     float h = patch.HeightAt(patch.MinX + i * v, patch.MinZ + k * v);
+                    h -= patch.GridShift(patch.MinX + i * v, patch.MinZ + k * v, h);
                     if (h < low) low = h;
                     if (h > high) high = h;
                 }
@@ -174,9 +194,10 @@ namespace Vastcore.RegionMap
                 {
                     float x = patch.MinX + i * v;
                     float ground = patch.HeightAt(x, z);
+                    float shift = patch.GridShift(x, z, ground);
                     for (int j = 0; j < ny; j++)
                     {
-                        float y = patch.MinY + j * v;
+                        float y = patch.MinY + j * v + shift;
                         density[i + nx * (j + ny * k)] = patch.Carve(ground - y, x, y, z);
                     }
                 }
@@ -217,6 +238,16 @@ namespace Vastcore.RegionMap
         public float Density(float x, float y, float z)
         {
             return Carve(HeightAt(x, z) - y, x, y, z);
+        }
+
+        // Outside the cavity, bend the sampling columns up to the uncut surface.
+        // At the rim each column crosses the same layer, putting exactly one dual
+        // vertex at each original grid point, even on a near-vertical wall.
+        private float GridShift(float x, float z, float ground)
+        {
+            if (!Spec.JoinHeightGrid) return 0f;
+            float edge = Math.Min(Math.Min(x - MinX, MaxX - x), Math.Min(z - MinZ, MaxZ - z));
+            return (ground - Spec.FocusY) * (1f - RegionNoise.Smooth(2f * Spec.VoxelMeters, 9f, edge));
         }
 
         private float Carve(float density, float x, float y, float z)
@@ -283,9 +314,24 @@ namespace Vastcore.RegionMap
                         if (length < 1e-9f) length = 1f;
 
                         cellVertex[cellIndex] = positions.Count / 3;
-                        positions.Add(MinX + (i + sx / crossings) * v);
-                        positions.Add(MinY + (j + sy / crossings) * v);
-                        positions.Add(MinZ + (k + sz / crossings) * v);
+                        float wx = MinX + (i + sx / crossings) * v, wz = MinZ + (k + sz / crossings) * v;
+                        float wy = MinY + (j + sy / crossings) * v;
+                        if (Spec.JoinHeightGrid)
+                        {
+                            wy += GridShift(wx, wz, HeightAt(wx, wz));
+                            float edge = Math.Min(Math.Min(wx - MinX, MaxX - wx), Math.Min(wz - MinZ, MaxZ - wz));
+                            if (edge < 9f)
+                            {
+                                wy = HeightAt(wx, wz); // The carving ends before the transition band.
+                                gx = HeightAt(wx + v, wz) - HeightAt(wx - v, wz);
+                                gy = -2f * v;
+                                gz = HeightAt(wx, wz + v) - HeightAt(wx, wz - v);
+                                length = (float)Math.Sqrt(gx * gx + gy * gy + gz * gz);
+                            }
+                        }
+                        positions.Add(wx);
+                        positions.Add(wy);
+                        positions.Add(wz);
                         // 密度は岩の中が正なので、外向きは勾配の逆
                         normals.Add(-gx / length);
                         normals.Add(-gy / length);

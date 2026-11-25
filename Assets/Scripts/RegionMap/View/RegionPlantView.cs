@@ -10,9 +10,24 @@ namespace Vastcore.RegionMap
         // Atlas columns are pairs of projections of the same branching plant; rows are RegionPlantKind.
         private static readonly float[] Aspect = { 1.35f, 1.65f, 1.12f, 1.12f };
 
-        public static int[] AddTo(Transform root, RegionLookScene scene)
+        public static int[] AddTo(Transform root, RegionLookScene scene, RegionAlcoveView alcove)
         {
             List<RegionPlant> plants = RegionPlantField.Build(scene);
+            if (alcove == null) return AddPlants(root, plants, "Vegetation");
+            var displaced = plants.FindAll(p => alcove.LostSupport(p.X, p.Y, p.Z, 0.10f));
+            if (displaced.Count == 0) return AddPlants(root, plants, "Vegetation");
+            var lost = new HashSet<RegionPlant>(displaced);
+            plants.RemoveAll(lost.Contains);
+            var holder = new GameObject("Vegetation");
+            holder.transform.SetParent(root, false);
+            int[] counts = AddPlants(holder.transform, plants, "Rooted");
+            AddPlants(holder.transform, displaced, "Before carving");
+            alcove.UnsupportedPlants = holder.transform.Find("Before carving").gameObject;
+            return counts;
+        }
+
+        internal static int[] AddPlants(Transform root, List<RegionPlant> plants, string name)
+        {
             var counts = new int[4];
             if (plants.Count == 0) return counts;
             Shader shader = Resources.Load<Shader>("RegionMap3D/RegionPlants");
@@ -21,7 +36,7 @@ namespace Vastcore.RegionMap
             var material = new Material(shader) { name = "Desert plants", hideFlags = HideFlags.DontSave };
             material.SetTexture("_BaseMap", atlas);
             material.EnableKeyword("_ALPHATEST_ON"); // Also cuts holes in the URP shadow and depth passes.
-            var parent = new GameObject("Vegetation");
+            var parent = new GameObject(name);
             parent.transform.SetParent(root, false);
             var tiles = new Dictionary<Vector2Int, List<RegionPlant>>();
             foreach (RegionPlant plant in plants)

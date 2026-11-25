@@ -241,6 +241,58 @@ namespace Vastcore.Tests.EditMode
             Assert.Greater(patch.HeightAt(chamber.Bx, chamber.Bz), chamber.By + 8f);
         }
 
+        [Test]
+        public void MesaAlcove_CutsOneContact_AndSharesEveryRimVertexWithTheGrid()
+        {
+            const int n = 192;
+            var data = new RegionData(new RegionSpec { Resolution = n, SizeKm = n / 1000f });
+            data.MesaContactHeight = new float[n * n];
+            data.Cliff = new float[n * n];
+            data.Caprock = new byte[n * n];
+            Assert.IsNull(RegionMesaAlcove.Find(data));
+            for (int z = 0; z < n; z++)
+            for (int x = 0; x < n; x++)
+            {
+                int i = x + z * n;
+                data.Height[i] = x < 96 ? 50f : 99f;
+                data.MesaContactHeight[i] = 50f;
+                data.Caprock[i] = (byte)(x >= 96 ? 1 : 0);
+                data.Cliff[i] = x == 96 ? 1f : 0f;
+            }
+            var site = RegionMesaAlcove.Find(data);
+            Assert.IsNotNull(site);
+            Assert.AreEqual(1, site.Volume.Cavities.Count);
+            var patch = RegionVolumePatch.Build(data, site.Volume);
+            site.Point(0f, 5f, out float sx, out float sz);
+            Assert.Less(patch.Density(sx, site.Floor + 2f, sz), 0f);
+            Assert.Greater(patch.Density(sx, site.Floor + 12f, sz), 0f);
+            Assert.Greater(patch.DownFacingShare, 0f);
+            int rim = 0;
+            for (int v = 0; v < patch.VertexCount; v++)
+            {
+                float x = patch.Positions[v * 3], z = patch.Positions[v * 3 + 2];
+                if (x - patch.MinX > 0.75f && patch.MaxX - x > 0.75f &&
+                    z - patch.MinZ > 0.75f && patch.MaxZ - z > 0.75f) continue;
+                int ix = Mathf.RoundToInt(x), iz = Mathf.RoundToInt(z);
+                Assert.AreEqual(ix, x, 0.001f);
+                Assert.AreEqual(iz, z, 0.001f);
+                Assert.AreEqual(data.Height[ix + iz * n], patch.Positions[v * 3 + 1], 0.001f);
+                rim++;
+            }
+            Assert.AreEqual(4 * (patch.SamplesX - 2), rim);
+            // The same lip across a 48 m wide pinnacle would remove its entire footing.
+            for (int z = 0; z < n; z++)
+            {
+                if (Mathf.Abs(z - 96) <= 24) continue;
+                for (int x = 96; x < n; x++)
+                {
+                    data.Height[x + z * n] = 50f;
+                    data.Caprock[x + z * n] = 0;
+                }
+            }
+            Assert.IsNull(RegionMesaAlcove.Find(data));
+        }
+
         private static RegionData _dryRegion;
 
         /// <summary>seed 9 の地域（南に、台地が立つ乾いた平原がある）。台地の試験で使い回す。</summary>

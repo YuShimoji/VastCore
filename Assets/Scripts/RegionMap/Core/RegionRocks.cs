@@ -209,6 +209,13 @@ namespace Vastcore.RegionMap
         /// 形を、大きさ・向き・位置を決めて書き足す。yaw は真上から見た回転。slopeX・slopeZ は地面の傾きに沿わせる量、
         /// tiltX・tiltZ は岩ごとの傾き（どれも高さ / 水平距離）。
         /// </summary>
+        internal static void AppendFallenSlab(List<float> positions, List<float> normals, int variant,
+            float x, float y, float z, float size, float yaw, float dip)
+        {
+            Append(Shapes(false)[variant % ShapeCount], positions, normals, x, y + size * 0.08f, z,
+                size, size * 0.40f, size * 0.72f, yaw, 0f, 0f, dip, -0.18f);
+        }
+
         private static void Append(Shape shape, List<float> positions, List<float> normals, float x, float y, float z,
             float sx, float sy, float sz, float yaw, float slopeX, float slopeZ, float tiltX, float tiltZ)
         {

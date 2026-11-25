@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Globalization;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -29,7 +30,7 @@ namespace Vastcore.RegionMap.Editor
                 SceneView view = SceneView.lastActiveSceneView;
                 if (view != null) view.AlignViewToObject(camera.transform);
                 Selection.activeGameObject = look.Root;
-                Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + "。視点は「Region Terrain Look/Viewpoints」の far・mid・near");
+                Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + "。視点は「Region Terrain Look/Viewpoints」の far・mid・near と、適地がある場合は alcove-mid・alcove-near・alcove-shelf");
             }
             finally
             {
@@ -123,18 +124,25 @@ namespace Vastcore.RegionMap.Editor
                 ShaderUtil.allowAsyncCompilation = false;
                 var watch = System.Diagnostics.Stopwatch.StartNew();
                 var regionSpec = new RegionSpec { Seed = int.Parse(RegionMapMenu.Argument("-regionSeed", "9")) };
-                RegionTerrainView.LookResult look = CreateLookScene(regionSpec, new RegionLookSpec(), out Camera camera);
+                var spec = new RegionLookSpec();
+                string center = RegionMapMenu.Argument("-lookCenter", "");
+                if (center.Length > 0)
+                {
+                    string[] xy = center.Split(',');
+                    if (xy.Length != 2) throw new ArgumentException("-lookCenter X,Y");
+                    spec.CenterMapX = float.Parse(xy[0], CultureInfo.InvariantCulture);
+                    spec.CenterMapY = float.Parse(xy[1], CultureInfo.InvariantCulture);
+                }
+                RegionTerrainView.LookResult look = CreateLookScene(regionSpec, spec, out Camera camera);
                 Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + " 作成 " + watch.ElapsedMilliseconds + "ms");
                 // 作った直後の最初の 1 枚は、地面の画像が貼られる前の白い地面で写る（2026-11-25 に、最初と最後に同じ視点を撮って確かめた）。
                 // 捨てコマを 1 枚描いてから撮る
                 RegionTerrainView.PlaceLook(camera.transform, look.Scene, look.Scene.Spec.Far);
                 Capture(camera, null, null);
-                foreach (RegionLookViewpoint viewpoint in look.Scene.Spec.Viewpoints())
-                {
-                    RegionTerrainView.PlaceLook(camera.transform, look.Scene, viewpoint);
-                    camera.fieldOfView = viewpoint.FovDegrees;
-                    Capture(camera, output, "look-" + viewpoint.Name + ".png");
-                }
+                if (look.Alcove != null && RegionMapMenu.Argument("-alcoveReview", "false") == "true")
+                    CaptureAlcoveComparison(camera, look, output);
+                CaptureLookViews(camera, look, output);
+                if (look.Alcove == null) DescribeNearestCap(look.Scene);
             }
             catch (Exception exception)
             {
@@ -173,6 +181,79 @@ namespace Vastcore.RegionMap.Editor
             EditorApplication.Exit(exitCode);
         }
 
+        private static void CaptureLookViews(Camera camera, RegionTerrainView.LookResult look, string output)
+        {
+            Directory.CreateDirectory(output);
+            foreach (RegionLookViewpoint viewpoint in look.Scene.Spec.Viewpoints())
+            {
+                RegionTerrainView.PlaceLook(camera.transform, look.Scene, viewpoint);
+                camera.fieldOfView = viewpoint.FovDegrees;
+                Capture(camera, output, "look-" + viewpoint.Name + ".png");
+            }
+            if (look.Alcove == null) return;
+            foreach (bool mid in new[] { true, false })
+            {
+                look.Alcove.Place(camera.transform, mid, 0.57f, true);
+                camera.fieldOfView = mid ? 48f : 67f;
+                Capture(camera, output, mid ? "alcove-mid.png" : "alcove-near.png");
+            }
+        }
+
+        private static void CaptureAlcoveComparison(Camera camera, RegionTerrainView.LookResult look, string output)
+        {
+            var alcove = look.Alcove;
+            var vegetation = look.Root.transform.Find("Vegetation");
+            alcove.Show(false, false);
+            CaptureLookViews(camera, look, Path.Combine(output, "original"));
+            if (vegetation) vegetation.gameObject.SetActive(false);
+            CaptureLookViews(camera, look, Path.Combine(output, "before"));
+            alcove.Show(true, false);
+            CaptureLookViews(camera, look, Path.Combine(output, "shape"));
+            alcove.Show(true, true);
+            if (vegetation) vegetation.gameObject.SetActive(true);
+            string walk = Path.Combine(output, "walk");
+            Directory.CreateDirectory(walk);
+            camera.fieldOfView = 67f;
+            for (int frame = 0; frame <= 32; frame++)
+            {
+                alcove.Place(camera.transform, false, frame / 32f);
+                Capture(camera, walk, frame.ToString("D3") + ".png", 960, 540);
+            }
+        }
+
+        private static void DescribeNearestCap(RegionLookScene scene)
+        {
+            var data = scene.Outer.Data;
+            int nearest = -1;
+            float distance = float.MaxValue;
+            if (data.Caprock == null) return;
+            int n = data.Resolution;
+            // A lone cap cell can be an isolated pinnacle. Look for a broad
+            // remnant (roughly 140 m across) before suggesting a new window.
+            const int radius = 12;
+            for (int z = radius; z < n - radius; z += 4)
+            for (int x = radius; x < n - radius; x += 4)
+            {
+                int i = x + z * n;
+                if (data.Caprock[i] == 0) continue;
+                float dx = (x + 0.5f) * scene.OuterCell - scene.CenterX;
+                float dz = (z + 0.5f) * scene.OuterCell - scene.CenterZ;
+                float d = dx * dx + dz * dz;
+                if (d >= distance) continue;
+                int coverage = 0;
+                for (int j = -radius; j <= radius; j += 2)
+                for (int k = -radius; k <= radius; k += 2)
+                    coverage += data.Caprock[i + k + j * n];
+                if (coverage < 140) continue;
+                nearest = i;
+                distance = d;
+            }
+            if (nearest < 0) return;
+            float mapCell = scene.Outer.SizeMap / data.Resolution;
+            Debug.Log("[RegionMap] broad outer cap X" + (scene.Outer.OriginMapX + (nearest % data.Resolution + 0.5f) * mapCell).ToString("F5", CultureInfo.InvariantCulture)
+                + " Y" + (scene.Outer.OriginMapY + (nearest / data.Resolution + 0.5f) * mapCell).ToString("F5", CultureInfo.InvariantCulture));
+        }
+
         private static string DescribeLook(RegionTerrainView.LookResult look)
         {
             RegionLookScene scene = look.Scene;
@@ -181,7 +262,11 @@ namespace Vastcore.RegionMap.Editor
             return "砂岩の台地の場面 中心 X" + scene.Spec.CenterMapX.ToString("F2") + " Y" + scene.Spec.CenterMapY.ToString("F2")
                 + " / 内側 " + scene.Inner.Data.SizeKm.ToString("F2") + " km（1 セル " + scene.InnerCell.ToString("F2") + " m）外側 " + scene.Outer.Data.SizeKm.ToString("F1") + " km"
                 + " / 広域の地図との標高の差の平均 内側 " + scene.Inner.MeanHeightDifference.ToString("F1") + " m 外側 " + scene.Outer.MeanHeightDifference.ToString("F1") + " m"
-                + " / 岩 " + rocks + " 個 / 草株・低木・針葉樹・谷筋の広葉樹 " + string.Join("/", look.PlantCounts) + " / シェーダー " + shader;
+                + " / 岩 " + rocks + " 個 / 草株・低木・針葉樹・谷筋の広葉樹 " + string.Join("/", look.PlantCounts) + " / シェーダー " + shader
+                + (look.Alcove == null ? " / アルコーブ適地なし" : " / アルコーブ 内側 X" + look.Alcove.Site.Volume.FocusX.ToString("F1")
+                + " Z" + look.Alcove.Site.Volume.FocusZ.ToString("F1") + " m 床 " + look.Alcove.Site.Floor.ToString("F1")
+                + " m 天井頂点率 " + look.Alcove.Patch.DownFacingShare.ToString("P2") + " しみ出し " + look.Alcove.SeepPlants
+                + " 株 崩落岩 " + look.Alcove.FallenBlocks + " 個");
         }
 
         private static string Describe(RegionTerrainView.Result result)
@@ -199,19 +284,17 @@ namespace Vastcore.RegionMap.Editor
         }
 
         /// <summary>カメラの絵を 1600×900 で描き、output のフォルダへ name で書き出す。name が null なら、描くだけで書き出さない。</summary>
-        private static void Capture(Camera camera, string output, string name)
+        private static void Capture(Camera camera, string output, string name, int width = 1600, int height = 900)
         {
-            const int Width = 1600;
-            const int Height = 900;
-            var target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
-            var image = new Texture2D(Width, Height, TextureFormat.RGB24, false);
+            var target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
+            var image = new Texture2D(width, height, TextureFormat.RGB24, false);
             try
             {
                 camera.targetTexture = target;
                 camera.Render();
                 RenderTexture previous = RenderTexture.active;
                 RenderTexture.active = target;
-                image.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
+                image.ReadPixels(new Rect(0, 0, width, height), 0, 0);
                 image.Apply();
                 RenderTexture.active = previous;
                 if (name == null) return;

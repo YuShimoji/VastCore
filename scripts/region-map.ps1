@@ -18,6 +18,9 @@
   [switch]$ModernDevelopment,
   # explore の時だけ: 開始直後の画面を、この秒数ぶん連続で <OutDir>/clip/ へ撮る（雲の流れを動画にする材料）
   [int]$ClipSeconds = 0,
+  # view3d: 地図上の中心 X,Y、アルコーブの前後・裾から棚への連続画像
+  [string]$LookCenter = '',
+  [switch]$AlcoveReview,
   [string]$UnityPath = ''
 )
 
@@ -63,6 +66,10 @@ if ($Mode -eq 'setup') {
     '-regionOut', "`"$OutFull`"",
     '-logFile', "`"$log`""
   ) + $regionArgs
+  if ($Mode -eq 'view3d') {
+    if ($LookCenter) { $unityArgs += @('-lookCenter', $LookCenter) }
+    if ($AlcoveReview) { $unityArgs += @('-alcoveReview', 'true') }
+  }
 } elseif ($Mode -eq 'play') {
   $unityArgs = @(
     '-projectPath', "`"$ProjectPath`"",

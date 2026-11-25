@@ -191,6 +191,7 @@ namespace Vastcore.RegionMap
             public GameObject Root;
             public RegionLookScene Scene;
             public int[] PlantCounts;
+            public RegionAlcoveView Alcove;
         }
 
         /// <summary>
@@ -202,6 +203,7 @@ namespace Vastcore.RegionMap
             RegionLookScene scene = RegionLookScene.Build(region, spec);
             var root = new GameObject("Region Terrain Look");
             var plain = new RegionRenderOptions { CloudCover = 0f, Exaggeration = 0f, CastShadow = 0f };
+            var result = new LookResult { Root = root, Scene = scene };
             foreach (RegionLookPart part in scene.Parts())
             {
                 Texture2D texture;
@@ -229,6 +231,10 @@ namespace Vastcore.RegionMap
                 }
                 MeshRenderer renderer = AddPart(root.transform, part.Name, LookMesh(part), material);
                 // 地形の影は頂点に持たせてあるため、地形メッシュによる二重の投影を省く
+                if (part == scene.Rocks)
+                    result.Alcove?.BindRocks(renderer.GetComponent<MeshFilter>().sharedMesh);
+                if (part == scene.InnerTerrain)
+                    result.Alcove = RegionAlcoveView.Build(root.transform, scene, renderer, material);
                 if (part.Data != null) renderer.shadowCastingMode = ShadowCastingMode.Off;
             }
 
@@ -240,7 +246,13 @@ namespace Vastcore.RegionMap
                 point.transform.SetParent(points.transform, false);
                 PlaceLook(point.transform, scene, viewpoint);
             }
-            return new LookResult { Root = root, Scene = scene, PlantCounts = RegionPlantView.AddTo(root.transform, scene) };
+            result.PlantCounts = RegionPlantView.AddTo(root.transform, scene, result.Alcove);
+            if (result.Alcove != null)
+            {
+                result.Alcove.AddViewpoints(points.transform);
+                result.Alcove.Show(true, true);
+            }
+            return result;
         }
 
         /// <summary>決まった視点の位置と向きを写す（画角は RegionLookViewpoint.FovDegrees を Camera.fieldOfView に入れる）。</summary>
@@ -299,17 +311,22 @@ namespace Vastcore.RegionMap
                 var surface = new Vector4[count];
                 for (int v = 0; v < count; v++)
                 {
-                    float wet = data.WaterCoverage != null ? data.WaterCoverage[v] : 0f;
-                    float dryLand = data.Height[v] <= 0f || data.LakeDepth[v] > 0f ? 0f
-                        : (1f - Mathf.Clamp01(wet)) * RegionNoise.Smooth(0.42f, 0.30f, data.Moisture[v]);
-                    float cover = Mathf.InverseLerp(0.10f, 0.32f, data.Moisture[v]);
-                    surface[v] = new Vector4(data.Talus[v], vertices[v].y - data.MesaContactHeight[v], cover, dryLand);
+                    surface[v] = SandstoneChannels(data, v, vertices[v].y);
                 }
                 mesh.SetUVs(1, surface);
             }
             mesh.SetColors(colors);
             mesh.SetTriangles(triangles, 0, true);
             return mesh;
+        }
+
+        internal static Vector4 SandstoneChannels(RegionData data, int i, float y)
+        {
+            float wet = data.WaterCoverage != null ? data.WaterCoverage[i] : 0f;
+            float dryLand = data.Height[i] <= 0f || data.LakeDepth[i] > 0f ? 0f
+                : (1f - Mathf.Clamp01(wet)) * RegionNoise.Smooth(0.42f, 0.30f, data.Moisture[i]);
+            return new Vector4(data.Talus[i], y - data.MesaContactHeight[i],
+                Mathf.InverseLerp(0.10f, 0.32f, data.Moisture[i]), dryLand);
         }
 
         private static bool Inside(float[] positions, int vertex, float minX, float maxX, float minZ, float maxZ)
@@ -328,7 +345,7 @@ namespace Vastcore.RegionMap
             return material;
         }
 
-        private static MeshRenderer AddPart(Transform parent, string name, Mesh mesh, Material material)
+        internal static MeshRenderer AddPart(Transform parent, string name, Mesh mesh, Material material)
         {
             var part = new GameObject(name);
             part.transform.SetParent(parent, false);
