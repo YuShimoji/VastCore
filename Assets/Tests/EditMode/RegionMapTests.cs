@@ -148,6 +148,55 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
+        public void VolumePatch_FollowsTheHeightField_AndACavityAddsRockOverhead()
+        {
+            // 東へ 45 度で登る斜面（1 セル 1 m、64 m 四方）
+            var data = new RegionData(new RegionSpec { Resolution = 64, SizeKm = 0.064f });
+            for (int y = 0; y < 64; y++)
+                for (int x = 0; x < 64; x++)
+                    data.Height[x + y * 64] = 20f + x;
+            var spec = new RegionVolumeSpec { CenterX = 32f, CenterZ = 32f, SizeMeters = 32f, VoxelMeters = 1f };
+
+            // 空洞が無ければ、面は高さ場と同じ位置に出て、下を向いた面は無い
+            RegionVolumePatch plain = RegionVolumePatch.Build(data, spec);
+            Assert.Greater(plain.VertexCount, 500);
+            Assert.AreEqual(0f, plain.DownFacingShare);
+            for (int v = 0; v < plain.VertexCount; v++)
+                Assert.AreEqual(plain.HeightAt(plain.Positions[v * 3], plain.Positions[v * 3 + 2]), plain.Positions[v * 3 + 1], 0.6f);
+            foreach (int index in plain.Indices) Assert.That(index, Is.InRange(0, plain.VertexCount - 1));
+
+            // 斜面へ水平に入る横穴を足すと、天井（下を向いた面）と、岩の下の頂点ができる
+            spec.Cavities.Add(new RegionVolumeCavity { Ax = 30f, Ay = 52f, Az = 32f, Bx = 44f, By = 52f, Bz = 32f, RadiusA = 2.5f, RadiusB = 2.5f });
+            RegionVolumePatch carved = RegionVolumePatch.Build(data, spec);
+            Assert.Greater(carved.VertexCount, plain.VertexCount);
+            Assert.Greater(carved.DownFacingShare, 0.02f);
+            Assert.Less(carved.Density(40f, 52f, 32f), 0f);
+            Assert.Greater(carved.Density(40f, 56f, 32f), 0f);
+            Assert.Contains(0f, carved.Sky);
+            foreach (int index in carved.Indices) Assert.That(index, Is.InRange(0, carved.VertexCount - 1));
+        }
+
+        [Test]
+        public void VolumeFeatures_PlaceAShelterAndACaveAtACliff()
+        {
+            RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = 9 });
+            var detailSpec = new RegionDetailSpec { CenterMapX = 38.8f, CenterMapY = 60.9f, SizeKm = 0.5f, Resolution = 512 };
+            Assert.IsNull(RegionVolumeFeatures.CliffShelterAndCave(RegionDetailBuilder.Build(region, detailSpec).Data, 2f));
+
+            detailSpec.Strata = 1f;
+            RegionData terrain = RegionDetailBuilder.Build(region, detailSpec).Data;
+            RegionVolumeSpec spec = RegionVolumeFeatures.CliffShelterAndCave(terrain, 2f);
+            Assert.IsNotNull(spec);
+            Assert.AreEqual(3, spec.Cavities.Count);
+            RegionVolumePatch patch = RegionVolumePatch.Build(terrain, spec);
+            Assert.Greater(patch.DownFacingShare, 0.01f);
+            // 広間の中は空気で、その上には岩がある
+            RegionVolumeCavity chamber = spec.Cavities[2];
+            Assert.Less(patch.Density(chamber.Bx, chamber.By, chamber.Bz), 0f);
+            Assert.Greater(patch.HeightAt(chamber.Bx, chamber.Bz), chamber.By + 8f);
+        }
+
+        [Test]
         public void Generate_DifferentSeed_ProducesDifferentRegion()
         {
             RegionData a = RegionGenerator.Generate(SmallSpec(11));
