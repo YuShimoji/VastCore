@@ -41,6 +41,13 @@ namespace Vastcore.RegionMap
         /// <summary>斜面のならし。</summary>
         public float HillslopeDiffusion = 0.012f;
 
+        /// <summary>
+        /// 川が溝を刻み始めるしきい値。集水面積 A（1024² の格子のセル数）の所では、傾きが IncisionThreshold / A^0.45 より
+        /// ゆるいと削らない。0（既定）は従来どおり。0.05〜0.12 でなだらかな平野の平行な筋が減るが、削られない斜面に
+        /// 隆起がたまって平野が持ち上がり、地形と街の位置が変わる（数は SP-021 8節）。
+        /// </summary>
+        public float IncisionThreshold = 0f;
+
         /// <summary>水の流れ先を選ぶときのゆらぎ（0〜0.9）。0 だと谷が平行な直線になり、大きいほど枝分かれする。</summary>
         public float FlowJitter = 0.8f;
 

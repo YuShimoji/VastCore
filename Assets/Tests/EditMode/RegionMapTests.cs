@@ -56,23 +56,37 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
-        public void Lake_KeepsOneWaterLevelAcrossTheRegionAndTheDetailWindow()
+        public void Lakes_KeepEachWaterLevelAcrossTheRegionAndTheDetailWindow()
         {
             RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = 8 });
+            int n = region.Resolution;
             int center = 0;
             for (int i = 1; i < region.LakeDepth.Length; i++)
                 if (region.LakeDepth[i] > region.LakeDepth[center]) center = i;
             Assert.Greater(region.LakeDepth[center], 2f);
             float lakeLevel = region.Height[center] + region.LakeDepth[center];
+            int lakeCells = 0;
             for (int i = 0; i < region.LakeDepth.Length; i++)
             {
                 if (region.LakeDepth[i] <= 0f) continue;
+                lakeCells++;
                 Assert.AreEqual(RegionBiome.Lake, region.Biome[i]);
-                Assert.AreEqual(lakeLevel, region.Height[i] + region.LakeDepth[i], 0.001f);
+                float level = region.Height[i] + region.LakeDepth[i];
+                int x = i % n, y = i / n;
+                for (int dy = -1; dy <= 1; dy++)
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    int j = (x + dx) + (y + dy) * n;
+                    // つながった湖は 1 つの水面を持ち、岸は水面より低くない
+                    if (region.LakeDepth[j] > 0f) Assert.AreEqual(level, region.Height[j] + region.LakeDepth[j], 0.01f);
+                    else if (region.Height[j] > 0f) Assert.GreaterOrEqual(region.Height[j], level - 0.01f);
+                }
                 int receiver = region.Downstream[i];
                 if (receiver >= 0 && region.LakeDepth[receiver] <= 0f)
-                    Assert.LessOrEqual(region.Height[receiver], lakeLevel);
+                    Assert.LessOrEqual(region.Height[receiver], level + 0.01f);
             }
+            float cellKm = region.CellMeters / 1000f;
+            Assert.Greater(lakeCells * cellKm * cellKm, 1f);
 
             RegionDetail detail = RegionDetailBuilder.Build(region, new RegionDetailSpec
             {

@@ -3,105 +3,281 @@ using System.Collections.Generic;
 
 namespace Vastcore.RegionMap
 {
-    /// <summary>広域の最終侵食で残す陸上の湖を一つ選び、湖底と流路を分けて扱う。</summary>
-    internal sealed class RegionLake
+    /// <summary>
+    /// 侵食の前の地形にある大きな窪地を湖として残す。侵食は窪地を土砂で埋めるので、何もしなければ湖は残らない。
+    /// 窪地は隆起させない（沈む盆地）。水面は侵食の前に窪地が溢れる高さのまま変えず、上流の川はそこを下流の基準にする。
+    /// 水面より下の湖底は削らず埋めず、湖の周り（岸）のセルは水面より下へ削らせない。水が引いた所は陸として削る。
+    /// 粗い格子と細かい格子で同じ湖を使う。
+    /// </summary>
+    internal sealed class RegionLakeMask
     {
-        private readonly List<int> _cells;
-        private readonly float _level;
+        // 湖にする窪地の下限。ノイズの凹凸でできる小さな穴は除き、地形の起伏でできた窪地だけを残す。
+        internal const float MinimumAreaKm2 = 2f;
+        internal const float MinimumDepthMeters = 6f;
+        // 湖にしてよい隆起の強さの上限。山地・丘陵は湖にすると隆起が止まり山が育たないので、平野の窪地だけを湖にする
+        internal const float MaximumUplift = 0.06f;
+        // 侵食の後に残す水たまりの下限。これより小さい・浅いものは土砂で埋まったものとする（岸の点々を残さない）。
+        internal const float MinimumPoolKm2 = 0.5f;
+        internal const float MinimumPoolDepthMeters = 0.5f;
 
-        private RegionLake(List<int> cells, float level)
+        internal readonly int Resolution;
+        /// <summary>セルの湖の番号。湖でなければ -1。</summary>
+        internal readonly int[] Id;
+        /// <summary>湖ごとの水面の標高（m）。侵食の間は変えない。</summary>
+        internal readonly float[] Level;
+        // 湖ごとの岸のセル（湖に 8 近傍で接する、湖でないセル）
+        private readonly int[][] _rims;
+
+        private RegionLakeMask(int resolution, int[] id, int lakes)
         {
-            _cells = cells;
-            _level = level;
-        }
-
-        internal static RegionLake Select(RegionData data)
-        {
-            float cellKm = data.CellMeters / 1000f;
-            float cellArea = cellKm * cellKm;
-            RegionLake best = null;
-            double bestVolume = 0;
-            VisitBasins(data.Height, data.Resolution, false, (spill, cells, depth, touchesSea) =>
+            Resolution = resolution;
+            Id = id;
+            Level = new float[lakes];
+            var rims = new List<int>[lakes];
+            for (int l = 0; l < lakes; l++) rims[l] = new List<int>();
+            int n = resolution;
+            var marked = new HashSet<long>();
+            for (int i = 0; i < id.Length; i++)
             {
-                float area = cells.Count * cellArea;
-                if (touchesSea || depth < 2f || area < 1f || area > 16f) return;
-
-                // 小さな凹凸や広域を覆う水面を除き、堰の高さに余裕を残す。
-                float level = spill - Math.Min(1f, depth * 0.1f);
-                var wet = new List<int>();
-                double volume = 0;
-                foreach (int i in cells)
-                {
-                    float water = level - data.Height[i];
-                    if (water <= 0f) continue;
-                    wet.Add(i);
-                    volume += water;
-                }
-                if (wet.Count * cellArea < 1f || volume <= bestVolume) return;
-                best = new RegionLake(wet, level);
-                bestVolume = volume;
-            });
-            if (best != null)
-            {
-                foreach (int i in best._cells) data.LakeDepth[i] = best._level - data.Height[i];
-            }
-            return best;
-        }
-
-        internal void Finish(RegionData data)
-        {
-            int n = data.Resolution;
-            float level = _level;
-            foreach (int i in _cells)
-            {
+                int l = id[i];
+                if (l < 0) continue;
+                int x = i % n, y = i / n;
                 for (int dy = -1; dy <= 1; dy++)
                 for (int dx = -1; dx <= 1; dx++)
                 {
-                    int j = i + dx + dy * n;
-                    if (data.LakeDepth[j] == 0f) level = Math.Min(level, data.Height[j]);
+                    int nx = x + dx, ny = y + dy;
+                    if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+                    int j = nx + ny * n;
+                    if (id[j] >= 0) continue;
+                    if (marked.Add((long)l * id.Length + j)) rims[l].Add(j);
                 }
             }
+            _rims = new int[lakes][];
+            for (int l = 0; l < lakes; l++) _rims[l] = rims[l].ToArray();
+        }
 
-            // 湖面が下がって複数の水たまりに分かれた場合、最も深い部分につながる岸を使う。
-            int deepest = -1;
-            foreach (int i in _cells)
+        internal int Count => Level.Length;
+
+        /// <summary>
+        /// ノイズの凹凸を除いた下地（smooth）から窪地を探し、下限を満たすものを湖にする。海とつながる低地は湖にしない。
+        /// 隆起の強い所（uplift が MaximumUplift を超える丘陵・山地）は湖から外し、他と同じく隆起させる。
+        /// </summary>
+        internal static RegionLakeMask Find(float[] smooth, float[] uplift, int n, float cellMeters)
+        {
+            float cellKm2 = cellMeters * cellMeters / 1e6f;
+            var id = new int[smooth.Length];
+            for (int i = 0; i < id.Length; i++) id[i] = -1;
+            var levels = new List<float>();
+            RegionLake.VisitBasins(smooth, n, true, (spill, cells, depth, touchesSea) =>
             {
-                data.LakeDepth[i] = Math.Max(0f, level - data.Height[i]);
-                if (data.LakeDepth[i] > 0f && (deepest < 0 || data.Height[i] < data.Height[deepest])) deepest = i;
+                if (touchesSea || depth < MinimumDepthMeters) return;
+                int kept = 0;
+                foreach (int i in cells) if (uplift[i] <= MaximumUplift) kept++;
+                if (kept * cellKm2 < MinimumAreaKm2) return;
+                foreach (int i in cells) if (uplift[i] <= MaximumUplift) id[i] = levels.Count;
+                levels.Add(spill);
+            });
+            var mask = new RegionLakeMask(n, id, levels.Count);
+            for (int l = 0; l < levels.Count; l++) mask.Level[l] = levels[l];
+            return mask;
+        }
+
+        /// <summary>半分の解像度の格子へ写す（粗い格子のセル (x, y) は細かい格子の (2x, 2y)）。</summary>
+        internal RegionLakeMask Half()
+        {
+            int half = Resolution / 2;
+            var id = new int[half * half];
+            for (int y = 0; y < half; y++)
+            for (int x = 0; x < half; x++)
+                id[x + y * half] = Id[x * 2 + y * 2 * Resolution];
+            var mask = new RegionLakeMask(half, id, Level.Length);
+            Array.Copy(Level, mask.Level, Level.Length);
+            return mask;
+        }
+
+        internal bool IsLake(int i) => Id[i] >= 0;
+
+        /// <summary>流れの計算に使う水面（湖のセルは水面、それ以外は地面）。</summary>
+        internal void Surface(float[] h, float[] surface)
+        {
+            Array.Copy(h, surface, h.Length);
+            for (int i = 0; i < Id.Length; i++)
+            {
+                int l = Id[i];
+                if (l >= 0 && surface[i] < Level[l]) surface[i] = Level[l];
             }
-            var connected = new HashSet<int>();
-            if (deepest >= 0)
+        }
+
+        /// <summary>岸のセルを水面より下へ下げない（流出口が削れて湖が抜けるのを防ぐ）。</summary>
+        internal void HoldRims(float[] h, bool[] land)
+        {
+            for (int l = 0; l < _rims.Length; l++)
             {
-                var pending = new Queue<int>();
-                connected.Add(deepest);
-                pending.Enqueue(deepest);
-                while (pending.Count > 0)
+                float level = Level[l];
+                foreach (int j in _rims[l])
+                    if (land[j] && h[j] < level) h[j] = level;
+            }
+        }
+
+        /// <summary>
+        /// 湖の深さを書き込む。水面は、侵食の後の地形で水が溢れ出す高さ（窪地を埋めた高さ）にする。
+        /// 水が引いて湖が分かれた時は、それぞれが自分の流出口の高さを持つ。
+        /// 湖の範囲から始まる水のつながりが小さい・浅い時は、土砂で埋まったものとして水面の高さの陸にする。
+        /// </summary>
+        internal void Write(RegionData data)
+        {
+            float[] h = data.Height;
+            int n = Resolution;
+            float cellKm2 = data.CellMeters * data.CellMeters / 1e6f;
+            float[] filled = RegionLake.FillToOutlet(h, n, true);
+            var seen = new bool[h.Length];
+            var pool = new List<int>();
+            int lakes = 0;
+            for (int start = 0; start < Id.Length; start++)
+            {
+                if (Id[start] < 0 || seen[start] || h[start] <= 0f || filled[start] <= h[start]) continue;
+                pool.Clear();
+                pool.Add(start);
+                seen[start] = true;
+                float deepest = 0f;
+                for (int cursor = 0; cursor < pool.Count; cursor++)
                 {
-                    int i = pending.Dequeue();
+                    int i = pool[cursor];
+                    deepest = Math.Max(deepest, filled[i] - h[i]);
+                    int x = i % n, y = i / n;
                     for (int dy = -1; dy <= 1; dy++)
                     for (int dx = -1; dx <= 1; dx++)
                     {
-                        int j = i + dx + dy * n;
-                        if (data.LakeDepth[j] > 0f && connected.Add(j)) pending.Enqueue(j);
+                        int nx = x + dx, ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+                        int j = nx + ny * n;
+                        if (seen[j] || h[j] <= 0f || filled[j] <= h[j]) continue;
+                        seen[j] = true;
+                        pool.Add(j);
                     }
                 }
-                data.LakeSurfaceLevel = level;
+                bool keep = pool.Count * cellKm2 >= MinimumPoolKm2 && deepest >= MinimumPoolDepthMeters;
+                foreach (int i in pool)
+                {
+                    if (keep) data.LakeDepth[i] = filled[i] - h[i];
+                    else h[i] = filled[i];
+                }
+                if (keep) lakes++;
             }
-            foreach (int i in _cells)
-                if (!connected.Contains(i)) data.LakeDepth[i] = 0f;
+            data.RetainedLakes = lakes > 0;
         }
+    }
 
-        // 流路計算の仮想的な勾配と、実際に越えられる岸の高さを分ける。
-        internal static void ConstrainOutlet(RegionData data, FlowRouter router)
+    internal static class RegionLake
+    {
+        /// <summary>水面は湖ごとに違うので、湖のセルの水面は 地面 + 深さ で読む。</summary>
+        internal static float SurfaceAt(RegionData data, int i) => data.Height[i] + data.LakeDepth[i];
+
+        /// <summary>
+        /// 湖のセルの流れ先を付け直し、流量を数える。流路の計算は湖面に 1 マス 1 cm の勾配を足すので、湖の奥のセルが
+        /// 水面よりわずかに高い岸を流れ先に選び、偽の流出口ができる。湖ごとに、水面以下の岸のうちいちばん低い所を
+        /// 本当の流出口とし、湖の中は流出口からの幅優先探索の木に沿って流す（流出口が無い湖は、いちばん深い所で止まる）。
+        /// 流れ先を変えたので、流量は取り出し順ではなく、流れ先の木の葉から順に足す。
+        /// </summary>
+        internal static void RouteThroughLakes(RegionData data, FlowRouter router, float[] weight, bool[] land, float[] result)
         {
-            if (float.IsNaN(data.LakeSurfaceLevel)) return;
+            int n = data.Resolution;
+            int count = data.Height.Length;
+            int[] receiver = router.Receiver;
+            var seen = new bool[count];
+            var lake = new List<int>();
+            for (int start = 0; start < count; start++)
+            {
+                if (seen[start] || data.LakeDepth[start] <= 0f) continue;
+                lake.Clear();
+                lake.Add(start);
+                seen[start] = true;
+                for (int cursor = 0; cursor < lake.Count; cursor++)
+                {
+                    int i = lake[cursor];
+                    int x = i % n, y = i / n;
+                    for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++)
+                    {
+                        int nx = x + dx, ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+                        int j = nx + ny * n;
+                        if (seen[j] || data.LakeDepth[j] <= 0f) continue;
+                        seen[j] = true;
+                        lake.Add(j);
+                    }
+                }
+
+                // 本当の流出口：水面以下（丸めの 1 cm まで）の岸のうち、いちばん低い所。海に面していれば海へ
+                int outlet = -1, exit = -1;
+                float exitHeight = float.MaxValue;
+                int deepest = start;
+                foreach (int i in lake)
+                {
+                    if (data.LakeDepth[i] > data.LakeDepth[deepest]) deepest = i;
+                    float surface = SurfaceAt(data, i);
+                    int x = i % n, y = i / n;
+                    for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++)
+                    {
+                        int nx = x + dx, ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+                        int j = nx + ny * n;
+                        if (data.LakeDepth[j] > 0f) continue;
+                        float g = data.Height[j] > 0f ? data.Height[j] : 0f;
+                        if (g > surface + 0.01f || g >= exitHeight) continue;
+                        exitHeight = g;
+                        outlet = i;
+                        exit = j;
+                    }
+                }
+
+                int root = outlet >= 0 ? outlet : deepest;
+                receiver[root] = exit;
+                // 流出口から湖の中へ幅優先にたどり、たどってきた向きを流れ先にする
+                var queue = new Queue<int>();
+                var reached = new HashSet<int> { root };
+                queue.Enqueue(root);
+                while (queue.Count > 0)
+                {
+                    int i = queue.Dequeue();
+                    int x = i % n, y = i / n;
+                    for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++)
+                    {
+                        int nx = x + dx, ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+                        int j = nx + ny * n;
+                        if (data.LakeDepth[j] <= 0f || !reached.Add(j)) continue;
+                        receiver[j] = i;
+                        queue.Enqueue(j);
+                    }
+                }
+            }
+
+            // 流量は流れ先の木の葉から順に足す（受け取る流れが残っていないセルから流す）
+            var pending = new int[count];
+            Array.Clear(result, 0, count);
             for (int o = 0; o < router.Count; o++)
             {
                 int i = router.Order[o];
-                int r = router.Receiver[i];
-                if (r >= 0 && data.LakeDepth[i] > 0f && data.LakeDepth[r] <= 0f &&
-                    data.Height[r] > data.LakeSurfaceLevel)
-                    router.Receiver[i] = -1;
+                result[i] = weight != null ? weight[i] : 1f;
+                int r = receiver[i];
+                if (r >= 0 && land[r]) pending[r]++;
+            }
+            var ready = new Queue<int>();
+            for (int o = 0; o < router.Count; o++)
+            {
+                int i = router.Order[o];
+                if (pending[i] == 0) ready.Enqueue(i);
+            }
+            while (ready.Count > 0)
+            {
+                int i = ready.Dequeue();
+                int r = receiver[i];
+                if (r < 0 || !land[r]) continue;
+                result[r] += result[i];
+                if (--pending[r] == 0) ready.Enqueue(r);
             }
         }
 
@@ -137,7 +313,7 @@ namespace Vastcore.RegionMap
         }
 
         // Barnes et al. (2014), Priority-Flood。水面には流路用の微小勾配を加えない。
-        private static float[] FillToOutlet(float[] height, int n, bool inlandSeaIsOutlet)
+        internal static float[] FillToOutlet(float[] height, int n, bool inlandSeaIsOutlet)
         {
             var filled = new float[height.Length];
             for (int i = 0; i < filled.Length; i++) filled[i] = float.NaN;
