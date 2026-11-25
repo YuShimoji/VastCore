@@ -190,11 +190,12 @@ namespace Vastcore.RegionMap
         {
             public GameObject Root;
             public RegionLookScene Scene;
+            public int[] PlantCounts;
         }
 
         /// <summary>
-        /// 砂岩の台地の場面（外側の地形・内側の地形・岩）を作って並べる。地形の影は頂点に持たせてあるので、
-        /// Unity の影は岩だけが落とす（影の届く距離の中でだけ出る）。
+        /// 砂岩の台地に内外の地形・転石・植生を並べる。地形の影は頂点に持たせ、
+        /// カメラに近い岩と植生は Unity の影も落とす。
         /// </summary>
         public static LookResult BuildLook(RegionData region, RegionLookSpec spec)
         {
@@ -227,7 +228,7 @@ namespace Vastcore.RegionMap
                     material.SetFloat("_LooseRock", part.Data == null ? 1f : 0f);
                 }
                 MeshRenderer renderer = AddPart(root.transform, part.Name, LookMesh(part), material);
-                // 地形の影は頂点に持たせてある。Unity の影を落とすのは岩だけにする
+                // 地形の影は頂点に持たせてあるため、地形メッシュによる二重の投影を省く
                 if (part.Data != null) renderer.shadowCastingMode = ShadowCastingMode.Off;
             }
 
@@ -239,7 +240,7 @@ namespace Vastcore.RegionMap
                 point.transform.SetParent(points.transform, false);
                 PlaceLook(point.transform, scene, viewpoint);
             }
-            return new LookResult { Root = root, Scene = scene };
+            return new LookResult { Root = root, Scene = scene, PlantCounts = RegionPlantView.AddTo(root.transform, scene) };
         }
 
         /// <summary>決まった視点の位置と向きを写す（画角は RegionLookViewpoint.FovDegrees を Camera.fieldOfView に入れる）。</summary>

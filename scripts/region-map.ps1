@@ -91,7 +91,7 @@ Write-Host "exit code: $($process.ExitCode)"
 
 if (Test-Path $log) {
   if ($Mode -in 'view3d', 'view3d-cave') {
-    $shaderFailure = Select-String -LiteralPath $log -SimpleMatch "Shader error in 'Vastcore/RegionTerrain'" | Select-Object -First 1
+    $shaderFailure = Select-String -LiteralPath $log -Pattern "Shader error in 'Vastcore/Region(Terrain|Plants)'" | Select-Object -First 1
     if ($shaderFailure) { throw $shaderFailure.Line }
   }
   Select-String -Path $log -Pattern 'error CS\d+|\[RegionMap\]|Scripts have compiler errors' |

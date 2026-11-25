@@ -428,6 +428,37 @@ namespace Vastcore.Tests.EditMode
             }
         }
 
+        [Test]
+        public void MesaPlants_AreRepeatable_AndSkipWaterAndOccupiedGroundInBothWindows()
+        {
+            var scene = RegionLookScene.Build(DryRegion(), new RegionLookSpec
+            {
+                OuterKm = 1.5f, InnerKm = 0.5f, Resolution = 128, Rocks = false
+            });
+            float waterEnd = scene.CenterX - 75f, occupiedStart = scene.CenterX + 65f;
+            foreach (RegionLookPart part in new[] { scene.InnerTerrain, scene.OuterTerrain })
+            {
+                part.Data.StructureCoverage = new float[part.VertexCount];
+                for (int i = 0; i < part.VertexCount; i++)
+                {
+                    float x = part.Positions[3 * i];
+                    if (x < waterEnd) part.Data.WaterCoverage[i] = 1f;
+                    if (x > occupiedStart) part.Data.StructureCoverage[i] = 1f;
+                }
+            }
+            var plants = RegionPlantField.Build(scene);
+            Assert.IsNotEmpty(plants);
+            CollectionAssert.AreEqual(plants, RegionPlantField.Build(scene));
+            foreach (RegionPlant plant in plants)
+            {
+                Assert.That(plant.X, Is.InRange(waterEnd, occupiedStart + scene.OuterCell * 0.5f));
+                Assert.That(plant.Variant, Is.InRange(0, 3));
+                Assert.Greater(plant.Height, 0f);
+            }
+            scene.Spec.Vegetation = false;
+            Assert.IsEmpty(RegionPlantField.Build(scene));
+        }
+
         /// <summary>60 度より急な陸のセルの数。</summary>
         private static int SteepLandCells(RegionData data)
         {

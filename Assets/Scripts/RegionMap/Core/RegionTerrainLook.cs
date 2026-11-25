@@ -49,6 +49,7 @@ namespace Vastcore.RegionMap
 
         public float Mesa = 1f;
         public bool Rocks = true;
+        public bool Vegetation = true;
 
         // 3 つの視点は、既定の場所（seed 9 の X43.61 Y76.92）に合わせて決めた値。太陽は北西から差すので、
         // 西と北を向いた崖に光が斜めに当たる向きから見る。場所を変えたら、視点も決め直す。
