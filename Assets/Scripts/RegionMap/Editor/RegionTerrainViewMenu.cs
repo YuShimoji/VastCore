@@ -44,7 +44,11 @@ namespace Vastcore.RegionMap.Editor
             try
             {
                 EditorUtility.DisplayProgressBar("Region Map", "地域と、崖・洞窟の地形を作っています…", 0.3f);
-                RegionTerrainView.Result result = CreateScene(new RegionSpec { Seed = 9 }, new RegionTerrainViewSpec(), out Camera camera);
+                var region = new RegionSpec { Seed = 9 };
+                var window = new RegionTerrainViewSpec();
+                RegionTerrainView.Result result = CreateScene(region, window, out Camera camera);
+                if (result.Volume != null && result.Volume.Cavities.Count >= 2)
+                    camera.gameObject.AddComponent<RegionCaveWalk>().Configure(result, region, window);
                 RegionTerrainView.Place(camera.transform, result, 20f, 7f, 150f);
                 SceneView view = SceneView.lastActiveSceneView;
                 if (view != null) view.LookAt(result.Focus, camera.transform.rotation, 60f);
@@ -199,7 +203,7 @@ namespace Vastcore.RegionMap.Editor
         }
 
         /// <summary>カメラの絵を 1600×900 で描き、output のフォルダへ name で書き出す。name が null なら、描くだけで書き出さない。</summary>
-        private static void Capture(Camera camera, string output, string name)
+        internal static void Capture(Camera camera, string output, string name)
         {
             const int Width = 1600;
             const int Height = 900;
