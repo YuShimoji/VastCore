@@ -43,6 +43,8 @@ namespace Vastcore.RegionMap.Preview
             float formScale = 1f;
             string detailSizes = "8";
             float detailExaggeration = 1.5f;
+            string view3d = null;
+            string view3dFocus = null;
 
             for (int a = 0; a < args.Length; a++)
             {
@@ -108,6 +110,8 @@ namespace Vastcore.RegionMap.Preview
                     case "--detailres": detailSpec.Resolution = int.Parse(value); a++; break;
                     case "--detailrough": detailSpec.Roughness = Float(value); a++; break;
                     case "--gully": detailSpec.GullyPasses = int.Parse(value); a++; break;
+                    case "--view3d": view3d = value; a++; break;
+                    case "--view3d-focus": view3dFocus = value; a++; break;
                     case "--forms": forms = true; break;
                     case "--formscale": formScale = Float(value); a++; break;
                     default:
@@ -211,9 +215,58 @@ namespace Vastcore.RegionMap.Preview
             if (developmentDetails)
                 foreach (string size in developmentSizes.Split(','))
                     WriteDevelopmentDetails(data, options.Style, stem, detailSpec.Resolution, Float(size), developmentAt);
+            if (view3d != null) Write3dView(data, options, stem, view3d, view3dFocus, detailSpec.Resolution);
             using var process = Process.GetCurrentProcess();
             Console.WriteLine("peak_working_set_bytes=" + process.PeakWorkingSet64);
             return 0;
+        }
+
+        /// <summary>
+        /// 地形を斜めから見た絵を書き出す（3D化の試作、段階 A）。
+        /// view は "方位,見下ろす角,高さの倍率,距離km,幅,高さ"（例 "0,32,3,220,1600,900"）。
+        /// focus は "地図X,地図Y,窓の一辺km"。指定すると、その窓を拡大した地形で作り直して、その中心を見る。
+        /// </summary>
+        private static void Write3dView(RegionData data, RegionRenderOptions options, string stem, string view, string focus, int detailResolution)
+        {
+            string[] v = view.Split(',');
+            float exaggeration = v.Length > 2 ? Float(v[2]) : 3f;
+            var camera = new TerrainView.Camera
+            {
+                Yaw = v.Length > 0 ? Float(v[0]) : 0f,
+                Pitch = v.Length > 1 ? Float(v[1]) : 32f,
+                Distance = (v.Length > 3 ? Float(v[3]) : 220f) * 1000f,
+                Width = v.Length > 4 ? int.Parse(v[4]) : 1600,
+                Height = v.Length > 5 ? int.Parse(v[5]) : 900,
+            };
+            RegionData terrain = data;
+            if (focus != null)
+            {
+                string[] f = focus.Split(',');
+                var spec = new RegionDetailSpec
+                {
+                    CenterMapX = Float(f[0]),
+                    CenterMapY = Float(f[1]),
+                    SizeKm = f.Length > 2 ? Float(f[2]) : 8f,
+                    Resolution = detailResolution,
+                };
+                RegionDetail detail = RegionDetailBuilder.Build(data, spec);
+                terrain = detail.Data;
+                camera.TargetMapX = 50f;
+                camera.TargetMapY = 50f;
+            }
+
+            var render = new RegionRenderOptions { Style = options.Style, CloudCover = 0f, Exaggeration = options.Exaggeration };
+            var watch = Stopwatch.StartNew();
+            byte[] albedo = RegionMapRenderer.Render(terrain, render);
+            // 広域は半分の格子（約52万頂点）、拡大した地形は全セルで作る
+            RegionTerrainMesh mesh = RegionTerrainMesh.Build(terrain, terrain.Resolution > 512 && focus == null ? 2 : 1, exaggeration);
+            long meshMs = watch.ElapsedMilliseconds;
+            watch.Restart();
+            byte[] image = TerrainView.Render(terrain, mesh, albedo, camera, out int width, out int height);
+            string file = stem + "-3d" + (focus != null ? "-detail" : "") + "-" + view.Replace(',', '_') + ".png";
+            PngWriter.Write(file, image, width, height);
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                "3D: 頂点={0} 三角形={1} 準備={2}ms 描画={3}ms → {4}", mesh.VertexCount, mesh.TriangleCount, meshMs, watch.ElapsedMilliseconds, Path.GetFullPath(file)));
         }
 
         private static void DescribeDevelopment(RegionDevelopment development)

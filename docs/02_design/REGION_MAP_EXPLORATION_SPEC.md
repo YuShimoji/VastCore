@@ -209,6 +209,8 @@ dotnet run --project tools/RegionMapPreview -c Release --no-build -- --seed 7 --
 dotnet run --project tools/RegionMapPreview -c Release --no-build -- --seed 7 --res 1024 --style satellite --names --detail 14,5,10 --detailsize 8,2 --forms --out artifacts/region-map
 ```
 
+3D化の試作（`Core/RegionTerrainMesh`、段階 A。範囲の外の試作で、採否は本人）は、`--view3d "方位,見下ろす角,高さの倍率,距離km,幅,高さ"` で斜めから見た絵を出す。拡大した窓を見るときは `--view3d-focus "地図X,地図Y,窓の一辺km"` を足す。
+
 2行目は、エリアの図・エリアと地点の一覧（根拠と採点）・採点の図を書き出す。ファイル名と雲の連番のオプションは [履歴](REGION_MAP_EXPLORATION_HISTORY.md)。
 
 3行目は、呼び名の一覧（`*-names.json`）・地点 14・5・10 の周りの拡大した絵と形の案・窓の位置の図を書き出す。オプションの説明は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) の「7節 3行目の説明（二度目）」。

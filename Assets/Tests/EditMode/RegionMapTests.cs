@@ -32,6 +32,27 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
+        public void TerrainMesh_FollowsHeightField_AndFlattensSea()
+        {
+            RegionData data = RegionGenerator.Generate(SmallSpec(11));
+            RegionTerrainMesh mesh = RegionTerrainMesh.Build(data, 2, 3f);
+            int n = data.Resolution;
+            Assert.AreEqual((n - 1) / 2 + 1, mesh.Columns);
+            Assert.AreEqual(mesh.VertexCount * 3, mesh.Positions.Length);
+            Assert.AreEqual((mesh.Columns - 1) * (mesh.Rows - 1) * 2, mesh.TriangleCount);
+            for (int j = 0; j < mesh.Rows; j++)
+            {
+                for (int i = 0; i < mesh.Columns; i++)
+                {
+                    float height = data.Height[i * 2 + j * 2 * n];
+                    float y = mesh.Positions[(i + j * mesh.Columns) * 3 + 1];
+                    Assert.AreEqual(height > 0f ? height * 3f : 0f, y, 1e-3f);
+                }
+            }
+            foreach (int index in mesh.Indices) Assert.That(index, Is.InRange(0, mesh.VertexCount - 1));
+        }
+
+        [Test]
         public void Generate_DifferentSeed_ProducesDifferentRegion()
         {
             RegionData a = RegionGenerator.Generate(SmallSpec(11));
