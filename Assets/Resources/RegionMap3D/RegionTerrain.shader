@@ -1,5 +1,7 @@
 // 地域の 3D 表示（3D 化の試作）用。真上から見た地面の画像を貼り、急な面は岩の色にする。
-// 頂点カラー: R = 真上が空なら 1、岩の下（張り出しの下・洞窟の中）なら 0。G = 近くの岩の影でなければ 1。
+// 頂点カラー: R = 空の開け具合（真上が空なら 1、岩の下・割れ目の中で小さい）。G = 日が当たる度合い（先に計算した影。影の中で 0）。
+//             B = 1 から「岩肌の色にする度合い」を引いた値（崖の面と岩は 0）。A = 岩肌の色のむら（1 で元の色、0 で 0.66 倍）。
+// 頂点カラーの無いメッシュは全部 1 として描かれる（空は開け、影は無く、岩肌は傾きだけで決まる）。
 // 影を落とす・深度を書くパスは URP 標準の Lit のものを借りる。
 Shader "Vastcore/RegionTerrain"
 {
@@ -9,6 +11,7 @@ Shader "Vastcore/RegionTerrain"
         _RockColor ("Rock Color", Color) = (0.59, 0.553, 0.502, 1)
         _RockStart ("Rock Starts (normal Y)", Range(0, 1)) = 0.766
         _RockFull ("Rock Only (normal Y)", Range(0, 1)) = 0.53
+        _BandAmount ("Strata Band Amount", Range(0, 0.3)) = 0.1
     }
 
     SubShader
@@ -38,6 +41,7 @@ Shader "Vastcore/RegionTerrain"
                 half4 _RockColor;
                 half _RockStart;
                 half _RockFull;
+                half _BandAmount;
             CBUFFER_END
 
             struct Attributes
@@ -76,15 +80,16 @@ Shader "Vastcore/RegionTerrain"
                 half3 normal = normalize(input.normalWS);
                 half3 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).rgb;
 
-                // 急な面ほど岩の色にする。岩には、高さに沿った地層の縞を薄く入れる
-                half rock = saturate((_RockStart - normal.y) / max(0.001, _RockStart - _RockFull));
-                half band = 0.9 + 0.1 * sin(input.positionWS.y * 0.55 + 1.3 * sin(input.positionWS.y * 0.13));
+                // 急な面と、頂点が岩と指定した所を、岩の色にする。岩には、高さに沿った地層の縞を薄く入れる
+                half rock = max(saturate((_RockStart - normal.y) / max(0.001, _RockStart - _RockFull)), 1.0 - input.color.b);
+                half band = (1.0 - _BandAmount) + _BandAmount * sin(input.positionWS.y * 0.55 + 1.3 * sin(input.positionWS.y * 0.13));
+                band *= 0.66 + 0.34 * input.color.a;
                 albedo = lerp(albedo, _RockColor.rgb * band, rock);
 
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light light = GetMainLight(shadowCoord);
-                // 頂点の「近くの岩の影」は、岩の下でだけ使う（開けた崖の面は Unity の影に任せ、周りの地形と同じ明るさにする）
-                half direct = saturate(dot(normal, light.direction)) * light.shadowAttenuation * max(input.color.r, input.color.g);
+                // 影は、Unity の影（近くだけ届く）と、頂点に持たせた影の、暗い方
+                half direct = saturate(dot(normal, light.direction)) * min(light.shadowAttenuation, input.color.g);
                 // 岩の下では、空からの光も減らす
                 half3 ambient = SampleSH(normal) * (0.35 + 0.65 * input.color.r);
                 half3 color = albedo * (light.color * direct + ambient);

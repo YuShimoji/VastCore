@@ -241,6 +241,191 @@ namespace Vastcore.Tests.EditMode
             Assert.Greater(patch.HeightAt(chamber.Bx, chamber.Bz), chamber.By + 8f);
         }
 
+        private static RegionData _dryRegion;
+
+        /// <summary>seed 9 の地域（南に、台地が立つ乾いた平原がある）。台地の試験で使い回す。</summary>
+        private static RegionData DryRegion()
+        {
+            if (_dryRegion == null) _dryRegion = RegionGenerator.Generate(new RegionSpec { Seed = 9 });
+            return _dryRegion;
+        }
+
+        [Test]
+        public void Detail_Mesa_IsOffByDefault_AndRaisesFlatToppedCliffsWithoutMovingWater()
+        {
+            RegionData region = DryRegion();
+            var spec = new RegionDetailSpec { CenterMapX = 43.61f, CenterMapY = 76.92f, SizeKm = 1.5f, Resolution = 256 };
+            Assert.AreEqual(0f, spec.Mesa);
+            RegionDetail plainDetail = RegionDetailBuilder.Build(region, spec);
+            RegionData plain = plainDetail.Data;
+            Assert.IsNull(plain.Caprock);
+            Assert.IsNull(plain.Talus);
+
+            spec.Mesa = 1f;
+            RegionDetail mesaDetail = RegionDetailBuilder.Build(region, spec);
+            RegionData mesa = mesaDetail.Data;
+            Assert.IsNotNull(mesa.Caprock);
+            Assert.IsNotNull(mesa.Talus);
+            // 海岸と川は動かず、広域の地図より高くなった分だけ、標高の差が増える
+            CollectionAssert.AreEqual(plain.WaterCoverage, mesa.WaterCoverage);
+            Assert.AreEqual(plainDetail.CoastAgreement, mesaDetail.CoastAgreement);
+            Assert.AreEqual(plainDetail.RiverAgreement, mesaDetail.RiverAgreement);
+            Assert.Greater(mesaDetail.MeanHeightDifference, plainDetail.MeanHeightDifference + 5f);
+
+            var tops = new System.Collections.Generic.List<float>();
+            int rubble = 0;
+            for (int i = 0; i < mesa.Height.Length; i++)
+            {
+                Assert.AreEqual(plain.Height[i] > 0f, mesa.Height[i] > 0f);
+                // 床より下げない。水面のセルは変えない
+                Assert.GreaterOrEqual(mesa.Height[i], plain.Height[i]);
+                if (mesa.WaterCoverage[i] > 0f) Assert.AreEqual(plain.Height[i], mesa.Height[i]);
+                if (mesa.Caprock[i] != 0) tops.Add(mesa.Height[i]);
+                if (mesa.Talus[i] > 0.4f) rubble++;
+            }
+            Assert.Greater(tops.Count, mesa.Height.Length / 50);
+            Assert.Greater(rubble, mesa.Height.Length / 50);
+            // 上面は平ら：帽子の岩のセルの 8 割が、高さ 40 m の幅に収まる（崖は 86 m）
+            tops.Sort();
+            Assert.Less(tops[tops.Count * 9 / 10] - tops[tops.Count / 10], 40f);
+            // 崖ができる
+            Assert.Greater(SteepLandCells(mesa), SteepLandCells(plain) + 100);
+        }
+
+        [Test]
+        public void RockField_PutsAngularRocksOnTheTalus_AndIsRepeatable()
+        {
+            RegionData region = DryRegion();
+            var spec = new RegionDetailSpec { CenterMapX = 43.61f, CenterMapY = 76.92f, SizeKm = 0.6f, Resolution = 256, Mesa = 1f };
+            RegionData terrain = RegionDetailBuilder.Build(region, spec).Data;
+            int n = terrain.Resolution;
+            float cell = terrain.CellMeters;
+            RegionRockField rocks = RegionRockField.Build(terrain, 1000.0, 2000.0, 0f, 0f, 0.8f, null);
+            Assert.Greater(rocks.Rocks.Length, 50);
+            Assert.AreEqual(rocks.VertexCount * 3, rocks.Normals.Length);
+            Assert.AreEqual(rocks.VertexCount, rocks.Tint.Length);
+            Assert.AreEqual(rocks.VertexCount, rocks.Lift.Length);
+            Assert.AreEqual(rocks.VertexCount, rocks.Indices.Length);
+
+            float smallest = float.MaxValue, largest = 0f;
+            foreach (RegionRock rock in rocks.Rocks)
+            {
+                Assert.GreaterOrEqual(rock.Size, 0.8f);
+                if (rock.Size < smallest) smallest = rock.Size;
+                if (rock.Size > largest) largest = rock.Size;
+                // 岩屑の斜面（とその先の転石が届く範囲）にだけ置く
+                int x = (int)(rock.X / cell), z = (int)(rock.Z / cell);
+                float amount = Mathf.Max(Mathf.Max(terrain.Talus[x + z * n], terrain.Talus[x + 1 + z * n]),
+                    Mathf.Max(terrain.Talus[x + (z + 1) * n], terrain.Talus[x + 1 + (z + 1) * n]));
+                Assert.Greater(amount, 0f);
+                Assert.Greater(rock.VertexCount, 11);
+            }
+            // 大きさが揃っていない
+            Assert.Greater(largest, 2.5f * smallest);
+            for (int v = 0; v < rocks.VertexCount; v += 97)
+            {
+                var normal = new Vector3(rocks.Normals[v * 3], rocks.Normals[v * 3 + 1], rocks.Normals[v * 3 + 2]);
+                Assert.AreEqual(1f, normal.magnitude, 1e-3f);
+            }
+
+            RegionRockField again = RegionRockField.Build(terrain, 1000.0, 2000.0, 0f, 0f, 0.8f, null);
+            CollectionAssert.AreEqual(rocks.Positions, again.Positions);
+
+            // 台地の無い地形には置かない
+            spec.Mesa = 0f;
+            Assert.AreEqual(0, RegionRockField.Build(RegionDetailBuilder.Build(region, spec).Data, 1000.0, 2000.0, 0f, 0f, 0.8f, null).Rocks.Length);
+        }
+
+        [Test]
+        public void LookScene_HasThreeFixedViewpoints_AndTheInnerTerrainMeetsTheOuterAtItsEdge()
+        {
+            var spec = new RegionLookSpec { Resolution = 128 };
+            RegionLookScene scene = RegionLookScene.Build(DryRegion(), spec);
+            RegionLookViewpoint[] views = spec.Viewpoints();
+            Assert.AreEqual(3, views.Length);
+            Assert.AreEqual("far", views[0].Name);
+            Assert.AreEqual("mid", views[1].Name);
+            Assert.AreEqual("near", views[2].Name);
+
+            // 視点は、場面の中の、地面より上にある
+            float extent = scene.Outer.Data.SizeKm * 1000f;
+            var eye = new float[3];
+            var target = new float[3];
+            foreach (RegionLookViewpoint view in views)
+            {
+                scene.Resolve(view, eye, target);
+                Assert.That(eye[0], Is.InRange(0f, extent));
+                Assert.That(eye[2], Is.InRange(0f, extent));
+                Assert.AreEqual(scene.HeightAt(eye[0], eye[2]) + view.EyeAbove, eye[1], 1e-3f);
+                Assert.Greater(view.EyeAbove, 0f);
+            }
+
+            // 内側の地形の縁の頂点は、外側の地形の面に乗る（継ぎ目に段が無い）
+            RegionLookPart inner = scene.InnerTerrain;
+            int n = scene.Inner.Data.Resolution;
+            int outerN = scene.Outer.Data.Resolution;
+            for (int k = 0; k < n; k += 5)
+            {
+                foreach (int v in new[] { k, k + (n - 1) * n, k * n, n - 1 + k * n })
+                {
+                    float fx = inner.Positions[v * 3] / scene.OuterCell - 0.5f, fz = inner.Positions[v * 3 + 2] / scene.OuterCell - 0.5f;
+                    int x0 = Mathf.Min((int)fx, outerN - 2), z0 = Mathf.Min((int)fz, outerN - 2);
+                    float tx = fx - x0, tz = fz - z0;
+                    float[] h = scene.Outer.Data.Height;
+                    float top = Mathf.Lerp(h[x0 + z0 * outerN], h[x0 + 1 + z0 * outerN], tx);
+                    float bottom = Mathf.Lerp(h[x0 + (z0 + 1) * outerN], h[x0 + 1 + (z0 + 1) * outerN], tx);
+                    Assert.AreEqual(Mathf.Max(0f, Mathf.Lerp(top, bottom, tz)), inner.Positions[v * 3 + 1], 0.05f);
+                }
+            }
+            // 外側の地形は、内側の範囲を抜いてある
+            Assert.Less(scene.OuterTerrain.TriangleCount, (outerN - 1) * (outerN - 1) * 2);
+
+            foreach (RegionLookPart part in scene.Parts())
+            {
+                Assert.AreEqual(part.VertexCount, part.Sun.Length);
+                Assert.AreEqual(part.VertexCount, part.Rock.Length);
+                for (int v = 0; v < part.VertexCount; v++)
+                {
+                    Assert.That(part.Sun[v], Is.InRange(0f, 1f));
+                    Assert.That(part.Sky[v], Is.InRange(0f, 1f));
+                }
+                foreach (int index in part.Indices) Assert.That(index, Is.InRange(0, part.VertexCount - 1));
+            }
+
+            // Unity の Mesh にしても、頂点と色の数は同じ
+            Assert.IsNotNull(scene.Rocks);
+            UnityEngine.Mesh mesh = RegionTerrainView.LookMesh(scene.Rocks);
+            try
+            {
+                Assert.AreEqual(scene.Rocks.VertexCount, mesh.vertexCount);
+                Assert.AreEqual(scene.Rocks.VertexCount, mesh.colors32.Length);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(mesh);
+            }
+        }
+
+        /// <summary>60 度より急な陸のセルの数。</summary>
+        private static int SteepLandCells(RegionData data)
+        {
+            int n = data.Resolution;
+            int steep = 0;
+            float span = 2f * data.CellMeters;
+            for (int y = 1; y < n - 1; y++)
+            {
+                for (int x = 1; x < n - 1; x++)
+                {
+                    int i = x + y * n;
+                    if (data.Height[i] <= 0f) continue;
+                    float gx = (data.Height[i + 1] - data.Height[i - 1]) / span;
+                    float gy = (data.Height[i + n] - data.Height[i - n]) / span;
+                    if (gx * gx + gy * gy > 3f) steep++;
+                }
+            }
+            return steep;
+        }
+
         [Test]
         public void Generate_DifferentSeed_ProducesDifferentRegion()
         {

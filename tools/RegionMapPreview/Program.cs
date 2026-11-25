@@ -51,6 +51,10 @@ namespace Vastcore.RegionMap.Preview
             bool routes = false;
             bool volume = false;
             float voxel = 1f;
+            bool mesaSites = false;
+            string look = null;
+            string lookAt = null;
+            string lookCenter = null;
 
             for (int a = 0; a < args.Length; a++)
             {
@@ -125,6 +129,12 @@ namespace Vastcore.RegionMap.Preview
                     case "--routes": routes = true; break;
                     case "--volume": volume = true; break;
                     case "--voxel": voxel = Float(value); a++; break;
+                    case "--mesa": detailSpec.Mesa = Float(value); a++; break;
+                    case "--mesa-any": detailSpec.MesaAnyClimate = true; break;
+                    case "--mesa-sites": mesaSites = true; break;
+                    case "--look": look = value; a++; break;
+                    case "--look-at": lookAt = value; a++; break;
+                    case "--look-center": lookCenter = value; a++; break;
                     case "--forms": forms = true; break;
                     case "--formscale": formScale = Float(value); a++; break;
                     default:
@@ -229,6 +239,8 @@ namespace Vastcore.RegionMap.Preview
                 foreach (string size in developmentSizes.Split(','))
                     WriteDevelopmentDetails(data, options.Style, stem, detailSpec.Resolution, Float(size), developmentAt);
             if (steepCoasts) DescribeSteepCoasts(data);
+            if (mesaSites) LookView.DescribeMesaSites(data);
+            if (look != null) LookView.Write(data, stem, look, lookAt, lookCenter);
             if (routes && view3dFocus == null) RouteView.WriteRegion(data, options.Style, stem);
             if (view3d != null) Write3dView(data, options, stem, view3d, view3dFocus, detailSpec, view3dLit, routes, volume ? voxel : 0f);
             using var process = Process.GetCurrentProcess();
@@ -273,6 +285,8 @@ namespace Vastcore.RegionMap.Preview
                     Resolution = detailSpec.Resolution,
                     Strata = detailSpec.Strata,
                     StrataThickness = detailSpec.StrataThickness,
+                    Mesa = detailSpec.Mesa,
+                    MesaAnyClimate = detailSpec.MesaAnyClimate,
                 };
                 var buildWatch = Stopwatch.StartNew();
                 RegionDetail detail = RegionDetailBuilder.Build(data, spec);
@@ -283,6 +297,7 @@ namespace Vastcore.RegionMap.Preview
                     "拡大した地形: 作成={0}ms 海陸の一致={1:P2} 標高の差の平均={2:F1}m 川の一致={3:P1}",
                     buildWatch.ElapsedMilliseconds, detail.CoastAgreement, detail.MeanHeightDifference, detail.RiverAgreement));
                 DescribeSlopes(terrain);
+                LookView.DescribeMesa(terrain);
                 if (routes)
                 {
                     // 出発点と行き先は段なしの地形で選ぶ（段あり・段なしを同じ場所で比べるため）
@@ -444,7 +459,7 @@ namespace Vastcore.RegionMap.Preview
         }
 
         /// <summary>陸のセルの傾きの分布を出す（崖がどれだけあるかの目安。30°・45°・60° を超える割合と最大）。</summary>
-        private static void DescribeSlopes(RegionData terrain)
+        internal static void DescribeSlopes(RegionData terrain)
         {
             int n = terrain.Resolution;
             float cell = terrain.CellMeters;

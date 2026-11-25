@@ -34,6 +34,16 @@ namespace Vastcore.RegionMap
         /// <summary>地層 1 枚の厚さ（m）。崖の高さはこの 4〜6 割ほどで、崖を作る層は半分弱。</summary>
         public float StrataThickness = 120f;
 
+        /// <summary>
+        /// 砂岩の台地（3D 化、見え方の想定の第1区切り）。0 で入れない（既定。今までの地形とバイト一致）。1 が標準。
+        /// 入れると、乾いていて平らな内陸に、平らな上面・縦の割れ目のある崖・岩屑の斜面・棚・次の崖の断面を持つ台地が立つ。
+        /// 床（広域から引いた標高）・海岸・川は動かさず、その上に載せる。広域の地図より高くなる量は MeanHeightDifference に出る。
+        /// </summary>
+        public float Mesa = 0f;
+
+        /// <summary>台地を置く乾きの条件を外す（どの気候でも置く。試験と比較のため）。</summary>
+        public bool MesaAnyClimate = false;
+
         public RegionDetailSpec Clone()
         {
             return (RegionDetailSpec)MemberwiseClone();
@@ -92,7 +102,7 @@ namespace Vastcore.RegionMap
     ///    窓の中だけで水を流し直すと、窓の外から来る水量が分からず位置がずれるので、そうしない。
     /// 5. 谷の刻み：最後に、細かい格子で斜面の水を集め、集まった所を少し削る。海岸と川の水面は動かさない。
     /// </summary>
-    public static class RegionDetailBuilder
+    public static partial class RegionDetailBuilder
     {
         private const int Margin = 4;
         private const int RiverSteps = 6;
@@ -343,6 +353,15 @@ namespace Vastcore.RegionMap
             });
 
             if (spec.GullyPasses > 0) CarveGullies(data, spec.GullyPasses, seed);
+            if (spec.Mesa > 0f)
+            {
+                ApplyMesas(data, spec, new MesaInput
+                {
+                    Region = region, Sign = sign, LandHeight = landHeight, Ground = ground, Relief = relief, Moisture = moisture, Temperature = temperature,
+                    W = w, H = h, Cx0 = cx0, Cy0 = cy0, Gx0 = gx0, Gy0 = gy0, Step = step, CoarseCell = coarseCell, Seed = seed,
+                    Pieces = pieces, Bins = bins,
+                });
+            }
             Classify(data);
             Measure(detail, gx0, gy0, step);
             return detail;

@@ -146,7 +146,7 @@ namespace Vastcore.RegionMap
 
         /// <summary>
         /// 体積で作り直した部分のメッシュ。span は地形の一辺（m。貼る画像の位置を決める）。
-        /// 頂点カラーの R に「真上が空か」、G に「近くの岩の影でないか」を入れる。
+        /// 頂点カラーの R に「真上が空か」、G に「日が当たるか」を入れる（開けた面は Unity の影に任せるので、G は真上が空なら 1）。
         /// </summary>
         public static Mesh PatchMesh(RegionVolumePatch patch, float span)
         {
@@ -162,7 +162,7 @@ namespace Vastcore.RegionMap
                 vertices[v] = new Vector3(p[v * 3], p[v * 3 + 1], -p[v * 3 + 2]);
                 normals[v] = new Vector3(n[v * 3], n[v * 3 + 1], -n[v * 3 + 2]);
                 uv[v] = new Vector2(p[v * 3] / span, 1f - p[v * 3 + 2] / span);
-                colors[v] = new Color32((byte)(patch.Sky[v] * 255f), (byte)(patch.Sun[v] * 255f), 255, 255);
+                colors[v] = new Color32((byte)(patch.Sky[v] * 255f), (byte)(Mathf.Max(patch.Sky[v], patch.Sun[v]) * 255f), 255, 255);
             }
 
             // Z を逆にすると回り方も逆になるので、面の向きを頂点の外向きに合わせ直す
@@ -185,6 +185,113 @@ namespace Vastcore.RegionMap
             return mesh;
         }
 
+        /// <summary>見え方の想定と見比べる場面（RegionLookScene）を Unity に並べた物。</summary>
+        public sealed class LookResult
+        {
+            public GameObject Root;
+            public RegionLookScene Scene;
+        }
+
+        /// <summary>
+        /// 砂岩の台地の場面（外側の地形・内側の地形・岩）を作って並べる。地形の影は頂点に持たせてあるので、
+        /// Unity の影は岩だけが落とす（影の届く距離の中でだけ出る）。
+        /// </summary>
+        public static LookResult BuildLook(RegionData region, RegionLookSpec spec)
+        {
+            RegionLookScene scene = RegionLookScene.Build(region, spec);
+            var root = new GameObject("Region Terrain Look");
+            var plain = new RegionRenderOptions { CloudCover = 0f, Exaggeration = 0f, CastShadow = 0f };
+            foreach (RegionLookPart part in scene.Parts())
+            {
+                Texture2D texture;
+                if (part.Data != null)
+                {
+                    texture = RegionMapTexture.Create(RegionMapRenderer.Render(part.Data, plain), part.Data.Resolution);
+                }
+                else
+                {
+                    var white = new Color32(255, 255, 255, 255);
+                    texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                    texture.SetPixels32(new[] { white, white, white, white });
+                    texture.Apply();
+                }
+                texture.name = part.Name + " Ground";
+                texture.hideFlags = HideFlags.DontSave;
+                Material material = CreateMaterial(texture);
+                material.name = part.Name;
+                material.SetColor("_RockColor", new Color(RegionLookScene.RockRed, RegionLookScene.RockGreen, RegionLookScene.RockBlue, 1f));
+                material.SetFloat("_BandAmount", RegionLookScene.BandAmount);
+                MeshRenderer renderer = AddPart(root.transform, part.Name, LookMesh(part), material);
+                // 地形の影は頂点に持たせてある。Unity の影を落とすのは岩だけにする
+                if (part.Data != null) renderer.shadowCastingMode = ShadowCastingMode.Off;
+            }
+
+            var points = new GameObject("Viewpoints");
+            points.transform.SetParent(root.transform, false);
+            foreach (RegionLookViewpoint viewpoint in scene.Spec.Viewpoints())
+            {
+                var point = new GameObject(viewpoint.Name);
+                point.transform.SetParent(points.transform, false);
+                PlaceLook(point.transform, scene, viewpoint);
+            }
+            return new LookResult { Root = root, Scene = scene };
+        }
+
+        /// <summary>決まった視点の位置と向きを写す（画角は RegionLookViewpoint.FovDegrees を Camera.fieldOfView に入れる）。</summary>
+        public static void PlaceLook(Transform target, RegionLookScene scene, RegionLookViewpoint viewpoint)
+        {
+            var eye = new float[3];
+            var look = new float[3];
+            scene.Resolve(viewpoint, eye, look);
+            target.position = new Vector3(eye[0], eye[1], -eye[2]);
+            target.rotation = Quaternion.LookRotation(new Vector3(look[0] - eye[0], look[1] - eye[1], -(look[2] - eye[2])), Vector3.up);
+        }
+
+        /// <summary>
+        /// 場面の部品のメッシュ。頂点カラーは R = 空の開け具合、G = 日が当たる度合い、B = 1 − 岩肌の度合い、A = 色のむら。
+        /// </summary>
+        public static Mesh LookMesh(RegionLookPart part)
+        {
+            int count = part.VertexCount;
+            float[] p = part.Positions;
+            float[] n = part.Normals;
+            var vertices = new Vector3[count];
+            var normals = new Vector3[count];
+            var uv = new Vector2[count];
+            var colors = new Color32[count];
+            for (int v = 0; v < count; v++)
+            {
+                vertices[v] = new Vector3(p[v * 3], p[v * 3 + 1], -p[v * 3 + 2]);
+                normals[v] = new Vector3(n[v * 3], n[v * 3 + 1], -n[v * 3 + 2]);
+                if (part.Uv != null) uv[v] = new Vector2(part.Uv[v * 2], 1f - part.Uv[v * 2 + 1]);
+                colors[v] = new Color32((byte)(Mathf.Clamp01(part.Sky[v]) * 255f), (byte)(Mathf.Clamp01(part.Sun[v]) * 255f),
+                    (byte)((1f - Mathf.Clamp01(part.Rock[v])) * 255f), (byte)(Mathf.Clamp01(part.Tint[v]) * 255f));
+            }
+
+            int[] triangles = part.Indices;
+            if (part.Data == null)
+            {
+                // 岩は、面の向きから回り方を確かめる（Z を逆にしているので）
+                triangles = (int[])triangles.Clone();
+                for (int t = 0; t < triangles.Length; t += 3)
+                {
+                    int a = triangles[t], b = triangles[t + 1], c = triangles[t + 2];
+                    Vector3 face = Vector3.Cross(vertices[b] - vertices[a], vertices[c] - vertices[a]);
+                    if (Vector3.Dot(face, normals[a]) >= 0f) continue;
+                    triangles[t + 1] = c;
+                    triangles[t + 2] = b;
+                }
+            }
+
+            var mesh = new Mesh { name = part.Name, indexFormat = IndexFormat.UInt32, hideFlags = HideFlags.DontSave };
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
+            if (part.Uv != null) mesh.SetUVs(0, uv);
+            mesh.SetColors(colors);
+            mesh.SetTriangles(triangles, 0, true);
+            return mesh;
+        }
+
         private static bool Inside(float[] positions, int vertex, float minX, float maxX, float minZ, float maxZ)
         {
             float x = positions[vertex * 3];
@@ -201,7 +308,7 @@ namespace Vastcore.RegionMap
             return material;
         }
 
-        private static void AddPart(Transform parent, string name, Mesh mesh, Material material)
+        private static MeshRenderer AddPart(Transform parent, string name, Mesh mesh, Material material)
         {
             var part = new GameObject(name);
             part.transform.SetParent(parent, false);
@@ -210,6 +317,7 @@ namespace Vastcore.RegionMap
             renderer.sharedMaterial = material;
             renderer.shadowCastingMode = ShadowCastingMode.On;
             renderer.receiveShadows = true;
+            return renderer;
         }
     }
 }

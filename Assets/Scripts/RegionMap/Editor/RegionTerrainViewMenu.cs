@@ -8,11 +8,35 @@ using UnityEngine.Rendering;
 namespace Vastcore.RegionMap.Editor
 {
     /// <summary>
-    /// 崖と洞窟の 3D 表示（3D 化の試作）の入口。メニュー「Vastcore/Region Map」から開くと、新しいシーンに地形を並べ、
-    /// Scene ビューを崖の正面へ向ける（シーンは保存しない前提）。コマンドライン（-executeMethod）からは、決まった 3 つの視点を画像に残す。
+    /// 3D 表示（3D 化の試作）の入口。メニュー「Vastcore/Region Map」から開くと、新しいシーンに地形を並べる（シーンは保存しない前提）。
+    /// ・砂岩の台地の場面（見え方の想定 docs/02_design/REGION_TERRAIN_LOOK_SPEC.md と見比べる。視点は遠景・中景・近景の 3 つで固定）
+    /// ・崖と洞窟（局所の体積の試作）
+    /// コマンドライン（-executeMethod）からは、決まった 3 つの視点を画像に残す。
     /// </summary>
     public static class RegionTerrainViewMenu
     {
+        [MenuItem("Vastcore/Region Map/Open 3D Mesa Look (far, mid, near)")]
+        public static void OpenLook()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            try
+            {
+                EditorUtility.DisplayProgressBar("Region Map", "地域と、砂岩の台地の場面を作っています…", 0.3f);
+                RegionTerrainView.LookResult look = CreateLookScene(new RegionSpec { Seed = 9 }, new RegionLookSpec(), out Camera camera);
+                RegionLookViewpoint mid = look.Scene.Spec.Mid;
+                RegionTerrainView.PlaceLook(camera.transform, look.Scene, mid);
+                camera.fieldOfView = mid.FovDegrees;
+                SceneView view = SceneView.lastActiveSceneView;
+                if (view != null) view.AlignViewToObject(camera.transform);
+                Selection.activeGameObject = look.Root;
+                Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + "。視点は「Region Terrain Look/Viewpoints」の far・mid・near");
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+        }
+
         [MenuItem("Vastcore/Region Map/Open 3D Cliff And Cave Prototype")]
         public static void OpenPrototype()
         {
@@ -39,7 +63,25 @@ namespace Vastcore.RegionMap.Editor
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             RegionData region = RegionGenerator.Generate(regionSpec);
             RegionTerrainView.Result result = RegionTerrainView.Build(region, viewSpec);
+            camera = CreateStage(5000f);
+            return result;
+        }
 
+        /// <summary>新しいシーンに、砂岩の台地の場面・太陽・カメラを置く。</summary>
+        public static RegionTerrainView.LookResult CreateLookScene(RegionSpec regionSpec, RegionLookSpec lookSpec, out Camera camera)
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            RegionData region = RegionGenerator.Generate(regionSpec);
+            RegionTerrainView.LookResult look = RegionTerrainView.BuildLook(region, lookSpec);
+            // 外側の地形の対角線（6 km 四方で約 8.5 km）が収まる距離まで描く
+            camera = CreateStage(lookSpec.OuterKm * 1000f * 1.5f + 1000f);
+            return look;
+        }
+
+        /// <summary>太陽・空からの光・カメラ（光と空気は仮の値。見え方の想定の次の区切りで決める）。</summary>
+        private static Camera CreateStage(float farClip)
+        {
+            Camera camera;
             var sun = new GameObject("Sun");
             Light light = sun.AddComponent<Light>();
             light.type = LightType.Directional;
@@ -58,18 +100,55 @@ namespace Vastcore.RegionMap.Editor
             cameraObject.tag = "MainCamera";
             camera = cameraObject.AddComponent<Camera>();
             camera.fieldOfView = 40f;
-            camera.nearClipPlane = 0.5f;
-            camera.farClipPlane = 5000f;
+            camera.nearClipPlane = 0.3f;
+            camera.farClipPlane = farClip;
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.55f, 0.68f, 0.86f);
-            return result;
+            return camera;
         }
 
         /// <summary>
-        /// コマンドライン用。崖の正面・近く・引いた所の 3 枚を -regionOut のフォルダへ書き出して終了する。
+        /// コマンドライン用。砂岩の台地の場面を、決まった 3 つの視点（遠景・中景・近景）で撮り、
+        /// look-far.png・look-mid.png・look-near.png を -regionOut のフォルダへ書き出して終了する。毎回同じ 3 枚になる。
         /// 指定: -regionSeed 9 -regionOut 出力先のフォルダ（画面を使うので -nographics は付けない）
         /// </summary>
         public static void CaptureFromCommandLine()
+        {
+            int exitCode = 0;
+            try
+            {
+                string output = Path.GetFullPath(RegionMapMenu.Argument("-regionOut", "artifacts/region-map/3d-look"));
+                Directory.CreateDirectory(output);
+                // 最初の 1 枚が、コンパイル待ちの仮の色で写らないようにする
+                ShaderUtil.allowAsyncCompilation = false;
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                var regionSpec = new RegionSpec { Seed = int.Parse(RegionMapMenu.Argument("-regionSeed", "9")) };
+                RegionTerrainView.LookResult look = CreateLookScene(regionSpec, new RegionLookSpec(), out Camera camera);
+                Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + " 作成 " + watch.ElapsedMilliseconds + "ms");
+                // 作った直後の最初の 1 枚は、地面の画像が貼られる前の白い地面で写る（2026-11-25 に、最初と最後に同じ視点を撮って確かめた）。
+                // 捨てコマを 1 枚描いてから撮る
+                RegionTerrainView.PlaceLook(camera.transform, look.Scene, look.Scene.Spec.Far);
+                Capture(camera, null, null);
+                foreach (RegionLookViewpoint viewpoint in look.Scene.Spec.Viewpoints())
+                {
+                    RegionTerrainView.PlaceLook(camera.transform, look.Scene, viewpoint);
+                    camera.fieldOfView = viewpoint.FovDegrees;
+                    Capture(camera, output, "look-" + viewpoint.Name + ".png");
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError("[RegionMap] 3D の撮影に失敗: " + exception);
+                exitCode = 1;
+            }
+            EditorApplication.Exit(exitCode);
+        }
+
+        /// <summary>
+        /// コマンドライン用。崖と洞窟（局所の体積の試作）の、崖の正面・近く・引いた所の 3 枚を -regionOut のフォルダへ書き出して終了する。
+        /// 指定: -regionSeed 9 -regionOut 出力先のフォルダ（画面を使うので -nographics は付けない）
+        /// </summary>
+        public static void CaptureCaveFromCommandLine()
         {
             int exitCode = 0;
             try
@@ -94,6 +173,17 @@ namespace Vastcore.RegionMap.Editor
             EditorApplication.Exit(exitCode);
         }
 
+        private static string DescribeLook(RegionTerrainView.LookResult look)
+        {
+            RegionLookScene scene = look.Scene;
+            string shader = RegionTerrainView.ShaderResource + (Resources.Load<Shader>(RegionTerrainView.ShaderResource) != null ? "" : "（見つからず、URP の Lit で代用）");
+            int rocks = scene.InnerRocks != null ? scene.InnerRocks.Rocks.Length + scene.OuterRocks.Rocks.Length : 0;
+            return "砂岩の台地の場面 中心 X" + scene.Spec.CenterMapX.ToString("F2") + " Y" + scene.Spec.CenterMapY.ToString("F2")
+                + " / 内側 " + scene.Inner.Data.SizeKm.ToString("F2") + " km（1 セル " + scene.InnerCell.ToString("F2") + " m）外側 " + scene.Outer.Data.SizeKm.ToString("F1") + " km"
+                + " / 広域の地図との標高の差の平均 内側 " + scene.Inner.MeanHeightDifference.ToString("F1") + " m 外側 " + scene.Outer.MeanHeightDifference.ToString("F1") + " m"
+                + " / 岩 " + rocks + " 個 / シェーダー " + shader;
+        }
+
         private static string Describe(RegionTerrainView.Result result)
         {
             string shader = RegionTerrainView.ShaderResource + (Resources.Load<Shader>(RegionTerrainView.ShaderResource) != null ? "" : "（見つからず、URP の Lit で代用）");
@@ -104,9 +194,15 @@ namespace Vastcore.RegionMap.Editor
 
         private static void Shot(Camera camera, RegionTerrainView.Result result, string output, string name, float yawOffset, float pitch, float distance)
         {
+            RegionTerrainView.Place(camera.transform, result, yawOffset, pitch, distance);
+            Capture(camera, output, name);
+        }
+
+        /// <summary>カメラの絵を 1600×900 で描き、output のフォルダへ name で書き出す。name が null なら、描くだけで書き出さない。</summary>
+        private static void Capture(Camera camera, string output, string name)
+        {
             const int Width = 1600;
             const int Height = 900;
-            RegionTerrainView.Place(camera.transform, result, yawOffset, pitch, distance);
             var target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
             var image = new Texture2D(Width, Height, TextureFormat.RGB24, false);
             try
@@ -118,6 +214,7 @@ namespace Vastcore.RegionMap.Editor
                 image.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
                 image.Apply();
                 RenderTexture.active = previous;
+                if (name == null) return;
                 string path = Path.Combine(output, name);
                 File.WriteAllBytes(path, image.EncodeToPNG());
                 Debug.Log("[RegionMap] 3D の絵 → " + path);

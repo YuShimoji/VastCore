@@ -205,7 +205,7 @@ dotnet run --project tools/RegionMapPreview -c Release --no-build -- --seed 7 --
 
 3D化の試作（`Core/RegionTerrainMesh`、段階 A。範囲の外の試作で、採否は本人）は、`--view3d "方位,見下ろす角,高さの倍率,距離km,幅,高さ"` で斜めから見た絵を出す。拡大した窓を見るときは `--view3d-focus "地図X,地図Y,窓の一辺km"` を足す。 段階 B〜D（2026-11-25。値は仮）: B `--strata 1`＝拡大した地形に地層の段（`RegionDetailSpec.Strata`。既定 0 は入れず、今までの地形とバイト一致）。C `--routes`＝通行の区分と道筋（`Core/RegionTraversal`）。D `--volume`＝崖を1つ選び、崖下のえぐれと洞窟を体積で作って、断面図も出す（`Core/RegionVolume`。面の取り出しは Surface Nets）。`--view3d-lit` は面の向きから光を計算する。B・C の細かい説明は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-25 3D化の試作・段階 D（正本から移した行）」。
 
-Unity では、メニュー `Vastcore > Region Map > Open 3D Cliff And Cave Prototype` か `./scripts/region-map.ps1 -Mode view3d`（3 視点を撮る）で見る（`View/RegionTerrainView`）。
+Unity では `./scripts/region-map.ps1 -Mode view3d` が、砂岩の台地の場面を 3 視点で撮る（[想定と結果](REGION_TERRAIN_LOOK_SPEC.md)）。崖と洞窟は `-Mode view3d-cave`。メニューは `Vastcore > Region Map`。
 
 2行目は、エリアの図・エリアと地点の一覧（根拠と採点）・採点の図を書き出す。ファイル名と雲の連番のオプションは [履歴](REGION_MAP_EXPLORATION_HISTORY.md)。
 

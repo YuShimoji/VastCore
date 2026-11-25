@@ -78,6 +78,15 @@ namespace Vastcore.RegionMap
         /// </summary>
         public float[] Cliff;
 
+        /// <summary>
+        /// 岩屑の斜面にあたる度合い（0〜1）。台地を入れた拡大した地形（RegionDetailSpec.Mesa）だけが持ち、それ以外は null。
+        /// 崖の足もとで 1、斜面の裾で 0.5、その先の転石が届く範囲で 0 へ薄れる。岩を置く密度（RegionRockField）に使う。
+        /// </summary>
+        public float[] Talus;
+
+        /// <summary>台地の帽子の岩（上面と崖）にあたるセルは 1。RegionDetailSpec.Mesa を入れた時だけ持つ。</summary>
+        public byte[] Caprock;
+
         public RegionDevelopment Development { get; internal set; }
         internal RegionPosition DevelopmentOrigin;
 
