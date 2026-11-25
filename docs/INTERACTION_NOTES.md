@@ -48,6 +48,10 @@ style.
   evidence cannot decide. Do not turn the "what to add next" field of an answer
   into the next task without checking the SP-021 stage table.
 - Preference questions about defects the developer can count and fix.
+- Asking the user to accept a screen that fell out of implementation (2026-11-25
+  correction). For look work, research references and write the expected look
+  (what must read at far, middle and near range, with reference images) before
+  building; then compare the screen against that target.
 
 Durable user preferences belong in `docs/USER_REQUEST_LEDGER.md`; this file owns
 only interaction behavior.
