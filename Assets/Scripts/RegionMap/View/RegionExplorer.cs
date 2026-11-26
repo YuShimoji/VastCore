@@ -1026,9 +1026,10 @@ namespace Vastcore.RegionMap
                 if (_cloudTexture != null) Destroy(_cloudTexture);
                 if (_highCloudTexture != null) Destroy(_highCloudTexture);
                 if (_shadowTexture != null) Destroy(_shadowTexture);
-                _cloudTexture = RegionMapTexture.Create(generated.CloudPixels, generated.CloudSize, true);
-                _highCloudTexture = RegionMapTexture.Create(generated.HighCloudPixels, generated.CloudSize, true);
-                _shadowTexture = RegionMapTexture.Create(generated.ShadowPixels, generated.CloudSize, true);
+                // Linear 色空間では、雲は濃く・影は薄く重なるので、不透明さを Gamma の見え方へ寄せる（RegionMapTexture.ForBlend）
+                _cloudTexture = RegionMapTexture.Create(RegionMapTexture.ForBlend(generated.CloudPixels, false), generated.CloudSize, true);
+                _highCloudTexture = RegionMapTexture.Create(RegionMapTexture.ForBlend(generated.HighCloudPixels, false), generated.CloudSize, true);
+                _shadowTexture = RegionMapTexture.Create(RegionMapTexture.ForBlend(generated.ShadowPixels, true), generated.CloudSize, true);
                 _clouds.Texture = _cloudTexture;
                 _highClouds.Texture = _highCloudTexture;
                 _cloudShadows.Texture = _shadowTexture;
@@ -1355,9 +1356,10 @@ namespace Vastcore.RegionMap
                 // 消さないと、1 つの雲が画面の全部を覆って細部が霞む。×64 までの見え方は変えない
                 float opacity = _cloudOpacity * Mathf.Clamp01(1f - Mathf.Log(_zoom / CloudClearFromZoom, 2f));
                 var shadowShift = new Vector2(RegionClouds.ShadowOffset, -RegionClouds.ShadowOffset);
-                _cloudShadows.SetFlow(RegionCloudFlow.Low, _cloudTime, _cloudCrossSeconds, shadowShift, opacity);
-                _clouds.SetFlow(RegionCloudFlow.Low, _cloudTime, _cloudCrossSeconds, Vector2.zero, opacity);
-                _highClouds.SetFlow(RegionCloudFlow.High, _cloudTime, _cloudCrossSeconds, Vector2.zero, opacity);
+                // 層全体の濃さも、画素の不透明さと同じく色空間に合わせて補正する
+                _cloudShadows.SetFlow(RegionCloudFlow.Low, _cloudTime, _cloudCrossSeconds, shadowShift, RegionMapTexture.DarkAlpha(opacity));
+                _clouds.SetFlow(RegionCloudFlow.Low, _cloudTime, _cloudCrossSeconds, Vector2.zero, RegionMapTexture.LightAlpha(opacity));
+                _highClouds.SetFlow(RegionCloudFlow.High, _cloudTime, _cloudCrossSeconds, Vector2.zero, RegionMapTexture.LightAlpha(opacity));
             }
             float driftU;
             float driftV;
@@ -1620,7 +1622,7 @@ namespace Vastcore.RegionMap
                 for (int b = 0; b < _signalBars.Length; b++)
                 {
                     _fx.Cancel(_signalBars[b]);
-                    _signalBars[b].color = b < level ? AccentColor : OffColor;
+                    _signalBars[b].color = b < level ? AccentColor : RegionMapTexture.ForBlend(OffColor);
                 }
             }
             bool expedition = _rules == SearchRules.Expedition && _expedition != null;
@@ -2173,12 +2175,12 @@ namespace Vastcore.RegionMap
                 if (b >= level || !_motion)
                 {
                     _fx.Cancel(bar);
-                    bar.color = b < level ? AccentColor : OffColor;
+                    bar.color = b < level ? AccentColor : RegionMapTexture.ForBlend(OffColor);
                     continue;
                 }
-                bar.color = OffColor;
+                bar.color = RegionMapTexture.ForBlend(OffColor);
                 bool glow = _motionGlow;
-                _fx.Play(bar, delay + b * 0.09f, 0.12f, t => bar.color = Color.Lerp(OffColor, AccentColor, t), () =>
+                _fx.Play(bar, delay + b * 0.09f, 0.12f, t => bar.color = Color.Lerp(RegionMapTexture.ForBlend(OffColor), AccentColor, t), () =>
                 {
                     if (!glow) return;
                     // C の要素：点いた直後に明るく光り、1.7 秒かけて元の橙へ戻る
@@ -3036,7 +3038,8 @@ namespace Vastcore.RegionMap
             var created = new GameObject(name, typeof(RectTransform), typeof(Image));
             created.transform.SetParent(parent, false);
             var image = created.GetComponent<Image>();
-            image.color = color;
+            // 半透明の面と線は、Linear 色空間でも Gamma と同じ透け方に見えるよう補正する
+            image.color = RegionMapTexture.ForBlend(color);
             image.sprite = sprite;
             image.raycastTarget = false;
             return image;
@@ -3059,7 +3062,7 @@ namespace Vastcore.RegionMap
             if (shadow)
             {
                 Shadow drop = created.AddComponent<Shadow>();
-                drop.effectColor = ShadowColor;
+                drop.effectColor = RegionMapTexture.ForBlend(ShadowColor);
                 drop.effectDistance = new Vector2(1f, -1f);
             }
             return text;

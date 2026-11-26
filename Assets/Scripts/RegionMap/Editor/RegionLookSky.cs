@@ -297,8 +297,10 @@ namespace Vastcore.RegionMap.Editor
 
         private static void SetHazeColors(RegionAtmosphere atmosphere, Color awaySample, Color towardSample)
         {
-            // 読んだ値は画面の値（sRGB）。シェーダーへは線形で渡す。
-            Color away = awaySample.linear, toward = towardSample.linear;
+            // シェーダーへは線形で渡す。Gamma 色空間では読んだ値は画面の値（sRGB）なので線形に直す。
+            // Linear 色空間では描画先（ARGBHalf）に線形の値のまま入るので、そのまま使う（直すと二重になり、霞が暗く色が転ぶ。2026-11-27 m28）
+            bool gamma = QualitySettings.activeColorSpace == ColorSpace.Gamma;
+            Color away = gamma ? awaySample.linear : awaySample, toward = gamma ? towardSample.linear : towardSample;
             Shader.SetGlobalVector("_RegionFogColor", new Vector4(away.r, away.g, away.b, 0f));
             Shader.SetGlobalVector("_RegionFogSunColor", new Vector4(toward.r, toward.g, toward.b, atmosphere.FogTowardSunSharpness));
             Debug.Log("[RegionMap] 霞の色を Weather Maker の地平線の空に合わせた（線形）: 太陽と反対 " + away + "、太陽の側 " + toward);

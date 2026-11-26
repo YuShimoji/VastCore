@@ -142,6 +142,9 @@ namespace Vastcore.RegionMap
             Set(profile, "TimeZoneOffsetSeconds", 0);
             Set(profile, "Speed", 0f);
             Set(profile, "NightSpeed", 0f);
+            // 空からの光（環境光）は自作の条件（RegionAtmosphere が置いた値）のままにする。既定は毎コマ素材の色で上書きし、
+            // その色は Linear 色空間では暗く変換されて、夕方の影の地面がほぼ黒になった（2026-11-27 m28・m29）
+            SetEnum(profile, "AmbientColorMode", "UnityAmbientSettings");
             Set(cycle, "DayNightProfile", profile);
 
             // 正午（12 時）から日没（18 時）までで、太陽の高さが目標になる時刻を二分法で探す
@@ -238,12 +241,19 @@ namespace Vastcore.RegionMap
         public static float CoverFullDensity = 0.25f;
 
         /// <summary>
+        /// 雲の地図の量（R）の上限。1 では形の雑音が全部雲になり、雲が形の無い板になる。下げると塊の間に青空が出て積雲の形になるが、
+        /// 雲の割合は 2D より減る（上限 1 / 0.94 / 0.88 / 0.75 で中央 0.48 / 0.37 / 0.26 / 0.07、2D 0.55。sky-trial m26）。
+        /// 本人は 2D の雲の量より形を選んだ（2026-11-27）。雲のある場所は 2D と同じまま。
+        /// </summary>
+        public static float CoverMax = 0.8f;
+
+        /// <summary>
         /// 2D の雲の濃さ（RegionCloudSky の低い雲）から雲の地図の 1 画素を作る。
-        /// 量は 2D の地図で雲が見える濃さ（RegionClouds.Shade の不透明さ）と同じ範囲で 0〜1 にし、厚い所ほど積雲に寄せる。
+        /// 量は 2D の地図で雲が見える濃さ（RegionClouds.Shade の不透明さ）と同じ範囲で 0〜<see cref="CoverMax"/> にし、厚い所ほど積雲に寄せる。
         /// </summary>
         public static Color CloudMapPixel(float density)
         {
-            float cover = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(density / CoverFullDensity));
+            float cover = CoverMax * Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(density / CoverFullDensity));
             float cumulus = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((density - 0.1f) / 0.5f));
             return new Color(cover, 1f, 0.35f + 0.65f * cumulus, 1f);
         }

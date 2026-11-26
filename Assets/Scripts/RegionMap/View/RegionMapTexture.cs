@@ -19,6 +19,50 @@ namespace Vastcore.RegionMap
             return texture;
         }
 
+        /// <summary>
+        /// 半透明の重ね方の補正。Linear 色空間では重ね合わせを線形の値で行うので、同じ不透明さでも暗い面は薄く、
+        /// 明るい面（雲・白い線）は濃く見える（2026-11-27 sky-trial m27）。探索画面は Gamma の見え方で作ったので、
+        /// Linear の時は不透明さを変えて Gamma の見え方へ寄せる。Gamma ではそのまま返す。
+        /// 暗い面は黒に近い色なら正確に合う式、明るい面は地図の中ほどの明るさ（sRGB 0.2〜0.35）で合う指数にした。
+        /// </summary>
+        public static float DarkAlpha(float alpha)
+        {
+            return LinearBlending ? 1f - Mathf.Pow(1f - Mathf.Clamp01(alpha), 2.2f) : alpha;
+        }
+
+        public static float LightAlpha(float alpha)
+        {
+            return LinearBlending ? Mathf.Pow(Mathf.Clamp01(alpha), 1.5f) : alpha;
+        }
+
+        /// <summary>色の明るさで暗い面か明るい面かを決めて、不透明さを補正する。</summary>
+        public static Color ForBlend(Color color)
+        {
+            if (!LinearBlending || color.a >= 1f) return color;
+            color.a = color.grayscale < 0.5f ? DarkAlpha(color.a) : LightAlpha(color.a);
+            return color;
+        }
+
+        /// <summary>画素の不透明さ（RGBA32 の A）を補正した写し。Gamma では元の配列を返す。</summary>
+        public static byte[] ForBlend(byte[] rgba, bool dark)
+        {
+            if (!LinearBlending) return rgba;
+            var lookup = new byte[256];
+            for (int i = 0; i < 256; i++)
+            {
+                float a = i / 255f;
+                lookup[i] = (byte)Mathf.RoundToInt((dark ? DarkAlpha(a) : LightAlpha(a)) * 255f);
+            }
+            var copy = (byte[])rgba.Clone();
+            for (int i = 3; i < copy.Length; i += 4) copy[i] = lookup[copy[i]];
+            return copy;
+        }
+
+        private static bool LinearBlending
+        {
+            get { return QualitySettings.activeColorSpace == ColorSpace.Linear; }
+        }
+
         public static void Apply(Texture2D texture, byte[] rgba, int size)
         {
             int stride = size * 4;

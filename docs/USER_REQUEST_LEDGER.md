@@ -124,13 +124,19 @@
   > これだと天気に応じて方向性そのものが変わってくるので前提として成り立たないと思います。光と空気の種類でなく、シェーダーとポストプロセッシング技術の選定なら選択の余地もありますが。
   > これらについて私の既存のアセットなどは調査済みですか？　そのうえで新規実装しようとしていますか？
 
-  購入済みとして挙げたもの: UniStorm、Weather Maker、Ethereal URP、Aura 2（Built-in専用）、Environment / Weather / Nature VFX pack（一覧 `C:\Users\PLANNER007\Unity_Rendering_Assets_2026-11-26.csv`）。写しで試す案を受け、写しの比較の後に「Use Weather Maker」を選んだ。色空間は Gamma のまま、遠くの影は GPU で毎フレーム計算（本人の選択）。
+  購入済みとして挙げたもの: UniStorm、Weather Maker、Ethereal URP、Aura 2（Built-in専用）、Environment / Weather / Nature VFX pack（一覧 `C:\Users\PLANNER007\Unity_Rendering_Assets_2026-11-26.csv`）。写しで試す案を受け、写しの比較の後に「Use Weather Maker」を選んだ。色空間は Gamma のまま（2026-11-27 に Linear へ変更、下の項）、遠くの影は GPU で毎フレーム計算（本人の選択）。
 
 - 2026-11-26（チャット、3D の雲）。本人原文
 
   > 雲ですが２Dマップとの整合性を取るのが前提条件です。特殊な形の雲を見つけてその地域に行ったら実際に見つけられるようにしたいです。降り立ったら、空が別物になっているというのは避けたいです。
 
   開発担当の読み（本人の確認は未）: 3D の雲は、2D の地図と同じ雲の濃さ（`RegionClouds`・`RegionCloudFlow`、同じ seed と時刻）から置く。Weather Maker の雲は既定では独自の乱数で作るので、そのままでは使わない。
+
+- 2026-11-27（別セッション経由、3D の空の見え方の確定）。本人原文
+
+  > 現在最新のセッションで見た目の確定について選択肢がでていますが、満足の行くクオリティになっていないのでこの時点での妥当性について調査してください。
+
+  確定の問いへの答えは「直したい点がある」。参照写真（Monument Valley の晴天・夕方・砂塵、Wikimedia Commons）と写しの比較（sky-trial m26・m27）を見て、「晴れの雲はどちらに寄せますか？」（形を優先する／2Dの雲量を優先する／両方を満たす方式を調べる）に「形を優先する」、「色空間は Gamma のままにしますか、Linear にしますか？」に「Linear に変える」を選んだ。
 
 ## Standing Reporting Preferences
 
