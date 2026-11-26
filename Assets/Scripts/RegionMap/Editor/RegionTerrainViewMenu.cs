@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 
 namespace Vastcore.RegionMap.Editor
 {
@@ -31,14 +32,23 @@ namespace Vastcore.RegionMap.Editor
 
         private static void OpenLook(RegionAtmosphere.Preset preset)
         {
+            if (EditorApplication.isPlaying)
+            {
+                OpenLookFromExplorer(preset);
+                return;
+            }
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             try
             {
                 EditorUtility.DisplayProgressBar("Region Map", "地域と、砂岩の台地の場面を作っています…", 0.3f);
-                RegionTerrainView.LookResult look = CreateLookScene(new RegionSpec { Seed = 9 }, new RegionLookSpec(), RegionAtmosphere.Create(preset), out Camera camera);
+                RegionAtmosphere atmosphere = RegionAtmosphere.Create(preset);
+                RegionTerrainView.LookResult look = CreateLookScene(new RegionSpec { Seed = 9 }, new RegionLookSpec(),
+                    atmosphere, out Camera camera);
                 RegionLookViewpoint mid = look.Scene.Spec.Mid;
                 RegionTerrainView.PlaceLook(camera.transform, look.Scene, mid);
                 camera.fieldOfView = mid.FovDegrees;
+                if (preset != RegionAtmosphere.Preset.DustHaze)
+                    RegionLookSky.ApplyInteractive(camera, look, atmosphere, RegionLookSky.MixedCloudTime(look.Scene));
                 SceneView view = SceneView.lastActiveSceneView;
                 if (view != null) view.AlignViewToObject(camera.transform);
                 Selection.activeGameObject = look.Root;
@@ -46,6 +56,53 @@ namespace Vastcore.RegionMap.Editor
             }
             finally
             {
+                EditorUtility.ClearProgressBar();
+            }
+        }
+
+        private static void OpenLookFromExplorer(RegionAtmosphere.Preset preset)
+        {
+            var explorer = UnityEngine.Object.FindFirstObjectByType<RegionExplorer>();
+            if (explorer == null || !explorer.TryGetGroundViewInput(out RegionData region, out Vector2 position,
+                out float cover, out float time, out float crossSeconds))
+            {
+                Debug.LogWarning("[RegionMap] 探索地図の生成が終わってから、地上で見る地点を選んでください。");
+                return;
+            }
+
+            Scene previous = SceneManager.GetActiveScene();
+            Scene preview = SceneManager.CreateScene("Region Mesa Look");
+            SceneManager.SetActiveScene(preview);
+            try
+            {
+                EditorUtility.DisplayProgressBar("Region Map", "選んだ地点と雲を地上で描いています…", 0.5f);
+                var spec = new RegionLookSpec { CenterMapX = position.x, CenterMapY = position.y };
+                RegionAtmosphere atmosphere = RegionAtmosphere.Create(preset);
+                atmosphere.PrepareSun();
+                RegionTerrainView.LookResult look = CreateLookStage(region, spec, atmosphere, out Camera camera);
+                float x = look.Scene.CenterX;
+                float z = look.Scene.CenterZ;
+                camera.transform.SetPositionAndRotation(new Vector3(x, look.Scene.HeightAt(x, z) + 1.7f, -z),
+                    Quaternion.LookRotation(new Vector3(0f, 0.25f, 1f)));
+                camera.fieldOfView = 60f;
+                camera.gameObject.AddComponent<RegionGroundLook>();
+                RegionLookSky.ApplyInteractive(camera, look, atmosphere, time, cover, crossSeconds,
+                    useWeatherMaker: preset != RegionAtmosphere.Preset.DustHaze);
+                foreach (GameObject root in explorer.gameObject.scene.GetRootGameObjects())
+                    root.SetActive(false);
+                Selection.activeGameObject = look.Root;
+                Debug.Log(FormattableString.Invariant(
+                    $"[RegionMap] 探索の雲を引継ぎ: seed {region.Spec.Seed}, X {position.x:F4}, Y {position.y:F4}, t {time:F3}s, cover {cover:F3}, cross {crossSeconds:F3}s"));
+            }
+            catch
+            {
+                SceneManager.SetActiveScene(previous);
+                SceneManager.UnloadSceneAsync(preview);
+                throw;
+            }
+            finally
+            {
+                RegionVolumePatch.SunAltitudeDegrees = RegionVolumePatch.DefaultSunAltitudeDegrees;
                 EditorUtility.ClearProgressBar();
             }
         }
@@ -89,6 +146,12 @@ namespace Vastcore.RegionMap.Editor
             // 頂点に持たせる影は、場面を作る時の太陽の高さで計算する
             atmosphere.PrepareSun();
             RegionData region = RegionGenerator.Generate(regionSpec);
+            return CreateLookStage(region, lookSpec, atmosphere, out camera);
+        }
+
+        private static RegionTerrainView.LookResult CreateLookStage(RegionData region, RegionLookSpec lookSpec,
+            RegionAtmosphere atmosphere, out Camera camera)
+        {
             RegionTerrainView.LookResult look = RegionTerrainView.BuildLook(region, lookSpec);
             float ground = look.Scene.HeightAt(look.Scene.CenterX, look.Scene.CenterZ);
             // 外側の地形の対角線（6 km 四方で約 8.5 km）が収まる距離まで描く
@@ -162,6 +225,14 @@ namespace Vastcore.RegionMap.Editor
                     Directory.CreateDirectory(folder);
                     watch.Restart();
                     RegionTerrainView.LookResult look = CreateLookScene(regionSpec, spec, atmosphere, out Camera camera);
+                    float cloudTime = 0f;
+                    if (preset != RegionAtmosphere.Preset.DustHaze)
+                    {
+                        string timeArgument = RegionMapMenu.Argument("-cloudTime", "auto");
+                        cloudTime = timeArgument == "auto" ? RegionLookSky.MixedCloudTime(look.Scene)
+                            : float.Parse(timeArgument, CultureInfo.InvariantCulture);
+                        RegionLookSky.UseOwnClouds(camera, look, cloudTime);
+                    }
                     Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + " 光と空気 " + atmosphere.Name + " 作成 " + watch.ElapsedMilliseconds + "ms");
                     Debug.Log("[RegionMap] 表面の写真素材: " + RegionSurfaceMaterials.Summary);
                     // 作った直後の最初の 1 枚は、地面の画像が貼られる前の白い地面で写る（2026-11-25 に、最初と最後に同じ視点を撮って確かめた）。
@@ -176,6 +247,34 @@ namespace Vastcore.RegionMap.Editor
                     if (RegionMapMenu.Argument("-surfaceCompare", "false") == "true")
                         CaptureToggleComparison(camera, look, folder, "surface", "写真素材", RegionSurfaceMaterials.Count > 0, RegionSurfaceMaterials.SetActive);
                     if (look.Alcove == null) DescribeNearestCap(look.Scene);
+                    if (preset != RegionAtmosphere.Preset.DustHaze && ownSky.Length == 1 && weatherMaker.Length == 0
+                        && RegionMapMenu.Argument("-skyCompare", "false") == "true")
+                    {
+                        var steps = new RegionEditorSteps();
+                        RegionLookSky.AddComparisonSteps(steps, () => camera, () => look, () => cloudTime, folder,
+                            RegionLookSky.OwnCloudComparisonPlane);
+                        string nextTime = RegionMapMenu.Argument("-skyCompareNext", "");
+                        bool secondSnapshot = !string.IsNullOrEmpty(nextTime);
+                        if (secondSnapshot)
+                        {
+                            float secondTime = float.Parse(nextTime, CultureInfo.InvariantCulture);
+                            string secondFolder = Path.Combine(folder, "second");
+                            Directory.CreateDirectory(secondFolder);
+                            steps.Add(() =>
+                            {
+                                RegionLookSky.UseOwnClouds(camera, look, secondTime);
+                                CaptureLookViews(camera, look, secondFolder);
+                            }, 0);
+                            RegionLookSky.AddComparisonSteps(steps, () => camera, () => look, () => secondTime, secondFolder,
+                                RegionLookSky.OwnCloudComparisonPlane);
+                        }
+                        steps.Run(secondSnapshot ? 600 : 300, error =>
+                        {
+                            if (error != null) Debug.LogError("[RegionMap] 雲の比較に失敗: " + error);
+                            EditorApplication.Exit(error == null ? 0 : 1);
+                        });
+                        return;
+                    }
                     CaptureSunSweep(camera, look, folder);
                 }
                 RegionVolumePatch.SunAltitudeDegrees = RegionVolumePatch.DefaultSunAltitudeDegrees;
@@ -523,7 +622,7 @@ namespace Vastcore.RegionMap.Editor
         }
 
         /// <summary>カメラの絵を 1600×900 で描き、output のフォルダへ name で書き出す。name が null なら、描くだけで書き出さない。</summary>
-        private static void Capture(Camera camera, string output, string name, int width = 1600, int height = 900)
+        internal static void Capture(Camera camera, string output, string name, int width = 1600, int height = 900)
         {
             var target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
             var image = new Texture2D(width, height, TextureFormat.RGB24, false);

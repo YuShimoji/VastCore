@@ -28,7 +28,7 @@ namespace Vastcore.RegionMap
         [SerializeField] private bool _liveSignal;
 
         [Tooltip("雲が地図の幅を横切るのにかかる秒数。0 にすると雲は動かない。")]
-        [SerializeField] private float _cloudCrossSeconds = 420f;
+        [SerializeField] private float _cloudCrossSeconds = RegionCloudFlow.DefaultCrossSeconds;
 
         [Header("動き（SP-021 軸 E。案 B を基にし、C の一部を加えた候補）")]
         [Tooltip("オフにすると、動きなしの画面（状態が変わったらすぐ終わりの姿を出す）へ戻る。")]
@@ -340,6 +340,18 @@ namespace Vastcore.RegionMap
 
         /// <summary>低い雲の層が一様な流れで動いた量（地図の幅を 1 とした割合。1 で一周して 0 へ戻る）。場所ごとの渦のずれは含まない。</summary>
         public Vector2 CloudDrift { get { return _cloudDrift; } }
+
+        /// <summary>地上を開く時の地域・選択地点と、その時点で地図が描いている雲の条件。</summary>
+        public bool TryGetGroundViewInput(out RegionData region, out Vector2 position,
+            out float cloudCover, out float cloudTime, out float cloudCrossSeconds)
+        {
+            region = IsReady ? _data : null;
+            position = _cursorMap;
+            cloudCover = _render.CloudCover;
+            cloudTime = _cloudTime;
+            cloudCrossSeconds = _cloudCrossSeconds;
+            return region != null;
+        }
 
         /// <summary>地名の出し方の段（0 名前、1 名前と境界、2 なし）。</summary>
         public int AreaDisplay

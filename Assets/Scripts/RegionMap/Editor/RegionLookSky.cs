@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Vastcore.RegionMap.Editor
 {
@@ -20,6 +22,8 @@ namespace Vastcore.RegionMap.Editor
 
         /// <summary>塊の雲の層の底と頂（地面から、m）。</summary>
         public const float CloudBase = 1500f, CloudTop = 5000f;
+        private const float OwnCloudTop = 2600f;
+        public const float OwnCloudComparisonPlane = CloudBase + 450f;
 
         /// <summary>高い薄雲（2D の地図の上の層）の平らな層の高さ（地面から、m）。</summary>
         public const float HighCloudHeight = 9000f;
@@ -89,11 +93,105 @@ namespace Vastcore.RegionMap.Editor
             return true;
         }
 
+        public static void ApplyInteractive(Camera camera, RegionTerrainView.LookResult look, RegionAtmosphere atmosphere,
+            float cloudTime, float? cover = null, float crossSeconds = RegionCloudFlow.DefaultCrossSeconds,
+            bool useWeatherMaker = true)
+        {
+            if (useWeatherMaker && CanUse(out _))
+            {
+                try
+                {
+                    Use(camera, look, atmosphere, cloudTime, cover, crossSeconds);
+                }
+                catch
+                {
+                    RegionWeatherMaker.RemoveRenderFeature();
+                    throw;
+                }
+                ReleaseWithScene(camera.gameObject.scene, RegionWeatherMaker.RemoveRenderFeature);
+                Vector3 position = camera.transform.position;
+                Quaternion rotation = camera.transform.rotation;
+                float fov = camera.fieldOfView;
+                var steps = new RegionEditorSteps();
+                steps.Add(() => { }, 240);
+                AddHazeSteps(steps, () => camera, () => look, atmosphere);
+                steps.Run(120, error =>
+                {
+                    if (camera != null)
+                    {
+                        RenderTexture temporary = camera.targetTexture;
+                        camera.targetTexture = null;
+                        camera.ResetAspect();
+                        camera.transform.SetPositionAndRotation(position, rotation);
+                        camera.fieldOfView = fov;
+                        look.Root.SetActive(true);
+                        RegionWeatherMaker.SetPostProcessing(camera, true);
+                        if (temporary != null) UnityEngine.Object.DestroyImmediate(temporary);
+                    }
+                    if (error != null) Debug.LogWarning("[RegionMap] Weather Maker の霞を合わせられなかった: " + error.Message);
+                });
+            }
+            else
+            {
+                UseOwnClouds(camera, look, cloudTime, cover, crossSeconds);
+            }
+        }
+
+        public static void UseOwnClouds(Camera camera, RegionTerrainView.LookResult look, float cloudTime,
+            float? cover = null, float crossSeconds = RegionCloudFlow.DefaultCrossSeconds)
+        {
+            Material sky = RenderSettings.skybox;
+            if (sky == null || !sky.HasProperty("_RegionCloudMap"))
+                throw new InvalidOperationException("共有の雲を描く Region Sky の素材が見つからない");
+            RegionCloudSkySpec spec = CloudSpec(look.Scene, cloudTime, cover, crossSeconds);
+            RegionCloudSky.Build(spec, out float[] low, out float[] high);
+            var pixels = new Color[low.Length];
+            for (int i = 0; i < pixels.Length; i++)
+                pixels[i] = new Color(low[i], high[i], 0f, 1f);
+            var density = new Texture2D(spec.Resolution, spec.Resolution, TextureFormat.RGBAHalf, true, true)
+            {
+                name = "Region Cloud Density", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear,
+                hideFlags = HideFlags.DontSave,
+            };
+            density.SetPixels(pixels);
+            density.Apply(true, true);
+            sky.SetTexture("_RegionCloudMap", density);
+            sky.SetVector("_RegionCloudTransform", new Vector4(spec.MinX, spec.MinZ, 1f / spec.Size, 1f));
+            float ground = look.Scene.HeightAt(look.Scene.CenterX, look.Scene.CenterZ);
+            sky.SetVector("_RegionCloudView", new Vector4(ground + CloudBase, ground + OwnCloudTop,
+                ground + HighCloudHeight, CloudFadeMeters));
+            ReleaseWithScene(camera.gameObject.scene, () => UnityEngine.Object.DestroyImmediate(density));
+            Debug.Log(FormattableString.Invariant(
+                $"[RegionMap] 空 Region Sky: 共有の雲 seed {spec.RegionSeed}, t {spec.Time:F3}s, cover {spec.Cover:F3}, cross {spec.CrossSeconds:F3}s"));
+        }
+
+        private static RegionCloudSkySpec CloudSpec(RegionLookScene scene, float time, float? cover, float crossSeconds)
+        {
+            RegionCloudSkySpec spec = RegionCloudSky.ForScene(scene, CloudBoxSize, CloudMapSize,
+                cover ?? new RegionRenderOptions().CloudCover, time);
+            spec.CrossSeconds = crossSeconds;
+            return spec;
+        }
+
+        private static void ReleaseWithScene(Scene scene, Action release)
+        {
+            void Closed(Scene closed)
+            {
+                if (closed != scene) return;
+                SceneManager.sceneUnloaded -= Closed;
+                EditorSceneManager.sceneClosed -= Closed;
+                release();
+            }
+            SceneManager.sceneUnloaded += Closed;
+            EditorSceneManager.sceneClosed += Closed;
+        }
+
         /// <summary>
         /// 場面の自作の空・霞・太陽を外し、Weather Maker を置く。cloudTime は探索画面の雲の時刻（秒）。
         /// 置いた後、空と太陽が落ち着くまで編集時の更新を数百コマ回してから撮る（RegionEditorSteps）。
         /// </summary>
-        public static void Use(Camera camera, RegionTerrainView.LookResult look, RegionAtmosphere atmosphere, float cloudTime)
+        public static void Use(Camera camera, RegionTerrainView.LookResult look, RegionAtmosphere atmosphere,
+            float cloudTime, float? cover = null, float crossSeconds = RegionCloudFlow.DefaultCrossSeconds)
         {
             RegionWeatherMaker.AddRenderFeature();
 
@@ -103,10 +201,12 @@ namespace Vastcore.RegionMap.Editor
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = Color.black;
             // 自作の太陽を外し、Weather Maker の太陽を主光源にする
-            GameObject ourSun = GameObject.Find("Sun");
+            GameObject ourSun = RenderSettings.sun != null ? RenderSettings.sun.gameObject : null;
             if (ourSun != null) UnityEngine.Object.DestroyImmediate(ourSun);
 
-            PrefabUtility.InstantiatePrefab(FindAsset<GameObject>(PrefabName, "Prefab"));
+            GameObject weatherPrefab = FindAsset<GameObject>(PrefabName, "Prefab");
+            if (Application.isPlaying) UnityEngine.Object.Instantiate(weatherPrefab);
+            else PrefabUtility.InstantiatePrefab(weatherPrefab);
             RegionWeatherMaker.AllowCamera(camera);
             RegionWeatherMaker.UseFullQualityClouds();
             RegionWeatherMaker.SetSky(FindAsset<ScriptableObject>(SkyProfileName, "ScriptableObject"));
@@ -115,8 +215,7 @@ namespace Vastcore.RegionMap.Editor
             RegionWeatherMaker.SetSun(atmosphere.SunAltitudeDegrees, Mathf.Atan2(toSun.x, toSun.z) * Mathf.Rad2Deg);
 
             var watch = System.Diagnostics.Stopwatch.StartNew();
-            float cover = new RegionRenderOptions().CloudCover;
-            RegionCloudSkySpec spec = RegionCloudSky.ForScene(look.Scene, CloudBoxSize, CloudMapSize, cover, cloudTime);
+            RegionCloudSkySpec spec = CloudSpec(look.Scene, cloudTime, cover, crossSeconds);
             float[] low;
             float[] high;
             RegionCloudSky.Build(spec, out low, out high);
@@ -281,7 +380,8 @@ namespace Vastcore.RegionMap.Editor
         /// Weather Maker へ渡した雲の量を sky-cover.png に書く手順を足す。どれも上が北。
         /// Weather Maker はカメラの向きに合わせた準備を毎コマの更新で行うので、向きを変えるたびにコマを回してから撮る。
         /// </summary>
-        public static void AddComparisonSteps(RegionEditorSteps steps, Func<Camera> camera, Func<RegionTerrainView.LookResult> look, Func<float> cloudTime, string output)
+        public static void AddComparisonSteps(RegionEditorSteps steps, Func<Camera> camera,
+            Func<RegionTerrainView.LookResult> look, Func<float> cloudTime, string output, float lowCloudPlane = ComparePlane)
         {
             var pixels = new Color32[FaceForward.Length][];
             var matrices = new Matrix4x4[FaceForward.Length];
@@ -333,7 +433,7 @@ namespace Vastcore.RegionMap.Editor
                 look().Root.SetActive(true);
                 target.Release();
                 UnityEngine.Object.DestroyImmediate(target);
-                WriteComparison(look().Scene, pixels, matrices, cloudTime(), output);
+                WriteComparison(look().Scene, pixels, matrices, cloudTime(), output, lowCloudPlane);
             });
         }
 
@@ -342,7 +442,8 @@ namespace Vastcore.RegionMap.Editor
             return new Vector3(scene.CenterX, scene.HeightAt(scene.CenterX, scene.CenterZ) + 2f, -scene.CenterZ);
         }
 
-        private static void WriteComparison(RegionLookScene scene, Color32[][] pixels, Matrix4x4[] matrices, float cloudTime, string output)
+        private static void WriteComparison(RegionLookScene scene, Color32[][] pixels, Matrix4x4[] matrices,
+            float cloudTime, string output, float lowCloudPlane)
         {
             Vector3 eye = Eye(scene);
             float ground = eye.y - 2f;
@@ -352,7 +453,7 @@ namespace Vastcore.RegionMap.Editor
                 for (int i = 0; i < CompareSize; i++)
                 {
                     // 行 0 が南（画像は下の行から並ぶ）、列 0 が西
-                    var point = new Vector3(eye.x + Offset(i), ground + (HighOnly ? HighCloudHeight : ComparePlane), eye.z + Offset(j));
+                    var point = new Vector3(eye.x + Offset(i), ground + (HighOnly ? HighCloudHeight : lowCloudPlane), eye.z + Offset(j));
                     // 写っている方向の絵を、枠の端から重なりの幅の中で 0 へ下がる重みで混ぜる
                     float overlap = 1f - Mathf.Tan(45f * Mathf.Deg2Rad) / Mathf.Tan(FaceFov * 0.5f * Mathf.Deg2Rad);
                     Color sum = Color.clear;
