@@ -173,6 +173,8 @@ seed 9 の北西側の雲を追った。30km四方の雲濃度と地上投影の
 
 通常の探索メニューから、seed 9の崖下（X43.61／Y76.92、69秒）とseed 8の平地（X82.93144／Y62.38425、75秒）を開いた。各動画は同条件の地図1.5秒とGameビューでカメラを75度回した3秒をつないだもの。Ground054（砂）とGround081（礫）は比較用に適用。自作の空、PC品質、GTX 1650 Ti、1600×900、VSyncなしで撮影前の120フレームを測り、中央値／95パーセンタイルはseed 9で21.44／25.92ms、seed 8で12.61／16.84ms。Unity Editorのフレーム間隔。[崖下の動画](../../artifacts/region-map/mesa-cloud-20261126/normal-route/mesa-route-seed9.mp4)・[平地の動画](../../artifacts/region-map/mesa-cloud-20261126/normal-route/mesa-route-seed8.mp4)
 
+Weather Makerを使う通常の見回しでは、立ち上がりを待った後、地平線の2方向を手動描画し、同じ更新内で見回し中の視点、地形、描画先、後処理を復元する。空の色を読めなければ条件の霞を使う。自作の空の小さな試験シーンで両方向の色の取得と状態復元を確認し、計測前後の画像はバイト一致した。Weather Maker本体での色と見回しは未確認。[Unity Camera.Render](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Camera.Render.html)・[検証ログ](../../artifacts/region-map/mesa-cloud-20261126/haze-transition/result.txt)
+
 ### 5.3 写真・生成結果・実装を突き合わせる
 
 | 距離と見る場所 | 基準画像で見える差 | 制作時に変えて比べるもの |

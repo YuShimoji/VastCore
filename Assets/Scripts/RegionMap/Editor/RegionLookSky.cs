@@ -109,26 +109,20 @@ namespace Vastcore.RegionMap.Editor
                     throw;
                 }
                 ReleaseWithScene(camera.gameObject.scene, RegionWeatherMaker.RemoveRenderFeature);
-                Vector3 position = camera.transform.position;
-                Quaternion rotation = camera.transform.rotation;
-                float fov = camera.fieldOfView;
                 var steps = new RegionEditorSteps();
                 steps.Add(() => { }, 240);
-                AddHazeSteps(steps, () => camera, () => look, atmosphere);
+                steps.Add(() =>
+                {
+                    if (camera == null || look.Root == null || !camera.gameObject.scene.isLoaded) return;
+                    var (away, toward) = ReadInteractiveHorizon(camera, look.Root, Eye(look.Scene), HazeSunYaw(atmosphere));
+                    if (!ValidHorizon(away) || !ValidHorizon(toward))
+                        throw new InvalidOperationException("地平線の空の色を読めなかったため、場面の霞を使用する");
+                    SetHazeColors(atmosphere, away, toward);
+                }, 0);
                 steps.Run(120, error =>
                 {
-                    if (camera != null)
-                    {
-                        RenderTexture temporary = camera.targetTexture;
-                        camera.targetTexture = null;
-                        camera.ResetAspect();
-                        camera.transform.SetPositionAndRotation(position, rotation);
-                        camera.fieldOfView = fov;
-                        look.Root.SetActive(true);
-                        RegionWeatherMaker.SetPostProcessing(camera, true);
-                        if (temporary != null) UnityEngine.Object.DestroyImmediate(temporary);
-                    }
-                    if (error != null) Debug.LogWarning("[RegionMap] Weather Maker の霞を合わせられなかった: " + error.Message);
+                    if (error != null && camera != null)
+                        Debug.LogWarning("[RegionMap] Weather Maker の霞を合わせられなかった: " + error.Message);
                 });
             }
             else
@@ -253,6 +247,63 @@ namespace Vastcore.RegionMap.Editor
         private const int HazeWidth = 256, HazeHeight = 128;
         private const float HazeFov = 20f, HazeLowDegrees = 0.5f, HazeHighDegrees = 3f;
 
+        // 見回し中のカメラと地形を変えるのは手動描画の間だけ。描画前の向きへ同じ更新内で戻す。
+        internal static (Color Away, Color Toward) ReadInteractiveHorizon(Camera camera, GameObject terrain, Vector3 eye, float sunYaw)
+        {
+            Vector3 position = camera.transform.position;
+            Quaternion rotation = camera.transform.rotation;
+            float fov = camera.fieldOfView;
+            bool terrainActive = terrain.activeSelf;
+            RenderTexture previousTarget = camera.targetTexture;
+            RenderTexture previousActive = RenderTexture.active;
+            bool post = RegionWeatherMaker.SetPostProcessing(camera, false);
+            RenderTexture target = null;
+            try
+            {
+                target = RenderTexture.GetTemporary(HazeWidth, HazeHeight, 24, RenderTextureFormat.ARGBHalf);
+                terrain.SetActive(false);
+                camera.targetTexture = target;
+                camera.fieldOfView = HazeFov;
+                camera.transform.SetPositionAndRotation(eye, Quaternion.Euler(0f, sunYaw + 180f, 0f));
+                camera.Render();
+                Color away = HorizonColor(target);
+                camera.transform.rotation = Quaternion.Euler(0f, sunYaw, 0f);
+                camera.Render();
+                return (away, HorizonColor(target));
+            }
+            finally
+            {
+                camera.targetTexture = previousTarget;
+                camera.fieldOfView = fov;
+                camera.transform.SetPositionAndRotation(position, rotation);
+                RegionWeatherMaker.SetPostProcessing(camera, post);
+                terrain.SetActive(terrainActive);
+                RenderTexture.active = previousActive;
+                if (target != null) RenderTexture.ReleaseTemporary(target);
+            }
+        }
+
+        private static float HazeSunYaw(RegionAtmosphere atmosphere)
+        {
+            Vector3 toSun = -(RegionTerrainView.SunRotation(atmosphere.SunAltitudeDegrees) * Vector3.forward);
+            return Mathf.Atan2(toSun.x, toSun.z) * Mathf.Rad2Deg;
+        }
+
+        private static bool ValidHorizon(Color color)
+        {
+            float brightness = color.grayscale;
+            return brightness > 0f && !float.IsInfinity(brightness);
+        }
+
+        private static void SetHazeColors(RegionAtmosphere atmosphere, Color awaySample, Color towardSample)
+        {
+            // 読んだ値は画面の値（sRGB）。シェーダーへは線形で渡す。
+            Color away = awaySample.linear, toward = towardSample.linear;
+            Shader.SetGlobalVector("_RegionFogColor", new Vector4(away.r, away.g, away.b, 0f));
+            Shader.SetGlobalVector("_RegionFogSunColor", new Vector4(toward.r, toward.g, toward.b, atmosphere.FogTowardSunSharpness));
+            Debug.Log("[RegionMap] 霞の色を Weather Maker の地平線の空に合わせた（線形）: 太陽と反対 " + away + "、太陽の側 " + toward);
+        }
+
         /// <summary>
         /// 地形を隠して、地平線のすぐ上の空（高さ 0.5〜3 度）を太陽の側と反対の側で撮り、自作の霞の 2 色（RegionAtmosphere.hlsl）にする手順を足す。
         /// 遠い台地が地平線の空と同じ色へ溶けるので、空と地形の間に色の段が出ない。霞の濃さと高さは光と空気の条件のまま。
@@ -260,8 +311,7 @@ namespace Vastcore.RegionMap.Editor
         /// </summary>
         public static void AddHazeSteps(RegionEditorSteps steps, Func<Camera> camera, Func<RegionTerrainView.LookResult> look, RegionAtmosphere atmosphere)
         {
-            Vector3 toSun = -(RegionTerrainView.SunRotation(atmosphere.SunAltitudeDegrees) * Vector3.forward);
-            float sunYaw = Mathf.Atan2(toSun.x, toSun.z) * Mathf.Rad2Deg;
+            float sunYaw = HazeSunYaw(atmosphere);
             var colors = new Color[2];
             RenderTexture target = null;
             bool post = true;
@@ -302,11 +352,7 @@ namespace Vastcore.RegionMap.Editor
                 look().Root.SetActive(true);
                 target.Release();
                 UnityEngine.Object.DestroyImmediate(target);
-                // 読んだ値は画面の値（sRGB）。シェーダーへは線形で渡す
-                Color away = colors[0].linear, toward = colors[1].linear;
-                Shader.SetGlobalVector("_RegionFogColor", new Vector4(away.r, away.g, away.b, 0f));
-                Shader.SetGlobalVector("_RegionFogSunColor", new Vector4(toward.r, toward.g, toward.b, atmosphere.FogTowardSunSharpness));
-                Debug.Log("[RegionMap] 霞の色を Weather Maker の地平線の空に合わせた（線形）: 太陽と反対 " + away + "、太陽の側 " + toward);
+                SetHazeColors(atmosphere, colors[0], colors[1]);
             });
         }
 
@@ -314,12 +360,18 @@ namespace Vastcore.RegionMap.Editor
         {
             var image = new Texture2D(HazeWidth, HazeHeight, TextureFormat.RGBAFloat, false);
             RenderTexture previous = RenderTexture.active;
-            RenderTexture.active = target;
-            image.ReadPixels(new Rect(0, 0, HazeWidth, HazeHeight), 0, 0);
-            image.Apply();
-            RenderTexture.active = previous;
-            Color[] pixels = image.GetPixels();
-            UnityEngine.Object.DestroyImmediate(image);
+            Color[] pixels;
+            try
+            {
+                RenderTexture.active = target;
+                image.ReadPixels(new Rect(0, 0, HazeWidth, HazeHeight), 0, 0);
+                pixels = image.GetPixels();
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+                UnityEngine.Object.DestroyImmediate(image);
+            }
 
             // 水平に向けたカメラで、高さ e 度の行は tan(e) / tan(視野の半分) の位置（行 0 が下）
             float halfTan = Mathf.Tan(HazeFov * 0.5f * Mathf.Deg2Rad);
