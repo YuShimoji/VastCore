@@ -251,6 +251,7 @@ namespace Vastcore.RegionMap.Editor
                     RegionLookSky.Use(camera, look, atmosphere, cloudTime);
                     Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + " 光と空気 " + atmosphere.Name + "（空 Weather Maker）作成 " + watch.ElapsedMilliseconds + "ms");
                 }, 240);
+                RegionLookSky.AddHazeSteps(steps, () => camera, () => look, atmosphere);
                 foreach (RegionLookViewpoint viewpoint in spec.Viewpoints())
                 {
                     RegionLookViewpoint view = viewpoint;

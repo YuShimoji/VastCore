@@ -21,6 +21,13 @@ namespace Vastcore.RegionMap.Editor
         /// <summary>塊の雲の層の底と頂（地面から、m）。</summary>
         public const float CloudBase = 1500f, CloudTop = 5000f;
 
+        /// <summary>
+        /// 雲が地平線へ向けて空の色に溶け、ほぼ見えなくなる水平の距離（m）。雲を置く範囲の端（中心から 80 km）に合わせる。
+        /// Weather Maker の既定（層の厚さの 8 倍＝約 24 km を基準に溶ける）では、10 km 先の雲が 3 割ほどの濃さになり 17 km 先でほぼ消えるので、
+        /// 2D の地図で見える 10〜20 km 先の雲が空に出ない。
+        /// </summary>
+        public static float CloudFadeMeters = 80000f;
+
         private const string PrefabName = "WeatherMakerPrefab";
         private const string SkyProfileName = "WeatherMakerSkyProfile_ProceduralMilkyWayPhysicallyBased";
         private const string CloudProfileName = "WeatherMakerCloudProfile_CloudBox";
@@ -77,8 +84,8 @@ namespace Vastcore.RegionMap.Editor
         {
             RegionWeatherMaker.AddRenderFeature();
 
-            // 自作の霞と空を切る。空は Weather Maker の空の球が描くので、カメラは黒で消す（Weather Maker の手順）
-            Shader.SetGlobalVector("_RegionFogParams", Vector4.zero);
+            // 自作の空を切る。空は Weather Maker の空の球が描くので、カメラは黒で消す（Weather Maker の手順）。
+            // 地形の霞は自作のまま使い、色だけ Weather Maker の地平線の空に合わせる（AddHazeSteps）
             RenderSettings.skybox = null;
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = Color.black;
@@ -115,10 +122,98 @@ namespace Vastcore.RegionMap.Editor
             var box = boxObject.AddComponent<BoxCollider>();
             box.isTrigger = true;
             box.size = new Vector3(spec.Size, CloudTop - CloudBase, spec.Size);
-            RegionWeatherMaker.SetClouds(map, box, FindAsset<ScriptableObject>(CloudProfileName, "ScriptableObject"));
+            RegionWeatherMaker.SetClouds(map, box, FindAsset<ScriptableObject>(CloudProfileName, "ScriptableObject"), ground + CloudBase, ground + CloudTop, CloudFadeMeters);
             Debug.Log("[RegionMap] 空 Weather Maker: 太陽 " + atmosphere.SunAltitudeDegrees + " 度（北西）、雲 2D の地図と同じ（seed " + spec.RegionSeed +
                       "、時刻 " + cloudTime + " 秒、" + (spec.Size / 1000f) + " km 四方、雲が見える割合 " + RegionClouds.Coverage(low, 0.1f).ToString("0.00") +
                       "、" + watch.ElapsedMilliseconds + " ms）");
+        }
+
+        // ---- 地形の霞の色を、Weather Maker の地平線の空に合わせる ----
+        private const int HazeWidth = 256, HazeHeight = 128;
+        private const float HazeFov = 20f, HazeLowDegrees = 0.5f, HazeHighDegrees = 3f;
+
+        /// <summary>
+        /// 地形を隠して、地平線のすぐ上の空（高さ 0.5〜3 度）を太陽の側と反対の側で撮り、自作の霞の 2 色（RegionAtmosphere.hlsl）にする手順を足す。
+        /// 遠い台地が地平線の空と同じ色へ溶けるので、空と地形の間に色の段が出ない。霞の濃さと高さは光と空気の条件のまま。
+        /// 雲が地平線の帯に入っても色が引っ張られないよう、明るさの順に並べた中ほどの半分の平均を使う。
+        /// </summary>
+        public static void AddHazeSteps(RegionEditorSteps steps, Func<Camera> camera, Func<RegionTerrainView.LookResult> look, RegionAtmosphere atmosphere)
+        {
+            Vector3 toSun = -(RegionTerrainView.SunRotation(atmosphere.SunAltitudeDegrees) * Vector3.forward);
+            float sunYaw = Mathf.Atan2(toSun.x, toSun.z) * Mathf.Rad2Deg;
+            var colors = new Color[2];
+            RenderTexture target = null;
+            bool post = true;
+            float fov = 0f;
+            steps.Add(() =>
+            {
+                post = RegionWeatherMaker.SetPostProcessing(camera(), false);
+                fov = camera().fieldOfView;
+                look().Root.SetActive(false);
+                // 太陽の側の地平線は 1 を超えるので、HDR のまま読む（8 bit では切れて色が変わる）
+                target = new RenderTexture(HazeWidth, HazeHeight, 24, RenderTextureFormat.ARGBHalf);
+            }, 0);
+            for (int s = 0; s < 2; s++)
+            {
+                int side = s;
+                steps.Add(() =>
+                {
+                    Camera c = camera();
+                    c.transform.position = Eye(look().Scene);
+                    c.transform.rotation = Quaternion.Euler(0f, sunYaw + (side == 0 ? 180f : 0f), 0f);
+                    c.fieldOfView = HazeFov;
+                    c.targetTexture = target;
+                    c.aspect = (float)HazeWidth / HazeHeight;
+                }, 24);
+                steps.Add(() =>
+                {
+                    camera().Render();
+                    colors[side] = HorizonColor(target);
+                }, 0);
+            }
+            steps.Add(() =>
+            {
+                Camera c = camera();
+                c.targetTexture = null;
+                c.ResetAspect();
+                c.fieldOfView = fov;
+                RegionWeatherMaker.SetPostProcessing(c, post);
+                look().Root.SetActive(true);
+                target.Release();
+                UnityEngine.Object.DestroyImmediate(target);
+                // 読んだ値は画面の値（sRGB）。シェーダーへは線形で渡す
+                Color away = colors[0].linear, toward = colors[1].linear;
+                Shader.SetGlobalVector("_RegionFogColor", new Vector4(away.r, away.g, away.b, 0f));
+                Shader.SetGlobalVector("_RegionFogSunColor", new Vector4(toward.r, toward.g, toward.b, atmosphere.FogTowardSunSharpness));
+                Debug.Log("[RegionMap] 霞の色を Weather Maker の地平線の空に合わせた（線形）: 太陽と反対 " + away + "、太陽の側 " + toward);
+            });
+        }
+
+        private static Color HorizonColor(RenderTexture target)
+        {
+            var image = new Texture2D(HazeWidth, HazeHeight, TextureFormat.RGBAFloat, false);
+            RenderTexture previous = RenderTexture.active;
+            RenderTexture.active = target;
+            image.ReadPixels(new Rect(0, 0, HazeWidth, HazeHeight), 0, 0);
+            image.Apply();
+            RenderTexture.active = previous;
+            Color[] pixels = image.GetPixels();
+            UnityEngine.Object.DestroyImmediate(image);
+
+            // 水平に向けたカメラで、高さ e 度の行は tan(e) / tan(視野の半分) の位置（行 0 が下）
+            float halfTan = Mathf.Tan(HazeFov * 0.5f * Mathf.Deg2Rad);
+            int low = Mathf.FloorToInt((Mathf.Tan(HazeLowDegrees * Mathf.Deg2Rad) / halfTan + 1f) * 0.5f * HazeHeight);
+            int high = Mathf.CeilToInt((Mathf.Tan(HazeHighDegrees * Mathf.Deg2Rad) / halfTan + 1f) * 0.5f * HazeHeight);
+            var band = new List<Color>();
+            for (int y = low; y <= high; y++)
+                for (int x = 0; x < HazeWidth; x++) band.Add(pixels[x + y * HazeWidth]);
+            band.Sort((a, b) => a.grayscale.CompareTo(b.grayscale));
+            Color sum = Color.clear;
+            int from = band.Count / 4, to = band.Count * 3 / 4;
+            for (int i = from; i < to; i++) sum += band[i];
+            Color mean = sum / Mathf.Max(to - from, 1);
+            mean.a = 1f;
+            return mean;
         }
 
         // ---- 2D の地図との見比べ ----
@@ -146,6 +241,8 @@ namespace Vastcore.RegionMap.Editor
         // 地上から見上げた空を雲の高さの平面へ投影する範囲（中心から各辺まで、m）と、平面の高さ（地面から）
         private const float CompareHalf = 15000f, ComparePlane = 2500f;
         private const int FaceSize = 1024, CompareSize = 900;
+        // 5 方向の絵は隣と重なるように 90 度より広く撮り、重なりの中で混ぜてつなぎ目を消す
+        private const float FaceFov = 120f;
         private static readonly Vector3[] FaceForward = { Vector3.up, Vector3.forward, Vector3.right, Vector3.back, Vector3.left };
 
         /// <summary>
@@ -177,7 +274,7 @@ namespace Vastcore.RegionMap.Editor
                     Camera c = camera();
                     c.transform.position = Eye(look().Scene);
                     c.transform.rotation = Quaternion.LookRotation(FaceForward[face], face == 0 ? Vector3.forward : Vector3.up);
-                    c.fieldOfView = 90f;
+                    c.fieldOfView = FaceFov;
                     c.targetTexture = target;
                     c.aspect = 1f;
                 }, 24);
@@ -226,14 +323,25 @@ namespace Vastcore.RegionMap.Editor
                 {
                     // 行 0 が南（画像は下の行から並ぶ）、列 0 が西
                     var point = new Vector3(eye.x + Offset(i), ground + ComparePlane, eye.z + Offset(j));
-                    Vector3 direction = (point - eye).normalized;
-                    int best = 0;
-                    for (int f = 1; f < FaceForward.Length; f++)
-                        if (Vector3.Dot(direction, FaceForward[f]) > Vector3.Dot(direction, FaceForward[best])) best = f;
-                    Vector4 clip = matrices[best] * new Vector4(point.x, point.y, point.z, 1f);
-                    int x = Mathf.Clamp((int)((clip.x / clip.w + 1f) * 0.5f * FaceSize), 0, FaceSize - 1);
-                    int y = Mathf.Clamp((int)((clip.y / clip.w + 1f) * 0.5f * FaceSize), 0, FaceSize - 1);
-                    sky[i + j * CompareSize] = pixels[best][x + y * FaceSize];
+                    // 写っている方向の絵を、枠の端から重なりの幅の中で 0 へ下がる重みで混ぜる
+                    float overlap = 1f - Mathf.Tan(45f * Mathf.Deg2Rad) / Mathf.Tan(FaceFov * 0.5f * Mathf.Deg2Rad);
+                    Color sum = Color.clear;
+                    float weights = 0f;
+                    for (int f = 0; f < FaceForward.Length; f++)
+                    {
+                        Vector4 clip = matrices[f] * new Vector4(point.x, point.y, point.z, 1f);
+                        if (clip.w <= 0f) continue;
+                        float nx = clip.x / clip.w, ny = clip.y / clip.w;
+                        float weight = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((1f - Mathf.Max(Mathf.Abs(nx), Mathf.Abs(ny))) / overlap));
+                        if (weight <= 0f) continue;
+                        int x = Mathf.Clamp((int)((nx + 1f) * 0.5f * FaceSize), 0, FaceSize - 1);
+                        int y = Mathf.Clamp((int)((ny + 1f) * 0.5f * FaceSize), 0, FaceSize - 1);
+                        sum += (Color)pixels[f][x + y * FaceSize] * weight;
+                        weights += weight;
+                    }
+                    Color color = weights > 0f ? sum / weights : Color.black;
+                    color.a = 1f;
+                    sky[i + j * CompareSize] = color;
                 }
             }
             Save(sky, Path.Combine(output, "sky-3d.png"));

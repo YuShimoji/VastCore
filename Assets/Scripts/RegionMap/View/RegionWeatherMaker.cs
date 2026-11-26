@@ -167,18 +167,30 @@ namespace Vastcore.RegionMap
         }
 
         /// <summary>
-        /// 雲の地図（R 量・G 濃さ・B 種類。Weather Maker の weather map）を、箱 box の水平の範囲へ貼り、箱の高さを雲の層にする。
-        /// cloudProfile は雲の形と光の設定（WeatherMakerCloudProfileScript）。すぐに切り替える（既定の切り替えは 5 秒かける）。
+        /// 雲の地図（R 量・G 濃さ・B 種類。Weather Maker の weather map）を、箱 box の水平の範囲へ貼る。
+        /// cloudProfile は雲の形と光の設定（WeatherMakerCloudProfileScript）。写しを作り、雲の層を世界の高さ baseHeight〜topHeight（m）に固定し、
+        /// 地平線へ向けて雲が空の色へ溶ける距離を fadeMeters（この距離でほぼ消える）にする。すぐに切り替える（既定の切り替えは 5 秒かける）。
+        /// 層の高さは箱ではなく設定で決まる（惑星の半径を持つ設定では、箱は地図を貼る水平の範囲にだけ使われる）。
         /// </summary>
-        public static void SetClouds(Texture2D map, BoxCollider box, ScriptableObject cloudProfile)
+        public static void SetClouds(Texture2D map, BoxCollider box, ScriptableObject cloudProfile, float baseHeight, float topHeight, float fadeMeters)
         {
+            var profile = UnityEngine.Object.Instantiate(cloudProfile);
+            profile.hideFlags = HideFlags.DontSave;
+            var layer = UnityEngine.Object.Instantiate((ScriptableObject)Get(profile, "CloudLayerVolumetric1"));
+            layer.hideFlags = HideFlags.DontSave;
+            Set(profile, "CloudLayerVolumetric1", layer);
+            SetRange(profile, "CloudHeight", baseHeight);
+            SetRange(profile, "CloudHeightTop", topHeight);
+            // 溶け始めの距離は (層の厚さ × この倍率)。地平線の溶け方（CloudHorizonFade）の既定では、その 2/3 ほどでほぼ消える
+            Set(layer, "CloudOpticalDistanceMultiplier", Mathf.Clamp(fadeMeters * 1.5f / Mathf.Max(topHeight - baseHeight, 1f), 1f, 100f));
+
             UnityEngine.Object clouds = Instance("WeatherMakerFullScreenCloudsScript");
             Set(clouds, "WeatherMapOverride", map);
             Set(clouds, "VolumetricCloudBoxRemap", box);
             MethodInfo show = clouds.GetType().GetMethod("ShowCloudsAnimated",
-                new[] { cloudProfile.GetType(), typeof(float), typeof(float), typeof(string) });
+                new[] { profile.GetType(), typeof(float), typeof(float), typeof(string) });
             if (show == null) throw new MissingMethodException("WeatherMakerFullScreenCloudsScript.ShowCloudsAnimated");
-            show.Invoke(clouds, new object[] { cloudProfile, 0f, 0f, null });
+            show.Invoke(clouds, new object[] { profile, 0f, 0f, null });
         }
 
         /// <summary>雲の量が 1 になる 2D の雲の濃さ（0.42 は 2D の地図で雲が不透明になる濃さ。RegionClouds.Shade）。</summary>
@@ -239,6 +251,17 @@ namespace Vastcore.RegionMap
             FieldInfo field = type.GetField(name, BindingFlags.Public | BindingFlags.Instance);
             if (field == null) throw new MissingMemberException(type.Name, name);
             field.SetValue(target, Convert(value, field.FieldType));
+        }
+
+        // 範囲の値（RangeOfFloats。最小と最大から乱数で選ぶ）を、1 つの値に固定する
+        private static void SetRange(object target, string name, float value)
+        {
+            FieldInfo field = target.GetType().GetField(name, BindingFlags.Public | BindingFlags.Instance);
+            if (field == null) throw new MissingMemberException(target.GetType().Name, name);
+            object range = field.GetValue(target);
+            range.GetType().GetField("Minimum").SetValue(range, value);
+            range.GetType().GetField("Maximum").SetValue(range, value);
+            field.SetValue(target, range);
         }
 
         private static void SetEnum(object target, string name, string valueName)
