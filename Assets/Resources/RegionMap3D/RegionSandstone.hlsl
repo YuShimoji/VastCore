@@ -56,7 +56,7 @@ float SandChips(float2 uv)
 
 // Four surfaces: exposed bedrock, talus, sand/soil and patchy dry ground cover.
 // surface = talus density, metres above the caprock contact, moisture for cover, dry-land coverage.
-half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half looseRock)
+half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half looseRock, out float bedHeightOut, out float4 laminaOut)
 {
     float3 weights = n * n;
     weights *= weights;
@@ -66,6 +66,8 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
     float broad = SandNoise(p.xz * 0.023);
     float broken = SandTriplanar(p * 0.065 + 3.5, weights);
     float mineral = 0.63 * mottling + 0.37 * grains;
+    bedHeightOut = 0.0;
+    laminaOut = 0.0;
     if (looseRock > 0.5)
     {
         float3 block = lerp(float3(0.56, 0.37, 0.28), float3(0.85, 0.62, 0.44), broken);
@@ -73,6 +75,7 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
     }
 
     float bedHeight = surface.y + 1.8 * (broad - 0.5) + 0.28 * (mottling - 0.5);
+    bedHeightOut = bedHeight;
     float bed = bedHeight * 0.12 + 0.78 * SandNoise(float2(bedHeight * 0.072, 5.4));
     float unit = SandNoise(float2(bedHeight * 0.28, 3.7));
     float3 rock = lerp(float3(0.64, 0.31, 0.20), float3(0.91, 0.64, 0.40), 0.62 * unit + 0.38 * broken);
@@ -89,6 +92,8 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
     float crossBed = SandSeam(lamina, 0.13) * smoothstep(0.03, 0.22, frac(bed))
                    * (1.0 - smoothstep(0.68, 0.98, frac(bed))) * smoothstep(0.20, 0.68, broken);
     rock += float3(0.22, 0.18, 0.12) * crossBed;
+    // 凹凸用：斜交葉理の位相、縞が出る度合い（縞の形を除く）、傾きの向き
+    laminaOut = float4(lamina, smoothstep(0.03, 0.22, frac(bed)) * (1.0 - smoothstep(0.68, 0.98, frac(bed))) * smoothstep(0.20, 0.68, broken), dip);
     float seam = (0.06 + 0.17 * broken) * SandSeam(bed, 0.018 + 0.020 * mottling);
     float pores = SandTriplanar(p * 1.82 + mottling, weights);
     rock *= 0.76 + 0.40 * mineral + 0.13 * (pores - 0.5) - seam;
@@ -119,6 +124,77 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
     groundColor *= 0.82 + 0.24 * grains + 0.14 * pores + (0.55 + talus) * gravel;
     float rockFace = 1.0 - smoothstep(0.52, 0.82, n.y);
     return lerp(groundColor, rock, rockFace);
+}
+
+// ---- 表面の凹凸（RegionSurfaceRelief.cs が場面を作る時に焼いた傾きの画像を読む） ----
+
+// 地層の柱の起伏（m）。層ごとの硬さで張り出しと引っ込みが変わり、層の境は溝、下の泥岩の帯は奥へ下がる。
+// 色の縞（SandstoneSurface の bed・unit・mud）と同じ式なので、溝と色の境は一致する。
+float SandstoneRelief(float bedHeight)
+{
+    float bed = bedHeight * 0.12 + 0.78 * SandNoise(float2(bedHeight * 0.072, 5.4));
+    float set = floor(bed);
+    float hard = SandHash(float2(set, 9.1)) - 0.5;
+    float below = SandHash(float2(set - 1.0, 9.1)) - 0.5;
+    float protrude = lerp(below, hard, smoothstep(0.0, 0.04, frac(bed)));
+    float unit = SandNoise(float2(bedHeight * 0.28, 3.7));
+    float mud = (1.0 - smoothstep(-6.0, 1.5, bedHeight)) * smoothstep(-38.0, -29.0, bedHeight);
+    return 0.9 * protrude + 0.15 * (unit - 0.5) - 0.18 * SandSeam(bed, 0.025) - 0.45 * mud;
+}
+
+TEXTURE2D(_RegionReliefStrataSlope);
+SAMPLER(sampler_RegionReliefStrataSlope);
+TEXTURE2D(_RegionReliefRockSlope);
+SAMPLER(sampler_RegionReliefRockSlope);
+float4 _RegionReliefStrata;  // x 柱の最低の高さ m、y 1 / 柱の幅 m、z 強さ、w 1 で有効
+float4 _RegionReliefRock;    // x 1 / 繰り返しの一辺 m、y 強さ、z 薄れ始める距離 m、w 読まなくなる距離 m
+
+bool RegionReliefEnabled() { return _RegionReliefStrata.w > 0.5; }
+
+float3 SandAxis(int axis) { return axis == 0 ? float3(1, 0, 0) : (axis == 1 ? float3(0, 1, 0) : float3(0, 0, 1)); }
+
+// 岩肌の細かな凹凸の、体積の勾配（m/m）。biplanar：重みの大きい 2 面だけ読む（Quilez）。
+// 面の切り替わりで mip の線が出ないよう、uv の微分は分岐の外で出して渡す
+float3 SandRockGradient(float3 q, float3 qdx, float3 qdy, float3 n)
+{
+    float3 a = abs(n);
+    int3 ma = (a.x > a.y && a.x > a.z) ? int3(0, 1, 2) : ((a.y > a.z) ? int3(1, 2, 0) : int3(2, 0, 1));
+    int3 mi = (a.x < a.y && a.x < a.z) ? int3(0, 1, 2) : ((a.y < a.z) ? int3(1, 2, 0) : int3(2, 0, 1));
+    int3 me = int3(3, 3, 3) - mi - ma;
+    float2 s0 = SAMPLE_TEXTURE2D_GRAD(_RegionReliefRockSlope, sampler_RegionReliefRockSlope,
+        float2(q[ma.y], q[ma.z]), float2(qdx[ma.y], qdx[ma.z]), float2(qdy[ma.y], qdy[ma.z])).rg;
+    float2 s1 = SAMPLE_TEXTURE2D_GRAD(_RegionReliefRockSlope, sampler_RegionReliefRockSlope,
+        float2(q[me.y], q[me.z]), float2(qdx[me.y], qdx[me.z]), float2(qdy[me.y], qdy[me.z])).rg;
+    float2 w = saturate((float2(a[ma.x], a[me.x]) - 0.5773) / (1.0 - 0.5773));
+    float3 g = w.x * (s0.x * SandAxis(ma.y) + s0.y * SandAxis(ma.z))
+             + w.y * (s1.x * SandAxis(me.y) + s1.y * SandAxis(me.z));
+    return g / max(w.x + w.y, 1e-4);
+}
+
+// 凹凸を足した法線（物体の座標）。高さの体積の勾配から面に沿う成分だけを取り、法線を傾ける（surface gradient）。
+// 地層の起伏は上下の向きだけに効くので、水平な面には効かない。岩肌の細かな凹凸は崖の面と転石で、遠くでは読まない
+float3 SandstoneReliefNormal(float3 p, float3 n, float bedHeight, float4 lamina, half looseRock, float viewDistance)
+{
+    float face = 1.0 - smoothstep(0.52, 0.82, n.y);
+    float u = (bedHeight - _RegionReliefStrata.x) * _RegionReliefStrata.y;
+    float strata = SAMPLE_TEXTURE2D_GRAD(_RegionReliefStrataSlope, sampler_RegionReliefStrataSlope,
+        float2(u, 0.5), float2(ddx(u), 0), float2(ddy(u), 0)).r;
+    // 斜交葉理の明るい縞は、風化で少し張り出した稜（高さ 6 cm、幅は位相の ±0.2）。縞が画素より細くなると消す
+    float side = frac(lamina.x + 0.5) - 0.5;
+    float t = saturate(abs(side) / 0.2);
+    float ridge = -0.06 * lamina.y * (6.0 * t * (1.0 - t) / 0.2) * sign(side)
+                * (1.0 - smoothstep(0.15, 0.5, fwidth(lamina.x)));
+    float3 g = (float3(0, strata, 0) + ridge * 0.93 * float3(lamina.z, 1.0, lamina.w))
+             * (_RegionReliefStrata.z * face * (1.0 - looseRock));
+
+    float3 q = p * _RegionReliefRock.x;
+    float3 qdx = ddx(q);
+    float3 qdy = ddy(q);
+    float rock = max(face, looseRock) * (1.0 - smoothstep(_RegionReliefRock.z, _RegionReliefRock.w, viewDistance));
+    [branch]
+    if (rock > 0.0)
+        g += SandRockGradient(q, qdx, qdy, n) * (_RegionReliefRock.y * rock);
+    return normalize(n - (g - n * dot(n, g)));
 }
 
 #endif

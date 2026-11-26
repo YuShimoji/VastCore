@@ -25,6 +25,8 @@
   [string]$LookPreset = '',
   # view3d: 場面を作り直さずに太陽だけを回して中景を撮る高さ（度）の並び。例 '60,38,20,10'
   [string]$SunSweep = '',
+  # view3d: 表面の凹凸を切った絵（<OutDir>/relief-off）と、切・入の描画時間（relief-timing.txt）も撮る
+  [switch]$ReliefCompare,
   [string]$UnityPath = ''
 )
 
@@ -75,6 +77,7 @@ if ($Mode -eq 'setup') {
     if ($AlcoveReview) { $unityArgs += @('-alcoveReview', 'true') }
     if ($LookPreset) { $unityArgs += @('-lookPreset', $LookPreset) }
     if ($SunSweep) { $unityArgs += @('-sunSweep', $SunSweep) }
+    if ($ReliefCompare) { $unityArgs += @('-reliefCompare', 'true') }
   }
 } elseif ($Mode -eq 'play') {
   $unityArgs = @(

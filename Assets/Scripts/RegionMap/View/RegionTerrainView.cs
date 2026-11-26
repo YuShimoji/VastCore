@@ -209,6 +209,8 @@ namespace Vastcore.RegionMap
             RegionLookScene scene = RegionLookScene.Build(region, spec);
             // 遠くまで届く地形の影は、描画のたびに GPU が高さの格子から出す（太陽を回すと影も動く）
             RegionTerrainShadows.Bind(scene);
+            // 地層の起伏と岩肌の細かな凹凸を、場面を作る時に一度だけ GPU で焼く
+            RegionSurfaceRelief.Bind();
             var root = new GameObject("Region Terrain Look");
             var plain = new RegionRenderOptions { CloudCover = 0f, Exaggeration = 0f, CastShadow = 0f };
             var result = new LookResult { Root = root, Scene = scene };

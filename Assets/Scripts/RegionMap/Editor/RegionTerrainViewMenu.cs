@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Globalization;
 using UnityEditor;
@@ -157,6 +158,8 @@ namespace Vastcore.RegionMap.Editor
                     if (look.Alcove != null && RegionMapMenu.Argument("-alcoveReview", "false") == "true")
                         CaptureAlcoveComparison(camera, look, folder);
                     CaptureLookViews(camera, look, folder);
+                    if (RegionMapMenu.Argument("-reliefCompare", "false") == "true")
+                        CaptureReliefComparison(camera, look, folder);
                     if (look.Alcove == null) DescribeNearestCap(look.Scene);
                     CaptureSunSweep(camera, look, folder);
                 }
@@ -228,6 +231,105 @@ namespace Vastcore.RegionMap.Editor
                 camera.fieldOfView = mid ? 48f : 67f;
                 Capture(camera, output, mid ? "alcove-mid.png" : "alcove-near.png");
             }
+        }
+
+        /// <summary>
+        /// -reliefCompare true で、同じ場面・視点のまま表面の凹凸（RegionSurfaceRelief）を切った絵を &lt;出力&gt;/relief-off へ撮り、
+        /// 描画 1 回の時間（GPU の終わりを待つまで）を、切と入を交互に繰り返して測る（relief-timing.txt）。
+        /// </summary>
+        private static void CaptureReliefComparison(Camera camera, RegionTerrainView.LookResult look, string output)
+        {
+            if (!RegionSurfaceRelief.Baked)
+            {
+                Debug.LogWarning("[RegionMap] 凹凸を焼いていないので、比較を撮らない");
+                return;
+            }
+            string off = Path.Combine(output, "relief-off");
+            Directory.CreateDirectory(off);
+            var views = new List<(string name, Action place, float fov)>();
+            foreach (RegionLookViewpoint viewpoint in look.Scene.Spec.Viewpoints())
+            {
+                RegionLookViewpoint v = viewpoint;
+                views.Add(("look-" + v.Name, () => RegionTerrainView.PlaceLook(camera.transform, look.Scene, v), v.FovDegrees));
+            }
+            if (look.Alcove != null)
+            {
+                views.Add(("alcove-mid", () => look.Alcove.Place(camera.transform, true, 0.57f, true), 48f));
+                views.Add(("alcove-near", () => look.Alcove.Place(camera.transform, false, 0.57f, true), 67f));
+            }
+            var report = new System.Text.StringBuilder();
+            report.AppendLine("視点	大きさ	切 ms	入 ms	差 ms（MSAA4、各 " + TimingRounds * TimingBatch + " 回の中央値。3840x2160 は GPU が律速になる条件）");
+            var targets = new[]
+            {
+                new RenderTexture(1600, 900, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 },
+                new RenderTexture(3840, 2160, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 },
+            };
+            var pixel = new Texture2D(1, 1, TextureFormat.RGB24, false);
+            try
+            {
+                foreach ((string name, Action place, float fov) in views)
+                {
+                    place();
+                    camera.fieldOfView = fov;
+                    RegionSurfaceRelief.SetActive(false);
+                    Capture(camera, off, name + ".png");
+                    foreach (RenderTexture target in targets)
+                    {
+                        var timesOff = new List<double>();
+                        var timesOn = new List<double>();
+                        camera.targetTexture = target;
+                        for (int i = 0; i < 6; i++) TimedRender(camera, target, pixel);
+                        for (int round = 0; round < TimingRounds; round++)
+                        {
+                            foreach (bool on in new[] { false, true })
+                            {
+                                RegionSurfaceRelief.SetActive(on);
+                                TimedRender(camera, target, pixel);
+                                for (int i = 0; i < TimingBatch; i++) (on ? timesOn : timesOff).Add(TimedRender(camera, target, pixel));
+                            }
+                        }
+                        camera.targetTexture = null;
+                        RegionSurfaceRelief.SetActive(true);
+                        double a = Median(timesOff), b = Median(timesOn);
+                        string size = target.width + "x" + target.height;
+                        report.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0}	{1}	{2:F2}	{3:F2}	{4:F2}", name, size, a, b, b - a));
+                        Debug.Log(string.Format(CultureInfo.InvariantCulture, "[RegionMap] 凹凸の重さ {0} {1}: 切 {2:F2} ms 入 {3:F2} ms 差 {4:F2} ms", name, size, a, b, b - a));
+                    }
+                }
+            }
+            finally
+            {
+                camera.targetTexture = null;
+                RegionSurfaceRelief.SetActive(true);
+                foreach (RenderTexture target in targets)
+                {
+                    target.Release();
+                    UnityEngine.Object.DestroyImmediate(target);
+                }
+                UnityEngine.Object.DestroyImmediate(pixel);
+            }
+            File.WriteAllText(Path.Combine(output, "relief-timing.txt"), report.ToString());
+        }
+
+        private const int TimingRounds = 8, TimingBatch = 6;
+
+        // 描いて、1 画素を読み戻して GPU の終わりを待つまでの時間（ms）
+        private static double TimedRender(Camera camera, RenderTexture target, Texture2D pixel)
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            camera.Render();
+            RenderTexture previous = RenderTexture.active;
+            RenderTexture.active = target;
+            pixel.ReadPixels(new Rect(0, 0, 1, 1), 0, 0);
+            RenderTexture.active = previous;
+            return watch.Elapsed.TotalMilliseconds;
+        }
+
+        private static double Median(List<double> values)
+        {
+            values.Sort();
+            int n = values.Count;
+            return n % 2 == 1 ? values[n / 2] : 0.5 * (values[n / 2 - 1] + values[n / 2]);
         }
 
         /// <summary>
