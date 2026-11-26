@@ -14,7 +14,7 @@ namespace Vastcore.RegionMap
 
         /// <summary>探索画面の雲の時刻（秒）と、低い雲が地図の幅を横切る秒数（RegionExplorer と同じ）。</summary>
         public float Time;
-        public float CrossSeconds = 420f;
+        public float CrossSeconds = RegionCloudFlow.DefaultCrossSeconds;
 
         /// <summary>2D の雲の画像の一辺（(RegionSpec.Resolution + 1) / 2）。画素の中心の半画素ぶんのずれを合わせる。0 ならずらさない。</summary>
         public int MapCloudSize;

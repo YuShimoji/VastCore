@@ -15,6 +15,7 @@ namespace Vastcore.RegionMap
 
         /// <summary>高い所の薄い筋雲。</summary>
         public const int High = 1;
+        public const float DefaultCrossSeconds = 420f;
 
         // 一様な流れの向き（u は東、v は北が正）と、基準の速さに対する倍率。高い雲ほど速く、向きも少し違う
         private static readonly float[] WindU = { 1f, 1f };

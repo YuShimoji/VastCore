@@ -159,6 +159,12 @@ UE の乾燥地サンプルはモアブで採取した岩と地表の高密度�
 
 <a id="scene-workflow"></a>
 
+探索画面の再生中に地点を選び、`Vastcore > Region Map > Open 3D Mesa Look (far, mid, near)` を使うと、再生中の地域と選択地点を使って地上に移る。雲の量と時刻・流れる速さを切替時に受け渡し、地上では選んだ時点の雲を表示する。右ドラッグで見回し、再生を終了すると編集に戻る。Weather Maker が使えない環境では、同じ雲の地図を既存の空のシェーダーに渡す。seed 7 でメニュー操作と X43.6100／Y76.9200・0.250秒の一致を確認。Weather Maker 本体を入れた環境でのこの操作は未確認。[照合ログ](../../artifacts/region-map/mesa-cloud-20261126/handoff-readiness/from-explorer.txt)
+
+seed 9 では低い雲と高い雲を分け、同じ地図を2Dと地上の空で69秒・75秒に撮った。比較の3D画像は地上の5方向を低層雲の高さへ投影し、地図と同じ向きにしたもの。砂・礫を段3の取り込み口に仮置きして、PC品質・GTX 1650 Ti・1600×900の同期描画を各48回測った。素材ありの中央値は31.84〜43.08ms、中景・近景で切より2.72・2.50ms長い。CPU・GPUを含む読み戻しまでの値。[2時刻の雲](../../artifacts/region-map/mesa-cloud-20261126/readiness-final-seed9/cloud-two-times.jpg)・[描画時間](../../artifacts/region-map/mesa-cloud-20261126/readiness-final-seed9/surface-timing.txt)
+
+別地点のseed 8（X82.93144／Y62.38425）でも、PC品質で遠景・中景・崖下を撮影できた。砂・礫の素材は比較用に置き、既定への採用は本人の判断。[seed 8 の遠景・中景・崖下](../../artifacts/region-map/mesa-cloud-20261126/readiness-final-seed8/mesa-views.jpg)
+
 ### 5.3 写真・生成結果・実装を突き合わせる
 
 | 距離と見る場所 | 基準画像で見える差 | 制作時に変えて比べるもの |
