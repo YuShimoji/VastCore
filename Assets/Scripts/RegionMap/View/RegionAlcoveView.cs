@@ -131,12 +131,7 @@ namespace Vastcore.RegionMap
             {
                 float x = vertices[v].x, z = -vertices[v].z, y = vertices[v].y;
                 int i = Mathf.RoundToInt(x / cell) + data.Resolution * Mathf.RoundToInt(z / cell);
-                float edge = Mathf.Min(Mathf.Min(x - Patch.MinX, Patch.MaxX - x), Mathf.Min(z - Patch.MinZ, Patch.MaxZ - z));
-                float blend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((edge - 2f) / 7f));
-                float sky = terrainPart.Sky[i] * Mathf.Lerp(1f, Patch.Sky[v], blend);
-                // Talus shadows baked at the old height do not belong on the newly exposed bed.
-                float cutDepth = Mathf.InverseLerp(0.4f, 4f, Patch.HeightAt(x, z) - y);
-                float sun = Mathf.Lerp(terrainPart.Sun[i], 1f, cutDepth) * Mathf.Lerp(1f, Patch.Sun[v], blend);
+                BlendLighting(i, x, y, z, Patch.Sky[v], Patch.Sun[v], out float sky, out float sun);
                 colors[v] = new Color(sky, sun, 1f - terrainPart.Rock[i], terrainPart.Tint[i]);
                 surface[v] = RegionTerrainView.SandstoneChannels(data, i, y);
                 vertices[v] += new Vector3(scene.InnerMinX, 0f, -scene.InnerMinZ);
@@ -146,6 +141,17 @@ namespace Vastcore.RegionMap
             mesh.SetUVs(1, surface);
             mesh.RecalculateBounds();
             return mesh;
+        }
+
+        private void BlendLighting(int cell, float x, float y, float z, float localSky, float localSun, out float sky, out float sun)
+        {
+            float edge = Mathf.Min(Mathf.Min(x - Patch.MinX, Patch.MaxX - x), Mathf.Min(z - Patch.MinZ, Patch.MaxZ - z));
+            float blend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((edge - 2f) / 7f));
+            var terrainPart = scene.InnerTerrain;
+            sky = terrainPart.Sky[cell] * Mathf.Lerp(1f, localSky, blend);
+            // The shadow from the pre-cut slope no longer applies to the exposed bed or the rocks on it.
+            float cutDepth = Mathf.InverseLerp(0.4f, 4f, Patch.HeightAt(x, z) - y);
+            sun = Mathf.Lerp(terrainPart.Sun[cell], 1f, cutDepth) * Mathf.Lerp(1f, localSun, blend);
         }
 
         // Highest upward-facing triangle below the roof, including the talus outside the mouth.
@@ -220,11 +226,17 @@ namespace Vastcore.RegionMap
                 Indices = new int[count], Rock = new float[count], Tint = new float[count], Sky = new float[count], Sun = new float[count] };
             for (int i = 0; i < count; i++)
             {
-                int ix = Mathf.RoundToInt((part.Positions[i * 3] - scene.InnerMinX) / scene.InnerCell);
-                int iz = Mathf.RoundToInt((part.Positions[i * 3 + 2] - scene.InnerMinZ) / scene.InnerCell);
+                int offset = i * 3;
+                float x = part.Positions[offset] - scene.InnerMinX;
+                float y = part.Positions[offset + 1];
+                float z = part.Positions[offset + 2] - scene.InnerMinZ;
+                int ix = Mathf.RoundToInt(x / scene.InnerCell);
+                int iz = Mathf.RoundToInt(z / scene.InnerCell);
                 int cell = ix + iz * scene.Inner.Data.Resolution;
                 part.Indices[i] = i; part.Rock[i] = 1f; part.Tint[i] = 0.45f;
-                part.Sun[i] = scene.InnerTerrain.Sun[cell]; part.Sky[i] = scene.InnerTerrain.Sky[cell];
+                Patch.SampleLighting(x, y, z, part.Normals[offset], part.Normals[offset + 1], part.Normals[offset + 2],
+                    out float localSky, out float localSun);
+                BlendLighting(cell, x, y, z, localSky, localSun, out part.Sky[i], out part.Sun[i]);
             }
             var material = new Material(sandstone) { name = "Fallen sandstone", hideFlags = HideFlags.DontSave };
             material.SetFloat("_LooseRock", 1f);

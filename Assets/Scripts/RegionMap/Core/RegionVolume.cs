@@ -134,6 +134,8 @@ namespace Vastcore.RegionMap
         public float DownFacingShare;
 
         private RegionData terrain;
+        private float lightingStep;
+        private float sunX, sunY, sunZ;
 
         public int VertexCount
         {
@@ -405,37 +407,45 @@ namespace Vastcore.RegionMap
             int count = VertexCount;
             Sun = new float[count];
             Sky = new float[count];
+            lightingStep = v;
             double altitude = SunAltitudeDegrees * Math.PI / 180.0;
-            float sunX = -(float)Math.Cos(altitude) * 0.70710678f;
-            float sunY = (float)Math.Sin(altitude);
-            float sunZ = -(float)Math.Cos(altitude) * 0.70710678f;
+            sunX = -(float)Math.Cos(altitude) * 0.70710678f;
+            sunY = (float)Math.Sin(altitude);
+            sunZ = sunX;
             Parallel.For(0, count, i =>
             {
-                float x = Positions[i * 3] + Normals[i * 3] * 1.2f * v;
-                float y = Positions[i * 3 + 1] + Normals[i * 3 + 1] * 1.2f * v;
-                float z = Positions[i * 3 + 2] + Normals[i * 3 + 2] * 1.2f * v;
-                float sun = 1f;
-                for (int s = 1; s <= 16; s++)
-                {
-                    float step = s * v;
-                    if (Density(x + sunX * step, y + sunY * step, z + sunZ * step) <= 0f) continue;
-                    sun = 0f;
-                    break;
-                }
-                // 真上の判定は、面から 3 升目離れた所から始める（ほぼ垂直な崖で、壁の出っ張りを「頭上の岩」と数えないように）
-                float skyX = Positions[i * 3] + Normals[i * 3] * 3f * v;
-                float skyY = Positions[i * 3 + 1] + Normals[i * 3 + 1] * 3f * v;
-                float skyZ = Positions[i * 3 + 2] + Normals[i * 3 + 2] * 3f * v;
-                float sky = 1f;
-                for (int s = 0; s <= 48; s++)
-                {
-                    if (Density(skyX, skyY + s * v, skyZ) <= 0f) continue;
-                    sky = 0f;
-                    break;
-                }
-                Sun[i] = sun;
-                Sky[i] = sky;
+                int offset = i * 3;
+                SampleLighting(Positions[offset], Positions[offset + 1], Positions[offset + 2],
+                    Normals[offset], Normals[offset + 1], Normals[offset + 2], out Sky[i], out Sun[i]);
             });
+        }
+
+        /// <summary>張り出しを含む体積で、頂点の真上の空と、場面を作った時点の日照を調べる。</summary>
+        internal void SampleLighting(float x, float y, float z, float nx, float ny, float nz, out float sky, out float sun)
+        {
+            float v = lightingStep;
+            float sx = x + nx * 1.2f * v;
+            float sy = y + ny * 1.2f * v;
+            float sz = z + nz * 1.2f * v;
+            sun = 1f;
+            for (int s = 1; s <= 16; s++)
+            {
+                float step = s * v;
+                if (Density(sx + sunX * step, sy + sunY * step, sz + sunZ * step) <= 0f) continue;
+                sun = 0f;
+                break;
+            }
+            // 真上の判定は、面から 3 升目離れた所から始める（ほぼ垂直な崖で、壁の出っ張りを「頭上の岩」と数えないように）。
+            float skyX = x + nx * 3f * v;
+            float skyY = y + ny * 3f * v;
+            float skyZ = z + nz * 3f * v;
+            sky = 1f;
+            for (int s = 0; s <= 48; s++)
+            {
+                if (Density(skyX, skyY + s * v, skyZ) <= 0f) continue;
+                sky = 0f;
+                break;
+            }
         }
 
         private static float Clamp(float value, float low, float high)

@@ -181,7 +181,7 @@ Weather Makerを使う通常の見回しでは、立ち上がりを待った後�
 
 同じ場面で、上向きで日が当たらず、空が遮られた面にだけ間接光を加えた。設定をゼロにした比較用シェーダーは、現行との差が全画面平均0.001未満。影の床は平均37.85→48.36（0〜255）で、影の岩壁47.21と日向の砂171.07はほぼ同じ。床の接地影を強めた条件は48.18。床は明るくなるが、礫の輪郭は拡大しても追いづらい。比較用の設定。[全景と床の拡大](../../artifacts/region-map/mesa-cloud-20261126/shadow-light/floor/floor-comparison.jpg)・[計測](../../artifacts/region-map/mesa-cloud-20261126/shadow-light/floor/measurements.txt)
 
-アルコーブの床は張り出しを含む体積で空の開け具合と日照を計算する。近くに追加した崩落岩は切り取る前の高さ格子の値を読むため、両者の光が場所によって一致しない可能性がある。床の照り返しの強さを決める前に、実際の崩落岩が床と整合した光を受けるかを確認する。[アルコーブの床と崩落岩](../../Assets/Scripts/RegionMap/View/RegionAlcoveView.cs)
+崩落岩の頂点の日照と空の開け具合を、床と同じ張り出しを含む体積から計算するよう修正した。seed 9・晴天・69秒で、岩32個の形と配置を固定し、頂点の日照データだけ切り替えて比較した。3156頂点のうち日照617、空の開け具合1214が変わり、近景では右手前の岩の側面・底面に差が出た。従来の値で描いた近景は前回の現行画像とバイト一致。穴の床に間接光を足す案は比較用のまま。[アルコーブの崩落岩](../../Assets/Scripts/RegionMap/View/RegionAlcoveView.cs)・[新旧の比較](../../artifacts/region-map/mesa-cloud-20261126/fallen-rock-light/fallen-rock-comparison.jpg)・[計測](../../artifacts/region-map/mesa-cloud-20261126/fallen-rock-light/run.txt)
 
 ### 5.3 写真・生成結果・実装を突き合わせる
 
