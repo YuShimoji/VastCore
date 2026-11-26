@@ -55,6 +55,8 @@ namespace Vastcore.RegionMap.Preview
             string look = null;
             string lookAt = null;
             string lookCenter = null;
+            string sedimentOut = null;
+            float sedimentAmount = 1f, sedimentGravity = 1f, sedimentWater = 1f;
 
             for (int a = 0; a < args.Length; a++)
             {
@@ -136,6 +138,10 @@ namespace Vastcore.RegionMap.Preview
                     case "--look": look = value; a++; break;
                     case "--look-at": lookAt = value; a++; break;
                     case "--look-center": lookCenter = value; a++; break;
+                    case "--sediment-compare": sedimentOut = value; a++; break;
+                    case "--sediment": sedimentAmount = Float(value); a++; break;
+                    case "--sediment-gravity": sedimentGravity = Float(value); a++; break;
+                    case "--sediment-water": sedimentWater = Float(value); a++; break;
                     case "--forms": forms = true; break;
                     case "--formscale": formScale = Float(value); a++; break;
                     default:
@@ -242,6 +248,7 @@ namespace Vastcore.RegionMap.Preview
             if (steepCoasts) DescribeSteepCoasts(data);
             if (mesaSites) LookView.DescribeMesaSites(data);
             if (look != null) LookView.Write(data, stem, look, lookAt, lookCenter);
+            if (sedimentOut != null) LookView.WriteSediment(data, sedimentOut, lookCenter, sedimentAmount, sedimentGravity, sedimentWater);
             if (routes && view3dFocus == null) RouteView.WriteRegion(data, options.Style, stem);
             if (view3d != null) Write3dView(data, options, stem, view3d, view3dFocus, detailSpec, view3dLit, routes, volume ? voxel : 0f);
             using var process = Process.GetCurrentProcess();

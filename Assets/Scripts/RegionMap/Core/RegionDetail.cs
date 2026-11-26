@@ -44,6 +44,19 @@ namespace Vastcore.RegionMap
         /// <summary>台地を置く乾きの条件を外す（どの気候でも置く。試験と比較のため）。</summary>
         public bool MesaAnyClimate = false;
 
+        /// <summary>
+        /// 土砂の場（RegionSediment）の強さ。0 で流さない（既定。今までの地形とバイト一致）。1 が標準。台地（Mesa）を入れた窓だけで効く。
+        /// 入れると、崖の落ち口の下に岩屑の錐、斜面に溝、裾に扇状地ができ、地図 Deposit・Wear・SedimentFlow・Scree を持つ。
+        /// 帽子の岩・海・湖・川の水面は動かさず、台地を載せる前の標高より下は削らない。
+        /// </summary>
+        public float Sediment = 0f;
+
+        /// <summary>土砂の場のうち、崖からの供給と崩れ（重力）の強さ。1 が中くらい。</summary>
+        public float SedimentGravity = 1f;
+
+        /// <summary>土砂の場のうち、水による削りと運搬の強さ。1 が中くらい。</summary>
+        public float SedimentWater = 1f;
+
         public RegionDetailSpec Clone()
         {
             return (RegionDetailSpec)MemberwiseClone();
@@ -372,12 +385,16 @@ namespace Vastcore.RegionMap
             if (spec.GullyPasses > 0) CarveGullies(data, spec.GullyPasses, seed);
             if (spec.Mesa > 0f)
             {
+                // 土砂の場は、台地を載せる前の標高より下を削らない
+                float[] beforeMesa = spec.Sediment > 0f ? (float[])height.Clone() : null;
                 ApplyMesas(data, spec, new MesaInput
                 {
                     Region = region, Sign = sign, LandHeight = landHeight, Ground = ground, Relief = relief, Moisture = moisture, Temperature = temperature,
                     W = w, H = h, Cx0 = cx0, Cy0 = cy0, Gx0 = gx0, Gy0 = gy0, Step = step, CoarseCell = coarseCell, Seed = seed,
                     Pieces = pieces, Bins = bins,
                 });
+                if (beforeMesa != null && data.Caprock != null)
+                    RegionSediment.Apply(data, beforeMesa, spec.Sediment, spec.SedimentGravity, spec.SedimentWater, seed);
             }
             Classify(data);
             Measure(detail, gx0, gy0, step);

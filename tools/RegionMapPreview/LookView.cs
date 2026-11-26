@@ -171,6 +171,247 @@ namespace Vastcore.RegionMap.Preview
             if (map) WriteMaps(scene, stem, views);
         }
 
+        /// <summary>
+        /// 土砂の場（RegionDetailSpec.Sediment）の前後を比べる。場面（RegionLookScene）と同じ外側・内側の窓を、Sediment 0 と amount で作り、
+        /// 高さのハッシュ、広域との一致、生成時間（交互に 3 回の中央値）、4 つの地図の 0 でないセルの割合を出し、
+        /// 窓ごとに陰影図（前・後）・高さの差・4 つの地図の PNG を outDir に書く。
+        /// </summary>
+        internal static void WriteSediment(RegionData data, string outDir, string center, float amount, float gravity, float water)
+        {
+            System.IO.Directory.CreateDirectory(outDir);
+            var look = new RegionLookSpec();
+            if (center != null)
+            {
+                string[] c = center.Split(',');
+                look.CenterMapX = Float(c[0]);
+                look.CenterMapY = Float(c[1]);
+            }
+            var outerSpec = new RegionDetailSpec
+            {
+                CenterMapX = look.CenterMapX, CenterMapY = look.CenterMapY, SizeKm = look.OuterKm, Resolution = look.Resolution, Mesa = look.Mesa,
+            };
+            RegionDetail outerPlain = RegionDetailBuilder.Build(data, outerSpec);
+            RegionDetailSpec innerSpec = InnerWindow(data, look, outerPlain);
+            string stem = System.IO.Path.Combine(outDir, "seed" + data.Spec.Seed);
+            CompareSediment("outer", data, outerSpec, stem + "-outer", amount, gravity, water);
+            CompareSediment("inner", data, innerSpec, stem + "-inner", amount, gravity, water);
+        }
+
+        /// <summary>RegionLookScene.Build と同じ計算で、内側の窓の指定を作る。</summary>
+        private static RegionDetailSpec InnerWindow(RegionData region, RegionLookSpec spec, RegionDetail outer)
+        {
+            int n = outer.Data.Resolution;
+            float outerCell = outer.Data.CellMeters;
+            float metersPerMapUnit = region.SizeKm * 1000f / RegionData.MapUnits;
+            float centerX = (spec.CenterMapX - outer.OriginMapX) * metersPerMapUnit;
+            float centerZ = (spec.CenterMapY - outer.OriginMapY) * metersPerMapUnit;
+            int k = (int)Math.Round(spec.InnerKm * 1000f / outerCell);
+            if (k < 8) k = 8; else if (k > n - 8) k = n - 8;
+            int ka = Math.Max(2, Math.Min(n - 3 - k, (int)Math.Round(centerX / outerCell - 0.5f - k * 0.5f)));
+            int la = Math.Max(2, Math.Min(n - 3 - k, (int)Math.Round(centerZ / outerCell - 0.5f - k * 0.5f)));
+            int m = Math.Max(64, spec.Resolution);
+            float innerCell = k * outerCell / (m - 1);
+            float minX = (ka + 0.5f) * outerCell;
+            float minZ = (la + 0.5f) * outerCell;
+            return new RegionDetailSpec
+            {
+                CenterMapX = outer.OriginMapX + (minX + (m * 0.5f - 0.5f) * innerCell) / metersPerMapUnit,
+                CenterMapY = outer.OriginMapY + (minZ + (m * 0.5f - 0.5f) * innerCell) / metersPerMapUnit,
+                SizeKm = m * innerCell / 1000f, Resolution = m, Mesa = spec.Mesa,
+            };
+        }
+
+        private static void CompareSediment(string name, RegionData region, RegionDetailSpec baseSpec, string stem, float amount, float gravity, float water)
+        {
+            RegionDetailSpec before = baseSpec.Clone();
+            SetSediment(before, 0f, gravity, water);
+            RegionDetailSpec after = baseSpec.Clone();
+            SetSediment(after, amount, gravity, water);
+            var timesBefore = new List<long>();
+            var timesAfter = new List<long>();
+            RegionDetail a = null, b = null;
+            var watch = new Stopwatch();
+            for (int round = 0; round < 3; round++)
+            {
+                watch.Restart();
+                a = RegionDetailBuilder.Build(region, before);
+                timesBefore.Add(watch.ElapsedMilliseconds);
+                watch.Restart();
+                b = RegionDetailBuilder.Build(region, after);
+                timesAfter.Add(watch.ElapsedMilliseconds);
+            }
+            timesBefore.Sort();
+            timesAfter.Sort();
+            RegionData d0 = a.Data, d1 = b.Data;
+            int res = d0.Resolution;
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                "土砂 {0}: 1セル {1:F3} m 一辺 {2:F3} km  高さのハッシュ Sediment0={3:x16} 全体={4:x16}",
+                name, d0.CellMeters, d0.SizeKm, HashFloats(d0.Height), HashAll(d0)));
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                "  海陸の一致 {0:P2}→{1:P2} 川の一致 {2:P1}→{3:P1} 標高の差の平均 {4:F2}→{5:F2} m 生成（中央値） {6}→{7} ms（Sediment 0→{8}）",
+                a.CoastAgreement, b.CoastAgreement, a.RiverAgreement, b.RiverAgreement, a.MeanHeightDifference, b.MeanHeightDifference,
+                timesBefore[1], timesAfter[1], amount.ToString(CultureInfo.InvariantCulture)));
+            int sameSign = 0, land = 0, raised = 0, lowered = 0;
+            double gain = 0.0, loss = 0.0;
+            float most = 0f, least = 0f;
+            for (int i = 0; i < d0.Height.Length; i++)
+            {
+                if ((d0.Height[i] > 0f) == (d1.Height[i] > 0f)) sameSign++;
+                if (d0.Height[i] <= 0f) continue;
+                land++;
+                float change = d1.Height[i] - d0.Height[i];
+                if (change > 0.05f) raised++;
+                if (change < -0.05f) lowered++;
+                if (change > 0f) gain += change; else loss -= change;
+                if (change > most) most = change;
+                if (change < least) least = change;
+            }
+            float area = d0.CellMeters * d0.CellMeters;
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                "  セルの海陸が Sediment 0 と同じ {0:P3}  高さが 5 cm 超 上がった {1:P2}・下がった {2:P2}  最大 +{3:F1} / {4:F1} m  盛り {5:F0} m3・削り {6:F0} m3",
+                sameSign / (double)d0.Height.Length, raised / (double)land, lowered / (double)land, most, least, gain * area, loss * area));
+            string[] names = { "Deposit", "Wear", "SedimentFlow", "Scree" };
+            var line = new System.Text.StringBuilder("  0 でないセル（陸に対して）:");
+            var maps = new float[4][];
+            for (int k = 0; k < 4; k++)
+            {
+                maps[k] = Map(d1, names[k]);
+                if (maps[k] == null) { line.Append(' ').Append(names[k]).Append("=null"); continue; }
+                int nonZero = 0, strong = 0;
+                for (int i = 0; i < maps[k].Length; i++)
+                {
+                    if (d1.Height[i] <= 0f) continue;
+                    if (maps[k][i] > 0f) nonZero++;
+                    if (maps[k][i] > 0.5f) strong++;
+                }
+                line.Append(string.Format(CultureInfo.InvariantCulture, " {0}={1:P1}（0.5 超 {2:P2}）", names[k], nonZero / (double)land, strong / (double)land));
+            }
+            Console.WriteLine(line.ToString());
+            if (Map(d0, "Deposit") != null) Console.WriteLine("  注意: Sediment 0 の窓が地図を持っている");
+
+            float cell = d0.CellMeters;
+            byte[] shade0 = Hillshade(d0.Height, res, cell);
+            byte[] shade1 = Hillshade(d1.Height, res, cell);
+            PngWriter.Write(stem + "-shade-s0.png", shade0, res, res);
+            PngWriter.Write(stem + "-shade-s1.png", shade1, res, res);
+            var diff = new float[res * res];
+            for (int i = 0; i < diff.Length; i++) diff[i] = d1.Height[i] - d0.Height[i];
+            PngWriter.Write(stem + "-diff.png", Diverging(shade1, diff, 3f), res, res);
+            byte[][] tint = { new byte[] { 255, 200, 40 }, new byte[] { 230, 40, 40 }, new byte[] { 40, 170, 255 }, new byte[] { 60, 230, 90 } };
+            for (int k = 0; k < 4; k++)
+            {
+                if (maps[k] == null) continue;
+                PngWriter.Write(stem + "-" + names[k].ToLowerInvariant() + ".png", Overlay(shade1, maps[k], tint[k]), res, res);
+            }
+            Console.WriteLine("  画像 → " + System.IO.Path.GetFullPath(stem) + "-*.png");
+        }
+
+        private static void SetSediment(RegionDetailSpec spec, float amount, float gravity, float water)
+        {
+            spec.Sediment = amount;
+            spec.SedimentGravity = gravity;
+            spec.SedimentWater = water;
+        }
+
+        private static float[] Map(RegionData data, string name)
+        {
+            switch (name)
+            {
+                case "Deposit": return data.Deposit;
+                case "Wear": return data.Wear;
+                case "SedimentFlow": return data.SedimentFlow;
+                default: return data.Scree;
+            }
+        }
+
+        private static ulong HashFloats(float[] values)
+        {
+            ulong hash = 14695981039346656037UL;
+            if (values == null) return hash;
+            for (int i = 0; i < values.Length; i++)
+            {
+                uint bits = (uint)BitConverter.SingleToInt32Bits(values[i]);
+                for (int b = 0; b < 4; b++)
+                {
+                    hash ^= (bits >> (b * 8)) & 0xffu;
+                    hash *= 1099511628211UL;
+                }
+            }
+            return hash;
+        }
+
+        /// <summary>高さ・崖・岩屑・帽子の岩・気温・土地の種類を合わせたハッシュ。</summary>
+        private static ulong HashAll(RegionData d)
+        {
+            ulong hash = HashFloats(d.Height);
+            hash = hash * 31UL + HashFloats(d.Cliff);
+            hash = hash * 31UL + HashFloats(d.Talus);
+            hash = hash * 31UL + HashFloats(d.Temperature);
+            var biome = new float[d.Biome.Length];
+            for (int i = 0; i < biome.Length; i++) biome[i] = (float)d.Biome[i] + (d.Caprock != null ? 100f * d.Caprock[i] : 0f);
+            return hash * 31UL + HashFloats(biome);
+        }
+
+        /// <summary>灰色の陰影図。太陽は北西の高さ 35 度（崖の割れ目と岩屑の溝が影で出る向き）。</summary>
+        private static byte[] Hillshade(float[] height, int n, float cell)
+        {
+            var pixels = new byte[n * n * 4];
+            double alt = 35.0 * Math.PI / 180.0;
+            float lx = (float)(-Math.Cos(alt) * Math.Sqrt(0.5)), lz = (float)(-Math.Cos(alt) * Math.Sqrt(0.5)), ly = (float)Math.Sin(alt);
+            Parallel.For(0, n, y =>
+            {
+                for (int x = 0; x < n; x++)
+                {
+                    int i = x + y * n;
+                    float h = Math.Max(0f, height[i]);
+                    float east = Math.Max(0f, height[Math.Min(n - 1, x + 1) + y * n]) - Math.Max(0f, height[Math.Max(0, x - 1) + y * n]);
+                    float south = Math.Max(0f, height[x + Math.Min(n - 1, y + 1) * n]) - Math.Max(0f, height[x + Math.Max(0, y - 1) * n]);
+                    float nx = -east / (2f * cell), nz = -south / (2f * cell), ny = 1f;
+                    float length = (float)Math.Sqrt(nx * nx + ny * ny + nz * nz);
+                    float lit = (nx * lx + ny * ly + nz * lz) / length;
+                    float v = 30f + 215f * Math.Max(0f, lit);
+                    byte g = (byte)Math.Min(255f, v);
+                    int o = i * 4;
+                    if (height[i] <= 0f) { pixels[o] = 40; pixels[o + 1] = 70; pixels[o + 2] = 110; }
+                    else { pixels[o] = g; pixels[o + 1] = g; pixels[o + 2] = g; }
+                    pixels[o + 3] = 255;
+                }
+            });
+            return pixels;
+        }
+
+        /// <summary>陰影図に値（0〜1）を色で重ねる。</summary>
+        private static byte[] Overlay(byte[] shade, float[] values, byte[] color)
+        {
+            var pixels = (byte[])shade.Clone();
+            for (int i = 0; i < values.Length; i++)
+            {
+                float t = Math.Max(0f, Math.Min(1f, values[i])) * 0.85f;
+                if (t <= 0f) continue;
+                int o = i * 4;
+                for (int c = 0; c < 3; c++) pixels[o + c] = (byte)(pixels[o + c] + (color[c] - pixels[o + c]) * t);
+            }
+            return pixels;
+        }
+
+        /// <summary>陰影図に高さの差を重ねる。上がった所は赤、下がった所は青。range（m）で最も濃い。</summary>
+        private static byte[] Diverging(byte[] shade, float[] change, float range)
+        {
+            var pixels = (byte[])shade.Clone();
+            for (int i = 0; i < change.Length; i++)
+            {
+                float t = Math.Max(-1f, Math.Min(1f, change[i] / range));
+                if (Math.Abs(t) < 0.01f) continue;
+                int o = i * 4;
+                byte r = t > 0f ? (byte)240 : (byte)30, g = t > 0f ? (byte)50 : (byte)90, b = t > 0f ? (byte)30 : (byte)240;
+                float k = Math.Abs(t) * 0.85f;
+                pixels[o] = (byte)(pixels[o] + (r - pixels[o]) * k);
+                pixels[o + 1] = (byte)(pixels[o + 1] + (g - pixels[o + 1]) * k);
+                pixels[o + 2] = (byte)(pixels[o + 2] + (b - pixels[o + 2]) * k);
+            }
+            return pixels;
+        }
+
         private static void Describe(string name, RegionData region, RegionDetail detail)
         {
             // 同じ窓を、台地を入れずに作って比べる（広域の地図との一致がどれだけ下がるか）

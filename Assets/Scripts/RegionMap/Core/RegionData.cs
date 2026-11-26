@@ -90,6 +90,21 @@ namespace Vastcore.RegionMap
         /// <summary>台地を作る窓での、帽子の砂岩と下の軟らかい層の境界標高（m）。材質に地形と同じ層準を渡す。</summary>
         public float[] MesaContactHeight;
 
+        // 土砂の場の地図（各 0〜1）。台地を入れ、土砂の場（RegionDetailSpec.Sediment）を流した窓だけが持ち、それ以外は null。
+        // 材質の層を選ぶのに使う（色をそのまま描かない）。帽子の岩・水面のセルは 0。
+
+        /// <summary>水が運べなくなってためた細かい土砂の厚さ（扇状地・谷底・溝の出口）。0.4 m で約 0.63。</summary>
+        public float[] Deposit;
+
+        /// <summary>水が床より上の岩屑の斜面を削った深さ（溝の底と壁）。0.4 m で約 0.63。</summary>
+        public float[] Wear;
+
+        /// <summary>土砂の通り道（運ばれている土砂の量、幅 1 m あたり）。溝と扇状地の流路で大きい。</summary>
+        public float[] SedimentFlow;
+
+        /// <summary>崖から落ちて崩れでたまった岩屑の厚さ（崖の落ち口の下の錐）。1.5 m で約 0.63。</summary>
+        public float[] Scree;
+
         public RegionDevelopment Development { get; internal set; }
         internal RegionPosition DevelopmentOrigin;
 
