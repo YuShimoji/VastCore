@@ -171,6 +171,8 @@ seed 9 の北西側の雲を追った。30km四方の雲濃度と地上投影の
 
 別地点のseed 8（X82.93144／Y62.38425）でも、PC品質で遠景・中景・崖下を撮影できた。砂・礫の素材は比較用に置き、既定への採用は本人の判断。[seed 8 の遠景・中景・崖下](../../artifacts/region-map/mesa-cloud-20261126/readiness-final-seed8/mesa-views.jpg)
 
+通常の探索メニューから、seed 9の崖下（X43.61／Y76.92、69秒）とseed 8の平地（X82.93144／Y62.38425、75秒）を開いた。各動画は同条件の地図1.5秒とGameビューでカメラを75度回した3秒をつないだもの。Ground054（砂）とGround081（礫）は比較用に適用。自作の空、PC品質、GTX 1650 Ti、1600×900、VSyncなしで撮影前の120フレームを測り、中央値／95パーセンタイルはseed 9で21.44／25.92ms、seed 8で12.61／16.84ms。Unity Editorのフレーム間隔。[崖下の動画](../../artifacts/region-map/mesa-cloud-20261126/normal-route/mesa-route-seed9.mp4)・[平地の動画](../../artifacts/region-map/mesa-cloud-20261126/normal-route/mesa-route-seed8.mp4)
+
 ### 5.3 写真・生成結果・実装を突き合わせる
 
 | 距離と見る場所 | 基準画像で見える差 | 制作時に変えて比べるもの |

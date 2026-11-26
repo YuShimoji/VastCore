@@ -73,7 +73,7 @@ Last Updated: 2026-11-25
 4. 止めているもの（再開は本人の指示）：動き（軸 E）、音（軸 F）、サーチのゲーム性と遠征の規則（軸 H）、命名の響きと表示、段6。コード・確認ページ・回答の記録は残す。本人が挙げた直す点（波紋が距離に見える、矢印が答えの座標を指す、演出が機能に見える、発見物の分類を開発担当が決めた）は SP-021 4.1節と9節。命名の数えられる生成の欠陥は第3版で直した（2026-11-25、`1c69f16`。数は履歴）。
 5. 進め方：問いは、答えで方式が分かれる時だけ送る（[INTERACTION_NOTES](INTERACTION_NOTES.md)、[INVARIANTS](INVARIANTS.md)）。本人が Unity Editor を開いている間は写し `D:\vcv\VastCore` で確かめて1回で戻し、写しの Unity が動いている間は写しの C# を編集しない。
 6. 砂岩の3Dはアルコーブ・光と空気・表面の段3まで。本人選択は天気と時刻を条件とし、晴れは了承済みの Weather Maker、砂塵は自作。2Dと3Dで雲の濃度画像と流れの格子を共有し、探索メニューから地上に地点と時刻を引き継ぐ（seed 7）。Weather Maker は本体に導入済み。自作の空でseed 9の上層を2時刻で地図と照合済み。導入済み環境でのExplorerからの切替と雲の位置は未確認。[3Dの確認方法](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)・[本人の選択](USER_REQUEST_LEDGER.md)。
-   - 砂岩はseed 8・9をPC品質で撮影。表面の [T0〜T5](02_design/REGION_SURFACE_MATERIALS_SPEC.md) はT1統合済み・既定は切、T0は本人の回答待ち、T2は担当案。見た目と素材の採否は本人。アーチ・峡谷は後続。
+   - 探索メニューからseed 8・9を開き、既存の砂・礫を比較用に適用したPC品質の動画とフレーム間隔を確認。[動画と計測](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)。表面の [T0〜T5](02_design/REGION_SURFACE_MATERIALS_SPEC.md) はT1統合済み・既定は切、T0は本人の回答待ち、T2は担当案。見た目と素材の採否は本人。アーチ・峡谷は後続。
 
 ## External Pulse And Remote Resume
 
