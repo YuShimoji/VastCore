@@ -175,6 +175,10 @@ seed 9 の北西側の雲を追った。30km四方の雲濃度と地上投影の
 
 Weather Makerを使う通常の見回しでは、立ち上がりを待った後、地平線の2方向を手動描画し、同じ更新内で見回し中の視点、地形、描画先、後処理を復元する。空の色を読めなければ条件の霞を使う。自作の空の小さな試験シーンで両方向の色の取得と状態復元を確認し、計測前後の画像はバイト一致した。Weather Maker本体での色と見回しは未確認。[Unity Camera.Render](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Camera.Render.html)・[検証ログ](../../artifacts/region-map/mesa-cloud-20261126/haze-transition/result.txt)
 
+崖下の暗部は、seed 9・晴天・69秒の自作の空、砂と礫の写真材質を固定し、現行・照り返し2倍・露出+0.45 EVを比較した。8ビットの画面上の明るさの平均は、影の岩壁で47.21／57.70／56.64、影の床で37.85／40.36／45.70、日向の砂で171.07／171.22／190.16。いずれも標本範囲を固定した値。照り返しは壁に効き、露出は日向も明るくした。両案とも影の床で礫と地面の境が読みにくい。比較用の調整値。[現行と2案](../../artifacts/region-map/mesa-cloud-20261126/shadow-light/shadow-light-comparison.jpg)・[計測](../../artifacts/region-map/mesa-cloud-20261126/shadow-light/measurements.txt)
+
+地形シェーダーの照り返し係数は、上を向く地面で0.10、垂直な岩壁で0.55。他の条件が同じでも壁に多く届く。床の礫を見せるには、壁の照り返しを増やす試験に加え、地面に届く間接光と溝・岩の接点での陰影を場面内で確かめる。[地形シェーダー](../../Assets/Resources/RegionMap3D/RegionTerrain.shader)・[Canyonlandsのアルコーブ写真](https://www.nps.gov/places/alcove-spring-trail.htm)
+
 ### 5.3 写真・生成結果・実装を突き合わせる
 
 | 距離と見る場所 | 基準画像で見える差 | 制作時に変えて比べるもの |
