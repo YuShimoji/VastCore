@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>スクリーンショットと進捗 | VastCore</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f7f6f0;
+      --ink: #202820;
+      --muted: #50594d;
+      --accent: #315238;
+      --line: #c0c4b5;
+      --tint: #e8ecdf;
+      --frame: #dee1d7;
+      --heading: Georgia, "Yu Mincho", "Hiragino Mincho ProN", serif;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.65 "Segoe UI", "Yu Gothic", Meiryo, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; }
+    a { color: var(--accent); text-underline-offset: .2em; }
+    a:hover { color: #122e1b; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+    [hidden] { display: none !important; }
+    .wrap { width: min(1120px, calc(100% - 64px)); margin-inline: auto; }
+    .top { border-bottom: 1px solid var(--accent); }
+    .top .wrap, .foot .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 24px; }
+    .top .wrap { justify-content: space-between; min-height: 68px; }
+    .wordmark { color: var(--ink); font: 700 2rem/1 var(--heading); text-decoration: none; padding-block: 12px; }
+    nav { display: flex; flex-wrap: wrap; gap: 4px 24px; }
+    nav a { display: inline-flex; align-items: center; min-height: 44px; }
+    main { padding-block: 36px 56px; }
+    h1, h2, h3, p, figure { margin: 0; }
+    h1, h2 { font-family: var(--heading); line-height: 1.25; }
+    h1 { font-size: clamp(2rem, 5vw, 3.1rem); margin-bottom: 12px; }
+    h2 { font-size: clamp(1.65rem, 4vw, 2.25rem); margin-bottom: 12px; }
+    h3 { font-size: 1.05rem; line-height: 1.45; }
+    .date, .hint, figcaption p { color: var(--muted); font-size: .9rem; }
+    .date { margin-top: 5px; }
+    .state { display: grid; grid-template-columns: 1fr 1fr; margin-top: 22px; border: 1px solid var(--line); border-radius: 4px; background: var(--tint); }
+    .state > div { padding: 18px 22px; }
+    .state > div + div { border-left: 1px solid var(--line); }
+    .state h2 { color: var(--accent); font-size: 1.45rem; margin-bottom: 5px; }
+    .state a { display: inline-block; margin-top: 7px; font-weight: 600; }
+    .section { margin-top: 44px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 2px 4px; border-bottom: 1px solid var(--accent); margin: 14px 0 8px; }
+    .filters button { min-height: 44px; padding: 6px 15px; border: 0; border-radius: 3px 3px 0 0; color: var(--accent); background: transparent; font: inherit; font-weight: 650; cursor: pointer; }
+    .filters button:hover { background: var(--tint); }
+    .filters button[aria-pressed="true"] { color: #fff; background: var(--accent); }
+    .gallery { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 20px; margin-top: 16px; }
+    .thumb { display: grid; place-items: center; overflow: hidden; aspect-ratio: 16 / 9; border-radius: 3px; background: var(--frame); }
+    .thumb img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+    .thumb[href]:hover { box-shadow: 0 0 0 2px var(--accent); }
+    .thumb.missing { padding: 12px; color: var(--muted); text-align: center; }
+    figcaption { padding-top: 8px; }
+    figcaption p { margin-top: 3px; }
+    details { margin-top: 26px; border-block: 1px solid var(--line); }
+    summary { padding: 10px 0; min-height: 44px; color: var(--accent); font-weight: 650; cursor: pointer; }
+    .reviews { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 24px; padding: 4px 0 16px; }
+    .reviews ul { margin: 4px 0 0; padding-left: 1.2em; }
+    .timeline { border: 1px solid var(--line); border-radius: 4px; margin-top: 14px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 9px 15px; text-align: left; vertical-align: top; }
+    thead { color: var(--accent); background: var(--tint); }
+    tbody tr { border-top: 1px solid var(--line); }
+    tbody th { white-space: nowrap; font-variant-numeric: tabular-nums; font-size: .9rem; font-weight: 500; }
+    td a { white-space: nowrap; }
+    .foot { border-top: 1px solid var(--line); }
+    .foot .wrap { padding-block: 12px; font-size: .9rem; }
+    @media (max-width: 900px) {
+      .gallery, .reviews { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 590px) {
+      .wrap { width: calc(100% - 32px); }
+      .top .wrap { padding-block: 6px; }
+      .wordmark { font-size: 1.6rem; }
+      nav { gap: 0 12px; font-size: .9rem; }
+      main { padding-top: 26px; }
+      .state, .gallery, .reviews { grid-template-columns: minmax(0, 1fr); }
+      .state > div { padding: 14px 16px; }
+      .state > div + div { border-left: 0; border-top: 1px solid var(--line); }
+      .filters button { padding-inline: 10px; }
+      th, td { padding: 8px 9px; }
+      tbody th { font-size: .8rem; }
+      td a { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top" id="top">
+    <div class="wrap">
+      <a class="wordmark" href="#top">VastCore</a>
+      <nav aria-label="ページ内リンク">
+        <a href="#screenshots">スクリーンショット</a>
+        <a href="#progress">進捗履歴</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>スクリーンショットと進捗</h1>
+    <p>地域の鳥瞰図、探索画面、3D地形、天候の試作を画像と開発記録で振り返れます。</p>
+    <p class="date">開発記録 <time datetime="2026-11-25">2026-11-25</time> 時点</p>
+
+    <section class="state" aria-label="プロジェクトの現在地">
+      <div>
+        <h2>現在地</h2>
+        <p>SP-021 の現代試作で、広域の2都市・幹線・空港から、建物や道路の細部まで確認できます。湖の修正と3D砂岩試作を統合しました。</p>
+        <a href="runtime-state.md">最新の状態と次の作業 →</a>
+      </div>
+      <div>
+        <h2>確認待ち</h2>
+        <p>探索画面で拡大した街区の見え方と、3D砂岩の二地点にある崖下のくぼみを確認する段階です。</p>
+        <a href="02_design/REGION_MAP_EXPLORATION_SPEC.md">SP-021 の仕様と判断事項（9節） →</a>
+      </div>
+    </section>
+
+    <section class="section" id="screenshots" aria-labelledby="screenshots-heading">
+      <h2 id="screenshots-heading">スクリーンショット</h2>
+      <div class="filters" role="group" aria-label="画像の絞り込み" hidden>
+        <button type="button" data-filter="all" aria-pressed="true">すべて</button>
+        <button type="button" data-filter="explorer" aria-pressed="false">探索画面</button>
+        <button type="button" data-filter="map" aria-pressed="false">地形・地図</button>
+        <button type="button" data-filter="terrain" aria-pressed="false">3D地形</button>
+        <button type="button" data-filter="weather" aria-pressed="false">天候</button>
+        <button type="button" data-filter="tools" aria-pressed="false">制作ツール</button>
+      </div>
+      <p class="hint"><span id="gallery-count" role="status"></span> 画像を開くと原寸で表示します。端末に保存された出力を参照しています。</p>
+
+      <div class="gallery">
+        <figure id="modern-region" data-category="explorer">
+          <a class="thumb" href="../artifacts/region-map/explorer-photo-20261125/unity-final/development-0-region.png" target="_blank" rel="noopener">
+            <img src="../artifacts/region-map/explorer-photo-20261125/unity-final/development-0-region.png" alt="現代試作の探索画面に表示された広域の鳥瞰図">
+          </a>
+          <figcaption><h3>現代試作の広域図</h3><p>Unity 実画面 · seed 9 · 2026-11-25</p></figcaption>
+        </figure>
+        <figure id="modern-city" data-category="explorer">
+          <a class="thumb" href="../artifacts/region-map/explorer-photo-20261125/unity-final/development-city-1-x512.png" target="_blank" rel="noopener">
+            <img src="../artifacts/region-map/explorer-photo-20261125/unity-final/development-city-1-x512.png" alt="探索画面で都市1を512倍に拡大した街区">
+          </a>
+          <figcaption><h3>都市1の街区 ×512</h3><p>Unity 実画面 · seed 9 · 2026-11-25</p></figcaption>
+        </figure>
+        <figure id="sandstone" data-category="terrain">
+          <a class="thumb" href="../Documentation/mesa-alcove-comparison.jpg" target="_blank" rel="noopener">
+            <img src="../Documentation/mesa-alcove-comparison.jpg" alt="砂岩の崖下にできたアルコーブを二地点で比較した画像">
+          </a>
+          <figcaption><h3>砂岩の崖下にできたアルコーブ</h3><p>Unity 実画面の比較 · seed 9 / 8 · 2026-11-25<br><a href="../Documentation/mesa-alcove-walk.mp4">移動の動画</a> · <a href="02_design/REGION_TERRAIN_LOOK_SPEC.md">砂岩試作の仕様</a></p></figcaption>
+        </figure>
+        <figure data-category="explorer">
+          <a class="thumb" href="../artifacts/region-map/explorer-photo-20261125/unity-final/development-city-1-x128.png" target="_blank" rel="noopener">
+            <img src="../artifacts/region-map/explorer-photo-20261125/unity-final/development-city-1-x128.png" alt="探索画面で都市1を128倍に拡大した街区" loading="lazy">
+          </a>
+          <figcaption><h3>都市1の街区 ×128</h3><p>Unity 実画面 · seed 9 · 2026-11-25</p></figcaption>
+        </figure>
+        <figure data-category="explorer">
+          <a class="thumb" href="../artifacts/region-map/explorer-photo-20261125/unity-final/development-airport-x256.png" target="_blank" rel="noopener">
+            <img src="../artifacts/region-map/explorer-photo-20261125/unity-final/development-airport-x256.png" alt="探索画面で空港周辺を256倍に拡大した様子" loading="lazy">
+          </a>
+          <figcaption><h3>空港周辺 ×256</h3><p>Unity 実画面 · seed 9 · 2026-11-25</p></figcaption>
+        </figure>
+        <figure id="naming" data-category="explorer">
+          <a class="thumb" href="../artifacts/region-map/review-20261125-naming-system/screen-1-seed7-card.jpg" target="_blank" rel="noopener">
+            <img src="../artifacts/region-map/review-20261125-naming-system/screen-1-seed7-card.jpg" alt="地名と発見カードを表示した命名第3版の探索画面" loading="lazy">
+          </a>
+          <figcaption><h3>命名の第3版と発見カード</h3><p>Unity 実画面 · seed 7 · 2026-11-25</p></figcaption>
+        </figure>
+        <figure id="lakes" data-category="map">
+          <a class="thumb" href="../artifacts/region-map/terrain-detail-20261125/pairs/seed9-1024.png" target="_blank" rel="noopener">
+            <img src="../artifacts/region-map/terrain-detail-20261125/pairs/seed9-1024.png" alt="湖を残す変更の前後を同じseedの地域地図で並べた比較" loading="lazy">
+          </a>
+          <figcaption><h3>湖を残す変更の前後</h3><p>.NET の地図出力 · seed 9、1024² · 2026-11-25</p></figcaption>
+        </figure>
+        <figure data-category="map">
+          <a class="thumb" href="../artifacts/region-map/resume-20261124-thank/region-seed9-satellite.png" target="_blank" rel="noopener">
+            <img src="../artifacts/region-map/resume-20261124-thank/region-seed9-satellite.png" alt="現代試作の鳥瞰図に描かれた都市と空港" loading="lazy">
+          </a>
+          <figcaption><h3>現代試作の鳥瞰図</h3><p>地図出力 · seed 9 · 2026-11-24</p></figcaption>
+        </figure>
+        <figure id="weather" data-category="weather">
+          <a class="thumb" href="../artifacts/region-map/weather-preview-20261124/region-seed7-prevailing.png" target="_blank" rel="noopener">
+            <img src="../artifacts/region-map/weather-preview-20261124/region-seed7-prevailing.png" alt="卓越風を適用した地形と雲のプレビュー" loading="lazy">
+          </a>
+          <figcaption><h3>地形と雲・雨の試作</h3><p>.NET プレビュー · seed 7、卓越風 · 2026-11-24</p></figcaption>
+        </figure>
+        <figure data-category="weather">
+          <a class="thumb" href="../artifacts/region-map/weather-preview-20261124/region-seed7-reversed.png" target="_blank" rel="noopener">
+            <img src="../artifacts/region-map/weather-preview-20261124/region-seed7-reversed.png" alt="同じ地域で風向きを反転させた地形と雲のプレビュー" loading="lazy">
+          </a>
+          <figcaption><h3>風向きを反転した比較</h3><p>.NET プレビュー · seed 7、逆風 · 2026-11-24</p></figcaption>
+        </figure>
+        <figure id="earlier-zoom" data-category="explorer">
+          <a class="thumb" href="../artifacts/region-map/review-20261122-r10/z5-ready-x64.jpg" target="_blank" rel="noopener">
+            <img src="../artifacts/region-map/review-20261122-r10/z5-ready-x64.jpg" alt="細部地形を表示した探索画面の64倍拡大" loading="lazy">
+          </a>
+          <figcaption><h3>細部地形への切替 ×64</h3><p>Unity 実画面 · 2026-11-22</p></figcaption>
+        </figure>
+        <figure id="satellite" data-category="map">
+          <a class="thumb" href="../artifacts/region-map/preview-seed7-satellite.png" target="_blank" rel="noopener">
+            <img src="../artifacts/region-map/preview-seed7-satellite.png" alt="海岸線、山地、川を描いた衛星写真風の地域地図" loading="lazy">
+          </a>
+          <figcaption><h3>衛星写真風の地域地図</h3><p>地図出力 · seed 7</p></figcaption>
+        </figure>
+        <figure id="arch" data-category="tools">
+          <a class="thumb" href="../artifacts/restart-20261101/20261101-0430-arch-fix/arch-generated.png" target="_blank" rel="noopener">
+            <img src="../artifacts/restart-20261101/20261101-0430-arch-fix/arch-generated.png" alt="Unity Editorで生成したアーチの確認画面" loading="lazy">
+          </a>
+          <figcaption><h3>Arch の生成</h3><p>Unity Editor 実画面 · SP-017 · 2026-11-01</p></figcaption>
+        </figure>
+        <figure data-category="tools">
+          <a class="thumb" href="../artifacts/restart-20261101/20261101-0328-sp017/cockpit-target-applied.png" target="_blank" rel="noopener">
+            <img src="../artifacts/restart-20261101/20261101-0328-sp017/cockpit-target-applied.png" alt="Designer Cockpitで選択対象に設定を適用したUnity Editorの画面" loading="lazy">
+          </a>
+          <figcaption><h3>Designer Cockpit の対象適用</h3><p>Unity Editor 実画面 · 2026-11-01</p></figcaption>
+        </figure>
+      </div>
+
+      <details id="reviews">
+        <summary>過去の確認ページ</summary>
+        <div class="reviews">
+          <div>
+            <h3>11月25日・24日</h3>
+            <ul>
+              <li><a href="../artifacts/region-map/review-20261125-naming-system/index.html">命名の第3版</a></li>
+              <li><a href="../artifacts/region-map/review-20261124-sound/index.html">仮の音が鳴る場所</a></li>
+              <li><a href="../artifacts/region-map/review-20261124-stage6-plan/index.html">段6の目的と見返りの案</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3>11月23日</h3>
+            <ul>
+              <li><a href="../artifacts/region-map/review-20261123-naming/index.html">命名の第2版</a></li>
+              <li><a href="../artifacts/region-map/review-20261123-naming-display/index.html">名前の出し方</a></li>
+              <li><a href="../artifacts/region-map/review-20261123-motion/index.html">動きの案</a> · <a href="../artifacts/region-map/review-20261123-motion-impl/index.html">動きの実装</a></li>
+              <li><a href="../artifacts/region-map/review-20261123-search/index.html">サーチの案</a> · <a href="../artifacts/region-map/review-20261123-search-impl/index.html">遠征の試作</a></li>
+              <li><a href="../artifacts/region-map/review-20261123-r1/index.html">山頂のモノリスの計画</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3>11月22日・21日</h3>
+            <ul>
+              <li><a href="../artifacts/region-map/review-20261122-r10/index.html">探索画面の拡大</a></li>
+              <li><a href="../artifacts/region-map/review-20261122-r9/index.html">巨大構造物の制作計画</a></li>
+              <li><a href="../artifacts/region-map/review-20261122-r8/index.html">命名の最初の版</a></li>
+              <li><a href="../artifacts/region-map/review-20261122-r7/index.html">拡大した地形・構造物・呼び名</a></li>
+              <li><a href="../artifacts/region-map/review-20261122-r6/index.html">エリア・地点の根拠・雲</a></li>
+              <li><a href="../artifacts/region-map/review-20261122-r5/index.html">全面地図の探索画面</a> · <a href="../artifacts/region-map/review-20261122-screen/index.html">比較画面</a></li>
+              <li><a href="../artifacts/region-map/review-20261122-r4/index.html">雲・待ち時間・画面ラフ</a></li>
+              <li><a href="../artifacts/region-map/review-20261121/index.html">地域鳥瞰図と探索画面</a> · <a href="../artifacts/region-map/review-20261121-r2/index.html">衛星写真風の第2版</a></li>
+            </ul>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section class="section" id="progress" aria-labelledby="progress-heading">
+      <h2 id="progress-heading">進捗履歴</h2>
+      <div class="timeline">
+        <table aria-labelledby="progress-heading">
+          <thead><tr><th scope="col">日付</th><th scope="col">内容</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><time datetime="2026-11-25">2026-11-25</time></th><td>湖の修正と3D砂岩試作を統合。Unity 6000.3.6f1 で EditMode 666/666、PlayMode 9/9。 <a href="https://github.com/YuShimoji/VastCore/commit/2e4ac8ba58ab719ac907826abef59ecfe25dfbc2">統合コミット</a></td></tr>
+            <tr><th scope="row"><time datetime="2026-11-25">2026-11-25</time></th><td>平野の窪地を湖として保持。3D試作で砂岩の地層・植生・崖下のくぼみを二地点で比較。 <a href="#lakes">湖の比較</a> · <a href="#sandstone">砂岩の比較</a></td></tr>
+            <tr><th scope="row"><time datetime="2026-11-25">2026-11-25</time></th><td>探索画面で ×512 まで拡大し、×128 から街区の細部へ切替。命名の第3版で名前の意味の重複を修正。 <a href="#modern-city">街区</a> · <a href="#naming">命名</a></td></tr>
+            <tr><th scope="row"><time datetime="2026-11-24">2026-11-24</time></th><td>現代試作で2都市・幹線・空港・郊外を配置。地形と風に応じた雲・雨をプレビューで試作。 <a href="#modern-region">現代試作</a> · <a href="#weather">天候</a></td></tr>
+            <tr><th scope="row"><time datetime="2026-11-24">2026-11-24</time></th><td>依頼の訂正により地形と鳥瞰図を主軸へ。動き・音・遠征の規則・名前の表示・段6は保留。 <a href="USER_REQUEST_LEDGER.md">依頼と回答の記録</a></td></tr>
+            <tr><th scope="row"><time datetime="2026-11-23">2026-11-23</time></th><td>命名の第2版、探索時の動き、遠征の規則を試作。 <a href="#reviews">当時の確認ページ</a></td></tr>
+            <tr><th scope="row"><time datetime="2026-11-22">2026-11-22</time></th><td>全面地図の探索画面にエリア・地点の根拠・雲の流れを追加。拡大時に細部地形へ切り替える表示を試作。 <a href="#earlier-zoom">拡大画面</a></td></tr>
+            <tr><th scope="row"><time datetime="2026-11-21">2026-11-21</time></th><td>seed から地域の鳥瞰図を生成し、その地図上で探索する SP-021 を開始。 <a href="#satellite">鳥瞰図</a></td></tr>
+            <tr><th scope="row"><time datetime="2026-11-01">2026-11-01</time></th><td>Arch 生成・Export・配置を修正。修正版の通常 GUI を通した一連の確認は保留。 <a href="#arch">制作ツールの画面</a> · <a href="restart/VC_RESTART_20261101_HISTORY.md">再開履歴</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <nav class="wrap" aria-label="関連資料">
+      <a href="runtime-state.md">現在地</a>
+      <a href="02_design/REGION_MAP_EXPLORATION_SPEC.md">SP-021 仕様</a>
+      <a href="02_design/REGION_MAP_EXPLORATION_HISTORY.md">SP-021 の詳細履歴</a>
+      <a href="project-context.md">プロジェクト全体の開発経緯</a>
+      <a href="https://github.com/YuShimoji/VastCore/issues/48">Project Pulse</a>
+      <a href="NAV.md">文書索引</a>
+    </nav>
+  </footer>
+
+  <script>
+    const filters = document.querySelector('.filters');
+    const buttons = Array.from(filters.querySelectorAll('button'));
+    const figures = Array.from(document.querySelectorAll('.gallery figure'));
+    const count = document.querySelector('#gallery-count');
+
+    function showCategory(category) {
+      let visible = 0;
+      for (const figure of figures) {
+        figure.hidden = category !== 'all' && figure.dataset.category !== category;
+        if (!figure.hidden) visible++;
+      }
+      for (const button of buttons) {
+        button.setAttribute('aria-pressed', String(button.dataset.filter === category));
+      }
+      count.textContent = `${visible}件。`;
+    }
+
+    function revealTarget(hash) {
+      const target = document.getElementById(hash.slice(1));
+      if (!target) return;
+      if (target.matches('details')) target.open = true;
+      if (target.matches('figure') && target.hidden) {
+        showCategory(target.dataset.category);
+        target.scrollIntoView();
+      }
+    }
+
+    for (const button of buttons) {
+      button.addEventListener('click', () => showCategory(button.dataset.filter));
+    }
+    for (const link of document.querySelectorAll('a[href^="#"]')) {
+      link.addEventListener('click', () => revealTarget(link.hash));
+    }
+    for (const img of document.querySelectorAll('.thumb img')) {
+      const showMissing = () => {
+        const link = img.parentElement;
+        link.removeAttribute('href');
+        link.classList.add('missing');
+        link.textContent = 'この端末に画像ファイルがありません';
+      };
+      if (img.complete && img.naturalWidth === 0) showMissing();
+      else img.addEventListener('error', showMissing, { once: true });
+    }
+    showCategory('all');
+    filters.hidden = false;
+    revealTarget(location.hash);
+    window.addEventListener('hashchange', () => revealTarget(location.hash));
+  </script>
+</body>
+</html>

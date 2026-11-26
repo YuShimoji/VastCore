@@ -174,8 +174,10 @@ namespace Vastcore.RegionMap
             var moisture = new float[count];
             var isLand = new bool[count];
             var source = new int[count];
-            float lakeLevel = region.LakeSurfaceLevel;
-            float[] lakeBank = float.IsNaN(lakeLevel) ? null : new float[count];
+            // 湖は湖ごとに水面が違う。窓の中の湖の水面を周りのセルへ広げ、岸の位置を「水面からの高さ」で補間する
+            float[] lakeLevel = region.RetainedLakes ? new float[count] : null;
+            bool[] lakeKnown = region.RetainedLakes ? new bool[count] : null;
+            bool anyLake = false;
             float riverThreshold = RegionGenerator.RiverThreshold(region);
 
             for (int y = 0; y < h; y++)
@@ -193,10 +195,25 @@ namespace Vastcore.RegionMap
                     landHeight[i] = value > 0f ? value : 0f;
                     seaDepth[i] = value > 0f ? 0f : -value;
                     ground[i] = value > 0f ? value : 0f;
-                    if (lakeBank != null)
-                        lakeBank[i] = region.LakeDepth[r] > 0f ? region.LakeDepth[r] : -Math.Max(0.1f, Math.Abs(value - lakeLevel));
+                    if (lakeLevel != null && region.LakeDepth[r] > 0f)
+                    {
+                        lakeLevel[i] = value + region.LakeDepth[r];
+                        lakeKnown[i] = true;
+                        anyLake = true;
+                    }
                     temperature[i] = region.Temperature[r];
                     moisture[i] = region.Moisture[r];
+                }
+            }
+            float[] lakeBank = null;
+            if (anyLake)
+            {
+                SpreadKnown(lakeLevel, lakeKnown, w, h);
+                lakeBank = new float[count];
+                for (int i = 0; i < count; i++)
+                {
+                    int r = source[i];
+                    lakeBank[i] = region.LakeDepth[r] > 0f ? region.LakeDepth[r] : -Math.Max(0.1f, Math.Abs(region.Height[r] - lakeLevel[i]));
                 }
             }
             // 海のセルへ岸の標高を、陸のセルへ岸の水深を広げておく（補間が海岸をまたいでも値が飛ばないように）
@@ -226,7 +243,7 @@ namespace Vastcore.RegionMap
             float[] water = data.WaterCoverage;
             float detailThreshold = RegionGenerator.RiverThreshold(data);
             float roughness = spec.Roughness;
-            data.LakeSurfaceLevel = lakeLevel;
+            data.RetainedLakes = anyLake;
 
             // 地層の段（段階 B）。層は少し傾いていて、傾きの向きは地域ごとに seed で決まる
             float strataAmount = spec.Strata;
@@ -335,7 +352,7 @@ namespace Vastcore.RegionMap
                         float depth = Bilinear(lakeBank, w, h, qx, qy);
                         if (depth > 0f)
                         {
-                            value = lakeLevel - depth;
+                            value = Bilinear(lakeLevel, w, h, qx, qy) - depth;
                             data.LakeDepth[i] = depth;
                             water[i] = 1f;
                         }
@@ -782,6 +799,49 @@ namespace Vastcore.RegionMap
                 }
             }
             return edge < float.MaxValue;
+        }
+
+        /// <summary>known のセルの値を、全部のセルが埋まるまで隣の平均で広げる（窓の中の湖の水面を岸の外へ広げる用）。</summary>
+        private static void SpreadKnown(float[] values, bool[] known, int w, int h)
+        {
+            int count = w * h;
+            var next = new float[count];
+            var nextKnown = new bool[count];
+            for (bool changed = true; changed;)
+            {
+                changed = false;
+                Array.Copy(values, next, count);
+                Array.Copy(known, nextKnown, count);
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        int i = x + y * w;
+                        if (known[i]) continue;
+                        float sum = 0f;
+                        int found = 0;
+                        for (int dy = -1; dy <= 1; dy++)
+                        {
+                            for (int dx = -1; dx <= 1; dx++)
+                            {
+                                int nx = x + dx;
+                                int ny = y + dy;
+                                if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+                                int j = nx + ny * w;
+                                if (!known[j]) continue;
+                                sum += values[j];
+                                found++;
+                            }
+                        }
+                        if (found == 0) continue;
+                        next[i] = sum / found;
+                        nextKnown[i] = true;
+                        changed = true;
+                    }
+                }
+                Array.Copy(next, values, count);
+                Array.Copy(nextKnown, known, count);
+            }
         }
 
         /// <summary>fill が true なら海のセルへ、false なら陸のセルへ、隣の値の平均を 2 回広げる。</summary>

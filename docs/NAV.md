@@ -1,7 +1,7 @@
 # NAV.md - VastCore document map
 
 Use this file when you are unsure where to look. It is an index, not a source of
-truth for rules, status, or implementation details. Updated 2026-11-21.
+truth for rules, status, or implementation details. Updated 2026-11-26.
 
 ## Normal Restart
 
@@ -29,6 +29,7 @@ On hold (not the next work unless the user reopens it): SP-017 Arch round trip
 
 ## Core Owners
 
+- [スクリーンショットと進捗](project-gallery.html) — ブラウザーで開く画像一覧・確認ページ・開発履歴
 - Product purpose and world-level priority: `docs/SSOT_WORLD.md`
 - Current state and active bottleneck: `docs/runtime-state.md`
 - Public current-state projection: pinned GitHub Issue

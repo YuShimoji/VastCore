@@ -48,8 +48,8 @@ namespace Vastcore.RegionMap
         /// <summary>湖の深さ（m）。湖でなければ 0。</summary>
         public readonly float[] LakeDepth;
 
-        // 広域と拡大で共有する、保持した湖の水面標高。
-        internal float LakeSurfaceLevel = float.NaN;
+        // 侵食の前の窪地から残した湖がある（湖ごとの水面は 地面 + LakeDepth）。広域と拡大で同じ水面を使う。
+        internal bool RetainedLakes;
 
         public readonly RegionBiome[] Biome;
 
