@@ -21,6 +21,9 @@ namespace Vastcore.RegionMap.Editor
         /// <summary>塊の雲の層の底と頂（地面から、m）。</summary>
         public const float CloudBase = 1500f, CloudTop = 5000f;
 
+        /// <summary>高い薄雲（2D の地図の上の層）の平らな層の高さ（地面から、m）。</summary>
+        public const float HighCloudHeight = 9000f;
+
         /// <summary>
         /// 雲が地平線へ向けて空の色に溶け、ほぼ見えなくなる水平の距離（m）。雲を置く範囲の端（中心から 80 km）に合わせる。
         /// Weather Maker の既定（層の厚さの 8 倍＝約 24 km を基準に溶ける）では、10 km 先の雲が 3 割ほどの濃さになり 17 km 先でほぼ消えるので、
@@ -108,13 +111,21 @@ namespace Vastcore.RegionMap.Editor
             float[] high;
             RegionCloudSky.Build(spec, out low, out high);
             var pixels = new Color[low.Length];
-            for (int i = 0; i < pixels.Length; i++) pixels[i] = RegionWeatherMaker.CloudMapPixel(low[i]);
+            for (int i = 0; i < pixels.Length; i++) pixels[i] = RegionWeatherMaker.CloudMapPixel(HighOnly ? 0f : low[i]);
             var map = new Texture2D(spec.Resolution, spec.Resolution, TextureFormat.RGBAHalf, false, true)
             {
                 name = "Region Cloud Map", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, hideFlags = HideFlags.DontSave,
             };
             map.SetPixels(pixels);
             map.Apply(false, false);
+            var highPixels = new Color[high.Length];
+            for (int i = 0; i < highPixels.Length; i++) highPixels[i] = RegionWeatherMaker.HighCloudPixel(high[i]);
+            var highMap = new Texture2D(spec.Resolution, spec.Resolution, TextureFormat.RGBA32, false, true)
+            {
+                name = "Region High Cloud Map", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, hideFlags = HideFlags.DontSave,
+            };
+            highMap.SetPixels(highPixels);
+            highMap.Apply(false, false);
 
             float ground = look.Scene.HeightAt(look.Scene.CenterX, look.Scene.CenterZ);
             var boxObject = new GameObject("Region Cloud Box");
@@ -122,7 +133,8 @@ namespace Vastcore.RegionMap.Editor
             var box = boxObject.AddComponent<BoxCollider>();
             box.isTrigger = true;
             box.size = new Vector3(spec.Size, CloudTop - CloudBase, spec.Size);
-            RegionWeatherMaker.SetClouds(map, box, FindAsset<ScriptableObject>(CloudProfileName, "ScriptableObject"), ground + CloudBase, ground + CloudTop, CloudFadeMeters);
+            RegionWeatherMaker.SetClouds(map, box, FindAsset<ScriptableObject>(CloudProfileName, "ScriptableObject"), ground + CloudBase, ground + CloudTop, CloudFadeMeters,
+                                       highMap, ground + HighCloudHeight);
             Debug.Log("[RegionMap] 空 Weather Maker: 太陽 " + atmosphere.SunAltitudeDegrees + " 度（北西）、雲 2D の地図と同じ（seed " + spec.RegionSeed +
                       "、時刻 " + cloudTime + " 秒、" + (spec.Size / 1000f) + " km 四方、雲が見える割合 " + RegionClouds.Coverage(low, 0.1f).ToString("0.00") +
                       "、" + watch.ElapsedMilliseconds + " ms）");
@@ -238,8 +250,16 @@ namespace Vastcore.RegionMap.Editor
         }
 
 
-        // 地上から見上げた空を雲の高さの平面へ投影する範囲（中心から各辺まで、m）と、平面の高さ（地面から）
-        private const float CompareHalf = 15000f, ComparePlane = 2500f;
+        // 地上から見上げた空を雲の高さの平面へ投影する範囲（中心から各辺まで、m）と、平面の高さ（地面から）。
+        // 地上から見えるのは雲の底なので、平面は層の底に置く（底より上に置くと、遠い雲ほど外へずれて絵からはみ出す）
+        private const float ComparePlane = CloudBase;
+        // 高い薄雲（9 km）だけの見比べでは、地平線の近くに見える 50〜80 km 先まで入るよう広げる
+        private static float CompareHalf => HighOnly ? 60000f : 15000f;
+
+        /// <summary>
+        /// 撮影の指定 -skyLayer high で、塊の雲を空にして高い薄雲だけを描き、見比べの絵を薄雲の高さ・2D の上の層で作る（薄雲の位置の確かめ）。
+        /// </summary>
+        private static bool HighOnly => RegionMapMenu.Argument("-skyLayer", "both") == "high";
         private const int FaceSize = 1024, CompareSize = 900;
         // 5 方向の絵は隣と重なるように 90 度より広く撮り、重なりの中で混ぜてつなぎ目を消す
         private const float FaceFov = 120f;
@@ -322,7 +342,7 @@ namespace Vastcore.RegionMap.Editor
                 for (int i = 0; i < CompareSize; i++)
                 {
                     // 行 0 が南（画像は下の行から並ぶ）、列 0 が西
-                    var point = new Vector3(eye.x + Offset(i), ground + ComparePlane, eye.z + Offset(j));
+                    var point = new Vector3(eye.x + Offset(i), ground + (HighOnly ? HighCloudHeight : ComparePlane), eye.z + Offset(j));
                     // 写っている方向の絵を、枠の端から重なりの幅の中で 0 へ下がる重みで混ぜる
                     float overlap = 1f - Mathf.Tan(45f * Mathf.Deg2Rad) / Mathf.Tan(FaceFov * 0.5f * Mathf.Deg2Rad);
                     Color sum = Color.clear;
@@ -356,7 +376,8 @@ namespace Vastcore.RegionMap.Editor
                     float low;
                     float high;
                     RegionCloudSky.SampleAt(spec, eye.x + Offset(i), eye.z + Offset(j), out low, out high);
-                    byte value = (byte)(RegionWeatherMaker.CloudMapPixel(low).r * 255f);
+                    float amount = HighOnly ? RegionWeatherMaker.HighCloudPixel(high).a : RegionWeatherMaker.CloudMapPixel(low).r;
+                    byte value = (byte)(amount * 255f);
                     cover[i + j * CompareSize] = new Color32(value, value, value, 255);
                 }
             }

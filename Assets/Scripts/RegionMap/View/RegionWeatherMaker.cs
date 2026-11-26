@@ -172,17 +172,40 @@ namespace Vastcore.RegionMap
         /// 地平線へ向けて雲が空の色へ溶ける距離を fadeMeters（この距離でほぼ消える）にする。すぐに切り替える（既定の切り替えは 5 秒かける）。
         /// 層の高さは箱ではなく設定で決まる（惑星の半径を持つ設定では、箱は地図を貼る水平の範囲にだけ使われる）。
         /// </summary>
-        public static void SetClouds(Texture2D map, BoxCollider box, ScriptableObject cloudProfile, float baseHeight, float topHeight, float fadeMeters)
+        public static void SetClouds(Texture2D map, BoxCollider box, ScriptableObject cloudProfile, float baseHeight, float topHeight, float fadeMeters,
+                                     Texture2D highMap, float highHeight)
         {
             var profile = UnityEngine.Object.Instantiate(cloudProfile);
             profile.hideFlags = HideFlags.DontSave;
             var layer = UnityEngine.Object.Instantiate((ScriptableObject)Get(profile, "CloudLayerVolumetric1"));
             layer.hideFlags = HideFlags.DontSave;
             Set(profile, "CloudLayerVolumetric1", layer);
+            // 設定の値の多くは範囲で、使う度に乱数で選ばれる。撮る度に空が変わらないよう、範囲の中ほどに固定する。
+            // 雲の地図を外から渡すので、雲の量は地図の R だけで決まる（設定の CloudCover・CloudDensity・CloudType・CloudNoiseShapeScalar は
+            // 上端・下端に変えても絵が変わらなかった。2026-11-26 m8a・m9・m10）。量は CloudMapPixel で合わせる
+            PinRanges(profile);
+            PinRanges(layer);
             SetRange(profile, "CloudHeight", baseHeight);
             SetRange(profile, "CloudHeightTop", topHeight);
             // 溶け始めの距離は (層の厚さ × この倍率)。地平線の溶け方（CloudHorizonFade）の既定では、その 2/3 ほどでほぼ消える
             Set(layer, "CloudOpticalDistanceMultiplier", Mathf.Clamp(fadeMeters * 1.5f / Mathf.Max(topHeight - baseHeight, 1f), 1f, 100f));
+
+            // 高い薄雲は、塊の雲と一緒に描かれる平らな層（4 番。この設定で塊の雲と重ねて描く層）に、2D の上の層の不透明さを貼る。
+            // 平らな層の模様の位置は (世界の位置 + ずれ) × 倍率 ÷ 層の高さ なので、倍率を 層の高さ ÷ 範囲 にし、ずれを範囲の南西の角へ合わせる
+            Bounds bounds = box.bounds;
+            var high = UnityEngine.Object.Instantiate((ScriptableObject)Get(profile, "CloudLayer4"));
+            high.hideFlags = HideFlags.DontSave;
+            Set(profile, "CloudLayer4", high);
+            PinRanges(high);
+            Set(high, "CloudNoise", highMap);
+            Set(high, "CloudNoiseVelocity", Vector3.zero);
+            SetRange(high, "CloudNoiseRotation", 0f);
+            SetRange(high, "CloudNoiseScale", highHeight / bounds.size.x);
+            SetRange(high, "CloudNoiseAdder", 0f);
+            SetRange(high, "CloudNoiseMultiplier", 1f);
+            SetRange(high, "CloudNoiseDither", 0f);
+            SetRange(high, "CloudCover", 1f);
+            SetRange(high, "CloudHeight", highHeight);
 
             UnityEngine.Object clouds = Instance("WeatherMakerFullScreenCloudsScript");
             Set(clouds, "WeatherMapOverride", map);
@@ -191,10 +214,28 @@ namespace Vastcore.RegionMap
                 new[] { profile.GetType(), typeof(float), typeof(float), typeof(string) });
             if (show == null) throw new MissingMethodException("WeatherMakerFullScreenCloudsScript.ShowCloudsAnimated");
             show.Invoke(clouds, new object[] { profile, 0f, 0f, null });
+            // ずれは切り替えの時に前の設定から写されるので、切り替えた後に置く（速さは 0 なので動かない）
+            FieldInfo offset = profile.GetType().GetField("cloudNoiseVelocityAccum4", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (offset == null) throw new MissingMemberException(profile.GetType().Name, "cloudNoiseVelocityAccum4");
+            offset.SetValue(profile, new Vector3(-bounds.min.x, 0f, -bounds.min.z));
         }
 
-        /// <summary>雲の量が 1 になる 2D の雲の濃さ（0.42 は 2D の地図で雲が不透明になる濃さ。RegionClouds.Shade）。</summary>
-        public static float CoverFullDensity = 0.42f;
+        /// <summary>2D の高い薄雲の濃さから、平らな雲の層の 1 画素（A が雲の量）。2D の地図の不透明さ（RegionClouds.Shade）と同じ。</summary>
+        public static Color HighCloudPixel(float density)
+        {
+            float a = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(density / MapOpaqueDensity)) * 0.93f;
+            return new Color(1f, 1f, 1f, a);
+        }
+
+        /// <summary>2D の地図で雲が不透明になる濃さ（RegionClouds.Shade）。</summary>
+        public const float MapOpaqueDensity = 0.42f;
+
+        /// <summary>
+        /// 塊の雲の地図の量（R）が 1 になる 2D の雲の濃さ。Weather Maker は形の雑音が (1 − 量) を超える所だけを雲にするので、
+        /// 2D の不透明さ（MapOpaqueDensity）と同じ写し方では雲が 2D の 3 分の 1 ほどになる。0.25 で、場面の周り 30 km 四方の雲の割合が
+        /// 2D とほぼ同じになった（中央 2D 0.55・3D 0.48、外周 0.30・0.31。2026-11-26 m13）。
+        /// </summary>
+        public static float CoverFullDensity = 0.25f;
 
         /// <summary>
         /// 2D の雲の濃さ（RegionCloudSky の低い雲）から雲の地図の 1 画素を作る。
@@ -251,6 +292,19 @@ namespace Vastcore.RegionMap
             FieldInfo field = type.GetField(name, BindingFlags.Public | BindingFlags.Instance);
             if (field == null) throw new MissingMemberException(type.Name, name);
             field.SetValue(target, Convert(value, field.FieldType));
+        }
+
+        // 範囲の値（RangeOfFloats）を全部、範囲の中ほどに固定する
+        private static void PinRanges(object target)
+        {
+            foreach (FieldInfo field in target.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (field.FieldType.Name != "RangeOfFloats") continue;
+                object range = field.GetValue(target);
+                float min = (float)field.FieldType.GetField("Minimum").GetValue(range);
+                float max = (float)field.FieldType.GetField("Maximum").GetValue(range);
+                SetRange(target, field.Name, (min + max) * 0.5f);
+            }
         }
 
         // 範囲の値（RangeOfFloats。最小と最大から乱数で選ぶ）を、1 つの値に固定する

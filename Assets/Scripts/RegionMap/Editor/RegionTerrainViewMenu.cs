@@ -233,7 +233,8 @@ namespace Vastcore.RegionMap.Editor
         {
             string timeArgument = RegionMapMenu.Argument("-cloudTime", "auto");
             bool compare = RegionMapMenu.Argument("-skyCompare", "false") == "true";
-            RegionWeatherMaker.CoverFullDensity = float.Parse(RegionMapMenu.Argument("-cloudCoverFull", "0.42"), CultureInfo.InvariantCulture);
+            RegionWeatherMaker.CoverFullDensity = float.Parse(RegionMapMenu.Argument("-cloudCoverFull",
+                RegionWeatherMaker.CoverFullDensity.ToString(CultureInfo.InvariantCulture)), CultureInfo.InvariantCulture);
             var steps = new RegionEditorSteps();
             RegionTerrainView.LookResult look = null;
             Camera camera = null;
