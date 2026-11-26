@@ -12,6 +12,15 @@ namespace Vastcore.RegionMap
     /// </summary>
     public sealed class RegionAtmosphere
     {
+        /// <summary>カメラの後処理を切り替え、前の状態を返す（後処理の前の HDR の値を読む計測用）。</summary>
+        public static bool SetPostProcessing(Camera camera, bool on)
+        {
+            UniversalAdditionalCameraData data = camera.GetUniversalAdditionalCameraData();
+            bool previous = data.renderPostProcessing;
+            data.renderPostProcessing = on;
+            return previous;
+        }
+
         public enum Preset
         {
             /// <summary>澄んだ午後。太陽 38 度、薄い青い霞、色は素直。現地写真に近い記録の見え方</summary>

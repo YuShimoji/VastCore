@@ -199,10 +199,8 @@ namespace Vastcore.RegionMap
             PinRanges(layer);
             SetRange(profile, "CloudHeight", baseHeight);
             SetRange(profile, "CloudHeightTop", topHeight);
-            // 雲に当たる空からの光（素材の既定は空 2・地面 1 倍）を弱め、太陽の光（既定 3 倍）を強めて、太陽の光の色が雲に出るようにする。
-            // 既定のままでは空の青い光が勝ち、夕方も雲が白か灰色のままだった（2026-11-27 m30・m33）
-            Set(layer, "CloudAmbientSkyIntensity", (float)Get(layer, "CloudAmbientSkyIntensity") * CloudAmbientScale);
-            Set(layer, "CloudAmbientGroundIntensity", (float)Get(layer, "CloudAmbientGroundIntensity") * CloudAmbientScale);
+            // 太陽の光（素材の既定 3 倍）を強めて、太陽の光の色が雲に出るようにする。空・地面からの光（既定 2・1 倍）は素材のまま。
+            // 空からの光を 0.25 倍にすると夕方の雲が煤のような暗い塊になり、暖かさは R/B 1.10 → 1.12 しか増えなかった（2026-11-27 m35）
             Set(layer, "CloudDirLightMultiplier", (float)Get(layer, "CloudDirLightMultiplier") * CloudSunScale);
             // 溶け始めの距離は (層の厚さ × この倍率)。地平線の溶け方（CloudHorizonFade）の既定では、その 2/3 ほどでほぼ消える
             Set(layer, "CloudOpticalDistanceMultiplier", Mathf.Clamp(fadeMeters * 1.5f / Mathf.Max(topHeight - baseHeight, 1f), 1f, 100f));
@@ -260,9 +258,6 @@ namespace Vastcore.RegionMap
         /// 本人は 2D の雲の量より形を選んだ（2026-11-27）。雲のある場所は 2D と同じまま。
         /// </summary>
         public static float CoverMax = 0.8f;
-
-        /// <summary>雲に当たる空からの光の倍率（素材の設定に掛ける）。</summary>
-        public static float CloudAmbientScale = 0.25f;
 
         /// <summary>雲に当たる太陽の光の倍率（素材の設定に掛ける）。</summary>
         public static float CloudSunScale = 1.6f;

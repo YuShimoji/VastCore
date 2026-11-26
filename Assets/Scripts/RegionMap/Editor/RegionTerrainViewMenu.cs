@@ -351,6 +351,7 @@ namespace Vastcore.RegionMap.Editor
             string timeArgument = RegionMapMenu.Argument("-cloudTime", "auto");
             bool compare = RegionMapMenu.Argument("-skyCompare", "false") == "true";
             bool sunView = RegionMapMenu.Argument("-sunView", "false") == "true";
+            bool hdrProbe = RegionMapMenu.Argument("-hdrProbe", "false") == "true";
             RegionWeatherMaker.CoverFullDensity = float.Parse(RegionMapMenu.Argument("-cloudCoverFull",
                 RegionWeatherMaker.CoverFullDensity.ToString(CultureInfo.InvariantCulture)), CultureInfo.InvariantCulture);
             var steps = new RegionEditorSteps();
@@ -384,6 +385,7 @@ namespace Vastcore.RegionMap.Editor
                         Capture(camera, null, null);
                     });
                     steps.Add(() => Capture(camera, folder, "look-" + view.Name + ".png"));
+                    if (hdrProbe && view.Name == "mid") steps.Add(() => ProbeHdr(camera, atmosphere.Name + " 中景"));
                 }
                 if (sunView)
                 {
@@ -409,6 +411,7 @@ namespace Vastcore.RegionMap.Editor
                         Capture(camera, null, null);
                     });
                     steps.Add(() => Capture(camera, folder, "look-sun.png"));
+                    if (hdrProbe) steps.Add(() => ProbeHdr(camera, atmosphere.Name + " 太陽側"));
                 }
                 if (compare) RegionLookSky.AddComparisonSteps(steps, () => camera, () => look, () => cloudTime, folder);
             }
@@ -655,6 +658,82 @@ namespace Vastcore.RegionMap.Editor
             RegionTerrainView.Place(camera.transform, result, yawOffset, pitch, distance);
             Capture(camera, output, name);
         }
+
+        /// <summary>
+        /// 後処理の前（HDR・線形の値）と後（PNG と同じ sRGB の値）で、同じ画素を比べてログに書く。画面の上 1/4 のうち、
+        /// 後処理の後で最も明るい 5% の画素（明るい雲）の平均を出す。明るい雲の色が後処理で白へ寄っているかを確かめる計測。
+        /// 雲は前の絵を使って描くので、どちらも 2 回描いて 2 回目を読む。
+        /// </summary>
+        private static void ProbeHdr(Camera camera, string label)
+        {
+            const int width = 1600, height = 900;
+            var hdr = new RenderTexture(width, height, 24, RenderTextureFormat.ARGBHalf) { antiAliasing = 4 };
+            var ldr = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
+            var hdrImage = new Texture2D(width, height, TextureFormat.RGBAHalf, false, true);
+            var ldrImage = new Texture2D(width, height, TextureFormat.RGB24, false);
+            RenderTexture previous = RenderTexture.active;
+            bool post = RegionAtmosphere.SetPostProcessing(camera, false);
+            try
+            {
+                camera.targetTexture = hdr;
+                camera.Render();
+                camera.Render();
+                RenderTexture.active = hdr;
+                hdrImage.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                hdrImage.Apply();
+                RegionAtmosphere.SetPostProcessing(camera, post);
+                camera.targetTexture = ldr;
+                camera.Render();
+                camera.Render();
+                RenderTexture.active = ldr;
+                ldrImage.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                ldrImage.Apply();
+            }
+            finally
+            {
+                RegionAtmosphere.SetPostProcessing(camera, post);
+                RenderTexture.active = previous;
+                camera.targetTexture = null;
+                hdr.Release();
+                ldr.Release();
+                UnityEngine.Object.DestroyImmediate(hdr);
+                UnityEngine.Object.DestroyImmediate(ldr);
+            }
+            Color[] before = hdrImage.GetPixels();
+            Color32[] after = ldrImage.GetPixels32();
+            UnityEngine.Object.DestroyImmediate(hdrImage);
+            UnityEngine.Object.DestroyImmediate(ldrImage);
+
+            // 読んだ画像の行 0 は下端。上 1/4 は行 height*3/4 から上
+            var top = new List<int>();
+            for (int y = height * 3 / 4; y < height; y++)
+                for (int x = 0; x < width; x++) top.Add(y * width + x);
+            top.Sort((a, b) => Luma(after[b]).CompareTo(Luma(after[a])));
+            int count = Mathf.Max(1, top.Count / 20);
+            Vector3 sumBefore = Vector3.zero, sumAfter = Vector3.zero;
+            float maxBefore = 0f;
+            int over = 0;
+            for (int i = 0; i < count; i++)
+            {
+                Color b = before[top[i]];
+                Color32 a = after[top[i]];
+                sumBefore += new Vector3(b.r, b.g, b.b);
+                sumAfter += new Vector3(a.r, a.g, a.b);
+                float m = Mathf.Max(b.r, Mathf.Max(b.g, b.b));
+                maxBefore = Mathf.Max(maxBefore, m);
+                if (m > 1f) over++;
+            }
+            Vector3 meanBefore = sumBefore / count, meanAfter = sumAfter / count;
+            Color afterLinear = new Color(meanAfter.x / 255f, meanAfter.y / 255f, meanAfter.z / 255f).linear;
+            Debug.Log("[RegionMap] HDR の計測 " + label + "：上 1/4 の明るい 5%（" + count + " 画素）。後処理の前（線形）RGB (" +
+                      meanBefore.x.ToString("0.000") + ", " + meanBefore.y.ToString("0.000") + ", " + meanBefore.z.ToString("0.000") + ") R/B " +
+                      (meanBefore.x / Mathf.Max(meanBefore.z, 1e-4f)).ToString("0.00") + "・最大 " + maxBefore.ToString("0.00") + "・1 を超える画素 " +
+                      (100f * over / count).ToString("0") + "%。後処理の後（sRGB）RGB (" + meanAfter.x.ToString("0") + ", " + meanAfter.y.ToString("0") + ", " +
+                      meanAfter.z.ToString("0") + ") R/B " + (meanAfter.x / Mathf.Max(meanAfter.z, 1e-4f)).ToString("0.00") + "・線形に直すと R/B " +
+                      (afterLinear.r / Mathf.Max(afterLinear.b, 1e-4f)).ToString("0.00"));
+        }
+
+        private static float Luma(Color32 c) => 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
 
         /// <summary>カメラの絵を 1600×900 で描き、output のフォルダへ name で書き出す。name が null なら、描くだけで書き出さない。</summary>
         internal static void Capture(Camera camera, string output, string name, int width = 1600, int height = 900)
