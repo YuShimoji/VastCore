@@ -169,6 +169,10 @@ seed 9 の北西側の雲を追った。30km四方の雲濃度と地上投影の
 
 高い薄雲は自作の空で低い雲を隠し、同じ2時刻を120km四方で撮影した。225²に縮小した濃度画像と高さ9kmへの地上投影で、左上基準 (136,183) の33・41画素四方を照合すると、両方で東へ6.40km、南へ1.60km移動した。4か所で移動量の差は東西最大1画素（0.53km）、南北0画素。比較画像の中央列は薄い濃度を読めるよう明るく表示した。Weather Maker での照合は未確認。[上層の比較](../../artifacts/region-map/mesa-cloud-20261126/shared-sampling/high/high-two-times.jpg)・[照合値](../../artifacts/region-map/mesa-cloud-20261126/shared-sampling/high/motion.txt)
 
+崩落岩修正版の自作の空で、seed 9の69秒・75秒を3Dカメラで真上から撮った。照合のため地形を隠し、上下の層を1枚ずつ表示した。低い雲は30km四方・高さ1.95kmの基準面、高い雲は120km四方・高さ9km。225²に縮小し、晴れた空との差と地図の濃度を相関照合。低層の北西の雲は両方で東1.33km・南0.53km、上層の南側の筋は東6.40km・南1.60km移動。69秒の照合窓での位置差は低層最大2画素、高層最大1画素だった。[低層](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/low-comparison.jpg)・[高層](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/high-comparison.jpg)・[照合値](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/measurements.txt)
+
+俯瞰の比較図の地図と地上投影は以前の同じseed・地点・時刻の画像。今回も地上カメラで両方の時刻のシーンを撮影した。地形を含む俯瞰画面で雲と地形を重ねた場合の前後関係、Weather Maker版での比較は未確認。[今回の地上の2時刻](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/ground-comparison.jpg)・[高層の晴天差分](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/high-overhead-signal.jpg)
+
 別地点のseed 8（X82.93144／Y62.38425）でも、PC品質で遠景・中景・崖下を撮影できた。砂・礫の素材は比較用に置き、既定への採用は本人の判断。[seed 8 の遠景・中景・崖下](../../artifacts/region-map/mesa-cloud-20261126/readiness-final-seed8/mesa-views.jpg)
 
 通常の探索メニューから、seed 9の崖下（X43.61／Y76.92、69秒）とseed 8の平地（X82.93144／Y62.38425、75秒）を開いた。各動画は同条件の地図1.5秒とGameビューでカメラを75度回した3秒をつないだもの。Ground054（砂）とGround081（礫）は比較用に適用。自作の空、PC品質、GTX 1650 Ti、1600×900、VSyncなしで撮影前の120フレームを測り、中央値／95パーセンタイルはseed 9で21.44／25.92ms、seed 8で12.61／16.84ms。Unity Editorのフレーム間隔。[崖下の動画](../../artifacts/region-map/mesa-cloud-20261126/normal-route/mesa-route-seed9.mp4)・[平地の動画](../../artifacts/region-map/mesa-cloud-20261126/normal-route/mesa-route-seed8.mp4)
