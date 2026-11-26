@@ -117,7 +117,7 @@ namespace Vastcore.RegionMap.Editor
         /// コマンドライン用。砂岩の台地の場面を、決まった 3 つの視点（遠景・中景・近景）で撮り、
         /// look-far.png・look-mid.png・look-near.png を -regionOut のフォルダへ書き出して終了する。毎回同じ 3 枚になる。
         /// 指定: -regionSeed 9 -regionOut 出力先のフォルダ（画面を使うので -nographics は付けない）
-        /// 空・霞・雲: -lookSky auto（既定。Weather Maker が入っていれば使い、無ければ自作の空と霞）・weathermaker・ours。
+        /// 空・霞・雲: -lookSky auto（既定。Weather Maker が入っていれば使い、無ければ自作の空と霞。砂塵は常に自作）・weathermaker・ours。
         /// Weather Maker の時は -cloudTime（探索画面の雲の時刻、秒。既定 auto は場面の周りに雲と晴れ間が半々に出る時刻）、
         /// -skyCompare true で、見上げた空と同じ範囲の 2D の地図を sky-3d.png・sky-2d.png に並べて撮る。
         /// </summary>
@@ -144,18 +144,21 @@ namespace Vastcore.RegionMap.Editor
                 }
                 // -lookPreset clear,golden,dust のように複数を書くと、条件ごとに場面を作り直して <出力>/<条件> へ撮る
                 string[] presets = RegionMapMenu.Argument("-lookPreset", "clear").Split(',');
+                bool subfolders = presets.Length > 1;
+                // Weather Maker を使う時も、砂塵は自作の空と霞で撮る（RegionLookSky.UsesOwnSky）。自作の分を先に撮り、Weather Maker の分は後の手順で撮る
+                string[] ownSky = presets;
+                string[] weatherMaker = new string[0];
                 if (UseWeatherMaker())
                 {
-                    // 終わると、手順の最後で終了する
-                    CaptureWithWeatherMaker(regionSpec, spec, presets, output);
-                    return;
+                    ownSky = Array.FindAll(presets, RegionLookSky.UsesOwnSky);
+                    weatherMaker = Array.FindAll(presets, name => !RegionLookSky.UsesOwnSky(name));
                 }
-                foreach (string presetName in presets)
+                foreach (string presetName in ownSky)
                 {
                     if (!RegionAtmosphere.TryParse(presetName, out RegionAtmosphere.Preset preset))
                         throw new ArgumentException("-lookPreset は clear・golden・dust: " + presetName);
                     RegionAtmosphere atmosphere = RegionAtmosphere.Create(preset);
-                    string folder = presets.Length > 1 ? Path.Combine(output, atmosphere.Name) : output;
+                    string folder = subfolders ? Path.Combine(output, atmosphere.Name) : output;
                     Directory.CreateDirectory(folder);
                     watch.Restart();
                     RegionTerrainView.LookResult look = CreateLookScene(regionSpec, spec, atmosphere, out Camera camera);
@@ -176,6 +179,12 @@ namespace Vastcore.RegionMap.Editor
                     CaptureSunSweep(camera, look, folder);
                 }
                 RegionVolumePatch.SunAltitudeDegrees = RegionVolumePatch.DefaultSunAltitudeDegrees;
+                if (weatherMaker.Length > 0)
+                {
+                    // 終わると、手順の最後で終了する
+                    CaptureWithWeatherMaker(regionSpec, spec, weatherMaker, subfolders, output);
+                    return;
+                }
             }
             catch (Exception exception)
             {
@@ -229,7 +238,7 @@ namespace Vastcore.RegionMap.Editor
         /// <summary>
         /// Weather Maker の空・霞・雲で撮る。Weather Maker は編集時の更新を回すと落ち着くので、手順を 1 コマずつ進める（RegionEditorSteps）。
         /// </summary>
-        private static void CaptureWithWeatherMaker(RegionSpec regionSpec, RegionLookSpec spec, string[] presets, string output)
+        private static void CaptureWithWeatherMaker(RegionSpec regionSpec, RegionLookSpec spec, string[] presets, bool subfolders, string output)
         {
             string timeArgument = RegionMapMenu.Argument("-cloudTime", "auto");
             bool compare = RegionMapMenu.Argument("-skyCompare", "false") == "true";
@@ -245,7 +254,7 @@ namespace Vastcore.RegionMap.Editor
                 if (!RegionAtmosphere.TryParse(presetName, out RegionAtmosphere.Preset preset))
                     throw new ArgumentException("-lookPreset は clear・golden・dust: " + presetName);
                 RegionAtmosphere atmosphere = RegionAtmosphere.Create(preset);
-                string folder = presets.Length > 1 ? Path.Combine(output, atmosphere.Name) : output;
+                string folder = subfolders ? Path.Combine(output, atmosphere.Name) : output;
                 Directory.CreateDirectory(folder);
                 steps.Add(() =>
                 {

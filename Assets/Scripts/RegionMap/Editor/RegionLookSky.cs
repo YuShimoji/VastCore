@@ -60,6 +60,15 @@ namespace Vastcore.RegionMap.Editor
             EditorApplication.Exit(code);
         }
 
+        /// <summary>
+        /// Weather Maker が使える時も、自作の空と霞で撮る光と空気の条件か（-lookPreset の名前）。砂塵は自作（本人の選択、2026-11-26）。
+        /// Weather Maker の空は砂塵でも晴れと同じに描かれ、空の濁りを上げると太陽の側が青緑に転んだ（m17・m22）。
+        /// </summary>
+        public static bool UsesOwnSky(string presetName)
+        {
+            return RegionAtmosphere.TryParse(presetName, out RegionAtmosphere.Preset preset) && preset == RegionAtmosphere.Preset.DustHaze;
+        }
+
         /// <summary>Weather Maker の素材が、このプロジェクトに入っていて使える状態か。使えない時は理由を返す。</summary>
         public static bool CanUse(out string reason)
         {
