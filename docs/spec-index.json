@@ -340,5 +340,14 @@
     "cat": "core",
     "file": "docs/02_design/REGION_MAP_EXPLORATION_SPEC.md",
     "summary": "seedから地域データ(海陸・侵食・気候・川)を生成し、鳥瞰図(3様式)に描き、探索地点を置き、座標サーチで発見する画面まで。2026-11-21の本人依頼による現行の主作業。段1-4実装済み、見え方と操作感の本人採否は未記録。段5(地点のローカル表示)・段6(ゲーム)は未着手"
+  },
+  {
+    "id": "DS-011",
+    "title": "Environment Props Catalog and Variation Design",
+    "status": "done",
+    "pct": 100,
+    "cat": "system",
+    "file": "docs/02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md",
+    "summary": "Megascans/Skyrim Mod系を分析し体系化した7ドメイン・38原型の環境Propsカタログと制作基準・7軸バリエーションデータ(environment-props-catalog.json)"
   }
 ]
