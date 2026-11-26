@@ -1198,6 +1198,7 @@ runtime-state Next Action 3 の行:
 
 - 3D化の試作・段階 A（PLANNER007、2026-11-25。範囲の外の試作で、採否は本人）：`Core/RegionTerrainMesh.cs`（標高→三角形メッシュ。海は高さ0）と確認用の簡易描画 `TerrainView.cs`（`--view3d`）。seed 9 の広域（頂点26万・三角形52万、高さ3倍）と、都市1・空港の8 km 拡大（頂点105万・三角形209万、高さ2倍）を斜めから出力。建物は地面に描かれたままで高さを持たない。
 - 3D化の試作・段階 B（PLANNER007、2026-11-25。本人は崖の出方に「この方向でよい」と答えた）：拡大した地形に地層の段（`RegionDetailSpec.Strata`、既定 0）。seed 9 の山（X38.8 Y60.9）で、60°を超える陸のセルが 8 km 窓 0.25%→2.23%、2.5 km 窓 0.12%→2.68%、0.5 km 窓 0.05%→4.42%。海陸と川の一致は 100% のまま。標高の差の平均は 8 km 窓 12.0→12.9 m、0.5 km 窓 7.0→20.0 m。段なしの絵は変更前とバイト一致（3視点）。海食崖は出ない（岸のセルが最高 23 m）。真上の地図では、崖は細い点線状の影にしか写らない。Unity 6000.3.6f1 で EditMode 657/657（失敗・skip 0。段階 A・B のテスト各1件を含む）。画像は `artifacts/region-map/3d-prototype-20261125/` と `3d-strata-20261125/`。Unity の Mesh へ渡す View 層は未作成。
+- 3D砂岩（Unity 6000.3.6f1）。seed 9 の植生版は EditMode 665/665・PlayMode 9/9。アルコーブの変更範囲は EditMode 28/28。seed 9 と seed 8 の同視点の前後と裾から棚への各33コマで天井・奥壁・しみ出しの緑・接地を確認。通常 Editor の Game ビューでも中景を確認。変更前の固定3枚は植生版とRGB一致。写真材質は別試験。[二地点の実画面](../../Documentation/mesa-alcove-comparison.jpg)・[移動](../../Documentation/mesa-alcove-walk.mp4)。
 
 ### 出典（2026-11-25 に開いて確かめたもの）
 

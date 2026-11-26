@@ -126,6 +126,7 @@ namespace Vastcore.RegionMap.Editor
                 Directory.CreateDirectory(output);
                 // 最初の 1 枚が、コンパイル待ちの仮の色で写らないようにする
                 ShaderUtil.allowAsyncCompilation = false;
+                UseBuildQuality();
                 var watch = System.Diagnostics.Stopwatch.StartNew();
                 var regionSpec = new RegionSpec { Seed = int.Parse(RegionMapMenu.Argument("-regionSeed", "9")) };
                 var spec = new RegionLookSpec();
@@ -182,6 +183,7 @@ namespace Vastcore.RegionMap.Editor
                 Directory.CreateDirectory(output);
                 // 最初の 1 枚が、コンパイル待ちの仮の色で写らないようにする
                 ShaderUtil.allowAsyncCompilation = false;
+                UseBuildQuality();
                 var watch = System.Diagnostics.Stopwatch.StartNew();
                 var regionSpec = new RegionSpec { Seed = int.Parse(RegionMapMenu.Argument("-regionSeed", "9")) };
                 RegionTerrainView.Result result = CreateScene(regionSpec, new RegionTerrainViewSpec(), out Camera camera);
@@ -196,6 +198,18 @@ namespace Vastcore.RegionMap.Editor
                 exitCode = 1;
             }
             EditorApplication.Exit(exitCode);
+        }
+
+        /// <summary>
+        /// 実行ファイル（Standalone）の既定の品質で撮る。編集時の品質は Mobile（ProjectSettings の m_CurrentQuality 0）で、
+        /// そのままでは描画の縮小 0.8・深度画像なし・SSAO なしの Mobile_RPAsset で写る（2026-11-26 に写しの試験で確かめた）。
+        /// </summary>
+        private static void UseBuildQuality()
+        {
+            int index = Array.IndexOf(QualitySettings.names, "PC");
+            if (index >= 0 && index != QualitySettings.GetQualityLevel()) QualitySettings.SetQualityLevel(index, true);
+            Debug.Log("[RegionMap] 品質 " + QualitySettings.names[QualitySettings.GetQualityLevel()] + "（描画 " +
+                      (UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null ? UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline.name : "なし") + "）");
         }
 
         private static void CaptureLookViews(Camera camera, RegionTerrainView.LookResult look, string output)
