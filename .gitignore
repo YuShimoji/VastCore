@@ -143,3 +143,7 @@ Assembly-CSharp-Editor.csproj
 # Ignore problematic submodules
 Packages/co.parabox.csg/
 doctor_output.json
+
+# Weather Maker (purchased Asset Store package; this repository is public, so it stays local. docs/runtime-state.md)
+/[Aa]ssets/WeatherMaker/
+/[Aa]ssets/WeatherMaker.meta

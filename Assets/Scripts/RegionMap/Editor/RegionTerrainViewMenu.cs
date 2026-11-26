@@ -117,6 +117,9 @@ namespace Vastcore.RegionMap.Editor
         /// コマンドライン用。砂岩の台地の場面を、決まった 3 つの視点（遠景・中景・近景）で撮り、
         /// look-far.png・look-mid.png・look-near.png を -regionOut のフォルダへ書き出して終了する。毎回同じ 3 枚になる。
         /// 指定: -regionSeed 9 -regionOut 出力先のフォルダ（画面を使うので -nographics は付けない）
+        /// 空・霞・雲: -lookSky auto（既定。Weather Maker が入っていれば使い、無ければ自作の空と霞）・weathermaker・ours。
+        /// Weather Maker の時は -cloudTime（探索画面の雲の時刻、秒。既定 auto は場面の周りに雲と晴れ間が半々に出る時刻）、
+        /// -skyCompare true で、見上げた空と同じ範囲の 2D の地図を sky-3d.png・sky-2d.png に並べて撮る。
         /// </summary>
         public static void CaptureFromCommandLine()
         {
@@ -141,6 +144,12 @@ namespace Vastcore.RegionMap.Editor
                 }
                 // -lookPreset clear,golden,dust のように複数を書くと、条件ごとに場面を作り直して <出力>/<条件> へ撮る
                 string[] presets = RegionMapMenu.Argument("-lookPreset", "clear").Split(',');
+                if (UseWeatherMaker())
+                {
+                    // 終わると、手順の最後で終了する
+                    CaptureWithWeatherMaker(regionSpec, spec, presets, output);
+                    return;
+                }
                 foreach (string presetName in presets)
                 {
                     if (!RegionAtmosphere.TryParse(presetName, out RegionAtmosphere.Preset preset))
@@ -201,6 +210,67 @@ namespace Vastcore.RegionMap.Editor
                 exitCode = 1;
             }
             EditorApplication.Exit(exitCode);
+        }
+
+        private static bool UseWeatherMaker()
+        {
+            string mode = RegionMapMenu.Argument("-lookSky", "auto");
+            if (mode == "ours") return false;
+            string reason;
+            if (RegionLookSky.CanUse(out reason)) return true;
+            if (mode == "weathermaker") throw new InvalidOperationException("-lookSky weathermaker: " + reason);
+            Debug.Log("[RegionMap] 空・霞は自作のまま: " + reason);
+            return false;
+        }
+
+        /// <summary>
+        /// Weather Maker の空・霞・雲で撮る。Weather Maker は編集時の更新を回すと落ち着くので、手順を 1 コマずつ進める（RegionEditorSteps）。
+        /// </summary>
+        private static void CaptureWithWeatherMaker(RegionSpec regionSpec, RegionLookSpec spec, string[] presets, string output)
+        {
+            string timeArgument = RegionMapMenu.Argument("-cloudTime", "auto");
+            bool compare = RegionMapMenu.Argument("-skyCompare", "false") == "true";
+            RegionWeatherMaker.CoverFullDensity = float.Parse(RegionMapMenu.Argument("-cloudCoverFull", "0.42"), CultureInfo.InvariantCulture);
+            var steps = new RegionEditorSteps();
+            RegionTerrainView.LookResult look = null;
+            Camera camera = null;
+            float cloudTime = 0f;
+            var watch = new System.Diagnostics.Stopwatch();
+            foreach (string presetName in presets)
+            {
+                if (!RegionAtmosphere.TryParse(presetName, out RegionAtmosphere.Preset preset))
+                    throw new ArgumentException("-lookPreset は clear・golden・dust: " + presetName);
+                RegionAtmosphere atmosphere = RegionAtmosphere.Create(preset);
+                string folder = presets.Length > 1 ? Path.Combine(output, atmosphere.Name) : output;
+                Directory.CreateDirectory(folder);
+                steps.Add(() =>
+                {
+                    watch.Restart();
+                    look = CreateLookScene(regionSpec, spec, atmosphere, out camera);
+                    cloudTime = timeArgument == "auto" ? RegionLookSky.MixedCloudTime(look.Scene) : float.Parse(timeArgument, CultureInfo.InvariantCulture);
+                    RegionLookSky.Use(camera, look, atmosphere, cloudTime);
+                    Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + " 光と空気 " + atmosphere.Name + "（空 Weather Maker）作成 " + watch.ElapsedMilliseconds + "ms");
+                }, 240);
+                foreach (RegionLookViewpoint viewpoint in spec.Viewpoints())
+                {
+                    RegionLookViewpoint view = viewpoint;
+                    steps.Add(() =>
+                    {
+                        RegionTerrainView.PlaceLook(camera.transform, look.Scene, view);
+                        camera.fieldOfView = view.FovDegrees;
+                        Capture(camera, null, null);
+                    });
+                    steps.Add(() => Capture(camera, folder, "look-" + view.Name + ".png"));
+                }
+                if (compare) steps.Add(() => RegionLookSky.WriteComparison(camera, look, cloudTime, folder));
+            }
+            steps.Run(1800, error =>
+            {
+                RegionWeatherMaker.RemoveRenderFeature();
+                RegionVolumePatch.SunAltitudeDegrees = RegionVolumePatch.DefaultSunAltitudeDegrees;
+                if (error != null) Debug.LogError("[RegionMap] 3D の撮影に失敗: " + error);
+                EditorApplication.Exit(error == null ? 0 : 1);
+            });
         }
 
         /// <summary>

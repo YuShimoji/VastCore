@@ -141,6 +141,10 @@ namespace Vastcore.RegionMap
         /// <summary>場面の中心（RegionLookSpec.CenterMapX・Y）の、場面の座標。</summary>
         public float CenterX, CenterZ;
 
+        /// <summary>地図の 1 単位の長さ（m）と、地域の seed・解像度（RegionSpec）。3D の空の雲を 2D の雲に合わせる時に使う（RegionCloudSky）。</summary>
+        public float MetersPerMapUnit;
+        public int RegionSeed, RegionResolution;
+
         /// <summary>
         /// 影を落とす高さの格子（描画時に GPU が太陽の方へたどる。RegionTerrainShadows）。
         /// 内側は 1.2 m 以上の岩を足した高さで、頂点 (i, j) は (InnerMinX + i * InnerCell, InnerMinZ + j * InnerCell)。
@@ -221,6 +225,7 @@ namespace Vastcore.RegionMap
                 Spec = spec, Outer = outer, Inner = inner, OuterCell = outerCell, InnerCell = innerCell,
                 InnerMinX = minX, InnerMinZ = minZ, InnerMaxX = minX + span, InnerMaxZ = minZ + span,
                 CenterX = centerX, CenterZ = centerZ,
+                MetersPerMapUnit = metersPerMapUnit, RegionSeed = region.Spec.Seed, RegionResolution = region.Spec.Resolution,
             };
 
             // 内側の縁を、外側の地形へなじませる
