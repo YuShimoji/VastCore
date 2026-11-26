@@ -211,6 +211,8 @@ namespace Vastcore.RegionMap
             RegionTerrainShadows.Bind(scene);
             // 地層の起伏と岩肌の細かな凹凸を、場面を作る時に一度だけ GPU で焼く
             RegionSurfaceRelief.Bind();
+            // Resources/RegionMap3D/Surfaces/<役>/ に置かれた写真素材を配列へ束ねる（無ければ今の手続きの絵）
+            RegionSurfaceMaterials.Bind();
             var root = new GameObject("Region Terrain Look");
             var plain = new RegionRenderOptions { CloudCover = 0f, Exaggeration = 0f, CastShadow = 0f };
             var result = new LookResult { Root = root, Scene = scene };

@@ -102,22 +102,23 @@ Shader "Vastcore/RegionTerrain"
 
                 // 光を受ける向き。凹凸が無い時は形の法線のまま（影の計算と岩肌の判定は常に形の法線）
                 half3 shade = normal;
+                half surfaceOcclusion = 1.0;
                 #if defined(REGION_SANDSTONE)
                 float3 positionOS = TransformWorldToObject(input.positionWS);
                 float3 normalOS = normalize(TransformWorldToObjectNormal(normal));
                 // 砂岩の色はシェーダーに書いた見た目の値なので、色空間によらず線形にする
-                float bedHeight;
-                float4 lamina;
-                half3 sandstone = RegionDisplayToLinear(SandstoneSurface(positionOS, normalOS, input.surface, input.color.a, _LooseRock, bedHeight, lamina));
+                SandstoneExtra extra;
+                half3 sandstone = RegionDisplayToLinear(SandstoneSurface(positionOS, normalOS, input.surface, input.color.a, _LooseRock, extra));
                 half sandstoneWeight = max(input.surface.w, _LooseRock);
                 albedo = lerp(albedo, sandstone, sandstoneWeight);
-                // 地層の起伏と岩肌の細かな凹凸（RegionSurfaceRelief が焼いた傾き）で、光を受ける向きを傾ける
-                if (RegionReliefEnabled())
+                // 写真素材の法線、地層の起伏と岩肌の細かな凹凸（RegionSurfaceRelief が焼いた傾き）で、光を受ける向きを傾ける
+                if (RegionReliefEnabled() || RegionSurfaceEnabled())
                 {
-                    float3 bumped = TransformObjectToWorldNormal(SandstoneReliefNormal(positionOS, normalOS, bedHeight, lamina, _LooseRock,
+                    float3 bumped = TransformObjectToWorldNormal(SandstoneReliefNormal(positionOS, normalOS, extra, _LooseRock,
                         distance(input.positionWS, _WorldSpaceCameraPos)));
                     shade = normalize(lerp(normal, bumped, sandstoneWeight));
                 }
+                surfaceOcclusion = lerp(1.0, extra.occlusion, sandstoneWeight);
                 #endif
 
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
@@ -136,7 +137,8 @@ Shader "Vastcore/RegionTerrain"
                 half3 ambient = SampleSH(shade) * open * tint;
                 // 日の当たる地面と向かいの岩壁からの照り返し。下や横を向いた面、影の中ほど受ける
                 half3 bounce = _RegionBounceColor.rgb * saturate(0.55 - 0.45 * shade.y) * (0.45 + 0.55 * (1.0 - sunlit)) * (0.5 + 0.5 * open);
-                half3 color = albedo * (light.color * direct + (ambient + bounce) * occlusion.indirectAmbientOcclusion);
+                // 写真素材の AO は、空の光と照り返しだけを弱める（日の光は形の影が受け持つ）
+                half3 color = albedo * (light.color * direct + (ambient + bounce) * occlusion.indirectAmbientOcclusion * surfaceOcclusion);
                 color = RegionApplyAir(color, input.positionWS);
                 return RegionOutput(color, 1);
             }

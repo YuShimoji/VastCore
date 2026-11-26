@@ -48,7 +48,7 @@ flowchart LR
 
 ### 3.1 素材の差し替え口
 
-役割は6つ。素材は `Assets/Resources/RegionMap3D/Surfaces/<役割>/` に置き、実寸（m）と向きを1つの設定（ScriptableObject）に持つ。置かれていない役割は今の手続きの色で描く（素材が無い環境・有料素材を置けない公開リポジトリでも動く。空と霞の Weather Maker と同じ扱い）。
+役割は6つ。素材は `Assets/Resources/RegionMap3D/Surfaces/<役割>/`（`Cliff`・`Mudstone`・`Talus`・`Sand`・`Crust`・`LooseRock`、下の表の順）に1組ずつ置き、実寸（m）・高さの幅・強さを1つの設定 `Surfaces/SurfaceSettings.asset`（[RegionSurfaceSettings](../../Assets/Scripts/RegionMap/View/RegionSurfaceSettings.cs)、無ければ横 2 m など既定の値）に持つ。置かれていない役割は今の手続きの色で描く（素材が無い環境・有料素材を置けない公開リポジトリでも動く。空と霞の Weather Maker と同じ扱い）。横の面は画像の上を空へ向けて貼る。
 
 | 役割 | 今の描き方 | 候補（開発担当の提示。採否は本人） |
 |---|---|---|
@@ -66,13 +66,13 @@ flowchart LR
 | 入力 | いつ作るか | 実行時の重さ | 方法 |
 |---|---|---|---|
 | 法線マップのある素材 | 取り込み時 | 読み1回 | そのまま使う。Unity は OpenGL 向き（緑が上）なので NormalGL を選び、DX 版しか無ければ緑を反転する |
-| 高さ（Displacement）だけある素材 | 取り込み時 | 読み1回 | Unity の取り込み設定 Create from Grayscale（Bumpiness、Sharp/Smooth）で法線にする（[Unity の法線マップの取り込み](https://docs.unity3d.com/Manual/texture-type-normal-map.html)） |
+| 高さ（Displacement）だけある素材 | 取り込み時 | 読み1回 | 高さを設定の幅（m）に直し、下の色の画像と同じ Sobel で法線にする。Unity の Create from Grayscale（[法線マップの取り込み](https://docs.unity3d.com/Manual/texture-type-normal-map.html)）は実寸の高さを扱えないので使わない（段2で変更） |
 | 色の画像だけの素材 | 取り込み時 | 読み1回 | 自作の Editor 処理。明るさを取り、実寸 0.5 m 程度のぼかしとの差で写真の大きな明暗を除き、半径の違う Sobel を重ねて法線にする。同じ高さを高さの画像にも書く。色から作る高さは推定（影と凹みを取り違える）なので、高さのある素材を優先する |
 | 地域データから作る画像（真上の地面） | 作らない | — | 乾いた陸では砂岩の色がこの画像を置き換える（`RegionTerrain.shader` の `surface.w`）ので、凹凸を作っても見える所がほぼ無い（段1で確認、2026-11-26） |
 | 手続きの地層（層の境・層ごとの硬さ） | 場面を作る時に1回 | 読み1回 | 色の縞と同じ式から起伏（m）を1次元の画像に焼き（384 m を 8192 画素）、Sobel で傾きにする。崖の面では法線を上下に傾け、硬い層が張り出し、層の境が溝になる |
 | 手続きの斜交葉理（細い斜めの縞） | 焼かない | 読み0回 | 明るい縞を高さ 6 cm の稜とし、縞の式の勾配から解析的に傾ける。縞が画素より細くなると消す |
 
-取り込み時の処理は `AssetPostprocessor` で、フォルダに置くだけで動く。作った画像は役割ごとに `Texture2DArray` へまとめる。
+取り込み時の処理（[RegionSurfaceImport](../../Assets/Scripts/RegionMap/Editor/RegionSurfaceImport.cs)、`AssetPostprocessor`）は、フォルダに置くだけで動き、役割ごとに 1024² の3枚（`surface-detail` 明るさと色の平均に対する比、`surface-normal`、`surface-hra` 高さ・粗さ・AO）を同じフォルダに作る。横長の画像は縦に繰り返して正方形にする。元の画像は材料なので 32² で取り込む（実行ファイルを重くしない）。素材を外すと3枚も消える。3枚は場面を作る時に GPU で3本の `Texture2DArray` へ写して束ねる（[RegionSurfaceMaterials](../../Assets/Scripts/RegionMap/View/RegionSurfaceMaterials.cs)。配列はファイルにしない）。
 
 ### 3.3 重くしない仕組み
 
@@ -83,7 +83,7 @@ flowchart LR
 | 混ぜる数の上限 | 1画素で混ぜる役割は重みの大きい2つまで |
 | 距離の段 | 近（約60 m まで）は色・法線・高さ粗さAO。中（約400 m まで）は色と法線を大きい周期で。遠は写真を読まず、今の手続きの色と地層の柱だけ。境は距離の連続した分岐なので画面の中でまとまる。距離は推定で、計測で決める |
 | 繰り返しを崩す | 割れ目の板ごとに UV をずらして回す（板の番号を頂点に持たせる。割れ目は [RegionDetailMesa.cs](../../Assets/Scripts/RegionMap/Core/RegionDetailMesa.cs) が決めている）。周期の違う2つの色を掛ける。読みが3回になる確率的タイル（stochastic）は使わない |
-| 圧縮と解像度 | 色 BC7、法線 BC5、高さ粗さAO BC7。配列は1本の中で同じ大きさが要るので 2K に揃える。品質設定の mip の上限で 1K に落とせる |
+| 圧縮と解像度 | 色 BC7、法線 BC5、高さ粗さAO BC7。配列は1本の中で同じ大きさが要るので揃える（段2は所有素材に合わせ 1K。`RegionSurfaceMaps.Texels`）。品質設定の mip の上限で落とせる |
 | メモリ | 2K の BC7・BC5 は mip 込みで1枚 約5.3 MB。6役割×3種で 約96 MB（1K に落とすと 約24 MB）。開発機の GPU は RTX 4060 Ti 8 GB |
 | 光 | 粗さが入るので URP の鏡面を使う。乾いた砂岩は鏡面を弱める（5.2節の 18% を初期値にする） |
 
@@ -113,6 +113,10 @@ flowchart LR
 
 値のノイズの等高線で作った割れ目は、閉じた丸い線の網に見えたので外した。比較画像は撮影端末の `artifacts/region-map/relief-20261126/v3/`。再現は `.\scripts\region-map.ps1 -Mode view3d -Seed 9 -ReliefCompare -OutDir <出力>`（`<出力>/relief-off/` と `relief-timing.txt`）。見た目の採否は本人。層の境の溝は細く均一で暗く、手前の稜はやや規則的（強さは `RegionSurfaceRelief.StrataStrength`）。
 
+**段2の結果（2026-11-26、同じ条件、写し）。** 写しの `Surfaces/Sand` に Ground054 の一式、`Talus` に Ground081 の一式（1024×512 は縦に2回並べた）、`Cliff` に Ground007 の色の画像だけを置くと、取り込み時に3役の3枚ができ（崖は色から法線と高さを作成、砂と岩屑は GL の法線と高さ・粗さ・AO）、場面で配列に束ねられた。同じ場面の切／入で画素の 25〜56% が変化し、岩屑の斜面に写真の礫の欠片が光を受けて陰影を持ち、色相は手続きの地層の色のまま。崖の Ground007 は機構の試験用の地面の礫で、岩壁が紙やすりのような粒に見える（崖の素材は段4で本人が選ぶ）。
+
+元の画像だけを消すと、取り込み時の処理が3枚も消し、絵は素材を置く前と同じ（5視点で違う画素は1つ）。素材が無い時は段1の絵と同じ（5視点で 0.001% 未満）。描画1回の時間の差は 3840×2160 で +0.45〜+1.77 ms（画素数で 1600×900 に直すと最大 約0.31 ms、段1と合わせて 約0.47 ms）。距離の段・上位2つの混合の前で、遠景でも読んでいる。比較画像は撮影端末の `artifacts/region-map/surface-20261126/`（`a-none`・`b-placed`（`surface-off/` と `surface-timing.txt`）・`c-removed`）。再現は素材を置いて `.\scripts\region-map.ps1 -Mode view3d -Seed 9 -SurfaceCompare -OutDir <出力>`。
+
 ## 5. 未確認
 
 - 地層の柱へ置き換えた時に、今の縞の見え方（5.1節 N1）が保てるか。
@@ -120,4 +124,5 @@ flowchart LR
 - 距離の段の境が、移動中にちらつかないか（Player 未計測）。
 - Weather Maker の霞が、このシェーダーの鏡面にどう掛かるか（組み込みは写し `D:\VastCore-sky-trial` で進行中）。
 - 泥岩の帯と地被の CC0 候補。
-- 段1の凹凸の、seed 8 などの別地点・golden と dust の光・Player での見え方と GPU 時間（計測は Editor のバッチ描画）。
+- 段1の凹凸と段2の素材の、seed 8 などの別地点・golden と dust の光・Player での見え方と GPU 時間（計測は Editor のバッチ描画）。
+- 段2の、泥岩・地被・転石の役（素材を置いて試していない）、PNG と JPG 以外の素材、2K 以上の素材の縮め方の見え方、実寸の既定 2 m が所有素材の実寸と合っているか。

@@ -160,6 +160,7 @@ namespace Vastcore.RegionMap.Editor
                     watch.Restart();
                     RegionTerrainView.LookResult look = CreateLookScene(regionSpec, spec, atmosphere, out Camera camera);
                     Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + " 光と空気 " + atmosphere.Name + " 作成 " + watch.ElapsedMilliseconds + "ms");
+                    Debug.Log("[RegionMap] 表面の写真素材: " + RegionSurfaceMaterials.Summary);
                     // 作った直後の最初の 1 枚は、地面の画像が貼られる前の白い地面で写る（2026-11-25 に、最初と最後に同じ視点を撮って確かめた）。
                     // 捨てコマを 1 枚描いてから撮る
                     RegionTerrainView.PlaceLook(camera.transform, look.Scene, look.Scene.Spec.Far);
@@ -168,7 +169,9 @@ namespace Vastcore.RegionMap.Editor
                         CaptureAlcoveComparison(camera, look, folder);
                     CaptureLookViews(camera, look, folder);
                     if (RegionMapMenu.Argument("-reliefCompare", "false") == "true")
-                        CaptureReliefComparison(camera, look, folder);
+                        CaptureToggleComparison(camera, look, folder, "relief", "凹凸", RegionSurfaceRelief.Baked, RegionSurfaceRelief.SetActive);
+                    if (RegionMapMenu.Argument("-surfaceCompare", "false") == "true")
+                        CaptureToggleComparison(camera, look, folder, "surface", "写真素材", RegionSurfaceMaterials.Count > 0, RegionSurfaceMaterials.SetActive);
                     if (look.Alcove == null) DescribeNearestCap(look.Scene);
                     CaptureSunSweep(camera, look, folder);
                 }
@@ -305,17 +308,19 @@ namespace Vastcore.RegionMap.Editor
         }
 
         /// <summary>
-        /// -reliefCompare true で、同じ場面・視点のまま表面の凹凸（RegionSurfaceRelief）を切った絵を &lt;出力&gt;/relief-off へ撮り、
-        /// 描画 1 回の時間（GPU の終わりを待つまで）を、切と入を交互に繰り返して測る（relief-timing.txt）。
+        /// 同じ場面・視点のまま、ある描き方を切った絵を &lt;出力&gt;/&lt;key&gt;-off へ撮り、
+        /// 描画 1 回の時間（GPU の終わりを待つまで）を、切と入を交互に繰り返して測る（&lt;key&gt;-timing.txt）。
+        /// -reliefCompare true は表面の凹凸（RegionSurfaceRelief）、-surfaceCompare true は表面の写真素材（RegionSurfaceMaterials）。
         /// </summary>
-        private static void CaptureReliefComparison(Camera camera, RegionTerrainView.LookResult look, string output)
+        private static void CaptureToggleComparison(Camera camera, RegionTerrainView.LookResult look, string output,
+            string key, string label, bool available, Action<bool> setActive)
         {
-            if (!RegionSurfaceRelief.Baked)
+            if (!available)
             {
-                Debug.LogWarning("[RegionMap] 凹凸を焼いていないので、比較を撮らない");
+                Debug.LogWarning("[RegionMap] " + label + "が無いので、比較を撮らない");
                 return;
             }
-            string off = Path.Combine(output, "relief-off");
+            string off = Path.Combine(output, key + "-off");
             Directory.CreateDirectory(off);
             var views = new List<(string name, Action place, float fov)>();
             foreach (RegionLookViewpoint viewpoint in look.Scene.Spec.Viewpoints())
@@ -342,7 +347,7 @@ namespace Vastcore.RegionMap.Editor
                 {
                     place();
                     camera.fieldOfView = fov;
-                    RegionSurfaceRelief.SetActive(false);
+                    setActive(false);
                     Capture(camera, off, name + ".png");
                     foreach (RenderTexture target in targets)
                     {
@@ -354,24 +359,24 @@ namespace Vastcore.RegionMap.Editor
                         {
                             foreach (bool on in new[] { false, true })
                             {
-                                RegionSurfaceRelief.SetActive(on);
+                                setActive(on);
                                 TimedRender(camera, target, pixel);
                                 for (int i = 0; i < TimingBatch; i++) (on ? timesOn : timesOff).Add(TimedRender(camera, target, pixel));
                             }
                         }
                         camera.targetTexture = null;
-                        RegionSurfaceRelief.SetActive(true);
+                        setActive(true);
                         double a = Median(timesOff), b = Median(timesOn);
                         string size = target.width + "x" + target.height;
                         report.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0}	{1}	{2:F2}	{3:F2}	{4:F2}", name, size, a, b, b - a));
-                        Debug.Log(string.Format(CultureInfo.InvariantCulture, "[RegionMap] 凹凸の重さ {0} {1}: 切 {2:F2} ms 入 {3:F2} ms 差 {4:F2} ms", name, size, a, b, b - a));
+                        Debug.Log(string.Format(CultureInfo.InvariantCulture, "[RegionMap] " + label + "の重さ {0} {1}: 切 {2:F2} ms 入 {3:F2} ms 差 {4:F2} ms", name, size, a, b, b - a));
                     }
                 }
             }
             finally
             {
                 camera.targetTexture = null;
-                RegionSurfaceRelief.SetActive(true);
+                setActive(true);
                 foreach (RenderTexture target in targets)
                 {
                     target.Release();
@@ -379,7 +384,7 @@ namespace Vastcore.RegionMap.Editor
                 }
                 UnityEngine.Object.DestroyImmediate(pixel);
             }
-            File.WriteAllText(Path.Combine(output, "relief-timing.txt"), report.ToString());
+            File.WriteAllText(Path.Combine(output, key + "-timing.txt"), report.ToString());
         }
 
         private const int TimingRounds = 8, TimingBatch = 6;

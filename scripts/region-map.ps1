@@ -27,6 +27,8 @@
   [string]$SunSweep = '',
   # view3d: 表面の凹凸を切った絵（<OutDir>/relief-off）と、切・入の描画時間（relief-timing.txt）も撮る
   [switch]$ReliefCompare,
+  # view3d: 表面の写真素材を切った絵（<OutDir>/surface-off）と、切・入の描画時間（surface-timing.txt）も撮る
+  [switch]$SurfaceCompare,
   [string]$UnityPath = ''
 )
 
@@ -78,6 +80,7 @@ if ($Mode -eq 'setup') {
     if ($LookPreset) { $unityArgs += @('-lookPreset', $LookPreset) }
     if ($SunSweep) { $unityArgs += @('-sunSweep', $SunSweep) }
     if ($ReliefCompare) { $unityArgs += @('-reliefCompare', 'true') }
+    if ($SurfaceCompare) { $unityArgs += @('-surfaceCompare', 'true') }
   }
 } elseif ($Mode -eq 'play') {
   $unityArgs = @(

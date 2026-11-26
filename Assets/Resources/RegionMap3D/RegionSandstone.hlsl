@@ -2,6 +2,8 @@
 #ifndef REGION_SANDSTONE_INCLUDED
 #define REGION_SANDSTONE_INCLUDED
 
+#include "RegionSurfaceMaterials.hlsl"
+
 float SandHash(float2 cell)
 {
     float3 p = frac(cell.xyx * float3(0.1031, 0.1030, 0.0973));
@@ -54,9 +56,37 @@ float SandChips(float2 uv)
     return mask * (facet * 0.31 - 0.18 + 0.28 * (SandHash(id - 2.4) - 0.5));
 }
 
+// 色と一緒に出す、光を受ける向きのための値
+struct SandstoneExtra
+{
+    float bedHeight;     // 帽子の岩の下端からの高さ（地層の柱を読む位置）
+    float4 lamina;       // 斜交葉理の位相、縞が出る度合い、傾きの向き
+    float3 gradient;     // 写真素材の凹凸（高さの体積の勾配 m/m、物体の座標）
+    half occlusion;      // 写真素材の AO
+    half rockMaterial;   // 岩肌の細かな凹凸（段1の仮の起伏）を写真素材に任せる度合い
+};
+
+// 役 role の写真素材を読み、重み weight で凹凸と AO を足して、明るさと色の比を返す。素材が無い・重みが小さい役は読まず 1 を返す
+half3 SandRole(int role, float weight, float3 p, float3 pdx, float3 pdy, float3 n, inout SandstoneExtra extra)
+{
+    half3 detail = 1.0;
+    [branch]
+    if (weight > 0.01 && RegionSurfaceHas(role))
+    {
+        RegionSurfaceSample s = RegionSurfaceRead(role, p, pdx, pdy, n);
+        detail = s.detail;
+        extra.gradient += s.gradient * weight;
+        extra.occlusion -= (1.0 - s.occlusion) * weight;
+    }
+    return detail;
+}
+
+float SandHas(int role) { return RegionSurfaceHas(role) ? 1.0 : 0.0; }
+
 // Four surfaces: exposed bedrock, talus, sand/soil and patchy dry ground cover.
 // surface = talus density, metres above the caprock contact, moisture for cover, dry-land coverage.
-half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half looseRock, out float bedHeightOut, out float4 laminaOut)
+// 写真素材の置かれた役では、手続きの細かな粒（grains・pores・礫）を写真の明暗に置き換え、大きなむらと地層の色は手続きのまま残す。
+half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half looseRock, out SandstoneExtra extra)
 {
     float3 weights = n * n;
     weights *= weights;
@@ -66,16 +96,25 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
     float broad = SandNoise(p.xz * 0.023);
     float broken = SandTriplanar(p * 0.065 + 3.5, weights);
     float mineral = 0.63 * mottling + 0.37 * grains;
-    bedHeightOut = 0.0;
-    laminaOut = 0.0;
+    float coarseMineral = 0.63 * mottling + 0.37 * 0.5;
+    float3 pdx = ddx(p);
+    float3 pdy = ddy(p);
+    extra.bedHeight = 0.0;
+    extra.lamina = 0.0;
+    extra.gradient = 0.0;
+    extra.occlusion = 1.0;
+    extra.rockMaterial = 0.0;
     if (looseRock > 0.5)
     {
+        float hasLoose = SandHas(5);
+        half3 detail = SandRole(5, 1.0, p, pdx, pdy, n, extra);
+        extra.rockMaterial = hasLoose;
         float3 block = lerp(float3(0.56, 0.37, 0.28), float3(0.85, 0.62, 0.44), broken);
-        return block * (0.79 + 0.43 * mineral) * (0.74 + 0.36 * tint);
+        return block * (0.79 + 0.43 * lerp(mineral, coarseMineral, hasLoose)) * (0.74 + 0.36 * tint) * detail;
     }
 
     float bedHeight = surface.y + 1.8 * (broad - 0.5) + 0.28 * (mottling - 0.5);
-    bedHeightOut = bedHeight;
+    extra.bedHeight = bedHeight;
     float bed = bedHeight * 0.12 + 0.78 * SandNoise(float2(bedHeight * 0.072, 5.4));
     float unit = SandNoise(float2(bedHeight * 0.28, 3.7));
     float3 rock = lerp(float3(0.64, 0.31, 0.20), float3(0.91, 0.64, 0.40), 0.62 * unit + 0.38 * broken);
@@ -93,10 +132,12 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
                    * (1.0 - smoothstep(0.68, 0.98, frac(bed))) * smoothstep(0.20, 0.68, broken);
     rock += float3(0.22, 0.18, 0.12) * crossBed;
     // 凹凸用：斜交葉理の位相、縞が出る度合い（縞の形を除く）、傾きの向き
-    laminaOut = float4(lamina, smoothstep(0.03, 0.22, frac(bed)) * (1.0 - smoothstep(0.68, 0.98, frac(bed))) * smoothstep(0.20, 0.68, broken), dip);
+    extra.lamina = float4(lamina, smoothstep(0.03, 0.22, frac(bed)) * (1.0 - smoothstep(0.68, 0.98, frac(bed))) * smoothstep(0.20, 0.68, broken), dip);
     float seam = (0.06 + 0.17 * broken) * SandSeam(bed, 0.018 + 0.020 * mottling);
     float pores = SandTriplanar(p * 1.82 + mottling, weights);
-    rock *= 0.76 + 0.40 * mineral + 0.13 * (pores - 0.5) - seam;
+    float rockFace = 1.0 - smoothstep(0.52, 0.82, n.y);
+    float rockMaterial = lerp(SandHas(0), SandHas(1), mud);
+    rock *= 0.76 + 0.40 * lerp(mineral, coarseMineral, rockMaterial) + 0.13 * (pores - 0.5) * (1.0 - rockMaterial) - seam;
 
     // Runoff follows gravity on each cliff face. Its extent breaks up vertically and between outcrops.
     float3 streakPos = p * float3(0.52, 0.027, 0.52);
@@ -106,23 +147,33 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
     float varnish = smoothstep(0.54, 0.79, streak) * smoothstep(0.37, 0.67, patches)
                   * (1.0 - smoothstep(0.38, 0.73, n.y));
     rock = lerp(rock, float3(0.27, 0.20, 0.18) * (0.78 + 0.50 * mineral), varnish * 0.88);
+    half3 cliffDetail = SandRole(0, rockFace * (1.0 - mud), p, pdx, pdy, n, extra);
+    half3 mudDetail = SandRole(1, rockFace * mud, p, pdx, pdy, n, extra);
+    rock *= lerp(cliffDetail, mudDetail, mud);
+    extra.rockMaterial = rockFace * rockMaterial;
 
     float sandPatch = 0.52 * broad + 0.30 * mottling + 0.18 * grains;
     float3 soil = lerp(float3(0.56, 0.40, 0.29), float3(0.87, 0.71, 0.51), sandPatch);
     float cover = smoothstep(0.60, 0.78, 0.56 * broad + 0.44 * mottling)
                 * surface.z * smoothstep(0.78, 0.97, n.y);
-    soil = lerp(soil, float3(0.43, 0.41, 0.28) * (0.65 + 0.70 * grains), cover);
+    float talus = smoothstep(0.04, 0.82, surface.x);
+    float driftSand = smoothstep(0.47, 0.80, 0.62 * mottling + 0.38 * broken);
+    float talusMix = talus * (1.0 - 0.56 * driftSand);
+    float groundShare = 1.0 - rockFace;
+    half3 sandDetail = SandRole(3, groundShare * (1.0 - talusMix) * (1.0 - cover), p, pdx, pdy, n, extra);
+    half3 crustDetail = SandRole(4, groundShare * (1.0 - talusMix) * cover, p, pdx, pdy, n, extra);
+    half3 talusDetail = SandRole(2, groundShare * talusMix, p, pdx, pdy, n, extra);
+    float hasCrust = SandHas(4);
+    soil = lerp(soil * sandDetail, float3(0.43, 0.41, 0.28) * (0.65 + 0.70 * lerp(grains, 0.5, hasCrust)) * crustDetail, cover);
+    float groundMaterial = lerp(lerp(SandHas(3), hasCrust, cover), SandHas(2), talusMix);
     float2 ground = float2(0.8 * p.x + 0.6 * p.z, -0.6 * p.x + 0.8 * p.z);
     float2 drift = float2(mottling, pores);
     float gravel = SandChips(ground * 4.6 + drift) + 0.75 * SandChips(p.xz * 13.3 - drift);
     // Talus is broken from the orange cliff above, so it stays warmer than the mudstone it covers.
     float3 rubble = lerp(float3(0.58, 0.42, 0.33), float3(0.80, 0.63, 0.48), sandPatch);
-    rubble = lerp(rubble, mudstone, mud * 0.45);
-    float talus = smoothstep(0.04, 0.82, surface.x);
-    float driftSand = smoothstep(0.47, 0.80, 0.62 * mottling + 0.38 * broken);
-    float3 groundColor = lerp(soil, rubble, talus * (1.0 - 0.56 * driftSand));
-    groundColor *= 0.82 + 0.24 * grains + 0.14 * pores + (0.55 + talus) * gravel;
-    float rockFace = 1.0 - smoothstep(0.52, 0.82, n.y);
+    rubble = lerp(rubble, mudstone, mud * 0.45) * talusDetail;
+    float3 groundColor = lerp(soil, rubble, talusMix);
+    groundColor *= lerp(0.82 + 0.24 * grains + 0.14 * pores + (0.55 + talus) * gravel, 1.0, groundMaterial);
     return lerp(groundColor, rock, rockFace);
 }
 
@@ -172,28 +223,38 @@ float3 SandRockGradient(float3 q, float3 qdx, float3 qdy, float3 n)
 }
 
 // 凹凸を足した法線（物体の座標）。高さの体積の勾配から面に沿う成分だけを取り、法線を傾ける（surface gradient）。
-// 地層の起伏は上下の向きだけに効くので、水平な面には効かない。岩肌の細かな凹凸は崖の面と転石で、遠くでは読まない
-float3 SandstoneReliefNormal(float3 p, float3 n, float bedHeight, float4 lamina, half looseRock, float viewDistance)
+// 写真素材の凹凸（extra.gradient）に段1の自動の凹凸を足す。地層の起伏は上下の向きだけに効くので、水平な面には効かない。
+// 岩肌の細かな凹凸（仮）は崖の面と転石で、写真素材のある役と遠くでは読まない
+float3 SandstoneReliefNormal(float3 p, float3 n, SandstoneExtra extra, half looseRock, float viewDistance)
 {
-    float face = 1.0 - smoothstep(0.52, 0.82, n.y);
-    float u = (bedHeight - _RegionReliefStrata.x) * _RegionReliefStrata.y;
-    float strata = SAMPLE_TEXTURE2D_GRAD(_RegionReliefStrataSlope, sampler_RegionReliefStrataSlope,
-        float2(u, 0.5), float2(ddx(u), 0), float2(ddy(u), 0)).r;
-    // 斜交葉理の明るい縞は、風化で少し張り出した稜（高さ 6 cm、幅は位相の ±0.2）。縞が画素より細くなると消す
-    float side = frac(lamina.x + 0.5) - 0.5;
-    float t = saturate(abs(side) / 0.2);
-    float ridge = -0.06 * lamina.y * (6.0 * t * (1.0 - t) / 0.2) * sign(side)
-                * (1.0 - smoothstep(0.15, 0.5, fwidth(lamina.x)));
-    float3 g = (float3(0, strata, 0) + ridge * 0.93 * float3(lamina.z, 1.0, lamina.w))
-             * (_RegionReliefStrata.z * face * (1.0 - looseRock));
-
+    float3 g = extra.gradient;
+    // 微分は分岐の外で出す
+    float u = (extra.bedHeight - _RegionReliefStrata.x) * _RegionReliefStrata.y;
+    float2 du = float2(ddx(u), ddy(u));
+    float laminaWidth = fwidth(extra.lamina.x);
     float3 q = p * _RegionReliefRock.x;
     float3 qdx = ddx(q);
     float3 qdy = ddy(q);
-    float rock = max(face, looseRock) * (1.0 - smoothstep(_RegionReliefRock.z, _RegionReliefRock.w, viewDistance));
     [branch]
-    if (rock > 0.0)
-        g += SandRockGradient(q, qdx, qdy, n) * (_RegionReliefRock.y * rock);
+    if (RegionReliefEnabled())
+    {
+        float face = 1.0 - smoothstep(0.52, 0.82, n.y);
+        float strata = SAMPLE_TEXTURE2D_GRAD(_RegionReliefStrataSlope, sampler_RegionReliefStrataSlope,
+            float2(u, 0.5), float2(du.x, 0), float2(du.y, 0)).r;
+        // 斜交葉理の明るい縞は、風化で少し張り出した稜（高さ 6 cm、幅は位相の ±0.2）。縞が画素より細くなると消す
+        float side = frac(extra.lamina.x + 0.5) - 0.5;
+        float t = saturate(abs(side) / 0.2);
+        float ridge = -0.06 * extra.lamina.y * (6.0 * t * (1.0 - t) / 0.2) * sign(side)
+                    * (1.0 - smoothstep(0.15, 0.5, laminaWidth));
+        g += (float3(0, strata, 0) + ridge * 0.93 * float3(extra.lamina.z, 1.0, extra.lamina.w))
+           * (_RegionReliefStrata.z * face * (1.0 - looseRock));
+
+        float rock = max(face, looseRock) * (1.0 - extra.rockMaterial)
+                   * (1.0 - smoothstep(_RegionReliefRock.z, _RegionReliefRock.w, viewDistance));
+        [branch]
+        if (rock > 0.0)
+            g += SandRockGradient(q, qdx, qdy, n) * (_RegionReliefRock.y * rock);
+    }
     return normalize(n - (g - n * dot(n, g)));
 }
 
