@@ -64,29 +64,51 @@ struct SandstoneExtra
     float3 gradient;     // 写真素材の凹凸（高さの体積の勾配 m/m、物体の座標）
     half occlusion;      // 写真素材の AO
     half rockMaterial;   // 岩肌の細かな凹凸（段1の仮の起伏）を写真素材に任せる度合い
+    half roughness;      // 写真素材の粗さに、素材の重みを掛けた和（specular で割ると粗さ）
+    half specular;       // 写真素材が受け持つ重み（鏡面を足す度合い）
 };
 
-// 役 role の写真素材を読み、重み weight で凹凸と AO を足して、明るさと色の比を返す。素材が無い・重みが小さい役は読まず 1 を返す
-half3 SandRole(int role, float weight, float3 p, float3 pdx, float3 pdy, float3 n, inout SandstoneExtra extra)
+// 写真素材を読む場所の値。微分は分岐の外で出しておく
+struct SandMaterialContext
+{
+    float3 p;
+    float3 pdx;
+    float3 pdy;
+    float3 n;
+    float farFade;    // 1 で写真を読む、0 で読まない（遠く）
+    float nearFade;   // 1 で高さ粗さAO も読む（近く）
+};
+
+// 役 role の写真素材を読み、重み weight で凹凸・AO・粗さを足して、明るさと色の比を返す。素材が無い・重みが小さい役は読まず 1 を返す。
+// 遠くへ行くほど比は 1、凹凸は 0 に近づき、読まなくなる所で素材が無い時と同じになる
+half3 SandRole(int role, float weight, SandMaterialContext c, inout SandstoneExtra extra)
 {
     half3 detail = 1.0;
+    float w = weight * c.farFade;
     [branch]
-    if (weight > 0.01 && RegionSurfaceHas(role))
+    if (w > 0.01 && RegionSurfaceHas(role))
     {
-        RegionSurfaceSample s = RegionSurfaceRead(role, p, pdx, pdy, n);
-        detail = s.detail;
-        extra.gradient += s.gradient * weight;
-        extra.occlusion -= (1.0 - s.occlusion) * weight;
+        RegionSurfaceSample s = RegionSurfaceRead(role, c.p, c.pdx, c.pdy, c.n, c.nearFade);
+        detail = lerp(1.0, s.detail, c.farFade);
+        extra.gradient += s.gradient * w;
+        extra.occlusion -= (1.0 - s.occlusion) * w;
+        extra.roughness += s.roughness * w;
+        extra.specular += w;
     }
     return detail;
 }
 
-float SandHas(int role) { return RegionSurfaceHas(role) ? 1.0 : 0.0; }
+// 素材があれば 1（遠くでは 0 へ）。手続きの細かな粒を写真に置き換える度合い
+float SandHas(int role, float farFade) { return RegionSurfaceHas(role) ? farFade : 0.0; }
+
+// 他の 4 役のうち、重みが w より大きいものが 2 つ未満なら 1（重みの大きい 2 つだけ読む）
+float SandTop2(float w, float4 others) { return dot((float4)(others > w), 1.0) < 2.0 ? 1.0 : 0.0; }
 
 // Four surfaces: exposed bedrock, talus, sand/soil and patchy dry ground cover.
 // surface = talus density, metres above the caprock contact, moisture for cover, dry-land coverage.
 // 写真素材の置かれた役では、手続きの細かな粒（grains・pores・礫）を写真の明暗に置き換え、大きなむらと地層の色は手続きのまま残す。
-half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half looseRock, out SandstoneExtra extra)
+// 写真は 1 画素で重みの大きい 2 役まで読み、カメラからの距離 viewDistance（m）で読む物を減らす（設計 3.3 節の距離の段）。
+half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half looseRock, float viewDistance, out SandstoneExtra extra)
 {
     float3 weights = n * n;
     weights *= weights;
@@ -97,17 +119,24 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
     float broken = SandTriplanar(p * 0.065 + 3.5, weights);
     float mineral = 0.63 * mottling + 0.37 * grains;
     float coarseMineral = 0.63 * mottling + 0.37 * 0.5;
-    float3 pdx = ddx(p);
-    float3 pdy = ddy(p);
+    SandMaterialContext c;
+    c.p = p;
+    c.pdx = ddx(p);
+    c.pdy = ddy(p);
+    c.n = n;
+    c.farFade = RegionSurfaceFarFade(viewDistance);
+    c.nearFade = RegionSurfaceNearFade(viewDistance);
     extra.bedHeight = 0.0;
     extra.lamina = 0.0;
     extra.gradient = 0.0;
     extra.occlusion = 1.0;
     extra.rockMaterial = 0.0;
+    extra.roughness = 0.0;
+    extra.specular = 0.0;
     if (looseRock > 0.5)
     {
-        float hasLoose = SandHas(5);
-        half3 detail = SandRole(5, 1.0, p, pdx, pdy, n, extra);
+        float hasLoose = SandHas(5, c.farFade);
+        half3 detail = SandRole(5, 1.0, c, extra);
         extra.rockMaterial = hasLoose;
         float3 block = lerp(float3(0.56, 0.37, 0.28), float3(0.85, 0.62, 0.44), broken);
         return block * (0.79 + 0.43 * lerp(mineral, coarseMineral, hasLoose)) * (0.74 + 0.36 * tint) * detail;
@@ -122,6 +151,23 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
     float3 mudstone = lerp(float3(0.42, 0.32, 0.35), float3(0.73, 0.58, 0.54), unit);
     rock = lerp(rock, mudstone, mud);
 
+    // 役の重み：崖の岩肌・泥岩の帯・岩屑・砂と土・地被。写真素材のある役の中で重みの大きい 2 つだけを読む
+    float rockFace = 1.0 - smoothstep(0.52, 0.82, n.y);
+    float cover = smoothstep(0.60, 0.78, 0.56 * broad + 0.44 * mottling)
+                * surface.z * smoothstep(0.78, 0.97, n.y);
+    float talus = smoothstep(0.04, 0.82, surface.x);
+    float driftSand = smoothstep(0.47, 0.80, 0.62 * mottling + 0.38 * broken);
+    float talusMix = talus * (1.0 - 0.56 * driftSand);
+    float groundShare = 1.0 - rockFace;
+    float wCliff = rockFace * (1.0 - mud);
+    float wMud = rockFace * mud;
+    float wTalus = groundShare * talusMix;
+    float wSand = groundShare * (1.0 - talusMix) * (1.0 - cover);
+    float wCrust = groundShare * (1.0 - talusMix) * cover;
+    float hasCliff = SandHas(0, c.farFade), hasMud = SandHas(1, c.farFade), hasTalus = SandHas(2, c.farFade);
+    float hasSand = SandHas(3, c.farFade), hasCrust = SandHas(4, c.farFade);
+    float eCliff = wCliff * hasCliff, eMud = wMud * hasMud, eTalus = wTalus * hasTalus, eSand = wSand * hasSand, eCrust = wCrust * hasCrust;
+
     // Finer wind-deposited sets change direction at the erosional boundary between beds.
     float set = floor(bed);
     float2 dip = lerp(float2(0.29, 0.37), float2(0.48, 0.63), SandHash(float2(set, 17.0)));
@@ -135,8 +181,7 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
     extra.lamina = float4(lamina, smoothstep(0.03, 0.22, frac(bed)) * (1.0 - smoothstep(0.68, 0.98, frac(bed))) * smoothstep(0.20, 0.68, broken), dip);
     float seam = (0.06 + 0.17 * broken) * SandSeam(bed, 0.018 + 0.020 * mottling);
     float pores = SandTriplanar(p * 1.82 + mottling, weights);
-    float rockFace = 1.0 - smoothstep(0.52, 0.82, n.y);
-    float rockMaterial = lerp(SandHas(0), SandHas(1), mud);
+    float rockMaterial = lerp(hasCliff, hasMud, mud);
     rock *= 0.76 + 0.40 * lerp(mineral, coarseMineral, rockMaterial) + 0.13 * (pores - 0.5) * (1.0 - rockMaterial) - seam;
 
     // Runoff follows gravity on each cliff face. Its extent breaks up vertically and between outcrops.
@@ -147,25 +192,18 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
     float varnish = smoothstep(0.54, 0.79, streak) * smoothstep(0.37, 0.67, patches)
                   * (1.0 - smoothstep(0.38, 0.73, n.y));
     rock = lerp(rock, float3(0.27, 0.20, 0.18) * (0.78 + 0.50 * mineral), varnish * 0.88);
-    half3 cliffDetail = SandRole(0, rockFace * (1.0 - mud), p, pdx, pdy, n, extra);
-    half3 mudDetail = SandRole(1, rockFace * mud, p, pdx, pdy, n, extra);
+    half3 cliffDetail = SandRole(0, wCliff * SandTop2(eCliff, float4(eMud, eTalus, eSand, eCrust)), c, extra);
+    half3 mudDetail = SandRole(1, wMud * SandTop2(eMud, float4(eCliff, eTalus, eSand, eCrust)), c, extra);
     rock *= lerp(cliffDetail, mudDetail, mud);
     extra.rockMaterial = rockFace * rockMaterial;
 
     float sandPatch = 0.52 * broad + 0.30 * mottling + 0.18 * grains;
     float3 soil = lerp(float3(0.56, 0.40, 0.29), float3(0.87, 0.71, 0.51), sandPatch);
-    float cover = smoothstep(0.60, 0.78, 0.56 * broad + 0.44 * mottling)
-                * surface.z * smoothstep(0.78, 0.97, n.y);
-    float talus = smoothstep(0.04, 0.82, surface.x);
-    float driftSand = smoothstep(0.47, 0.80, 0.62 * mottling + 0.38 * broken);
-    float talusMix = talus * (1.0 - 0.56 * driftSand);
-    float groundShare = 1.0 - rockFace;
-    half3 sandDetail = SandRole(3, groundShare * (1.0 - talusMix) * (1.0 - cover), p, pdx, pdy, n, extra);
-    half3 crustDetail = SandRole(4, groundShare * (1.0 - talusMix) * cover, p, pdx, pdy, n, extra);
-    half3 talusDetail = SandRole(2, groundShare * talusMix, p, pdx, pdy, n, extra);
-    float hasCrust = SandHas(4);
+    half3 sandDetail = SandRole(3, wSand * SandTop2(eSand, float4(eCliff, eMud, eTalus, eCrust)), c, extra);
+    half3 crustDetail = SandRole(4, wCrust * SandTop2(eCrust, float4(eCliff, eMud, eTalus, eSand)), c, extra);
+    half3 talusDetail = SandRole(2, wTalus * SandTop2(eTalus, float4(eCliff, eMud, eSand, eCrust)), c, extra);
     soil = lerp(soil * sandDetail, float3(0.43, 0.41, 0.28) * (0.65 + 0.70 * lerp(grains, 0.5, hasCrust)) * crustDetail, cover);
-    float groundMaterial = lerp(lerp(SandHas(3), hasCrust, cover), SandHas(2), talusMix);
+    float groundMaterial = lerp(lerp(hasSand, hasCrust, cover), hasTalus, talusMix);
     float2 ground = float2(0.8 * p.x + 0.6 * p.z, -0.6 * p.x + 0.8 * p.z);
     float2 drift = float2(mottling, pores);
     float gravel = SandChips(ground * 4.6 + drift) + 0.75 * SandChips(p.xz * 13.3 - drift);

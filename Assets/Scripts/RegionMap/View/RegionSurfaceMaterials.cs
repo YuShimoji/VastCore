@@ -16,6 +16,15 @@ namespace Vastcore.RegionMap
         /// <summary>false にすると、素材を読まず今の手続きの絵で描く。</summary>
         public static bool Enabled = true;
 
+        /// <summary>
+        /// 距離の段（m、カメラから）。NearStart〜NearEnd で高さ粗さAO を読まなくなり（近）、FarStart〜FarEnd で写真を読まなくなる（中）。
+        /// その先（遠）は素材が無い時と同じ絵（設計 3.3 節。値は開発担当の仮の値で、計測で決める）。
+        /// </summary>
+        public static float NearStart = 40f, NearEnd = 60f, FarStart = 300f, FarEnd = 400f;
+
+        /// <summary>鏡面の強さ（反射率 0.04 に掛ける）。乾いた砂岩なので弱める（設計 3.3 節の初期値 18%）。</summary>
+        public static float Specular = 0.18f;
+
         private static Texture2DArray detailArray, normalArray, hraArray;
         private static readonly Vector4[] roles = new Vector4[6];
 
@@ -80,7 +89,8 @@ namespace Vastcore.RegionMap
         /// <summary>配列を残したまま、素材を使うかを切り替える（同じ場面の前後比較と、重さの計測に使う）。</summary>
         public static void SetActive(bool active)
         {
-            Shader.SetGlobalVector("_RegionSurfaceParams", new Vector4(active && Count > 0 ? 1f : 0f, 0f, 0f, 0f));
+            Shader.SetGlobalVector("_RegionSurfaceParams", new Vector4(active && Count > 0 ? 1f : 0f, Specular, 0f, 0f));
+            Shader.SetGlobalVector("_RegionSurfaceTiers", new Vector4(NearStart, NearEnd, FarStart, FarEnd));
         }
 
         public static void Release()

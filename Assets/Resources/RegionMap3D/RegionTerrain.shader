@@ -103,22 +103,27 @@ Shader "Vastcore/RegionTerrain"
                 // 光を受ける向き。凹凸が無い時は形の法線のまま（影の計算と岩肌の判定は常に形の法線）
                 half3 shade = normal;
                 half surfaceOcclusion = 1.0;
+                half specularWeight = 0.0;
+                half roughness = 1.0;
                 #if defined(REGION_SANDSTONE)
+                float viewDistance = distance(input.positionWS, _WorldSpaceCameraPos);
                 float3 positionOS = TransformWorldToObject(input.positionWS);
                 float3 normalOS = normalize(TransformWorldToObjectNormal(normal));
                 // 砂岩の色はシェーダーに書いた見た目の値なので、色空間によらず線形にする
                 SandstoneExtra extra;
-                half3 sandstone = RegionDisplayToLinear(SandstoneSurface(positionOS, normalOS, input.surface, input.color.a, _LooseRock, extra));
+                half3 sandstone = RegionDisplayToLinear(SandstoneSurface(positionOS, normalOS, input.surface, input.color.a, _LooseRock, viewDistance, extra));
                 half sandstoneWeight = max(input.surface.w, _LooseRock);
                 albedo = lerp(albedo, sandstone, sandstoneWeight);
                 // 写真素材の法線、地層の起伏と岩肌の細かな凹凸（RegionSurfaceRelief が焼いた傾き）で、光を受ける向きを傾ける
                 if (RegionReliefEnabled() || RegionSurfaceEnabled())
                 {
-                    float3 bumped = TransformObjectToWorldNormal(SandstoneReliefNormal(positionOS, normalOS, extra, _LooseRock,
-                        distance(input.positionWS, _WorldSpaceCameraPos)));
+                    float3 bumped = TransformObjectToWorldNormal(SandstoneReliefNormal(positionOS, normalOS, extra, _LooseRock, viewDistance));
                     shade = normalize(lerp(normal, bumped, sandstoneWeight));
                 }
                 surfaceOcclusion = lerp(1.0, extra.occlusion, sandstoneWeight);
+                // 写真素材のある所だけ、粗さから弱い鏡面を足す（素材が無い所と遠くは今の描き方のまま）
+                specularWeight = extra.specular * sandstoneWeight;
+                roughness = extra.specular > 0.0 ? extra.roughness / extra.specular : 1.0;
                 #endif
 
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
@@ -139,6 +144,22 @@ Shader "Vastcore/RegionTerrain"
                 half3 bounce = _RegionBounceColor.rgb * saturate(0.55 - 0.45 * shade.y) * (0.45 + 0.55 * (1.0 - sunlit)) * (0.5 + 0.5 * open);
                 // 写真素材の AO は、空の光と照り返しだけを弱める（日の光は形の影が受け持つ）
                 half3 color = albedo * (light.color * direct + (ambient + bounce) * occlusion.indirectAmbientOcclusion * surfaceOcclusion);
+                #if defined(REGION_SANDSTONE)
+                [branch]
+                if (specularWeight > 0.001)
+                {
+                    // URP の Lit と同じ近似の GGX（反射率 0.04）。乾いた砂岩なので強さを絞る（設計 3.3 節、初期値 18%）
+                    float3 viewDirection = normalize(_WorldSpaceCameraPos - input.positionWS);
+                    float3 halfDirection = SafeNormalize(float3(light.direction) + viewDirection);
+                    float r = max(roughness * roughness, 0.0078125);
+                    float r2 = r * r;
+                    float nh = saturate(dot(float3(shade), halfDirection));
+                    float lh = saturate(dot(float3(light.direction), halfDirection));
+                    float d = nh * nh * (r2 - 1.0) + 1.00001;
+                    float specularTerm = r2 / ((d * d) * max(0.1, lh * lh) * (r * 4.0 + 2.0));
+                    color += light.color * direct * (0.04 * specularTerm * _RegionSurfaceParams.y * specularWeight);
+                }
+                #endif
                 color = RegionApplyAir(color, input.positionWS);
                 return RegionOutput(color, 1);
             }

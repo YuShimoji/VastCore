@@ -117,6 +117,12 @@ flowchart LR
 
 元の画像だけを消すと、取り込み時の処理が3枚も消し、絵は素材を置く前と同じ（5視点で違う画素は1つ）。素材が無い時は段1の絵と同じ（5視点で 0.001% 未満）。描画1回の時間の差は 3840×2160 で +0.45〜+1.77 ms（画素数で 1600×900 に直すと最大 約0.31 ms、段1と合わせて 約0.47 ms）。距離の段・上位2つの混合の前で、遠景でも読んでいる。比較画像は撮影端末の `artifacts/region-map/surface-20261126/`（`a-none`・`b-placed`（`surface-off/` と `surface-timing.txt`）・`c-removed`）。再現は素材を置いて `.\scripts\region-map.ps1 -Mode view3d -Seed 9 -SurfaceCompare -OutDir <出力>`。
 
+**段3の結果（2026-11-26、同じ条件と素材、写し）。** [RegionSandstone.hlsl](../../Assets/Resources/RegionMap3D/RegionSandstone.hlsl)・[RegionSurfaceMaterials.hlsl](../../Assets/Resources/RegionMap3D/RegionSurfaceMaterials.hlsl)・[RegionTerrain.shader](../../Assets/Resources/RegionMap3D/RegionTerrain.shader) に入れた。カメラから 40〜60 m で高さ粗さAO を読まなくなり（粗さは役の既定、AO は 1）、300〜400 m で写真を読まなくなる（その先は素材が無い時と同じ絵）。境は距離の smoothstep。値は `RegionSurfaceMaterials.NearStart` など。崖・泥岩・岩屑・砂・地被の重みのうち、素材のある役の大きい2つだけを読む。鏡面は URP の Lit と同じ近似の GGX（反射率 0.04 × 強さ 18%）を、素材のある所だけに足す。中の段で周期を大きくする案と板ごとの UV は入れていない。
+
+素材が無い時の絵は段2と同じ（5視点で 0.000%）。look-far の画面の上半分（遠い所）は切／入の変化が 0.3% 以下（段2は 6.3%）、look-mid の中ほどの帯は 30.6% → 0.9%。近景は日の当たる岩屑の粒に弱い照りが付き、平均の明るさが 4〜7 階調上がった（濡れた光り方ではない）。描画1回の時間の差は 3840×2160 で +0.38〜+1.90 ms（段2は +0.45〜+1.77 ms）。遠い所を含む視点で減り（look-mid 1.37 → 0.38 ms、alcove-mid 1.22 → 0.81 ms）、全部が近い look-near は同じ。1600×900 に直すと最大 約0.33 ms で予算 1.0 ms の内。計測中に別の Unity が4つ動き、1600×900 の差は −0.73〜+0.69 ms と揺れの範囲。比較画像は `surface-20261126/d-stage3/`（`pair3-*.png` は切・段2・段3・段2と段3の差）。
+
+板ごとの UV は、割れ目の板の番号を頂点に持たせるため、地形・アルコーブ・転石の3つのメッシュの組み立てと、Core の割れ目の式（[RegionDetailMesa.cs](../../Assets/Scripts/RegionMap/Core/RegionDetailMesa.cs)）を変える。段2・段3の画像で繰り返しは見えていないので、繰り返しが見えた時に入れる（本人の判断待ち）。
+
 ## 5. 未確認
 
 - 地層の柱へ置き換えた時に、今の縞の見え方（5.1節 N1）が保てるか。
