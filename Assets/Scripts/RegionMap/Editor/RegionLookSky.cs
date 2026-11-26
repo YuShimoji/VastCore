@@ -206,7 +206,9 @@ namespace Vastcore.RegionMap.Editor
             RegionWeatherMaker.SetSky(FindAsset<ScriptableObject>(SkyProfileName, "ScriptableObject"));
 
             Vector3 toSun = -(RegionTerrainView.SunRotation(atmosphere.SunAltitudeDegrees) * Vector3.forward);
-            RegionWeatherMaker.SetSun(atmosphere.SunAltitudeDegrees, Mathf.Atan2(toSun.x, toSun.z) * Mathf.Rad2Deg);
+            // 太陽の色は条件の値（線形の値で決めてある）にそろえる。Linear 色空間では Unity が Light.color を線形に直すので、先にガンマへ戻す
+            Color sunColor = QualitySettings.activeColorSpace == ColorSpace.Linear ? atmosphere.SunColor.gamma : atmosphere.SunColor;
+            RegionWeatherMaker.SetSun(atmosphere.SunAltitudeDegrees, Mathf.Atan2(toSun.x, toSun.z) * Mathf.Rad2Deg, sunColor);
 
             var watch = System.Diagnostics.Stopwatch.StartNew();
             RegionCloudSkySpec spec = CloudSpec(look.Scene, cloudTime, cover, crossSeconds);

@@ -163,17 +163,9 @@ UE の乾燥地サンプルはモアブで採取した岩と地表の高密度�
 
 seed 9 では両層を含む空を、同じ地図を使って2Dと地上の空で69秒・75秒に撮った。比較の3D画像は地上の5方向を低層雲の高さへ投影し、地図と同じ向きにしたもの。砂・礫を段3の取り込み口に仮置きして、PC品質・GTX 1650 Ti・1600×900の同期描画を各48回測った。素材ありの中央値は31.84〜43.08ms、中景・近景で切より2.72・2.50ms長い。CPU・GPUを含む読み戻しまでの値。[2時刻の雲](../../artifacts/region-map/mesa-cloud-20261126/readiness-final-seed9/cloud-two-times.jpg)・[描画時間](../../artifacts/region-map/mesa-cloud-20261126/readiness-final-seed9/surface-timing.txt)
 
-seed 9 の北西側の雲を追った。30km四方の雲濃度と地上投影の画像を225²へ縮小し、左上基準の (64,85) を中心に31・41・51画素四方で69秒と75秒を相関照合。3Dには青と赤の差を雲の指標として使った。両方で東へ約1.33km、南へ0.27〜0.53km移動した。69秒時点の投影と濃度画像の位置には、西へ0.53〜0.93kmの見かけの差がある。この数値は同じ雲の移動の照合に使う。
-
 2Dと3Dは32×32の流れの格子を同じ三角形で補間し、同じ濃度画像を画素の中心から双線形で読む。従来の3Dの計算と地図の濃度をseed 9の近傍400点で比べると、低い雲の差は0〜1の尺度で最大0.12247だった。修正後は地図との差が0.00005未満（69秒・75秒、上下両層）。
 
-高い薄雲は自作の空で低い雲を隠し、同じ2時刻を120km四方で撮影した。225²に縮小した濃度画像と高さ9kmへの地上投影で、左上基準 (136,183) の33・41画素四方を照合すると、両方で東へ6.40km、南へ1.60km移動した。4か所で移動量の差は東西最大1画素（0.53km）、南北0画素。比較画像の中央列は薄い濃度を読めるよう明るく表示した。Weather Maker での照合は未確認。[上層の比較](../../artifacts/region-map/mesa-cloud-20261126/shared-sampling/high/high-two-times.jpg)・[照合値](../../artifacts/region-map/mesa-cloud-20261126/shared-sampling/high/motion.txt)
-
-崩落岩修正版の自作の空で、seed 9の69秒・75秒を3Dカメラで真上から撮った。照合のため地形を隠し、上下の層を1枚ずつ表示した。低い雲は30km四方・高さ1.95kmの基準面、高い雲は120km四方・高さ9km。225²に縮小し、晴れた空との差と地図の濃度を相関照合。低層の北西の雲は両方で東1.33km・南0.53km、上層の南側の筋は東6.40km・南1.60km移動。69秒の照合窓での位置差は低層最大2画素、高層最大1画素だった。[低層](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/low-comparison.jpg)・[高層](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/high-comparison.jpg)・[照合値](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/measurements.txt)
-
-俯瞰の比較図の地図と地上投影は以前の同じseed・地点・時刻の画像。地上カメラでも両時刻を撮影した。Weather Maker版での比較は未確認。[地上の2時刻](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/ground-comparison.jpg)・[高層の晴天差分](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/high-overhead-signal.jpg)
-
-地形を含む俯瞰の試験では、seed 9の地形と小物の高さが10.6〜257.2m、低い雲の底が1601.4m。実際の地形を表示し、同じ雲のシェーダーを深度判定する比較用の透明面で描いた。雲が上では地形に重なり、69秒から75秒にかけて左上の地面が見える。面を地形の下に移した75秒の対照と雲なしの差は、900²のうち2画素。全地形が雲より下の条件での撮影。[深度の比較](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/depth/depth-comparison.jpg)・[計測](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/depth/measurements.txt)・[Unityの深度判定](https://docs.unity3d.com/6000.3/Documentation/Manual/SL-ZTest.html)
+5.2節の雲の照合（2時刻の移動、上層、真上からの撮影、地形を含む俯瞰と深度）と、崖下の暗部・床の間接光・崩落岩の日照の比較の記録（8段落）は、[履歴](REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-27 REGION_TERRAIN_LOOK_SPEC 5.2節から移した記録」へ原文のまま移した（未確認は今も効く）。
 
 別地点のseed 8（X82.93144／Y62.38425）でも、PC品質で遠景・中景・崖下を撮影できた。砂・礫の素材は比較用に置き、既定への採用は本人の判断。[seed 8 の遠景・中景・崖下](../../artifacts/region-map/mesa-cloud-20261126/readiness-final-seed8/mesa-views.jpg)
 
@@ -181,13 +173,7 @@ seed 9 の北西側の雲を追った。30km四方の雲濃度と地上投影の
 
 Weather Makerを使う通常の見回しでは、立ち上がりを待った後、地平線の2方向を手動描画し、同じ更新内で見回し中の視点、地形、描画先、後処理を復元する。空の色を読めなければ条件の霞を使う。自作の空の小さな試験シーンで両方向の色の取得と状態復元を確認し、計測前後の画像はバイト一致した。Weather Maker本体での色と見回しは未確認。[Unity Camera.Render](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Camera.Render.html)・[検証ログ](../../artifacts/region-map/mesa-cloud-20261126/haze-transition/result.txt)
 
-崖下の暗部は、seed 9・晴天・69秒の自作の空、砂と礫の写真材質を固定し、現行・照り返し2倍・露出+0.45 EVを比較した。8ビットの画面上の明るさの平均は、影の岩壁で47.21／57.70／56.64、影の床で37.85／40.36／45.70、日向の砂で171.07／171.22／190.16。いずれも標本範囲を固定した値。照り返しは壁に効き、露出は日向も明るくした。両案とも影の床で礫と地面の境が読みにくい。比較用の調整値。[現行と2案](../../artifacts/region-map/mesa-cloud-20261126/shadow-light/shadow-light-comparison.jpg)・[計測](../../artifacts/region-map/mesa-cloud-20261126/shadow-light/measurements.txt)
-
 地形シェーダーの照り返し係数は、上を向く地面で0.10、垂直な岩壁で0.55。他の条件が同じでも壁に多く届く。床の礫を見せるには、壁の照り返しを増やす試験に加え、地面に届く間接光と溝・岩の接点での陰影を場面内で確かめる。[地形シェーダー](../../Assets/Resources/RegionMap3D/RegionTerrain.shader)・[Canyonlandsのアルコーブ写真](https://www.nps.gov/places/alcove-spring-trail.htm)
-
-同じ場面で、上向きで日が当たらず、空が遮られた面にだけ間接光を加えた。設定をゼロにした比較用シェーダーは、現行との差が全画面平均0.001未満。影の床は平均37.85→48.36（0〜255）で、影の岩壁47.21と日向の砂171.07はほぼ同じ。床の接地影を強めた条件は48.18。床は明るくなるが、礫の輪郭は拡大しても追いづらい。比較用の設定。[全景と床の拡大](../../artifacts/region-map/mesa-cloud-20261126/shadow-light/floor/floor-comparison.jpg)・[計測](../../artifacts/region-map/mesa-cloud-20261126/shadow-light/floor/measurements.txt)
-
-崩落岩の頂点の日照と空の開け具合を、床と同じ張り出しを含む体積から計算するよう修正した。seed 9・晴天・69秒で、岩32個の形と配置を固定し、頂点の日照データだけ切り替えて比較した。3156頂点のうち日照617、空の開け具合1214が変わり、近景では右手前の岩の側面・底面に差が出た。従来の値で描いた近景は前回の現行画像とバイト一致。穴の床に間接光を足す案は比較用のまま。[アルコーブの崩落岩](../../Assets/Scripts/RegionMap/View/RegionAlcoveView.cs)・[新旧の比較](../../artifacts/region-map/mesa-cloud-20261126/fallen-rock-light/fallen-rock-comparison.jpg)・[計測](../../artifacts/region-map/mesa-cloud-20261126/fallen-rock-light/run.txt)
 
 ### 5.3 写真・生成結果・実装を突き合わせる
 

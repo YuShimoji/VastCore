@@ -1260,3 +1260,23 @@ Unity では、メニュー `Vastcore > Region Map > Open 3D Cliff And Cave Prot
 - 既定の地形のバイト一致: 台地を入れない指定で、2.5 km 窓（X38.8 Y60.9）の真上の絵が、変更前の出力（`3d-strata-20261125` の `m2-3d-detail-top.png` と `m2-3d-detail-strata-top.png`）と SHA-256 一致。0.5 km 窓は、変更前の出力を出した時の指定が分からず、比べていない。
 - 確認ツールの絵を見て直した順: ①棚の縁を塊ごとに出入りさせると、細かな崖が散らかる → なめらかな線にした ②割れ目と欠けをノイズの値で決めると、ノイズの傾きがゆるい所で上面の広い範囲が格子になる → なめらかな縁からの距離（m）で決める2段の計算にした ③幅 4 m より細い板と針が立つ → 取り除いた ④柱の面の出入りが 2.6 m ごとで波板に見える → 板 34×48 m・柱 9×12.5 m・面 4.2×5.5 m にした ⑤崩れ落ちた塊だけの離れ岩が、裾の無い柱として立つ → 岩屑から 4〜13 m だけ顔を出す形にした ⑥岩が斜面の地色から浮く → 岩屑の斜面を岩肌の色へ半分寄せた。Unity のバッチでは、作った直後に撮る最初の 1 枚だけ、地面の画像が貼られる前の白い地面で写った（最初と最後に同じ視点を撮って分けた） → 捨てコマを 1 枚描いてから撮る。直した後の遠景は、正常だった 1 枚と SHA-256 一致。
 - 見込みと実績: 着手時は時間の数値を置かず（同種の作業の記録が無い）、区切り（骨格 → 割れ目と岩屑 → 3視点と Unity）だけを示した。実績は、1 回の作業の中で3区切りとも終えた。確認ツールのビルド 10 回、Unity のバッチ 5 回（EditMode 2 回で 664/664、撮影 3 回）。岩の数は Unity で 109,444 個、確認ツールで 109,474 個（内側 106,023・外側 3,451）で、30 個の差がある（原因は未特定。小数の計算の差の疑い）。
+
+## 2026-11-27 REGION_TERRAIN_LOOK_SPEC 5.2節から移した記録
+
+正本の上限（40KB）の内側へ戻すため、5.2節の照合・計測の段落を原文のまま移した。リンクは同じフォルダからの相対パスのまま有効。
+
+seed 9 の北西側の雲を追った。30km四方の雲濃度と地上投影の画像を225²へ縮小し、左上基準の (64,85) を中心に31・41・51画素四方で69秒と75秒を相関照合。3Dには青と赤の差を雲の指標として使った。両方で東へ約1.33km、南へ0.27〜0.53km移動した。69秒時点の投影と濃度画像の位置には、西へ0.53〜0.93kmの見かけの差がある。この数値は同じ雲の移動の照合に使う。
+
+高い薄雲は自作の空で低い雲を隠し、同じ2時刻を120km四方で撮影した。225²に縮小した濃度画像と高さ9kmへの地上投影で、左上基準 (136,183) の33・41画素四方を照合すると、両方で東へ6.40km、南へ1.60km移動した。4か所で移動量の差は東西最大1画素（0.53km）、南北0画素。比較画像の中央列は薄い濃度を読めるよう明るく表示した。Weather Maker での照合は未確認。[上層の比較](../../artifacts/region-map/mesa-cloud-20261126/shared-sampling/high/high-two-times.jpg)・[照合値](../../artifacts/region-map/mesa-cloud-20261126/shared-sampling/high/motion.txt)
+
+崩落岩修正版の自作の空で、seed 9の69秒・75秒を3Dカメラで真上から撮った。照合のため地形を隠し、上下の層を1枚ずつ表示した。低い雲は30km四方・高さ1.95kmの基準面、高い雲は120km四方・高さ9km。225²に縮小し、晴れた空との差と地図の濃度を相関照合。低層の北西の雲は両方で東1.33km・南0.53km、上層の南側の筋は東6.40km・南1.60km移動。69秒の照合窓での位置差は低層最大2画素、高層最大1画素だった。[低層](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/low-comparison.jpg)・[高層](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/high-comparison.jpg)・[照合値](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/measurements.txt)
+
+俯瞰の比較図の地図と地上投影は以前の同じseed・地点・時刻の画像。地上カメラでも両時刻を撮影した。Weather Maker版での比較は未確認。[地上の2時刻](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/ground-comparison.jpg)・[高層の晴天差分](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/high-overhead-signal.jpg)
+
+地形を含む俯瞰の試験では、seed 9の地形と小物の高さが10.6〜257.2m、低い雲の底が1601.4m。実際の地形を表示し、同じ雲のシェーダーを深度判定する比較用の透明面で描いた。雲が上では地形に重なり、69秒から75秒にかけて左上の地面が見える。面を地形の下に移した75秒の対照と雲なしの差は、900²のうち2画素。全地形が雲より下の条件での撮影。[深度の比較](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/depth/depth-comparison.jpg)・[計測](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/depth/measurements.txt)・[Unityの深度判定](https://docs.unity3d.com/6000.3/Documentation/Manual/SL-ZTest.html)
+
+崖下の暗部は、seed 9・晴天・69秒の自作の空、砂と礫の写真材質を固定し、現行・照り返し2倍・露出+0.45 EVを比較した。8ビットの画面上の明るさの平均は、影の岩壁で47.21／57.70／56.64、影の床で37.85／40.36／45.70、日向の砂で171.07／171.22／190.16。いずれも標本範囲を固定した値。照り返しは壁に効き、露出は日向も明るくした。両案とも影の床で礫と地面の境が読みにくい。比較用の調整値。[現行と2案](../../artifacts/region-map/mesa-cloud-20261126/shadow-light/shadow-light-comparison.jpg)・[計測](../../artifacts/region-map/mesa-cloud-20261126/shadow-light/measurements.txt)
+
+同じ場面で、上向きで日が当たらず、空が遮られた面にだけ間接光を加えた。設定をゼロにした比較用シェーダーは、現行との差が全画面平均0.001未満。影の床は平均37.85→48.36（0〜255）で、影の岩壁47.21と日向の砂171.07はほぼ同じ。床の接地影を強めた条件は48.18。床は明るくなるが、礫の輪郭は拡大しても追いづらい。比較用の設定。[全景と床の拡大](../../artifacts/region-map/mesa-cloud-20261126/shadow-light/floor/floor-comparison.jpg)・[計測](../../artifacts/region-map/mesa-cloud-20261126/shadow-light/floor/measurements.txt)
+
+崩落岩の頂点の日照と空の開け具合を、床と同じ張り出しを含む体積から計算するよう修正した。seed 9・晴天・69秒で、岩32個の形と配置を固定し、頂点の日照データだけ切り替えて比較した。3156頂点のうち日照617、空の開け具合1214が変わり、近景では右手前の岩の側面・底面に差が出た。従来の値で描いた近景は前回の現行画像とバイト一致。穴の床に間接光を足す案は比較用のまま。[アルコーブの崩落岩](../../Assets/Scripts/RegionMap/View/RegionAlcoveView.cs)・[新旧の比較](../../artifacts/region-map/mesa-cloud-20261126/fallen-rock-light/fallen-rock-comparison.jpg)・[計測](../../artifacts/region-map/mesa-cloud-20261126/fallen-rock-light/run.txt)

@@ -75,17 +75,19 @@ namespace Vastcore.RegionMap
                     {
                         Name = "dust",
                         SunAltitudeDegrees = 26f,
-                        SunColor = new Color(1f, 0.86f, 0.68f), SunIntensity = 2.6f,
-                        AmbientSky = new Color(0.66f, 0.64f, 0.62f), AmbientEquator = new Color(0.62f, 0.55f, 0.48f), AmbientGround = new Color(0.42f, 0.33f, 0.26f),
-                        AmbientIntensity = 1.0f,
-                        Zenith = new Color(0.50f, 0.58f, 0.70f), SkyIntensity = 1.1f,
-                        Fog = new Color(0.80f, 0.72f, 0.62f), FogTowardSun = new Color(0.98f, 0.88f, 0.72f), FogTowardSunSharpness = 4f,
+                        // 参照写真の砂塵（黄土色の空、弱い太陽、明暗の差が小さい）に寄せた値（2026-11-27、Linear で調整）。
+                        // 天頂も黄土色にし、太陽を弱め、空からの光を強めて影を浅くし、後処理のコントラストを下げる
+                        SunColor = new Color(1f, 0.82f, 0.60f), SunIntensity = 1.7f,
+                        AmbientSky = new Color(0.72f, 0.64f, 0.52f), AmbientEquator = new Color(0.66f, 0.57f, 0.46f), AmbientGround = new Color(0.46f, 0.36f, 0.27f),
+                        AmbientIntensity = 1.3f,
+                        Zenith = new Color(0.66f, 0.58f, 0.46f), SkyIntensity = 1.15f,
+                        Fog = new Color(0.82f, 0.70f, 0.54f), FogTowardSun = new Color(0.98f, 0.86f, 0.66f), FogTowardSunSharpness = 3f,
                         FogDensity = 0.00030f, FogFalloffMeters = 900f, FogMax = 0.93f,
                         Bounce = new Color(0.90f, 0.62f, 0.42f), BounceIntensity = 0.35f,
                         ShadowTint = new Color(0.97f, 0.97f, 1.0f),
-                        SunGlow = new Color(1f, 0.85f, 0.62f), SunGlowSize = 6f, SunGlowStrength = 0.9f,
-                        Tonemap = TonemappingMode.ACES, PostExposure = 0.3f, Contrast = 2f, Saturation = -4f,
-                        Temperature = 4f, BloomIntensity = 0.25f, BloomThreshold = 1.0f, VignetteIntensity = 0.16f,
+                        SunGlow = new Color(1f, 0.86f, 0.64f), SunGlowSize = 4f, SunGlowStrength = 0.6f,
+                        Tonemap = TonemappingMode.ACES, PostExposure = 0.35f, Contrast = -12f, Saturation = -2f,
+                        Temperature = 6f, BloomIntensity = 0.25f, BloomThreshold = 1.0f, VignetteIntensity = 0.16f,
                     };
                 default:
                     return new RegionAtmosphere

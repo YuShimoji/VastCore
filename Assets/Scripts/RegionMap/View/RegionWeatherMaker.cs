@@ -126,7 +126,7 @@ namespace Vastcore.RegionMap
         /// 空の色は時刻と緯度から計算されるので、日付と場所を決め、午後のうち太陽がその高さになる時刻を探し、
         /// 方位は太陽の軌道を Y 軸回りに回して合わせる。時刻は止める。日・場所の設定は写しを作って差し替える。
         /// </summary>
-        public static void SetSun(float altitudeDegrees, float towardSunYawDegrees)
+        public static void SetSun(float altitudeDegrees, float towardSunYawDegrees, Color? sunColor = null)
         {
             UnityEngine.Object cycle = Instance("WeatherMakerDayNightCycleManagerScript");
             var profile = UnityEngine.Object.Instantiate((ScriptableObject)Get(cycle, "DayNightProfile"));
@@ -145,6 +145,15 @@ namespace Vastcore.RegionMap
             // 空からの光（環境光）は自作の条件（RegionAtmosphere が置いた値）のままにする。既定は毎コマ素材の色で上書きし、
             // その色は Linear 色空間では暗く変換されて、夕方の影の地面がほぼ黒になった（2026-11-27 m28・m29）
             SetEnum(profile, "AmbientColorMode", "UnityAmbientSettings");
+            // 太陽の光の色は、素材では太陽の高さのグラデーションで毎コマ決まり、夕方（12 度）でも白く、雲に夕日の色が出なかった（2026-11-27 m32）。
+            // sunColor（Light.color に入れる値）を渡した時は、グラデーションを 1 色にして条件の色にそろえる
+            if (sunColor.HasValue)
+            {
+                var tint = new Gradient();
+                tint.SetKeys(new[] { new GradientColorKey(sunColor.Value, 0f), new GradientColorKey(sunColor.Value, 1f) },
+                             new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
+                Set(profile, "SunTintColorGradient", tint);
+            }
             Set(cycle, "DayNightProfile", profile);
 
             // 正午（12 時）から日没（18 時）までで、太陽の高さが目標になる時刻を二分法で探す
@@ -190,6 +199,11 @@ namespace Vastcore.RegionMap
             PinRanges(layer);
             SetRange(profile, "CloudHeight", baseHeight);
             SetRange(profile, "CloudHeightTop", topHeight);
+            // 雲に当たる空からの光（素材の既定は空 2・地面 1 倍）を弱め、太陽の光（既定 3 倍）を強めて、太陽の光の色が雲に出るようにする。
+            // 既定のままでは空の青い光が勝ち、夕方も雲が白か灰色のままだった（2026-11-27 m30・m33）
+            Set(layer, "CloudAmbientSkyIntensity", (float)Get(layer, "CloudAmbientSkyIntensity") * CloudAmbientScale);
+            Set(layer, "CloudAmbientGroundIntensity", (float)Get(layer, "CloudAmbientGroundIntensity") * CloudAmbientScale);
+            Set(layer, "CloudDirLightMultiplier", (float)Get(layer, "CloudDirLightMultiplier") * CloudSunScale);
             // 溶け始めの距離は (層の厚さ × この倍率)。地平線の溶け方（CloudHorizonFade）の既定では、その 2/3 ほどでほぼ消える
             Set(layer, "CloudOpticalDistanceMultiplier", Mathf.Clamp(fadeMeters * 1.5f / Mathf.Max(topHeight - baseHeight, 1f), 1f, 100f));
 
@@ -246,6 +260,12 @@ namespace Vastcore.RegionMap
         /// 本人は 2D の雲の量より形を選んだ（2026-11-27）。雲のある場所は 2D と同じまま。
         /// </summary>
         public static float CoverMax = 0.8f;
+
+        /// <summary>雲に当たる空からの光の倍率（素材の設定に掛ける）。</summary>
+        public static float CloudAmbientScale = 0.25f;
+
+        /// <summary>雲に当たる太陽の光の倍率（素材の設定に掛ける）。</summary>
+        public static float CloudSunScale = 1.6f;
 
         /// <summary>
         /// 2D の雲の濃さ（RegionCloudSky の低い雲）から雲の地図の 1 画素を作る。

@@ -350,6 +350,7 @@ namespace Vastcore.RegionMap.Editor
         {
             string timeArgument = RegionMapMenu.Argument("-cloudTime", "auto");
             bool compare = RegionMapMenu.Argument("-skyCompare", "false") == "true";
+            bool sunView = RegionMapMenu.Argument("-sunView", "false") == "true";
             RegionWeatherMaker.CoverFullDensity = float.Parse(RegionMapMenu.Argument("-cloudCoverFull",
                 RegionWeatherMaker.CoverFullDensity.ToString(CultureInfo.InvariantCulture)), CultureInfo.InvariantCulture);
             var steps = new RegionEditorSteps();
@@ -383,6 +384,31 @@ namespace Vastcore.RegionMap.Editor
                         Capture(camera, null, null);
                     });
                     steps.Add(() => Capture(camera, folder, "look-" + view.Name + ".png"));
+                }
+                if (sunView)
+                {
+                    // 太陽の側の雲（夕日を受けた雲の縁）を見る 1 枚。中景の位置から、太陽の方位の 35 度横を 12 度見上げる
+                    steps.Add(() =>
+                    {
+                        // 向きは場面で実際に光っている太陽（最も強い平行光源）から取り、狙った方位とのずれを記録する
+                        Vector3 planned = -(RegionTerrainView.SunRotation(atmosphere.SunAltitudeDegrees) * Vector3.forward);
+                        Light brightest = null;
+                        foreach (Light candidate in UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None))
+                        {
+                            if (candidate.type != LightType.Directional || !candidate.isActiveAndEnabled) continue;
+                            if (brightest == null || candidate.intensity > brightest.intensity) brightest = candidate;
+                        }
+                        Vector3 toSun = brightest != null ? -brightest.transform.forward : planned;
+                        float yaw = Mathf.Atan2(toSun.x, toSun.z) * Mathf.Rad2Deg + 35f;
+                        Debug.Log("[RegionMap] 太陽側の視点: 光っている太陽 " + (brightest != null ? brightest.name + "（色 " + brightest.color + "・強さ " + brightest.intensity.ToString("0.00") + "）" : "なし") + " 方位 " +
+                                  (Mathf.Atan2(toSun.x, toSun.z) * Mathf.Rad2Deg).ToString("0.0") + " 度・高さ " + (Mathf.Asin(Mathf.Clamp(toSun.y, -1f, 1f)) * Mathf.Rad2Deg).ToString("0.0") +
+                                  " 度、狙った方位 " + (Mathf.Atan2(planned.x, planned.z) * Mathf.Rad2Deg).ToString("0.0") + " 度・高さ " + atmosphere.SunAltitudeDegrees + " 度");
+                        RegionTerrainView.PlaceLook(camera.transform, look.Scene, spec.Mid);
+                        camera.transform.rotation = Quaternion.Euler(-12f, yaw, 0f);
+                        camera.fieldOfView = spec.Mid.FovDegrees;
+                        Capture(camera, null, null);
+                    });
+                    steps.Add(() => Capture(camera, folder, "look-sun.png"));
                 }
                 if (compare) RegionLookSky.AddComparisonSteps(steps, () => camera, () => look, () => cloudTime, folder);
             }
