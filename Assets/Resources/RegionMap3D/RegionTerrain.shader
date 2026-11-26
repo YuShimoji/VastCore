@@ -4,6 +4,7 @@
 //             B = 1 から「岩肌の色にする度合い」を引いた値（崖の面と岩は 0）。A = 岩肌の色のむら（1 で元の色、0 で 0.66 倍）。
 // 頂点カラーの無いメッシュは全部 1 として描かれる（空は開け、影は無く、岩肌は傾きだけで決まる）。
 // 影を落とす・深度を書くパスは URP 標準の Lit のものを借りる。
+// 光は線形の値で計算し、空気の霞（RegionAtmosphere.hlsl）を重ねてから sRGB で書く。
 Shader "Vastcore/RegionTerrain"
 {
     Properties
@@ -31,10 +32,11 @@ Shader "Vastcore/RegionTerrain"
             #pragma multi_compile_local_fragment _ REGION_SANDSTONE
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
-            #pragma multi_compile_fog
+            #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "RegionAtmosphere.hlsl"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
@@ -67,7 +69,6 @@ Shader "Vastcore/RegionTerrain"
                 float3 positionWS : TEXCOORD0;
                 half3 normalWS : TEXCOORD1;
                 float2 uv : TEXCOORD2;
-                half fogFactor : TEXCOORD3;
                 half4 color : COLOR;
                 float4 surface : TEXCOORD4;
             };
@@ -80,7 +81,6 @@ Shader "Vastcore/RegionTerrain"
                 output.positionWS = position.positionWS;
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 output.uv = input.uv;
-                output.fogFactor = ComputeFogFactor(position.positionCS.z);
                 output.color = input.color;
                 output.surface = input.surface;
                 return output;
@@ -104,15 +104,22 @@ Shader "Vastcore/RegionTerrain"
                 albedo = lerp(albedo, sandstone, max(input.surface.w, _LooseRock));
                 #endif
 
+                albedo = RegionToLinear(albedo);
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light light = GetMainLight(shadowCoord);
+                AmbientOcclusionFactor occlusion = GetScreenSpaceAmbientOcclusion(GetNormalizedScreenSpaceUV(input.positionCS));
                 // 影は、Unity の影（近くだけ届く）と、頂点に持たせた影の、暗い方
-                half direct = saturate(dot(normal, light.direction)) * min(light.shadowAttenuation, input.color.g);
-                // 岩の下では、空からの光も減らす
-                half3 ambient = SampleSH(normal) * (0.35 + 0.65 * input.color.r);
-                half3 color = albedo * (light.color * direct + ambient);
-                color = MixFog(color, input.fogFactor);
-                return half4(color, 1);
+                half sunlit = min(light.shadowAttenuation, input.color.g);
+                half direct = saturate(dot(normal, light.direction)) * sunlit * occlusion.directAmbientOcclusion;
+                // 岩の下では、空からの光も減らす。影の中の空の光は、空の青を強めに受ける
+                half open = 0.35 + 0.65 * input.color.r;
+                half3 tint = dot(_RegionShadowTint.rgb, 1.0) > 0.0 ? lerp(_RegionShadowTint.rgb, 1.0, sunlit) : 1.0;
+                half3 ambient = SampleSH(normal) * open * tint;
+                // 日の当たる地面と向かいの岩壁からの照り返し。下や横を向いた面、影の中ほど受ける
+                half3 bounce = _RegionBounceColor.rgb * saturate(0.55 - 0.45 * normal.y) * (0.45 + 0.55 * (1.0 - sunlit)) * (0.5 + 0.5 * open);
+                half3 color = albedo * (light.color * direct + (ambient + bounce) * occlusion.indirectAmbientOcclusion);
+                color = RegionApplyAir(color, input.positionWS);
+                return RegionOutput(color, 1);
             }
             ENDHLSL
         }

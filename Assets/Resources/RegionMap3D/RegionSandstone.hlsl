@@ -110,8 +110,9 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
     float2 ground = float2(0.8 * p.x + 0.6 * p.z, -0.6 * p.x + 0.8 * p.z);
     float2 drift = float2(mottling, pores);
     float gravel = SandChips(ground * 4.6 + drift) + 0.75 * SandChips(p.xz * 13.3 - drift);
-    float3 rubble = lerp(float3(0.54, 0.40, 0.35), float3(0.77, 0.61, 0.50), sandPatch);
-    rubble = lerp(rubble, mudstone, mud * 0.68);
+    // Talus is broken from the orange cliff above, so it stays warmer than the mudstone it covers.
+    float3 rubble = lerp(float3(0.58, 0.42, 0.33), float3(0.80, 0.63, 0.48), sandPatch);
+    rubble = lerp(rubble, mudstone, mud * 0.45);
     float talus = smoothstep(0.04, 0.82, surface.x);
     float driftSand = smoothstep(0.47, 0.80, 0.62 * mottling + 0.38 * broken);
     float3 groundColor = lerp(soil, rubble, talus * (1.0 - 0.56 * driftSand));

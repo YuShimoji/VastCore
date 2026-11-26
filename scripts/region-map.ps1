@@ -21,6 +21,8 @@
   # view3d: 地図上の中心 X,Y、アルコーブの前後・裾から棚への連続画像
   [string]$LookCenter = '',
   [switch]$AlcoveReview,
+  # view3d: 光と空気の案（clear・golden・dust）。コンマで並べると案ごとに <OutDir>/<案> へ撮る
+  [string]$LookPreset = '',
   [string]$UnityPath = ''
 )
 
@@ -69,6 +71,7 @@ if ($Mode -eq 'setup') {
   if ($Mode -eq 'view3d') {
     if ($LookCenter) { $unityArgs += @('-lookCenter', $LookCenter) }
     if ($AlcoveReview) { $unityArgs += @('-alcoveReview', 'true') }
+    if ($LookPreset) { $unityArgs += @('-lookPreset', $LookPreset) }
   }
 } elseif ($Mode -eq 'play') {
   $unityArgs = @(

@@ -2,7 +2,9 @@
     "name": "Vastcore.RegionMap",
     "rootNamespace": "Vastcore.RegionMap",
     "references": [
-        "UnityEngine.UI"
+        "UnityEngine.UI",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

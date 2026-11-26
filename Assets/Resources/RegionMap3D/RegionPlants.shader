@@ -21,9 +21,10 @@ Shader "Vastcore/RegionPlants"
             #pragma fragment Frag
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
-            #pragma multi_compile_fog
+            #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "RegionAtmosphere.hlsl"
             TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
@@ -31,7 +32,7 @@ Shader "Vastcore/RegionPlants"
                 half _Cutoff;
             CBUFFER_END
             struct Attributes { float4 positionOS : POSITION; float2 uv : TEXCOORD0; half4 light : COLOR; };
-            struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; float3 positionWS : TEXCOORD1; half3 lightFog : TEXCOORD2; };
+            struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; float3 positionWS : TEXCOORD1; half2 light : TEXCOORD2; };
 
             Varyings Vert(Attributes input)
             {
@@ -40,17 +41,25 @@ Shader "Vastcore/RegionPlants"
                 o.positionCS = p.positionCS;
                 o.positionWS = p.positionWS;
                 o.uv = input.uv;
-                o.lightFog = half3(input.light.rg, ComputeFogFactor(p.positionCS.z));
+                o.light = input.light.rg;
                 return o;
             }
             half4 Frag(Varyings i) : SV_Target
             {
                 half4 leaf = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv);
                 clip(leaf.a - _Cutoff);
+                half3 albedo = RegionToLinear(leaf.rgb);
                 Light sun = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
-                half direct = min(sun.shadowAttenuation, i.lightFog.x) * saturate(0.30h + 0.55h * sun.direction.y);
-                half3 sky = SampleSH(half3(0,1,0)) * (0.4h + 0.6h * i.lightFog.y);
-                return half4(MixFog(leaf.rgb * (sun.color * direct + sky), i.lightFog.z), leaf.a);
+                AmbientOcclusionFactor occlusion = GetScreenSpaceAmbientOcclusion(GetNormalizedScreenSpaceUV(i.positionCS));
+                half sunlit = min(sun.shadowAttenuation, i.light.x);
+                half direct = sunlit * saturate(0.30h + 0.55h * sun.direction.y);
+                // 低い太陽を背にした葉は、光が透けて明るく見える
+                float3 view = normalize(i.positionWS - _WorldSpaceCameraPos);
+                half through = pow(saturate(dot(view, sun.direction)), 4.0) * 0.45h * sunlit;
+                half3 tint = dot(_RegionShadowTint.rgb, 1.0) > 0.0 ? lerp(_RegionShadowTint.rgb, 1.0, sunlit) : 1.0;
+                half3 sky = SampleSH(half3(0,1,0)) * (0.4h + 0.6h * i.light.y) * tint + 0.5h * _RegionBounceColor.rgb;
+                half3 color = albedo * (sun.color * (direct + through) + sky * occlusion.indirectAmbientOcclusion);
+                return RegionOutput(RegionApplyAir(color, i.positionWS), leaf.a);
             }
             ENDHLSL
         }

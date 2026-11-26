@@ -103,8 +103,14 @@ namespace Vastcore.RegionMap
     /// </summary>
     public sealed class RegionVolumePatch
     {
-        /// <summary>太陽の高さ（度）。光は北西から。RegionRenderOptions.SunAltitude の既定と同じ。</summary>
-        public const float SunAltitudeDegrees = 38f;
+        /// <summary>太陽の高さの既定（度）。光は北西から。RegionRenderOptions.SunAltitude の既定と同じ。</summary>
+        public const float DefaultSunAltitudeDegrees = 38f;
+
+        /// <summary>
+        /// 3D 表示で使う太陽の高さ（度）。天気・時刻の条件（RegionAtmosphere）が、場面を作る前に替える。
+        /// 頂点に持たせる影と空の開け具合は場面を作る時に計算するので、替えたら場面を作り直す。
+        /// </summary>
+        public static float SunAltitudeDegrees = DefaultSunAltitudeDegrees;
 
         public RegionVolumeSpec Spec;
         public float MinX, MinY, MinZ;

@@ -17,13 +17,24 @@ namespace Vastcore.RegionMap.Editor
     public static class RegionTerrainViewMenu
     {
         [MenuItem("Vastcore/Region Map/Open 3D Mesa Look (far, mid, near)")]
-        public static void OpenLook()
+        public static void OpenLook() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon); }
+
+        [MenuItem("Vastcore/Region Map/3D Mesa Look Atmosphere/Clear afternoon")]
+        public static void OpenLookClear() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon); }
+
+        [MenuItem("Vastcore/Region Map/3D Mesa Look Atmosphere/Golden hour")]
+        public static void OpenLookGolden() { OpenLook(RegionAtmosphere.Preset.GoldenHour); }
+
+        [MenuItem("Vastcore/Region Map/3D Mesa Look Atmosphere/Dust haze")]
+        public static void OpenLookDust() { OpenLook(RegionAtmosphere.Preset.DustHaze); }
+
+        private static void OpenLook(RegionAtmosphere.Preset preset)
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             try
             {
                 EditorUtility.DisplayProgressBar("Region Map", "地域と、砂岩の台地の場面を作っています…", 0.3f);
-                RegionTerrainView.LookResult look = CreateLookScene(new RegionSpec { Seed = 9 }, new RegionLookSpec(), out Camera camera);
+                RegionTerrainView.LookResult look = CreateLookScene(new RegionSpec { Seed = 9 }, new RegionLookSpec(), RegionAtmosphere.Create(preset), out Camera camera);
                 RegionLookViewpoint mid = look.Scene.Spec.Mid;
                 RegionTerrainView.PlaceLook(camera.transform, look.Scene, mid);
                 camera.fieldOfView = mid.FovDegrees;
@@ -58,53 +69,46 @@ namespace Vastcore.RegionMap.Editor
             }
         }
 
-        /// <summary>新しいシーンに、地形・太陽・カメラを置く。</summary>
+        /// <summary>新しいシーンに、地形・太陽・カメラを置く（光と空気は「澄んだ午後」）。</summary>
         public static RegionTerrainView.Result CreateScene(RegionSpec regionSpec, RegionTerrainViewSpec viewSpec, out Camera camera)
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            RegionAtmosphere atmosphere = RegionAtmosphere.Create(RegionAtmosphere.Preset.ClearAfternoon);
+            atmosphere.PrepareSun();
             RegionData region = RegionGenerator.Generate(regionSpec);
             RegionTerrainView.Result result = RegionTerrainView.Build(region, viewSpec);
-            camera = CreateStage(5000f);
+            camera = CreateStage(5000f, atmosphere, result.Focus.y);
             return result;
         }
 
-        /// <summary>新しいシーンに、砂岩の台地の場面・太陽・カメラを置く。</summary>
-        public static RegionTerrainView.LookResult CreateLookScene(RegionSpec regionSpec, RegionLookSpec lookSpec, out Camera camera)
+        /// <summary>新しいシーンに、砂岩の台地の場面・太陽・カメラ・光と空気を置く。</summary>
+        public static RegionTerrainView.LookResult CreateLookScene(RegionSpec regionSpec, RegionLookSpec lookSpec, RegionAtmosphere atmosphere, out Camera camera)
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            // 頂点に持たせる影は、場面を作る時の太陽の高さで計算する
+            atmosphere.PrepareSun();
             RegionData region = RegionGenerator.Generate(regionSpec);
             RegionTerrainView.LookResult look = RegionTerrainView.BuildLook(region, lookSpec);
+            float ground = look.Scene.HeightAt(look.Scene.CenterX, look.Scene.CenterZ);
             // 外側の地形の対角線（6 km 四方で約 8.5 km）が収まる距離まで描く
-            camera = CreateStage(lookSpec.OuterKm * 1000f * 1.5f + 1000f);
+            camera = CreateStage(lookSpec.OuterKm * 1000f * 1.5f + 1000f, atmosphere, ground);
             return look;
         }
 
-        /// <summary>太陽・空からの光・カメラ（光と空気は仮の値。見え方の想定の次の区切りで決める）。</summary>
-        private static Camera CreateStage(float farClip)
+        /// <summary>太陽・カメラを置き、光と空気（空・霞・空からの光・後処理）を掛ける。</summary>
+        private static Camera CreateStage(float farClip, RegionAtmosphere atmosphere, float groundHeight)
         {
-            Camera camera;
             var sun = new GameObject("Sun");
             Light light = sun.AddComponent<Light>();
             light.type = LightType.Directional;
-            light.color = new Color(1f, 0.97f, 0.92f);
-            light.intensity = 1.1f;
-            light.shadows = LightShadows.Soft;
-            sun.transform.rotation = RegionTerrainView.SunRotation();
-
-            RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.55f, 0.62f, 0.72f);
-            RenderSettings.ambientEquatorColor = new Color(0.42f, 0.44f, 0.46f);
-            RenderSettings.ambientGroundColor = new Color(0.22f, 0.21f, 0.19f);
-            RenderSettings.fog = false;
 
             var cameraObject = new GameObject("Main Camera");
             cameraObject.tag = "MainCamera";
-            camera = cameraObject.AddComponent<Camera>();
+            Camera camera = cameraObject.AddComponent<Camera>();
             camera.fieldOfView = 40f;
             camera.nearClipPlane = 0.3f;
             camera.farClipPlane = farClip;
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(0.55f, 0.68f, 0.86f);
+            atmosphere.Apply(camera, light, groundHeight);
             return camera;
         }
 
@@ -133,16 +137,28 @@ namespace Vastcore.RegionMap.Editor
                     spec.CenterMapX = float.Parse(xy[0], CultureInfo.InvariantCulture);
                     spec.CenterMapY = float.Parse(xy[1], CultureInfo.InvariantCulture);
                 }
-                RegionTerrainView.LookResult look = CreateLookScene(regionSpec, spec, out Camera camera);
-                Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + " 作成 " + watch.ElapsedMilliseconds + "ms");
-                // 作った直後の最初の 1 枚は、地面の画像が貼られる前の白い地面で写る（2026-11-25 に、最初と最後に同じ視点を撮って確かめた）。
-                // 捨てコマを 1 枚描いてから撮る
-                RegionTerrainView.PlaceLook(camera.transform, look.Scene, look.Scene.Spec.Far);
-                Capture(camera, null, null);
-                if (look.Alcove != null && RegionMapMenu.Argument("-alcoveReview", "false") == "true")
-                    CaptureAlcoveComparison(camera, look, output);
-                CaptureLookViews(camera, look, output);
-                if (look.Alcove == null) DescribeNearestCap(look.Scene);
+                // -lookPreset clear,golden,dust のように複数を書くと、条件ごとに場面を作り直して <出力>/<条件> へ撮る
+                string[] presets = RegionMapMenu.Argument("-lookPreset", "clear").Split(',');
+                foreach (string presetName in presets)
+                {
+                    if (!RegionAtmosphere.TryParse(presetName, out RegionAtmosphere.Preset preset))
+                        throw new ArgumentException("-lookPreset は clear・golden・dust: " + presetName);
+                    RegionAtmosphere atmosphere = RegionAtmosphere.Create(preset);
+                    string folder = presets.Length > 1 ? Path.Combine(output, atmosphere.Name) : output;
+                    Directory.CreateDirectory(folder);
+                    watch.Restart();
+                    RegionTerrainView.LookResult look = CreateLookScene(regionSpec, spec, atmosphere, out Camera camera);
+                    Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + " 光と空気 " + atmosphere.Name + " 作成 " + watch.ElapsedMilliseconds + "ms");
+                    // 作った直後の最初の 1 枚は、地面の画像が貼られる前の白い地面で写る（2026-11-25 に、最初と最後に同じ視点を撮って確かめた）。
+                    // 捨てコマを 1 枚描いてから撮る
+                    RegionTerrainView.PlaceLook(camera.transform, look.Scene, look.Scene.Spec.Far);
+                    Capture(camera, null, null);
+                    if (look.Alcove != null && RegionMapMenu.Argument("-alcoveReview", "false") == "true")
+                        CaptureAlcoveComparison(camera, look, folder);
+                    CaptureLookViews(camera, look, folder);
+                    if (look.Alcove == null) DescribeNearestCap(look.Scene);
+                }
+                RegionVolumePatch.SunAltitudeDegrees = RegionVolumePatch.DefaultSunAltitudeDegrees;
             }
             catch (Exception exception)
             {

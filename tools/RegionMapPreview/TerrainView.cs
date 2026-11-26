@@ -84,7 +84,7 @@ namespace Vastcore.RegionMap.Preview
             for (int i = 0; i < frame.Zbuffer.Length; i++) frame.Zbuffer[i] = float.MaxValue;
             frame.Color = new float[w * h * 3];
             frame.Covered = new bool[w * h];
-            const float SunAltitude = RegionVolumePatch.SunAltitudeDegrees * (float)Math.PI / 180f;
+            const float SunAltitude = RegionVolumePatch.DefaultSunAltitudeDegrees * (float)Math.PI / 180f;
             frame.SunX = -(float)Math.Cos(SunAltitude) * 0.70710678f;
             frame.SunY = (float)Math.Sin(SunAltitude);
             frame.SunZ = -(float)Math.Cos(SunAltitude) * 0.70710678f;
