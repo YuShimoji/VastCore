@@ -171,7 +171,9 @@ seed 9 の北西側の雲を追った。30km四方の雲濃度と地上投影の
 
 崩落岩修正版の自作の空で、seed 9の69秒・75秒を3Dカメラで真上から撮った。照合のため地形を隠し、上下の層を1枚ずつ表示した。低い雲は30km四方・高さ1.95kmの基準面、高い雲は120km四方・高さ9km。225²に縮小し、晴れた空との差と地図の濃度を相関照合。低層の北西の雲は両方で東1.33km・南0.53km、上層の南側の筋は東6.40km・南1.60km移動。69秒の照合窓での位置差は低層最大2画素、高層最大1画素だった。[低層](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/low-comparison.jpg)・[高層](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/high-comparison.jpg)・[照合値](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/measurements.txt)
 
-俯瞰の比較図の地図と地上投影は以前の同じseed・地点・時刻の画像。今回も地上カメラで両方の時刻のシーンを撮影した。地形を含む俯瞰画面で雲と地形を重ねた場合の前後関係、Weather Maker版での比較は未確認。[今回の地上の2時刻](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/ground-comparison.jpg)・[高層の晴天差分](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/high-overhead-signal.jpg)
+俯瞰の比較図の地図と地上投影は以前の同じseed・地点・時刻の画像。地上カメラでも両時刻を撮影した。Weather Maker版での比較は未確認。[地上の2時刻](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/ground-comparison.jpg)・[高層の晴天差分](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/high-overhead-signal.jpg)
+
+地形を含む俯瞰の試験では、seed 9の地形と小物の高さが10.6〜257.2m、低い雲の底が1601.4m。実際の地形を表示し、同じ雲のシェーダーを深度判定する比較用の透明面で描いた。雲が上では地形に重なり、69秒から75秒にかけて左上の地面が見える。面を地形の下に移した75秒の対照と雲なしの差は、900²のうち2画素。全地形が雲より下の条件での撮影。[深度の比較](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/depth/depth-comparison.jpg)・[計測](../../artifacts/region-map/mesa-cloud-20261126/cloud-overhead/depth/measurements.txt)・[Unityの深度判定](https://docs.unity3d.com/6000.3/Documentation/Manual/SL-ZTest.html)
 
 別地点のseed 8（X82.93144／Y62.38425）でも、PC品質で遠景・中景・崖下を撮影できた。砂・礫の素材は比較用に置き、既定への採用は本人の判断。[seed 8 の遠景・中景・崖下](../../artifacts/region-map/mesa-cloud-20261126/readiness-final-seed8/mesa-views.jpg)
 
