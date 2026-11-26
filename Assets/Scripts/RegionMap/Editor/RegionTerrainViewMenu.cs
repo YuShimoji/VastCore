@@ -262,7 +262,7 @@ namespace Vastcore.RegionMap.Editor
                     });
                     steps.Add(() => Capture(camera, folder, "look-" + view.Name + ".png"));
                 }
-                if (compare) steps.Add(() => RegionLookSky.WriteComparison(camera, look, cloudTime, folder));
+                if (compare) RegionLookSky.AddComparisonSteps(steps, () => camera, () => look, () => cloudTime, folder);
             }
             steps.Run(1800, error =>
             {

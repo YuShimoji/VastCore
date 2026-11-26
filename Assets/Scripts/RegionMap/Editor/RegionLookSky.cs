@@ -150,53 +150,75 @@ namespace Vastcore.RegionMap.Editor
 
         /// <summary>
         /// 場面の中心の地面から見上げた空（上と東西南北の 5 方向）を、雲の高さの平面へ投影して sky-3d.png に、
-        /// 同じ範囲の 2D の地図（探索画面と同じ雲の重ね方、場面の 6 km 四方の枠付き）を sky-2d.png に書く。どちらも上が北。
+        /// 同じ範囲の 2D の地図（探索画面と同じ雲の重ね方、場面の 6 km 四方の枠付き）を sky-2d.png に、
+        /// Weather Maker へ渡した雲の量を sky-cover.png に書く手順を足す。どれも上が北。
+        /// Weather Maker はカメラの向きに合わせた準備を毎コマの更新で行うので、向きを変えるたびにコマを回してから撮る。
         /// </summary>
-        public static void WriteComparison(Camera camera, RegionTerrainView.LookResult look, float cloudTime, string output)
+        public static void AddComparisonSteps(RegionEditorSteps steps, Func<Camera> camera, Func<RegionTerrainView.LookResult> look, Func<float> cloudTime, string output)
         {
-            RegionLookScene scene = look.Scene;
-            float ground = scene.HeightAt(scene.CenterX, scene.CenterZ);
-            var eye = new Vector3(scene.CenterX, ground + 2f, -scene.CenterZ);
             var pixels = new Color32[FaceForward.Length][];
             var matrices = new Matrix4x4[FaceForward.Length];
-            var target = new RenderTexture(FaceSize, FaceSize, 24, RenderTextureFormat.ARGB32);
-            var image = new Texture2D(FaceSize, FaceSize, TextureFormat.RGBA32, false);
-            float far = camera.farClipPlane, fov = camera.fieldOfView;
-            // 空だけを写す。地形は隠し、後処理（周辺減光など）は切る（5 枚のつなぎ目に段が出ないように）
-            bool post = RegionWeatherMaker.SetPostProcessing(camera, false);
-            look.Root.SetActive(false);
-            try
+            RenderTexture target = null;
+            bool post = true;
+            float fov = 0f;
+            steps.Add(() =>
             {
-                camera.targetTexture = target;
-                camera.aspect = 1f;
-                camera.fieldOfView = 90f;
-                camera.transform.position = eye;
-                for (int f = 0; f < FaceForward.Length; f++)
+                // 空だけを写す。地形は隠し、後処理（周辺減光など）は切る（5 枚のつなぎ目に段が出ないように）
+                post = RegionWeatherMaker.SetPostProcessing(camera(), false);
+                fov = camera().fieldOfView;
+                look().Root.SetActive(false);
+                target = new RenderTexture(FaceSize, FaceSize, 24, RenderTextureFormat.ARGB32);
+            }, 0);
+            for (int f = 0; f < FaceForward.Length; f++)
+            {
+                int face = f;
+                steps.Add(() =>
                 {
-                    camera.transform.rotation = Quaternion.LookRotation(FaceForward[f], f == 0 ? Vector3.forward : Vector3.up);
-                    for (int i = 0; i < 3; i++) camera.Render();
+                    Camera c = camera();
+                    c.transform.position = Eye(look().Scene);
+                    c.transform.rotation = Quaternion.LookRotation(FaceForward[face], face == 0 ? Vector3.forward : Vector3.up);
+                    c.fieldOfView = 90f;
+                    c.targetTexture = target;
+                    c.aspect = 1f;
+                }, 24);
+                steps.Add(() =>
+                {
+                    Camera c = camera();
+                    c.Render();
+                    var image = new Texture2D(FaceSize, FaceSize, TextureFormat.RGBA32, false);
                     RenderTexture previous = RenderTexture.active;
                     RenderTexture.active = target;
                     image.ReadPixels(new Rect(0, 0, FaceSize, FaceSize), 0, 0);
                     image.Apply();
                     RenderTexture.active = previous;
-                    pixels[f] = image.GetPixels32();
-                    matrices[f] = camera.projectionMatrix * camera.worldToCameraMatrix;
-                }
+                    pixels[face] = image.GetPixels32();
+                    matrices[face] = c.projectionMatrix * c.worldToCameraMatrix;
+                    UnityEngine.Object.DestroyImmediate(image);
+                }, 0);
             }
-            finally
+            steps.Add(() =>
             {
-                camera.targetTexture = null;
-                camera.ResetAspect();
-                look.Root.SetActive(true);
-                RegionWeatherMaker.SetPostProcessing(camera, post);
-                camera.fieldOfView = fov;
-                camera.farClipPlane = far;
+                Camera c = camera();
+                c.targetTexture = null;
+                c.ResetAspect();
+                c.fieldOfView = fov;
+                RegionWeatherMaker.SetPostProcessing(c, post);
+                look().Root.SetActive(true);
                 target.Release();
                 UnityEngine.Object.DestroyImmediate(target);
-                UnityEngine.Object.DestroyImmediate(image);
-            }
+                WriteComparison(look().Scene, pixels, matrices, cloudTime(), output);
+            });
+        }
 
+        private static Vector3 Eye(RegionLookScene scene)
+        {
+            return new Vector3(scene.CenterX, scene.HeightAt(scene.CenterX, scene.CenterZ) + 2f, -scene.CenterZ);
+        }
+
+        private static void WriteComparison(RegionLookScene scene, Color32[][] pixels, Matrix4x4[] matrices, float cloudTime, string output)
+        {
+            Vector3 eye = Eye(scene);
+            float ground = eye.y - 2f;
             var sky = new Color32[CompareSize * CompareSize];
             for (int j = 0; j < CompareSize; j++)
             {
