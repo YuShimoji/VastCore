@@ -105,6 +105,12 @@ namespace Vastcore.RegionMap
         /// <summary>崖から落ちて崩れでたまった岩屑の厚さ（崖の落ち口の下の錐）。1.5 m で約 0.63。</summary>
         public float[] Scree;
 
+        /// <summary>
+        /// 岩屑の大きい岩の割合（分級、0〜1）。岩屑が崖の足もとから動いた距離で決まり、落ち口の下で小さく、斜面の裾とその先の転がり出しで大きい。
+        /// 大きい岩を裾の先へ寄せる配置（RegionRockField）に使える。
+        /// </summary>
+        public float[] Coarse;
+
         public RegionDevelopment Development { get; internal set; }
         internal RegionPosition DevelopmentOrigin;
 

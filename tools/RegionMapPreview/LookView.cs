@@ -270,10 +270,10 @@ namespace Vastcore.RegionMap.Preview
             Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
                 "  セルの海陸が Sediment 0 と同じ {0:P3}  高さが 5 cm 超 上がった {1:P2}・下がった {2:P2}  最大 +{3:F1} / {4:F1} m  盛り {5:F0} m3・削り {6:F0} m3",
                 sameSign / (double)d0.Height.Length, raised / (double)land, lowered / (double)land, most, least, gain * area, loss * area));
-            string[] names = { "Deposit", "Wear", "SedimentFlow", "Scree" };
+            string[] names = { "Deposit", "Wear", "SedimentFlow", "Scree", "Coarse" };
             var line = new System.Text.StringBuilder("  0 でないセル（陸に対して）:");
-            var maps = new float[4][];
-            for (int k = 0; k < 4; k++)
+            var maps = new float[names.Length][];
+            for (int k = 0; k < names.Length; k++)
             {
                 maps[k] = Map(d1, names[k]);
                 if (maps[k] == null) { line.Append(' ').Append(names[k]).Append("=null"); continue; }
@@ -297,8 +297,8 @@ namespace Vastcore.RegionMap.Preview
             var diff = new float[res * res];
             for (int i = 0; i < diff.Length; i++) diff[i] = d1.Height[i] - d0.Height[i];
             PngWriter.Write(stem + "-diff.png", Diverging(shade1, diff, 3f), res, res);
-            byte[][] tint = { new byte[] { 255, 200, 40 }, new byte[] { 230, 40, 40 }, new byte[] { 40, 170, 255 }, new byte[] { 60, 230, 90 } };
-            for (int k = 0; k < 4; k++)
+            byte[][] tint = { new byte[] { 255, 200, 40 }, new byte[] { 230, 40, 40 }, new byte[] { 40, 170, 255 }, new byte[] { 60, 230, 90 }, new byte[] { 190, 70, 255 } };
+            for (int k = 0; k < names.Length; k++)
             {
                 if (maps[k] == null) continue;
                 PngWriter.Write(stem + "-" + names[k].ToLowerInvariant() + ".png", Overlay(shade1, maps[k], tint[k]), res, res);
@@ -320,6 +320,7 @@ namespace Vastcore.RegionMap.Preview
                 case "Deposit": return data.Deposit;
                 case "Wear": return data.Wear;
                 case "SedimentFlow": return data.SedimentFlow;
+                case "Coarse": return data.Coarse;
                 default: return data.Scree;
             }
         }
