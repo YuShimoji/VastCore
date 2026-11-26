@@ -161,9 +161,13 @@ UE の乾燥地サンプルはモアブで採取した岩と地表の高密度�
 
 探索画面の再生中に地点を選び、`Vastcore > Region Map > Open 3D Mesa Look (far, mid, near)` を使うと、再生中の地域と選択地点を使って地上に移る。雲の量と時刻・流れる速さを切替時に受け渡し、地上では選んだ時点の雲を表示する。右ドラッグで見回し、再生を終了すると編集に戻る。Weather Maker が使えない環境では、同じ雲の地図を既存の空のシェーダーに渡す。seed 7 でメニュー操作と X43.6100／Y76.9200・0.250秒の一致を確認。Weather Maker 本体を入れた環境でのこの操作は未確認。[照合ログ](../../artifacts/region-map/mesa-cloud-20261126/handoff-readiness/from-explorer.txt)
 
-seed 9 では低い雲と高い雲を分け、同じ地図を2Dと地上の空で69秒・75秒に撮った。比較の3D画像は地上の5方向を低層雲の高さへ投影し、地図と同じ向きにしたもの。砂・礫を段3の取り込み口に仮置きして、PC品質・GTX 1650 Ti・1600×900の同期描画を各48回測った。素材ありの中央値は31.84〜43.08ms、中景・近景で切より2.72・2.50ms長い。CPU・GPUを含む読み戻しまでの値。[2時刻の雲](../../artifacts/region-map/mesa-cloud-20261126/readiness-final-seed9/cloud-two-times.jpg)・[描画時間](../../artifacts/region-map/mesa-cloud-20261126/readiness-final-seed9/surface-timing.txt)
+seed 9 では両層を含む空を、同じ地図を使って2Dと地上の空で69秒・75秒に撮った。比較の3D画像は地上の5方向を低層雲の高さへ投影し、地図と同じ向きにしたもの。砂・礫を段3の取り込み口に仮置きして、PC品質・GTX 1650 Ti・1600×900の同期描画を各48回測った。素材ありの中央値は31.84〜43.08ms、中景・近景で切より2.72・2.50ms長い。CPU・GPUを含む読み戻しまでの値。[2時刻の雲](../../artifacts/region-map/mesa-cloud-20261126/readiness-final-seed9/cloud-two-times.jpg)・[描画時間](../../artifacts/region-map/mesa-cloud-20261126/readiness-final-seed9/surface-timing.txt)
 
 seed 9 の北西側の雲を追った。30km四方の雲濃度と地上投影の画像を225²へ縮小し、左上基準の (64,85) を中心に31・41・51画素四方で69秒と75秒を相関照合。3Dには青と赤の差を雲の指標として使った。両方で東へ約1.33km、南へ0.27〜0.53km移動した。69秒時点の投影と濃度画像の位置には、西へ0.53〜0.93kmの見かけの差がある。この数値は同じ雲の移動の照合に使う。
+
+2Dと3Dは32×32の流れの格子を同じ三角形で補間し、同じ濃度画像を画素の中心から双線形で読む。従来の3Dの計算と地図の濃度をseed 9の近傍400点で比べると、低い雲の差は0〜1の尺度で最大0.12247だった。修正後は地図との差が0.00005未満（69秒・75秒、上下両層）。
+
+高い薄雲は自作の空で低い雲を隠し、同じ2時刻を120km四方で撮影した。225²に縮小した濃度画像と高さ9kmへの地上投影で、左上基準 (136,183) の33・41画素四方を照合すると、両方で東へ6.40km、南へ1.60km移動した。4か所で移動量の差は東西最大1画素（0.53km）、南北0画素。比較画像の中央列は薄い濃度を読めるよう明るく表示した。Weather Maker での照合は未確認。[上層の比較](../../artifacts/region-map/mesa-cloud-20261126/shared-sampling/high/high-two-times.jpg)・[照合値](../../artifacts/region-map/mesa-cloud-20261126/shared-sampling/high/motion.txt)
 
 別地点のseed 8（X82.93144／Y62.38425）でも、PC品質で遠景・中景・崖下を撮影できた。砂・礫の素材は比較用に置き、既定への採用は本人の判断。[seed 8 の遠景・中景・崖下](../../artifacts/region-map/mesa-cloud-20261126/readiness-final-seed8/mesa-views.jpg)
 

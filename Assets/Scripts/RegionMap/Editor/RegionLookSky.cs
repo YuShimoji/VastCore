@@ -138,7 +138,7 @@ namespace Vastcore.RegionMap.Editor
         }
 
         public static void UseOwnClouds(Camera camera, RegionTerrainView.LookResult look, float cloudTime,
-            float? cover = null, float crossSeconds = RegionCloudFlow.DefaultCrossSeconds)
+            float? cover = null, float crossSeconds = RegionCloudFlow.DefaultCrossSeconds, bool highOnly = false)
         {
             Material sky = RenderSettings.skybox;
             if (sky == null || !sky.HasProperty("_RegionCloudMap"))
@@ -147,7 +147,7 @@ namespace Vastcore.RegionMap.Editor
             RegionCloudSky.Build(spec, out float[] low, out float[] high);
             var pixels = new Color[low.Length];
             for (int i = 0; i < pixels.Length; i++)
-                pixels[i] = new Color(low[i], high[i], 0f, 1f);
+                pixels[i] = new Color(highOnly ? 0f : low[i], high[i], 0f, 1f);
             var density = new Texture2D(spec.Resolution, spec.Resolution, TextureFormat.RGBAHalf, true, true)
             {
                 name = "Region Cloud Density", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear,
@@ -346,12 +346,12 @@ namespace Vastcore.RegionMap.Editor
         {
             float cover = new RegionRenderOptions().CloudCover;
             float best = 0f, bestScore = float.MaxValue;
-            for (float time = 0f; time < 420f; time += 10f)
+            RegionCloudSkySpec spec = RegionCloudSky.ForScene(scene, CompareHalf * 2f, 48, cover, 0f);
+            var sampler = new RegionCloudSky.Sampler(spec);
+            for (float time = 0f; time < spec.CrossSeconds; time += 10f)
             {
-                RegionCloudSkySpec spec = RegionCloudSky.ForScene(scene, CompareHalf * 2f, 48, cover, time);
-                float[] low;
-                float[] high;
-                RegionCloudSky.Build(spec, out low, out high);
+                sampler.SetTime(time, spec.CrossSeconds);
+                sampler.Build(spec.MinX, spec.MinZ, spec.Size, spec.Resolution, out float[] low, out _);
                 float score = Mathf.Abs(RegionClouds.Coverage(low, 0.1f) - 0.5f);
                 if (score < bestScore) { bestScore = score; best = time; }
             }
@@ -368,7 +368,7 @@ namespace Vastcore.RegionMap.Editor
         /// <summary>
         /// 撮影の指定 -skyLayer high で、塊の雲を空にして高い薄雲だけを描き、見比べの絵を薄雲の高さ・2D の上の層で作る（薄雲の位置の確かめ）。
         /// </summary>
-        private static bool HighOnly => RegionMapMenu.Argument("-skyLayer", "both") == "high";
+        internal static readonly bool HighOnly = RegionMapMenu.Argument("-skyLayer", "both") == "high";
         private const int FaceSize = 1024, CompareSize = 900;
         // 5 方向の絵は隣と重なるように 90 度より広く撮り、重なりの中で混ぜてつなぎ目を消す
         private const float FaceFov = 120f;
@@ -479,6 +479,7 @@ namespace Vastcore.RegionMap.Editor
 
             // Weather Maker へ渡した雲の量（雲の地図の R）。白いほど雲が多い
             RegionCloudSkySpec spec = RegionCloudSky.ForScene(scene, CloudBoxSize, CloudMapSize, new RegionRenderOptions().CloudCover, cloudTime);
+            var sampler = new RegionCloudSky.Sampler(spec);
             var cover = new Color32[CompareSize * CompareSize];
             for (int j = 0; j < CompareSize; j++)
             {
@@ -486,7 +487,7 @@ namespace Vastcore.RegionMap.Editor
                 {
                     float low;
                     float high;
-                    RegionCloudSky.SampleAt(spec, eye.x + Offset(i), eye.z + Offset(j), out low, out high);
+                    sampler.SampleAt(eye.x + Offset(i), eye.z + Offset(j), out low, out high);
                     float amount = HighOnly ? RegionWeatherMaker.HighCloudPixel(high).a : RegionWeatherMaker.CloudMapPixel(low).r;
                     byte value = (byte)(amount * 255f);
                     cover[i + j * CompareSize] = new Color32(value, value, value, 255);
@@ -514,11 +515,14 @@ namespace Vastcore.RegionMap.Editor
             RegionClouds.BuildLayerFields(cloudSize, region.Spec.Seed, cover, out low, out high);
             RegionClouds.RenderLayers(low, cloudSize, out lowPixels, out shadowPixels);
             RegionClouds.RenderLayers(high, cloudSize, out highPixels, out unused);
+            var lowFlow = new RegionCloudFlow.Grid(RegionCloudFlow.Low, cloudTime, RegionCloudFlow.DefaultCrossSeconds);
+            var highFlow = new RegionCloudFlow.Grid(RegionCloudFlow.High, cloudTime, RegionCloudFlow.DefaultCrossSeconds);
 
             float mpu = scene.MetersPerMapUnit;
             float centerMapX = scene.Outer.OriginMapX + scene.CenterX / mpu;
             float centerMapY = scene.Outer.OriginMapY + scene.CenterZ / mpu;
             float half = scene.Spec.OuterKm * 500f, edge = CompareHalf / CompareSize * 3f;
+            bool highOnly = HighOnly;
             var colors = new Color32[CompareSize * CompareSize];
             for (int j = 0; j < CompareSize; j++)
             {
@@ -528,9 +532,12 @@ namespace Vastcore.RegionMap.Editor
                     float mapX = centerMapX + east / mpu, mapY = centerMapY - north / mpu;
                     float u = mapX / RegionData.MapUnits, v = 1f - mapY / RegionData.MapUnits;
                     Color c = Read(basePixels, region.Resolution, u, 1f - v);
-                    c = Over(c, Layer(shadowPixels, cloudSize, RegionCloudFlow.Low, u, v, cloudTime, RegionClouds.ShadowOffset, -RegionClouds.ShadowOffset));
-                    c = Over(c, Layer(lowPixels, cloudSize, RegionCloudFlow.Low, u, v, cloudTime, 0f, 0f));
-                    c = Over(c, Layer(highPixels, cloudSize, RegionCloudFlow.High, u, v, cloudTime, 0f, 0f));
+                    if (!highOnly)
+                    {
+                        c = Over(c, Layer(shadowPixels, cloudSize, lowFlow, u, v, RegionClouds.ShadowOffset, -RegionClouds.ShadowOffset));
+                        c = Over(c, Layer(lowPixels, cloudSize, lowFlow, u, v, 0f, 0f));
+                    }
+                    c = Over(c, Layer(highPixels, cloudSize, highFlow, u, v, 0f, 0f));
                     bool frame = (Mathf.Abs(Mathf.Abs(east) - half) < edge && Mathf.Abs(north) < half) ||
                                  (Mathf.Abs(Mathf.Abs(north) - half) < edge && Mathf.Abs(east) < half);
                     colors[i + j * CompareSize] = frame ? new Color(1f, 0.85f, 0.2f) : c;
@@ -540,12 +547,11 @@ namespace Vastcore.RegionMap.Editor
         }
 
         // 探索画面の雲の層と同じ読み方（地図の位置 (u, v)、v は北が正。画像は北西の角から行ごと。shift は影のずれ）
-        private static Color Layer(byte[] pixels, int size, int layer, float u, float v, float time, float shiftU, float shiftV)
+        private static Color Layer(byte[] pixels, int size, RegionCloudFlow.Grid flow, float u, float v, float shiftU, float shiftV)
         {
-            float du, dv, fade;
-            RegionCloudFlow.Sample(layer, u, v, time, 420f, out du, out dv, out fade);
-            Color c = Read(pixels, size, u - du - shiftU, 1f - (v - dv - shiftV));
-            c.a *= fade;
+            var offset = flow.At(u, v);
+            Color c = Read(pixels, size, u - offset.Du - shiftU, 1f - (v - offset.Dv - shiftV));
+            c.a *= offset.Fade;
             return c;
         }
 

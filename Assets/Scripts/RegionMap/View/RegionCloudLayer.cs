@@ -12,7 +12,7 @@ namespace Vastcore.RegionMap
     public sealed class RegionCloudLayer : MaskableGraphic
     {
         /// <summary>升目の数（縦横とも）。</summary>
-        public const int Cells = 32;
+        public const int Cells = RegionCloudFlow.Grid.Cells;
 
         private const int Side = Cells + 1;
 
@@ -92,6 +92,7 @@ namespace Vastcore.RegionMap
                     int b = a + 1;
                     int c = a + Side;
                     int d = c + 1;
+                    // RegionCloudFlow.Grid.At もこの対角線で補間する。
                     vh.AddTriangle(a, c, d);
                     vh.AddTriangle(a, d, b);
                 }

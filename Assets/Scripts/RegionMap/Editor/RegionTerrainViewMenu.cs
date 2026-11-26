@@ -231,7 +231,7 @@ namespace Vastcore.RegionMap.Editor
                         string timeArgument = RegionMapMenu.Argument("-cloudTime", "auto");
                         cloudTime = timeArgument == "auto" ? RegionLookSky.MixedCloudTime(look.Scene)
                             : float.Parse(timeArgument, CultureInfo.InvariantCulture);
-                        RegionLookSky.UseOwnClouds(camera, look, cloudTime);
+                        RegionLookSky.UseOwnClouds(camera, look, cloudTime, highOnly: RegionLookSky.HighOnly);
                     }
                     Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + " 光と空気 " + atmosphere.Name + " 作成 " + watch.ElapsedMilliseconds + "ms");
                     Debug.Log("[RegionMap] 表面の写真素材: " + RegionSurfaceMaterials.Summary);
@@ -262,7 +262,7 @@ namespace Vastcore.RegionMap.Editor
                             Directory.CreateDirectory(secondFolder);
                             steps.Add(() =>
                             {
-                                RegionLookSky.UseOwnClouds(camera, look, secondTime);
+                                RegionLookSky.UseOwnClouds(camera, look, secondTime, highOnly: RegionLookSky.HighOnly);
                                 CaptureLookViews(camera, look, secondFolder);
                             }, 0);
                             RegionLookSky.AddComparisonSteps(steps, () => camera, () => look, () => secondTime, secondFolder,

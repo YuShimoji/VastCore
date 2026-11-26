@@ -16,7 +16,7 @@ namespace Vastcore.RegionMap
         public float Time;
         public float CrossSeconds = RegionCloudFlow.DefaultCrossSeconds;
 
-        /// <summary>2D の雲の画像の一辺（(RegionSpec.Resolution + 1) / 2）。画素の中心の半画素ぶんのずれを合わせる。0 ならずらさない。</summary>
+        /// <summary>2D の雲の画像の一辺（(RegionSpec.Resolution + 1) / 2）。0 なら雲の式を直接読む。</summary>
         public int MapCloudSize;
 
         /// <summary>場面の座標の原点の、地図の座標（RegionDetail.OriginMapX・Y）と、地図の 1 単位の長さ（m）。</summary>
@@ -64,67 +64,98 @@ namespace Vastcore.RegionMap
         public static void Build(RegionCloudSkySpec spec, out float[] low, out float[] high)
         {
             if (spec == null) throw new ArgumentNullException("spec");
-            if (spec.Resolution < 1) throw new ArgumentOutOfRangeException("spec", "Resolution は 1 以上");
-            int n = spec.Resolution;
-            var lowField = new float[n * n];
-            var highField = new float[n * n];
-            low = lowField;
-            high = highField;
-            if (spec.Cover <= 0f) return;
-            float step = spec.Size / n;
-            Parallel.For(0, n, r =>
-            {
-                float z = spec.MinZ + (r + 0.5f) * step;
-                for (int c = 0; c < n; c++)
-                {
-                    float x = spec.MinX + (c + 0.5f) * step;
-                    float a;
-                    float b;
-                    SampleAt(spec, x, z, out a, out b);
-                    lowField[c + r * n] = a;
-                    highField[c + r * n] = b;
-                }
-            });
+            new Sampler(spec).Build(spec.MinX, spec.MinZ, spec.Size, spec.Resolution, out low, out high);
         }
 
-        /// <summary>Unity の座標 (x, z) の真上の、低い塊の雲と高い筋雲の濃さ。2D の地図が今の時刻にその地点へ描く雲と同じもの。</summary>
+        /// <summary>Unity の座標 (x, z) の真上の、低い塊の雲と高い筋雲の濃さ。複数点を読むときは Sampler を使う。</summary>
         public static void SampleAt(RegionCloudSkySpec spec, float x, float z, out float low, out float high)
         {
-            low = 0f;
-            high = 0f;
-            if (spec.Cover <= 0f) return;
-            uint seed = RegionClouds.CloudSeed(spec.RegionSeed);
-            float amount = RegionClouds.CloudAmount(spec.Cover);
-            // 場面は (x, 高さ, -z) で置くので、地図の Y（南へ増える）は -Z から戻す
-            float mapX = spec.OriginMapX + x / spec.MetersPerMapUnit;
-            float mapY = spec.OriginMapY - z / spec.MetersPerMapUnit;
-            // 探索画面の地図の上の位置（u は東、v は北が正）
-            float u = mapX / RegionData.MapUnits;
-            float v = 1f - mapY / RegionData.MapUnits;
-            low = LayerAt(RegionCloudFlow.Low, spec, u, v, seed, amount);
-            high = LayerAt(RegionCloudFlow.High, spec, u, v, seed, amount);
+            new Sampler(spec).SampleAt(x, z, out low, out high);
         }
 
-        private static float LayerAt(int layer, RegionCloudSkySpec spec, float u, float v, uint seed, float amount)
+        /// <summary>同じ地点・時刻条件で複数点を読むとき、2D の濃度画像と流れの升目を共有する。</summary>
+        public sealed class Sampler
         {
-            float du;
-            float dv;
-            float fade;
-            RegionCloudFlow.Sample(layer, u, v, spec.Time, spec.CrossSeconds, out du, out dv, out fade);
-            // 探索画面は雲の画像を (u - du, v - dv) で読む。画像は北の行が上になるよう上下を入れ替えてあり、
-            // 画素 (列, 行) の中心には雲の濃さの (列 / size, 行 / size) の値が載る
-            float half = spec.MapCloudSize > 0 ? 0.5f / spec.MapCloudSize : 0f;
-            float fu = Wrap(u - du - half);
-            float fv = Wrap(1f - (v - dv) - half);
-            float thick;
-            float veil;
-            RegionClouds.SampleLayers(fu, fv, seed, amount, out thick, out veil);
-            return (layer == RegionCloudFlow.Low ? thick : veil) * fade;
-        }
+            private readonly bool _hasClouds;
+            private readonly int _size;
+            private readonly uint _seed;
+            private readonly float _amount, _originMapX, _originMapY, _metersPerMapUnit;
+            private readonly float[] _low, _high;
+            private RegionCloudFlow.Grid _lowFlow, _highFlow;
 
-        private static float Wrap(float value)
-        {
-            return value - (float)Math.Floor(value);
+            public Sampler(RegionCloudSkySpec spec)
+            {
+                _hasClouds = spec.Cover > 0f;
+                if (!_hasClouds) return;
+                _size = spec.MapCloudSize;
+                _seed = RegionClouds.CloudSeed(spec.RegionSeed);
+                _amount = RegionClouds.CloudAmount(spec.Cover);
+                _originMapX = spec.OriginMapX;
+                _originMapY = spec.OriginMapY;
+                _metersPerMapUnit = spec.MetersPerMapUnit;
+                if (_size > 0)
+                    RegionClouds.BuildLayerFields(_size, spec.RegionSeed, spec.Cover, out _low, out _high);
+                SetTime(spec.Time, spec.CrossSeconds);
+            }
+
+            /// <summary>同じ濃度画像で時刻だけを変える。読み取りと並行して呼ばない。</summary>
+            public void SetTime(float time, float crossSeconds)
+            {
+                if (!_hasClouds) return;
+                _lowFlow = new RegionCloudFlow.Grid(RegionCloudFlow.Low, time, crossSeconds);
+                _highFlow = new RegionCloudFlow.Grid(RegionCloudFlow.High, time, crossSeconds);
+            }
+
+            public void Build(float minX, float minZ, float size, int resolution, out float[] low, out float[] high)
+            {
+                if (resolution < 1) throw new ArgumentOutOfRangeException("resolution", "Resolution は 1 以上");
+                var lowField = new float[resolution * resolution];
+                var highField = new float[resolution * resolution];
+                low = lowField;
+                high = highField;
+                if (!_hasClouds) return;
+                float step = size / resolution;
+                Parallel.For(0, resolution, r =>
+                {
+                    float z = minZ + (r + 0.5f) * step;
+                    for (int c = 0; c < resolution; c++)
+                    {
+                        float x = minX + (c + 0.5f) * step;
+                        int pixel = c + r * resolution;
+                        SampleAt(x, z, out lowField[pixel], out highField[pixel]);
+                    }
+                });
+            }
+
+            public void SampleAt(float x, float z, out float low, out float high)
+            {
+                low = 0f;
+                high = 0f;
+                if (!_hasClouds) return;
+                float mapX = _originMapX + x / _metersPerMapUnit;
+                float mapY = _originMapY - z / _metersPerMapUnit;
+                float u = mapX / RegionData.MapUnits;
+                float v = 1f - mapY / RegionData.MapUnits;
+                low = LayerAt(RegionCloudFlow.Low, _lowFlow, _low, u, v);
+                high = LayerAt(RegionCloudFlow.High, _highFlow, _high, u, v);
+            }
+
+            private float LayerAt(int layer, RegionCloudFlow.Grid flow, float[] field, float u, float v)
+            {
+                var offset = flow.At(u, v);
+                // 探索画面は画像の北の行を上に置き、画素の中心を基準に双線形補間する。
+                float fu = Wrap(u - offset.Du);
+                float fv = Wrap(1f - (v - offset.Dv));
+                if (field != null)
+                    return RegionClouds.Sample(field, _size, fu * _size - 0.5f, fv * _size - 0.5f) * offset.Fade;
+                RegionClouds.SampleLayers(fu, fv, _seed, _amount, out float thick, out float veil);
+                return (layer == RegionCloudFlow.Low ? thick : veil) * offset.Fade;
+            }
+
+            private static float Wrap(float value)
+            {
+                return value - (float)Math.Floor(value);
+            }
         }
     }
 }

@@ -17,6 +17,60 @@ namespace Vastcore.RegionMap
         public const int High = 1;
         public const float DefaultCrossSeconds = 420f;
 
+        /// <summary>探索地図のメッシュと同じ升目で雲の流れと濃さを補間する。</summary>
+        public sealed class Grid
+        {
+            public const int Cells = 32;
+            public const int Side = Cells + 1;
+
+            private readonly int _layer;
+            private readonly float _time, _crossSeconds;
+            private readonly (float Du, float Dv, float Fade)[] _points = new (float, float, float)[Side * Side];
+
+            public Grid(int layer, float time, float crossSeconds)
+            {
+                _layer = layer;
+                _time = time;
+                _crossSeconds = crossSeconds;
+                for (int y = 0; y < Side; y++)
+                {
+                    for (int x = 0; x < Side; x++)
+                    {
+                        RegionCloudFlow.Sample(layer, x / (float)Cells, y / (float)Cells, time, crossSeconds,
+                            out float du, out float dv, out float fade);
+                        _points[x + y * Side] = (du, dv, fade);
+                    }
+                }
+            }
+
+            public (float Du, float Dv, float Fade) this[int x, int y] => _points[x + y * Side];
+
+            public (float Du, float Dv, float Fade) At(float u, float v)
+            {
+                if (u < 0f || u > 1f || v < 0f || v > 1f)
+                {
+                    // 地図の外側も地上からは見える。地図の縁から流れをそのまま延ばす。
+                    RegionCloudFlow.Sample(_layer, u, v, _time, _crossSeconds, out float du, out float dv, out float fade);
+                    return (du, dv, fade);
+                }
+
+                int x = Math.Min((int)(u * Cells), Cells - 1);
+                int y = Math.Min((int)(v * Cells), Cells - 1);
+                float fx = u * Cells - x;
+                float fy = v * Cells - y;
+                var a = this[x, y];
+                var d = this[x + 1, y + 1];
+                bool upper = fy >= fx;
+                var corner = upper ? this[x, y + 1] : this[x + 1, y];
+                float diagonalWeight = Math.Min(fx, fy);
+                float aWeight = 1f - Math.Max(fx, fy);
+                float cornerWeight = Math.Abs(fx - fy);
+                return (a.Du * aWeight + d.Du * diagonalWeight + corner.Du * cornerWeight,
+                    a.Dv * aWeight + d.Dv * diagonalWeight + corner.Dv * cornerWeight,
+                    a.Fade * aWeight + d.Fade * diagonalWeight + corner.Fade * cornerWeight);
+            }
+        }
+
         // 一様な流れの向き（u は東、v は北が正）と、基準の速さに対する倍率。高い雲ほど速く、向きも少し違う
         private static readonly float[] WindU = { 1f, 1f };
         private static readonly float[] WindV = { -0.22f, 0.17f };
