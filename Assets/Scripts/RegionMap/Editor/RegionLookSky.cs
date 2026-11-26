@@ -38,6 +38,7 @@ namespace Vastcore.RegionMap.Editor
         /// <summary>
         /// Weather Maker を入れた直後に 1 回行う、URP で描くための切り替え（Weather Maker の手順のうち、シェーダーの GrabPass の置き換えと UNITY_URP の定義）。
         /// 描画パイプラインの資産は差し替えない（Weather Maker の既定の手順は自分の資産へ差し替える）。描画の機能は撮影の時にメモリの中だけで足す。
+        /// 取り込み時に Weather Maker が出す URP 有効化の確認画面も、既定と Mobile の描画を WeatherMakerURPProfile へ差し替える（2026-11-26 に本体で起き、戻した）。こちらを使う。
         /// コマンドラインからは -executeMethod Vastcore.RegionMap.Editor.RegionLookSky.SetUpFromCommandLine。
         /// </summary>
         [MenuItem("Vastcore/Region Map/Set Up Weather Maker For URP")]
