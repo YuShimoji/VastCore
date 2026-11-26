@@ -234,6 +234,12 @@ namespace Vastcore.RegionMap.Editor
                         RegionLookSky.UseOwnClouds(camera, look, cloudTime, highOnly: RegionLookSky.HighOnly);
                     }
                     Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + " 光と空気 " + atmosphere.Name + " 作成 " + watch.ElapsedMilliseconds + "ms");
+                    string blendDepth = RegionMapMenu.Argument("-blendDepth", "");
+                    if (blendDepth.Length > 0)
+                    {
+                        RegionSurfaceMaterials.BlendDepthOverride = float.Parse(blendDepth, CultureInfo.InvariantCulture);
+                        RegionSurfaceMaterials.SetActive(true);
+                    }
                     Debug.Log("[RegionMap] 表面の写真素材: " + RegionSurfaceMaterials.Summary);
                     // 作った直後の最初の 1 枚は、地面の画像が貼られる前の白い地面で写る（2026-11-25 に、最初と最後に同じ視点を撮って確かめた）。
                     // 捨てコマを 1 枚描いてから撮る
@@ -246,6 +252,9 @@ namespace Vastcore.RegionMap.Editor
                         CaptureToggleComparison(camera, look, folder, "relief", "凹凸", RegionSurfaceRelief.Baked, RegionSurfaceRelief.SetActive);
                     if (RegionMapMenu.Argument("-surfaceCompare", "false") == "true")
                         CaptureToggleComparison(camera, look, folder, "surface", "写真素材", RegionSurfaceMaterials.Count > 0, RegionSurfaceMaterials.SetActive);
+                    if (RegionMapMenu.Argument("-blendCompare", "false") == "true")
+                        CaptureToggleComparison(camera, look, folder, "blend", "高さの混合", RegionSurfaceMaterials.Count > 0,
+                            on => { RegionSurfaceMaterials.HeightBlend = on; RegionSurfaceMaterials.SetActive(true); });
                     if (look.Alcove == null) DescribeNearestCap(look.Scene);
                     if (preset != RegionAtmosphere.Preset.DustHaze && ownSky.Length == 1 && weatherMaker.Length == 0
                         && RegionMapMenu.Argument("-skyCompare", "false") == "true")

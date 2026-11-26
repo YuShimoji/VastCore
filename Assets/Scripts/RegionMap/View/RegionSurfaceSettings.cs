@@ -27,6 +27,22 @@ namespace Vastcore.RegionMap
         /// <summary>役ごとの値（RegionSurfaceRole の並び）。</summary>
         public Entry[] Roles = Defaults();
 
+        /// <summary>高さによる層の混合の境の深さ（m）。0 で切。大きいほど境がぼける（設計 6.2 節）。</summary>
+        public float BlendDepthMetres = DefaultBlendDepth;
+
+        /// <summary>層の重み 1 を何 m の高さとみなすか（高さの画像の幅 HeightMetres と比べる単位）。</summary>
+        public float BlendSpanMetres = DefaultBlendSpan;
+
+        /// <summary>BlendDepthMetres・BlendSpanMetres の既定。</summary>
+        public const float DefaultBlendDepth = 0.01f, DefaultBlendSpan = 0.04f;
+
+        /// <summary>混合の値を Resources から読む。無ければ既定。</summary>
+        public static (float depth, float span) LoadBlend()
+        {
+            var settings = Resources.Load<RegionSurfaceSettings>(RegionSurfaceMaps.Root + "/SurfaceSettings");
+            return settings == null ? (DefaultBlendDepth, DefaultBlendSpan) : (settings.BlendDepthMetres, settings.BlendSpanMetres);
+        }
+
         /// <summary>既定の値。実寸は ambientCG・Poly Haven の地面と岩の素材で多い 2 m 前後（開発担当の仮定）。</summary>
         public static Entry[] Defaults()
         {

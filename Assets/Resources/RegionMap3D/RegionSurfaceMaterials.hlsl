@@ -84,4 +84,35 @@ RegionSurfaceSample RegionSurfaceRead(int role, float3 p, float3 pdx, float3 pdy
     return s;
 }
 
+// 高さによる層の混合（設計 6.2 節）。重み 1 を幅 BlendSpan（m）とみなした単位で、
+// _RegionSurfaceBlend.x 境の深さ（0 で切）、_RegionSurfaceBlendHeights 崖・泥岩・岩屑・地被の高さの画像の 0〜1 の幅
+float4 _RegionSurfaceBlend;
+float4 _RegionSurfaceBlendHeights;
+
+// 役 role の高さ（0〜1）だけを biplanar で読む。素材の無い役は 0.5
+float RegionSurfaceHeight(int role, float3 p, float3 pdx, float3 pdy, float3 n)
+{
+    if (!RegionSurfaceHas(role)) return 0.5;
+    float4 r = _RegionSurfaceRoles[role];
+    float3 a = abs(n);
+    int ma = (a.x > a.y && a.x > a.z) ? 0 : ((a.y > a.z) ? 1 : 2);
+    int mi = (a.x < a.y && a.x < a.z) ? 0 : ((a.y < a.z) ? 1 : 2);
+    if (mi == ma) mi = (ma + 1) % 3;
+    int me = 3 - mi - ma;
+    float h[2];
+    int axes[2] = { ma, me };
+    [unroll]
+    for (int i = 0; i < 2; i++)
+    {
+        int u, v;
+        RegionSurfaceFrame(axes[i], u, v);
+        float2 uv = float2(p[u], p[v]) * r.y;
+        h[i] = SAMPLE_TEXTURE2D_ARRAY_GRAD(_RegionSurfaceHRA, sampler_RegionSurfaceDetail, uv, r.x,
+            float2(pdx[u], pdx[v]) * r.y, float2(pdy[u], pdy[v]) * r.y).r;
+    }
+    float2 w = saturate((float2(a[ma], a[me]) - 0.5773) / (1.0 - 0.5773));
+    w = (w.x + w.y) > 1e-4 ? w / (w.x + w.y) : float2(1.0, 0.0);
+    return h[0] * w.x + h[1] * w.y;
+}
+
 #endif

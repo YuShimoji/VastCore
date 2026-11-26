@@ -25,6 +25,15 @@ namespace Vastcore.RegionMap
         /// <summary>鏡面の強さ（反射率 0.04 に掛ける）。乾いた砂岩なので弱める（設計 3.3 節の初期値 18%）。</summary>
         public static float Specular = 0.18f;
 
+        /// <summary>高さによる層の混合を使うか（前後比較用）。境の深さ・幅は RegionSurfaceSettings。</summary>
+        public static bool HeightBlend = true;
+
+        /// <summary>負でなければ、設定の境の深さ（m）の代わりに使う（既定を撮って決める時用）。</summary>
+        public static float BlendDepthOverride = -1f;
+
+        private static Vector4 blendHeights;
+        private static float blendDepth, blendSpan = RegionSurfaceSettings.DefaultBlendSpan;
+
         private static Texture2DArray detailArray, normalArray, hraArray;
         private static readonly Vector4[] roles = new Vector4[6];
 
@@ -74,6 +83,9 @@ namespace Vastcore.RegionMap
                     roles[role] = new Vector4(slice, 1f / Mathf.Max(0.05f, entry.TileMetres), entry.Strength, entry.Roughness);
                     notes.Add(RegionSurfaceMaps.Folders[role] + " " + entry.TileMetres.ToString("0.##") + " m");
                 }
+                (blendDepth, blendSpan) = RegionSurfaceSettings.LoadBlend();
+                blendSpan = Mathf.Max(0.001f, blendSpan);
+                blendHeights = new Vector4(settings[0].HeightMetres, settings[1].HeightMetres, settings[2].HeightMetres, settings[4].HeightMetres) / blendSpan;
                 Shader.SetGlobalTexture("_RegionSurfaceDetail", detailArray);
                 Shader.SetGlobalTexture("_RegionSurfaceNormal", normalArray);
                 Shader.SetGlobalTexture("_RegionSurfaceHRA", hraArray);
@@ -91,6 +103,10 @@ namespace Vastcore.RegionMap
         {
             Shader.SetGlobalVector("_RegionSurfaceParams", new Vector4(active && Count > 0 ? 1f : 0f, Specular, 0f, 0f));
             Shader.SetGlobalVector("_RegionSurfaceTiers", new Vector4(NearStart, NearEnd, FarStart, FarEnd));
+            float depth = BlendDepthOverride >= 0f ? BlendDepthOverride : blendDepth;
+            bool blend = active && Count > 0 && HeightBlend && depth > 0f;
+            Shader.SetGlobalVector("_RegionSurfaceBlend", new Vector4(blend ? depth / blendSpan : 0f, 0f, 0f, 0f));
+            Shader.SetGlobalVector("_RegionSurfaceBlendHeights", blendHeights);
         }
 
         public static void Release()

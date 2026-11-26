@@ -29,6 +29,9 @@
   [switch]$ReliefCompare,
   # view3d: 表面の写真素材を切った絵（<OutDir>/surface-off）と、切・入の描画時間（surface-timing.txt）も撮る
   [switch]$SurfaceCompare,
+  # view3d: 高さによる層の混合を切った絵（<OutDir>/blend-off）と描画時間（blend-timing.txt）も撮る。-BlendDepth は境の深さ（m）
+  [switch]$BlendCompare,
+  [string]$BlendDepth = '',
   [string]$UnityPath = ''
 )
 
@@ -81,6 +84,8 @@ if ($Mode -eq 'setup') {
     if ($SunSweep) { $unityArgs += @('-sunSweep', $SunSweep) }
     if ($ReliefCompare) { $unityArgs += @('-reliefCompare', 'true') }
     if ($SurfaceCompare) { $unityArgs += @('-surfaceCompare', 'true') }
+    if ($BlendCompare) { $unityArgs += @('-blendCompare', 'true') }
+    if ($BlendDepth) { $unityArgs += @('-blendDepth', $BlendDepth) }
   }
 } elseif ($Mode -eq 'play') {
   $unityArgs = @(

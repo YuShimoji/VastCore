@@ -164,6 +164,33 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
     float wTalus = groundShare * talusMix;
     float wSand = groundShare * (1.0 - talusMix) * (1.0 - cover);
     float wCrust = groundShare * (1.0 - talusMix) * cover;
+    // 高さによる層の混合（UE の LB Height Blend と同じ考え）。近くだけで、礫の頭が砂の上に出て、間に砂が入る。
+    // 砂と土は高さ 0 の基準の層。重みの小さい層の高さは重みに応じて弱め、無い層が高さだけで出てこないようにする
+    [branch]
+    if (_RegionSurfaceBlend.x > 0.0 && c.nearFade > 0.0 && RegionSurfaceEnabled())
+    {
+        float4 wr = float4(wCliff, wMud, wTalus, wCrust);
+        float4 hr = 0.5;
+        [branch] if (wCliff > 0.01) hr.x = RegionSurfaceHeight(0, p, c.pdx, c.pdy, n);
+        [branch] if (wMud > 0.01) hr.y = RegionSurfaceHeight(1, p, c.pdx, c.pdy, n);
+        [branch] if (wTalus > 0.01) hr.z = RegionSurfaceHeight(2, p, c.pdx, c.pdy, n);
+        [branch] if (wCrust > 0.01) hr.w = RegionSurfaceHeight(4, p, c.pdx, c.pdy, n);
+        float4 sr = wr + hr * _RegionSurfaceBlendHeights * smoothstep(0.0, 0.25, wr);
+        float top = max(max(max(sr.x, sr.y), max(sr.z, sr.w)), wSand);
+        float depth = _RegionSurfaceBlend.x;
+        float4 br = max(0.0, sr - (top - depth));
+        float bs = max(0.0, wSand - (top - depth));
+        float total = dot(br, 1.0) + bs;
+        float k = c.nearFade * c.farFade;
+        br = lerp(wr, br / total, k);
+        bs = lerp(wSand, bs / total, k);
+        wCliff = br.x; wMud = br.y; wTalus = br.z; wCrust = br.w; wSand = bs;
+        rockFace = wCliff + wMud;
+        mud = rockFace > 1e-4 ? wMud / rockFace : mud;
+        groundShare = 1.0 - rockFace;
+        talusMix = groundShare > 1e-4 ? wTalus / groundShare : talusMix;
+        cover = (wSand + wCrust) > 1e-4 ? wCrust / (wSand + wCrust) : cover;
+    }
     float hasCliff = SandHas(0, c.farFade), hasMud = SandHas(1, c.farFade), hasTalus = SandHas(2, c.farFade);
     float hasSand = SandHas(3, c.farFade), hasCrust = SandHas(4, c.farFade);
     float eCliff = wCliff * hasCliff, eMud = wMud * hasMud, eTalus = wTalus * hasTalus, eSand = wSand * hasSand, eCrust = wCrust * hasCrust;
