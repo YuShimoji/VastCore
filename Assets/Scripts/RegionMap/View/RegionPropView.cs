@@ -23,7 +23,7 @@ namespace Vastcore.RegionMap
             public readonly Dictionary<string, Material> Materials = new Dictionary<string, Material>(StringComparer.Ordinal);
         }
 
-        public static Result AddTo(Transform parent, RegionPropProofSlice slice)
+        public static Result AddTo(Transform parent, RegionPropProofSlice slice, bool attachGizmos = true)
         {
             var root = new GameObject("DS011_Props_Proof");
             root.transform.SetParent(parent, false);
@@ -31,6 +31,13 @@ namespace Vastcore.RegionMap
             if (slice == null || slice.Instances.Count == 0) return result;
 
             var palette = new Palette { Shader = FindPropShader() };
+            var clusterByIndex = new Dictionary<int, RegionPropClusterPlan>();
+            for (int c = 0; c < slice.Clusters.Count; c++)
+            {
+                RegionPropClusterPlan plan = slice.Clusters[c];
+                if (plan != null && plan.Instances.Count > 0)
+                    clusterByIndex[plan.Instances[0].ClusterIndex] = plan;
+            }
 
             for (int i = 0; i < slice.Instances.Count; i++)
             {
@@ -39,6 +46,12 @@ namespace Vastcore.RegionMap
                 go.transform.SetParent(root.transform, false);
                 go.transform.localPosition = new Vector3(inst.X, inst.Y, -inst.Z);
                 go.transform.localRotation = Quaternion.Euler(inst.PitchDeg, inst.YawDeg, -inst.RollDeg);
+                if (attachGizmos)
+                {
+                    RegionPropGizmo gizmo = go.AddComponent<RegionPropGizmo>();
+                    clusterByIndex.TryGetValue(inst.ClusterIndex, out RegionPropClusterPlan cluster);
+                    gizmo.Configure(inst, cluster);
+                }
                 result.PlacedCount++;
             }
 
@@ -62,20 +75,53 @@ namespace Vastcore.RegionMap
                 case "rub_stone_rubble_pile":
                     BuildStoneRubble(go.transform, inst, palette, index);
                     break;
+                case "rub_masonry_blocks":
+                    BuildMasonryBlocks(go.transform, inst, palette, index);
+                    break;
                 case "nat_stratified_slab":
                     BuildStratifiedSlab(go.transform, inst, palette, index);
+                    break;
+                case "nat_sand_drift":
+                    BuildSandDrift(go.transform, inst, palette, index);
+                    break;
+                case "nat_pebble_cluster":
+                    BuildPebbleCluster(go.transform, inst, palette, index);
+                    break;
+                case "nat_dry_root_log":
+                    BuildDryRootLog(go.transform, inst, palette, index);
+                    break;
+                case "nat_cliff_overhang_cap":
+                    BuildCliffOverhangCap(go.transform, inst, palette, index);
                     break;
                 case "str_ruin_pillar":
                     BuildRuinPillar(go.transform, inst, palette, index);
                     break;
+                case "str_ruin_wall_segment":
+                    BuildRuinWallSegment(go.transform, inst, palette);
+                    break;
                 case "cnt_wood_barrel":
                     BuildWoodBarrel(go.transform, inst, palette);
+                    break;
+                case "cnt_fabric_sack":
+                    BuildFabricSack(go.transform, inst, palette);
+                    break;
+                case "set_expedition_tent":
+                    BuildExpeditionTent(go.transform, inst, palette);
+                    break;
+                case "set_campfire_hearth":
+                    BuildCampfireHearth(go.transform, inst, palette, index);
                     break;
                 case "set_trail_signpost":
                     BuildTrailSignpost(go.transform, inst, palette);
                     break;
+                case "exp_monolith_fragment":
+                    BuildMonolithFragment(go.transform, inst, palette);
+                    break;
+                case "exp_survey_marker":
+                    BuildSurveyMarker(go.transform, inst, palette);
+                    break;
                 default:
-                    AddBox(go.transform, "Box", Vector3.zero,
+                    AddBox(go.transform, "Box", new Vector3(0f, inst.DimensionsY * inst.ScaleY * 0.5f, 0f),
                         new Vector3(inst.DimensionsX * inst.ScaleX, inst.DimensionsY * inst.ScaleY, inst.DimensionsZ * inst.ScaleZ),
                         Vector3.zero, GetMaterial(palette, inst.MaterialVariant, inst, 0.14f, 0f));
                     break;
@@ -331,6 +377,163 @@ namespace Vastcore.RegionMap
                 new Vector3(0f, 0.08f, 0f), Vector3.zero, GetMaterial(palette, "sandstone_rubble", inst, 0.10f, 0f));
         }
 
+        private static void BuildSandDrift(Transform parent, RegionPropInstance inst, Palette palette, int seedIndex)
+        {
+            float w = inst.DimensionsX * inst.ScaleX;
+            float h = inst.DimensionsY * inst.ScaleY;
+            float d = inst.DimensionsZ * inst.ScaleZ;
+            Material sand = GetMaterial(palette, inst.MaterialVariant, inst, 0.08f, 0f);
+            Mesh mound = CreateFacetedRockMesh("SandDrift", new Vector3(w * 0.5f, h * 0.8f, d * 0.5f), (uint)(seedIndex + 101), 0.15f, flattenTop: true);
+            AddMesh(parent, "Mound", mound, new Vector3(0f, h * 0.35f, 0f), Vector3.zero, sand);
+            AddBox(parent, "LeeTail", new Vector3(0f, h * 0.14f, d * 0.24f), new Vector3(w * 0.65f, h * 0.28f, d * 0.48f), new Vector3(-8f, 0f, 0f), sand);
+        }
+
+        private static void BuildPebbleCluster(Transform parent, RegionPropInstance inst, Palette palette, int seedIndex)
+        {
+            float w = inst.DimensionsX * inst.ScaleX;
+            float h = inst.DimensionsY * inst.ScaleY;
+            float d = inst.DimensionsZ * inst.ScaleZ;
+            Material mat = GetMaterial(palette, inst.MaterialVariant, inst, 0.10f, 0f);
+            for (int i = 0; i < 5; i++)
+            {
+                uint hv = RegionNoise.Hash(seedIndex, i + 3, 5501u);
+                float ang = (hv & 255) / 255f * Mathf.PI * 2f;
+                float dist = i == 0 ? 0f : Mathf.Min(w, d) * 0.32f;
+                Vector3 pos = new Vector3(Mathf.Cos(ang) * dist, h * 0.35f, Mathf.Sin(ang) * dist);
+                Vector3 radii = new Vector3(w * 0.18f, h * 0.6f, d * 0.18f) * (i == 0 ? 1.2f : 0.75f);
+                AddMesh(parent, "Pebble_" + i, CreateFacetedRockMesh("Pebble", radii, (uint)(seedIndex * 17 + i), 0.28f),
+                    pos, new Vector3(0f, hv % 360, 0f), mat);
+            }
+        }
+
+        private static void BuildDryRootLog(Transform parent, RegionPropInstance inst, Palette palette, int seedIndex)
+        {
+            float w = inst.DimensionsX * inst.ScaleX;
+            float h = inst.DimensionsY * inst.ScaleY;
+            Material wood = GetMaterial(palette, inst.MaterialVariant, inst, 0.10f, 0f);
+            Mesh trunk = CreateCylinderMesh("LogTrunk", h * 0.32f, w * 0.92f, 8, bulge: 1.08f);
+            AddMesh(parent, "Trunk", trunk, new Vector3(0f, h * 0.34f, 0f), new Vector3(0f, 0f, 90f), wood);
+            Mesh stub = CreateCylinderMesh("RootStub", h * 0.18f, h * 0.9f, 6);
+            AddMesh(parent, "StubA", stub, new Vector3(-w * 0.36f, h * 0.45f, 0.14f), new Vector3(24f, 0f, 38f), wood);
+            AddMesh(parent, "StubB", stub, new Vector3(w * 0.28f, h * 0.42f, -0.10f), new Vector3(-28f, 15f, -42f), wood);
+            _ = seedIndex;
+        }
+
+        private static void BuildCliffOverhangCap(Transform parent, RegionPropInstance inst, Palette palette, int seedIndex)
+        {
+            float w = inst.DimensionsX * inst.ScaleX;
+            float h = inst.DimensionsY * inst.ScaleY;
+            float d = inst.DimensionsZ * inst.ScaleZ;
+            Material rock = GetMaterial(palette, inst.MaterialVariant, inst, 0.12f, 0f);
+            AddBox(parent, "ColumnCore", new Vector3(0f, h * 0.48f, 0f), new Vector3(w * 0.88f, h * 0.95f, d * 0.88f), Vector3.zero, rock);
+            Mesh cap = CreateFacetedRockMesh("CapTop", new Vector3(w * 0.54f, h * 0.22f, d * 0.54f), (uint)(seedIndex + 701), 0.24f, flattenTop: true);
+            AddMesh(parent, "Cap", cap, new Vector3(0f, h * 0.86f, 0.18f), Vector3.zero, rock);
+        }
+
+        private static void BuildMasonryBlocks(Transform parent, RegionPropInstance inst, Palette palette, int seedIndex)
+        {
+            float w = inst.DimensionsX * inst.ScaleX;
+            float h = inst.DimensionsY * inst.ScaleY;
+            float d = inst.DimensionsZ * inst.ScaleZ;
+            Material stone = GetMaterial(palette, inst.MaterialVariant, inst, 0.12f, 0f);
+            AddBox(parent, "BlockA", new Vector3(-w * 0.15f, h * 0.42f, 0f), new Vector3(w * 0.65f, h * 0.82f, d * 0.72f), new Vector3(4f, 12f, -6f), stone);
+            AddBox(parent, "BlockB", new Vector3(w * 0.24f, h * 0.30f, d * 0.18f), new Vector3(w * 0.44f, h * 0.58f, d * 0.52f), new Vector3(-8f, -24f, 11f), stone);
+            _ = seedIndex;
+        }
+
+        private static void BuildRuinWallSegment(Transform parent, RegionPropInstance inst, Palette palette)
+        {
+            float w = inst.DimensionsX * inst.ScaleX;
+            float h = inst.DimensionsY * inst.ScaleY;
+            float d = inst.DimensionsZ * inst.ScaleZ;
+            Material wall = GetMaterial(palette, inst.MaterialVariant, inst, 0.12f, 0f);
+            Material trim = GetMaterial(palette, inst.MaterialVariant + "_trim", inst, 0.10f, 0f, -0.06f);
+            AddBox(parent, "FoundationSkirt", new Vector3(0f, 0.12f, 0f), new Vector3(w * 1.04f, 0.24f, d * 1.18f), Vector3.zero, trim);
+            if (inst.DamageState == "foundation_only")
+            {
+                AddBox(parent, "LowWall", new Vector3(0f, h * 0.16f, 0f), new Vector3(w, h * 0.32f, d), Vector3.zero, wall);
+                return;
+            }
+            if (inst.DamageState == "breached")
+            {
+                AddBox(parent, "WallLeft", new Vector3(-w * 0.32f, h * 0.48f, 0f), new Vector3(w * 0.36f, h * 0.96f, d), Vector3.zero, wall);
+                AddBox(parent, "WallRight", new Vector3(w * 0.32f, h * 0.44f, 0f), new Vector3(w * 0.36f, h * 0.88f, d), Vector3.zero, wall);
+                AddBox(parent, "Sill", new Vector3(0f, h * 0.16f, 0f), new Vector3(w * 0.32f, h * 0.32f, d * 0.9f), Vector3.zero, trim);
+                return;
+            }
+            float topScale = inst.DamageState == "eroded_corner" ? 0.78f : 1f;
+            AddBox(parent, "WallBody", new Vector3(0f, h * 0.5f * topScale, 0f), new Vector3(w, h * topScale, d), Vector3.zero, wall);
+        }
+
+        private static void BuildFabricSack(Transform parent, RegionPropInstance inst, Palette palette)
+        {
+            float w = inst.DimensionsX * inst.ScaleX;
+            float h = inst.DimensionsY * inst.ScaleY;
+            Material cloth = GetMaterial(palette, inst.MaterialVariant, inst, 0.08f, 0f);
+            Material rope = GetMaterial(palette, "rope_hemp", inst, 0.08f, 0f);
+            Mesh sack = CreateCylinderMesh("SackBody", w * 0.42f, h * 0.88f, 8, bulge: 1.24f);
+            AddMesh(parent, "Body", sack, new Vector3(0f, h * 0.44f, 0f), new Vector3(inst.DamageState == "half_slumped" ? 16f : 0f, 0f, 0f), cloth);
+            AddMesh(parent, "Neck", CreateCylinderMesh("SackNeck", w * 0.16f, h * 0.18f, 6), new Vector3(0f, h * 0.88f, 0f), Vector3.zero, rope);
+        }
+
+        private static void BuildExpeditionTent(Transform parent, RegionPropInstance inst, Palette palette)
+        {
+            float w = inst.DimensionsX * inst.ScaleX;
+            float h = inst.DimensionsY * inst.ScaleY;
+            float d = inst.DimensionsZ * inst.ScaleZ;
+            Material canvas = GetMaterial(palette, inst.MaterialVariant, inst, 0.10f, 0f);
+            Material pole = GetMaterial(palette, "raw_pine", inst, 0.14f, 0f);
+            float slopeLen = Mathf.Sqrt((w * 0.5f) * (w * 0.5f) + h * h);
+            float slopeAng = Mathf.Atan2(h, w * 0.5f) * Mathf.Rad2Deg;
+            AddBox(parent, "RoofL", new Vector3(-w * 0.25f, h * 0.5f, 0f), new Vector3(slopeLen, 0.05f, d), new Vector3(0f, 0f, slopeAng), canvas);
+            AddBox(parent, "RoofR", new Vector3(w * 0.25f, h * 0.5f, 0f), new Vector3(slopeLen, 0.05f, d), new Vector3(0f, 0f, -slopeAng), canvas);
+            AddBox(parent, "PoleF", new Vector3(0f, h * 0.5f, d * 0.48f), new Vector3(0.08f, h, 0.08f), Vector3.zero, pole);
+            AddBox(parent, "PoleB", new Vector3(0f, h * 0.5f, -d * 0.48f), new Vector3(0.08f, h, 0.08f), Vector3.zero, pole);
+        }
+
+        private static void BuildCampfireHearth(Transform parent, RegionPropInstance inst, Palette palette, int seedIndex)
+        {
+            float w = inst.DimensionsX * inst.ScaleX;
+            float h = inst.DimensionsY * inst.ScaleY;
+            Material stone = GetMaterial(palette, inst.MaterialVariant, inst, 0.10f, 0f);
+            Material wood = GetMaterial(palette, "dark_tarred_wood", inst, 0.08f, 0f);
+            float r = w * 0.42f;
+            for (int i = 0; i < 8; i++)
+            {
+                float a = (i / 8f) * Mathf.PI * 2f;
+                Mesh rock = CreateFacetedRockMesh("HearthStone_" + i, new Vector3(0.14f, h * 0.42f, 0.12f), (uint)(seedIndex + i * 7), 0.25f);
+                AddMesh(parent, "Stone_" + i, rock, new Vector3(Mathf.Cos(a) * r, h * 0.3f, Mathf.Sin(a) * r), new Vector3(0f, a * Mathf.Rad2Deg, 0f), stone);
+            }
+            AddBox(parent, "CharredLogA", new Vector3(0f, h * 0.22f, 0f), new Vector3(w * 0.55f, 0.08f, 0.09f), new Vector3(6f, 28f, 8f), wood);
+            AddBox(parent, "CharredLogB", new Vector3(0f, h * 0.24f, 0f), new Vector3(w * 0.52f, 0.08f, 0.09f), new Vector3(-8f, -36f, -6f), wood);
+        }
+
+        private static void BuildMonolithFragment(Transform parent, RegionPropInstance inst, Palette palette)
+        {
+            float w = inst.DimensionsX * inst.ScaleX;
+            float h = inst.DimensionsY * inst.ScaleY;
+            float d = inst.DimensionsZ * inst.ScaleZ;
+            Material rock = GetMaterial(palette, inst.MaterialVariant, inst, 0.22f, 0.08f);
+            AddBox(parent, "SlabBody", new Vector3(0f, h * 0.48f, 0f), new Vector3(w, h * 0.94f, d), Vector3.zero, rock);
+            AddBox(parent, "CrownShard", new Vector3(w * 0.06f, h * 0.95f, 0f), new Vector3(w * 0.72f, h * 0.14f, d * 0.82f), new Vector3(0f, 0f, -14f), rock);
+        }
+
+        private static void BuildSurveyMarker(Transform parent, RegionPropInstance inst, Palette palette)
+        {
+            float w = inst.DimensionsX * inst.ScaleX;
+            float h = inst.DimensionsY * inst.ScaleY;
+            Material metal = GetMaterial(palette, inst.MaterialVariant, inst, 0.35f, 0.65f);
+            Material head = GetMaterial(palette, "anodized_orange_steel", inst, 0.42f, 0.4f);
+            for (int i = 0; i < 3; i++)
+            {
+                float a = (i / 3f) * Mathf.PI * 2f;
+                Vector3 pos = new Vector3(Mathf.Cos(a) * w * 0.22f, h * 0.34f, Mathf.Sin(a) * w * 0.22f);
+                AddBox(parent, "Leg_" + i, pos, new Vector3(0.05f, h * 0.72f, 0.05f), new Vector3(Mathf.Sin(a) * 16f, 0f, -Mathf.Cos(a) * 16f), metal);
+            }
+            AddBox(parent, "Mast", new Vector3(0f, h * 0.56f, 0f), new Vector3(0.07f, h * 0.85f, 0.07f), Vector3.zero, metal);
+            AddBox(parent, "BeaconHead", new Vector3(0f, h * 0.95f, 0f), new Vector3(w * 0.35f, 0.16f, w * 0.35f), Vector3.zero, head);
+        }
+
         private static Mesh CreateFacetedRockMesh(string name, Vector3 radii, uint seed, float noiseAmp, bool flattenTop = false)
         {
             // 細分化した球を岩状に歪め、フラットシェーディング（頂点分離）で角張った岩面を作る
@@ -544,9 +747,17 @@ namespace Vastcore.RegionMap
                 srgb = new Color(0.32f, 0.29f, 0.28f, 1f);
             else if (key == "iron_metal") srgb = new Color(0.22f, 0.23f, 0.25f, 1f);
             else if (key == "stencil_stripe") srgb = new Color(0.84f, 0.78f, 0.52f, 1f);
-            else if (key == "cargo_cloth") srgb = new Color(0.64f, 0.55f, 0.40f, 1f);
-            else if (key == "packing_straw") srgb = new Color(0.76f, 0.64f, 0.34f, 1f);
+            else if (key == "cargo_cloth" || key.StartsWith("burlap", StringComparison.Ordinal)) srgb = new Color(0.64f, 0.55f, 0.40f, 1f);
+            else if (key == "packing_straw" || key.StartsWith("ochre_field", StringComparison.Ordinal)) srgb = new Color(0.76f, 0.64f, 0.34f, 1f);
             else if (key == "rope_hemp") srgb = new Color(0.58f, 0.47f, 0.31f, 1f);
+            else if (key.StartsWith("fine_sand", StringComparison.Ordinal) || key.StartsWith("coarse_sand", StringComparison.Ordinal)) srgb = new Color(0.79f, 0.63f, 0.43f, 1f);
+            else if (key.StartsWith("bleached_canvas", StringComparison.Ordinal)) srgb = new Color(0.80f, 0.76f, 0.68f, 1f);
+            else if (key.StartsWith("olive_ripstop", StringComparison.Ordinal)) srgb = new Color(0.36f, 0.40f, 0.29f, 1f);
+            else if (key.StartsWith("anodized_orange", StringComparison.Ordinal)) srgb = new Color(0.85f, 0.42f, 0.14f, 1f);
+            else if (key.StartsWith("dark_basalt", StringComparison.Ordinal)) srgb = new Color(0.24f, 0.23f, 0.24f, 1f);
+            else if (key.StartsWith("wingate_red", StringComparison.Ordinal) || key.StartsWith("sandstone_ashlar", StringComparison.Ordinal) || key.StartsWith("carved_sandstone", StringComparison.Ordinal))
+                srgb = new Color(0.69f, 0.40f, 0.26f, 1f);
+            else if (key.StartsWith("charred_stones", StringComparison.Ordinal)) srgb = new Color(0.28f, 0.25f, 0.24f, 1f);
             else srgb = new Color(0.55f, 0.45f, 0.35f, 1f);
             return srgb.linear;
         }

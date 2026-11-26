@@ -226,5 +226,281 @@ namespace Vastcore.Tests.EditMode
                 UnityEngine.Object.DestroyImmediate(parent);
             }
         }
+
+        [Test]
+        public void Catalog_ValidatesAll38Props_AndP0IdsMatchSpec()
+        {
+            RegionPropCatalog catalog = RegionPropCatalog.LoadDefault();
+            RegionPropCatalogValidationResult validation = catalog.Validate();
+            Assert.IsTrue(validation.IsValid, string.Join("\n", validation.Errors));
+            Assert.DoesNotThrow(() => catalog.ValidateOrThrow());
+
+            string[] expectedP0Ids =
+            {
+                "nat_stratified_slab", "nat_sand_drift", "nat_pebble_cluster", "nat_dry_root_log", "nat_cliff_overhang_cap",
+                "rub_stone_rubble_pile", "rub_masonry_blocks",
+                "str_ruin_pillar", "str_ruin_wall_segment", "cnt_wood_crate", "cnt_wood_barrel", "cnt_fabric_sack",
+                "set_expedition_tent", "set_campfire_hearth", "set_trail_signpost", "exp_monolith_fragment", "exp_survey_marker"
+            };
+            List<RegionPropDefinition> p0 = catalog.Filter(RegionPropPriority.P0);
+            Assert.AreEqual(expectedP0Ids.Length, p0.Count);
+            foreach (string id in expectedP0Ids)
+                Assert.IsTrue(catalog.TryGetProp(id, out _), "P0 ID がカタログに不足: " + id);
+        }
+
+        [Test]
+        public void Planner_PlacesAll17P0Props_Deterministically_WithinV1AndSpawningLimits()
+        {
+            RegionPropCatalog catalog = RegionPropCatalog.LoadDefault();
+            RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = 9, Resolution = 256 });
+            var lookSpec = new RegionLookSpec { Resolution = 256, Props = true, PropsShowAllP0 = true };
+
+            RegionLookScene sceneA = RegionLookScene.Build(region, lookSpec);
+            RegionLookScene sceneB = RegionLookScene.Build(region, lookSpec);
+            RegionPropProofSlice sliceA = sceneA.PropsSlice;
+            RegionPropProofSlice sliceB = sceneB.PropsSlice;
+
+            Assert.IsNotNull(sliceA);
+            Assert.IsNotNull(sliceB);
+            Assert.AreEqual(sliceA.Instances.Count, sliceB.Instances.Count);
+            Assert.Greater(sliceA.Instances.Count, 17);
+
+            var coveredP0 = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < sliceA.Instances.Count; i++)
+            {
+                RegionPropInstance a = sliceA.Instances[i];
+                RegionPropInstance b = sliceB.Instances[i];
+                Assert.AreEqual(a.PropId, b.PropId);
+                Assert.AreEqual(a.X, b.X, 1e-4f);
+                Assert.AreEqual(a.Y, b.Y, 1e-4f);
+                Assert.AreEqual(a.Z, b.Z, 1e-4f);
+                Assert.AreEqual(a.YawDeg, b.YawDeg, 1e-4f);
+                Assert.AreEqual(a.PitchDeg, b.PitchDeg, 1e-4f);
+                Assert.AreEqual(a.RollDeg, b.RollDeg, 1e-4f);
+                Assert.AreEqual(a.ScaleX, b.ScaleX, 1e-4f);
+                Assert.AreEqual(a.ScaleY, b.ScaleY, 1e-4f);
+                Assert.AreEqual(a.ScaleZ, b.ScaleZ, 1e-4f);
+
+                RegionPropDefinition def = catalog.GetProp(a.PropId);
+                if (def.Priority == RegionPropPriority.P0)
+                    coveredP0.Add(def.Id);
+
+                float tiltLimit = def.VariationRules.V1_Transform.MaxTiltDeg;
+                if ((a.DamageState == "leaning_weathered" || a.DamageState == "leaning_faded") &&
+                    def.VariationRules.V1_Transform.DamagedTiltDeg > tiltLimit)
+                    tiltLimit = def.VariationRules.V1_Transform.DamagedTiltDeg;
+                if (a.DamageState == "fallen_drum" && def.VariationRules.V1_Transform.FallenMaxTiltDeg > tiltLimit)
+                    tiltLimit = def.VariationRules.V1_Transform.FallenMaxTiltDeg;
+
+                float totalTilt = Mathf.Sqrt(a.PitchDeg * a.PitchDeg + a.RollDeg * a.RollDeg);
+                Assert.LessOrEqual(totalTilt, tiltLimit + 0.01f, def.Id + " 合成傾斜が上限超過");
+
+                if (def.VariationRules.V1_Transform.NonUniformMax <= 1e-5f && a.DamageState != "collapsed_wreck")
+                {
+                    Assert.AreEqual(a.ScaleX, a.ScaleY, 1e-4f, def.Id + " 非均一禁止違反");
+                    Assert.AreEqual(a.ScaleZ, a.ScaleY, 1e-4f, def.Id + " 非均一禁止違反");
+                }
+
+                if (def.SpawningRules.EmbedDepthMaxRatio > 0f && a.StackLayer == 0)
+                {
+                    float ratio = a.EmbedDepthM / a.EffectiveHeightM;
+                    Assert.That(ratio, Is.InRange(def.SpawningRules.EmbedDepthMinRatio - 0.002f, def.SpawningRules.EmbedDepthMaxRatio + 0.002f),
+                        def.Id + " 埋没率範囲外");
+                }
+            }
+
+            List<RegionPropDefinition> allP0 = catalog.Filter(RegionPropPriority.P0);
+            foreach (RegionPropDefinition p0 in allP0)
+                Assert.IsTrue(coveredP0.Contains(p0.Id), "P0 計画配置に未含: " + p0.Id);
+        }
+
+        [Test]
+        public void Planner_ExercisesAll6ClusterPatterns_AndEnforcesSlopeAndWaterAndRockBounds()
+        {
+            RegionPropCatalog catalog = RegionPropCatalog.LoadDefault();
+            RegionData steepData = CreateSyntheticData(32, 2f, (x, z) => x * 1.4f + 10f); // 約 54.5 度斜面
+            var steepField = RegionPropFieldContext.FromData(steepData);
+
+            // 急斜面で maxSlopeDeg 上限が機能すること
+            Assert.IsFalse(RegionPropPlacementPlanner.TryPlanCluster(
+                catalog, catalog.GetProp("cnt_wood_crate"), steepField, 100u, 1, 32f, 32f, out RegionPropClusterPlan crateReject));
+            Assert.AreEqual("SlopeExceedsMax", crateReject.SkipReason);
+            Assert.IsFalse(RegionPropPlacementPlanner.TryPlanCluster(
+                catalog, catalog.GetProp("set_expedition_tent"), steepField, 101u, 2, 32f, 32f, out RegionPropClusterPlan tentReject));
+            Assert.AreEqual("SlopeExceedsMax", tentReject.SkipReason);
+            Assert.IsTrue(RegionPropPlacementPlanner.TryPlanCluster(
+                catalog, catalog.GetProp("nat_cliff_overhang_cap"), steepField, 102u, 3, 32f, 32f, out RegionPropClusterPlan capAccept));
+            Assert.IsTrue(capAccept.Accepted);
+
+            // 水面セルでは WaterBlocked で拒否されること
+            RegionData waterData = CreateSyntheticData(32, 2f, (x, z) => 10f);
+            for (int i = 0; i < waterData.LakeDepth.Length; i++) waterData.LakeDepth[i] = 2f;
+            var waterField = RegionPropFieldContext.FromData(waterData);
+            Assert.IsFalse(RegionPropPlacementPlanner.TryPlanCluster(
+                catalog, catalog.GetProp("nat_pebble_cluster"), waterField, 103u, 4, 32f, 32f, out RegionPropClusterPlan waterReject));
+            Assert.AreEqual("WaterBlocked", waterReject.SkipReason);
+
+            // 岩重複の検出と探索退避
+            RegionData flatData = CreateSyntheticData(32, 2f, (x, z) => 12f);
+            RegionRockField rocks = CreateSingleRockField(32f, 32f, 4f);
+            var rockFieldCtx = RegionPropFieldContext.FromData(flatData, rocks);
+            Assert.IsFalse(RegionPropPlacementPlanner.TryPlanCluster(
+                catalog, catalog.GetProp("cnt_wood_crate"), rockFieldCtx, 104u, 5, 32f, 32f, out RegionPropClusterPlan rockReject, searchRadiusM: 0f));
+            Assert.AreEqual("RockOverlap", rockReject.SkipReason);
+            Assert.IsTrue(RegionPropPlacementPlanner.TryPlanCluster(
+                catalog, catalog.GetProp("cnt_wood_crate"), rockFieldCtx, 104u, 5, 32f, 32f, out RegionPropClusterPlan rockEvaded, searchRadiusM: 8f));
+            Assert.Greater(Vector2.Distance(new Vector2(rockEvaded.AnchorX, rockEvaded.AnchorZ), new Vector2(32f, 32f)), 1.5f);
+
+            // V6 全 6 パターンの展開確認
+            string[] patternProps =
+            {
+                "set_trail_signpost",      // Single
+                "cnt_wood_crate",          // StackedGrid
+                "cnt_fabric_sack",         // Huddled
+                "nat_pebble_cluster",      // RadialScatter
+                "rub_stone_rubble_pile",   // DirectionalCone
+                "str_ruin_wall_segment"    // WallSkirt
+            };
+            var seenPatterns = new HashSet<RegionPropClusterPattern>();
+            for (int i = 0; i < patternProps.Length; i++)
+            {
+                RegionPropDefinition p = catalog.GetProp(patternProps[i]);
+                Assert.IsTrue(RegionPropPlacementPlanner.TryPlanCluster(
+                    catalog, p, RegionPropFieldContext.FromData(flatData), 200u, i, 32f, 32f, out RegionPropClusterPlan plan));
+                Assert.GreaterOrEqual(plan.Instances.Count, 1, p.Id);
+                seenPatterns.Add(plan.Pattern);
+            }
+            Assert.AreEqual(6, seenPatterns.Count);
+        }
+
+        [Test]
+        public void Planner_ReadsRegionSedimentAndRegionData_WithoutModifyingThem()
+        {
+            RegionPropCatalog catalog = RegionPropCatalog.LoadDefault();
+            RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = 9 });
+            RegionDetail detail = RegionDetailBuilder.Build(region, new RegionDetailSpec
+            {
+                CenterMapX = 43.61f,
+                CenterMapY = 76.92f,
+                SizeKm = 0.6f,
+                Resolution = 128,
+                Mesa = 1f,
+                Sediment = 1f
+            });
+
+            Assert.IsNotNull(detail.Data.Deposit);
+            Assert.IsNotNull(detail.Data.Scree);
+            Assert.IsNotNull(detail.Data.Wear);
+            Assert.IsNotNull(detail.Data.SedimentFlow);
+
+            float[] heightCopy = (float[])detail.Data.Height.Clone();
+            float[] screeCopy = (float[])detail.Data.Scree.Clone();
+            float[] depositCopy = (float[])detail.Data.Deposit.Clone();
+
+            // Scree または Deposit が存在するセルを探す
+            int n = detail.Data.Resolution;
+            float cell = detail.Data.CellMeters;
+            float targetX = n * cell * 0.5f;
+            float targetZ = n * cell * 0.5f;
+            for (int z = 8; z < n - 8; z++)
+            {
+                bool found = false;
+                for (int x = 8; x < n - 8; x++)
+                {
+                    if (detail.Data.Scree[x + z * n] > 0.1f)
+                    {
+                        targetX = x * cell;
+                        targetZ = z * cell;
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) break;
+            }
+
+            var field = RegionPropFieldContext.FromDetail(detail);
+            bool hasSedimentFlow = field.TrySampleSedimentFlowDir(targetX, targetZ, out float fx, out float fz);
+            Assert.IsTrue(hasSedimentFlow);
+            Assert.AreEqual(1f, Mathf.Sqrt(fx * fx + fz * fz), 1e-3f);
+
+            RegionPropDefinition rubble = catalog.GetProp("rub_stone_rubble_pile");
+            Assert.IsTrue(RegionPropPlacementPlanner.TryPlanCluster(
+                catalog, rubble, field, 505u, 1, targetX, targetZ, out RegionPropClusterPlan plan, enforceMaxSlope: false));
+            Assert.GreaterOrEqual(plan.Instances.Count, 14);
+
+            // 入力の地形・土砂配列が書き換わっていないことを検証
+            Assert.AreEqual(heightCopy, detail.Data.Height);
+            Assert.AreEqual(screeCopy, detail.Data.Scree);
+            Assert.AreEqual(depositCopy, detail.Data.Deposit);
+        }
+
+        [Test]
+        public void View_BuildsMeshesAndGizmoBounds_ForAll17P0Props()
+        {
+            RegionPropCatalog catalog = RegionPropCatalog.LoadDefault();
+            RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = 9, Resolution = 256 });
+            RegionLookScene scene = RegionLookScene.Build(region, new RegionLookSpec { Resolution = 256, Props = true, PropsShowAllP0 = true });
+            RegionPropProofSlice slice = scene.PropsSlice;
+
+            var host = new GameObject("P0AllHost");
+            try
+            {
+                RegionPropView.Result view = RegionPropView.AddTo(host.transform, slice, attachGizmos: true);
+                Assert.AreEqual(slice.Instances.Count, view.PlacedCount);
+
+                RegionPropGizmo[] gizmos = view.Root.GetComponentsInChildren<RegionPropGizmo>();
+                Assert.AreEqual(slice.Instances.Count, gizmos.Length);
+
+                var viewPropIds = new HashSet<string>(StringComparer.Ordinal);
+                foreach (RegionPropGizmo g in gizmos)
+                {
+                    viewPropIds.Add(g.PropId);
+                    Assert.Greater(g.ScaledDimensionsM.x, 0f);
+                    Assert.Greater(g.ScaledDimensionsM.y, 0f);
+                    Assert.Greater(g.ScaledDimensionsM.z, 0f);
+                }
+                foreach (RegionPropDefinition p0 in catalog.Filter(RegionPropPriority.P0))
+                    Assert.IsTrue(viewPropIds.Contains(p0.Id), "View Gizmo に P0 Prop が不足: " + p0.Id);
+
+                foreach (MeshFilter mf in view.Root.GetComponentsInChildren<MeshFilter>())
+                {
+                    Assert.IsNotNull(mf.sharedMesh);
+                    Assert.Greater(mf.sharedMesh.vertexCount, 0);
+                }
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(host);
+            }
+        }
+
+        private static RegionData CreateSyntheticData(int res, float cellMeters, Func<float, float, float> heightFn)
+        {
+            float sizeKm = res * cellMeters / 1000f;
+            var spec = new RegionSpec { Seed = 1, Resolution = res, SizeKm = sizeKm };
+            var data = new RegionData(spec);
+            for (int z = 0; z < res; z++)
+            {
+                for (int x = 0; x < res; x++)
+                    data.Height[x + z * res] = heightFn(x * cellMeters, z * cellMeters);
+            }
+            return data;
+        }
+
+        private static RegionRockField CreateSingleRockField(float rx, float rz, float size)
+        {
+            return new RegionRockField
+            {
+                Positions = Array.Empty<float>(),
+                Normals = Array.Empty<float>(),
+                Indices = Array.Empty<int>(),
+                Tint = Array.Empty<float>(),
+                Lift = Array.Empty<float>(),
+                Rocks = new[]
+                {
+                    new RegionRock { X = rx, Y = 12f, Z = rz, Size = size, Top = size * 0.5f, FirstVertex = 0, VertexCount = 0 }
+                }
+            };
+        }
     }
 }

@@ -348,6 +348,6 @@
     "pct": 100,
     "cat": "system",
     "file": "docs/02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md",
-    "summary": "Megascans/Skyrim Mod系を分析し体系化した7ドメイン・38原型の環境Propsカタログと制作基準・7軸バリエーションデータ(environment-props-catalog.json)"
+    "summary": "Megascans/Skyrim Mod系を分析し体系化した7ドメイン・38原型の環境Propsカタログと制作基準・7軸バリエーションデータ(environment-props-catalog.json)。Unity側読込・検証・P0(17件)配置計画・プレースホルダ/Gizmo受け口をVastcore.RegionMapへ接続済み"
   }
 ]

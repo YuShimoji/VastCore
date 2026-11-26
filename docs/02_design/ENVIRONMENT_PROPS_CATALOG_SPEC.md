@@ -188,6 +188,21 @@ VastCore の現行3D景観（砂岩・乾燥地）と今後の展開予定（古
 | `StructureTagProfile` (SP-019) | JSON の `structureTags` | 既存のフラットタグ（`weathered`, `fortified`, `functional`, `sacred`, `primitive` 等）を継承し、小道具向けに最小限の時代/環境タグを補う |
 | `RegionSurfaceMaterials` (T2/T3) | V4 / V7 の砂塵・土砂なじませ | `Surfaces/<Role>` と同じ色相・鏡面抑制（反射率低め）と高さブレンド思想を Props シェーダーへ揃える |
 
+### 6.1 Unity 側受け口実装と残ギャップ（2026-11-27 接続時点）
+
+- **実装済み受け口 (`Vastcore.RegionMap`)**:
+  - [RegionJson.cs](../../Assets/Scripts/RegionMap/Core/RegionJson.cs) / [RegionPropCatalog.cs](../../Assets/Scripts/RegionMap/Core/RegionPropCatalog.cs): `environment-props-catalog.json`（7ドメイン・38件・P0:17件）の読込、スキーマ・参照整合検証（`Validate` / `ValidateOrThrow`）、SP-018 `Sp018RotationMode()` 変換。
+  - [RegionPropPlacement.cs](../../Assets/Scripts/RegionMap/Core/RegionPropPlacement.cs): 7軸解決 `RegionPropPlacementSolver` と、地形傾斜上限（`spawningRules.maxSlopeDeg`）・水域除外・`RegionRocks` 非重複・`RegionSediment` 勾配読取を行う `RegionPropPlacementPlanner`（P0 全17件の決定論的配置計画 `PlanP0Showcase` を含む）。
+  - [RegionPropView.cs](../../Assets/Scripts/RegionMap/View/RegionPropView.cs) / [RegionPropGizmo.cs](../../Assets/Scripts/RegionMap/View/RegionPropGizmo.cs): P0 全17件の簡易プレースホルダメッシュ生成と外寸・ピボット・正面軸(`+Z`)・V6 群生境界 Gizmo 描画。
+  - [RegionPropCatalogTests.cs](../../Assets/Tests/EditMode/RegionPropCatalogTests.cs) / `tools/RegionMapPreview` (`--props-check`): JSON 38件検証、P0 17件配置・V1/V6/傾斜/埋没・`RegionSediment`/`RegionRocks` 境界の自動テスト。
+- **次段 Proof Slice 比較対象（案A CC0変換 vs 案B Blender造形）**:
+  - `NAT/RUB` 枠: `rub_stone_rubble_pile`（3層 `CorePile`/`MidFragments`/`MicroScatter` と `DirectionalCone`・接地スカート比較）。
+  - `CNT/STR` 枠: `cnt_wood_crate`（V3 5型・V4 材質4種・V2 損傷4段階・`StackedGrid`・斜面パレット連動比較）。
+- **実アセット投入前に不足している受け口**:
+  - **V7 専用シェーダー入力**: 現在は `URP/Lit` `_BaseColor` への `TopDust` 簡易色ブレンドのみ。`WorldNormal.y` による `TopDust`/`TopSnow`/`MossMask` と `LocalY < groundSkirtBlendM` による `GroundSkirtBlend` を受ける Props 用シェーダー/MPB 入力が未接続。
+  - **実アセット解決テーブル**: `MeshVariant`/`MaterialVariant`/`V5` 付属物キーから `Resources` またはアセットレジストリ上の実 Prefab/Mesh を解決し、未登録時のみプレースホルダへフォールバックする差し替え口が未接続。
+  - **Standalone 配布用 JSON 同梱**: 現在は `docs/02_design/environment-props-catalog.json` を上位ディレクトリ探索で読込。ビルド同梱時は `Resources`/`StreamingAssets` 経路が必要。
+
 ---
 
 ## 7. 未決事項・本人の判断待ち

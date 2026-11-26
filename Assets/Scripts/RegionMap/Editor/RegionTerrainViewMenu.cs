@@ -19,21 +19,24 @@ namespace Vastcore.RegionMap.Editor
     public static class RegionTerrainViewMenu
     {
         [MenuItem("Vastcore/Region Map/Open 3D Mesa Look (far, mid, near)")]
-        public static void OpenLook() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon, false); }
+        public static void OpenLook() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon, false, false); }
 
         [MenuItem("Vastcore/Region Map/Open 3D Mesa Look + DS-011 Props Proof")]
-        public static void OpenLookWithPropsProof() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon, true); }
+        public static void OpenLookWithPropsProof() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon, true, false); }
+
+        [MenuItem("Vastcore/Region Map/Open 3D Mesa Look + DS-011 All P0 Props")]
+        public static void OpenLookWithAllP0Props() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon, true, true); }
 
         [MenuItem("Vastcore/Region Map/3D Mesa Look Atmosphere/Clear afternoon")]
-        public static void OpenLookClear() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon, false); }
+        public static void OpenLookClear() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon, false, false); }
 
         [MenuItem("Vastcore/Region Map/3D Mesa Look Atmosphere/Golden hour")]
-        public static void OpenLookGolden() { OpenLook(RegionAtmosphere.Preset.GoldenHour, false); }
+        public static void OpenLookGolden() { OpenLook(RegionAtmosphere.Preset.GoldenHour, false, false); }
 
         [MenuItem("Vastcore/Region Map/3D Mesa Look Atmosphere/Dust haze")]
-        public static void OpenLookDust() { OpenLook(RegionAtmosphere.Preset.DustHaze, false); }
+        public static void OpenLookDust() { OpenLook(RegionAtmosphere.Preset.DustHaze, false, false); }
 
-        private static void OpenLook(RegionAtmosphere.Preset preset, bool withPropsProof)
+        private static void OpenLook(RegionAtmosphere.Preset preset, bool withPropsProof, bool showAllP0)
         {
             if (EditorApplication.isPlaying)
             {
@@ -45,11 +48,13 @@ namespace Vastcore.RegionMap.Editor
             {
                 EditorUtility.DisplayProgressBar("Region Map", "地域と、砂岩の台地の場面を作っています…", 0.3f);
                 RegionAtmosphere atmosphere = RegionAtmosphere.Create(preset);
-                var lookSpec = new RegionLookSpec { Props = withPropsProof };
+                var lookSpec = new RegionLookSpec { Props = withPropsProof, PropsShowAllP0 = showAllP0 };
                 RegionTerrainView.LookResult look = CreateLookScene(new RegionSpec { Seed = 9 }, lookSpec,
                     atmosphere, out Camera camera);
                 RegionLookViewpoint startView = withPropsProof && look.Scene.PropsSlice != null
-                    ? look.Scene.PropsSlice.CratesViewpoint
+                    ? (showAllP0 && look.Scene.PropsSlice.P0ShowcaseViewpoint != null
+                        ? look.Scene.PropsSlice.P0ShowcaseViewpoint
+                        : look.Scene.PropsSlice.CratesViewpoint)
                     : look.Scene.Spec.Mid;
                 RegionTerrainView.PlaceLook(camera.transform, look.Scene, startView);
                 camera.fieldOfView = startView.FovDegrees;
@@ -205,8 +210,10 @@ namespace Vastcore.RegionMap.Editor
                 var regionSpec = new RegionSpec { Seed = int.Parse(RegionMapMenu.Argument("-regionSeed", "9")) };
                 var spec = new RegionLookSpec();
                 bool propsCompare = RegionMapMenu.Argument("-propsCompare", "false") == "true";
-                bool propsProof = propsCompare || RegionMapMenu.Argument("-propsProof", "false") == "true";
+                bool propsAllP0 = RegionMapMenu.Argument("-propsAllP0", "false") == "true";
+                bool propsProof = propsCompare || propsAllP0 || RegionMapMenu.Argument("-propsProof", "false") == "true";
                 spec.Props = propsProof;
+                spec.PropsShowAllP0 = propsAllP0;
                 string center = RegionMapMenu.Argument("-lookCenter", "");
                 if (center.Length > 0)
                 {
@@ -621,6 +628,12 @@ namespace Vastcore.RegionMap.Editor
                 RegionTerrainView.PlaceLook(camera.transform, look.Scene, slice.RubbleViewpoint);
                 camera.fieldOfView = slice.RubbleViewpoint.FovDegrees;
                 Capture(camera, output, "props-rubble.png");
+            }
+            if (look.Scene.Spec != null && look.Scene.Spec.PropsShowAllP0 && slice.P0ShowcaseViewpoint != null)
+            {
+                RegionTerrainView.PlaceLook(camera.transform, look.Scene, slice.P0ShowcaseViewpoint);
+                camera.fieldOfView = slice.P0ShowcaseViewpoint.FovDegrees;
+                Capture(camera, output, "props-p0-all.png");
             }
 
             var report = new System.Text.StringBuilder();

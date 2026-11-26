@@ -268,7 +268,7 @@ namespace Vastcore.RegionMap
             if (scene.PropsSlice != null)
             {
                 result.Props = RegionPropView.AddTo(root.transform, scene.PropsSlice);
-                foreach (RegionLookViewpoint vp in new[] { scene.PropsSlice.CratesViewpoint, scene.PropsSlice.RubbleViewpoint })
+                foreach (RegionLookViewpoint vp in new[] { scene.PropsSlice.CratesViewpoint, scene.PropsSlice.RubbleViewpoint, scene.PropsSlice.P0ShowcaseViewpoint })
                 {
                     if (vp == null) continue;
                     var point = new GameObject(vp.Name);

@@ -35,6 +35,7 @@
   # view3d: DS-011 P0 Props Proof Slice の前後比較（props-near-before/after, props-crates, props-rubble）
   [switch]$PropsCompare,
   [switch]$PropsProof,
+  [switch]$PropsAllP0,
   [string]$LookSky = '',
   [string]$UnityPath = ''
 )
@@ -92,6 +93,7 @@ if ($Mode -eq 'setup') {
     if ($BlendDepth) { $unityArgs += @('-blendDepth', $BlendDepth) }
     if ($PropsCompare) { $unityArgs += @('-propsCompare', 'true') }
     if ($PropsProof) { $unityArgs += @('-propsProof', 'true') }
+    if ($PropsAllP0) { $unityArgs += @('-propsAllP0', 'true') }
     if ($LookSky) { $unityArgs += @('-lookSky', $LookSky) }
   }
 } elseif ($Mode -eq 'play') {

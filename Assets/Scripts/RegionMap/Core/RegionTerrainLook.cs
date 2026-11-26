@@ -51,6 +51,7 @@ namespace Vastcore.RegionMap
         public bool Rocks = true;
         public bool Vegetation = true;
         public bool Props = false;
+        public bool PropsShowAllP0 = false;
         public int PropsSeedOffset = 0;
 
         // 3 つの視点は、既定の場所（seed 9 の X43.61 Y76.92）に合わせて決めた値。太陽は北西から差すので、

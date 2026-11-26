@@ -244,6 +244,13 @@ namespace Vastcore.RegionMap
         }
     }
 
+    public sealed class RegionPropCatalogValidationResult
+    {
+        public readonly List<string> Errors = new List<string>();
+        public readonly List<string> Warnings = new List<string>();
+        public bool IsValid => Errors.Count == 0;
+    }
+
     /// <summary>
     /// DS-011 (`docs/02_design/environment-props-catalog.json`) の読込済みカタログ。
     /// </summary>
@@ -293,6 +300,118 @@ namespace Vastcore.RegionMap
             return list;
         }
 
+        /// <summary>
+        /// カタログの必須項目・技術基準・数値範囲・相互参照 ID を検証する。
+        /// </summary>
+        public RegionPropCatalogValidationResult Validate()
+        {
+            var res = new RegionPropCatalogValidationResult();
+            if (string.IsNullOrEmpty(SchemaVersion)) res.Errors.Add("schemaVersion が空です。");
+            if (!string.Equals(SpecId, "DS-011", StringComparison.Ordinal))
+                res.Errors.Add("specId は 'DS-011' である必要があります: " + SpecId);
+            if (!string.Equals(TechnicalStandards.ColorSpace, "Linear", StringComparison.OrdinalIgnoreCase))
+                res.Errors.Add("technicalStandards.colorSpace は 'Linear' である必要があります: " + TechnicalStandards.ColorSpace);
+            if (TechnicalStandards.AlbedoMinimumSrgb < 0 || TechnicalStandards.AlbedoMinimumSrgb >= TechnicalStandards.AlbedoMaximumSrgb)
+                res.Errors.Add("albedoMinimumSrgb / albedoMaximumSrgb の範囲が不正です。");
+            if (Domains.Count == 0) res.Errors.Add("domains が空です。");
+            if (Props.Count == 0) res.Errors.Add("props が空です。");
+
+            var domainIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (RegionPropDomain d in Domains)
+            {
+                if (string.IsNullOrEmpty(d.Id)) res.Errors.Add("domains に空の id があります。");
+                else domainIds.Add(d.Id);
+            }
+
+            var seenIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (RegionPropDefinition prop in Props)
+            {
+                if (string.IsNullOrEmpty(prop.Id))
+                {
+                    res.Errors.Add("props に空の id があります。");
+                    continue;
+                }
+                if (!seenIds.Add(prop.Id))
+                    res.Errors.Add("props の id が重複しています: " + prop.Id);
+                if (!domainIds.Contains(prop.Domain))
+                    res.Errors.Add(prop.Id + ": 未定義の domain '" + prop.Domain + "'");
+                if (prop.DimensionsM.X <= 0f || prop.DimensionsM.Y <= 0f || prop.DimensionsM.Z <= 0f)
+                    res.Errors.Add(prop.Id + ": dimensionsM はすべて正の値である必要があります。");
+                if (prop.MeshVariants == null || prop.MeshVariants.Length == 0)
+                    res.Errors.Add(prop.Id + ": meshVariants が空です。");
+                if (prop.MaterialVariants == null || prop.MaterialVariants.Length == 0)
+                    res.Errors.Add(prop.Id + ": materialVariants が空です。");
+
+                RegionPropTransformRules v1 = prop.VariationRules.V1_Transform;
+                if (v1.YawMinDeg > v1.YawMaxDeg)
+                    res.Errors.Add(prop.Id + ": V1 yawMinDeg > yawMaxDeg");
+                if (v1.MaxTiltDeg < 0f || v1.FallenMaxTiltDeg < 0f || v1.DamagedTiltDeg < 0f)
+                    res.Errors.Add(prop.Id + ": V1 maxTiltDeg が負です。");
+                if (v1.ScaleMin <= 0f || v1.ScaleMin > v1.ScaleMax)
+                    res.Errors.Add(prop.Id + ": V1 scaleRange が不正です。");
+                if (v1.NonUniformMax < 0f || v1.NonUniformMax >= 1f)
+                    res.Errors.Add(prop.Id + ": V1 nonUniformMax が範囲外です。");
+
+                RegionPropDamageRules v2 = prop.VariationRules.V2_DamageState;
+                if (v2 != null && v2.States != null && v2.States.Length > 0)
+                {
+                    if (v2.Weights != null && v2.Weights.Length > 0 && v2.Weights.Length != v2.States.Length)
+                        res.Errors.Add(prop.Id + ": V2 states と weights の長さが一致しません。");
+                    if (v2.Weights != null && v2.Weights.Length > 0)
+                    {
+                        float sum = 0f;
+                        for (int i = 0; i < v2.Weights.Length; i++)
+                        {
+                            if (v2.Weights[i] < 0f) res.Errors.Add(prop.Id + ": V2 weight が負です。");
+                            sum += v2.Weights[i];
+                        }
+                        if (sum <= 0f) res.Errors.Add(prop.Id + ": V2 weights の合計が 0 以下です。");
+                    }
+                }
+
+                RegionPropClusterRules v6 = prop.VariationRules.V6_ClusterSpread;
+                if (v6.ClusterCountMin < 1 || v6.ClusterCountMin > v6.ClusterCountMax)
+                    res.Errors.Add(prop.Id + ": V6 clusterCount が不正です。");
+                if (v6.MaxStackLayers < 1)
+                    res.Errors.Add(prop.Id + ": V6 maxStackLayers が 1 未満です。");
+                ValidateRefProp(res, prop.Id, "V6.requireDebrisSkirt", v6.RequireDebrisSkirt);
+                ValidateRefProp(res, prop.Id, "V6.collapsedSpills", v6.CollapsedSpills);
+                ValidateRefPropArray(res, prop.Id, "V6.actsAsBaseFor", v6.ActsAsBaseFor);
+                ValidateRefPropArray(res, prop.Id, "V6.pairWith", v6.PairWith);
+                ValidateRefPropArray(res, prop.Id, "V6.leanAgainst", v6.LeanAgainst);
+                ValidateRefPropArray(res, prop.Id, "V6.anchorFor", v6.AnchorFor);
+
+                RegionPropSpawningRules sr = prop.SpawningRules;
+                if (sr.MaxSlopeDeg < 0f || sr.MaxSlopeDeg > 90f)
+                    res.Errors.Add(prop.Id + ": spawningRules.maxSlopeDeg が範囲外です。");
+                if (sr.EmbedDepthMinRatio < 0f || sr.EmbedDepthMinRatio > sr.EmbedDepthMaxRatio || sr.EmbedDepthMaxRatio > 1f)
+                    res.Errors.Add(prop.Id + ": spawningRules.embedDepthRatio が不正です。");
+                ValidateRefPropArray(res, prop.Id, "spawningRules.pairWith", sr.PairWith);
+            }
+            return res;
+        }
+
+        public void ValidateOrThrow()
+        {
+            RegionPropCatalogValidationResult res = Validate();
+            if (!res.IsValid)
+                throw new FormatException("DS-011 カタログ検証エラー (" + res.Errors.Count + "件): " + string.Join("; ", res.Errors));
+        }
+
+        private void ValidateRefProp(RegionPropCatalogValidationResult res, string ownerId, string field, string targetId)
+        {
+            if (string.IsNullOrEmpty(targetId)) return;
+            if (!_byId.ContainsKey(targetId))
+                res.Errors.Add(ownerId + ": " + field + " の参照先 '" + targetId + "' がカタログに存在しません。");
+        }
+
+        private void ValidateRefPropArray(RegionPropCatalogValidationResult res, string ownerId, string field, string[] targetIds)
+        {
+            if (targetIds == null) return;
+            for (int i = 0; i < targetIds.Length; i++)
+                ValidateRefProp(res, ownerId, field, targetIds[i]);
+        }
+
         private static bool ContainsTag(string[] tags, string value)
         {
             if (tags == null) return false;
@@ -301,18 +420,38 @@ namespace Vastcore.RegionMap
             return false;
         }
 
-        /// <summary>現在ディレクトリまたはその親ディレクトリから `docs/02_design/environment-props-catalog.json` を探す。</summary>
+        /// <summary>現在ディレクトリ、実行基準ディレクトリ、または親ディレクトリから `docs/02_design/environment-props-catalog.json` を探す。</summary>
         public static string FindDefaultCatalogPath(string startDirectory = null)
         {
-            string dir = string.IsNullOrEmpty(startDirectory) ? Directory.GetCurrentDirectory() : startDirectory;
-            for (int depth = 0; depth < 8 && !string.IsNullOrEmpty(dir); depth++)
+            string relative = DefaultRelativePath.Replace('/', Path.DirectorySeparatorChar);
+            string[] roots = !string.IsNullOrEmpty(startDirectory)
+                ? new[] { startDirectory }
+                : new[] { Directory.GetCurrentDirectory(), AppDomain.CurrentDomain.BaseDirectory };
+
+            for (int r = 0; r < roots.Length; r++)
             {
-                string candidate = Path.Combine(dir, DefaultRelativePath.Replace('/', Path.DirectorySeparatorChar));
-                if (File.Exists(candidate)) return candidate;
-                DirectoryInfo parent = Directory.GetParent(dir);
-                dir = parent != null ? parent.FullName : null;
+                string dir = roots[r];
+                for (int depth = 0; depth < 8 && !string.IsNullOrEmpty(dir); depth++)
+                {
+                    string candidate = Path.Combine(dir, relative);
+                    if (File.Exists(candidate)) return candidate;
+                    DirectoryInfo parent = Directory.GetParent(dir);
+                    dir = parent != null ? parent.FullName : null;
+                }
             }
             return null;
+        }
+
+        public static bool TryLoadDefault(out RegionPropCatalog catalog, string startDirectory = null)
+        {
+            string path = FindDefaultCatalogPath(startDirectory);
+            if (path == null)
+            {
+                catalog = null;
+                return false;
+            }
+            catalog = LoadFromFile(path);
+            return true;
         }
 
         public static RegionPropCatalog LoadDefault(string startDirectory = null)

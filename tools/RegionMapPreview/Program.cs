@@ -52,6 +52,7 @@ namespace Vastcore.RegionMap.Preview
             bool volume = false;
             float voxel = 1f;
             bool mesaSites = false;
+            bool propsCheck = false;
             string look = null;
             string lookAt = null;
             string lookCenter = null;
@@ -135,6 +136,7 @@ namespace Vastcore.RegionMap.Preview
                     case "--mesa": detailSpec.Mesa = Float(value); a++; break;
                     case "--mesa-any": detailSpec.MesaAnyClimate = true; break;
                     case "--mesa-sites": mesaSites = true; break;
+                    case "--props-check": propsCheck = true; break;
                     case "--look": look = value; a++; break;
                     case "--look-at": lookAt = value; a++; break;
                     case "--look-center": lookCenter = value; a++; break;
@@ -247,6 +249,7 @@ namespace Vastcore.RegionMap.Preview
                     WriteDevelopmentDetails(data, options.Style, stem, detailSpec.Resolution, Float(size), developmentAt);
             if (steepCoasts) DescribeSteepCoasts(data);
             if (mesaSites) LookView.DescribeMesaSites(data);
+            if (propsCheck) RunPropsCheck(data);
             if (look != null) LookView.Write(data, stem, look, lookAt, lookCenter);
             if (sedimentOut != null) LookView.WriteSediment(data, sedimentOut, lookCenter, sedimentAmount, sedimentGravity, sedimentWater);
             if (routes && view3dFocus == null) RouteView.WriteRegion(data, options.Style, stem);
@@ -1115,6 +1118,29 @@ namespace Vastcore.RegionMap.Preview
             Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "雲 seed={0} 量={1:F2} 作成={2}ms 薄い雲を含む割合={3:P0} はっきり白い割合={4:P0} → {5}",
                 spec.Seed, options.CloudCover, ms, RegionClouds.Coverage(field, 0.05f), RegionClouds.Coverage(field, 0.25f), Path.GetFullPath(file)));
             return 0;
+        }
+
+        private static void RunPropsCheck(RegionData data)
+        {
+            RegionPropCatalog catalog = RegionPropCatalog.LoadDefault();
+            catalog.ValidateOrThrow();
+            var scene = RegionLookScene.Build(data, new RegionLookSpec { Props = true, PropsShowAllP0 = true });
+            RegionPropProofSlice slice = scene.PropsSlice;
+            var distinct = new HashSet<string>(StringComparer.Ordinal);
+            var coveredP0 = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < slice.Instances.Count; i++)
+            {
+                string id = slice.Instances[i].PropId;
+                distinct.Add(id);
+                if (catalog.TryGetProp(id, out RegionPropDefinition def) && def.Priority == RegionPropPriority.P0)
+                    coveredP0.Add(id);
+            }
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                "DS-011 Props Check: total={0} domains={1} p0_count={2} p0_covered={3} placed_instances={4} distinct_props={5}",
+                catalog.Props.Count, catalog.Domains.Count, catalog.Filter(RegionPropPriority.P0).Count,
+                coveredP0.Count, slice.Instances.Count, distinct.Count));
+            if (coveredP0.Count < catalog.Filter(RegionPropPriority.P0).Count)
+                throw new InvalidOperationException("P0 カバレッジ不足: " + coveredP0.Count);
         }
 
         private static float Float(string value)

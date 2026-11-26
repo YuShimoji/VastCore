@@ -53,16 +53,240 @@ namespace Vastcore.RegionMap
     }
 
     /// <summary>
+    /// 1 クラスタ分の配置計画と V6 境界情報（Gizmo 可視化・検証用）。
+    /// </summary>
+    public sealed class RegionPropClusterPlan
+    {
+        public string PropId = "";
+        public RegionPropClusterPattern Pattern = RegionPropClusterPattern.Single;
+        public float AnchorX;
+        public float AnchorY;
+        public float AnchorZ;
+        public float BoundaryRadiusM;
+        public float FlowDirX;
+        public float FlowDirZ = 1f;
+        public float ConeAngleDeg = 70f;
+        public bool Accepted = true;
+        public string SkipReason = "";
+        public readonly List<RegionPropInstance> Instances = new List<RegionPropInstance>();
+    }
+
+    /// <summary>
     /// 3D 砂岩シーン上の DS-011 P0 Proof Slice 配置結果と、比較撮影用の視点情報。
     /// </summary>
     public sealed class RegionPropProofSlice
     {
         public readonly List<RegionPropInstance> Instances = new List<RegionPropInstance>();
+        public readonly List<RegionPropClusterPlan> Clusters = new List<RegionPropClusterPlan>();
         public RegionLookViewpoint CratesViewpoint;
         public RegionLookViewpoint RubbleViewpoint;
+        public RegionLookViewpoint P0ShowcaseViewpoint;
         public float CratesCenterX, CratesCenterZ;
         public float RubbleCenterX, RubbleCenterZ;
         public float RubbleFlowDirX, RubbleFlowDirZ;
+    }
+
+    /// <summary>
+    /// RegionData / RegionSediment / RegionRocks を読み取り専用で参照し、
+    /// 水域・傾斜・既存岩との非重複境界および土砂流向を評価するコンテキスト。
+    /// </summary>
+    public sealed class RegionPropFieldContext
+    {
+        private readonly RegionLookScene _scene;
+        private readonly RegionData _data;
+        private readonly RegionRockField _rocks;
+        private readonly float _originX;
+        private readonly float _originZ;
+        private readonly float _cell;
+
+        private RegionPropFieldContext(RegionLookScene scene, RegionData data, RegionRockField rocks, float originX, float originZ, float cell)
+        {
+            _scene = scene;
+            _data = data;
+            _rocks = rocks;
+            _originX = originX;
+            _originZ = originZ;
+            _cell = cell > 0f ? cell : 1f;
+        }
+
+        public static RegionPropFieldContext FromScene(RegionLookScene scene)
+        {
+            if (scene == null) throw new ArgumentNullException("scene");
+            RegionData innerData = scene.Inner != null ? scene.Inner.Data : null;
+            return new RegionPropFieldContext(
+                scene,
+                innerData,
+                scene.InnerRocks,
+                scene.InnerMinX,
+                scene.InnerMinZ,
+                scene.InnerCell);
+        }
+
+        public static RegionPropFieldContext FromDetail(RegionDetail detail, RegionRockField rocks = null, float originX = 0f, float originZ = 0f)
+        {
+            if (detail == null || detail.Data == null) throw new ArgumentNullException("detail");
+            return new RegionPropFieldContext(null, detail.Data, rocks, originX, originZ, detail.Data.CellMeters);
+        }
+
+        public static RegionPropFieldContext FromData(RegionData data, RegionRockField rocks = null, float originX = 0f, float originZ = 0f)
+        {
+            if (data == null) throw new ArgumentNullException("data");
+            return new RegionPropFieldContext(null, data, rocks, originX, originZ, data.CellMeters);
+        }
+
+        public float HeightAt(float x, float z)
+        {
+            if (_scene != null) return _scene.HeightAt(x, z);
+            float h = SampleArray(_data.Height, _data.Resolution, (x - _originX) / _cell, (z - _originZ) / _cell);
+            return h > 0f ? h : 0f;
+        }
+
+        public void SampleSlope(float x, float z, out float slopeDeg, out float downX, out float downZ)
+        {
+            float step = Math.Max(1.0f, _cell);
+            float hx0 = HeightAt(x - step, z);
+            float hx1 = HeightAt(x + step, z);
+            float hz0 = HeightAt(x, z - step);
+            float hz1 = HeightAt(x, z + step);
+            float gx = (hx1 - hx0) / (2f * step);
+            float gz = (hz1 - hz0) / (2f * step);
+            float grad = (float)Math.Sqrt(gx * gx + gz * gz);
+            slopeDeg = (float)(Math.Atan(grad) * (180.0 / Math.PI));
+            if (grad > 1e-4f)
+            {
+                downX = -gx / grad;
+                downZ = -gz / grad;
+            }
+            else
+            {
+                downX = 0f;
+                downZ = 1f;
+            }
+        }
+
+        public void SampleSurfaceMetrics(
+            float x,
+            float z,
+            out float deposit,
+            out float scree,
+            out float wear,
+            out float sedimentFlow,
+            out float coarse,
+            out float talus,
+            out float caprock,
+            out float waterCoverage)
+        {
+            deposit = 0f;
+            scree = 0f;
+            wear = 0f;
+            sedimentFlow = 0f;
+            coarse = 0f;
+            talus = 0f;
+            caprock = 0f;
+            waterCoverage = 0f;
+            if (_data == null) return;
+
+            int n = _data.Resolution;
+            float fx = (x - _originX) / _cell;
+            float fz = (z - _originZ) / _cell;
+            if (fx < 0f || fz < 0f || fx > n - 1 || fz > n - 1) return;
+
+            if (_data.Deposit != null) deposit = SampleArray(_data.Deposit, n, fx, fz);
+            if (_data.Scree != null) scree = SampleArray(_data.Scree, n, fx, fz);
+            if (_data.Wear != null) wear = SampleArray(_data.Wear, n, fx, fz);
+            if (_data.SedimentFlow != null) sedimentFlow = SampleArray(_data.SedimentFlow, n, fx, fz);
+            if (_data.Coarse != null) coarse = SampleArray(_data.Coarse, n, fx, fz);
+            if (_data.Talus != null) talus = SampleArray(_data.Talus, n, fx, fz);
+            if (_data.Caprock != null)
+            {
+                int ix = Math.Min(n - 1, Math.Max(0, (int)Math.Round(fx)));
+                int iz = Math.Min(n - 1, Math.Max(0, (int)Math.Round(fz)));
+                caprock = _data.Caprock[ix + iz * n];
+            }
+            if (_data.WaterCoverage != null) waterCoverage = SampleArray(_data.WaterCoverage, n, fx, fz);
+            if (_data.LakeDepth != null)
+            {
+                float lake = SampleArray(_data.LakeDepth, n, fx, fz);
+                if (lake > 0.01f) waterCoverage = Math.Max(waterCoverage, 1f);
+            }
+            if (HeightAt(x, z) <= 0.01f) waterCoverage = Math.Max(waterCoverage, 1f);
+        }
+
+        /// <summary>
+        /// RegionSediment の Scree/Deposit/SedimentFlow 勾配から流向ベクトルを返す。土砂場が無い場合は地形勾配へフォールバックする。
+        /// </summary>
+        public bool TrySampleSedimentFlowDir(float x, float z, out float dirX, out float dirZ)
+        {
+            SampleSlope(x, z, out _, out float slopeDx, out float slopeDz);
+            dirX = slopeDx;
+            dirZ = slopeDz;
+            if (_data == null || (_data.Scree == null && _data.Deposit == null && _data.SedimentFlow == null))
+                return false;
+
+            int n = _data.Resolution;
+            float fx = (x - _originX) / _cell;
+            float fz = (z - _originZ) / _cell;
+            if (fx < 1f || fz < 1f || fx > n - 2 || fz > n - 2)
+                return false;
+
+            float[] field = _data.Scree ?? _data.Deposit ?? _data.SedimentFlow;
+            float sx0 = SampleArray(field, n, fx - 1f, fz);
+            float sx1 = SampleArray(field, n, fx + 1f, fz);
+            float sz0 = SampleArray(field, n, fx, fz - 1f);
+            float sz1 = SampleArray(field, n, fx, fz + 1f);
+            // Scree 増加方向ではなく、地形の下り方向へ向けた堆積流出軸を優先し、直交バイアスとして土砂勾配を加味する
+            float gx = (sx1 - sx0) * 0.5f;
+            float gz = (sz1 - sz0) * 0.5f;
+            float lenSq = gx * gx + gz * gz;
+            if (lenSq > 1e-5f)
+            {
+                // 土砂が増えている下流（または地形と揃った向き）へ合わせる
+                float dot = gx * slopeDx + gz * slopeDz;
+                float sign = dot >= 0f ? 1f : -1f;
+                dirX = slopeDx * 0.7f + sign * gx * 0.3f;
+                dirZ = slopeDz * 0.7f + sign * gz * 0.3f;
+                float norm = (float)Math.Sqrt(dirX * dirX + dirZ * dirZ);
+                if (norm > 1e-5f)
+                {
+                    dirX /= norm;
+                    dirZ /= norm;
+                }
+            }
+            return true;
+        }
+
+        public bool OverlapsExistingRock(float x, float z, float propRadiusM, float clearanceM = 0.25f)
+        {
+            if (_rocks == null || _rocks.Rocks == null) return false;
+            RegionRock[] rocks = _rocks.Rocks;
+            for (int i = 0; i < rocks.Length; i++)
+            {
+                RegionRock rock = rocks[i];
+                if (rock.Size < 0.45f) continue;
+                float rockRadius = 0.48f * rock.Size;
+                float minDist = rockRadius + propRadiusM + clearanceM;
+                float dx = x - rock.X;
+                float dz = z - rock.Z;
+                if (dx * dx + dz * dz < minDist * minDist)
+                    return true;
+            }
+            return false;
+        }
+
+        private static float SampleArray(float[] values, int n, float x, float y)
+        {
+            if (values == null || n < 2) return 0f;
+            int x0 = (int)x, y0 = (int)y;
+            if (x0 < 0) x0 = 0; else if (x0 > n - 2) x0 = n - 2;
+            if (y0 < 0) y0 = 0; else if (y0 > n - 2) y0 = n - 2;
+            float fx = x - x0, fy = y - y0;
+            if (fx < 0f) fx = 0f; else if (fx > 1f) fx = 1f;
+            if (fy < 0f) fy = 0f; else if (fy > 1f) fy = 1f;
+            int i = x0 + y0 * n;
+            float top = values[i] + (values[i + 1] - values[i]) * fx;
+            float bottom = values[i + n] + (values[i + n + 1] - values[i + n]) * fx;
+            return top + (bottom - top) * fy;
+        }
     }
 
     /// <summary>
@@ -455,6 +679,7 @@ namespace Vastcore.RegionMap
 
             uint seed = unchecked((uint)(scene.RegionSeed + seedOffset) * 2654435761u + 131u);
             var slice = new RegionPropProofSlice();
+            var field = RegionPropFieldContext.FromScene(scene);
 
             // 1. 木箱・補給キャンプ区画: Near 視点（Eye: -121, -69）の前方手前、緩斜面を探す
             FindGentleSpot(scene, scene.CenterX - 120f, scene.CenterZ - 81f, 7f,
@@ -526,13 +751,14 @@ namespace Vastcore.RegionMap
                 out float rubX, out float rubZ, out float rubSlope, out float rubDx, out float rubDz);
             slice.RubbleCenterX = rubX;
             slice.RubbleCenterZ = rubZ;
-            slice.RubbleFlowDirX = rubDx;
-            slice.RubbleFlowDirZ = rubDz;
+            field.TrySampleSedimentFlowDir(rubX, rubZ, out float rubFlowX, out float rubFlowZ);
+            slice.RubbleFlowDirX = rubFlowX;
+            slice.RubbleFlowDirZ = rubFlowZ;
 
             RegionPropDefinition rubbleProp = catalog.GetProp("rub_stone_rubble_pile");
             slice.Instances.AddRange(PlaceCluster(
                 catalog, rubbleProp, seed, 10, rubX, scene.HeightAt(rubX, rubZ), rubZ,
-                rubSlope, rubDx, rubDz, scene.HeightAt, rubDx, rubDz, "sandstone_rubble"));
+                rubSlope, rubDx, rubDz, scene.HeightAt, rubFlowX, rubFlowZ, "sandstone_rubble"));
 
             if (catalog.TryGetProp("nat_stratified_slab", out RegionPropDefinition slabProp))
             {
@@ -554,6 +780,11 @@ namespace Vastcore.RegionMap
                     pSlope, pDx, pDz, scene.HeightAt, pDx, pDz, "sandstone_carved"));
             }
 
+            if (scene.Spec != null && scene.Spec.PropsShowAllP0)
+            {
+                AppendRemainingP0Showcase(catalog, scene, field, seed, crateX, crateZ, rubX, rubZ, slice);
+            }
+
             // 比較撮影用の専用近接視点（木箱ショーケース / 瓦礫3層広がり）
             float crateRelE = crateX - scene.CenterX;
             float crateRelS = crateZ - scene.CenterZ;
@@ -566,15 +797,63 @@ namespace Vastcore.RegionMap
             float rubRelE = rubX - scene.CenterX;
             float rubRelS = rubZ - scene.CenterZ;
             // 瓦礫の方向性広がりを斜め前方から見下ろす（崖壁にめり込まないよう斜面下側へ置く）
-            float perpX = -rubDz;
-            float perpZ = rubDx;
+            float perpX = -rubFlowZ;
+            float perpZ = rubFlowX;
             slice.RubbleViewpoint = new RegionLookViewpoint(
                 "props-rubble",
-                rubRelE + rubDx * 7.5f + perpX * 5.2f, rubRelS + rubDz * 7.5f + perpZ * 5.2f, 4.6f,
-                rubRelE + rubDx * 1.4f, rubRelS + rubDz * 1.4f, 0.5f,
+                rubRelE + rubFlowX * 7.5f + perpX * 5.2f, rubRelS + rubFlowZ * 7.5f + perpZ * 5.2f, 4.6f,
+                rubRelE + rubFlowX * 1.4f, rubRelS + rubFlowZ * 1.4f, 0.5f,
                 52f);
 
+            slice.P0ShowcaseViewpoint = new RegionLookViewpoint(
+                "props-p0-all",
+                crateRelE - 6.0f, crateRelS + 14.0f, 8.5f,
+                (crateRelE + rubRelE) * 0.5f, (crateRelS + rubRelS) * 0.5f, 1.5f,
+                55f);
+
             return slice;
+        }
+
+        private static void AppendRemainingP0Showcase(
+            RegionPropCatalog catalog,
+            RegionLookScene scene,
+            RegionPropFieldContext field,
+            uint seed,
+            float crateX,
+            float crateZ,
+            float rubX,
+            float rubZ,
+            RegionPropProofSlice slice)
+        {
+            var placedIds = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < slice.Instances.Count; i++)
+                placedIds.Add(slice.Instances[i].PropId);
+
+            List<RegionPropDefinition> p0Props = catalog.Filter(RegionPropPriority.P0);
+            int idx = 20;
+            for (int i = 0; i < p0Props.Count; i++)
+            {
+                RegionPropDefinition prop = p0Props[i];
+                if (placedIds.Contains(prop.Id)) continue;
+
+                bool isNaturalOrRubble = prop.Domain == "NAT" || prop.Domain == "RUB" || prop.Id == "exp_monolith_fragment";
+                float baseX = isNaturalOrRubble ? rubX : crateX;
+                float baseZ = isNaturalOrRubble ? rubZ : crateZ;
+                float angle = (idx - 20) * 0.85f;
+                float ring = 5.5f + ((idx - 20) / 6) * 4.5f;
+                float candX = baseX + (float)Math.Cos(angle) * ring;
+                float candZ = baseZ + (float)Math.Sin(angle) * ring;
+
+                if (RegionPropPlacementPlanner.TryPlanCluster(
+                    catalog, prop, field, seed, idx, candX, candZ,
+                    out RegionPropClusterPlan plan, slice.Instances, searchRadiusM: 22f))
+                {
+                    slice.Clusters.Add(plan);
+                    slice.Instances.AddRange(plan.Instances);
+                    placedIds.Add(prop.Id);
+                }
+                idx++;
+            }
         }
 
         private static void FindGentleSpot(RegionLookScene scene, float startX, float startZ, float radius,
@@ -720,6 +999,13 @@ namespace Vastcore.RegionMap
 
             pitchDeg = Clamp(pitchDeg, -tiltLimitDeg, tiltLimitDeg);
             rollDeg = Clamp(rollDeg, -tiltLimitDeg, tiltLimitDeg);
+            float magSq = pitchDeg * pitchDeg + rollDeg * rollDeg;
+            if (magSq > tiltLimitDeg * tiltLimitDeg && magSq > 1e-6f)
+            {
+                float scale = tiltLimitDeg / (float)Math.Sqrt(magSq);
+                pitchDeg *= scale;
+                rollDeg *= scale;
+            }
         }
 
         private static float ResolveEmbedDepth(RegionPropDefinition prop, float scaledHeight, float h)
@@ -874,5 +1160,179 @@ namespace Vastcore.RegionMap
         private static float Lerp(float a, float b, float t) => a + (b - a) * Clamp(t, 0f, 1f);
 
         private static float Clamp(float v, float min, float max) => v < min ? min : (v > max ? max : v);
+    }
+
+    /// <summary>
+    /// DS-011 の SpawningRules（最大傾斜）・水域除外・RegionRocks 非重複・RegionSediment 流向接続を適用して
+    /// 決定論的な配置計画を構築する。
+    /// </summary>
+    public static class RegionPropPlacementPlanner
+    {
+        public static bool CanSpawnAtSlope(RegionPropDefinition prop, float slopeDeg)
+        {
+            if (prop == null) throw new ArgumentNullException("prop");
+            return slopeDeg <= prop.SpawningRules.MaxSlopeDeg;
+        }
+
+        public static bool TryPlanCluster(
+            RegionPropCatalog catalog,
+            RegionPropDefinition prop,
+            RegionPropFieldContext field,
+            uint seed,
+            int anchorIndex,
+            float targetX,
+            float targetZ,
+            out RegionPropClusterPlan plan,
+            IList<RegionPropInstance> existingInstances = null,
+            bool enforceMaxSlope = true,
+            float searchRadiusM = 0f,
+            float? flowDirX = null,
+            float? flowDirZ = null,
+            string parentMaterial = null)
+        {
+            if (prop == null) throw new ArgumentNullException("prop");
+            if (field == null) throw new ArgumentNullException("field");
+
+            float anchorRadius = 0.45f * Math.Max(prop.DimensionsM.X, prop.DimensionsM.Z);
+            plan = new RegionPropClusterPlan
+            {
+                PropId = prop.Id,
+                Pattern = prop.VariationRules.V6_ClusterSpread.Pattern,
+                ConeAngleDeg = prop.VariationRules.V6_ClusterSpread.ConeAngleDeg,
+                Accepted = false
+            };
+
+            float bestX = targetX;
+            float bestZ = targetZ;
+            float bestSlope = 0f;
+            float bestDx = 0f;
+            float bestDz = 1f;
+            bool found = false;
+            string firstFailReason = "";
+
+            int candidates = searchRadiusM > 0.1f ? 25 : 1;
+            for (int c = 0; c < candidates; c++)
+            {
+                float cx = targetX;
+                float cz = targetZ;
+                if (c > 0)
+                {
+                    float ring = (float)c / (candidates - 1);
+                    float r = searchRadiusM * (0.2f + 0.8f * ring);
+                    float ang = c * 2.3999632f; // golden angle
+                    cx = targetX + (float)Math.Cos(ang) * r;
+                    cz = targetZ + (float)Math.Sin(ang) * r;
+                }
+
+                field.SampleSlope(cx, cz, out float slopeDeg, out float dx, out float dz);
+                field.SampleSurfaceMetrics(cx, cz, out _, out _, out _, out _, out _, out _, out _, out float water);
+
+                string reason = null;
+                if (water > 0.01f) reason = "WaterBlocked";
+                else if (enforceMaxSlope && !CanSpawnAtSlope(prop, slopeDeg)) reason = "SlopeExceedsMax";
+                else if (field.OverlapsExistingRock(cx, cz, anchorRadius)) reason = "RockOverlap";
+                else if (OverlapsInstances(cx, cz, anchorRadius, existingInstances)) reason = "PropOverlap";
+
+                if (reason == null)
+                {
+                    bestX = cx;
+                    bestZ = cz;
+                    bestSlope = slopeDeg;
+                    bestDx = dx;
+                    bestDz = dz;
+                    found = true;
+                    break;
+                }
+                if (string.IsNullOrEmpty(firstFailReason))
+                    firstFailReason = reason;
+            }
+
+            if (!found)
+            {
+                plan.AnchorX = targetX;
+                plan.AnchorY = field.HeightAt(targetX, targetZ);
+                plan.AnchorZ = targetZ;
+                plan.SkipReason = firstFailReason;
+                return false;
+            }
+
+            float fx = bestDx;
+            float fz = bestDz;
+            if (flowDirX.HasValue && flowDirZ.HasValue)
+            {
+                fx = flowDirX.Value;
+                fz = flowDirZ.Value;
+            }
+            else if (prop.VariationRules.V6_ClusterSpread.Pattern == RegionPropClusterPattern.DirectionalCone)
+            {
+                field.TrySampleSedimentFlowDir(bestX, bestZ, out fx, out fz);
+            }
+
+            float bestY = field.HeightAt(bestX, bestZ);
+            List<RegionPropInstance> raw = RegionPropPlacementSolver.PlaceCluster(
+                catalog, prop, seed, anchorIndex, bestX, bestY, bestZ,
+                bestSlope, bestDx, bestDz, field.HeightAt, fx, fz, parentMaterial);
+
+            float maxDist = anchorRadius;
+            for (int i = 0; i < raw.Count; i++)
+            {
+                RegionPropInstance inst = raw[i];
+                bool isAnchor = i == 0 || inst.Role == "Primary" || inst.Role == "BaseLayer" || inst.Role == "PalletBase" || inst.Role == "CorePile";
+                if (!isAnchor)
+                {
+                    field.SampleSurfaceMetrics(inst.X, inst.Z, out _, out _, out _, out _, out _, out _, out _, out float mw);
+                    float mr = 0.4f * Math.Max(inst.DimensionsX * inst.ScaleX, inst.DimensionsZ * inst.ScaleZ);
+                    if (mw > 0.01f || field.OverlapsExistingRock(inst.X, inst.Z, mr, 0.1f))
+                        continue;
+                }
+                plan.Instances.Add(inst);
+                float ddx = inst.X - bestX;
+                float ddz = inst.Z - bestZ;
+                float dist = (float)Math.Sqrt(ddx * ddx + ddz * ddz) + 0.5f * Math.Max(inst.DimensionsX * inst.ScaleX, inst.DimensionsZ * inst.ScaleZ);
+                if (dist > maxDist) maxDist = dist;
+            }
+
+            plan.Accepted = plan.Instances.Count > 0;
+            plan.AnchorX = bestX;
+            plan.AnchorY = bestY;
+            plan.AnchorZ = bestZ;
+            plan.FlowDirX = fx;
+            plan.FlowDirZ = fz;
+            plan.BoundaryRadiusM = Math.Max(maxDist, prop.VariationRules.V6_ClusterSpread.RadiusM);
+            return plan.Accepted;
+        }
+
+        public static RegionPropProofSlice PlanP0Showcase(RegionPropCatalog catalog, RegionLookScene scene, int seedOffset = 0)
+        {
+            if (catalog == null) throw new ArgumentNullException("catalog");
+            if (scene == null) throw new ArgumentNullException("scene");
+            bool prev = scene.Spec != null && scene.Spec.PropsShowAllP0;
+            if (scene.Spec != null) scene.Spec.PropsShowAllP0 = true;
+            try
+            {
+                return RegionPropPlacementSolver.BuildProofSlice(catalog, scene, seedOffset);
+            }
+            finally
+            {
+                if (scene.Spec != null) scene.Spec.PropsShowAllP0 = prev;
+            }
+        }
+
+        private static bool OverlapsInstances(float x, float z, float radiusM, IList<RegionPropInstance> existing)
+        {
+            if (existing == null || existing.Count == 0) return false;
+            for (int i = 0; i < existing.Count; i++)
+            {
+                RegionPropInstance e = existing[i];
+                if (e.StackLayer > 0) continue;
+                float er = 0.45f * Math.Max(e.DimensionsX * e.ScaleX, e.DimensionsZ * e.ScaleZ);
+                float minDist = radiusM + er + 0.25f;
+                float dx = x - e.X;
+                float dz = z - e.Z;
+                if (dx * dx + dz * dz < minDist * minDist)
+                    return true;
+            }
+            return false;
+        }
     }
 }
