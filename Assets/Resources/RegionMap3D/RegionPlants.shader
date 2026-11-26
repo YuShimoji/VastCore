@@ -25,6 +25,7 @@ Shader "Vastcore/RegionPlants"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "RegionAtmosphere.hlsl"
+            #include "RegionShadows.hlsl"
             TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
@@ -51,7 +52,8 @@ Shader "Vastcore/RegionPlants"
                 half3 albedo = RegionToLinear(leaf.rgb);
                 Light sun = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
                 AmbientOcclusionFactor occlusion = GetScreenSpaceAmbientOcclusion(GetNormalizedScreenSpaceUV(i.positionCS));
-                half sunlit = min(sun.shadowAttenuation, i.light.x);
+                half terrainSun = RegionShadowsEnabled() ? RegionSunVisibility(i.positionWS, float3(0, 1, 0), 0.0) : i.light.x;
+                half sunlit = min(sun.shadowAttenuation, terrainSun);
                 half direct = sunlit * saturate(0.30h + 0.55h * sun.direction.y);
                 // 低い太陽を背にした葉は、光が透けて明るく見える
                 float3 view = normalize(i.positionWS - _WorldSpaceCameraPos);

@@ -107,6 +107,15 @@ namespace Vastcore.RegionMap
             }
         }
 
+        /// <summary>
+        /// 線形の値で決めた色を、Unity の光・空からの光の色として渡す値にする。
+        /// Linear 色空間では Unity が渡された色を線形に直すので、先にガンマへ戻しておく。ガンマ色空間ではそのまま（シェーダーが線形として扱う）。
+        /// </summary>
+        private static Color ForEngine(Color linearValue)
+        {
+            return QualitySettings.activeColorSpace == ColorSpace.Linear ? linearValue.gamma : linearValue;
+        }
+
         public static bool TryParse(string name, out Preset preset)
         {
             switch ((name ?? "").Trim().ToLowerInvariant())
@@ -130,15 +139,16 @@ namespace Vastcore.RegionMap
         /// </summary>
         public GameObject Apply(Camera camera, Light sun, float groundHeight)
         {
-            sun.color = SunColor;
+            // 太陽の色の数値は、シェーダーが受け取る線形の値として決めてある
+            sun.color = ForEngine(SunColor);
             sun.intensity = SunIntensity;
             sun.shadows = LightShadows.Soft;
             sun.transform.rotation = RegionTerrainView.SunRotation();
 
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = AmbientSky.linear * AmbientIntensity;
-            RenderSettings.ambientEquatorColor = AmbientEquator.linear * AmbientIntensity;
-            RenderSettings.ambientGroundColor = AmbientGround.linear * AmbientIntensity;
+            RenderSettings.ambientSkyColor = ForEngine(AmbientSky.linear * AmbientIntensity);
+            RenderSettings.ambientEquatorColor = ForEngine(AmbientEquator.linear * AmbientIntensity);
+            RenderSettings.ambientGroundColor = ForEngine(AmbientGround.linear * AmbientIntensity);
             RenderSettings.fog = false;
             RenderSettings.sun = sun;
 
@@ -153,8 +163,9 @@ namespace Vastcore.RegionMap
             if (skyShader != null)
             {
                 var sky = new Material(skyShader) { name = "Region Sky", hideFlags = HideFlags.DontSave };
-                sky.SetColor("_ZenithColor", Zenith.linear * SkyIntensity);
-                sky.SetColor("_SunGlowColor", SunGlow.linear);
+                // SetVector は色空間で変換されないので、線形の値をそのまま渡せる
+                sky.SetVector("_ZenithColor", (Vector4)(Zenith.linear * SkyIntensity));
+                sky.SetVector("_SunGlowColor", (Vector4)SunGlow.linear);
                 sky.SetFloat("_SunGlowSize", SunGlowSize);
                 sky.SetFloat("_SunGlowStrength", SunGlowStrength);
                 RenderSettings.skybox = sky;

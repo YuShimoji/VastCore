@@ -1,5 +1,6 @@
 // 地域の 3D 表示の「光と空気」。地形・植生・空のシェーダーが共通に使う。
-// プロジェクトはガンマ色空間なので、光の計算は線形の値で行い、最後に sRGB へ戻して書く（URP の後処理は sRGB→線形に戻してから色調を掛ける）。
+// 光の計算は線形の値で行う。プロジェクトが Linear 色空間なら画像と色は Unity が線形にして渡すのでそのまま使い、
+// ガンマ色空間なら自分で線形にして、最後に sRGB へ戻して書く（URP の後処理は sRGB→線形に戻してから色調を掛ける）。
 // 値は RegionAtmosphere.cs が Shader.SetGlobal* で渡す。渡されていない時（0）は霞なし・照り返しなし。
 #ifndef REGION_ATMOSPHERE_INCLUDED
 #define REGION_ATMOSPHERE_INCLUDED
@@ -10,7 +11,18 @@ float4 _RegionFogParams;       // x: 濃さ（1/m）、y: 濃さが 1/e にな�
 float4 _RegionBounceColor;     // rgb: 日の当たる地面と岩からの照り返し（線形）。w: 未使用
 float4 _RegionShadowTint;      // rgb: 影の中だけ空の光に掛ける色（1 で変えない）
 
-half3 RegionToLinear(half3 c) { return SRGBToLinear(c); }
+// 画像・マテリアルの色（Unity が色空間に合わせて渡す値）を線形にする
+half3 RegionToLinear(half3 c)
+{
+#if defined(UNITY_COLORSPACE_GAMMA)
+    return SRGBToLinear(c);
+#else
+    return c;
+#endif
+}
+
+// シェーダーに直接書いた見た目の色（sRGB の値）を線形にする。色空間によらず変換する
+half3 RegionDisplayToLinear(half3 c) { return SRGBToLinear(c); }
 
 // 霞の色。太陽の方を見るほど明るく暖かい（前方散乱）
 half3 RegionFogColor(float3 viewDir, float3 sunDir)
@@ -39,10 +51,14 @@ half3 RegionApplyAir(half3 colorLinear, float3 positionWS)
     return lerp(RegionFogColor(view, _MainLightPosition.xyz), colorLinear, t);
 }
 
-// 書き出し。HDR の線形の値を sRGB に符号化する（1 を超える値もそのまま残す）
+// 書き出し。ガンマ色空間では HDR の線形の値を sRGB に符号化する（1 を超える値もそのまま残す）
 half4 RegionOutput(half3 colorLinear, half alpha)
 {
+#if defined(UNITY_COLORSPACE_GAMMA)
     return half4(LinearToSRGB(max(colorLinear, 0.0)), alpha);
+#else
+    return half4(max(colorLinear, 0.0), alpha);
+#endif
 }
 
 #endif

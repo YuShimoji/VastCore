@@ -23,6 +23,8 @@
   [switch]$AlcoveReview,
   # view3d: 光と空気の案（clear・golden・dust）。コンマで並べると案ごとに <OutDir>/<案> へ撮る
   [string]$LookPreset = '',
+  # view3d: 場面を作り直さずに太陽だけを回して中景を撮る高さ（度）の並び。例 '60,38,20,10'
+  [string]$SunSweep = '',
   [string]$UnityPath = ''
 )
 
@@ -72,6 +74,7 @@ if ($Mode -eq 'setup') {
     if ($LookCenter) { $unityArgs += @('-lookCenter', $LookCenter) }
     if ($AlcoveReview) { $unityArgs += @('-alcoveReview', 'true') }
     if ($LookPreset) { $unityArgs += @('-lookPreset', $LookPreset) }
+    if ($SunSweep) { $unityArgs += @('-sunSweep', $SunSweep) }
   }
 } elseif ($Mode -eq 'play') {
   $unityArgs = @(

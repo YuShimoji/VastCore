@@ -141,6 +141,14 @@ namespace Vastcore.RegionMap
         /// <summary>場面の中心（RegionLookSpec.CenterMapX・Y）の、場面の座標。</summary>
         public float CenterX, CenterZ;
 
+        /// <summary>
+        /// 影を落とす高さの格子（描画時に GPU が太陽の方へたどる。RegionTerrainShadows）。
+        /// 内側は 1.2 m 以上の岩を足した高さで、頂点 (i, j) は (InnerMinX + i * InnerCell, InnerMinZ + j * InnerCell)。
+        /// 外側は頂点 (i, j) が ((i + 0.5) * OuterCell, (j + 0.5) * OuterCell)。頂点に持たせる日当たり（Sun）と同じ入力。
+        /// </summary>
+        public float[] ShadowInner, ShadowOuter;
+        public int ShadowInnerSize, ShadowOuterSize;
+
         /// <summary>太陽の方を向く単位ベクトル（北西・高さ 38 度。鳥瞰図と同じ）。</summary>
         public static void SunDirection(out float x, out float y, out float z)
         {
@@ -269,6 +277,11 @@ namespace Vastcore.RegionMap
                     }
                 }
             }
+
+            scene.ShadowInner = caster;
+            scene.ShadowInnerSize = m;
+            scene.ShadowOuter = outerHeight;
+            scene.ShadowOuterSize = n;
 
             float[] outerSun = BakeSun(outerHeight, outerHeight, n, outerCell, null, 0, 0f, 0f, 0f);
             float[] outerSky = BakeSky(outerHeight, outerHeight, n, outerCell, new[] { 6f, 12f, 24f, 48f, 96f });

@@ -100,7 +100,13 @@ namespace Vastcore.RegionMap
         /// <summary>太陽の向き（光が進む向き）。北西・高さ 38 度から照らす（鳥瞰図と同じ）。</summary>
         public static Quaternion SunRotation()
         {
-            float altitude = RegionVolumePatch.SunAltitudeDegrees * Mathf.Deg2Rad;
+            return SunRotation(RegionVolumePatch.SunAltitudeDegrees);
+        }
+
+        /// <summary>北西から、高さ altitudeDegrees（度）で照らす向き。</summary>
+        public static Quaternion SunRotation(float altitudeDegrees)
+        {
+            float altitude = altitudeDegrees * Mathf.Deg2Rad;
             var toSun = new Vector3(-Mathf.Cos(altitude) * 0.70710678f, Mathf.Sin(altitude), Mathf.Cos(altitude) * 0.70710678f);
             return Quaternion.LookRotation(-toSun, Vector3.up);
         }
@@ -201,6 +207,8 @@ namespace Vastcore.RegionMap
         public static LookResult BuildLook(RegionData region, RegionLookSpec spec)
         {
             RegionLookScene scene = RegionLookScene.Build(region, spec);
+            // 遠くまで届く地形の影は、描画のたびに GPU が高さの格子から出す（太陽を回すと影も動く）
+            RegionTerrainShadows.Bind(scene);
             var root = new GameObject("Region Terrain Look");
             var plain = new RegionRenderOptions { CloudCover = 0f, Exaggeration = 0f, CastShadow = 0f };
             var result = new LookResult { Root = root, Scene = scene };

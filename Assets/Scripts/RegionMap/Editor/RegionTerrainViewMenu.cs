@@ -157,6 +157,7 @@ namespace Vastcore.RegionMap.Editor
                         CaptureAlcoveComparison(camera, look, folder);
                     CaptureLookViews(camera, look, folder);
                     if (look.Alcove == null) DescribeNearestCap(look.Scene);
+                    CaptureSunSweep(camera, look, folder);
                 }
                 RegionVolumePatch.SunAltitudeDegrees = RegionVolumePatch.DefaultSunAltitudeDegrees;
             }
@@ -213,6 +214,26 @@ namespace Vastcore.RegionMap.Editor
                 camera.fieldOfView = mid ? 48f : 67f;
                 Capture(camera, output, mid ? "alcove-mid.png" : "alcove-near.png");
             }
+        }
+
+        /// <summary>
+        /// -sunSweep 60,38,20,10 のように太陽の高さ（度）を並べると、場面を作り直さずに太陽だけを回して中景を撮る（sun-<高さ>.png）。
+        /// 地形の影が描画のたびに計算されていることを確かめる。
+        /// </summary>
+        private static void CaptureSunSweep(Camera camera, RegionTerrainView.LookResult look, string output)
+        {
+            string sweep = RegionMapMenu.Argument("-sunSweep", "");
+            if (sweep.Length == 0 || RenderSettings.sun == null) return;
+            Quaternion original = RenderSettings.sun.transform.rotation;
+            RegionTerrainView.PlaceLook(camera.transform, look.Scene, look.Scene.Spec.Mid);
+            camera.fieldOfView = look.Scene.Spec.Mid.FovDegrees;
+            foreach (string value in sweep.Split(','))
+            {
+                float altitude = float.Parse(value, CultureInfo.InvariantCulture);
+                RenderSettings.sun.transform.rotation = RegionTerrainView.SunRotation(altitude);
+                Capture(camera, output, "sun-" + altitude.ToString("00", CultureInfo.InvariantCulture) + ".png");
+            }
+            RenderSettings.sun.transform.rotation = original;
         }
 
         private static void CaptureAlcoveComparison(Camera camera, RegionTerrainView.LookResult look, string output)

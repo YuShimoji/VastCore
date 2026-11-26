@@ -32,8 +32,11 @@ namespace Vastcore.RegionMap
             };
             view.inset.transform.SetParent(parent, false);
             view.outside = view.OutsideIndices();
-            RegionTerrainView.AddPart(view.inset.transform, "Bedding contact", view.BuildSurface(), sandstone);
-            if (scene.Spec.Rocks) view.AddFalls(sandstone);
+            // 張り出しの下の影は高さの格子では表せないので、この部分と崩落岩は頂点に持たせた影を使う
+            var overhang = new Material(sandstone) { name = "Alcove sandstone", hideFlags = HideFlags.DontSave };
+            overhang.SetFloat("_SunFromVertex", 1f);
+            RegionTerrainView.AddPart(view.inset.transform, "Bedding contact", view.BuildSurface(), overhang);
+            if (scene.Spec.Rocks) view.AddFalls(overhang);
             if (scene.Spec.Vegetation) view.AddSeepPlants();
             return view;
         }

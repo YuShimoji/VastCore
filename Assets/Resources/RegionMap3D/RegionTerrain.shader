@@ -15,6 +15,7 @@ Shader "Vastcore/RegionTerrain"
         _RockFull ("Rock Only (normal Y)", Range(0, 1)) = 0.53
         _BandAmount ("Strata Band Amount", Range(0, 0.3)) = 0.1
         [HideInInspector] _LooseRock ("Detached rock", Float) = 0
+        [HideInInspector] _SunFromVertex ("Keep the baked sun (overhangs)", Float) = 0
     }
 
     SubShader
@@ -37,6 +38,7 @@ Shader "Vastcore/RegionTerrain"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "RegionAtmosphere.hlsl"
+            #include "RegionShadows.hlsl"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
@@ -48,6 +50,7 @@ Shader "Vastcore/RegionTerrain"
                 half _RockFull;
                 half _BandAmount;
                 half _LooseRock;
+                half _SunFromVertex;
             CBUFFER_END
 
             #if defined(REGION_SANDSTONE)
@@ -95,21 +98,25 @@ Shader "Vastcore/RegionTerrain"
                 half rock = max(saturate((_RockStart - normal.y) / max(0.001, _RockStart - _RockFull)), 1.0 - input.color.b);
                 half band = (1.0 - _BandAmount) + _BandAmount * sin(input.positionWS.y * 0.55 + 1.3 * sin(input.positionWS.y * 0.13));
                 band *= 0.66 + 0.34 * input.color.a;
-                albedo = lerp(albedo, _RockColor.rgb * band, rock);
+                albedo = RegionToLinear(lerp(albedo, _RockColor.rgb * band, rock));
 
                 #if defined(REGION_SANDSTONE)
                 float3 positionOS = TransformWorldToObject(input.positionWS);
                 float3 normalOS = normalize(TransformWorldToObjectNormal(normal));
-                half3 sandstone = SandstoneSurface(positionOS, normalOS, input.surface, input.color.a, _LooseRock);
+                // 砂岩の色はシェーダーに書いた見た目の値なので、色空間によらず線形にする
+                half3 sandstone = RegionDisplayToLinear(SandstoneSurface(positionOS, normalOS, input.surface, input.color.a, _LooseRock));
                 albedo = lerp(albedo, sandstone, max(input.surface.w, _LooseRock));
                 #endif
 
-                albedo = RegionToLinear(albedo);
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light light = GetMainLight(shadowCoord);
                 AmbientOcclusionFactor occlusion = GetScreenSpaceAmbientOcclusion(GetNormalizedScreenSpaceUV(input.positionCS));
-                // 影は、Unity の影（近くだけ届く）と、頂点に持たせた影の、暗い方
-                half sunlit = min(light.shadowAttenuation, input.color.g);
+                // 影は、Unity の影（近くだけ届く）と、遠くまで届く地形の影の、暗い方。
+                // 地形の影は GPU が高さの格子をたどって出す。格子が無い時と、張り出しのある所（_SunFromVertex）は頂点に持たせた値
+                half terrainSun = input.color.g;
+                if (RegionShadowsEnabled() && _SunFromVertex < 0.5)
+                    terrainSun = RegionSunVisibility(input.positionWS, normal, _LooseRock > 0.5 ? 4.0 : 0.0);
+                half sunlit = min(light.shadowAttenuation, terrainSun);
                 half direct = saturate(dot(normal, light.direction)) * sunlit * occlusion.directAmbientOcclusion;
                 // 岩の下では、空からの光も減らす。影の中の空の光は、空の青を強めに受ける
                 half open = 0.35 + 0.65 * input.color.r;

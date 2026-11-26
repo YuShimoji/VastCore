@@ -1,6 +1,6 @@
 // 地域の 3D 表示の空。天頂から地平線へのグラデーションと、太陽の周りの明るさを描く。
 // 地平線の色は、地形に重ねる霞（RegionAtmosphere.hlsl）と同じ式で出すので、遠くの地形が空へ溶けて見える。
-// 地平線より下は霞の色のまま（地形の外側の切れ目を隠す）。色は線形の値（RegionAtmosphere.cs が渡す）。
+// 地平線より下は霞の色のまま（地形の外側の切れ目を隠す）。色は線形の値（RegionAtmosphere.cs が SetVector で渡すので、色空間で変換されない）。
 Shader "Vastcore/RegionSky"
 {
     Properties
