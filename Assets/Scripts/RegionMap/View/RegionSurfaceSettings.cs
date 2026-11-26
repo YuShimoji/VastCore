@@ -54,6 +54,8 @@ namespace Vastcore.RegionMap
                 new Entry { TileMetres = 2f, HeightMetres = 0.02f, Strength = 1f, Roughness = 0.95f },
                 new Entry { TileMetres = 2f, HeightMetres = 0.02f, Strength = 1f, Roughness = 0.95f },
                 new Entry { TileMetres = 1.5f, HeightMetres = 0.04f, Strength = 1f, Roughness = 0.85f },
+                new Entry { TileMetres = 2f, HeightMetres = 0.015f, Strength = 1f, Roughness = 0.95f },
+                new Entry { TileMetres = 1.5f, HeightMetres = 0.05f, Strength = 1f, Roughness = 0.9f },
             };
         }
 

@@ -56,6 +56,67 @@ float SandChips(float2 uv)
     return mask * (facet * 0.31 - 0.18 + 0.28 * (SandHash(id - 2.4) - 0.5));
 }
 
+// 乾いて割れたシルトの割れ目（ボロノイの境）。width は格子 1 つに対する割れ目の幅。plate は割れた板ごとの 0〜1。
+// footprint は uv の 1 画素の幅（分岐の外で出したもの）。割れ目が画素より細くなると、平均の暗さへ薄れる
+float SandCracks(float2 uv, float footprint, float width, out float plate)
+{
+    float2 id = floor(uv);
+    float2 f = frac(uv);
+    float d1 = 8.0, d2 = 8.0;
+    float2 nearest = id;
+    [unroll] for (int y = -1; y <= 1; y++)
+    {
+        [unroll] for (int x = -1; x <= 1; x++)
+        {
+            float2 o = float2(x, y);
+            float2 c = o + 0.1 + 0.8 * float2(SandHash(id + o), SandHash(id + o + 19.7));
+            float d = dot(c - f, c - f);
+            if (d < d1) { d2 = d1; d1 = d; nearest = id + o; }
+            else if (d < d2) d2 = d;
+        }
+    }
+    plate = SandHash(nearest + 5.3);
+    float edge = sqrt(d2) - sqrt(d1);
+    float crack = 1.0 - smoothstep(width, width + max(footprint, 0.01), edge);
+    return lerp(crack, 2.5 * width, smoothstep(0.08, 0.35, footprint));
+}
+
+// 水に転がされた丸い礫。xyz は礫の色、w は礫が覆う度合い（画素より小さくなると 0）。uv は東・北の向きのまま（北西の太陽の側を明るく）
+float4 SandPebbles(float2 uv, float footprint)
+{
+    float2 id = floor(uv);
+    float radius = 0.22 + 0.2 * SandHash(id + 41.7);
+    float2 center = lerp(radius, 1.0 - radius, float2(SandHash(id + 2.9), SandHash(id - 11.3)));
+    float2 offset = (frac(uv) - center) / radius;
+    float r2 = dot(offset, offset);
+    float mask = (1.0 - smoothstep(0.72, 1.0, r2)) * (1.0 - smoothstep(0.12, 0.5, footprint));
+    float kind = SandHash(id + 8.1);
+    float3 color = kind < 0.45 ? float3(0.60, 0.58, 0.55) : (kind < 0.8 ? float3(0.72, 0.49, 0.37) : float3(0.78, 0.70, 0.60));
+    float dome = 1.0 + 0.18 * (offset.y - offset.x) * sqrt(saturate(1.0 - r2));
+    return float4(color * (0.82 + 0.3 * SandHash(id - 3.3)) * dome, mask);
+}
+
+// 土砂の地図（RegionSedimentLayers が窓ごとに結び付けた画像）。x たまり（Deposit）、y 流路（SedimentFlow と Wear の大きい方）、
+// z 崖から落ちた岩屑の錐（Scree）、w 大きい岩の割合（Coarse）。地図の無い所・層を切った時は 0（今の描き方のまま）
+#if defined(REGION_SEDIMENT_MATERIAL)
+TEXTURE2D(_SedimentMap);
+SAMPLER(sampler_SedimentMap);
+#endif
+float4 _RegionSedimentParams;  // x 1 で層を出す
+
+float4 SandSedimentMaps(float3 p)
+{
+#if defined(REGION_SEDIMENT_MATERIAL)
+    if (_RegionSedimentParams.x > 0.5 && _SedimentRect.z > 0.0)
+    {
+        // 物体の座標は X 東・Z 北。地図は Core の座標（Z 南）で並ぶ
+        float2 uv = float2(p.x - _SedimentRect.x, -p.z - _SedimentRect.y) * _SedimentRect.z + _SedimentRect.w;
+        return SAMPLE_TEXTURE2D(_SedimentMap, sampler_SedimentMap, uv);
+    }
+#endif
+    return 0.0;
+}
+
 // 色と一緒に出す、光を受ける向きのための値
 struct SandstoneExtra
 {
@@ -101,8 +162,11 @@ half3 SandRole(int role, float weight, SandMaterialContext c, inout SandstoneExt
 // 素材があれば 1（遠くでは 0 へ）。手続きの細かな粒を写真に置き換える度合い
 float SandHas(int role, float farFade) { return RegionSurfaceHas(role) ? farFade : 0.0; }
 
-// 他の 4 役のうち、重みが w より大きいものが 2 つ未満なら 1（重みの大きい 2 つだけ読む）
-float SandTop2(float w, float4 others) { return dot((float4)(others > w), 1.0) < 2.0 ? 1.0 : 0.0; }
+// 他の 6 役のうち、重みが w より大きいものが 2 つ未満なら 1（重みの大きい 2 つだけ読む）
+float SandTop2(float w, float4 others, float2 more)
+{
+    return dot((float4)(others > w), 1.0) + dot((float2)(more > w), 1.0) < 2.0 ? 1.0 : 0.0;
+}
 
 // Four surfaces: exposed bedrock, talus, sand/soil and patchy dry ground cover.
 // surface = talus density, metres above the caprock contact, moisture for cover, dry-land coverage.
@@ -151,49 +215,77 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
     float3 mudstone = lerp(float3(0.42, 0.32, 0.35), float3(0.73, 0.58, 0.54), unit);
     rock = lerp(rock, mudstone, mud);
 
-    // 役の重み：崖の岩肌・泥岩の帯・岩屑・砂と土・地被。写真素材のある役の中で重みの大きい 2 つだけを読む
+    // 土砂の地図（設計 6.2 節）。どの層を出すかだけを決め、色の模様は層ごとの手続きの模様と写真素材が持つ（流れの地図をそのまま色にしない）。
+    // 主は崩れの錐と分級（錐の岩屑、大きい岩の多い所の礫）、従は水の溝（流路の礫）。水がためた所は細かい土砂
+    float4 sed = SandSedimentMaps(p);
+    float screeAmount = smoothstep(0.06, 0.55, sed.z);
+    float coarse = sed.w;
+    float washAmount = 0.85 * smoothstep(0.12, 0.65, sed.y);
+    float depositAmount = smoothstep(0.08, 0.5, sed.x) * (1.0 - 0.8 * screeAmount);
+
+    // 役の重み：崖の岩肌・泥岩の帯・岩屑・砂と土・地被・細かい土砂・流路の礫。写真素材のある役の中で重みの大きい 2 つだけを読む
     float rockFace = 1.0 - smoothstep(0.52, 0.82, n.y);
     float cover = smoothstep(0.60, 0.78, 0.56 * broad + 0.44 * mottling)
                 * surface.z * smoothstep(0.78, 0.97, n.y);
-    float talus = smoothstep(0.04, 0.82, surface.x);
+    float talus = max(smoothstep(0.04, 0.82, surface.x), screeAmount);
     float driftSand = smoothstep(0.47, 0.80, 0.62 * mottling + 0.38 * broken);
-    float talusMix = talus * (1.0 - 0.56 * driftSand);
+    // 大きい岩の多い所は礫の間を砂が埋めず、斜面の裾の先へ転がり出た大きい岩も岩屑の層で描く
+    float talusMix = max(talus * (1.0 - 0.56 * driftSand * (1.0 - coarse)), 0.6 * coarse * smoothstep(0.25, 0.6, coarse));
     float groundShare = 1.0 - rockFace;
     float wCliff = rockFace * (1.0 - mud);
     float wMud = rockFace * mud;
-    float wTalus = groundShare * talusMix;
-    float wSand = groundShare * (1.0 - talusMix) * (1.0 - cover);
-    float wCrust = groundShare * (1.0 - talusMix) * cover;
+    float wWash = groundShare * washAmount;
+    float wDeposit = groundShare * (1.0 - washAmount) * depositAmount;
+    float rest = groundShare * (1.0 - washAmount) * (1.0 - depositAmount);
+    float wTalus = rest * talusMix;
+    float wSand = rest * (1.0 - talusMix) * (1.0 - cover);
+    float wCrust = rest * (1.0 - talusMix) * cover;
     // 高さによる層の混合（UE の LB Height Blend と同じ考え）。近くだけで、礫の頭が砂の上に出て、間に砂が入る。
     // 砂と土は高さ 0 の基準の層。重みの小さい層の高さは重みに応じて弱め、無い層が高さだけで出てこないようにする
     [branch]
     if (_RegionSurfaceBlend.x > 0.0 && c.nearFade > 0.0 && RegionSurfaceEnabled())
     {
         float4 wr = float4(wCliff, wMud, wTalus, wCrust);
+        float2 wr2 = float2(wDeposit, wWash);
         float4 hr = 0.5;
+        float2 hr2 = 0.5;
         [branch] if (wCliff > 0.01) hr.x = RegionSurfaceHeight(0, p, c.pdx, c.pdy, n);
         [branch] if (wMud > 0.01) hr.y = RegionSurfaceHeight(1, p, c.pdx, c.pdy, n);
         [branch] if (wTalus > 0.01) hr.z = RegionSurfaceHeight(2, p, c.pdx, c.pdy, n);
         [branch] if (wCrust > 0.01) hr.w = RegionSurfaceHeight(4, p, c.pdx, c.pdy, n);
+        [branch] if (wDeposit > 0.01) hr2.x = RegionSurfaceHeight(6, p, c.pdx, c.pdy, n);
+        [branch] if (wWash > 0.01) hr2.y = RegionSurfaceHeight(7, p, c.pdx, c.pdy, n);
         float4 sr = wr + hr * _RegionSurfaceBlendHeights * smoothstep(0.0, 0.25, wr);
-        float top = max(max(max(sr.x, sr.y), max(sr.z, sr.w)), wSand);
+        float2 sr2 = wr2 + hr2 * _RegionSurfaceBlendHeights2.xy * smoothstep(0.0, 0.25, wr2);
+        float top = max(max(max(sr.x, sr.y), max(sr.z, sr.w)), max(wSand, max(sr2.x, sr2.y)));
         float depth = _RegionSurfaceBlend.x;
         float4 br = max(0.0, sr - (top - depth));
+        // 重みの無い土砂の層は、境の深さだけで出てこないようにする
+        float2 br2 = max(0.0, sr2 - (top - depth)) * (float2)(wr2 > 0.0);
         float bs = max(0.0, wSand - (top - depth));
-        float total = dot(br, 1.0) + bs;
+        float total = dot(br, 1.0) + bs + br2.x + br2.y;
         float k = c.nearFade * c.farFade;
         br = lerp(wr, br / total, k);
+        br2 = lerp(wr2, br2 / total, k);
         bs = lerp(wSand, bs / total, k);
-        wCliff = br.x; wMud = br.y; wTalus = br.z; wCrust = br.w; wSand = bs;
+        wCliff = br.x; wMud = br.y; wTalus = br.z; wCrust = br.w; wSand = bs; wDeposit = br2.x; wWash = br2.y;
         rockFace = wCliff + wMud;
         mud = rockFace > 1e-4 ? wMud / rockFace : mud;
         groundShare = 1.0 - rockFace;
-        talusMix = groundShare > 1e-4 ? wTalus / groundShare : talusMix;
+        float restShare = groundShare - wDeposit - wWash;
+        talusMix = restShare > 1e-4 ? wTalus / restShare : talusMix;
         cover = (wSand + wCrust) > 1e-4 ? wCrust / (wSand + wCrust) : cover;
     }
+    // 流路の礫と細かい土砂が地面に占める割合（色を重ねる順は、今の地面 → 細かい土砂 → 流路の礫）
+    float washShare = groundShare > 1e-4 ? wWash / groundShare : 0.0;
+    float depositShare = groundShare > 1e-4 ? wDeposit / groundShare : 0.0;
+    float depositInRest = depositShare / max(1.0 - washShare, 1e-4);
     float hasCliff = SandHas(0, c.farFade), hasMud = SandHas(1, c.farFade), hasTalus = SandHas(2, c.farFade);
     float hasSand = SandHas(3, c.farFade), hasCrust = SandHas(4, c.farFade);
+    float hasDeposit = SandHas(6, c.farFade), hasWash = SandHas(7, c.farFade);
     float eCliff = wCliff * hasCliff, eMud = wMud * hasMud, eTalus = wTalus * hasTalus, eSand = wSand * hasSand, eCrust = wCrust * hasCrust;
+    float eDeposit = wDeposit * hasDeposit, eWash = wWash * hasWash;
+    float2 eSediment = float2(eDeposit, eWash);
 
     // Finer wind-deposited sets change direction at the erosional boundary between beds.
     float set = floor(bed);
@@ -219,26 +311,53 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
     float varnish = smoothstep(0.54, 0.79, streak) * smoothstep(0.37, 0.67, patches)
                   * (1.0 - smoothstep(0.38, 0.73, n.y));
     rock = lerp(rock, float3(0.27, 0.20, 0.18) * (0.78 + 0.50 * mineral), varnish * 0.88);
-    half3 cliffDetail = SandRole(0, wCliff * SandTop2(eCliff, float4(eMud, eTalus, eSand, eCrust)), c, extra);
-    half3 mudDetail = SandRole(1, wMud * SandTop2(eMud, float4(eCliff, eTalus, eSand, eCrust)), c, extra);
+    half3 cliffDetail = SandRole(0, wCliff * SandTop2(eCliff, float4(eMud, eTalus, eSand, eCrust), eSediment), c, extra);
+    half3 mudDetail = SandRole(1, wMud * SandTop2(eMud, float4(eCliff, eTalus, eSand, eCrust), eSediment), c, extra);
     rock *= lerp(cliffDetail, mudDetail, mud);
     extra.rockMaterial = rockFace * rockMaterial;
 
     float sandPatch = 0.52 * broad + 0.30 * mottling + 0.18 * grains;
     float3 soil = lerp(float3(0.56, 0.40, 0.29), float3(0.87, 0.71, 0.51), sandPatch);
-    half3 sandDetail = SandRole(3, wSand * SandTop2(eSand, float4(eCliff, eMud, eTalus, eCrust)), c, extra);
-    half3 crustDetail = SandRole(4, wCrust * SandTop2(eCrust, float4(eCliff, eMud, eTalus, eSand)), c, extra);
-    half3 talusDetail = SandRole(2, wTalus * SandTop2(eTalus, float4(eCliff, eMud, eSand, eCrust)), c, extra);
+    half3 sandDetail = SandRole(3, wSand * SandTop2(eSand, float4(eCliff, eMud, eTalus, eCrust), eSediment), c, extra);
+    half3 crustDetail = SandRole(4, wCrust * SandTop2(eCrust, float4(eCliff, eMud, eTalus, eSand), eSediment), c, extra);
+    half3 talusDetail = SandRole(2, wTalus * SandTop2(eTalus, float4(eCliff, eMud, eSand, eCrust), eSediment), c, extra);
     soil = lerp(soil * sandDetail, float3(0.43, 0.41, 0.28) * (0.65 + 0.70 * lerp(grains, 0.5, hasCrust)) * crustDetail, cover);
     float groundMaterial = lerp(lerp(hasSand, hasCrust, cover), hasTalus, talusMix);
     float2 ground = float2(0.8 * p.x + 0.6 * p.z, -0.6 * p.x + 0.8 * p.z);
     float2 drift = float2(mottling, pores);
     float gravel = SandChips(ground * 4.6 + drift) + 0.75 * SandChips(p.xz * 13.3 - drift);
+    // 大きい岩の多い所（分級の地図 Coarse）は、一辺 0.3〜0.7 m の角ばった塊を足し、塊の間の影で暗くする
+    gravel += 1.3 * coarse * SandChips(ground * 1.4 - 2.0 * drift);
     // Talus is broken from the orange cliff above, so it stays warmer than the mudstone it covers.
     float3 rubble = lerp(float3(0.58, 0.42, 0.33), float3(0.80, 0.63, 0.48), sandPatch);
-    rubble = lerp(rubble, mudstone, mud * 0.45) * talusDetail;
+    rubble = lerp(rubble, mudstone, mud * 0.45) * talusDetail * (1.0 - 0.10 * coarse);
     float3 groundColor = lerp(soil, rubble, talusMix);
     groundColor *= lerp(0.82 + 0.24 * grains + 0.14 * pores + (0.55 + talus) * gravel, 1.0, groundMaterial);
+
+    // 細かい土砂（乾いて割れたシルト）と流路の礫。土砂の地図のある所だけ描く。細かい模様の 1 画素の幅は分岐の外で出す
+    float footprint = max(fwidth(p.x), fwidth(p.z));
+    [branch]
+    if (depositShare + washShare > 0.001)
+    {
+        half3 depositDetail = SandRole(6, wDeposit * SandTop2(eDeposit, float4(eCliff, eMud, eTalus, eSand), float2(eCrust, eWash)), c, extra);
+        half3 washDetail = SandRole(7, wWash * SandTop2(eWash, float4(eCliff, eMud, eTalus, eSand), float2(eCrust, eDeposit)), c, extra);
+        // シルトは砂より淡く細かい。厚くたまった所だけ、乾いて割れた板の境が出る（写真素材のある時は写真に任せる）
+        float plate;
+        float crack = SandCracks(p.xz * 1.7 + 0.25 * drift, footprint * 1.7, 0.06, plate) * smoothstep(0.25, 0.75, sed.x);
+        // 色は周りの砂と同じ赤みを保ち、少しだけ淡くする（灰白にすると、離れた所で雪や塗り残しに見える）
+        float3 silt = lerp(float3(0.62, 0.47, 0.37), float3(0.81, 0.66, 0.51), 0.5 * broad + 0.3 * mottling + 0.2 * plate);
+        silt *= lerp((0.94 + 0.08 * grains) * (1.0 - 0.38 * crack), 1.0, hasDeposit) * depositDetail;
+        // 流路の礫は、水に転がされた丸い礫と粗い砂。色は崖の赤だけでなく、灰と白の礫が混ざる。大きい岩の多い所は大きい礫も
+        // 礫の間の粗い砂は岩屑と同じ赤み。礫が画素より小さくなる中景からは、岩屑と同じ角ばった塊の影でむらを残す
+        float3 washBase = lerp(float3(0.53, 0.41, 0.33), float3(0.74, 0.60, 0.48), sandPatch) * (0.9 + 0.2 * grains);
+        float4 pebble = SandPebbles(p.xz * 7.0 + drift, footprint * 7.0);
+        float4 cobble = SandPebbles(p.xz * 2.3 - drift, footprint * 2.3);
+        float3 washMix = lerp(washBase, pebble.rgb, 0.85 * pebble.w);
+        washMix = lerp(washMix, cobble.rgb, 0.85 * cobble.w * (0.3 + 0.7 * coarse));
+        washMix *= 0.8 + 0.14 * pores + 1.05 * gravel;
+        float3 washColor = lerp(washMix, washBase, hasWash) * washDetail;
+        groundColor = lerp(lerp(groundColor, silt, depositInRest), washColor, washShare);
+    }
     return lerp(groundColor, rock, rockFace);
 }
 

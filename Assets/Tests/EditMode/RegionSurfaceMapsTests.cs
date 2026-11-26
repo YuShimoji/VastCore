@@ -29,6 +29,57 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
+        public void SurfaceRoles_AddDepositAndWashAfterTheFirstSix()
+        {
+            int roles = System.Enum.GetValues(typeof(RegionSurfaceRole)).Length;
+            Assert.AreEqual(8, roles);
+            Assert.AreEqual(roles, RegionSurfaceMaps.Folders.Length);
+            Assert.AreEqual(roles, RegionSurfaceSettings.Defaults().Length);
+            // 先の 6 役の番号とフォルダは変えない（シェーダーの番号と、置かれた素材の場所）
+            Assert.AreEqual("LooseRock", RegionSurfaceMaps.Folders[(int)RegionSurfaceRole.LooseRock]);
+            Assert.AreEqual(5, (int)RegionSurfaceRole.LooseRock);
+            Assert.AreEqual("Deposit", RegionSurfaceMaps.Folders[(int)RegionSurfaceRole.Deposit]);
+            Assert.AreEqual("Wash", RegionSurfaceMaps.Folders[(int)RegionSurfaceRole.Wash]);
+            foreach (RegionSurfaceSettings.Entry entry in RegionSurfaceSettings.Defaults())
+                Assert.Greater(entry.TileMetres, 0f);
+        }
+
+        [Test]
+        public void SedimentLayers_PackDepositWashScreeAndCoarse()
+        {
+            var data = new RegionData(new RegionSpec { Resolution = 2, SizeKm = 0.002f });
+            data.Deposit = new[] { 1f, 0f, 0.5f, 0f };
+            data.Wear = new[] { 0f, 0.4f, 0f, 0f };
+            data.SedimentFlow = new[] { 0f, 0.2f, 0f, 0.6f };
+            data.Scree = new[] { 0f, 0f, 1f, 0f };
+            data.Coarse = new[] { 0f, 0f, 0.25f, 2f };
+            Color32[] pixels = RegionSedimentLayers.Pack(data);
+            Assert.AreEqual(4, pixels.Length);
+            Assert.AreEqual(new Color32(255, 0, 0, 0), pixels[0]);
+            // 流路は、通り道と削れの大きい方
+            Assert.AreEqual(102, pixels[1].g);
+            Assert.AreEqual(new Color32(128, 0, 255, 64), pixels[2]);
+            Assert.AreEqual(153, pixels[3].g);
+            Assert.AreEqual(255, pixels[3].a);
+
+            // 地図の無い窓は結び付けない（シェーダーは今の描き方のまま）
+            Shader shader = Resources.Load<Shader>(RegionTerrainView.ShaderResource);
+            Assert.IsNotNull(shader);
+            var material = new Material(shader);
+            try
+            {
+                Assert.IsFalse(RegionSedimentLayers.Bind(material, new RegionData(new RegionSpec { Resolution = 2, SizeKm = 0.002f }), 0f, 0f, 1f));
+                Assert.IsTrue(RegionSedimentLayers.Bind(material, data, 10f, 20f, 1f));
+                Assert.AreEqual(new Vector4(10f, 20f, 0.5f, 0.25f), material.GetVector(RegionSedimentLayers.RectProperty));
+                Object.DestroyImmediate(material.GetTexture(RegionSedimentLayers.MapProperty));
+            }
+            finally
+            {
+                Object.DestroyImmediate(material);
+            }
+        }
+
+        [Test]
         public void ToSquare_RepeatsAWideImageVerticallyToKeepItsProportions()
         {
             // 4×2 の画像（行ごとに値が違う）は、縦に 2 回並べた 4×4 になる

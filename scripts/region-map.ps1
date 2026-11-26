@@ -32,6 +32,10 @@
   # view3d: 高さによる層の混合を切った絵（<OutDir>/blend-off）と描画時間（blend-timing.txt）も撮る。-BlendDepth は境の深さ（m）
   [switch]$BlendCompare,
   [string]$BlendDepth = '',
+  # view3d: 土砂の場の強さ（RegionLookSpec.Sediment、既定 1）。0 で T3 より前の地形と、層の無い絵
+  [string]$Sediment = '',
+  # view3d: 土砂の層を切った絵（<OutDir>/sediment-off）と、切・入の描画時間（sediment-timing.txt）も撮る（地形は同じ）
+  [switch]$SedimentCompare,
   # view3d: DS-011 P0 Props Proof Slice の前後比較（props-near-before/after, props-crates, props-rubble）
   [switch]$PropsCompare,
   [switch]$PropsProof,
@@ -90,6 +94,8 @@ if ($Mode -eq 'setup') {
     if ($SurfaceCompare) { $unityArgs += @('-surfaceCompare', 'true') }
     if ($BlendCompare) { $unityArgs += @('-blendCompare', 'true') }
     if ($BlendDepth) { $unityArgs += @('-blendDepth', $BlendDepth) }
+    if ($Sediment) { $unityArgs += @('-lookSediment', $Sediment) }
+    if ($SedimentCompare) { $unityArgs += @('-sedimentCompare', 'true') }
     if ($PropsCompare) { $unityArgs += @('-propsCompare', 'true') }
     if ($PropsProof) { $unityArgs += @('-propsProof', 'true') }
     if ($LookSky) { $unityArgs += @('-lookSky', $LookSky) }

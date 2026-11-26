@@ -214,6 +214,8 @@ namespace Vastcore.RegionMap
             RegionSurfaceRelief.Bind();
             // Resources/RegionMap3D/Surfaces/<役>/ に置かれた写真素材を配列へ束ねる（無ければ今の手続きの絵）
             RegionSurfaceMaterials.Bind();
+            // 土砂の地図は窓ごとに画像にして、その窓のマテリアルへ結び付ける（アルコーブは内側のマテリアルを写すので同じ地図を読む）
+            RegionSedimentLayers.Begin();
             var root = new GameObject("Region Terrain Look");
             var plain = new RegionRenderOptions { CloudCover = 0f, Exaggeration = 0f, CastShadow = 0f };
             var result = new LookResult { Root = root, Scene = scene };
@@ -242,6 +244,10 @@ namespace Vastcore.RegionMap
                     material.EnableKeyword("REGION_SANDSTONE");
                     material.SetFloat("_LooseRock", part.Data == null ? 1f : 0f);
                 }
+                if (part == scene.InnerTerrain)
+                    RegionSedimentLayers.Bind(material, part.Data, scene.InnerMinX, scene.InnerMinZ, scene.InnerCell);
+                else if (part == scene.OuterTerrain)
+                    RegionSedimentLayers.Bind(material, part.Data, 0.5f * scene.OuterCell, 0.5f * scene.OuterCell, scene.OuterCell);
                 MeshRenderer renderer = AddPart(root.transform, part.Name, LookMesh(part), material);
                 // 地形の影は頂点に持たせてあるため、地形メッシュによる二重の投影を省く
                 if (part == scene.Rocks)

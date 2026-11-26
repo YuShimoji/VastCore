@@ -31,11 +31,11 @@ namespace Vastcore.RegionMap
         /// <summary>負でなければ、設定の境の深さ（m）の代わりに使う（既定を撮って決める時用）。</summary>
         public static float BlendDepthOverride = -1f;
 
-        private static Vector4 blendHeights;
+        private static Vector4 blendHeights, blendHeights2;
         private static float blendDepth, blendSpan = RegionSurfaceSettings.DefaultBlendSpan;
 
         private static Texture2DArray detailArray, normalArray, hraArray;
-        private static readonly Vector4[] roles = new Vector4[6];
+        private static readonly Vector4[] roles = new Vector4[RegionSurfaceMaps.Folders.Length];
 
         /// <summary>配列に入った役の数。</summary>
         public static int Count { get; private set; }
@@ -86,6 +86,7 @@ namespace Vastcore.RegionMap
                 (blendDepth, blendSpan) = RegionSurfaceSettings.LoadBlend();
                 blendSpan = Mathf.Max(0.001f, blendSpan);
                 blendHeights = new Vector4(settings[0].HeightMetres, settings[1].HeightMetres, settings[2].HeightMetres, settings[4].HeightMetres) / blendSpan;
+                blendHeights2 = new Vector4(settings[(int)RegionSurfaceRole.Deposit].HeightMetres, settings[(int)RegionSurfaceRole.Wash].HeightMetres, 0f, 0f) / blendSpan;
                 Shader.SetGlobalTexture("_RegionSurfaceDetail", detailArray);
                 Shader.SetGlobalTexture("_RegionSurfaceNormal", normalArray);
                 Shader.SetGlobalTexture("_RegionSurfaceHRA", hraArray);
@@ -107,6 +108,7 @@ namespace Vastcore.RegionMap
             bool blend = active && Count > 0 && HeightBlend && depth > 0f;
             Shader.SetGlobalVector("_RegionSurfaceBlend", new Vector4(blend ? depth / blendSpan : 0f, 0f, 0f, 0f));
             Shader.SetGlobalVector("_RegionSurfaceBlendHeights", blendHeights);
+            Shader.SetGlobalVector("_RegionSurfaceBlendHeights2", blendHeights2);
         }
 
         public static void Release()

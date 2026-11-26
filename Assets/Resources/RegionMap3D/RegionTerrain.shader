@@ -16,6 +16,8 @@ Shader "Vastcore/RegionTerrain"
         _BandAmount ("Strata Band Amount", Range(0, 0.3)) = 0.1
         [HideInInspector] _LooseRock ("Detached rock", Float) = 0
         [HideInInspector] _SunFromVertex ("Keep the baked sun (overhangs)", Float) = 0
+        [HideInInspector][NoScaleOffset] _SedimentMap ("Sediment maps (deposit, wash, scree, coarse)", 2D) = "black" {}
+        [HideInInspector] _SedimentRect ("Sediment map placement", Vector) = (0, 0, 0, 0)
     }
 
     SubShader
@@ -51,9 +53,11 @@ Shader "Vastcore/RegionTerrain"
                 half _BandAmount;
                 half _LooseRock;
                 half _SunFromVertex;
+                float4 _SedimentRect;   // 土砂の地図の置き場所（RegionSedimentLayers）。z が 0 なら地図なし
             CBUFFER_END
 
             #if defined(REGION_SANDSTONE)
+            #define REGION_SEDIMENT_MATERIAL
             #include "RegionSandstone.hlsl"
             #endif
 

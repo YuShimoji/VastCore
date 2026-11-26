@@ -1,10 +1,10 @@
 // 表面の写真素材（RegionSurfaceMaterials.cs が場面を作る時に束ねた配列）を読む。役の番号は RegionSurfaceRole と同じ
-// （0 崖の岩肌、1 泥岩の帯、2 岩屑、3 砂と土、4 地被、5 転石）。置かれていない役は読まない。
+// （0 崖の岩肌、1 泥岩の帯、2 岩屑、3 砂と土、4 地被、5 転石、6 細かい土砂、7 流路の礫）。置かれていない役は読まない。
 // 座標は m（内側・外側の地形と転石に共通の座標）。
 #ifndef REGION_SURFACE_MATERIALS_INCLUDED
 #define REGION_SURFACE_MATERIALS_INCLUDED
 
-#define REGION_SURFACE_ROLES 6
+#define REGION_SURFACE_ROLES 8
 
 TEXTURE2D_ARRAY(_RegionSurfaceDetail);   // 明るさと色のむら（平均 0.5）
 SAMPLER(sampler_RegionSurfaceDetail);
@@ -88,6 +88,7 @@ RegionSurfaceSample RegionSurfaceRead(int role, float3 p, float3 pdx, float3 pdy
 // _RegionSurfaceBlend.x 境の深さ（0 で切）、_RegionSurfaceBlendHeights 崖・泥岩・岩屑・地被の高さの画像の 0〜1 の幅
 float4 _RegionSurfaceBlend;
 float4 _RegionSurfaceBlendHeights;
+float4 _RegionSurfaceBlendHeights2;  // x 細かい土砂、y 流路の礫
 
 // 役 role の高さ（0〜1）だけを biplanar で読む。素材の無い役は 0.5
 float RegionSurfaceHeight(int role, float3 p, float3 pdx, float3 pdy, float3 n)

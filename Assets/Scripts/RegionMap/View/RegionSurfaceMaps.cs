@@ -19,6 +19,10 @@ namespace Vastcore.RegionMap
         Crust,
         /// <summary>転石</summary>
         LooseRock,
+        /// <summary>細かい土砂（扇状地・谷底の乾いて割れたシルト。土砂の地図の Deposit で出す）</summary>
+        Deposit,
+        /// <summary>流路の礫（溝と扇の流れ筋。土砂の地図の SedimentFlow・Wear で出す）</summary>
+        Wash,
     }
 
     /// <summary>
@@ -39,7 +43,7 @@ namespace Vastcore.RegionMap
         public const int Texels = 1024;
 
         /// <summary>役ごとのフォルダの名前（RegionSurfaceRole の並び）。</summary>
-        public static readonly string[] Folders = { "Cliff", "Mudstone", "Talus", "Sand", "Crust", "LooseRock" };
+        public static readonly string[] Folders = { "Cliff", "Mudstone", "Talus", "Sand", "Crust", "LooseRock", "Deposit", "Wash" };
 
         /// <summary>素材のファイルが何の画像か。</summary>
         public enum MapKind

@@ -103,10 +103,14 @@ namespace Vastcore.RegionMap
         // 溝の傾きをとる長さ（m）と、溝の V 字の壁の傾き（崩れで埋まらないように安息角よりかなり緩い）
         private const float ChuteSlopeMeters = 4f;
         private const float ChuteWallTan = 0.35f;
+        // 溝の半幅の上限（溝の長さに対する割合）。短い溝を深く刻むと、丸いすり鉢（seed 8 の窪地の Wear の塊）になるので、細長い溝に保つ
+        private const float ChuteAspect = 0.15f;
         // 溝の両脇の土手の高さ（溝の深さに対する割合）。土手は溝が削った土砂で作る
         private const float LeveeShare = 0.35f;
         // 溝の下の錐の面の傾き（高さ / 水平距離。安息角より緩い円錐を、溝が運んだ量の合計に合わせて描く）
         private const float ConeTan = 0.2f;
+        // 錐の縁で厚さを 0 へ滑らかにつなぐ幅（厚さ m）。縁で傾きが折れると、回ごとの錐の縁が丸い輪の跡に見える
+        private const float ConeToe = 0.6f;
 
         // 水の運搬で運べる量を決める傾きは、この幅（m）でならした地形でとる（ためた土砂が上流の傾きを変えて、等高線のような波を作らない）
         private const float SlopeSmoothMeters = 6f;
@@ -854,7 +858,7 @@ namespace Vastcore.RegionMap
                     // V 字の断面（壁の傾き ChuteWallTan）と、その外側の土手
                     // 溝の頭と終わりでは、そこまでの長さより幅を広げない（端に丸い窪みを作らない）
                     float half = depth / ChuteWallTan;
-                    float room = Math.Min(along[k], along[last] - along[k]);
+                    float room = Math.Min(Math.Min(along[k], along[last] - along[k]), ChuteAspect * along[last]);
                     if (half > room) half = room;
                     if (half < cell) half = cell;
                     if (depth > half * ChuteWallTan) depth = half * ChuteWallTan;
@@ -940,7 +944,7 @@ namespace Vastcore.RegionMap
                 float top1 = (float)Math.Pow(3.0 * moved[source] * ConeTan * ConeTan / Math.PI, 1.0 / 3.0);
                 int end = ends[k];
                 int ex = end % n, ey = end / n;
-                int radius = (int)Math.Ceiling(top1 / ConeTan / cell);
+                int radius = (int)Math.Ceiling((top1 + ConeToe) / ConeTan / cell);
                 for (int y = Math.Max(0, ey - radius); y <= Math.Min(n - 1, ey + radius); y++)
                 {
                     for (int x = Math.Max(0, ex - radius); x <= Math.Min(n - 1, ex + radius); x++)
@@ -948,16 +952,27 @@ namespace Vastcore.RegionMap
                         int c = x + y * n;
                         if (kind[c] != Movable) continue;
                         float distance = cell * (float)Math.Sqrt((x - ex) * (x - ex) + (y - ey) * (y - ey));
-                        float t1 = top1 - ConeTan * distance;
+                        float t1 = Toe(top1 - ConeTan * distance);
                         if (t1 <= 0f) continue;
-                        float t0 = top0 - ConeTan * distance;
-                        float add = t0 > 0f ? t1 - t0 : t1;
+                        float add = before > 0f ? t1 - Toe(top0 - ConeTan * distance) : t1;
                         cone[c] += add;
                         coneTravel[c] += add * (lengths[k] + distance);
                     }
                 }
             }
             return carved;
+        }
+
+        /// <summary>
+        /// 円錐の厚さ x（m。縁の外で負）を、縁の前後 ConeToe で 0 へ滑らかにつないだ値（傾きが折れない）。
+        /// 回ごとに増えた分は Toe(新しい厚さ) − Toe(前の厚さ) なので、足し合わせると最後の錐の形になる。
+        /// </summary>
+        private static float Toe(float x)
+        {
+            if (x >= ConeToe) return x;
+            if (x <= -ConeToe) return 0f;
+            float t = x + ConeToe;
+            return t * t / (4f * ConeToe);
         }
 
         /// <summary>溝の下の錐へ、cone（厚さ m）の fraction を岩屑として足す。帽子の上面より 1 m 下までで止める。足した量（m3）を返す。</summary>

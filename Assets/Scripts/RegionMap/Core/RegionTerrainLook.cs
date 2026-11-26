@@ -48,6 +48,13 @@ namespace Vastcore.RegionMap
         public int Resolution = 1024;
 
         public float Mesa = 1f;
+
+        /// <summary>
+        /// 土砂の場の強さ（RegionDetailSpec.Sediment）。1 が標準で、崖の落ち口の下に岩屑の溝と錐、裾に扇状地ができ、
+        /// 内外の窓が土砂の地図（Deposit・Wear・SedimentFlow・Scree・Coarse）を持つ。0 で土砂の場を流さない（T3 より前の地形）。
+        /// </summary>
+        public float Sediment = 1f;
+
         public bool Rocks = true;
         public bool Vegetation = true;
         public bool Props = false;
@@ -199,6 +206,7 @@ namespace Vastcore.RegionMap
             RegionDetail outer = RegionDetailBuilder.Build(region, new RegionDetailSpec
             {
                 CenterMapX = spec.CenterMapX, CenterMapY = spec.CenterMapY, SizeKm = spec.OuterKm, Resolution = spec.Resolution, Mesa = spec.Mesa,
+                Sediment = spec.Sediment,
             });
             int n = outer.Data.Resolution;
             float outerCell = outer.Data.CellMeters;
@@ -220,7 +228,7 @@ namespace Vastcore.RegionMap
             {
                 CenterMapX = outer.OriginMapX + (minX + (m * 0.5f - 0.5f) * innerCell) / metersPerMapUnit,
                 CenterMapY = outer.OriginMapY + (minZ + (m * 0.5f - 0.5f) * innerCell) / metersPerMapUnit,
-                SizeKm = m * innerCell / 1000f, Resolution = m, Mesa = spec.Mesa,
+                SizeKm = m * innerCell / 1000f, Resolution = m, Mesa = spec.Mesa, Sediment = spec.Sediment,
             });
 
             var scene = new RegionLookScene
@@ -231,9 +239,11 @@ namespace Vastcore.RegionMap
                 MetersPerMapUnit = metersPerMapUnit, RegionSeed = region.Spec.Seed, RegionResolution = region.Spec.Resolution,
             };
 
-            // 内側の縁を、外側の地形へなじませる
+            // 内側の縁を、外側の地形へなじませる。土砂の地図も同じ幅で外側の地図へなじませる（窓の境で層が切り替わらない）
             float[] outerHeight = outer.Data.Height;
             float[] innerHeight = inner.Data.Height;
+            float[][] innerMaps = SedimentMaps(inner.Data);
+            float[][] outerMaps = SedimentMaps(outer.Data);
             float band = 3f * outerCell;
             Parallel.For(0, m, y =>
             {
@@ -242,9 +252,16 @@ namespace Vastcore.RegionMap
                     int edge = Math.Min(Math.Min(x, m - 1 - x), Math.Min(y, m - 1 - y));
                     float t = RegionNoise.Smooth(0f, band, edge * innerCell);
                     if (t >= 1f) continue;
-                    float coarse = Sample(outerHeight, n, (minX + x * innerCell) / outerCell - 0.5f, (minZ + y * innerCell) / outerCell - 0.5f);
+                    float ox = (minX + x * innerCell) / outerCell - 0.5f, oz = (minZ + y * innerCell) / outerCell - 0.5f;
+                    float coarse = Sample(outerHeight, n, ox, oz);
                     int i = x + y * m;
                     innerHeight[i] = coarse + (innerHeight[i] - coarse) * t;
+                    if (innerMaps == null) continue;
+                    for (int k = 0; k < innerMaps.Length; k++)
+                    {
+                        float edgeValue = outerMaps != null ? Sample(outerMaps[k], n, ox, oz) : 0f;
+                        innerMaps[k][i] = edgeValue + (innerMaps[k][i] - edgeValue) * t;
+                    }
                 }
             });
 
@@ -317,6 +334,13 @@ namespace Vastcore.RegionMap
                 }
             }
             return scene;
+        }
+
+        /// <summary>土砂の地図 5 つ（Deposit・Wear・SedimentFlow・Scree・Coarse）。土砂の場を流していない窓は null。</summary>
+        private static float[][] SedimentMaps(RegionData data)
+        {
+            if (data.Deposit == null || data.Wear == null || data.SedimentFlow == null || data.Scree == null || data.Coarse == null) return null;
+            return new[] { data.Deposit, data.Wear, data.SedimentFlow, data.Scree, data.Coarse };
         }
 
         /// <summary>
