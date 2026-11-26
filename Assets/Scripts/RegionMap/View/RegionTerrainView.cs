@@ -198,6 +198,7 @@ namespace Vastcore.RegionMap
             public RegionLookScene Scene;
             public int[] PlantCounts;
             public RegionAlcoveView Alcove;
+            public RegionPropView.Result Props;
         }
 
         /// <summary>
@@ -263,6 +264,17 @@ namespace Vastcore.RegionMap
             {
                 result.Alcove.AddViewpoints(points.transform);
                 result.Alcove.Show(true, true);
+            }
+            if (scene.PropsSlice != null)
+            {
+                result.Props = RegionPropView.AddTo(root.transform, scene.PropsSlice);
+                foreach (RegionLookViewpoint vp in new[] { scene.PropsSlice.CratesViewpoint, scene.PropsSlice.RubbleViewpoint })
+                {
+                    if (vp == null) continue;
+                    var point = new GameObject(vp.Name);
+                    point.transform.SetParent(points.transform, false);
+                    PlaceLook(point.transform, scene, vp);
+                }
             }
             return result;
         }

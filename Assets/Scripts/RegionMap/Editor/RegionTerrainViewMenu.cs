@@ -19,18 +19,21 @@ namespace Vastcore.RegionMap.Editor
     public static class RegionTerrainViewMenu
     {
         [MenuItem("Vastcore/Region Map/Open 3D Mesa Look (far, mid, near)")]
-        public static void OpenLook() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon); }
+        public static void OpenLook() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon, false); }
+
+        [MenuItem("Vastcore/Region Map/Open 3D Mesa Look + DS-011 Props Proof")]
+        public static void OpenLookWithPropsProof() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon, true); }
 
         [MenuItem("Vastcore/Region Map/3D Mesa Look Atmosphere/Clear afternoon")]
-        public static void OpenLookClear() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon); }
+        public static void OpenLookClear() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon, false); }
 
         [MenuItem("Vastcore/Region Map/3D Mesa Look Atmosphere/Golden hour")]
-        public static void OpenLookGolden() { OpenLook(RegionAtmosphere.Preset.GoldenHour); }
+        public static void OpenLookGolden() { OpenLook(RegionAtmosphere.Preset.GoldenHour, false); }
 
         [MenuItem("Vastcore/Region Map/3D Mesa Look Atmosphere/Dust haze")]
-        public static void OpenLookDust() { OpenLook(RegionAtmosphere.Preset.DustHaze); }
+        public static void OpenLookDust() { OpenLook(RegionAtmosphere.Preset.DustHaze, false); }
 
-        private static void OpenLook(RegionAtmosphere.Preset preset)
+        private static void OpenLook(RegionAtmosphere.Preset preset, bool withPropsProof)
         {
             if (EditorApplication.isPlaying)
             {
@@ -42,17 +45,21 @@ namespace Vastcore.RegionMap.Editor
             {
                 EditorUtility.DisplayProgressBar("Region Map", "地域と、砂岩の台地の場面を作っています…", 0.3f);
                 RegionAtmosphere atmosphere = RegionAtmosphere.Create(preset);
-                RegionTerrainView.LookResult look = CreateLookScene(new RegionSpec { Seed = 9 }, new RegionLookSpec(),
+                var lookSpec = new RegionLookSpec { Props = withPropsProof };
+                RegionTerrainView.LookResult look = CreateLookScene(new RegionSpec { Seed = 9 }, lookSpec,
                     atmosphere, out Camera camera);
-                RegionLookViewpoint mid = look.Scene.Spec.Mid;
-                RegionTerrainView.PlaceLook(camera.transform, look.Scene, mid);
-                camera.fieldOfView = mid.FovDegrees;
+                RegionLookViewpoint startView = withPropsProof && look.Scene.PropsSlice != null
+                    ? look.Scene.PropsSlice.CratesViewpoint
+                    : look.Scene.Spec.Mid;
+                RegionTerrainView.PlaceLook(camera.transform, look.Scene, startView);
+                camera.fieldOfView = startView.FovDegrees;
                 if (preset != RegionAtmosphere.Preset.DustHaze)
                     RegionLookSky.ApplyInteractive(camera, look, atmosphere, RegionLookSky.MixedCloudTime(look.Scene));
                 SceneView view = SceneView.lastActiveSceneView;
                 if (view != null) view.AlignViewToObject(camera.transform);
-                Selection.activeGameObject = look.Root;
-                Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + "。視点は「Region Terrain Look/Viewpoints」の far・mid・near と、適地がある場合は alcove-mid・alcove-near・alcove-shelf");
+                Selection.activeGameObject = withPropsProof && look.Props != null ? look.Props.Root : look.Root;
+                Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + "。視点は「Region Terrain Look/Viewpoints」の far・mid・near と、適地がある場合は alcove-mid・alcove-near・alcove-shelf" +
+                    (withPropsProof ? "、Props Proof は props-crates・props-rubble" : ""));
             }
             finally
             {
@@ -197,6 +204,9 @@ namespace Vastcore.RegionMap.Editor
                 var watch = System.Diagnostics.Stopwatch.StartNew();
                 var regionSpec = new RegionSpec { Seed = int.Parse(RegionMapMenu.Argument("-regionSeed", "9")) };
                 var spec = new RegionLookSpec();
+                bool propsCompare = RegionMapMenu.Argument("-propsCompare", "false") == "true";
+                bool propsProof = propsCompare || RegionMapMenu.Argument("-propsProof", "false") == "true";
+                spec.Props = propsProof;
                 string center = RegionMapMenu.Argument("-lookCenter", "");
                 if (center.Length > 0)
                 {
@@ -247,6 +257,8 @@ namespace Vastcore.RegionMap.Editor
                     Capture(camera, null, null);
                     if (look.Alcove != null && RegionMapMenu.Argument("-alcoveReview", "false") == "true")
                         CaptureAlcoveComparison(camera, look, folder);
+                    if (propsCompare)
+                        CapturePropsComparison(camera, look, folder);
                     CaptureLookViews(camera, look, folder);
                     if (RegionMapMenu.Argument("-reliefCompare", "false") == "true")
                         CaptureToggleComparison(camera, look, folder, "relief", "凹凸", RegionSurfaceRelief.Baked, RegionSurfaceRelief.SetActive);
@@ -350,6 +362,7 @@ namespace Vastcore.RegionMap.Editor
         {
             string timeArgument = RegionMapMenu.Argument("-cloudTime", "auto");
             bool compare = RegionMapMenu.Argument("-skyCompare", "false") == "true";
+            bool propsCompare = RegionMapMenu.Argument("-propsCompare", "false") == "true";
             bool sunView = RegionMapMenu.Argument("-sunView", "false") == "true";
             bool hdrProbe = RegionMapMenu.Argument("-hdrProbe", "false") == "true";
             RegionWeatherMaker.CoverFullDensity = float.Parse(RegionMapMenu.Argument("-cloudCoverFull",
@@ -414,6 +427,7 @@ namespace Vastcore.RegionMap.Editor
                     if (hdrProbe) steps.Add(() => ProbeHdr(camera, atmosphere.Name + " 太陽側"));
                 }
                 if (compare) RegionLookSky.AddComparisonSteps(steps, () => camera, () => look, () => cloudTime, folder);
+                if (propsCompare) steps.Add(() => CapturePropsComparison(camera, look, folder));
             }
             steps.Run(1800, error =>
             {
@@ -573,6 +587,51 @@ namespace Vastcore.RegionMap.Editor
                 Capture(camera, output, "sun-" + altitude.ToString("00", CultureInfo.InvariantCulture) + ".png");
             }
             RenderSettings.sun.transform.rotation = original;
+        }
+
+        private static void CapturePropsComparison(Camera camera, RegionTerrainView.LookResult look, string output)
+        {
+            if (look?.Props == null || look.Scene?.PropsSlice == null)
+            {
+                Debug.LogWarning("[RegionMap] DS-011 Props Proof が無いので比較を撮らない");
+                return;
+            }
+            Directory.CreateDirectory(output);
+            RegionPropProofSlice slice = look.Scene.PropsSlice;
+            RegionLookViewpoint near = look.Scene.Spec.Near;
+
+            look.Props.Root.SetActive(false);
+            RegionTerrainView.PlaceLook(camera.transform, look.Scene, near);
+            camera.fieldOfView = near.FovDegrees;
+            Capture(camera, output, "props-near-before.png");
+
+            look.Props.Root.SetActive(true);
+            RegionTerrainView.PlaceLook(camera.transform, look.Scene, near);
+            camera.fieldOfView = near.FovDegrees;
+            Capture(camera, output, "props-near-after.png");
+
+            if (slice.CratesViewpoint != null)
+            {
+                RegionTerrainView.PlaceLook(camera.transform, look.Scene, slice.CratesViewpoint);
+                camera.fieldOfView = slice.CratesViewpoint.FovDegrees;
+                Capture(camera, output, "props-crates.png");
+            }
+            if (slice.RubbleViewpoint != null)
+            {
+                RegionTerrainView.PlaceLook(camera.transform, look.Scene, slice.RubbleViewpoint);
+                camera.fieldOfView = slice.RubbleViewpoint.FovDegrees;
+                Capture(camera, output, "props-rubble.png");
+            }
+
+            var report = new System.Text.StringBuilder();
+            report.AppendLine(FormattableString.Invariant($"DS-011 Props Proof Slice (seed {look.Scene.RegionSeed}, count {slice.Instances.Count})"));
+            for (int i = 0; i < slice.Instances.Count; i++)
+            {
+                RegionPropInstance inst = slice.Instances[i];
+                report.AppendLine(FormattableString.Invariant(
+                    $"[{i:D2}] {inst.PropId} role={inst.Role} layer={inst.StackLayer} pos=({inst.X:F2},{inst.Y:F2},{inst.Z:F2}) rot=({inst.PitchDeg:F1},{inst.YawDeg:F1},{inst.RollDeg:F1}) v2={inst.DamageState} v3={inst.ConstructionVariant} v4={inst.MaterialVariant} mesh={inst.MeshVariant} dust={inst.TopDust:F2}"));
+            }
+            File.WriteAllText(Path.Combine(output, "props-proof-report.txt"), report.ToString());
         }
 
         private static void CaptureAlcoveComparison(Camera camera, RegionTerrainView.LookResult look, string output)

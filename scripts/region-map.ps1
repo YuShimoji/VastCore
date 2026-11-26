@@ -32,6 +32,10 @@
   # view3d: 高さによる層の混合を切った絵（<OutDir>/blend-off）と描画時間（blend-timing.txt）も撮る。-BlendDepth は境の深さ（m）
   [switch]$BlendCompare,
   [string]$BlendDepth = '',
+  # view3d: DS-011 P0 Props Proof Slice の前後比較（props-near-before/after, props-crates, props-rubble）
+  [switch]$PropsCompare,
+  [switch]$PropsProof,
+  [string]$LookSky = '',
   [string]$UnityPath = ''
 )
 
@@ -86,6 +90,9 @@ if ($Mode -eq 'setup') {
     if ($SurfaceCompare) { $unityArgs += @('-surfaceCompare', 'true') }
     if ($BlendCompare) { $unityArgs += @('-blendCompare', 'true') }
     if ($BlendDepth) { $unityArgs += @('-blendDepth', $BlendDepth) }
+    if ($PropsCompare) { $unityArgs += @('-propsCompare', 'true') }
+    if ($PropsProof) { $unityArgs += @('-propsProof', 'true') }
+    if ($LookSky) { $unityArgs += @('-lookSky', $LookSky) }
   }
 } elseif ($Mode -eq 'play') {
   $unityArgs = @(

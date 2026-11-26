@@ -1,6 +1,6 @@
 # VastCore Runtime State
 
-Last Updated: 2026-11-25
+Last Updated: 2026-11-27
 
 ## Current Position
 
@@ -27,6 +27,7 @@ Last Updated: 2026-11-25
 
 - SP-021で追加したもの：`Assets/Scripts/RegionMap/`（Core・View・Editor、asmdef 2件）、`Assets/Scenes/RegionExplorer.unity`、`Assets/Tests/EditMode/RegionMapTests.cs`、`tools/RegionMapPreview/`、`scripts/region-map.ps1`。`1982fdd` の後に足したのは `Core/RegionDetail.cs`（拡大した地形）・`Core/RegionStructures.cs`（構造物の形の案）・`Core/RegionNames.cs`（呼び名の響き）の3件。変えたのは `Core/` の `RegionData`・`RegionGenerator`・`RegionSite`・`RegionAreas`・`RegionSpec`・`RegionMapRenderer`、テスト、`tools/RegionMapPreview/Program.cs`。
 - 砂岩の台地の骨格・転石・固定視点は `48974a3`、表面材質は `ddb06ac`、植生は `0f70616`。通常シーンの崖下のアルコーブは `RegionMesaAlcove` が地層の境目を選び、`RegionAlcoveView` が局所の体積・崩落岩・しみ出しの緑・追加視点を組み込む。軸 G の旧記録は履歴の「2026-11-25 3D化の見え方の第1区切り」。
+- DS-011 Props Proof Slice（2026-11-27）：`Core/RegionJson.cs`・`Core/RegionPropCatalog.cs`・`Core/RegionPropPlacement.cs`・`View/RegionPropView.cs`（各 meta つき）と `Assets/Tests/EditMode/RegionPropCatalogTests.cs` を追加し、`Core/RegionTerrainLook.cs`・`View/RegionTerrainView.cs`・`Editor/RegionTerrainViewMenu.cs`・`scripts/region-map.ps1` を拡張。`docs/02_design/environment-props-catalog.json`（7ドメイン・38原型・V1〜V7）を読み、P0 代表（`cnt_wood_crate` 5型×4材質・パレット・2段積み、`rub_stone_rubble_pile` 3層扇状広がり、`nat_stratified_slab`、`cnt_wood_barrel`、`str_ruin_pillar`、`set_trail_signpost`）のプレースホルダ配置・検証スライスを実装（既定 `RegionLookSpec.Props = false` で既存3D比較は不変）。
 - 命名（2026-11-22 の最初の版と川岸、2026-11-23 の第2版）で足したのは `Core/RegionNaming.cs`・`Core/RegionNamingRules.cs`・`Core/RegionFeatures.cs` と `Assets/Tests/EditMode/RegionNamingTests.cs`。変えたのは `Core/` の `RegionNames`・`RegionSite`・`RegionAreas`・`RegionSpec`・`RegionData`、`View/RegionExplorer.cs`、`Editor/RegionExplorerSmoke.cs`、`tools/RegionMapPreview/Program.cs`。
 - 拡大表示（2026-11-22〜23）で足したのは `View/RegionDetailLayer.cs`・`View/RegionRingGraphic.cs`・`Assets/Tests/EditMode/RegionDetailLayerTests.cs`（各 meta つき）。変えたのは `View/RegionExplorer.cs`（最大拡大 8→64、右上の札、サーチの輪、矢印キー1回分の移動量、標高の読み）と `Editor/RegionExplorerSmoke.cs`（拡大の確認の手順）。`Core/`・シーン・`ProjectSettings/`・`Packages/` は変更していない。
 - 遠征の規則（軸 H、2026-11-23）で足したのは `Core/RegionExpedition.cs` と `Assets/Tests/EditMode/RegionExpeditionTests.cs`（各 meta つき）。変えたのは `Core/ExplorationSession.cs`（最寄りの地点 `Nearest`、`Reset()`）、`View/RegionExplorer.cs`（規則の切替、左の「遠征の残り」、右の「手掛かり」、地図の野営地・拠点の輪・線・方角の矢印、終わりの結果）、`Editor/RegionExplorerSmoke.cs`（遠征の撮影7枚）。
@@ -56,8 +57,7 @@ Last Updated: 2026-11-25
 - 本人の回答（動きの案、2026-11-23、`01M828W77SDBJKNBXA22T8XJ8B`）：「B 地図で広がる」、記述「BとCを取り入れた動き方が良いです。」。4つの場面とも B。動きの長さは「長く（×1.6）」。進める範囲は「選んだ案の最小の実装まで」。削る動きは未回答。
 - 本人の回答（2026-11-24）：動きの受入（`01M831H77K6HV96N1BYM6J0JZK`）は「一部直したい」。段6の残り3設問（`01M84QPNKRE5XXVTF20ZHEN8RF`）は「保留」。遠征の規則の受入（`01M82V588FZE0C05C0YP34DNGN`）は差し戻し。原文は [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md)。
 - 本人の回答（2026-11-22）：エリア・雲の流れ・地点の根拠を足した版（`01M80215JPBGRPF79KE7J0YQQF`）は「近い」、「エリアと地点の呼び名」だけ「直したい（次の前に）」、他は「軽微」、次は「ここで十分」。進め方（`01M80219XNGW9T27XQMXDZJQFG`）は SP-021 4.1節。拡大した地形（`01M81JA2CC4WC37TF841JJ8ZEE`）は「近い」・全項目「軽微」・次は「今回の続き」。呼び名と形（`01M81JA6HWR4TJQXZA6T07TC6J`）は SP-021 4.1節。命名の仕組みの方向（`01M81SA3GF8YMRZRETVZCHBGE2`、2026-11-23）は SP-021 5節。
-- 未確認：差し替えの画像を本人が置いた時の見え方（仮の画像1組でだけ確認。PNG以外の形式、正方形でない画像、取り込み設定が Sprite の画像、1920×1080 以外の画面は未確認）、確認ページ `review-20261122-r7` を本人のブラウザで開いた時の表示（Recordinator の「開く」は応答200。添付18ファイルのハッシュは元と一致）、seed 7 以外の地域と地点 5・10・14 以外での拡大した地形、`9cc6770` 以降の画面での実マウスの操作（右・中ドラッグでの移動、ホイールの拡大・縮小、一覧の行とボタンのクリック、「地名」ボタン、部品の上のクリックが地図へ通らないこと）、雲の層を3枚に増やした後の実際の描画の速さ、拡大した時の地名の重なり、16:9 以外の画面の形での部品の重なり、元のリポジトリの Editor での探索シーン再生（写しでだけ確認）、ビルドした Player、Windows以外でのフォント表示、残る見た目の制限（SP-021 8節）の解消。
-- 未確認（拡大表示）：実マウスでのホイール・右ドラッグの手触りと、細部を作っている最中の滑らかさ（更新の間隔の測定だけ）、元のリポジトリの Editor での再生（写しでだけ確認）、seed 7 以外と 1920×1080 以外の画面の形、ビルドした Player での作成時間、拡大 ×40 以上でのサーチの輪（画面より大きく見えない）、確認ページ `review-20261122-r10` を本人のブラウザで開いた時の画像の出方。
+- DS-011 Props Proof Slice（2026-11-27、seed 9）：EditMode 700/700（新規 `RegionPropCatalogTests` 6件含む）、`RegionMapPreview` Release 通過。`region-map.ps1 -Mode view3d -Seed 9 -PropsCompare -LookSky ours` で `props-near-before/after`・`props-crates`・`props-rubble` 撮影・目視確認。未確認：実アセット造形方式、Weather Maker空比較。
 
 ## Next Action
 
@@ -72,6 +72,7 @@ Last Updated: 2026-11-25
 5. 進め方：問いは、答えで方式が分かれる時だけ送る（[INTERACTION_NOTES](INTERACTION_NOTES.md)、[INVARIANTS](INVARIANTS.md)）。本人が Unity Editor を開いている間は写し `D:\vcv\VastCore` で確かめて1回で戻し、写しの Unity が動いている間は写しの C# を編集しない。
 6. 砂岩の3Dはアルコーブ・光と空気・表面の段3まで。晴れは Weather Maker、砂塵は自作。本人の選択は Linear・雲量上限0.8（形を優先）・夕方の雲は今の淡さ（2026-11-27、sky-trial m36）。空・雲・霞の作業は終了。終了後の追加は本人の選択「模様を2Dの風で流す」で、塊が2Dと同じ向き・速さで流れる（一周で戻さない。m43）。thank 端末にも Weather Maker を導入し、PC・Mobile の描画設定を維持した。探索から地上へ地点と雲の時刻を渡せる。個々の雲の輪郭の照合には差が残る。[通常の入口と確認結果](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)・[本人の選択](USER_REQUEST_LEDGER.md)。
    - 探索メニューからseed 8・9を開き、既存の砂・礫を比較用に適用したPC品質の動画とフレーム間隔を確認。[動画と計測](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)。表面の [T0〜T5](02_design/REGION_SURFACE_MATERIALS_SPEC.md) はT1統合済み・既定は切、T0は本人の回答待ち、T2は担当案。見た目と素材の採否は本人。アーチ・峡谷は後続。
+   - DS-011 環境 Props 体系は P0 Proof Slice（読込・7軸ソルバ・プレースホルダ比較撮影）まで確認済み。次は [DS-011 7節](02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md) の実アセット造形方式の採否と、本人の比較画像確認後に P0 残件（17種実アセット変換）へ進む。
 
 ## External Pulse And Remote Resume
 
