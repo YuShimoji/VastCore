@@ -70,7 +70,7 @@ Last Updated: 2026-11-25
    - 起動元（判断）：平野の筋を減らすしきい値 `RegionSpec.IncisionThreshold`（0／0.05／0.08／0.12、SP-021 8節・9節）。0.05 で seed 9 の都市が別の場所へ移り（Next Action 1 の `--development-at` も変わる）、0.08 以上では都市を置けない。決まるまで既定0。
 4. 止めているもの（再開は本人の指示）：動き（軸 E）、音（軸 F）、サーチのゲーム性と遠征の規則（軸 H）、命名の響きと表示、段6。コード・確認ページ・回答の記録は残す。本人が挙げた直す点（波紋が距離に見える、矢印が答えの座標を指す、演出が機能に見える、発見物の分類を開発担当が決めた）は SP-021 4.1節と9節。命名の数えられる生成の欠陥は第3版で直した（2026-11-25、`1c69f16`。数は履歴）。
 5. 進め方：問いは、答えで方式が分かれる時だけ送る（[INTERACTION_NOTES](INTERACTION_NOTES.md)、[INVARIANTS](INVARIANTS.md)）。本人が Unity Editor を開いている間は写し `D:\vcv\VastCore` で確かめて1回で戻し、写しの Unity が動いている間は写しの C# を編集しない。
-6. 砂岩の3Dはアルコーブ・光と空気・表面の段3まで。晴れは本人選択の Weather Maker、砂塵は自作。2Dと3Dは雲の濃度画像・流れの格子を共有し、探索メニューから地上に地点と時刻を引き継ぐ。自作の空ではseed 9の上下両層を地図と俯瞰で2時刻照合済み。Weather Maker導入先の撮影記録は `1c552db`。Weather Maker は本体に導入済み（git の外で worktree には無い）。空は本人の選択で Linear・雲の量の上限 0.8（形を優先）・夕方の雲は今の淡さ（2026-11-27、sky-trial m36）。空・雲・霞の作業は終了。[3Dの確認方法](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)・[Unityの診断ログ](../artifacts/region-map/mesa-cloud-20261126/weather-maker-preflight/unity.log)・[本人の選択](USER_REQUEST_LEDGER.md)。
+6. 砂岩の3Dはアルコーブ・光と空気・表面の段3まで。晴れは Weather Maker、砂塵は自作。本人の選択は Linear・雲量上限0.8（形を優先）・夕方の雲は今の淡さ（2026-11-27、sky-trial m36）。空・雲・霞の作業は終了。thank 端末にも Weather Maker を導入し、PC・Mobile の描画設定を維持した。探索から地上へ地点と雲の時刻を渡せる。個々の雲の輪郭の照合には差が残る。[通常の入口と確認結果](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)・[本人の選択](USER_REQUEST_LEDGER.md)。
    - 探索メニューからseed 8・9を開き、既存の砂・礫を比較用に適用したPC品質の動画とフレーム間隔を確認。[動画と計測](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)。表面の [T0〜T5](02_design/REGION_SURFACE_MATERIALS_SPEC.md) はT1統合済み・既定は切、T0は本人の回答待ち、T2は担当案。見た目と素材の採否は本人。アーチ・峡谷は後続。
 
 ## External Pulse And Remote Resume
