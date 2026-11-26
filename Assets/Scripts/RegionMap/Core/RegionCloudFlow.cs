@@ -131,6 +131,17 @@ namespace Vastcore.RegionMap
             return a + b * 0.3f;
         }
 
+        /// <summary>一様な流れだけのずれを、一周で戻さずに時刻に比例して増やし続けた値（地図の幅を 1 とした割合）。</summary>
+        public static void DriftUnwrapped(int layer, float time, float crossSeconds, out double du, out double dv)
+        {
+            du = 0.0;
+            dv = 0.0;
+            if (crossSeconds <= 0f) return;
+            double turns = time / (double)crossSeconds * Speed[layer];
+            du = turns * WindU[layer];
+            dv = turns * WindV[layer];
+        }
+
         /// <summary>一様な流れだけのずれ（地図の幅を 1 とした割合。1 で一周して 0 へ戻る）。</summary>
         public static void Drift(int layer, float time, float crossSeconds, out float du, out float dv)
         {

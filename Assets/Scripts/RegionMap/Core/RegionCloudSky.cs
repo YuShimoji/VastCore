@@ -73,6 +73,25 @@ namespace Vastcore.RegionMap
             new Sampler(spec).SampleAt(x, z, out low, out high);
         }
 
+        /// <summary>
+        /// Unity の座標 (x, z) で、2D の低い雲の模様が時刻 spec.Time までに流れた距離（m、東と北が正）。
+        /// 渦のずれは探索画面と同じ流れの升目（RegionCloudFlow.Grid）で読む。一様な流れは、2D の地図では地図の幅で一周して戻るが、
+        /// ここでは戻さずに時刻に比例して増やす（Weather Maker の形の模様は地図の幅で繰り返さないので、戻すと塊がとぶ）。
+        /// </summary>
+        public static void PatternShift(RegionCloudSkySpec spec, float x, float z, out float east, out float north)
+        {
+            if (spec == null) throw new ArgumentNullException("spec");
+            float u = (spec.OriginMapX + x / spec.MetersPerMapUnit) / RegionData.MapUnits;
+            float v = 1f - (spec.OriginMapY - z / spec.MetersPerMapUnit) / RegionData.MapUnits;
+            var offset = new RegionCloudFlow.Grid(RegionCloudFlow.Low, spec.Time, spec.CrossSeconds).At(u, v);
+            // 升目のずれ = 一周で戻した一様な流れ + 渦。一様な流れの分を、戻さない値に入れ替える
+            RegionCloudFlow.Drift(RegionCloudFlow.Low, spec.Time, spec.CrossSeconds, out float wrappedU, out float wrappedV);
+            RegionCloudFlow.DriftUnwrapped(RegionCloudFlow.Low, spec.Time, spec.CrossSeconds, out double driftU, out double driftV);
+            double width = RegionData.MapUnits * (double)spec.MetersPerMapUnit;
+            east = (float)((driftU + (offset.Du - wrappedU)) * width);
+            north = (float)((driftV + (offset.Dv - wrappedV)) * width);
+        }
+
         /// <summary>同じ地点・時刻条件で複数点を読むとき、2D の濃度画像と流れの升目を共有する。</summary>
         public sealed class Sampler
         {

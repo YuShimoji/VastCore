@@ -185,7 +185,7 @@ namespace Vastcore.RegionMap
         /// 層の高さは箱ではなく設定で決まる（惑星の半径を持つ設定では、箱は地図を貼る水平の範囲にだけ使われる）。
         /// </summary>
         public static void SetClouds(Texture2D map, BoxCollider box, ScriptableObject cloudProfile, float baseHeight, float topHeight, float fadeMeters,
-                                     Texture2D highMap, float highHeight)
+                                     Texture2D highMap, float highHeight, Vector2 shapeShift = default)
         {
             var profile = UnityEngine.Object.Instantiate(cloudProfile);
             profile.hideFlags = HideFlags.DontSave;
@@ -233,6 +233,14 @@ namespace Vastcore.RegionMap
             FieldInfo offset = profile.GetType().GetField("cloudNoiseVelocityAccum4", BindingFlags.NonPublic | BindingFlags.Instance);
             if (offset == null) throw new MissingMemberException(profile.GetType().Name, "cloudNoiseVelocityAccum4");
             offset.SetValue(profile, new Vector3(-bounds.min.x, 0f, -bounds.min.z));
+
+            // 塊の形の模様は、2D の模様が流れた距離（shapeShift、x 東・y 北）だけずらして止める。素材の風（雲の地図の流れ、模様も一緒に流す）は 0 にする
+            Set(profile, "WeatherMapCloudCoverageVelocity", Vector3.zero);
+            var shift = box.gameObject.GetComponent<RegionCloudShapeShift>();
+            if (shift == null) shift = box.gameObject.AddComponent<RegionCloudShapeShift>();
+            shift.Layer = layer;
+            shift.Shift = new Vector3(shapeShift.x, 0f, shapeShift.y);
+            shift.Apply();
         }
 
         /// <summary>2D の高い薄雲の濃さから、平らな雲の層の 1 画素（A が雲の量）。2D の地図の不透明さ（RegionClouds.Shade）と同じ。</summary>

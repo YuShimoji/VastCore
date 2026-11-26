@@ -238,8 +238,12 @@ namespace Vastcore.RegionMap.Editor
             var box = boxObject.AddComponent<BoxCollider>();
             box.isTrigger = true;
             box.size = new Vector3(spec.Size, CloudTop - CloudBase, spec.Size);
+            // 塊の形の模様を、場面の中心で 2D の模様が流れた距離だけずらす（場所による流れの違いは中心の値で代表する）
+            RegionCloudSky.PatternShift(spec, look.Scene.CenterX, -look.Scene.CenterZ, out float shiftEast, out float shiftNorth);
             RegionWeatherMaker.SetClouds(map, box, FindAsset<ScriptableObject>(CloudProfileName, "ScriptableObject"), ground + CloudBase, ground + CloudTop, CloudFadeMeters,
-                                       highMap, ground + HighCloudHeight);
+                                       highMap, ground + HighCloudHeight, new Vector2(shiftEast, shiftNorth));
+            Debug.Log("[RegionMap] 雲の形の模様のずれ: 東 " + (shiftEast / 1000f).ToString("0.000") + " km・北 " + (shiftNorth / 1000f).ToString("0.000") +
+                      " km（時刻 " + cloudTime + " 秒）");
             Debug.Log("[RegionMap] 空 Weather Maker: 太陽 " + atmosphere.SunAltitudeDegrees + " 度（北西）、雲 2D の地図と同じ（seed " + spec.RegionSeed +
                       "、時刻 " + cloudTime + " 秒、" + (spec.Size / 1000f) + " km 四方、雲が見える割合 " + RegionClouds.Coverage(low, 0.1f).ToString("0.00") +
                       "、" + watch.ElapsedMilliseconds + " ms）");
