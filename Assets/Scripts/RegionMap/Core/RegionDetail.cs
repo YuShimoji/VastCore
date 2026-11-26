@@ -46,16 +46,16 @@ namespace Vastcore.RegionMap
 
         /// <summary>
         /// 土砂の場（RegionSediment）の強さ。0 で流さない（既定。今までの地形とバイト一致）。1 が標準。台地（Mesa）を入れた窓だけで効く。
-        /// 入れると、崖の落ち口の下に岩屑の錐、斜面に溝、裾に扇状地ができ、地図 Deposit・Wear・SedimentFlow・Scree を持つ。
+        /// 入れると、崖の落ち口の下に岩屑の溝と錐、裾に扇状地ができ、地図 Deposit・Wear・SedimentFlow・Scree・Coarse を持つ。
         /// 帽子の岩・海・湖・川の水面は動かさず、台地を載せる前の標高より下は削らない。
         /// </summary>
         public float Sediment = 0f;
 
-        /// <summary>土砂の場のうち、崖からの供給と崩れ（重力）の強さ。1 が中くらい。</summary>
-        public float SedimentGravity = 1f;
+        /// <summary>土砂の場のうち、崖からの供給・岩屑の溝・崩れ（重力）の強さ。1 が中くらいで、既定は主役の 1.25（2026-11-27 の本人の選択: 重力の錐と分級が主）。</summary>
+        public float SedimentGravity = 1.25f;
 
-        /// <summary>土砂の場のうち、水による削りと運搬の強さ。1 が中くらい。</summary>
-        public float SedimentWater = 1f;
+        /// <summary>土砂の場のうち、水による削りと運搬の強さ。1 が中くらいで、既定は従の 0.4（水の溝と扇状地は従）。</summary>
+        public float SedimentWater = 0.4f;
 
         public RegionDetailSpec Clone()
         {

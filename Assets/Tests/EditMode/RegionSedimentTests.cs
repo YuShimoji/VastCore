@@ -48,6 +48,7 @@ namespace Vastcore.Tests.EditMode
             Assert.IsNull(same.Wear);
             Assert.IsNull(same.SedimentFlow);
             Assert.IsNull(same.Scree);
+            Assert.IsNull(same.Coarse);
 
             // 台地の無い窓では、Sediment を入れても地図を持たない
             RegionDetailSpec noMesa = MesaWindow();
@@ -73,7 +74,7 @@ namespace Vastcore.Tests.EditMode
             Assert.AreEqual(beforeDetail.CoastAgreement, afterDetail.CoastAgreement);
             Assert.AreEqual(beforeDetail.RiverAgreement, afterDetail.RiverAgreement);
             CollectionAssert.AreEqual(before.WaterCoverage, after.WaterCoverage);
-            float[][] maps = { after.Deposit, after.Wear, after.SedimentFlow, after.Scree };
+            float[][] maps = { after.Deposit, after.Wear, after.SedimentFlow, after.Scree, after.Coarse };
             foreach (float[] map in maps)
             {
                 Assert.IsNotNull(map);
@@ -115,9 +116,25 @@ namespace Vastcore.Tests.EditMode
             var before = (float[])data.Height.Clone();
             RegionSedimentBudget budget = RegionSediment.Apply(data, floor, 1f, 1f, 0f, 5u);
             Assert.Greater(budget.Supplied, 0.0);
-            Assert.AreEqual(0.0, budget.Eroded);
+            // 岩屑の溝が削った分は溝の下の錐へ積み直すので、総量は供給から窓の外へ出た分を引いた量
             double change = VolumeChange(before, data.Height, data.CellMeters);
-            Assert.AreEqual(budget.Supplied - budget.Outflow, change, 1e-3 * budget.Supplied + 1.0);
+            Assert.AreEqual(budget.Supplied - budget.Outflow, change, 1e-3 * (budget.Supplied + budget.Eroded) + 1.0);
+
+            // 分級：崖の足もとの近く（6 m 以内）より、斜面の下の方（15 m より先）の岩屑に大きい岩が多い
+            double near = 0.0, far = 0.0;
+            int nearCount = 0, farCount = 0;
+            for (int i = 0; i < data.Height.Length; i++)
+            {
+                if (data.Scree[i] <= 0.05f) continue;
+                int x = i % data.Resolution, y = i / data.Resolution;
+                int distance = Math.Max(Math.Max(36 - x, x - 59), Math.Max(36 - y, y - 59));
+                if (distance <= 0) continue;
+                if (distance <= 6) { near += data.Coarse[i]; nearCount++; }
+                else if (distance > 15) { far += data.Coarse[i]; farCount++; }
+            }
+            Assert.Greater(nearCount, 0);
+            Assert.Greater(farCount, 0);
+            Assert.Greater(far / farCount, near / nearCount);
 
             // ゆるい土砂のあるセルの組で、安息角を明らかに超える組は残らない
             int n = data.Resolution;

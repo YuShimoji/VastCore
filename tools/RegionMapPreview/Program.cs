@@ -56,7 +56,7 @@ namespace Vastcore.RegionMap.Preview
             string lookAt = null;
             string lookCenter = null;
             string sedimentOut = null;
-            float sedimentAmount = 1f, sedimentGravity = 1f, sedimentWater = 1f;
+            float sedimentAmount = 1f, sedimentGravity = new RegionDetailSpec().SedimentGravity, sedimentWater = new RegionDetailSpec().SedimentWater;
 
             for (int a = 0; a < args.Length; a++)
             {
