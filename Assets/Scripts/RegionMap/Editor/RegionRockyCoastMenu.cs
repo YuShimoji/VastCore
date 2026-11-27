@@ -11,10 +11,12 @@ namespace Vastcore.RegionMap.Editor
 {
     public static class RegionRockyCoastMenu
     {
-        [MenuItem("Vastcore/Region Map/Rocky Coast Sample/Seed 8")]
+        private const string CoastMenu = "Vastcore/Region Map/Rocky Coast Sample/Seed ";
+
+        [MenuItem(CoastMenu + "8")]
         public static void Open() => OpenSample(8);
 
-        [MenuItem("Vastcore/Region Map/Rocky Coast Sample/Seed 9")]
+        [MenuItem(CoastMenu + "9")]
         public static void OpenSecond() => OpenSample(9);
 
         private static void OpenSample(int seed)
@@ -40,6 +42,68 @@ namespace Vastcore.RegionMap.Editor
         public static void CaptureFromCommandLine() => Capture(false);
 
         public static void CaptureRockfallFromCommandLine() => Capture(true);
+
+        public static void CaptureAppearanceFromCommandLine()
+        {
+            try
+            {
+                int seed = int.Parse(RegionMapMenu.Argument("-regionSeed", "8"), CultureInfo.InvariantCulture);
+                string menu = CoastMenu + seed;
+                var spec = SeedSpec(seed);
+                if (!EditorApplication.ExecuteMenuItem(menu)) throw new InvalidOperationException("Could not open " + menu);
+                var after = Selection.activeGameObject;
+                Camera camera = Camera.main;
+                Light sun = RenderSettings.sun;
+                if (sun == null) sun = GameObject.Find("Sun")?.GetComponent<Light>();
+                var ledge = after != null ? after.transform.Find("Jointed cliff and rockfall ledge") : null;
+                var cobbles = after != null ? after.transform.Find("Rounded cobbles at the waterline/DS011_Props_Real") : null;
+                if (camera == null || sun == null || ledge == null || cobbles == null || cobbles.childCount < 8)
+                    throw new InvalidOperationException("The coast menu needs to build a camera, a rock shelf and imported foreshore cobbles.");
+                Material rock = ledge.GetComponent<MeshRenderer>().sharedMaterial;
+                Texture gravel = rock.GetTexture("_BiomeGroundMap");
+                if (rock.GetVector("_RegionBiomeParams").x < 0.5f || gravel == null ||
+                    !gravel.name.StartsWith("rocks_ground_06", StringComparison.Ordinal))
+                    throw new InvalidOperationException("The coast menu did not bind the existing cliff and gravel textures.");
+
+                string output = Path.GetFullPath(RegionMapMenu.Argument("-regionOut", "artifacts/region-map/rocky-coast-appearance"));
+                Directory.CreateDirectory(output);
+                ShaderUtil.allowAsyncCompilation = false;
+                RegionTerrainViewMenu.Capture(camera, output, "opened-from-menu.png");
+                Debug.Log($"[RockyCoast] Opened {menu}; cliff {rock.GetTexture("_BiomeCliffMap").name}, foreshore {cobbles.childCount} clusters.");
+
+                var air = RegionAtmosphere.Create(RegionAtmosphere.Preset.ClearAfternoon);
+                spec.FixedWaveTime = 0f;
+                after.transform.Find("Sea").GetComponent<MeshRenderer>().sharedMaterial.SetFloat("_FixedTime", 0f);
+                RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = seed });
+                RegionRockyCoast.Result baseline = Build(region, spec, true, RegionPropCatalog.LoadDefault(), true, surfaceDetail: false);
+                baseline.Root.SetActive(false);
+                foreach (string value in RegionMapMenu.Argument("-sunAltitudes", "60,38,20,10").Split(','))
+                {
+                    float altitude = float.Parse(value, CultureInfo.InvariantCulture);
+                    air.SunAltitudeDegrees = altitude;
+                    air.PrepareSun();
+                    sun.transform.rotation = Quaternion.Euler(altitude, -spec.SeaYaw + 37f, 0f);
+                    string folder = Path.Combine(output, "sun-" + value);
+                    Directory.CreateDirectory(folder);
+                    for (int i = 0; i < ViewNames.Length; i++)
+                    {
+                        Place(camera, baseline, i);
+                        CapturePair(camera, baseline.Root, after, folder, ViewNames[i]);
+                    }
+                    if (altitude == 38f)
+                    {
+                        PlaceAtWaterEdge(camera, baseline);
+                        CapturePair(camera, baseline.Root, after, folder, "foreshore");
+                    }
+                }
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
 
         private static void Capture(bool compareRockfall)
         {
@@ -87,12 +151,7 @@ namespace Vastcore.RegionMap.Editor
                     {
                         Place(camera, after, i);
                         Debug.Log(FormattableString.Invariant($"[RockyCoast] sun={altitude} view={ViewNames[i]} eye={camera.transform.position:F3} target_shore={after.View.Focus:F3}"));
-                        before.Root.SetActive(true);
-                        after.Root.SetActive(false);
-                        RegionTerrainViewMenu.Capture(camera, folder, ViewNames[i] + "-before.png");
-                        before.Root.SetActive(false);
-                        after.Root.SetActive(true);
-                        RegionTerrainViewMenu.Capture(camera, folder, ViewNames[i] + "-after.png");
+                        CapturePair(camera, before.Root, after.Root, folder, ViewNames[i]);
                     }
                 }
                 EditorApplication.Exit(0);
@@ -105,6 +164,16 @@ namespace Vastcore.RegionMap.Editor
         }
 
         private static readonly string[] ViewNames = { "far", "mid", "near" };
+
+        private static void CapturePair(Camera camera, GameObject before, GameObject after, string folder, string view)
+        {
+            before.SetActive(true);
+            after.SetActive(false);
+            RegionTerrainViewMenu.Capture(camera, folder, view + "-before.png");
+            before.SetActive(false);
+            after.SetActive(true);
+            RegionTerrainViewMenu.Capture(camera, folder, view + "-after.png");
+        }
 
         private static void Place(Camera camera, RegionRockyCoast.Result coast, int view)
         {
@@ -124,6 +193,16 @@ namespace Vastcore.RegionMap.Editor
                     break;
                 default: throw new ArgumentOutOfRangeException(nameof(view));
             }
+        }
+
+        private static void PlaceAtWaterEdge(Camera camera, RegionRockyCoast.Result coast)
+        {
+            float yaw = coast.View.FacingYawDegrees * Mathf.Deg2Rad;
+            Vector3 inland = new Vector3(-Mathf.Sin(yaw), 0f, Mathf.Cos(yaw));
+            Vector3 along = Vector3.Cross(Vector3.up, inland);
+            camera.fieldOfView = 58f;
+            camera.transform.position = coast.View.Focus + 6f * inland + 17f * along + 3.6f * Vector3.up;
+            camera.transform.LookAt(coast.View.Focus - 13f * along - 1.5f * inland + 1.15f * Vector3.up);
         }
 
         private static RegionRockyCoastSpec SeedSpec(int seed)
@@ -157,13 +236,16 @@ namespace Vastcore.RegionMap.Editor
             air.Apply(camera, sun, 0f);
         }
 
-        private static RegionRockyCoast.Result Build(RegionData region, RegionRockyCoastSpec spec, bool shape, RegionPropCatalog catalog, bool refine)
+        private static RegionRockyCoast.Result Build(RegionData region, RegionRockyCoastSpec spec, bool shape, RegionPropCatalog catalog,
+            bool refine, bool surfaceDetail = true)
         {
             var watch = Stopwatch.StartNew();
-            RegionRockyCoast.Result result = RegionRockyCoast.Build(region, spec, shape, catalog, refine);
+            RegionRockyCoast.Result result = RegionRockyCoast.Build(region, spec, shape, catalog, refine, surfaceDetail);
             RegionPropView.Result props = result.Props;
             Debug.Log(FormattableString.Invariant(
                 $"[RockyCoast] shape={shape} refined={refine} ms={watch.ElapsedMilliseconds} shore_agreement={result.ShoreAgreement:P2} foot_m={result.CliffFootMeters:F1} rise_m={result.CliffRiseMeters:F1} joint_yaw={result.JointYaw:F1} grid_m={result.LocalStepMeters:F2} added_triangles={result.LocalTriangles} max_local_change_m={result.LocalHeightDelta:F1} props={props?.RealModelCount ?? 0} rockfall={result.RockfallProps?.RealModelCount ?? 0} {result.RockfallProps?.RealSummary}"));
+            if (result.ShoreCobbles != null)
+                Debug.Log($"[RockyCoast] foreshore={result.ShoreCobbles.RealModelCount}/{result.ShoreCobbles.PlacedCount} triangles={result.ShoreCobbles.RealTriangles} {result.ShoreCobbles.RealSummary} {string.Join(", ", result.ShoreCobbles.ContactMeasurements)}");
             return result;
         }
     }

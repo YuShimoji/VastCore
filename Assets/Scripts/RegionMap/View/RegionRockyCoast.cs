@@ -41,6 +41,7 @@ namespace Vastcore.RegionMap
             public float RaisedCliffMeters { get; internal set; }
             public int RaisedCells { get; internal set; }
             public RegionPropView.Result RockfallProps { get; internal set; }
+            public RegionPropView.Result ShoreCobbles { get; internal set; }
             public float CliffFootMeters { get; internal set; }
             public float CliffRiseMeters { get; internal set; }
             public float JointYaw { get; internal set; }
@@ -50,7 +51,7 @@ namespace Vastcore.RegionMap
         }
 
         public static Result Build(RegionData region, RegionRockyCoastSpec spec, bool shape, RegionPropCatalog catalog = null,
-            bool refineCliff = true)
+            bool refineCliff = true, bool surfaceDetail = true)
         {
             RegionDetail detail = RegionDetailBuilder.Build(region, new RegionDetailSpec
             {
@@ -124,7 +125,7 @@ namespace Vastcore.RegionMap
 
             var grid = RegionTerrainMesh.Build(terrain, 1, 1f);
             for (int i = 0; i < ground.Length; i++) grid.Positions[i * 3 + 1] = ground[i];
-            var rockfall = shape ? RegionCoastRockfall.Locate(region, detail, ground, grid.Indices, spec.SeaYaw) : null;
+            var rockfall = shape ? RegionCoastRockfall.Locate(region, detail, ground, grid.Indices, spec.SeaYaw, surfaceDetail) : null;
             var root = new GameObject(shape ? "Rocky Coast" : "Coast Before");
             Mesh mesh = RegionTerrainView.TerrainMesh(grid, null);
             Mesh ledge = rockfall != null && refineCliff ? rockfall.Refine(mesh) : null;
@@ -144,7 +145,8 @@ namespace Vastcore.RegionMap
                 RegionSurfaceMaterials.BindBiomeSurfaces(terrainMat, profile);
             }
             RegionTerrainView.AddPart(root.transform, "Headlands and ledges", mesh, terrainMat);
-            if (ledge != null) RegionTerrainView.AddPart(root.transform, ledge.name, ledge, terrainMat);
+            Material rockSurface = ledge != null && surfaceDetail ? CoastalSurface(terrainMat) : null;
+            if (ledge != null) RegionTerrainView.AddPart(root.transform, ledge.name, ledge, rockSurface ?? terrainMat);
 
             var waterMat = new Material(Resources.Load<Shader>("RegionMap3D/RegionCoastWater")) { hideFlags = HideFlags.DontSave };
             var depth = new Texture2D(n, n, TextureFormat.RGBA32, false, true)
@@ -162,7 +164,7 @@ namespace Vastcore.RegionMap
             waterRenderer.shadowCastingMode = ShadowCastingMode.Off;
             root.AddComponent<RegionRockyCoast>()._generated = new UnityEngine.Object[]
             {
-                mesh, ledge, texture, terrainMat, water, depth, waterMat,
+                mesh, ledge, texture, terrainMat, rockSurface, water, depth, waterMat,
             };
 
             Vector2 waterline = rockfall?.Waterline ?? focus;
@@ -188,12 +190,53 @@ namespace Vastcore.RegionMap
                     deposit.transform.SetParent(root.transform, false);
                     result.RockfallProps = RegionPropView.AddTo(deposit.transform, rockfall.Deposits(catalog, spec.PropsSeed), rockfall.HeightAt);
                     MatchDepositColor(result.RockfallProps.RealRoot);
+                    if (surfaceDetail)
+                    {
+                        var foreshore = new GameObject("Rounded cobbles at the waterline");
+                        foreshore.transform.SetParent(root.transform, false);
+                        result.ShoreCobbles = RegionPropView.AddTo(foreshore.transform, rockfall.ShoreCobbles(catalog, spec.PropsSeed), rockfall.HeightAt);
+                        RegionPropView.SettleLoosePieces(result.ShoreCobbles, rockfall.HeightAt, 0.024f);
+                        MatchDepositColor(result.ShoreCobbles.RealRoot, wet: true);
+                    }
                 }
             }
             return result;
         }
 
-        private static void MatchDepositColor(GameObject roots)
+        private static Material CoastalSurface(Material baseTerrain)
+        {
+            var material = new Material(baseTerrain) { name = "Exposed rock and wave-washed ground", hideFlags = HideFlags.DontSave };
+            var profile = RegionBiomeSurface.ProfileFor(RegionBiome.Coast);
+            profile.CliffR = 0.52f;
+            profile.CliffG = 0.465f;
+            profile.CliffB = 0.43f;
+            profile.CliffTileMetres = 4.0f;
+            profile.GroundTileMetres = 2.2f;
+            profile.SubsoilTileMetres = 2.75f;
+            profile.GroundPhotoColor = 0.86f;
+            profile.DetailStrength = 0.96f;
+            profile.NormalStrength = 1.4f;
+            RegionSurfaceMaterials.BindBiomeSurfaces(material, profile);
+            var cliff = CoastTextures("RegionMap3D/Surfaces/Cliff/rock_boulder_cracked_");
+            if (cliff.IsComplete) RegionSurfaceMaterials.BindBiomeTextureSet(material, "_BiomeCliff", cliff);
+            var gravel = CoastTextures("RegionMap3D/Surfaces/Talus/rocks_ground_06_");
+            if (gravel.IsComplete)
+            {
+                RegionSurfaceMaterials.BindBiomeTextureSet(material, "_BiomeGround", gravel);
+                RegionSurfaceMaterials.BindBiomeTextureSet(material, "_BiomeSubsoil", gravel);
+            }
+            material.SetFloat("_CoastalRockDetail", 1f);
+            return material;
+        }
+
+        private static RegionBiomeSurfaceTextures.TextureSet CoastTextures(string stem) => new RegionBiomeSurfaceTextures.TextureSet
+        {
+            Color = Resources.Load<Texture2D>(stem + "diff_1k"),
+            Normal = Resources.Load<Texture2D>(stem + "nor_gl_1k"),
+            Roughness = Resources.Load<Texture2D>(stem + "rough_1k"),
+        };
+
+        private static void MatchDepositColor(GameObject roots, bool wet = false)
         {
             if (roots == null) return;
             int baseColor = Shader.PropertyToID("_BaseColor");
@@ -204,7 +247,9 @@ namespace Vastcore.RegionMap
                 if (mat == null || !mat.HasProperty(baseColor)) continue;
                 Color tint = mat.GetColor(baseColor);
                 renderer.GetPropertyBlock(block);
-                block.SetColor(baseColor, new Color(tint.r * 0.64f, tint.g * 0.91f, tint.b * 1.13f, tint.a));
+                Color coast = wet ? new Color(tint.r * 0.54f, tint.g * 0.63f, tint.b * 0.72f, tint.a)
+                    : new Color(tint.r * 0.64f, tint.g * 0.91f, tint.b * 1.13f, tint.a);
+                block.SetColor(baseColor, coast);
                 renderer.SetPropertyBlock(block);
             }
         }

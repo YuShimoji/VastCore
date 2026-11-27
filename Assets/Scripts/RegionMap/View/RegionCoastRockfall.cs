@@ -16,6 +16,7 @@ namespace Vastcore.RegionMap
         private readonly int[] coarseIndices;
         private readonly float cell;
         private readonly int n;
+        private readonly bool exposedStone;
         private int minX, minZ, fineWidth, fineRows;
         private float[] fineGround;
         private float lowerBenchHeight;
@@ -31,20 +32,21 @@ namespace Vastcore.RegionMap
         internal int AddedTriangles { get; private set; }
         internal float JointYaw => Yaw(Inland + PrimaryJoint * Along);
 
-        private RegionCoastRockfall(RegionData data, float[] ground, int[] coarseIndices, float seaYaw)
+        private RegionCoastRockfall(RegionData data, float[] ground, int[] coarseIndices, float seaYaw, bool exposedStone)
         {
             terrain = data;
             this.ground = ground;
             this.coarseIndices = coarseIndices;
+            this.exposedStone = exposedStone;
             n = data.Resolution;
             cell = data.CellMeters;
             float radians = seaYaw * Mathf.Deg2Rad;
             Sea = new Vector2(Mathf.Sin(radians), Mathf.Cos(radians));
         }
 
-        internal static RegionCoastRockfall Locate(RegionData region, RegionDetail detail, float[] ground, int[] coarseIndices, float yaw)
+        internal static RegionCoastRockfall Locate(RegionData region, RegionDetail detail, float[] ground, int[] coarseIndices, float yaw, bool exposedStone)
         {
-            var site = new RegionCoastRockfall(detail.Data, ground, coarseIndices, yaw);
+            var site = new RegionCoastRockfall(detail.Data, ground, coarseIndices, yaw, exposedStone);
             bool[] regionalSea = RegionOceanMask.ConnectedSea(region);
             float perCell = detail.SizeMap / site.n;
             bool[] localSea = RegionOceanMask.ConnectedSea(detail.Data, i =>
@@ -173,6 +175,7 @@ namespace Vastcore.RegionMap
             mesh.triangles = indices;
             mesh.RecalculateNormals();
             MatchEdgeNormals(mesh, baseMesh.normals);
+            if (exposedStone) SetSurfaceChannels(mesh, positions);
             AddedTriangles = (indices.Length - removed) / 3;
             return mesh;
 
@@ -181,6 +184,28 @@ namespace Vastcore.RegionMap
                 Array.Copy(coarseIndices, source, remaining, target, length);
                 target += length;
             }
+        }
+
+        private void SetSurfaceChannels(Mesh mesh, Vector3[] positions)
+        {
+            var channels = new List<Vector4>(positions.Length);
+            for (int i = 0; i < positions.Length; i++)
+            {
+                Vector3 vertex = positions[i];
+                Vector2 local = new Vector2(vertex.x, -vertex.z) - Waterline;
+                float side = Vector2.Dot(local, Along);
+                float run = Vector2.Dot(local, Inland) - FootDistance;
+                int x = i % fineWidth, z = i / fineWidth;
+                float edgeDistance = Mathf.Min(Mathf.Min(x, fineWidth - 1 - x), Mathf.Min(z, fineRows - 1 - z)) * StepMeters;
+                float weight = RegionNoise.Smooth(0f, 16f, edgeDistance) * RegionNoise.Smooth(-2.8f, 0.5f, vertex.y)
+                    * (1f - RegionNoise.Smooth(42f, 72f, Mathf.Abs(side))) * (1f - RegionNoise.Smooth(26f, 51f, run));
+                // Bedrock shelves keep the same material as the cliff, even where their surface is almost flat.
+                float exposed = RegionNoise.Smooth(3.1f, 5.8f, vertex.y) * (1f - RegionNoise.Smooth(68f, 79f, vertex.y));
+                float wetHeight = 1.07f + 0.46f * RegionNoise.Fbm(side / 10f, run / 7f, 2, 371u);
+                float wet = 1f - RegionNoise.Smooth(0.08f, wetHeight, vertex.y);
+                channels.Add(new Vector4(exposed, wet, 1f, weight));
+            }
+            mesh.SetUVs(2, channels);
         }
 
         private void MatchEdgeNormals(Mesh mesh, Vector3[] coarseNormals)
@@ -241,7 +266,22 @@ namespace Vastcore.RegionMap
             float bed = dip + 7.8f * (baseLayer + RegionNoise.Smooth(0.24f, 0.79f, layer - baseLayer));
             float lowerWall = RegionNoise.Smooth(3.5f, 9f, shaped) * (1f - RegionNoise.Smooth(19f, 32f, shaped));
             shaped = Mathf.Lerp(shaped, bed, 0.74f * lowerWall * face);
+            if (exposedStone)
+            {
+                // Cross-joint benches terminate at the splits. Compress the slope at the plane without forming a spike.
+                float leftPanel = RegionNoise.Smooth(-31f, -23f, primary) * (1f - RegionNoise.Smooth(-9f, -2f, primary));
+                float rightPanel = RegionNoise.Smooth(0f, 6f, secondary) * (1f - RegionNoise.Smooth(20f, 28f, secondary));
+                shaped = JointBench(shaped, 11.2f - 0.16f * side + 0.041f * run, leftPanel * face);
+                shaped = JointBench(shaped, 18.2f + 0.19f * side - 0.035f * run, rightPanel * face);
+            }
             return Mathf.Max(0.06f, Mathf.Lerp(old, shaped, patch * protection));
+        }
+
+        private static float JointBench(float height, float level, float widthFade)
+        {
+            float delta = height - level;
+            float shelf = 1f - RegionNoise.Smooth(1.2f, 5.5f, Mathf.Abs(delta));
+            return Mathf.Lerp(height, level + delta * 0.12f, widthFade * shelf);
         }
 
         internal RegionPropProofSlice Deposits(RegionPropCatalog catalog, int seed)
@@ -291,6 +331,66 @@ namespace Vastcore.RegionMap
                 positions.Add(p);
                 result.Instances.Add(item);
             }
+        }
+
+        internal RegionPropProofSlice ShoreCobbles(RegionPropCatalog catalog, int seed)
+        {
+            var result = new RegionPropProofSlice
+            {
+                Biome = RegionBiome.Coast, UseRealAssets = true, HasGroundColor = true,
+                GroundRed = 0.36f, GroundGreen = 0.35f, GroundBlue = 0.34f,
+            };
+            var cobbles = catalog.GetProp("nat_pebble_cluster");
+            var random = new System.Random(unchecked(seed * 1777 + 6823));
+            var accepted = new List<Vector2>();
+            for (int group = 0; group < 9; group++)
+            {
+                float center = -38f + 9.5f * group + 4.6f * ((float)random.NextDouble() - 0.5f);
+                int placed = 0;
+                for (int attempt = 0; attempt < 10 && placed < 4; attempt++)
+                {
+                    float side = center + Mathf.Lerp(-3.7f, 3.7f, (float)random.NextDouble());
+                    float target = Mathf.Lerp(0.19f, 1.14f, (float)random.NextDouble());
+                    Vector2 column = Waterline + side * Along;
+                    Vector2 p = column;
+                    float best = 0.28f, height = 0f;
+                    for (float depth = -13f; depth <= 19f; depth += 0.65f)
+                    {
+                        Vector2 point = column + depth * Inland;
+                        float y = HeightAt(point.x, point.y);
+                        float delta = Mathf.Abs(y - target);
+                        if (delta >= best || y < 0.09f || y > 1.27f || IsWatercourse(Nearest(point))) continue;
+                        best = delta;
+                        p = point;
+                        height = y;
+                    }
+                    if (height <= 0f || accepted.Exists(other => (p - other).sqrMagnitude < 2.1f)) continue;
+                    float sx = (HeightAt(p.x + 0.44f, p.y) - HeightAt(p.x - 0.44f, p.y)) / 0.88f;
+                    float sz = (HeightAt(p.x, p.y + 0.44f) - HeightAt(p.x, p.y - 0.44f)) / 0.88f;
+                    float slope = Mathf.Atan(Mathf.Sqrt(sx * sx + sz * sz)) * Mathf.Rad2Deg;
+                    if (slope > 25f) continue;
+                    float scale = Mathf.Lerp(1.6f, 3.2f, (float)random.NextDouble());
+                    float yaw = Yaw(Along) + Mathf.Lerp(-60f, 60f, (float)random.NextDouble());
+                    var cobble = RegionPropPlacementSolver.ResolveSingle(cobbles, unchecked((uint)seed), result.Instances.Count,
+                        p.x, height, p.y, slope, sx, sz, scaleOverride: scale, yawOverride: yaw, biome: RegionBiome.Coast);
+                    cobble.X = p.x;
+                    cobble.Z = p.y;
+                    Vector3 facing = (Quaternion.FromToRotation(Vector3.up, new Vector3(-sx, 1f, sz).normalized)
+                        * Quaternion.Euler(0f, yaw, 0f)).eulerAngles;
+                    cobble.PitchDeg = facing.x;
+                    cobble.YawDeg = facing.y;
+                    cobble.RollDeg = -facing.z;
+                    cobble.ScaleY *= 0.76f;
+                    cobble.Y = height - Mathf.Clamp(cobble.DimensionsY * cobble.ScaleY * 0.18f, 0.023f, 0.082f);
+                    cobble.MeshVariant = "nat_pebble_cluster__wash_sorted_cobbles";
+                    cobble.DamageState = cobble.ConstructionVariant = "";
+                    cobble.TopDust = 0f;
+                    result.Instances.Add(cobble);
+                    accepted.Add(p);
+                    placed++;
+                }
+            }
+            return result;
         }
 
         internal bool InDeposit(float x, float z)

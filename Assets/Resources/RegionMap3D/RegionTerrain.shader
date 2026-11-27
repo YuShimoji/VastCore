@@ -20,10 +20,13 @@ Shader "Vastcore/RegionTerrain"
         [HideInInspector] _SedimentRect ("Sediment map placement", Vector) = (0, 0, 0, 0)
         [HideInInspector] _GrasslandSurface ("Grassland coordinates", Vector) = (0, 0, 0, 0)
         [HideInInspector] _GrasslandTrail ("Sample trail anchor", Vector) = (0, 0, 0, 0)
+        [HideInInspector][NoScaleOffset] _WoodlandTrailRows ("Woodland trail footprint", 2D) = "black" {}
+        [HideInInspector] _WoodlandTrail ("Woodland trail coordinates", Vector) = (0, 0, 0, 0)
         [HideInInspector] _RegionBiomeParams ("Biome surface settings", Vector) = (0, 0, 0, 0)
         [HideInInspector] _RegionBiomeTile ("Biome surface scales", Vector) = (0.4, 0.45, 0.36, 0.88)
         [HideInInspector] _RegionBiomeCliffColor ("Biome cliff tint", Vector) = (0, 0, 0, 0)
         [HideInInspector] _RegionBiomeGroundBlend ("Biome ground blend", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _CoastalRockDetail ("Coastal exposed rock and wet ground", Float) = 0
         [HideInInspector][NoScaleOffset] _BiomeGroundMap ("Biome turf", 2D) = "white" {}
         [HideInInspector][NoScaleOffset] _BiomeGroundNormal ("Biome turf normals", 2D) = "bump" {}
         [HideInInspector][NoScaleOffset] _BiomeGroundRoughness ("Biome turf roughness", 2D) = "white" {}
@@ -49,6 +52,7 @@ Shader "Vastcore/RegionTerrain"
             #pragma fragment Frag
             #pragma multi_compile_local_fragment _ REGION_SANDSTONE
             #pragma multi_compile_local_fragment _ REGION_BIOME_SURFACE
+            #pragma multi_compile_local_fragment _ REGION_WOODLAND_TRAIL
             #pragma require integers : REGION_BIOME_SURFACE
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
@@ -73,10 +77,12 @@ Shader "Vastcore/RegionTerrain"
                 float4 _SedimentRect;   // 土砂の地図の置き場所（RegionSedimentLayers）。z が 0 なら地図なし
                 float4 _GrasslandSurface;
                 float4 _GrasslandTrail;
+                float4 _WoodlandTrail;
                 float4 _RegionBiomeParams;
                 float4 _RegionBiomeTile;
                 float4 _RegionBiomeCliffColor;
                 float4 _RegionBiomeGroundBlend;
+                half _CoastalRockDetail;
             CBUFFER_END
 
             #if defined(REGION_SANDSTONE)
@@ -167,8 +173,20 @@ Shader "Vastcore/RegionTerrain"
                 {
                     float biomeDist = distance(input.positionWS, _WorldSpaceCameraPos);
                     BiomeSurfaceExtra bExtra;
+                    half coastalRock = _CoastalRockDetail > 0.5h ? max(rock, input.biomeSurface.x) : rock;
                     half3 biomeAlbedo = EvaluateBiomeSurface(
-                        input.positionWS, normal, rock, albedo, input.biomeSurface, input.color.a, biomeDist, bExtra);
+                        input.positionWS, normal, coastalRock, albedo, input.biomeSurface, input.color.a, biomeDist, bExtra);
+                    if (_CoastalRockDetail > 0.5h)
+                    {
+                        half wet = saturate(input.biomeSurface.y);
+                        float3 p = input.positionWS;
+                        half weathering = BiomeNoise(float2(p.x + 0.39 * p.z, p.y - 0.23 * p.z) * 0.16);
+                        half3 rockTone = lerp(half3(0.55h, 0.62h, 0.71h), half3(0.89h, 0.83h, 0.76h), weathering);
+                        biomeAlbedo *= lerp(half3(0.43h, 0.47h, 0.50h), rockTone, coastalRock);
+                        biomeAlbedo *= lerp(1.0h, half3(0.46h, 0.53h, 0.61h), wet);
+                        bExtra.roughness = lerp(bExtra.roughness, 0.55h, wet);
+                        bExtra.specular = lerp(bExtra.specular, 0.22h, wet);
+                    }
                     albedo = lerp(albedo, biomeAlbedo, biomeWeight);
                     shade = normalize(lerp(shade, bExtra.normalWS, biomeWeight));
                     surfaceOcclusion *= lerp(1.0h, bExtra.occlusion, biomeWeight);

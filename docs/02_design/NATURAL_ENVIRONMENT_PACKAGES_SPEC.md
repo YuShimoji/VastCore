@@ -34,6 +34,7 @@
 
 - Unity の `Vastcore > Region Map > Rocky Coast Sample > Seed 8 / Seed 9` で海岸Aを開く。`Vastcore.RegionMap.Editor.RegionRockyCoastMenu.CaptureFromCommandLine` は `-regionSeed`、`-regionOut`、`-sunAltitudes` を受け、`-coastHeight`、`-coastShelfWidth`、`-coastShapeSeed`、`-coastPropsSeed` で崖・岩棚・Propsを再生成できる。
 - 代表区間の前後比較は `Vastcore.RegionMap.Editor.RegionRockyCoastMenu.CaptureRockfallFromCommandLine` に同じ引数を渡す。前回Aと今回Aで、拡大地形の標高0 mを横切る岸を共有する。岸から沖まで外洋の連結水域に含まれることを確かめ、近景は水際から沖20 m・海面上3.4 mに置く。前後で遠・中・近のカメラ、太陽の方向と高度、波の時刻を固定する。
+- 岩肌と水際の仕上げを比較する場合は `Vastcore.RegionMap.Editor.RegionRockyCoastMenu.CaptureAppearanceFromCommandLine` に `-regionSeed`、`-regionOut`、`-sunAltitudes` を渡す。通常の `Seed 8 / Seed 9` メニューから現行の場面を開き、`0da4d2a` 時点の代表区間と同じ視点で撮る。太陽38°では、水面と礫の接地を見るため岸に沿う低い視点も撮る。
 
 ## 洞窟Aの接続と部品
 
@@ -71,6 +72,14 @@
 別地点で再利用できた部品は、海岸の棚岩・割れ岩・角礫（DS-011のFBXをseed 8で32点、9で31点使用）と、洞窟の欠け・角岩・小岩片（短・長で同じ構成）。海岸では元の海陸と水路を保ち、支持面の傾斜31°以下で岩を地面に沈める。洞窟では入口と断面を共有し、崩落を橋の上下の歩行帯から外す。環境をまたいで使う配置条件は、先に崩落の起点と支持面を決め、起点に大きい岩、広がる方向へ小岩を置くこと。光は通路の長さと遮蔽に合わせて調整する。
 
 洞窟Aの差分は `layered-cave` の `0f39183`。歩行比較の `RegionCaveWalkSmoke.Run` は `-caveRevision before|after` で形と光を切り替える。[海岸の前後48枚、洞窟の前後と短・長の帰路、Unityログ](<D:/AI-Runs/VastCore/coast-and-cave/refinement/index.html>)
+
+#### 海岸Aの岩盤と水際の仕上げ
+
+前回は写真材質を指定しても頂点に重みがなく、岩面の色と法線が効いていなかった。細密メッシュに重みを渡し、崖と棚は既存の `rock_boulder_cracked`、浜は `rocks_ground_06` を使う。海面からの高さで濡れを変え、水際の緩斜面には既存FBX `wash_sorted_cobbles` を小群で配置する。崖直下の角礫から浜の丸礫へつなぐ。横切れ目の最初の試作で鋭い三角が出たため、傾いた面の付近だけ勾配を弱め、縦の節理に短い段差を交差させる方式に変えた。
+
+丸礫は海面上0.09〜1.27 m、傾斜25°以下を配置候補とする。群れを斜面に沿わせ、礫ごとにLOD0・1の底を地表へ2.4 cm沈める。最初は群れの端で影と礫が離れて見えたが、石ごとの接地後に収まった。通常メニューのseed 8・9で丸礫33・25群を確認し、遠・中・近を太陽4条件、水際視点を38°で前後撮影した。[NPSの実景、完成想定図、Unityの前後52枚とメニューの画面](<D:/AI-Runs/VastCore/coast-and-cave/refinement/coast-appearance.html>)
+
+近景で岩肌の凹凸と、岩盤・濡れた地面・丸礫の区別が付いた。完成想定図に比べて中景の縦溝は大きく、岩棚の横の張り出しが弱い。礫も浜全体を埋める厚みには達しておらず、水際の泡の間隔が揃って見える。別地点では塗り分けと水際の高低差に従う配置を再利用し、礫の密度と岩棚の形を独立に変える。
 
 海岸は今回のAの前後を確認した後、C 岩礁とポケットビーチ、B 砂浜と砂丘の順に進める。PC Playerでの1.2 ms予算と地域探索から洞窟入口への接続は、段5の残りの確認項目。
 

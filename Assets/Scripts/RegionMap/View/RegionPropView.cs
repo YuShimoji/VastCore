@@ -296,6 +296,36 @@ namespace Vastcore.RegionMap
             return bottom;
         }
 
+        internal static void SettleLoosePieces(Result result, Func<float, float, float> heightAt, float inset)
+        {
+            if (result.RealRoot == null) return;
+            Transform frame = result.RealRoot.transform;
+            var verticesByMesh = new Dictionary<Mesh, Vector3[]>();
+            float maximum = float.NegativeInfinity;
+            int count = 0;
+            foreach (Transform placed in frame)
+            {
+                foreach (MeshFilter part in placed.GetComponentsInChildren<MeshFilter>(true))
+                {
+                    Mesh mesh = part.sharedMesh;
+                    if (mesh == null || (Application.isPlaying && !mesh.isReadable)) continue;
+                    if (!verticesByMesh.TryGetValue(mesh, out Vector3[] vertices))
+                    {
+                        vertices = mesh.vertices;
+                        verticesByMesh.Add(mesh, vertices);
+                    }
+                    if (vertices.Length == 0) continue;
+                    float lift = -BottomClearance(part, frame, vertices, heightAt) - inset;
+                    part.transform.position += frame.TransformVector(Vector3.up * lift);
+                    maximum = Mathf.Max(maximum, BottomClearance(part, frame, vertices, heightAt));
+                    count++;
+                }
+                if (placed.TryGetComponent(out LODGroup lod)) lod.RecalculateBounds();
+            }
+            if (count > 0)
+                result.ContactMeasurements.Add(FormattableString.Invariant($"loose pieces: parts={count} maxGapCm={maximum * 100f:F2}"));
+        }
+
         private static GameObject BuildRealInstance(RegionPropInstance inst, RegionPropModel model, RealContext ctx, int index,
             Func<float, float, float> heightAt, float rootY, Result result)
         {
