@@ -50,7 +50,7 @@
   [switch]$GrasslandGround,
   [string]$LookBiome = '',
   [switch]$GrasslandCoverOff,
-  [ValidateSet('Tussocks','TussockGeometry','Continuous','Previous','Denser','Overlapping')] [string]$GrasslandStyle = 'Tussocks',
+  [ValidateSet('Colonies','Tussocks','TussockGeometry','Continuous','Previous','Denser','Overlapping')] [string]$GrasslandStyle = 'Colonies',
   [switch]$GrasslandTiming,
   # view3d: 表面の写真素材の候補を撮り比べる（T5）。候補の一覧（JSON）を渡すと、-SunAltitudes の太陽の高さごとに場面を作り、
   #         素材なしと各候補（1 役ずつ差し替え）の固定の視点を <OutDir>/sun<高さ>/<候補>/ へ撮る（RegionSurfaceCandidates）。
@@ -122,7 +122,7 @@ if ($Mode -eq 'setup') {
     if ($GrasslandSample) { $unityArgs += @('-grasslandSample', 'true') }
     if ($LookBiome) { $unityArgs += @('-lookBiome', $LookBiome) }
     if ($GrasslandCoverOff) { $unityArgs += @('-grasslandCover', 'false') }
-    if ($GrasslandStyle -ne 'Tussocks') { $unityArgs += @('-grasslandStyle', $GrasslandStyle) }
+    if ($GrasslandStyle -ne 'Colonies') { $unityArgs += @('-grasslandStyle', $GrasslandStyle) }
     if ($GrasslandTiming) { $unityArgs += @('-grasslandTiming', 'true') }
     if ($LookCenter) { $unityArgs += @('-lookCenter', $LookCenter) }
     if ($AlcoveReview) { $unityArgs += @('-alcoveReview', 'true') }

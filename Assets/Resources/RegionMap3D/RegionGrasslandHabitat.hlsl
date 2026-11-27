@@ -77,6 +77,80 @@ float3 GrasslandTussockCanopy(float2 metres, float moisture)
     return float3(t * t * (3.0 - 2.0 * t), slope);
 }
 
+float GrasslandColonyAmount(float eyeDistance)
+{
+    return smoothstep(28.0, 76.0, eyeDistance);
+}
+
+float2 GrasslandTerrainSlope(float3 normal)
+{
+    return normal.xz * float2(-1.0, 1.0) / max(0.36, normal.y);
+}
+
+// The terrain height bends the bands around the slopes. Broad patches break up bands of equal height.
+// Return canopy growth and its east/south derivatives in metres for both the mesh and distant shading.
+float3 GrasslandColony(float2 metres, float groundHeight, float2 terrainSlope, float moisture)
+{
+    const float2 along = float2(0.80, 0.60);
+    const float2 drift = float2(-0.019, 0.023);
+    const float2 broadScale = float2(62.0, 41.0);
+    const float2 localScale = float2(10.0, 8.0);
+    float3 broad = GrasslandNoiseAndSlope(metres / broadScale + float2(8.0, -4.0));
+    float contour = groundHeight + 5.2 * (broad.x - 0.5) + dot(metres, drift);
+    float3 band = GrasslandNoiseAndSlope(float2(dot(along, metres) / 42.0, contour / 3.6) + float2(12.4, -6.1));
+    float3 local = GrasslandNoiseAndSlope(metres / localScale + float2(31.0, -16.0));
+    float field = 0.32 * broad.x + 0.43 * band.x + 0.10 * local.x + 0.15 * moisture;
+    float2 contourSlope = terrainSlope + 5.2 * broad.yz / broadScale + drift;
+    float2 gradient = 0.32 * broad.yz / broadScale + 0.10 * local.yz / localScale
+        + 0.43 * (band.y * along / 42.0 + band.z * contourSlope / 3.6);
+    float t = saturate((field - 0.25) / 0.48);
+    return float3(t * t * (3.0 - 2.0 * t), gradient * ((6.0 / 0.48) * t * (1.0 - t)));
+}
+
+float GrasslandColonyHeight(float growth)
+{
+    return 0.14 + 1.07 * growth * growth;
+}
+
+float3 GrasslandColonyNormal(float3 terrainNormal, float3 colony, float amount)
+{
+    float2 rise = (2.14 * colony.x * amount) * colony.yz;
+    return normalize(terrainNormal + float3(-rise.x, 0.0, rise.y) * terrainNormal.y);
+}
+
+half3 GrasslandColonyColor(half growth)
+{
+    return lerp(half3(0.459h, 0.425h, 0.304h), half3(0.315h, 0.366h, 0.232h), growth);
+}
+
+half GrasslandColonyOcclusion(half growth)
+{
+    return lerp(0.82h, 0.62h, growth);
+}
+
+// Approximate sunlight filtered by the deeper layer of leaves, with a longer path at a low sun angle.
+half GrasslandColonyTransmission(half growth, half sunElevation)
+{
+    half depth = smoothstep(0.22h, 0.82h, growth);
+    return exp2(-1.36h * depth * lerp(1.0h, 0.44h, saturate(sunElevation)));
+}
+
+// Directional foliage texture, filtered in screen space as the canopy recedes.
+half GrasslandColonyGrain(float2 metres, half growth)
+{
+    float2 flow = float2(dot(metres, float2(0.80, 0.60)), dot(metres, float2(-0.60, 0.80)));
+    float2 mid = flow * float2(0.62, 1.17);
+    float2 fine = flow * float2(2.3, 7.2) + float2(0.0, 1.8 * growth);
+    float midWeight = 1.0 - smoothstep(0.31, 1.36, max(length(ddx(mid)), length(ddy(mid))));
+    float fineWeight = 1.0 - smoothstep(0.37, 1.34, max(length(ddx(fine)), length(ddy(fine))));
+    half grain = 1.0h;
+    [branch] if (midWeight > 0.001)
+        grain += (GrasslandNoise(mid + float2(9.0, -2.0)) - 0.5) * midWeight * 0.43;
+    [branch] if (fineWeight > 0.001)
+        grain += (GrasslandNoise(fine + float2(-13.0, 6.0)) - 0.5) * fineWeight * 0.34;
+    return grain;
+}
+
 half3 GrasslandCrownColor(half growth)
 {
     return lerp(half3(0.52h, 0.48h, 0.34h), half3(0.285h, 0.375h, 0.235h), growth);

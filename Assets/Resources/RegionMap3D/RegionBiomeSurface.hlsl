@@ -90,6 +90,7 @@ half3 EvaluateBiomeSurface(
     half3 canopy = baseAlbedoLinear;
     half trailWear = 0.0h;
     half growth = 0.0h;
+    half colonyWeight = 0.0h;
     half3 groundNormal = normalWS;
     if (meadow)
     {
@@ -139,6 +140,23 @@ half3 EvaluateBiomeSurface(
             canopy = RegionDisplayToLinear(lerp(half3(0.43h, 0.43h, 0.32h), half3(0.32h, 0.39h, 0.25h), growth));
             canopy *= 0.89h + 0.23h * mid;
             baseAlbedoLinear = lerp(baseAlbedoLinear, canopy, coverage * lerp(0.61h, 0.95h, smoothstep(38.0, 185.0, viewDistance)));
+        }
+        colonyWeight = _GrasslandSurface.w > 2.5
+            ? GrasslandColonyAmount(viewDistance) * coverage * smoothstep(0.78h, 0.97h, normalWS.y) : 0.0h;
+        [branch]
+        if (colonyWeight > 0.001h)
+        {
+            // Continue the same meadow across the distance at which the raised canopy merges into the ground.
+            float3 stand = GrasslandColony(geographic, positionWS.y, GrasslandTerrainSlope(normalWS), biomeChannels.y);
+            half transmission = GrasslandColonyTransmission(stand.x, GetMainLight().direction.y);
+            half3 colonyColor = RegionDisplayToLinear(GrasslandColonyColor(stand.x)) *
+                GrasslandColonyGrain(geographic, stand.x) * lerp(1.0h, transmission, 0.65h);
+            canopy = lerp(canopy, colonyColor, colonyWeight);
+            baseAlbedoLinear = lerp(baseAlbedoLinear, colonyColor, colonyWeight);
+            groundNormal = normalize(lerp(groundNormal, GrasslandColonyNormal(normalWS, stand, 1.0), colonyWeight));
+            extra.normalWS = groundNormal;
+            extra.occlusion = lerp(extra.occlusion, GrasslandColonyOcclusion(stand.x), colonyWeight);
+            growth = lerp(growth, stand.x, colonyWeight);
         }
     }
 
@@ -194,6 +212,7 @@ half3 EvaluateBiomeSurface(
                 half understory = lerp(0.56h, 0.38h, growth);
                 tintedGround = lerp(tintedGround * lerp(1.0h, understory, 1.0h - trailWear), canopy,
                     (1.0h - trailWear) * smoothstep(24.0, 145.0, viewDistance));
+                tintedGround = lerp(tintedGround, canopy, 0.65h * colonyWeight);
             }
         }
 

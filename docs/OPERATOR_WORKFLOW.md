@@ -26,8 +26,7 @@ handoffとして repository variable `PROJECT_PULSE_BRANCH` と
 
 ## Supervisor To Developer Mission Packet
 
-一つのPromptは一つの成果単位を渡す。実装手順の細分化ではなく、以下の契約を
-短く埋める。既知の状態は commit と正本パスで参照し、Prompt本文に複製しない。
+一つのPromptで一つの成果単位を渡し、実装手順は任せる。既知の状態は commit と正本パスを参照する。
 
 ```text
 [VASTCORE MISSION]
@@ -43,9 +42,13 @@ Sync on close: runtime-state と今回変わる owning artifact
 Start from: branch/commit と必要最小限の task/spec/正本パス
 ```
 
-次の作業が Outcome、Scope、Autonomy の内側なら、監修AIは追加のmicro-promptを
-発行せず、開発AIも確認待ちにしない。新しいPromptが必要なのは、成果単位が閉じた、
-stop condition に触れた、またはユーザーが方向を変えた時だけ。
+画が成果に入る環境・パッケージの初回依頼では、`Creative checkpoint` で出典付き参考画像を開き、
+取り入れる点と完成想定図を本制作前に示すよう指定する。`Acceptance` には通常の入口と代表場面・
+視点を入れる。初回の試作を返す前に Unity の実画面を完成想定図と同じ構図で比べ、依頼内で
+直して撮り直す。機能の確認と見た目に残る差を示す。
+
+開発AIは Outcome、Scope、Autonomy の内側を自律で進める。新しいPromptは成果単位の完了、
+stop condition、またはユーザーが方向を変えた時に発行する。
 
 ## Direction Before Production
 
@@ -97,16 +100,16 @@ stop condition に触れた、またはユーザーが方向を変えた時だ�
 固定サンプルは小道・露岩を含む。同じ seed・晴天の前後と、地域探索からの自動生成を PowerShell で撮る。
 
 ```powershell
-.\scripts\region-map.ps1 -Mode view3d -GrasslandSample -Seed 8 -LookSky ours -GrasslandStyle Continuous -GrasslandTiming -OutDir artifacts/region-map/grassland-before
+.\scripts\region-map.ps1 -Mode view3d -GrasslandSample -Seed 8 -LookSky ours -GrasslandStyle Tussocks -GrasslandTiming -OutDir artifacts/region-map/grassland-before
 .\scripts\region-map.ps1 -Mode view3d -GrasslandSample -Seed 8 -LookSky ours -GrasslandTiming -OutDir artifacts/region-map/grassland-after
 .\scripts\region-map.ps1 -Mode explore -GrasslandGround -Seed 8 -OutDir artifacts/region-map/grassland-ground
 ```
 
-固定撮影は遠中近・目の高さ・俯瞰・足元・露岩・柵・小道。既定の `Tussocks` は近景の細い葉と株の投影素材、中遠景の株の立体を重ねる。`TussockGeometry` は近景の株を細い葉の立体だけで描いて比較する。
+固定撮影は遠中近・目の高さ・俯瞰・足元・露岩・柵・小道。既定の `Colonies` は近景の細葉と株を使い、中遠景は斜面に沿う低い草の面と葉先を重ねる。`Tussocks` は前版、`TussockGeometry` は近景を細葉の立体で描く比較用。
 
 `-GrasslandTiming` は足元と目の高さの被覆マスク、視野に重なるタイルの三角形、GPU 同期を含む描画時間を出す。日照は `-SunSweep '60,38,20,10'`、別地点は `-LookBiome auto -LookCenter 'X,Y'`。Editor の入口は `Vastcore > Region Map > Open 3D Grassland Env Sample`。探索では seed 8 の X37.55、Y57.86 から `3Dへダイブ` し、Esc で戻る。
 
-別の環境でも、完成図で必要な輪郭・重なり・影を距離別に切り出す。既存素材を実寸で置き、小試験の不足を埋める素材だけを足す。草原では細葉2種から [株アトラスと投影範囲の焼き出し](../scripts/bake-meadow-tussocks.py) を追加した。素材の出所・実寸・見る角度を記録し、実装の前後は目の高さと見下ろし、別地点で照合する。被覆・陰影・描画負荷はそれぞれ現物で確かめる。
+別の環境でも、完成図に必要な輪郭・重なり・影を距離別に切り出す。同一カメラで立体の入切を見て、素材と配置・陰影のどこが差を生むか特定する。既存素材を実寸で試し、素材の不足が残る場合は出所・実寸・見る角度を記録して足す。草原では細葉2種から [株アトラスと投影範囲](../scripts/bake-meadow-tussocks.py) を焼いた。前後を目の高さ・見下ろし・別地点で照合し、被覆・陰影・描画負荷を確かめる。
 
 元の 1K Blend 2種を付属の `textures` とともに展開し、`python scripts/bake-meadow-tussocks.py <Blender.exe> <素材フォルダ> <作業フォルダ> Assets/Resources/RegionMap3D/MeadowTussocks.png` で PNG と投影範囲 JSON を作る。出所とライセンスは [素材記録](../Assets/Resources/RegionMap3D/texture-source.json) にある。
 

@@ -3,6 +3,9 @@ Shader "Vastcore/RegionGrasslandCover"
     Properties
     {
         [HideInInspector] _GrasslandContinuous ("Continuous cover", Float) = 0
+        [HideInInspector] _GrasslandColonies ("Colony canopy", Float) = 0
+        [HideInInspector] _GrasslandOrigin ("Geographic origin", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _GrasslandTrail ("Trail origin and presence", Vector) = (0, 0, 0, 0)
         [HideInInspector] _GrasslandAlphaToMask ("Alpha to coverage", Float) = 0
         [NoScaleOffset] _MeadowTussocks ("Meadow tussocks", 2D) = "white" {}
     }
@@ -29,6 +32,9 @@ Shader "Vastcore/RegionGrasslandCover"
 
             CBUFFER_START(UnityPerMaterial)
                 float _GrasslandContinuous;
+                float _GrasslandColonies;
+                float4 _GrasslandOrigin;
+                float4 _GrasslandTrail;
             CBUFFER_END
             #if defined(GRASSLAND_TUSSOCKS)
             TEXTURE2D(_MeadowTussocks);
@@ -40,7 +46,8 @@ Shader "Vastcore/RegionGrasslandCover"
                 float4 positionOS : POSITION;
                 float4 rootAndLayer : TEXCOORD0;
                 #if defined(GRASSLAND_TUSSOCKS)
-                float3 tussock : TEXCOORD1; // atlas UV and card flag
+                float3 normalOS : NORMAL;
+                float3 tussock : TEXCOORD1; // atlas UV and geometry kind: blades, side, crown, or canopy
                 #endif
                 half4 plant : COLOR; // growth, variation, terrain sun, dry stem
             };
@@ -52,15 +59,42 @@ Shader "Vastcore/RegionGrasslandCover"
                 half4 leaf : TEXCOORD1;
                 #if defined(GRASSLAND_TUSSOCKS)
                 float4 atlasAndFade : TEXCOORD2;
-                half4 crown : TEXCOORD3; // radial lighting normal and card flag
+                half4 crown : TEXCOORD3; // lighting normal and geometry kind
                 #endif
             };
+
+            #if defined(GRASSLAND_TUSSOCKS)
+            float2 GrasslandMetres(float3 positionWS)
+            {
+                return positionWS.xz * float2(1.0, -1.0) + _GrasslandOrigin.xy;
+            }
+
+            Varyings VertColony(Attributes input, float3 rootWS, float eyeDistance)
+            {
+                float2 metres = GrasslandMetres(rootWS);
+                float3 groundNormal = TransformObjectToWorldNormal(input.normalOS);
+                float3 stand = GrasslandColony(metres, rootWS.y, GrasslandTerrainSlope(groundNormal), input.plant.r);
+                float reach = GrasslandColonyAmount(eyeDistance) * (1.0 - smoothstep(317.0, 458.0, eyeDistance));
+                float land = input.plant.g;
+                if (_GrasslandTrail.z > 0.5)
+                    land *= 1.0 - GrasslandTrailWear(metres - _GrasslandTrail.xy);
+                float lift = 0.49 * GrasslandColonyHeight(stand.x) * reach * land;
+                Varyings o;
+                o.positionWS = rootWS + float3(0, lift - 0.025, 0);
+                o.positionCS = TransformWorldToHClip(o.positionWS);
+                o.atlasAndFade = float4(metres, reach * land, eyeDistance);
+                o.crown = half4(GrasslandColonyNormal(groundNormal, stand, 0.65 * reach * land), input.tussock.z);
+                o.leaf = half4(stand.x, 0.0h, 0.0h, input.plant.b);
+                return o;
+            }
+            #endif
 
             Varyings Vert(Attributes input)
             {
                 float3 root = input.rootAndLayer.xyz;
                 float3 offset = input.positionOS.xyz - root;
-                float eyeDistance = distance(TransformObjectToWorld(root), _WorldSpaceCameraPos);
+                float3 rootWS = TransformObjectToWorld(root);
+                float eyeDistance = distance(rootWS, _WorldSpaceCameraPos);
                 float layer = input.rootAndLayer.w;
                 float2 band = layer > 1.5 ? float2(8.0, 16.0) : layer > 0.5 ? float2(18.0, 33.0) : float2(38.0, 86.0);
                 float reach = lerp(0.74, 1.0, input.plant.g);
@@ -76,22 +110,45 @@ Shader "Vastcore/RegionGrasslandCover"
                 if (layer > 2.5) fade *= smoothstep(40.0, 94.0, eyeDistance);
                 Varyings o;
                 #if defined(GRASSLAND_TUSSOCKS)
+                if (input.tussock.z > 2.5) return VertColony(input, rootWS, eyeDistance);
                 band = layer > 2.5 ? float2(315.0, 463.0) : layer > 1.5 ? float2(13.0, 23.5)
                     : layer > 0.5 ? float2(16.0, 29.5) : float2(112.0, 176.0);
+                bool distantTips = _GrasslandColonies > 0.5 && layer > 2.5;
+                bool colonyTips = _GrasslandColonies > 0.5 && (layer < 0.5 || distantTips);
+                if (colonyTips && layer < 0.5) band = float2(62.0, 142.0);
                 reach = lerp(0.9, 1.0, input.plant.g);
                 fade = 1.0h - smoothstep(band.x * reach, band.y * reach, eyeDistance);
                 if (layer < 0.5) fade *= smoothstep(8.0, 24.0, eyeDistance);
-                if (layer > 2.5) fade *= smoothstep(54.0, 119.0, eyeDistance);
+                if (layer > 2.5) fade *= distantTips ? smoothstep(38.0, 108.0, eyeDistance)
+                    : smoothstep(54.0, 119.0, eyeDistance);
+                half amount = colonyTips ? smoothstep(28.0, 61.0, eyeDistance) : 0.0h;
+                half group = input.plant.r;
+                float3 groupNormal = float3(0, 1, 0);
+                [branch]
+                if (amount > 0.0h)
+                {
+                    float3 groundNormal = distantTips ? TransformObjectToWorldNormal(input.normalOS) : float3(0, 1, 0);
+                    float2 slope = GrasslandTerrainSlope(groundNormal);
+                    float3 stand = GrasslandColony(GrasslandMetres(rootWS), rootWS.y, slope, input.plant.a);
+                    group = stand.x;
+                    // Tips remain more numerous and stand taller in the thick part of the same colony.
+                    fade *= lerp(1.0h, lerp(distantTips ? 0.72h : 0.52h, 1.0h, group), amount);
+                    float rootPlane = dot(slope, offset.xz * float2(1.0, -1.0));
+                    float tipsHeight = distantTips ? lerp(0.54, 1.68, group) : lerp(0.79, 1.18, group);
+                    offset.y = rootPlane + (offset.y - rootPlane) * lerp(1.0, tipsHeight, amount);
+                    if (distantTips) groupNormal = GrasslandColonyNormal(groundNormal, stand, 0.82);
+                }
                 o.atlasAndFade = float4(input.tussock.xy, fade, eyeDistance);
                 float2 radial = offset.xz / max(0.10, length(offset.xz) + max(0.0, offset.y) * 0.38);
-                o.crown = half4(radial.x, 0.86h, radial.y, input.tussock.z);
+                half3 cardNormal = half3(radial.x, 0.86h, radial.y);
+                o.crown = half4(lerp(cardNormal, groupNormal, amount * (distantTips ? 0.88h : 0.44h)), input.tussock.z);
                 if (input.tussock.z > 0.5)
                 {
                     // Leave the card's height intact as its silhouette thins at the LOD boundary.
                     float scale = fade > 0.004 ? lerp(0.70, 1.0, fade) : 0.0;
                     o.positionWS = TransformObjectToWorld(root + offset * scale);
                     o.positionCS = TransformWorldToHClip(o.positionWS);
-                    o.leaf = half4(input.plant.rg, 0.0h, input.plant.b);
+                    o.leaf = half4(lerp(input.plant.r, group, amount), input.plant.g, amount, input.plant.b);
                     return o;
                 }
                 #endif
@@ -133,6 +190,31 @@ Shader "Vastcore/RegionGrasslandCover"
             }
 
             #if defined(GRASSLAND_TUSSOCKS)
+            half4 ShadeColony(Varyings i)
+            {
+                float2 metres = i.atlasAndFade.xy;
+                half growth = i.leaf.r;
+                half3 albedo = RegionDisplayToLinear(GrasslandColonyColor(growth)) * GrasslandColonyGrain(metres, growth) * 0.90h;
+                half coverage = i.atlasAndFade.z;
+                if (_GrasslandTrail.z > 0.5)
+                    coverage *= 1.0h - GrasslandTrailWear(metres - _GrasslandTrail.xy);
+                // Fade with stable holes in the cover so the cutoff never draws a ring around the viewer.
+                half edge = lerp(0.08h, 0.88h, GrasslandNoise(metres * 0.79 + float2(-7.0, 11.0)));
+                clip(coverage - edge);
+                half alpha = saturate(0.52h + (coverage - edge) * 6.0h);
+                Light sun = GetMainLight();
+                [branch]
+                if (i.atlasAndFade.w < 72.0)
+                    sun.shadowAttenuation = MainLightRealtimeShadow(TransformWorldToShadowCoord(i.positionWS));
+                half3 normal = normalize(i.crown.xyz);
+                half sunlit = min(sun.shadowAttenuation, i.leaf.a);
+                half direct = (0.10h + 0.90h * saturate(dot(normal, sun.direction))) *
+                    GrasslandColonyTransmission(growth, sun.direction.y);
+                half3 ambient = SampleSH(normal) + _RegionBounceColor.rgb * 0.16h;
+                half3 color = albedo * (sun.color * sunlit * direct + ambient * GrasslandColonyOcclusion(growth));
+                return GrasslandOutput(color, i.positionWS, alpha);
+            }
+
             half4 ShadeTussock(Varyings i)
             {
                 half4 photo = SAMPLE_TEXTURE2D(_MeadowTussocks, sampler_MeadowTussocks, i.atlasAndFade.xy);
@@ -151,9 +233,20 @@ Shader "Vastcore/RegionGrasslandCover"
                 float2 frameUv = frac(i.atlasAndFade.xy * 4.0);
                 half height = i.crown.w > 1.5 ? saturate(1.31 - 2.1 * length(frameUv - 0.5))
                     : saturate((frameUv.y - 0.11) * 2.1);
+                if (i.leaf.b > 0.0h)
+                {
+                    half3 colony = RegionDisplayToLinear(GrasslandColonyColor(i.leaf.r)) * lerp(0.72h, 1.15h, height);
+                    albedo = lerp(albedo, colony, 0.84h * i.leaf.b);
+                }
                 half3 normal = normalize(i.crown.xyz);
                 half sunlit = min(sun.shadowAttenuation, i.leaf.a);
                 half direct = (0.22h + 0.82h * saturate(dot(normal, sun.direction))) * lerp(0.68h, 1.12h, height);
+                if (i.leaf.b > 0.0h)
+                {
+                    half filtered = GrasslandColonyTransmission(i.leaf.r, sun.direction.y);
+                    half exposedTips = 0.67h * smoothstep(0.40h, 0.98h, height);
+                    direct *= lerp(1.0h, lerp(filtered, 1.0h, exposedTips), i.leaf.b);
+                }
                 half3 ambient = SampleSH(half3(0, 1, 0)) + _RegionBounceColor.rgb * 0.23h;
                 half3 color = albedo * (sun.color * sunlit * direct + ambient * lerp(0.58h, 1.03h, height));
                 return GrasslandOutput(color, i.positionWS, alpha);
@@ -163,6 +256,8 @@ Shader "Vastcore/RegionGrasslandCover"
             half4 Frag(Varyings i) : SV_Target
             {
                 #if defined(GRASSLAND_TUSSOCKS)
+                [branch]
+                if (i.crown.w > 2.5) return ShadeColony(i);
                 [branch]
                 if (i.crown.w > 0.5) return ShadeTussock(i);
                 #endif

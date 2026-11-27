@@ -19,6 +19,8 @@ namespace Vastcore.RegionMap
         private const int DistantLayer = 3;
         private const float DistantRadius = 306f;
         private const float TussockDistantRadius = 468f;
+        private const int ColonySpacing = 4;
+        private const float ColonyMaxHeight = 2f;
         private const int TilesPerFrame = 2;
 
         private sealed class Tile
@@ -40,11 +42,12 @@ namespace Vastcore.RegionMap
         private Material _material;
         private Vector4[] _tussockFrames;
         private bool _visible = true;
-        private RegionGrasslandStyle Style => _look?.Spec.GrasslandStyle ?? RegionGrasslandStyle.Tussocks;
+        private RegionGrasslandStyle Style => _look?.Spec.GrasslandStyle ?? RegionGrasslandStyle.Colonies;
         private readonly Dictionary<Vector3Int, Tile> _tiles = new Dictionary<Vector3Int, Tile>();
         private readonly List<Vector3Int> _remove = new List<Vector3Int>();
         private readonly List<(Vector3Int Key, float Distance)> _pending = new List<(Vector3Int, float)>();
         private readonly List<Vector3> _vertices = new List<Vector3>();
+        private readonly List<Vector3> _surfaceNormals = new List<Vector3>();
         private readonly List<Vector4> _bladeData = new List<Vector4>();
         private readonly List<Vector3> _tussockData = new List<Vector3>();
         private readonly List<Color32> _colors = new List<Color32>();
@@ -192,6 +195,14 @@ namespace Vastcore.RegionMap
                 PlaceTile(tile.Object, request.Key, originEast, originSouth);
                 if (--remaining == 0) break;
             }
+            if (_material != null && style == RegionGrasslandStyle.Colonies)
+            {
+                _material.SetVector("_GrasslandOrigin", new Vector4((float)originEast, (float)originSouth, 0f, 0f));
+                var props = _look?.PropsSlice;
+                if (props != null)
+                    _material.SetVector("_GrasslandTrail", new Vector4((float)(originEast + props.CratesCenterX),
+                        (float)(originSouth + props.CratesCenterZ), 1f, 0f));
+            }
         }
 
         private (RegionLookPart Part, double East, double South, float Cell) Surface(Vector3Int key)
@@ -214,7 +225,7 @@ namespace Vastcore.RegionMap
         private static int TileMetres(int layer) => layer == DistantLayer ? 64 : TileSize;
 
         private static bool UsesTussocks(RegionGrasslandStyle style) =>
-            style is RegionGrasslandStyle.Tussocks or RegionGrasslandStyle.TussockGeometry;
+            style is RegionGrasslandStyle.Tussocks or RegionGrasslandStyle.TussockGeometry or RegionGrasslandStyle.Colonies;
 
         internal static bool HasCanopy(RegionGrasslandStyle style) =>
             style == RegionGrasslandStyle.Continuous || UsesTussocks(style);
@@ -227,7 +238,7 @@ namespace Vastcore.RegionMap
                     ShortGrassLayer => 24f,
                     1 => 30f,
                     DistantLayer => TussockDistantRadius,
-                    _ => 177f
+                    _ => Style == RegionGrasslandStyle.Colonies ? 146f : 177f
                 };
             if (layer == DistantLayer) return DistantRadius;
             bool continuous = Style == RegionGrasslandStyle.Continuous;
@@ -255,6 +266,7 @@ namespace Vastcore.RegionMap
         {
             var tile = new Tile { Surface = part };
             _vertices.Clear();
+            _surfaceNormals.Clear();
             _bladeData.Clear();
             _tussockData.Clear();
             _colors.Clear();
@@ -263,6 +275,7 @@ namespace Vastcore.RegionMap
             int layer = key.z;
             int tileSize = TileMetres(layer);
             RegionGrasslandStyle style = Style;
+            bool colonies = style == RegionGrasslandStyle.Colonies;
             bool tussocks = UsesTussocks(style);
             bool continuous = HasCanopy(style);
             if (tussocks && _tussockFrames == null)
@@ -276,9 +289,10 @@ namespace Vastcore.RegionMap
             bool overlap = continuous || style == RegionGrasslandStyle.Overlapping;
             bool shortGrass = layer == ShortGrassLayer;
             bool distant = layer == DistantLayer;
+            bool colonySurface = colonies && distant;
             int count = distant ? 27 : shortGrass ? (overlap ? 73 : 80) : layer == 1 ? 44 : 20;
             if (tussocks)
-                count = layer switch { ShortGrassLayer => 62, 1 => 32, DistantLayer => 25, _ => 17 };
+                count = layer switch { ShortGrassLayer => 62, 1 => 32, DistantLayer => colonySurface ? 21 : 25, _ => 17 };
             int blades = layer == 1 ? 7 : 3;
             if (continuous && shortGrass) blades = 4;
             if (style == RegionGrasslandStyle.Denser && layer != 0) blades += shortGrass ? 3 : 5;
@@ -293,6 +307,7 @@ namespace Vastcore.RegionMap
             var props = _look?.PropsSlice;
             float trailEast = (float)(originEast + (props?.CratesCenterX ?? 0f));
             float trailSouth = (float)(originSouth + (props?.CratesCenterZ ?? 0f));
+            if (colonySurface) BuildColonySurface(part, localX, localZ, cell, tileSize, props);
             for (int j = 0; j < count; j++)
             for (int i = 0; i < count; i++)
             {
@@ -312,7 +327,7 @@ namespace Vastcore.RegionMap
                 float trail = props != null ? Trail(east + x - trailEast, south + z - trailSouth) : 0f;
                 float coverage = shortGrass && overlap ? Mathf.Lerp(0.90f, 0.995f, growth)
                     : Mathf.Lerp(shortGrass ? 0.76f : 0.47f, 0.98f, growth);
-                if (tussocks && !shortGrass) coverage = Mathf.Lerp(0.69f, 0.995f, growth);
+                if (tussocks && !shortGrass) coverage = colonySurface ? 0.99f : Mathf.Lerp(0.69f, 0.995f, growth);
                 float cover = coverage * RegionNoise.Smooth(0.76f, 0.96f, normalY) * (1f - trail);
                 if (RegionNoise.Hash01(ix, iz, salt + 2) >= cover) continue;
                 if (props != null && Mathf.Abs(east + x - trailEast) < 9f && Mathf.Abs(south + z - trailSouth) < 7f &&
@@ -324,11 +339,22 @@ namespace Vastcore.RegionMap
                 if (tussocks)
                 {
                     var slope = new Vector2(-part.Normals[3 * v], part.Normals[3 * v + 2]) / normalY;
-                    float colony = Noise((east + x) / 2.65f + 31f, (south + z) / 2.1f - 16f);
+                    float tuft = Noise((east + x) / 2.65f + 31f, (south + z) / 2.1f - 16f);
                     bool meshLeaves = layer == 1 || (style == RegionGrasslandStyle.TussockGeometry && shortGrass);
-                    bool denseCrown = layer == 1 && style == RegionGrasslandStyle.Tussocks && colony > 0.38f;
-                    AddTussock(foot, slope, layer, growth, part.Sun[v], trail, size, colony, tuftAngle,
-                        RegionNoise.Hash01(ix, iz, salt + 8), meshLeaves, denseCrown, ix, iz, salt);
+                    bool denseCrown = layer == 1 && style != RegionGrasslandStyle.TussockGeometry && tuft > 0.38f;
+                    if (colonySurface)
+                    {
+                        float alongSlope = slope.sqrMagnitude > 0.015f ? Mathf.Atan2(slope.x, -slope.y) : -0.64f;
+                        tuftAngle = alongSlope + (size - 0.5f) * 1.5f;
+                    }
+                    AddTussock(foot, slope, layer, growth, part.Sun[v], trail, size, tuft, tuftAngle,
+                        RegionNoise.Hash01(ix, iz, salt + 8), meshLeaves, denseCrown, ix, iz, salt,
+                        colonies && (layer == 0 || distant) ? moisture : 0f, colonySurface);
+                    if (colonySurface)
+                    {
+                        Vector3 normal = new Vector3(part.Normals[3 * v], normalY, -part.Normals[3 * v + 2]);
+                        while (_surfaceNormals.Count < _vertices.Count) _surfaceNormals.Add(normal);
+                    }
                     continue;
                 }
                 float bladeHeight = shortGrass ? Mathf.Lerp(0.085f, 0.18f, growth) : Mathf.Lerp(0.14f, 0.42f, growth);
@@ -355,13 +381,75 @@ namespace Vastcore.RegionMap
                 }
             }
 
+            return CreateTile(tile, style, colonySurface);
+        }
+
+        private void BuildColonySurface(RegionLookPart part, float localX, float localZ, float cell, int tileSize,
+            RegionPropProofSlice props)
+        {
+            RegionData data = part.Data;
+            int n = data.Resolution;
+            int side = tileSize / ColonySpacing + 1;
+            // The tiles share edge samples. Sample the actual triangles to keep the turf on the terrain.
+            for (int j = 0; j < side; j++)
+            for (int i = 0; i < side; i++)
+            {
+                float x = i * ColonySpacing, z = j * ColonySpacing;
+                float px = localX + x, pz = localZ + z;
+                float gx = (px - part.Positions[0]) / cell, gz = (pz - part.Positions[2]) / cell;
+                var normal = Vector3.zero;
+                var surface = new Color32(0, 0, 0, 0);
+                float height = 0f;
+                if (gx >= 0f && gz >= 0f && gx <= n - 1 && gz <= n - 1)
+                {
+                    int ix = Mathf.Min((int)gx, n - 2), iz = Mathf.Min((int)gz, n - 2);
+                    if (part.TryGridHeight(px, pz, ix + iz * (n - 1), out height))
+                    {
+                        int v = Mathf.RoundToInt(gx) + Mathf.RoundToInt(gz) * n;
+                        normal = new Vector3(part.Normals[3 * v], part.Normals[3 * v + 1], -part.Normals[3 * v + 2]);
+                        float land = data.Biome[v] == RegionBiome.Grassland && data.Height[v] > 0f && data.LakeDepth[v] <= 0f &&
+                            (data.WaterCoverage?[v] ?? 0f) <= 0.24f && (data.StructureCoverage?[v] ?? 0f) <= 0.12f
+                            ? RegionNoise.Smooth(0.78f, 0.97f, normal.y) : 0f;
+                        float moisture = Mathf.Clamp01((data.Moisture[v] - 0.14f) / 0.46f);
+                        if (props != null && Mathf.Abs(px - props.CratesCenterX) < 9f &&
+                            Mathf.Abs(pz - props.CratesCenterZ) < 7f && OnRock(props, px, pz)) land = 0f;
+                        surface = new Color32((byte)(255 * moisture), (byte)(255 * land), (byte)(255 * part.Sun[v]), 0);
+                    }
+                }
+                var root = new Vector4(x, height, -z, DistantLayer);
+                AddTussockVertex(new Vector3(x, height, -z), root, surface, new Vector3(0f, 0f, 3f));
+                _surfaceNormals.Add(normal);
+            }
+
+            for (int j = 0; j < side - 1; j++)
+            for (int i = 0; i < side - 1; i++)
+            {
+                int a = i + j * side;
+                AddColonyTriangle(a, a + 1, a + side);
+                AddColonyTriangle(a + 1, a + side + 1, a + side);
+            }
+        }
+
+        private void AddColonyTriangle(int a, int b, int c)
+        {
+            if (_surfaceNormals[a].y <= 0f || _surfaceNormals[b].y <= 0f || _surfaceNormals[c].y <= 0f ||
+                (_colors[a].g == 0 && _colors[b].g == 0 && _colors[c].g == 0)) return;
+            _indices.Add(a);
+            _indices.Add(b);
+            _indices.Add(c);
+        }
+
+        private Tile CreateTile(Tile tile, RegionGrasslandStyle style, bool colonySurface)
+        {
             if (_indices.Count == 0) return tile;
+            bool tussocks = UsesTussocks(style);
             if (_material == null)
             {
                 Shader shader = Resources.Load<Shader>(ShaderResource);
                 if (shader == null || !shader.isSupported) return tile;
                 _material = new Material(shader) { name = "Meadow grass", hideFlags = HideFlags.DontSave };
-                _material.SetFloat("_GrasslandContinuous", continuous ? 1f : 0f);
+                _material.SetFloat("_GrasslandContinuous", HasCanopy(style) ? 1f : 0f);
+                _material.SetFloat("_GrasslandColonies", style == RegionGrasslandStyle.Colonies ? 1f : 0f);
                 if (tussocks)
                 {
                     Texture2D atlas = Resources.Load<Texture2D>(TussockAtlas);
@@ -372,15 +460,23 @@ namespace Vastcore.RegionMap
                     _material.renderQueue = (int)RenderQueue.AlphaTest;
                 }
             }
-            var mesh = new Mesh { name = "Grassland blades", hideFlags = HideFlags.DontSave };
+            var mesh = new Mesh { name = colonySurface ? "Grassland canopy" : "Grassland blades", hideFlags = HideFlags.DontSave };
             if (_vertices.Count > 65535) mesh.indexFormat = IndexFormat.UInt32;
             mesh.SetVertices(_vertices);
             mesh.SetUVs(0, _bladeData);
             if (tussocks) mesh.SetUVs(1, _tussockData);
             mesh.SetColors(_colors);
             mesh.SetTriangles(_indices, 0);
+            if (colonySurface)
+            {
+                mesh.SetNormals(_surfaceNormals);
+                // The shader raises the canopy from these grounded vertices.
+                Bounds bounds = mesh.bounds;
+                bounds.Expand(new Vector3(0f, 2f * ColonyMaxHeight, 0f));
+                mesh.bounds = bounds;
+            }
             mesh.UploadMeshData(true);
-            var go = new GameObject("Grass blades") { hideFlags = HideFlags.DontSave };
+            var go = new GameObject(colonySurface ? "Grass canopy" : "Grass blades") { hideFlags = HideFlags.DontSave };
             go.transform.SetParent(transform, false);
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = go.AddComponent<MeshRenderer>();
@@ -394,7 +490,8 @@ namespace Vastcore.RegionMap
         }
 
         private void AddTussock(Vector3 foot, Vector2 slope, int layer, float growth, float sun, float trail,
-            float size, float colony, float yaw, float variantPick, bool meshLeaves, bool denseCrown, int ix, int iz, uint salt)
+            float size, float colony, float yaw, float variantPick, bool meshLeaves, bool denseCrown, int ix, int iz, uint salt,
+            float moisture, bool colonySurface)
         {
             bool low = layer == ShortGrassLayer;
             float crown = Mathf.Lerp(0.73f, 1.28f, size);
@@ -407,10 +504,15 @@ namespace Vastcore.RegionMap
             };
             height *= crown * (1f - trail * 0.72f);
             float width = layer switch { ShortGrassLayer => 0.86f, 1 => 0.94f, DistantLayer => 3.48f, _ => 1.83f };
+            if (colonySurface)
+            {
+                height = Mathf.Lerp(0.70f, 0.87f, size);
+                width = 5.36f;
+            }
             width *= Mathf.Lerp(0.87f, 1.15f, size) * (1f - trail * 0.72f);
             int variant = variantPick < 0.65f ? 1
                 : variantPick < 0.94f || low || layer == DistantLayer ? 0 : variantPick < 0.97f ? 2 : 3;
-            var light = new Color32((byte)(255 * growth), (byte)(255 * size), (byte)(255 * sun), 0);
+            var light = new Color32((byte)(255 * growth), (byte)(255 * size), (byte)(255 * sun), (byte)(255 * moisture));
             var root = new Vector4(foot.x, foot.y, foot.z, layer);
             if (meshLeaves)
             {
@@ -650,9 +752,10 @@ namespace Vastcore.RegionMap
         }
 
         internal static void BindGround(Material material, float east, float south, RegionPropProofSlice props = null,
-            RegionGrasslandStyle style = RegionGrasslandStyle.Tussocks)
+            RegionGrasslandStyle style = RegionGrasslandStyle.Colonies)
         {
-            float canopy = UsesTussocks(style) ? 2f : style == RegionGrasslandStyle.Continuous ? 1f : 0f;
+            float canopy = style == RegionGrasslandStyle.Colonies ? 3f
+                : UsesTussocks(style) ? 2f : style == RegionGrasslandStyle.Continuous ? 1f : 0f;
             material.SetVector("_GrasslandSurface", new Vector4(east, south, 1f, canopy));
             if (props != null)
                 material.SetVector("_GrasslandTrail", new Vector4(east + props.CratesCenterX, south + props.CratesCenterZ, 1f, 0f));
