@@ -188,6 +188,15 @@ VastCore の現行3D景観（砂岩・乾燥地）と今後の展開予定（古
 | `StructureTagProfile` (SP-019) | JSON の `structureTags` | 既存のフラットタグ（`weathered`, `fortified`, `functional`, `sacred`, `primitive` 等）を継承し、小道具向けに最小限の時代/環境タグを補う |
 | `RegionSurfaceMaterials` (T2/T3) | V4 / V7 の砂塵・土砂なじませ | `Surfaces/<Role>` と同じ色相・鏡面抑制（反射率低め）と高さブレンド思想を Props シェーダーへ揃える |
 
+### 6.1 平野・田園の高速道路と一般幹線
+
+本人選択は「平野・田園」。開けた土地を挟んで約4.6 kmずつ道路を通す。高速は上下線を分け、中央分離帯・舗装路肩・ガードレールが続く。一般幹線は側方の短い進入口から砂利敷きの64 m × 42 mの空き地へつながる。寸法の参照は[国土交通省の車線・中央帯・路肩の断面](https://www.mlit.go.jp/road/sign/kouzourei_kaisetsu.html)。画面の参照は遠景の[水原バイパス空撮](https://www.hrr.mlit.go.jp/press/2022/10/221014niikoku.pdf#page=2)、中景の[圏央道沿道](https://www.ktr.mlit.go.jp/oomiya/oomiya00131.html)、近景の[新東名の土工部](https://www.c-nexco.co.jp/corporate/pressroom/news_release/4941.html)。
+
+- Unity の `Vastcore > Region Map > Highway Corridor Preview` で `Seed` と `Road layout` を選び、`Generate preview`。`Country` は片側2車線の高速と片側1車線の幹線、`Sweeping` は同じ断面で曲がりを増やし、`Wide` はそれぞれ片側3・2車線。`Shape only` と遠景・中景・入口・高速の固定視点がある。
+- [道路データ](../../Assets/Scripts/RegionMap/Core/RegionRoads.cs)はメートル単位の中心線、高さの取得関数、幅員から縦断と地形のすり付けを作る。[道路部品](../../Assets/Scripts/RegionMap/View/RegionRoadView.cs)は同じ断面を舗装、標示、防護柵、当たり判定に使う。敷地の `RegionRoadsideSite` は、道路ID、中心線に沿った距離、側、入口・敷地の座標と向きを持つ。敷地IDは生成した場面内で一意。探索マップからの道路・敷地呼び出しは別の接続工程。
+- 舗装は `Asphalt010`、砂利は `Ground007`、地表は `Grass005` と `Ground009`。中遠景の株と樹木は既存の `DesertPlants` から再利用し、畦と浅い溝の高低、畑の畝、植生をまとめる配置を追加した。[素材の出所](../../Assets/Resources/MapGenerator/Textures/texture-source.json)・[植生の配置](../../Assets/Scripts/RegionMap/View/RegionRoadLandscape.cs)
+- 自然地形のパッケージにも、形状だけの遠中景、着色した初稿、同じカメラの修正版を残す。畑の色と孤立した樹木を増やすだけでは境界が読みにくかったため、高低差と植生のまとまりを追加した。別 seed では、地形の接触と植生の除外を確認する。仕上げの残差は遠景の尾根の重なりと近景の路肩から草地への移り変わり。[完成想定図・Unity・計測の比較](<D:/AI-Runs/VastCore/highway-arterial/index.html>)
+
 ---
 
 ## 7. 未決事項・本人の判断待ち
@@ -249,3 +258,25 @@ GameProjects の木箱6型・木樽2型・扇状の瓦礫1型を、元GLBのSHA-
 積み上げは閉じた木箱を支持に選び、上段の敷木を下段の蓋の高さに合わせる。箱を別に置く荷台は土台として使い、積荷付きパレットをそこへ重ねない。開口と蓋付きの樽は実モデルを使い、横倒し樽に対応するFBXが無い場合は仮モデルで姿勢を保つ。瓦礫は下り方向へ向け、描画地形の三角形から各石の沈み込みを求める。
 
 [seed 9の通常配置での撮影結果](<D:/AI-Runs/VastCore/ds011-glb-fbx-20261127/seed9-placement/props-proof-report.txt>)では、筋交い入り木箱の敷木2本と蓋の高さの差は最大0.043 cm。斜度30.6°の瓦礫は地面に触れる28片の最低点を地表から0.3〜1.2 cm下へ収め、上の2片は支持する石に追従させた。
+
+## 9. 現代の混在街路と入れる建物
+
+本人選択「混在街路を軸にする（推奨）」。[三軒茶屋の小区画の商業棟](https://www.keyoperation.com/en/archives/projects/the-city-sangenjaya/)から路面店・上階の間口と窓の奥行き、[虎ノ門の業務棟](https://www.mori.co.jp/en/projects/toranomonhills/business-tower/)からガラスの上階と低層部の使い分けを参照した。生成した[設計時の完成イメージ](<D:/AI-Runs/VastCore/modern-city-block/design-directions.png>)の右列が混在街路。
+
+### 9.1 組み立てと確認
+
+- [Modern City Kit](../../Assets/Art/ModernCity/)の `ModernCity.unity` を開くか、`Vastcore > Modern City > Open Sample` を選ぶ。PlayでGameビューをクリックし、WASDとマウスで歩く。Escでマウスを解放する。ゲームパッドは左右スティック。
+- `Variants` の `Street block` は seed・街路形・Props密度を変えて別シーンを作る。`Building` は間口・奥行き・階数・外装・階の用途を選んで、開いているシーンへ1棟を足す。`Prefabs/Assembled` の3棟や `Buildings`・`Street`・`Props` の単体部材も直接置ける。
+- ブロックを組む基準は幅・奥行き4 m、階高3 m、外装は底面中央を原点に正面が−Z。床上端が各階の基準面。階段の上階側の4 m角を開け、上り終端側には床をつなぎ、開口の縁に柵を付ける。主要入口の開口1.84 m、搬入口1.46 m。幅0.68 m・高さ1.8 mの歩行カプセルで確認する。
+- `Export Asset Package` はパッケージ内のPrefab・Mesh・材質・シーン・コードと、参照先の舗装・レンガ・木材のCC0画像だけを含める。Unity 6 URPとInput Systemが必要。画像の出所は同梱の `Modern City Kit.txt`。DS-011の地形用配置とSP-021の地域生成は、それぞれ既存の入口から使う。
+- バッチの入口は [CityReview](../../Assets/Art/ModernCity/Editor/CityReview.cs) の `BuildCaptureAndPlayFromCommandLine`。Unity 6000.3.6f1に `-batchmode -projectPath <VastCore> -executeMethod Vastcore.ModernCity.Editor.CityReview.BuildCaptureAndPlayFromCommandLine -cityOutput <出力先>` を渡す。Prefabと見本シーンを作り直し、歩行・撮影・配布用書き出し・Playモードを順に確認する。
+
+### 9.2 次の人工物キットへ持ち越す検証
+
+市街の単色試作で歩道・開口・床・階段と距離別の輪郭を確認し、店頭、室用途、搬入口、屋上の順でPropsの組を置いた。初回の撮影では車道の抜けとカフェの空床が目立ち、階段前の光は飽和した。入口の見える歩道側へ視点を移し、街路の端に小広場、店内に客席と陳列のまとまり、階段に低い位置からの明かりを足した。後退した入口では舗装と室内床が重なったため、敷地側の舗装を床面より28 mm下げた。
+
+次のキットでも、部材数より先に「外で用途が読めるか」「室内の目的地と階の接続が歩いて分かるか」を試す。棚・椅子・照明は用途間で共有し、什器の組み方で区別する。Propsを増やす前後は別配置を含む2地点で固定カメラと日照をそろえ、通行・場面の生成時間・描画完了までの時間を照合する。近景の材質と室内照明、街路の輪郭はそれぞれの視点で評価する。
+
+現行の配布版は建築部材32、街路部材8、Props 71、組立見本3。seed 417と1031の各9棟で正面と搬入口、22・23か所の階の接続をカプセルで確認した。保存シーンはメニューから開き、Play中のゲームパッド入力でカフェ入口を通過した。[撮影の比較ページ](<D:/AI-Runs/VastCore/modern-city-block/review.html>)では同じ視点で基本構成と拡充後を比較できる。RTX 4060 Tiの街路視点・1600×900で、Props拡充による描画と1画素読み戻しの中央値の増分は0.93 msと1.03 ms。未確認の指標はGPU単独時間。
+
+完成イメージに比べ、店先の用途は判別しやすくなったが、遠景は平らな屋根の反復が残り、近景は石・ガラスの反射と使い込んだ細部が不足する。次の人工物キットで先に手を付ける箇所は、用途が見える地上階の開口と、輪郭を変えるセットバックや屋上部。近景の仕上げは撮影で差が目立つ入口と主役の什器に集中させ、同じ部材で別の建物を組めることを確かめる。

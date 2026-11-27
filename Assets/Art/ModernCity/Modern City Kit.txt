@@ -1,0 +1,9 @@
+Modern City Kit
+
+Open ModernCity.unity, select Play, then click the Game view to walk with WASD and look with the mouse. Esc releases the mouse. Both analog sticks are supported.
+Vastcore > Modern City > Variants builds a new street scene or adds a configurable building to the active scene.
+Prefabs/Buildings, Prefabs/Street and Prefabs/Props can be placed independently. Wall bays face -Z. The 4 m bay and 3 m storey mate at nominal slab height. Leave the rear 4 m bay open above each stair. The demo uses Unity 6 URP and the Input System.
+
+Reused textures
+Asphalt010, PavingStones073 and Bricks102 by ambientCG (CC0-1.0), https://docs.ambientcg.com/license/
+Raw Plank Wall by Poly Haven (CC0-1.0), https://polyhaven.com/a/raw_plank_wall

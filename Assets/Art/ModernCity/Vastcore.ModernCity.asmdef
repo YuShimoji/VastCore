@@ -1,0 +1,6 @@
+{
+    "name": "Vastcore.ModernCity",
+    "rootNamespace": "Vastcore.ModernCity",
+    "references": ["Unity.InputSystem"],
+    "autoReferenced": false
+}

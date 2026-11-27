@@ -1,0 +1,112 @@
+using System;
+using System.IO;
+using System.Linq;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace Vastcore.ModernCity.Editor
+{
+    internal sealed class CityKitMenu : EditorWindow
+    {
+        private const string Menu = "Vastcore/Modern City/";
+        [SerializeField] private int seed = CityBlock.DefaultSeed;
+        [SerializeField] private CityStreetPlan street = CityStreetPlan.CornerShops;
+        [SerializeField] private CityDetail detail = CityDetail.Furnished;
+        [SerializeField] private int panel;
+        [SerializeField] private Vector3 origin = new Vector3(0, CityStreetKit.Pavement, 0);
+        [SerializeField] private int across = 4;
+        [SerializeField] private int deep = 3;
+        [SerializeField] private int floors = 3;
+        [SerializeField] private float facing;
+        [SerializeField] private CityFacade facade;
+        [SerializeField] private CityRoom ground = CityRoom.Cafe;
+        [SerializeField] private CityRoom upper = CityRoom.Office;
+
+        [MenuItem(Menu + "Open Sample", false, 10)]
+        private static void OpenSample()
+        {
+            if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+                EditorSceneManager.OpenScene(CityKitAssets.SampleScene);
+        }
+
+        [MenuItem(Menu + "Variants...", false, 11)]
+        private static void OpenWindow()
+        {
+            var window = GetWindow<CityKitMenu>("Modern City Variants");
+            window.minSize = new Vector2(290, 305);
+        }
+
+        [MenuItem(Menu + "Export Asset Package...", false, 12)]
+        private static void ExportPackage()
+        {
+            string path = EditorUtility.SaveFilePanel("Export Modern City", Application.dataPath, "ModernCity", "unitypackage");
+            if (!string.IsNullOrEmpty(path))
+                Export(path);
+        }
+
+        private void OnGUI()
+        {
+            panel = GUILayout.Toolbar(panel, new[] { "Street block", "Building" });
+            seed = EditorGUILayout.IntField("Seed", seed);
+            detail = (CityDetail)EditorGUILayout.EnumPopup("Prop density", detail);
+            if (panel == 0)
+            {
+                street = (CityStreetPlan)EditorGUILayout.EnumPopup("Street plan", street);
+                if (GUILayout.Button("Generate as new scene") && EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+                    CreateVariant();
+            }
+            else
+            {
+                origin = EditorGUILayout.Vector3Field("Entry corner", origin);
+                facing = EditorGUILayout.FloatField("Facing (degrees)", facing);
+                across = EditorGUILayout.IntSlider("Frontage bays", across, 3, 8);
+                deep = EditorGUILayout.IntSlider("Depth bays", deep, 3, 8);
+                floors = EditorGUILayout.IntSlider("Floors", floors, 1, 10);
+                facade = (CityFacade)EditorGUILayout.EnumPopup("Facade", facade);
+                ground = (CityRoom)EditorGUILayout.EnumPopup("Ground floor", ground);
+                upper = (CityRoom)EditorGUILayout.EnumPopup("Upper floors", upper);
+                if (GUILayout.Button("Add building to active scene"))
+                    AddBuilding();
+            }
+        }
+
+        private void CreateVariant()
+        {
+            var kit = new CityKitAssets();
+            var block = CityBlock.Assemble(kit, seed, street);
+            CityFurnishing.Dress(kit, block, detail, seed);
+            EditorSceneManager.MarkSceneDirty(block.Scene);
+            Selection.activeGameObject = block.Root.gameObject;
+        }
+
+        private void AddBuilding()
+        {
+            var plot = new CityPlot($"{facade} building", origin.x, origin.z, across, deep, floors, facing,
+                facade, ground, upper, origin.y);
+            var kit = new CityKitAssets();
+            var building = CityBlock.AssembleBuilding(kit, plot, null, seed);
+            CityFurnishing.DressBuilding(kit, plot, building, detail, seed);
+            Undo.RegisterCreatedObjectUndo(building.gameObject, "Add modern city building");
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+            Selection.activeGameObject = building.gameObject;
+        }
+
+        internal static void Export(string path)
+        {
+            string[] library = AssetDatabase.GetAllAssetPaths()
+                .Where(p => p.StartsWith(CityKitAssets.Root + "/", StringComparison.Ordinal) && File.Exists(p))
+                .ToArray();
+            if (!File.Exists(CityKitAssets.SampleScene))
+                throw new InvalidOperationException("The Modern City sample has not been saved.");
+            // Only assets used by this kit are exported. URP and Input System are Unity package prerequisites.
+            string[] assets = AssetDatabase.GetDependencies(library)
+                .Where(p => p.StartsWith("Assets/", StringComparison.Ordinal) && File.Exists(p))
+                .Concat(library).Distinct().OrderBy(p => p, StringComparer.Ordinal).ToArray();
+            AssetDatabase.ExportPackage(assets, path, ExportPackageOptions.Default);
+            if (!File.Exists(path) || new FileInfo(path).Length == 0)
+                throw new IOException("Unity did not create the asset package at " + path);
+        }
+    }
+}
