@@ -456,7 +456,7 @@ namespace Vastcore.RegionMap.Editor
         /// 実行ファイル（Standalone）の既定の品質で撮る。編集時の品質は Mobile（ProjectSettings の m_CurrentQuality 0）で、
         /// そのままでは描画の縮小 0.8・深度画像なし・SSAO なしの Mobile_RPAsset で写る（2026-11-26 に写しの試験で確かめた）。
         /// </summary>
-        private static void UseBuildQuality()
+        internal static void UseBuildQuality()
         {
             int index = Array.IndexOf(QualitySettings.names, "PC");
             if (index >= 0 && index != QualitySettings.GetQualityLevel()) QualitySettings.SetQualityLevel(index, true);

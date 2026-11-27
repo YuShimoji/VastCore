@@ -43,6 +43,10 @@
   # view3d: DS-011 P0 Props Proof Slice の前後比較（props-near-before/after, props-crates, props-rubble）
   [switch]$PropsCompare,
   [switch]$PropsProof,
+  # view3d: 表面の写真素材の候補を撮り比べる（T5）。候補の一覧（JSON）を渡すと、-SunAltitudes の太陽の高さごとに場面を作り、
+  #         素材なしと各候補（1 役ずつ差し替え）の固定の視点を <OutDir>/sun<高さ>/<候補>/ へ撮る（RegionSurfaceCandidates）
+  [string]$SurfaceCandidates = '',
+  [string]$SunAltitudes = '',
   [string]$LookSky = '',
   [string]$UnityPath = ''
 )
@@ -82,10 +86,12 @@ if ($Mode -eq 'setup') {
 } elseif ($Mode -eq 'view3d' -or $Mode -eq 'view3d-cave') {
   # 画面を描くので -nographics は付けない
   $method = if ($Mode -eq 'view3d') { 'CaptureFromCommandLine' } else { 'CaptureCaveFromCommandLine' }
+  $type = 'RegionTerrainViewMenu'
+  if ($Mode -eq 'view3d' -and $SurfaceCandidates) { $type = 'RegionSurfaceCandidates' }
   $unityArgs = @(
     '-batchmode', '-quit',
     '-projectPath', "`"$ProjectPath`"",
-    '-executeMethod', "Vastcore.RegionMap.Editor.RegionTerrainViewMenu.$method",
+    '-executeMethod', "Vastcore.RegionMap.Editor.$type.$method",
     '-regionOut', "`"$OutFull`"",
     '-logFile', "`"$log`""
   ) + $regionArgs
@@ -105,6 +111,8 @@ if ($Mode -eq 'setup') {
     if ($PropsCompare) { $unityArgs += @('-propsCompare', 'true') }
     if ($PropsProof) { $unityArgs += @('-propsProof', 'true') }
     if ($LookSky) { $unityArgs += @('-lookSky', $LookSky) }
+    if ($SurfaceCandidates) { $unityArgs += @('-surfaceCandidates', "`"$((Resolve-Path $SurfaceCandidates).Path)`"") }
+    if ($SunAltitudes) { $unityArgs += @('-sunAltitudes', $SunAltitudes) }
   }
 } elseif ($Mode -eq 'play') {
   $unityArgs = @(

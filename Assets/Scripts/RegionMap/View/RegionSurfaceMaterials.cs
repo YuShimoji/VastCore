@@ -31,6 +31,15 @@ namespace Vastcore.RegionMap
         /// <summary>負でなければ、設定の境の深さ（m）の代わりに使う（既定を撮って決める時用）。</summary>
         public static float BlendDepthOverride = -1f;
 
+        /// <summary>
+        /// 素材の候補を撮り比べる時用（Editor の RegionSurfaceCandidates）。null でなければ、役ごとの 3 枚（細部・法線・高さ粗さAO）を
+        /// Resources の代わりにここから取る。null を返した役は素材なし。
+        /// </summary>
+        public static System.Func<int, Texture2D[]> SourceOverride;
+
+        /// <summary>同上。役ごとの横の実寸（m）。0 以下を返した役は設定の値のまま。</summary>
+        public static System.Func<int, float> TileOverride;
+
         private static Vector4 blendHeights, blendHeights2;
         private static float blendDepth, blendSpan = RegionSurfaceSettings.DefaultBlendSpan;
 
@@ -56,10 +65,21 @@ namespace Vastcore.RegionMap
             {
                 for (int role = 0; role < RegionSurfaceMaps.Folders.Length; role++)
                 {
-                    string folder = RegionSurfaceMaps.Root + "/" + RegionSurfaceMaps.Folders[role] + "/";
-                    var detail = Resources.Load<Texture2D>(folder + RegionSurfaceMaps.DetailName);
-                    var normal = Resources.Load<Texture2D>(folder + RegionSurfaceMaps.NormalName);
-                    var hra = Resources.Load<Texture2D>(folder + RegionSurfaceMaps.HraName);
+                    Texture2D detail, normal, hra;
+                    if (SourceOverride != null)
+                    {
+                        Texture2D[] provided = SourceOverride(role);
+                        detail = provided != null ? provided[0] : null;
+                        normal = provided != null ? provided[1] : null;
+                        hra = provided != null ? provided[2] : null;
+                    }
+                    else
+                    {
+                        string folder = RegionSurfaceMaps.Root + "/" + RegionSurfaceMaps.Folders[role] + "/";
+                        detail = Resources.Load<Texture2D>(folder + RegionSurfaceMaps.DetailName);
+                        normal = Resources.Load<Texture2D>(folder + RegionSurfaceMaps.NormalName);
+                        hra = Resources.Load<Texture2D>(folder + RegionSurfaceMaps.HraName);
+                    }
                     if (detail == null && normal == null && hra == null) continue;
                     string problem = Check(detail, normal, hra, slices.Count > 0 ? slices[0] : default);
                     if (problem != null)
@@ -80,6 +100,8 @@ namespace Vastcore.RegionMap
                 {
                     int role = slices[slice].role;
                     RegionSurfaceSettings.Entry entry = settings[role];
+                    float tile = TileOverride != null ? TileOverride(role) : 0f;
+                    if (tile > 0f) entry.TileMetres = tile;
                     roles[role] = new Vector4(slice, 1f / Mathf.Max(0.05f, entry.TileMetres), entry.Strength, entry.Roughness);
                     notes.Add(RegionSurfaceMaps.Folders[role] + " " + entry.TileMetres.ToString("0.##") + " m");
                 }
