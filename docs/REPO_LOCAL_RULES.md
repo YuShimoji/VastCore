@@ -61,7 +61,8 @@ exception, not progress by itself.
 - For costly user-visible UX, visual, or content work, establish direction with
   two or three genuinely different routes before broad implementation. Once a
   route and proof slice are selected, execute that slice without asking again
-  for routine details inside the agreed intent.
+  for routine details inside the agreed intent. Landscape / environment looks
+  follow `docs/OPERATOR_WORKFLOW.md` "環境（景観）の見た目を作る流れ".
 
 ## State Sync Is Part Of Completion
 
