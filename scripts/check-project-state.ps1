@@ -113,6 +113,26 @@ foreach ($field in @('Project', 'Current bottleneck', 'Change relation')) {
     }
 }
 
+# 文書の大きさの上限（AGENTS.md の Document size limits）。超えた文書は、追記する前に古い行を docs/archive/ へ原文のまま移す。
+$sizeLimits = @(
+    @{ Pattern = 'docs/runtime-state.md'; MaxBytes = 24KB; MaxLines = 100 },
+    @{ Pattern = 'docs/02_design/*.md'; MaxBytes = 40KB; MaxLines = 0 }
+)
+foreach ($limit in $sizeLimits) {
+    foreach ($file in Get-ChildItem -Path (Join-Path $repoRoot $limit.Pattern) -File -ErrorAction SilentlyContinue) {
+        $relative = [IO.Path]::GetRelativePath($repoRoot, $file.FullName).Replace([IO.Path]::DirectorySeparatorChar, '/')
+        if ($file.Length -gt $limit.MaxBytes) {
+            Add-StateError "$relative is $($file.Length) bytes, over the $($limit.MaxBytes)-byte limit. Move old lines verbatim to docs/archive/ before adding."
+        }
+        if ($limit.MaxLines -gt 0) {
+            $lines = [IO.File]::ReadAllLines($file.FullName).Count
+            if ($lines -gt $limit.MaxLines) {
+                Add-StateError "$relative has $lines lines, over the $($limit.MaxLines)-line limit."
+            }
+        }
+    }
+}
+
 if ($errors.Count -gt 0) {
     $errors | ForEach-Object { Write-Host "ERROR: $_" -ForegroundColor Red }
     throw "Project state validation failed with $($errors.Count) error(s)."

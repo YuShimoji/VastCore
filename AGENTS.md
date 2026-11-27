@@ -40,5 +40,12 @@ Put changes in the narrow owner instead:
 - Document map: `docs/NAV.md`
 - Feature status: `docs/spec-index.json`, `docs/tasks/`, or the owning spec
 
+## Document size limits
+
+`docs/runtime-state.md` 100 lines and 24 KB; specs in `docs/02_design/*.md`
+40 KB. `scripts/check-project-state.ps1` enforces both. When a document is over,
+move old lines verbatim to `docs/archive/` (not read on restart) and leave a
+one-line pointer; do not move them into another active document.
+
 Global files under `C:\Users\thank\.codex\` are fallback helpers, not VastCore
 authority.

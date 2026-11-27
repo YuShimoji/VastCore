@@ -1,6 +1,6 @@
 # SP-021 の履歴（過去の決定・不採用の案・出典）
 
-[SP-021](REGION_MAP_EXPLORATION_SPEC.md) から、完了した決定の記録・不採用になった案・出典を原文のまま移したもの。現在の仕様と判断待ちは SP-021 が持つ。
+[SP-021](../02_design/REGION_MAP_EXPLORATION_SPEC.md) から、完了した決定の記録・不採用になった案・出典を原文のまま移したもの。現在の仕様と判断待ちは SP-021 が持つ。
 
 ## 決定済みの事項と回答の記録（2026-11-22 に SP-021 9節から移した）
 
@@ -334,7 +334,7 @@ U.S. Copyright Office, Copyright Office Releases Part 2 of Artificial Intelligen
 
 ### runtime-state Next Action 1 の行
 
-1. 本人：Recordinatorの問いに答える（Project `pc96190c8a9`）。探索画面の拡大表示の受入 `01M81W8NN4XG16SQXMV2R3NBKT`（添付は Artifact `01M81W7J9SE5RN51G1Y0K9W9AZ`＝確認ページ `review-20261122-r10`。見え方・操作ごとのしやすさ・前の版との比較）。命名の仕組みの方向 `01M81SA3GF8YMRZRETVZCHBGE2`（名前の成り立ち、ことばの範囲、音と語根を誰が書くか、地点名の型の混ぜ方、由来を画面に出すか、足したいもの。添付は Artifact `01M81S8NDJ8B0J2DJ25PKPPW42`＝確認ページ `review-20261122-r8`）。答えられる設問だけでよい。回答済みで閉じた問いは [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md) にある。
+1. 本人：Recordinatorの問いに答える（Project `pc96190c8a9`）。探索画面の拡大表示の受入 `01M81W8NN4XG16SQXMV2R3NBKT`（添付は Artifact `01M81W7J9SE5RN51G1Y0K9W9AZ`＝確認ページ `review-20261122-r10`。見え方・操作ごとのしやすさ・前の版との比較）。命名の仕組みの方向 `01M81SA3GF8YMRZRETVZCHBGE2`（名前の成り立ち、ことばの範囲、音と語根を誰が書くか、地点名の型の混ぜ方、由来を画面に出すか、足したいもの。添付は Artifact `01M81S8NDJ8B0J2DJ25PKPPW42`＝確認ページ `review-20261122-r8`）。答えられる設問だけでよい。回答済みで閉じた問いは [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md) にある。
 
 ### runtime-state Next Action 2 の行
 
@@ -380,7 +380,7 @@ U.S. Copyright Office, Copyright Office Releases Part 2 of Artificial Intelligen
 
 ### runtime-state Next Action 1 の行（拡大表示の受入を外す前）
 
-1. 本人：Recordinatorの問いに答える（Project `pc96190c8a9`）。探索画面の拡大表示の受入 `01M81W8NN4XG16SQXMV2R3NBKT`（添付は Artifact `01M81W7J9SE5RN51G1Y0K9W9AZ`＝確認ページ `review-20261122-r10`。見え方・操作ごとのしやすさ・前の版との比較）。命名の第2版の受入 `01M825M5QZP791BTF91XA1FDAS`（見え方、領域別の指摘、次）と、名前の出し方の方向 `01M825M7PECFN9BY6CFVJREM58`（既定の音の質感、名前が分かる時、山の名前、経緯を誰が決めるか）。添付はどちらも Artifact `01M825KQ0FZZXDQ9PP6Q5M3C1G`＝確認ページ `review-20261123-naming`。答えられる設問だけでよい。回答済みで閉じた問いは [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md) にある。
+1. 本人：Recordinatorの問いに答える（Project `pc96190c8a9`）。探索画面の拡大表示の受入 `01M81W8NN4XG16SQXMV2R3NBKT`（添付は Artifact `01M81W7J9SE5RN51G1Y0K9W9AZ`＝確認ページ `review-20261122-r10`。見え方・操作ごとのしやすさ・前の版との比較）。命名の第2版の受入 `01M825M5QZP791BTF91XA1FDAS`（見え方、領域別の指摘、次）と、名前の出し方の方向 `01M825M7PECFN9BY6CFVJREM58`（既定の音の質感、名前が分かる時、山の名前、経緯を誰が決めるか）。添付はどちらも Artifact `01M825KQ0FZZXDQ9PP6Q5M3C1G`＝確認ページ `review-20261123-naming`。答えられる設問だけでよい。回答済みで閉じた問いは [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md) にある。
 
 ### runtime-state Next Action 3 の行
 
@@ -450,7 +450,7 @@ runtime-state Next Action 3 の行:
 
 ### runtime-state Next Action 1 の行
 
-1. 本人：Recordinatorの問いに答える（Project `pc96190c8a9`）。命名の第2版の受入 `01M825M5QZP791BTF91XA1FDAS`（見え方、領域別の指摘、次）と、名前の出し方の方向 `01M825M7PECFN9BY6CFVJREM58`（既定の音の質感、名前が分かる時、山の名前、経緯を誰が決めるか）。添付はどちらも Artifact `01M825KQ0FZZXDQ9PP6Q5M3C1G`＝確認ページ `review-20261123-naming`。答えられる設問だけでよい。回答済みで閉じた問いは [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md) にある。
+1. 本人：Recordinatorの問いに答える（Project `pc96190c8a9`）。命名の第2版の受入 `01M825M5QZP791BTF91XA1FDAS`（見え方、領域別の指摘、次）と、名前の出し方の方向 `01M825M7PECFN9BY6CFVJREM58`（既定の音の質感、名前が分かる時、山の名前、経緯を誰が決めるか）。添付はどちらも Artifact `01M825KQ0FZZXDQ9PP6Q5M3C1G`＝確認ページ `review-20261123-naming`。答えられる設問だけでよい。回答済みで閉じた問いは [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md) にある。
 
 ### runtime-state Next Action 2 の行
 
@@ -556,7 +556,7 @@ runtime-state Next Action 3 の行:
 
 ### runtime-state Next Action 1 の行
 
-1. 本人：Recordinatorの問い（Project `pc96190c8a9`）。動きの案 `01M828W77SDBJKNBXA22T8XJ8B`（確認ページ `review-20261123-motion`）と、名前の出し方の方向 `01M825M7PECFN9BY6CFVJREM58`（既定の音の質感、名前が分かる時、山の名前、経緯を誰が決めるか。確認ページ `review-20261123-naming`）。答えられる設問だけでよく、どちらも他の作業を止めない。回答済みで閉じた問いは [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md) にある。
+1. 本人：Recordinatorの問い（Project `pc96190c8a9`）。動きの案 `01M828W77SDBJKNBXA22T8XJ8B`（確認ページ `review-20261123-motion`）と、名前の出し方の方向 `01M825M7PECFN9BY6CFVJREM58`（既定の音の質感、名前が分かる時、山の名前、経緯を誰が決めるか。確認ページ `review-20261123-naming`）。答えられる設問だけでよく、どちらも他の作業を止めない。回答済みで閉じた問いは [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md) にある。
 
 ### runtime-state Next Action 2 の行
 
@@ -691,7 +691,7 @@ runtime-state Next Action 3 の行:
 
 ### runtime-state Next Action 1 の行（軸 E の前）
 
-1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）。Recordinator の問いは、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意）だけが未回答。回答済みで閉じた問いは [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md) にある。
+1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）。Recordinator の問いは、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意）だけが未回答。回答済みで閉じた問いは [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md) にある。
 
 ### runtime-state Next Action 3 の行（軸 E の前）
 
@@ -783,7 +783,7 @@ runtime-state Next Action 3 の行:
 
 ### runtime-state Next Action 1 の行
 
-1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）。未回答の Recordinator の問いは、遠征の規則の受入（Next Action 2）、動きの受入（Next Action 3）、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意。動きの受入の問いにも同じ設問がある）。回答済みで閉じた問いは [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md) にある。
+1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）。未回答の Recordinator の問いは、遠征の規則の受入（Next Action 2）、動きの受入（Next Action 3）、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意。動きの受入の問いにも同じ設問がある）。回答済みで閉じた問いは [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md) にある。
 
 ### runtime-state Next Action 2 の行
 
@@ -865,11 +865,11 @@ runtime-state Next Action 3 の行:
 
 ### runtime-state Current Trust Assessment 移した確認の索引の行
 
-- 拡大表示（2026-11-22〜23。EditMode 627/627、拡大してから細部が見えるまでの時間）、遠征の規則（2026-11-23。EditMode 639/639、遠征の7場面）、動き（2026-11-23。EditMode 639/639、3組の撮影 各1140枚）の Unity での確認は [履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md) へ原文のまま移した。
+- 拡大表示（2026-11-22〜23。EditMode 627/627、拡大してから細部が見えるまでの時間）、遠征の規則（2026-11-23。EditMode 639/639、遠征の7場面）、動き（2026-11-23。EditMode 639/639、3組の撮影 各1140枚）の Unity での確認は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) へ原文のまま移した。
 
 ### runtime-state Next Action 1 の行
 
-1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）。未回答の Recordinator の問いは、遠征の規則の受入（Next Action 2）、動きの受入と名前の出し方の受入（Next Action 3）、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意。動きの受入の問いにも同じ設問がある）。回答済みで閉じた問いは [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md) にある。
+1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）。未回答の Recordinator の問いは、遠征の規則の受入（Next Action 2）、動きの受入と名前の出し方の受入（Next Action 3）、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意。動きの受入の問いにも同じ設問がある）。回答済みで閉じた問いは [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md) にある。
 
 ### runtime-state Next Action 3 の行
 
@@ -899,7 +899,7 @@ runtime-state Next Action 3 の行:
 
 ### runtime-state Next Action 1 の行
 
-1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）。未回答の Recordinator の問いは、遠征の規則の受入（Next Action 2）、動き・名前の出し方・鳴る場所の受入（Next Action 3）、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意。動きの受入の問いにも同じ設問がある）。回答済みで閉じた問いは [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md) にある。
+1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）。未回答の Recordinator の問いは、遠征の規則の受入（Next Action 2）、動き・名前の出し方・鳴る場所の受入（Next Action 3）、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意。動きの受入の問いにも同じ設問がある）。回答済みで閉じた問いは [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md) にある。
 
 ### runtime-state Current Trust Assessment 通常Editorの確認の行（上限に収めるため移した）
 
@@ -911,7 +911,7 @@ runtime-state Next Action 3 の行:
 
 ### runtime-state Current Trust Assessment 移した確認の索引の行
 
-- 拡大表示（2026-11-22〜23。EditMode 627/627）、遠征の規則（2026-11-23。639/639、遠征の7場面）、動き（2026-11-23。639/639、3組の撮影）、命名の第2版（2026-11-23。631/631）、名前の出し方（2026-11-23。641/641）の Unity での確認と、.NET での拡大した地形・エリアと雲の測定（2026-11-22）は [履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md) へ原文のまま移した。
+- 拡大表示（2026-11-22〜23。EditMode 627/627）、遠征の規則（2026-11-23。639/639、遠征の7場面）、動き（2026-11-23。639/639、3組の撮影）、命名の第2版（2026-11-23。631/631）、名前の出し方（2026-11-23。641/641）の Unity での確認と、.NET での拡大した地形・エリアと雲の測定（2026-11-22）は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) へ原文のまま移した。
 
 ### SP-021 段5の行（上限に収めるため短くした）
 
@@ -954,7 +954,7 @@ runtime-state Next Action 3 の行:
 | Next mission | 本人が段6の目的と見返りの案（`01M84QPNKRE5XXVTF20ZHEN8RF`、確認ページ `review-20261124-stage6-plan`）から選び、遠征の規則（`01M82V588FZE0C05C0YP34DNGN`）・動き（`01M831H77K6HV96N1BYM6J0JZK`）・名前の出し方（`01M847PRXSXYDYJC00SH7ZDYYS`）・鳴る場所（`01M84NE26VM5MZAYR7QNM4D2WB`）の受入を見る。音の方向と素材は本人。回答による直しと段6の実装は `View/RegionExplorer.cs` と写しの Unity を使うので、同時には進めず順に入れる。構造物の画像の道具の用意は本人 |
 | Current bottleneck | 遠征の規則・動き・名前の出し方・鳴る場所が本人の手触りに近いかが未確認（受入の問い `01M82V588FZE0C05C0YP34DNGN`・`01M831H77K6HV96N1BYM6J0JZK`・`01M847PRXSXYDYJC00SH7ZDYYS`・`01M84NE26VM5MZAYR7QNM4D2WB`）。音の方向と素材は本人が決める。段6の目的と見返り（資材・基地・通貨とストア・依頼・記録）は案3つを出し、本人の選択待ち（`01M84QPNKRE5XXVTF20ZHEN8RF`）。手掛かりの文（ナラティブ）は開発担当が案を出して本人が決める。構造物の形は、承認済みの4枚が出て本人が方向を選ぶまで作れない（4枚を作る道具は本人が用意する。`01M821KYJMRRFKP1VY1F6Q1HS2`） |
 - 今回の増分：探索画面の 17 の場面で仮の合成音が動きと同じ時刻に鳴り、「音」ボタンで切れて、音のファイルを置けば場面ごとに差し替わり、本人が確認ページで各音を聞いて、鳴る場所の近さ・足したい場面・音の用意の仕方を言える。
-1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）。未回答の Recordinator の問いは、遠征の規則の受入（Next Action 2）、動き・名前の出し方・鳴る場所の受入（Next Action 3）、段6の案の選択（Next Action 5）、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意。動きの受入の問いにも同じ設問がある）。回答済みで閉じた問いは [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md) にある。
+1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）。未回答の Recordinator の問いは、遠征の規則の受入（Next Action 2）、動き・名前の出し方・鳴る場所の受入（Next Action 3）、段6の案の選択（Next Action 5）、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意。動きの受入の問いにも同じ設問がある）。回答済みで閉じた問いは [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md) にある。
 3. 本人（軸 E・名前の出し方・軸 F）：動きの受入（問い `01M831H77K6HV96N1BYM6J0JZK`、確認ページ `artifacts/region-map/review-20261123-motion-impl/`）、名前の出し方の受入（問い `01M847PRXSXYDYJC00SH7ZDYYS`、確認ページ `artifacts/region-map/review-20261123-naming-display/`）、鳴る場所の受入（問い `01M84NE26VM5MZAYR7QNM4D2WB`、確認ページ `artifacts/region-map/review-20261124-sound/`。近さ・気になる場面・足したい場面・音の方向と素材の用意の仕方）。音の方向と素材は本人が決め、本人のファイルは `Assets/Resources/RegionMapSound/` に場面の名前で置く（SP-021 6節）。回答による直しは同じ `View/RegionExplorer.cs` を使うので順に入れる。命名と拡大表示の「軽微」の指摘、×40 以上のサーチの輪（SP-021 8節）はその後。本人が Editor を開いている間は写しで確かめて1回で戻し、写しの Unity が動いている間は写しの C# を編集しない。
 5. 本人（段6）：目的と見返りの案の選択（問い `01M84QPNKRE5XXVTF20ZHEN8RF`、確認ページ `artifacts/region-map/review-20261124-stage6-plan/`。どの案が近いか・取り入れたい要素・外したい要素・最初に作る大きさ）。遠征の受入の「次に足すもの」と食い違ったら新しい方を使う。回答を読んだら開発担当が選ばれた案の最小の実装（SP-021 4節の段6の行）を作り、実画面で受入の問いを出す。案の中の値・名前・品目・文は本人が決める。
 
@@ -981,15 +981,15 @@ runtime-state Next Action 3 の行:
 
 ### runtime-state から移した行
 
-| Next mission | 名前の出し方（`01M847PRXSXYDYJC00SH7ZDYYS`）と鳴る場所（`01M84NE26VM5MZAYR7QNM4D2WB`）の受入は、2026-11-24 に本人が差し戻した（原文は [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md)）。開発担当は命名の生成の仕組みを直す。音の質感の作業と設問は止める。音は本人が扱いを決めるまで変えない。本人は段6で案A を選んだ（`01M84QPNKRE5XXVTF20ZHEN8RF`、残り3設問は未回答）。遠征の規則（`01M82V588FZE0C05C0YP34DNGN`）と動き（`01M831H77K6HV96N1BYM6J0JZK`）の受入は回答待ち。直しと段6の実装は `View/RegionExplorer.cs` と写しの Unity を使うので順に入れる |
-| Current bottleneck | 命名の生成の仕組み。本人の差し戻しは「好き好みの問題でなく、生成システムの問題」。seed 1〜12 の書き出しでは、名前のある6地域の土地の名 284 件のうち 96 件で地形の語根と類の語が同じ意味で重なり（例「ミニモ（山）＋山」）、53 件が方角で区別され、1字違いの語根の組が地域ごとに 9〜17 あり、未踏の6地域は記号名だけ（数え方は [履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md)）。音は、開発担当が合成した音の扱いを本人が決めるまで止まる。段6は残りの設問（取り入れる要素・外す要素・最初の大きさ）の回答待ち。構造物の形は画像の道具待ち（`01M821KYJMRRFKP1VY1F6Q1HS2`） |
+| Next mission | 名前の出し方（`01M847PRXSXYDYJC00SH7ZDYYS`）と鳴る場所（`01M84NE26VM5MZAYR7QNM4D2WB`）の受入は、2026-11-24 に本人が差し戻した（原文は [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md)）。開発担当は命名の生成の仕組みを直す。音の質感の作業と設問は止める。音は本人が扱いを決めるまで変えない。本人は段6で案A を選んだ（`01M84QPNKRE5XXVTF20ZHEN8RF`、残り3設問は未回答）。遠征の規則（`01M82V588FZE0C05C0YP34DNGN`）と動き（`01M831H77K6HV96N1BYM6J0JZK`）の受入は回答待ち。直しと段6の実装は `View/RegionExplorer.cs` と写しの Unity を使うので順に入れる |
+| Current bottleneck | 命名の生成の仕組み。本人の差し戻しは「好き好みの問題でなく、生成システムの問題」。seed 1〜12 の書き出しでは、名前のある6地域の土地の名 284 件のうち 96 件で地形の語根と類の語が同じ意味で重なり（例「ミニモ（山）＋山」）、53 件が方角で区別され、1字違いの語根の組が地域ごとに 9〜17 あり、未踏の6地域は記号名だけ（数え方は [履歴](REGION_MAP_EXPLORATION_HISTORY.md)）。音は、開発担当が合成した音の扱いを本人が決めるまで止まる。段6は残りの設問（取り入れる要素・外す要素・最初の大きさ）の回答待ち。構造物の形は画像の道具待ち（`01M821KYJMRRFKP1VY1F6Q1HS2`） |
 | Change relation | 継続（2026-11-22、本人依頼「複数のタスクの軸が考えられるため整理して、そのまま可能なら開発を継続」「回答しました。命名のシステムについてはより体系的に構築したいです。」と、回答 `01M81JA2CC4WC37TF841JJ8ZEE`・`01M81JA6HWR4TJQXZA6T07TC6J`）。順は SP-021 4.1節。軸 G の入口の後に、命名の仕組みの最初の版と川岸への移動を作った。2026-11-22〜23 に、親の作業からの依頼（SP-021「地域鳥瞰図と探索」の拡大表示の統合）で拡大表示を作った。2026-11-23 に、命名の回答 `01M81SA3GF8YMRZRETVZCHBGE2` を受けて第2版を作った |
 - 今回の増分：別の地域を開いても、名前が同じ語根の繰り返しや方角だけの区別にならず、1つ1つの名前がその場所の何から付いたかを本人が由来で確かめられる。
 次の作業は、本人の回答から決める。SP-017のArch往復検証を自動で次の作業にしない。
-1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）、開発担当が合成した音の扱い（Next Action 3）。未回答の問いは、遠征の規則の受入（Next Action 2）、動きの受入（Next Action 3）、段6の残り3設問（Next Action 5）、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意）。回答済みと差し戻しの原文は [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md)。
+1. 本人：構造物の4枚のための画像生成の道具の用意（Next Action 4）、開発担当が合成した音の扱い（Next Action 3）。未回答の問いは、遠征の規則の受入（Next Action 2）、動きの受入（Next Action 3）、段6の残り3設問（Next Action 5）、動きの案の「削る動き」（`01M828W77SDBJKNBXA22T8XJ8B`、任意）。回答済みと差し戻しの原文は [USER_REQUEST_LEDGER](../USER_REQUEST_LEDGER.md)。
 2. 本人（軸 H）：遠征の規則の受入（問い `01M82V588FZE0C05C0YP34DNGN`、確認ページ `artifacts/region-map/review-20261123-search-impl/`）。回答は開発担当が読み、`01M82CXPP4H2DKENWRZT0V0MGH` の続きとして SP-021 4.1節 H へ戻す。回答で直す所は、同じ `View/RegionExplorer.cs` を使うので、他の直しと順に入れる。
 3. 軸 E・命名・軸 F：動きの受入（問い `01M831H77K6HV96N1BYM6J0JZK`、確認ページ `artifacts/region-map/review-20261123-motion-impl/`）は本人の回答待ち。命名は、開発担当が生成の仕組みを直す（`Core/RegionNaming.cs`・`Core/RegionNamingRules.cs`。直す欠陥は Current bottleneck。左上の「ことばの音」の表示も外す）。直した版は seed 1〜12 の同じ数え方で前後を比べ、音の響きの好みは聞かない。未踏の割合・峰の規則・記号名の体系は本人が決める。音は、本人が扱いを決めるまで `View/RegionSound.cs`・`View/RegionSoundPlayer.cs` と鳴らす場面を変えない。命名と拡大表示の「軽微」の指摘、×40 以上のサーチの輪（SP-021 8節）はその後。本人が Editor を開いている間は写しで確かめて1回で戻し、写しの Unity が動いている間は写しの C# を編集しない。
-4. 構造物の形（画像から）：問い `01M81TQZHW7EREG4FR38RDSVBE` は2026-11-23に6設問とも本人が回答済み（回答ID `01M81V4908J2FG0Y2N0TN51ND4` ほか5件）。承認は A＝4枚（山頂のモノリス1種類で形の方向を4通り）・段階式（第1段は単体）・斜め見下ろし約35°・エージェントが生成・起こし方は画像を見てから。参照資料は出典付きで揃え済み（[SP-021 履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md)）。4枚は未生成（この環境に画像の生成の道具が無い）。経路は本人が「この環境で、生成の道具を使えるようにする」を選んだ（問い `01M821KYJMRRFKP1VY1F6Q1HS2`、外す方向の指定なし）。本人：画像生成の道具をこの環境で使えるようにする（手順は Task へ記録）。使えたら開発担当が4枚を生成し、方向を選ぶ問いを送る。地形つきの画像と形への起こし方は、方向が決まった後。軸 G のデザインの画像は `Assets/Resources/RegionMapSkin/` に置く（SP-021 6節）。段6（ゲームの内容）は本人の領分。
+4. 構造物の形（画像から）：問い `01M81TQZHW7EREG4FR38RDSVBE` は2026-11-23に6設問とも本人が回答済み（回答ID `01M81V4908J2FG0Y2N0TN51ND4` ほか5件）。承認は A＝4枚（山頂のモノリス1種類で形の方向を4通り）・段階式（第1段は単体）・斜め見下ろし約35°・エージェントが生成・起こし方は画像を見てから。参照資料は出典付きで揃え済み（[SP-021 履歴](REGION_MAP_EXPLORATION_HISTORY.md)）。4枚は未生成（この環境に画像の生成の道具が無い）。経路は本人が「この環境で、生成の道具を使えるようにする」を選んだ（問い `01M821KYJMRRFKP1VY1F6Q1HS2`、外す方向の指定なし）。本人：画像生成の道具をこの環境で使えるようにする（手順は Task へ記録）。使えたら開発担当が4枚を生成し、方向を選ぶ問いを送る。地形つきの画像と形への起こし方は、方向が決まった後。軸 G のデザインの画像は `Assets/Resources/RegionMapSkin/` に置く（SP-021 6節）。段6（ゲームの内容）は本人の領分。
 5. 本人（段6）：目的と見返りの案。本人は「案A 持ち帰って整える（通貨とストア）」を選んだ（2026-11-24）。残りは取り入れたい要素・外したい要素・最初に作る大きさ（問い `01M84QPNKRE5XXVTF20ZHEN8RF`、確認ページ `artifacts/region-map/review-20261124-stage6-plan/`）。遠征の受入の「次に足すもの」と食い違ったら新しい方を使う。回答を読んだら開発担当が選ばれた案の最小の実装（SP-021 4節の段6の行）を作り、実画面で受入の問いを出す。案の中の値・名前・品目・文は本人が決める。
 
 ## 2026-11-24 写真の縮尺の細部（正本から移した行）
@@ -1131,7 +1131,7 @@ runtime-state Next Action 3 の行:
 
 ### runtime-state Next Action 4 の行
 
-4. 止めているもの（再開は本人の指示）：動き（軸 E）、音（軸 F）、サーチのゲーム性と遠征の規則（軸 H）、命名の響きと表示、段6。コード・確認ページ・回答の記録は残す。本人が挙げた直す点（波紋が距離に見える、矢印が答えの座標を指す、演出が機能に見える、発見物の分類を開発担当が決めた）は SP-021 4.1節と9節。命名の生成の欠陥（seed 1〜12 で数えた。[履歴](02_design/REGION_MAP_EXPLORATION_HISTORY.md)）は、段1・2 の後に開発担当が数え方を変えずに直す（順は開発担当の整理）。
+4. 止めているもの（再開は本人の指示）：動き（軸 E）、音（軸 F）、サーチのゲーム性と遠征の規則（軸 H）、命名の響きと表示、段6。コード・確認ページ・回答の記録は残す。本人が挙げた直す点（波紋が距離に見える、矢印が答えの座標を指す、演出が機能に見える、発見物の分類を開発担当が決めた）は SP-021 4.1節と9節。命名の生成の欠陥（seed 1〜12 で数えた。[履歴](REGION_MAP_EXPLORATION_HISTORY.md)）は、段1・2 の後に開発担当が数え方を変えずに直す（順は開発担当の整理）。
 
 ## 2026-11-25 湖と平野の筋（正本から移した行）
 
@@ -1243,7 +1243,7 @@ runtime-state Next Action 3 の行:
 
 - 軸 G（2026-11-22）で `View/RegionMapSkin.cs` を足し、`View/RegionExplorer.cs`（画像の読み込みと4か所の描き方）、`Editor/RegionExplorerSmoke.cs`（差し替えの有無を1行ログに出す）、`Assets/Tests/EditMode/RegionMapTests.cs`（1件）を変えた。シーン・`ProjectSettings/`・`Packages/`・Terrain・StructureGenerator・Stamp は変更していない。画像を置く `Assets/Resources/RegionMapSkin/` は空のフォルダ（`.gitkeep` とフォルダの meta だけ）。
 - 3D化の試作（PLANNER007、2026-11-25。範囲の外）：仕組み（地層の段・通行の区分と道筋・局所の体積・Unity での表示。EditMode 661/661）は作ったが、本人は Unity の絵を「のっぺりしており初期状態のTerrainという感じなので直したいです。」と評価した。開発担当は見え方の想定を作らずに実装し、副産物の画面に可否を求めていた。数値と確認の記録は履歴の「2026-11-25 3D化の見え方の訂正（正本から移した行と出典）」。
-6. 3D化（範囲の外）：見え方の想定を先に作る進め方にした。本人が方向「砂岩の台地と峡谷」を選び、想定（3つの視点ごとの条件・参照写真・今の絵との差と作業）を [REGION_TERRAIN_LOOK_SPEC](02_design/REGION_TERRAIN_LOOK_SPEC.md) に書いた。実装はこの想定に沿って進め、同じ視点で条件ごとに見比べて報告する。段階ごとに可否を聞かない。
+6. 3D化（範囲の外）：見え方の想定を先に作る進め方にした。本人が方向「砂岩の台地と峡谷」を選び、想定（3つの視点ごとの条件・参照写真・今の絵との差と作業）を [REGION_TERRAIN_LOOK_SPEC](../02_design/REGION_TERRAIN_LOOK_SPEC.md) に書いた。実装はこの想定に沿って進め、同じ視点で条件ごとに見比べて報告する。段階ごとに可否を聞かない。
 
 ### SP-021 7節から移した行
 
@@ -1287,3 +1287,28 @@ seed 9 の北西側の雲を追った。30km四方の雲濃度と地上投影の
 
 - 未確認：差し替えの画像を本人が置いた時の見え方（仮の画像1組でだけ確認。PNG以外の形式、正方形でない画像、取り込み設定が Sprite の画像、1920×1080 以外の画面は未確認）、確認ページ `review-20261122-r7` を本人のブラウザで開いた時の表示（Recordinator の「開く」は応答200。添付18ファイルのハッシュは元と一致）、seed 7 以外の地域と地点 5・10・14 以外での拡大した地形、`9cc6770` 以降の画面での実マウスの操作（右・中ドラッグでの移動、ホイールの拡大・縮小、一覧の行とボタンのクリック、「地名」ボタン、部品の上のクリックが地図へ通らないこと）、雲の層を3枚に増やした後の実際の描画の速さ、拡大した時の地名の重なり、16:9 以外の画面の形での部品の重なり、元のリポジトリの Editor での探索シーン再生（写しでだけ確認）、ビルドした Player、Windows以外でのフォント表示、残る見た目の制限（SP-021 8節）の解消。
 - 未確認（拡大表示）：実マウスでのホイール・右ドラッグの手触りと、細部を作っている最中の滑らかさ（更新の間隔の測定だけ）、元のリポジトリの Editor での再生（写しでだけ確認）、seed 7 以外と 1920×1080 以外の画面の形、ビルドした Player での作成時間、拡大 ×40 以上でのサーチの輪（画面より大きく見えない）、確認ページ `review-20261122-r10` を本人のブラウザで開いた時の画像の出方。
+
+## 2026-11-27 文書の上限のために正本から移した行
+
+### docs/runtime-state.md から
+
+- 仮の音で鳴る場所（軸 F、2026-11-24、`2b398b0`）で足したのは `View/RegionSound.cs`・`View/RegionSoundPlayer.cs`・`Assets/Tests/EditMode/RegionSoundTests.cs`（各 meta つき）と空のフォルダ `Assets/Resources/RegionMapSound/`。変えたのは `View/RegionExplorer.cs`（各場面から鳴らす、「音」ボタン、`CloseCard`・`OpenDiscovered`、AudioListener）と `Editor/RegionExplorerSmoke.cs`（仮の音の WAV の書き出し、`sound-result.txt`）。2026-11-25 に既定を「なし」にした（`8dc7729`。`RegionExplorer.cs`・`Editor/RegionExplorerSmoke.cs`・`RegionSoundTests.cs`）。`Core/`・シーン・`ProjectSettings/`・`Packages/` は変えていない。
+
+- 確認ページ（`artifacts/region-map/` の下）：`review-20261124-sound/`（軸 F の鳴る場所と仮の音）・`review-20261123-naming-display/`（名前の出し方の4点）・`review-20261123-motion-impl/`（軸 E の動きの実画面）・`review-20261123-search-impl/`（軸 H の遠征の規則の実画面）・`review-20261123-search/`（軸 H のサーチの案）・`review-20261123-motion/`（軸 E の動きの案）・`review-20261123-naming/`（命名の第2版と探索画面の実画面）・`review-20261122-r10/`（拡大表示の実画面）・`review-20261123-r1/`（山頂のモノリスの形の方向4通りの計画と参照資料）・`review-20261122-r9/`（構造物の形を画像から起こす進め方）・`review-20261122-r4/`〜`r8/`（エリア・地点の根拠・雲の流れ・拡大した地形・形の案・呼び名・命名の仕組み）。
+
+### docs/02_design/REGION_MAP_EXPLORATION_SPEC.md から
+
+2行目は、エリアの図・エリアと地点の一覧（根拠と採点）・採点の図を書き出す。ファイル名と雲の連番のオプションは [履歴](../archive/REGION_MAP_EXPLORATION_HISTORY.md)。
+
+3行目は、呼び名の一覧（`*-names.json`）・地点 14・5・10 の周りの拡大した絵と形の案・窓の位置の図を書き出す。オプションの説明は [履歴](../archive/REGION_MAP_EXPLORATION_HISTORY.md) の「7節 3行目の説明（二度目）」。
+
+3D化の試作（`Core/RegionTerrainMesh`、段階 A。範囲の外の試作で、採否は本人）は、`--view3d "方位,見下ろす角,高さの倍率,距離km,幅,高さ"` で斜めから見た絵を出す。拡大した窓を見るときは `--view3d-focus "地図X,地図Y,窓の一辺km"` を足す。 段階 B〜D（2026-11-25。値は仮）: B `--strata 1`＝拡大した地形に地層の段（`RegionDetailSpec.Strata`。既定 0 は入れず、今までの地形とバイト一致）。C `--routes`＝通行の区分と道筋（`Core/RegionTraversal`）。D `--volume`＝崖を1つ選び、崖下のえぐれと洞窟を体積で作って、断面図も出す（`Core/RegionVolume`。面の取り出しは Surface Nets）。`--view3d-lit` は面の向きから光を計算する。B・C の細かい説明は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-25 3D化の試作・段階 D（正本から移した行）」。
+
+`--measure` は CSV と重ね図を出す（水色は陸上の窪地、黄色は海面以下を含む窪地、桃色は筋候補）。`--trace-terrain` は工程別の断面、`--compare-baseline` は共通の平野、`--lake-detail` は湖の拡大図を出す。判定は [TerrainMeasurements.cs](../../tools/RegionMapPreview/TerrainMeasurements.cs)。
+
+### docs/02_design/REGION_TERRAIN_LOOK_SPEC.md から
+
+- 米国国立公園局の [地層の色と岩質](https://www.nps.gov/colm/learn/nature/rock-layers.htm)・[崖を流れる黒い筋](https://www.nps.gov/colm/learn/nature/geology-faq.htm)、Unity の [三方向投影](https://docs.unity3d.com/Packages/com.unity.shadergraph@17.0/manual/Triplanar-Node.html) を第2区切りの参照にした。先行調査は Zion Geology 2007 と Capitol Reef Geologic Features が全文、Canyonlands・Arches・Bryce・Mesa Verde・Glen Canyon・Natural Bridges・Colorado NM は要約として読めた範囲。
+- 未取得の資料は、アルコーブの幅・高さ・奥行き、崖錐の傾きと岩の大きさ、フィン・尖塔の寸法、細い峡谷の実測（Narrows 以外）、崖を越える道筋の体系的な説明、この地域の霞と陰の実測値、Utah Geological Survey の記事。現地写真の撮影者と地層名は [NPS の写真原典](https://www.nps.gov/colm/learn/nature/rock-layers.htm)、転載条件は [NPS の Ownership](https://www.nps.gov/aboutus/disclaimer.htm) による。
+- 写真: Wikimedia Commons。ページが開けることを確かめ、遠景・中景・近景の1枚目は開発担当が実際に見た。
+- 構成の原則: James Gurney のブログ gurneyjourney。制作現場の資料は [履歴](../archive/REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-25 3D化の見え方の訂正」。

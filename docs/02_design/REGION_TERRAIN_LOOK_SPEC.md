@@ -167,7 +167,7 @@ seed 9 では両層を含む空を、同じ地図を使って2Dと地上の空�
 
 2Dと3Dは32×32の流れの格子を同じ三角形で補間し、同じ濃度画像を画素の中心から双線形で読む。従来の3Dの計算と地図の濃度をseed 9の近傍400点で比べると、低い雲の差は0〜1の尺度で最大0.12247だった。修正後は地図との差が0.00005未満（69秒・75秒、上下両層）。
 
-5.2節の雲の照合（2時刻の移動、上層、真上からの撮影、地形を含む俯瞰と深度）と、崖下の暗部・床の間接光・崩落岩の日照の比較の記録（8段落）は、[履歴](REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-27 REGION_TERRAIN_LOOK_SPEC 5.2節から移した記録」へ原文のまま移した（未確認は今も効く）。
+5.2節の雲の照合（2時刻の移動、上層、真上からの撮影、地形を含む俯瞰と深度）と、崖下の暗部・床の間接光・崩落岩の日照の比較の記録（8段落）は、[履歴](../archive/REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-27 REGION_TERRAIN_LOOK_SPEC 5.2節から移した記録」へ原文のまま移した（未確認は今も効く）。
 
 別地点のseed 8（X82.93144／Y62.38425）でも、PC品質で遠景・中景・崖下を撮影できた。砂・礫の素材は比較用に置き、既定への採用は本人の判断。[seed 8 の遠景・中景・崖下](../../artifacts/region-map/mesa-cloud-20261126/readiness-final-seed8/mesa-views.jpg)
 
@@ -231,7 +231,4 @@ dotnet run --project tools/RegionMapPreview -c Release -- --seed 8 --res 1024 --
 
 ## 6. 出典と、取れなかった物
 
-- 米国国立公園局の [地層の色と岩質](https://www.nps.gov/colm/learn/nature/rock-layers.htm)・[崖を流れる黒い筋](https://www.nps.gov/colm/learn/nature/geology-faq.htm)、Unity の [三方向投影](https://docs.unity3d.com/Packages/com.unity.shadergraph@17.0/manual/Triplanar-Node.html) を第2区切りの参照にした。先行調査は Zion Geology 2007 と Capitol Reef Geologic Features が全文、Canyonlands・Arches・Bryce・Mesa Verde・Glen Canyon・Natural Bridges・Colorado NM は要約として読めた範囲。
-- 写真: Wikimedia Commons。ページが開けることを確かめ、遠景・中景・近景の1枚目は開発担当が実際に見た。
-- 構成の原則: James Gurney のブログ gurneyjourney。制作現場の資料は [履歴](REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-25 3D化の見え方の訂正」。
-- 未取得の資料は、アルコーブの幅・高さ・奥行き、崖錐の傾きと岩の大きさ、フィン・尖塔の寸法、細い峡谷の実測（Narrows 以外）、崖を越える道筋の体系的な説明、この地域の霞と陰の実測値、Utah Geological Survey の記事。現地写真の撮影者と地層名は [NPS の写真原典](https://www.nps.gov/colm/learn/nature/rock-layers.htm)、転載条件は [NPS の Ownership](https://www.nps.gov/aboutus/disclaimer.htm) による。
+- 出典の一覧（米国国立公園局・Unity の資料・写真・構成の原則）と未取得の資料の行は [履歴](../archive/REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-27 文書の上限のために正本から移した行」へ原文のまま移した（2026-11-27）。
