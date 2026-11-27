@@ -140,7 +140,7 @@ namespace Vastcore.RegionMap
                 SampleItem item = items[i];
                 float px = anchorX + item.Dx;
                 float pz = anchorZ + item.Dz;
-                float py = scene.HeightAt(px, pz);
+                float py = scene.RenderedHeightAt(px, pz);
                 RegionPropPlacementSolver.SampleSlope(scene, px, pz, out float slopeDeg, out float sx, out float sz);
 
                 bool upright = item.PropId == "str_wooden_fence" || item.PropId == "set_trail_signpost";

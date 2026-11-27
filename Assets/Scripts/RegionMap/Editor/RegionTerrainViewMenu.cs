@@ -109,8 +109,8 @@ namespace Vastcore.RegionMap.Editor
             {
                 EditorUtility.DisplayProgressBar("Region Map", "選んだ地点と雲を地上で描いています…", 0.5f);
                 RegionBiome biome = region.BiomeAtMap(position.x, position.y);
-                bool withProps = biome == RegionBiome.Grassland;
-                RegionLookSpec spec = RegionLookSpec.ForBiome(biome, position.x, position.y, withProps: withProps, withRealAssets: withProps);
+                // 草原の固定配置は専用のサンプルメニューで開く。
+                RegionLookSpec spec = RegionLookSpec.ForBiome(biome, position.x, position.y);
                 RegionAtmosphere atmosphere = RegionAtmosphere.Create(preset);
                 atmosphere.PrepareSun();
                 RegionTerrainView.LookResult look = CreateLookStage(region, spec, atmosphere, out Camera camera);

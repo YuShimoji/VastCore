@@ -217,7 +217,7 @@ namespace Vastcore.RegionMap
             // Resources/RegionMap3D/Surfaces/<役>/ に置かれた写真素材を配列へ束ねる（無ければ今の手続きの絵）
             RegionSurfaceMaterials.Bind();
             // バイオーム別 3D 表面（Grassland 等の芝・ローム・花崗岩崖）をバインドする
-            RegionSurfaceMaterials.BindBiomeSurfaces(scene.BiomeSurface, RegionPropAssets.Source);
+            RegionSurfaceMaterials.BindBiomeSurfaces(scene.BiomeSurface);
             // 土砂の地図は窓ごとに画像にして、その窓のマテリアルへ結び付ける（アルコーブは内側のマテリアルを写すので同じ地図を読む）
             RegionSedimentLayers.Begin();
             var root = new GameObject("Region Terrain Look");

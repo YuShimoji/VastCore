@@ -163,7 +163,7 @@ namespace Vastcore.RegionMap
         /// 砂岩以外のバイオーム（Grassland / Forest / Savanna 等）用の地面・下層土・崖 PBR テクスチャをシェーダーへ渡す。
         /// テクスチャが存在しない環境でもエラーにせず、手続き色調＋崖色のみでフォールバックする。
         /// </summary>
-        public static void BindBiomeSurfaces(RegionBiomeSurfaceProfile profile, IRegionPropAssetSource assetSource = null)
+        public static void BindBiomeSurfaces(RegionBiomeSurfaceProfile profile)
         {
             ReleaseBiomeSurfaces();
             if (profile == null || profile.UsesSandstonePipeline)
@@ -171,32 +171,18 @@ namespace Vastcore.RegionMap
                 Shader.SetGlobalVector("_RegionBiomeParams", Vector4.zero);
                 Shader.SetGlobalVector("_RegionBiomeTile", new Vector4(0.4f, 0.45f, 0.36f, 0.88f));
                 Shader.SetGlobalVector("_RegionBiomeCliffColor", Vector4.zero);
+                Shader.SetGlobalVector("_RegionBiomeGroundBlend", Vector4.zero);
                 return;
             }
 
-            IRegionPropAssetSource source = assetSource ?? RegionPropAssets.Source;
-            Texture2D groundColor = source != null && !string.IsNullOrEmpty(profile.GroundColorPath) ? source.Texture(profile.GroundColorPath) : null;
-            Texture2D groundNormal = source != null && !string.IsNullOrEmpty(profile.GroundNormalPath) ? source.Texture(profile.GroundNormalPath) : null;
-            Texture2D groundRough = source != null && !string.IsNullOrEmpty(profile.GroundRoughnessPath) ? source.Texture(profile.GroundRoughnessPath) : null;
-            Texture2D subsoilColor = source != null && !string.IsNullOrEmpty(profile.SubsoilColorPath) ? source.Texture(profile.SubsoilColorPath) : null;
-            Texture2D subsoilNormal = source != null && !string.IsNullOrEmpty(profile.SubsoilNormalPath) ? source.Texture(profile.SubsoilNormalPath) : null;
-            Texture2D subsoilRough = source != null && !string.IsNullOrEmpty(profile.SubsoilRoughnessPath) ? source.Texture(profile.SubsoilRoughnessPath) : null;
-            Texture2D cliffColor = source != null && !string.IsNullOrEmpty(profile.CliffColorPath) ? source.Texture(profile.CliffColorPath) : null;
-            Texture2D cliffNormal = source != null && !string.IsNullOrEmpty(profile.CliffNormalPath) ? source.Texture(profile.CliffNormalPath) : null;
-            Texture2D cliffRough = source != null && !string.IsNullOrEmpty(profile.CliffRoughnessPath) ? source.Texture(profile.CliffRoughnessPath) : null;
-
-            bool hasTextures = Enabled && groundColor != null;
+            var textures = Enabled ? Resources.Load<RegionBiomeSurfaceTextures>(RegionBiomeSurfaceTextures.Resource) : null;
+            var ground = textures != null ? (profile.GroundUsesLoam ? textures.Loam : textures.Turf) : default;
+            bool hasTextures = textures != null && ground.IsComplete && textures.Loam.IsComplete && textures.Cliff.IsComplete;
             if (hasTextures)
             {
-                Shader.SetGlobalTexture("_BiomeGroundMap", groundColor);
-                Shader.SetGlobalTexture("_BiomeGroundNormal", groundNormal != null ? groundNormal : Texture2D.normalTexture);
-                Shader.SetGlobalTexture("_BiomeGroundRoughness", groundRough != null ? groundRough : Texture2D.whiteTexture);
-                Shader.SetGlobalTexture("_BiomeSubsoilMap", subsoilColor != null ? subsoilColor : groundColor);
-                Shader.SetGlobalTexture("_BiomeSubsoilNormal", subsoilNormal != null ? subsoilNormal : (groundNormal != null ? groundNormal : Texture2D.normalTexture));
-                Shader.SetGlobalTexture("_BiomeSubsoilRoughness", subsoilRough != null ? subsoilRough : (groundRough != null ? groundRough : Texture2D.whiteTexture));
-                Shader.SetGlobalTexture("_BiomeCliffMap", cliffColor != null ? cliffColor : groundColor);
-                Shader.SetGlobalTexture("_BiomeCliffNormal", cliffNormal != null ? cliffNormal : Texture2D.normalTexture);
-                Shader.SetGlobalTexture("_BiomeCliffRoughness", cliffRough != null ? cliffRough : Texture2D.whiteTexture);
+                BindBiomeTextureSet("_BiomeGround", ground);
+                BindBiomeTextureSet("_BiomeSubsoil", textures.Loam);
+                BindBiomeTextureSet("_BiomeCliff", textures.Cliff);
             }
 
             Color cliffDisplay = new Color(profile.CliffR, profile.CliffG, profile.CliffB, 1f);
@@ -213,6 +199,14 @@ namespace Vastcore.RegionMap
                 1f / Mathf.Max(0.1f, profile.CliffTileMetres),
                 profile.DefaultRoughness));
             Shader.SetGlobalVector("_RegionBiomeCliffColor", new Vector4(cliffLinear.r, cliffLinear.g, cliffLinear.b, 1f));
+            Shader.SetGlobalVector("_RegionBiomeGroundBlend", new Vector4(profile.GroundPhotoColor, profile.GroundPatchStrength, 0f, 0f));
+        }
+
+        private static void BindBiomeTextureSet(string prefix, RegionBiomeSurfaceTextures.TextureSet textures)
+        {
+            Shader.SetGlobalTexture(prefix + "Map", textures.Color);
+            Shader.SetGlobalTexture(prefix + "Normal", textures.Normal);
+            Shader.SetGlobalTexture(prefix + "Roughness", textures.Roughness);
         }
 
         public static void ReleaseBiomeSurfaces()

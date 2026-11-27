@@ -20,23 +20,17 @@ namespace Vastcore.RegionMap
         public float MossMaskScale = 0f;
 
         public float DetailStrength = 1f;
+        public float GroundPhotoColor = 0.56f;
+        public float GroundPatchStrength;
         public float NormalStrength = 1f;
         public float DefaultRoughness = 0.88f;
         public float SpecularStrength = 0.12f;
 
-        public string GroundColorPath = "";
-        public string GroundNormalPath = "";
-        public string GroundRoughnessPath = "";
+        public bool GroundUsesLoam;
         public float GroundTileMetres = 2.6f;
 
-        public string SubsoilColorPath = "";
-        public string SubsoilNormalPath = "";
-        public string SubsoilRoughnessPath = "";
         public float SubsoilTileMetres = 2.2f;
 
-        public string CliffColorPath = "";
-        public string CliffNormalPath = "";
-        public string CliffRoughnessPath = "";
         public float CliffTileMetres = 2.4f;
     }
 
@@ -45,9 +39,6 @@ namespace Vastcore.RegionMap
     /// </summary>
     public static class RegionBiomeSurface
     {
-        private const string MeadowTurfRoot = "Assets/Art/Textures/NAT/grassland_meadow_turf/";
-        private const string MeadowLoamRoot = "Assets/Art/Textures/NAT/grassland_loam_soil/";
-        private const string GraniteOutcropRoot = "Assets/Art/Textures/NAT/mossy_granite_outcrop/";
 
         public static RegionBiomeSurfaceProfile ProfileFor(RegionBiome biome)
         {
@@ -64,21 +55,14 @@ namespace Vastcore.RegionMap
                         PlantTintR = 0.58f, PlantTintG = 0.80f, PlantTintB = 0.56f,
                         TopDustScale = 0.08f,
                         MossMaskScale = 1.0f,
-                        DetailStrength = 0.88f,
+                        DetailStrength = 1f,
+                        GroundPhotoColor = 0.9f,
+                        GroundPatchStrength = 0.65f,
                         NormalStrength = 1.15f,
                         DefaultRoughness = 0.88f,
                         SpecularStrength = 0.12f,
-                        GroundColorPath = MeadowTurfRoot + "Grass005_1K-JPG_Color.jpg",
-                        GroundNormalPath = MeadowTurfRoot + "Grass005_1K-JPG_NormalGL.jpg",
-                        GroundRoughnessPath = MeadowTurfRoot + "Grass005_1K-JPG_Roughness.jpg",
                         GroundTileMetres = 2.4f,
-                        SubsoilColorPath = MeadowLoamRoot + "Ground009_1K-JPG_Color.jpg",
-                        SubsoilNormalPath = MeadowLoamRoot + "Ground009_1K-JPG_NormalGL.jpg",
-                        SubsoilRoughnessPath = MeadowLoamRoot + "Ground009_1K-JPG_Roughness.jpg",
                         SubsoilTileMetres = 2.2f,
-                        CliffColorPath = GraniteOutcropRoot + "mossy_granite_outcrop_diff_1k.jpg",
-                        CliffNormalPath = GraniteOutcropRoot + "mossy_granite_outcrop_nor_gl_1k.jpg",
-                        CliffRoughnessPath = GraniteOutcropRoot + "mossy_granite_outcrop_rough_1k.jpg",
                         CliffTileMetres = 2.8f,
                     };
                 case RegionBiome.Forest:
@@ -99,17 +83,8 @@ namespace Vastcore.RegionMap
                         NormalStrength = 1.1f,
                         DefaultRoughness = 0.86f,
                         SpecularStrength = 0.14f,
-                        GroundColorPath = MeadowTurfRoot + "Grass005_1K-JPG_Color.jpg",
-                        GroundNormalPath = MeadowTurfRoot + "Grass005_1K-JPG_NormalGL.jpg",
-                        GroundRoughnessPath = MeadowTurfRoot + "Grass005_1K-JPG_Roughness.jpg",
                         GroundTileMetres = 2.4f,
-                        SubsoilColorPath = MeadowLoamRoot + "Ground009_1K-JPG_Color.jpg",
-                        SubsoilNormalPath = MeadowLoamRoot + "Ground009_1K-JPG_NormalGL.jpg",
-                        SubsoilRoughnessPath = MeadowLoamRoot + "Ground009_1K-JPG_Roughness.jpg",
                         SubsoilTileMetres = 2.0f,
-                        CliffColorPath = GraniteOutcropRoot + "mossy_granite_outcrop_diff_1k.jpg",
-                        CliffNormalPath = GraniteOutcropRoot + "mossy_granite_outcrop_nor_gl_1k.jpg",
-                        CliffRoughnessPath = GraniteOutcropRoot + "mossy_granite_outcrop_rough_1k.jpg",
                         CliffTileMetres = 2.8f,
                     };
                 case RegionBiome.Savanna:
@@ -127,17 +102,8 @@ namespace Vastcore.RegionMap
                         NormalStrength = 1.0f,
                         DefaultRoughness = 0.90f,
                         SpecularStrength = 0.10f,
-                        GroundColorPath = MeadowTurfRoot + "Grass005_1K-JPG_Color.jpg",
-                        GroundNormalPath = MeadowTurfRoot + "Grass005_1K-JPG_NormalGL.jpg",
-                        GroundRoughnessPath = MeadowTurfRoot + "Grass005_1K-JPG_Roughness.jpg",
                         GroundTileMetres = 2.6f,
-                        SubsoilColorPath = MeadowLoamRoot + "Ground009_1K-JPG_Color.jpg",
-                        SubsoilNormalPath = MeadowLoamRoot + "Ground009_1K-JPG_NormalGL.jpg",
-                        SubsoilRoughnessPath = MeadowLoamRoot + "Ground009_1K-JPG_Roughness.jpg",
                         SubsoilTileMetres = 2.2f,
-                        CliffColorPath = GraniteOutcropRoot + "mossy_granite_outcrop_diff_1k.jpg",
-                        CliffNormalPath = GraniteOutcropRoot + "mossy_granite_outcrop_nor_gl_1k.jpg",
-                        CliffRoughnessPath = GraniteOutcropRoot + "mossy_granite_outcrop_rough_1k.jpg",
                         CliffTileMetres = 2.8f,
                     };
                 case RegionBiome.Taiga:
@@ -160,17 +126,8 @@ namespace Vastcore.RegionMap
                         NormalStrength = 0.95f,
                         DefaultRoughness = 0.90f,
                         SpecularStrength = 0.10f,
-                        GroundColorPath = MeadowTurfRoot + "Grass005_1K-JPG_Color.jpg",
-                        GroundNormalPath = MeadowTurfRoot + "Grass005_1K-JPG_NormalGL.jpg",
-                        GroundRoughnessPath = MeadowTurfRoot + "Grass005_1K-JPG_Roughness.jpg",
                         GroundTileMetres = 2.5f,
-                        SubsoilColorPath = MeadowLoamRoot + "Ground009_1K-JPG_Color.jpg",
-                        SubsoilNormalPath = MeadowLoamRoot + "Ground009_1K-JPG_NormalGL.jpg",
-                        SubsoilRoughnessPath = MeadowLoamRoot + "Ground009_1K-JPG_Roughness.jpg",
                         SubsoilTileMetres = 2.2f,
-                        CliffColorPath = GraniteOutcropRoot + "mossy_granite_outcrop_diff_1k.jpg",
-                        CliffNormalPath = GraniteOutcropRoot + "mossy_granite_outcrop_nor_gl_1k.jpg",
-                        CliffRoughnessPath = GraniteOutcropRoot + "mossy_granite_outcrop_rough_1k.jpg",
                         CliffTileMetres = 2.8f,
                     };
                 case RegionBiome.Coast:
@@ -190,21 +147,13 @@ namespace Vastcore.RegionMap
                         PlantTintR = 0.82f, PlantTintG = 0.95f, PlantTintB = 0.74f,
                         TopDustScale = biome == RegionBiome.Snow ? 0f : 0.22f,
                         MossMaskScale = biome == RegionBiome.Coast ? 0.15f : 0.20f,
+                        GroundUsesLoam = true,
                         DetailStrength = biome == RegionBiome.Snow ? 0.35f : 0.65f,
                         NormalStrength = 0.9f,
                         DefaultRoughness = 0.92f,
                         SpecularStrength = 0.08f,
-                        GroundColorPath = MeadowLoamRoot + "Ground009_1K-JPG_Color.jpg",
-                        GroundNormalPath = MeadowLoamRoot + "Ground009_1K-JPG_NormalGL.jpg",
-                        GroundRoughnessPath = MeadowLoamRoot + "Ground009_1K-JPG_Roughness.jpg",
                         GroundTileMetres = 2.4f,
-                        SubsoilColorPath = MeadowLoamRoot + "Ground009_1K-JPG_Color.jpg",
-                        SubsoilNormalPath = MeadowLoamRoot + "Ground009_1K-JPG_NormalGL.jpg",
-                        SubsoilRoughnessPath = MeadowLoamRoot + "Ground009_1K-JPG_Roughness.jpg",
                         SubsoilTileMetres = 2.2f,
-                        CliffColorPath = GraniteOutcropRoot + "mossy_granite_outcrop_diff_1k.jpg",
-                        CliffNormalPath = GraniteOutcropRoot + "mossy_granite_outcrop_nor_gl_1k.jpg",
-                        CliffRoughnessPath = GraniteOutcropRoot + "mossy_granite_outcrop_rough_1k.jpg",
                         CliffTileMetres = 2.8f,
                     };
                 default:

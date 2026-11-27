@@ -512,6 +512,32 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
+        public void GrasslandSurface_BindsAllPhotoMaterialsFromResources()
+        {
+            var textures = Resources.Load<RegionBiomeSurfaceTextures>(RegionBiomeSurfaceTextures.Resource);
+            Assert.IsNotNull(textures);
+            Assert.IsTrue(textures.Turf.IsComplete && textures.Loam.IsComplete && textures.Cliff.IsComplete);
+            bool enabled = RegionSurfaceMaterials.Enabled;
+            try
+            {
+                RegionSurfaceMaterials.Enabled = true;
+                RegionSurfaceMaterials.BindBiomeSurfaces(RegionBiomeSurface.ProfileFor(RegionBiome.Grassland));
+                Assert.AreEqual(1f, Shader.GetGlobalVector("_RegionBiomeParams").x);
+                Assert.AreSame(textures.Turf.Color, Shader.GetGlobalTexture("_BiomeGroundMap"));
+                Assert.AreSame(textures.Loam.Color, Shader.GetGlobalTexture("_BiomeSubsoilMap"));
+                Assert.AreSame(textures.Cliff.Color, Shader.GetGlobalTexture("_BiomeCliffMap"));
+
+                RegionSurfaceMaterials.BindBiomeSurfaces(RegionBiomeSurface.ProfileFor(RegionBiome.Desert));
+                Assert.AreEqual(0f, Shader.GetGlobalVector("_RegionBiomeParams").x);
+            }
+            finally
+            {
+                RegionSurfaceMaterials.Enabled = enabled;
+                RegionSurfaceMaterials.ReleaseBiomeSurfaces();
+            }
+        }
+
+        [Test]
         public void GrasslandLookScene_BuildsBiomeSurfaceChannels_AndVegetatesWithoutMesa()
         {
             RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = 8, Resolution = 256 });
@@ -526,6 +552,8 @@ namespace Vastcore.Tests.EditMode
             Assert.AreEqual(RegionBiome.Grassland, scene.PrimaryBiome);
             Assert.IsNull(scene.Inner.Data.MesaContactHeight);
             Assert.IsNotNull(scene.PropsSlice);
+            foreach (RegionPropInstance prop in scene.PropsSlice.Instances)
+                Assert.AreEqual(scene.RenderedHeightAt(prop.X, prop.Z), prop.Y + prop.EmbedDepthM, 0.001f, prop.Role);
 
             UnityEngine.Mesh innerMesh = RegionTerrainView.LookMesh(scene.InnerTerrain);
             try

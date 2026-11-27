@@ -19,6 +19,8 @@ float4 _RegionBiomeParams;      // x: 1 でテクスチャ有効, y: 細部強�
 float4 _RegionBiomeTile;        // x: 1/groundTileM, y: 1/subsoilTileM, z: 1/cliffTileM, w: 既定粗さ
 float4 _RegionBiomeCliffColor;  // rgb: 線形の崖色, a: 崖色ブレンド強さ
 
+float2 _RegionBiomeGroundBlend; // x: 写真の色の混合率, y: 地面の草と土の分布の強さ
+
 struct BiomeSurfaceExtra
 {
     half3 normalWS;
@@ -77,7 +79,10 @@ half3 EvaluateBiomeSurface(
     // x: 草地度合い, y: 湿り気, z: ローム/土露出, w: 重み
     half grassBias = saturate(biomeChannels.x * (0.75h + 0.35h * macro) * (1.0h - 0.65h * rockMask));
     half subsoilShare = saturate(biomeChannels.z * 0.65h + (1.0h - grassBias) * 0.45h + (1.0h - normalWS.y) * 0.55h);
-    half turfShare = saturate(1.0h - subsoilShare);
+    // 草原の地面は湿り気と広さの違う分布から、草のまとまりと土の露出を作る。
+    half patch = smoothstep(0.30h, 0.72h, macro * 0.55h + mid * 0.45h + (biomeChannels.y - 0.5h) * 0.24h);
+    subsoilShare = max(subsoilShare, (1.0h - patch) * _RegionBiomeGroundBlend.y);
+    half turfShare = 1.0h - subsoilShare;
 
     half3 resultAlbedo = baseAlbedoLinear;
     half3 cliffTint = _RegionBiomeCliffColor.a > 0.01h
@@ -119,7 +124,7 @@ half3 EvaluateBiomeSurface(
         half3 groundTex = lerp(loamTex, turfTex, turfShare);
         // 広域マップ（_BaseMap）の気候色調を保ちながら、近景のテクスチャ細部を乗せる
         half texLuma = max(dot(groundTex, half3(0.2126h, 0.7152h, 0.0722h)), 0.04h);
-        half3 tintedGround = lerp(baseAlbedoLinear * (groundTex / texLuma) * 0.86h, groundTex * 0.92h, 0.56h);
+        half3 tintedGround = lerp(baseAlbedoLinear * (groundTex / texLuma) * 0.86h, groundTex * 0.92h, _RegionBiomeGroundBlend.x);
         tintedGround *= 0.90h + 0.18h * macro;
 
         half3 cliffX = RegionToLinear(SAMPLE_TEXTURE2D_GRAD(_BiomeCliffMap, sampler_BiomeGroundMap, cUvX, cXDx, cXDy).rgb);
