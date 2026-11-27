@@ -50,7 +50,7 @@
   [switch]$GrasslandGround,
   [string]$LookBiome = '',
   [switch]$GrasslandCoverOff,
-  [ValidateSet('Continuous','Previous','Denser','Overlapping')] [string]$GrasslandStyle = 'Continuous',
+  [ValidateSet('Tussocks','TussockGeometry','Continuous','Previous','Denser','Overlapping')] [string]$GrasslandStyle = 'Tussocks',
   [switch]$GrasslandTiming,
   # view3d: 表面の写真素材の候補を撮り比べる（T5）。候補の一覧（JSON）を渡すと、-SunAltitudes の太陽の高さごとに場面を作り、
   #         素材なしと各候補（1 役ずつ差し替え）の固定の視点を <OutDir>/sun<高さ>/<候補>/ へ撮る（RegionSurfaceCandidates）。
@@ -122,7 +122,7 @@ if ($Mode -eq 'setup') {
     if ($GrasslandSample) { $unityArgs += @('-grasslandSample', 'true') }
     if ($LookBiome) { $unityArgs += @('-lookBiome', $LookBiome) }
     if ($GrasslandCoverOff) { $unityArgs += @('-grasslandCover', 'false') }
-    if ($GrasslandStyle -ne 'Continuous') { $unityArgs += @('-grasslandStyle', $GrasslandStyle) }
+    if ($GrasslandStyle -ne 'Tussocks') { $unityArgs += @('-grasslandStyle', $GrasslandStyle) }
     if ($GrasslandTiming) { $unityArgs += @('-grasslandTiming', 'true') }
     if ($LookCenter) { $unityArgs += @('-lookCenter', $LookCenter) }
     if ($AlcoveReview) { $unityArgs += @('-alcoveReview', 'true') }
@@ -199,7 +199,13 @@ if (Test-Path $log) {
 if (($grasslandCapture -or $GrasslandGround) -and $process.ExitCode -eq 0) {
   $expected = if ($GrasslandGround) { @('grassland-ground.png', 'grassland-return.png') } else { @('look-far.png', 'look-mid.png', 'look-near.png') }
   if ($GrasslandSample) { $expected += @('grassland-eye.png', 'grassland-foot.png', 'grassland-fence.png', 'grassland-panorama.png', 'grassland-outcrop.png', 'grassland-trail.png') }
-  if ($GrasslandSample -and -not $GrasslandCoverOff) { $expected += 'grassland-foot-without-blades.png' }
+  if ($GrasslandSample -and -not $GrasslandCoverOff) {
+    $expected += 'grassland-foot-without-blades.png'
+    if ($GrasslandTiming) { $expected += 'grassland-foot-mask.png', 'grassland-eye-mask.png' }
+    if (-not (Select-String -LiteralPath $log -SimpleMatch "草原の描画 $GrasslandStyle /" -Quiet)) {
+      throw "指定した草原の描画方式 $GrasslandStyle を確認できません。ログ: $log"
+    }
+  }
   $fresh = Get-ChildItem -LiteralPath $OutFull -Recurse -Filter '*.png' -File |
     Where-Object { $_.Length -gt 0 -and $_.LastWriteTimeUtc -ge $startedUtc }
   foreach ($name in $expected) {

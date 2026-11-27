@@ -208,6 +208,10 @@ namespace Vastcore.RegionMap
             }
 
             public void SetGrasslandBladesVisible(bool visible) => GroundCover?.SetVisible(visible);
+            public void SetGrasslandCoverageMask(bool enabled) => GroundCover?.SetCoverageMask(enabled);
+
+            public (int tiles, long triangles) GrasslandGeometryInView(Camera camera) =>
+                GroundCover?.GeometryInView(camera) ?? default;
         }
 
         /// <summary>
@@ -304,7 +308,7 @@ namespace Vastcore.RegionMap
             }
             if (scene.PropsSlice != null)
             {
-                bool weatherGrassland = meadowCover && scene.Spec.GrasslandStyle == RegionGrasslandStyle.Continuous;
+                bool weatherGrassland = meadowCover && RegionGrasslandCover.HasCanopy(scene.Spec.GrasslandStyle);
                 result.Props = RegionPropView.AddTo(root.transform, scene.PropsSlice, scene.HeightAt, weatherGrassland);
                 foreach (RegionLookViewpoint vp in new[]
                 {

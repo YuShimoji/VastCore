@@ -72,6 +72,7 @@ half3 EvaluateBiomeSurface(
 
     bool meadow = _GrasslandSurface.z > 0.5;
     bool continuous = meadow && _GrasslandSurface.w > 0.5;
+    bool tussocks = meadow && _GrasslandSurface.w > 1.5;
     float2 geographic = positionWS.xz;
     if (meadow)
         geographic = TransformWorldToObject(positionWS).xz * float2(1.0, -1.0) + _GrasslandSurface.xy;
@@ -92,7 +93,8 @@ half3 EvaluateBiomeSurface(
     half3 groundNormal = normalWS;
     if (meadow)
     {
-        float3 field = continuous ? GrasslandCanopy(geographic, biomeChannels.y)
+        float3 field = tussocks ? GrasslandTussockCanopy(geographic, biomeChannels.y)
+            : continuous ? GrasslandCanopy(geographic, biomeChannels.y)
             : float3(GrasslandGrowth(geographic, biomeChannels.y), 0.0, 0.0);
         growth = field.x;
         trailWear = _GrasslandTrail.z > 0.5 ? GrasslandTrailWear(geographic - _GrasslandTrail.xy) : 0.0h;
@@ -104,19 +106,29 @@ half3 EvaluateBiomeSurface(
             float2 tuftEast = float2(0.44, 0.33);
             float2 tuftSouth = float2(-0.48, 0.64);
             float2 tuftUv = float2(dot(geographic, tuftEast), dot(geographic, tuftSouth)) + float2(16.7, 5.3);
+            if (tussocks)
+            {
+                tuftEast = float2(1.0 / 2.65, 0.0);
+                tuftSouth = float2(0.0, 1.0 / 2.10);
+                tuftUv = geographic * float2(tuftEast.x, tuftSouth.y) + float2(31.0, -16.0);
+            }
             float footprint = max(length(ddx(tuftUv)), length(ddy(tuftUv)));
             float tuftWeight = smoothstep(28.0, 74.0, viewDistance) * (1.0 - smoothstep(0.24, 0.82, footprint));
-            float2 canopySlope = field.yz * 1.65 * smoothstep(18.0, 120.0, viewDistance);
+            float2 canopySlope = field.yz * (tussocks ? 4.20 : 1.65) * smoothstep(18.0, 120.0, viewDistance);
             half tuftShade = 0.0h;
             [branch]
             if (tuftWeight > 0.001)
             {
                 float3 tuft = GrasslandNoiseAndSlope(tuftUv);
-                canopySlope += (tuft.y * tuftEast + tuft.z * tuftSouth) * tuftWeight * lerp(0.11, 0.37, growth);
-                tuftShade = tuftWeight * (1.0 - tuft.x) * (1.0 - tuft.x) * 0.44h;
+                float lift = tussocks ? lerp(0.20, 0.59, growth) : lerp(0.11, 0.37, growth);
+                canopySlope += (tuft.y * tuftEast + tuft.z * tuftSouth) * tuftWeight * lift;
+                tuftShade = tuftWeight * (1.0 - tuft.x) * (1.0 - tuft.x) * (tussocks ? 0.50h : 0.44h);
             }
             groundNormal = normalize(normalWS + coverage * half3(-canopySlope.x, 0.0h, canopySlope.y));
-            canopy = RegionDisplayToLinear(GrasslandCrownColor(growth)) * (0.81h + 0.29h * mid);
+            half3 displayCanopy = tussocks
+                ? lerp(half3(0.46h, 0.43h, 0.30h), half3(0.30h, 0.37h, 0.22h), growth)
+                : GrasslandCrownColor(growth);
+            canopy = RegionDisplayToLinear(displayCanopy) * (0.81h + 0.29h * mid);
             half canopyFade = lerp(0.70h, 0.98h, smoothstep(22.0, 135.0, viewDistance));
             baseAlbedoLinear = lerp(baseAlbedoLinear, canopy, coverage * canopyFade);
             extra.normalWS = groundNormal;

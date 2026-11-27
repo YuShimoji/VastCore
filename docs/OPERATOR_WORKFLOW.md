@@ -97,14 +97,18 @@ stop condition に触れた、またはユーザーが方向を変えた時だ�
 固定サンプルは小道・露岩を含む。同じ seed・晴天の前後と、地域探索からの自動生成を PowerShell で撮る。
 
 ```powershell
-.\scripts\region-map.ps1 -Mode view3d -GrasslandSample -Seed 8 -LookSky ours -GrasslandStyle Previous -OutDir artifacts/region-map/grassland-before
-.\scripts\region-map.ps1 -Mode view3d -GrasslandSample -Seed 8 -LookSky ours -OutDir artifacts/region-map/grassland-after
+.\scripts\region-map.ps1 -Mode view3d -GrasslandSample -Seed 8 -LookSky ours -GrasslandStyle Continuous -GrasslandTiming -OutDir artifacts/region-map/grassland-before
+.\scripts\region-map.ps1 -Mode view3d -GrasslandSample -Seed 8 -LookSky ours -GrasslandTiming -OutDir artifacts/region-map/grassland-after
 .\scripts\region-map.ps1 -Mode explore -GrasslandGround -Seed 8 -OutDir artifacts/region-map/grassland-ground
 ```
 
-固定撮影は遠中近・目の高さ・俯瞰・足元・露岩・柵・小道。足元には草のメッシュを隠した画像も出る。`-GrasslandStyle Denser` は葉の本数、`Overlapping` は葉の横の重なりを比較する。既定の `Continuous` は葉の重なりと中遠景の群落、露岩と柵の材質を適用する。
+固定撮影は遠中近・目の高さ・俯瞰・足元・露岩・柵・小道。既定の `Tussocks` は近景の細い葉と株の投影素材、中遠景の株の立体を重ねる。`TussockGeometry` は近景の株を細い葉の立体だけで描いて比較する。
 
-`-GrasslandTiming` は草のメッシュ表示を切り替え、GPU の同期を待つ描画時間を記録する。日照の比較は `-SunSweep '60,38,20,10'`、別地点は `-LookBiome auto -LookCenter 'X,Y'` を使う。Editor の入口は `Vastcore > Region Map > Open 3D Grassland Env Sample`。探索画面では seed 8 の X37.55、Y57.86 から `3Dへダイブ` し、Esc で地図に戻る。
+`-GrasslandTiming` は足元と目の高さの被覆マスク、視野に重なるタイルの三角形、GPU 同期を含む描画時間を出す。日照は `-SunSweep '60,38,20,10'`、別地点は `-LookBiome auto -LookCenter 'X,Y'`。Editor の入口は `Vastcore > Region Map > Open 3D Grassland Env Sample`。探索では seed 8 の X37.55、Y57.86 から `3Dへダイブ` し、Esc で戻る。
+
+別の環境でも、完成図で必要な輪郭・重なり・影を距離別に切り出す。既存素材を実寸で置き、小試験の不足を埋める素材だけを足す。草原では細葉2種から [株アトラスと投影範囲の焼き出し](../scripts/bake-meadow-tussocks.py) を追加した。素材の出所・実寸・見る角度を記録し、実装の前後は目の高さと見下ろし、別地点で照合する。被覆・陰影・描画負荷はそれぞれ現物で確かめる。
+
+元の 1K Blend 2種を付属の `textures` とともに展開し、`python scripts/bake-meadow-tussocks.py <Blender.exe> <素材フォルダ> <作業フォルダ> Assets/Resources/RegionMap3D/MeadowTussocks.png` で PNG と投影範囲 JSON を作る。出所とライセンスは [素材記録](../Assets/Resources/RegionMap3D/texture-source.json) にある。
 
 ## Creative Exploration Pulse
 

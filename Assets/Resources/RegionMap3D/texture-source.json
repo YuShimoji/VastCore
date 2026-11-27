@@ -11,6 +11,17 @@
       "retrieved": "",
       "tileMetres": 0,
       "notes": "決まった形の植物を2方向から焼いた切り抜きのアトラス。作り直しは python scripts/bake-region-plants.py"
+    },
+    {
+      "files": ["MeadowTussocks.png"],
+      "origin": "generated",
+      "source": "https://polyhaven.com/a/grass_medium_01",
+      "generator": "scripts/bake-meadow-tussocks.py",
+      "license": "CC0-1.0",
+      "author": "Rico Cilliers, Rob Tuytel",
+      "retrieved": "2026-11-28",
+      "tileMetres": 0,
+      "notes": "Grass Medium 01 (low and mixed clumps) and https://polyhaven.com/a/grass_medium_02 (tall fine clumps). Four arrangements, each with two side projections and one top projection. MeadowTussocksLayout records the padded cutout bounds. Diffuse and cutout from the originals with neutral ambient occlusion and a green tint in the compact crown."
     }
   ]
 }

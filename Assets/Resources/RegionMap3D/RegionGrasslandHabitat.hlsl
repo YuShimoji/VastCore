@@ -61,6 +61,22 @@ float3 GrasslandCanopy(float2 metres, float moisture)
     return float3(t * t * (3.0 - 2.0 * t), slope.x * along + slope.y * across);
 }
 
+// The meadow mesh uses the same field. The broad and fine groups turn in different directions.
+float3 GrasslandTussockCanopy(float2 metres, float moisture)
+{
+    const float2 along = float2(0.8, 0.6), across = float2(-0.6, 0.8);
+    float2 rotated = float2(dot(along, metres), dot(across, metres));
+    float2 broadScale = float2(51.0, 37.0), fineScale = float2(12.0, 7.4);
+    float3 broad = GrasslandNoiseAndSlope(metres / broadScale + float2(8.0, -4.0));
+    float3 fine = GrasslandNoiseAndSlope(rotated / fineScale + float2(17.0, -9.0));
+    float field = 0.74 * (0.63 * broad.x + 0.37 * fine.x) + 0.26 * moisture;
+    float t = saturate((field - 0.18) / 0.62);
+    float2 fineSlope = fine.yz / fineScale;
+    float2 slope = 0.63 * broad.yz / broadScale + 0.37 * (fineSlope.x * along + fineSlope.y * across);
+    slope *= (0.74 * 6.0 / 0.62) * t * (1.0 - t);
+    return float3(t * t * (3.0 - 2.0 * t), slope);
+}
+
 half3 GrasslandCrownColor(half growth)
 {
     return lerp(half3(0.52h, 0.48h, 0.34h), half3(0.285h, 0.375h, 0.235h), growth);

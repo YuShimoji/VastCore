@@ -286,9 +286,9 @@ namespace Vastcore.RegionMap.Editor
                 }
                 // -lookSediment 0 で土砂の場を流さない（T3 より前の地形。地図が無いので層も出ない）
                 spec.GrasslandCover = RegionMapMenu.Argument("-grasslandCover", "true") != "false";
-                string style = RegionMapMenu.Argument("-grasslandStyle", "Continuous");
+                string style = RegionMapMenu.Argument("-grasslandStyle", spec.GrasslandStyle.ToString());
                 if (!Enum.TryParse(style, true, out spec.GrasslandStyle) || !Enum.IsDefined(typeof(RegionGrasslandStyle), spec.GrasslandStyle))
-                    throw new ArgumentException("-grasslandStyle expects Continuous, Previous, Denser or Overlapping: " + style);
+                    throw new ArgumentException("-grasslandStyle expects " + string.Join(", ", Enum.GetNames(typeof(RegionGrasslandStyle))) + ". Got " + style);
                 string sediment = RegionMapMenu.Argument("-lookSediment", "");
                 if (sediment.Length > 0) spec.Sediment = float.Parse(sediment, CultureInfo.InvariantCulture);
                 // -lookRockGround false で岩と地面のなじませと分級（T4）を入れない（T3 までの岩の置き方と描き方）
@@ -343,8 +343,11 @@ namespace Vastcore.RegionMap.Editor
                         CaptureGrasslandSampleViews(camera, look, look.Scene.PropsSlice, folder);
                     CaptureLookViews(camera, look, folder);
                     if (RegionMapMenu.Argument("-grasslandTiming", "false") == "true")
+                    {
                         CaptureToggleComparison(camera, look, folder, "grassland-blades", "草の立体描画",
                             look.HasGrasslandCover, look.SetGrasslandBladesVisible, GrasslandGroundViews(look));
+                        CaptureGrasslandMasks(camera, look, folder);
+                    }
                     if (RegionMapMenu.Argument("-reliefCompare", "false") == "true")
                         CaptureToggleComparison(camera, look, folder, "relief", "凹凸", RegionSurfaceRelief.Baked, RegionSurfaceRelief.SetActive);
                     if (RegionMapMenu.Argument("-surfaceCompare", "false") == "true")
@@ -603,7 +606,8 @@ namespace Vastcore.RegionMap.Editor
                 views.Add(("alcove-near", () => look.Alcove.Place(camera.transform, false, 0.57f, true), 67f));
             }
             var report = new System.Text.StringBuilder();
-            report.AppendLine("視点	大きさ	切 ms	入 ms	差 ms（MSAA4、各 " + TimingRounds * TimingBatch + " 回の中央値。3840x2160 は GPU が律速になる条件）");
+            report.AppendLine("視点	大きさ	切 ms	入 ms	差 ms（MSAA4、各 " + TimingRounds * TimingBatch + " 回の中央値。GPU の同期を含む）");
+            var geometry = key == "grassland-blades" ? new System.Text.StringBuilder("視点\tタイル\t三角形（視錐台と重なるタイルの合計）\n") : null;
             var targets = new[]
             {
                 new RenderTexture(1600, 900, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 },
@@ -640,6 +644,11 @@ namespace Vastcore.RegionMap.Editor
                         report.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0}	{1}	{2:F2}	{3:F2}	{4:F2}", name, size, a, b, b - a));
                         Debug.Log(string.Format(CultureInfo.InvariantCulture, "[RegionMap] " + label + "の重さ {0} {1}: 切 {2:F2} ms 入 {3:F2} ms 差 {4:F2} ms", name, size, a, b, b - a));
                     }
+                    if (geometry != null)
+                    {
+                        (int tiles, long triangles) = look.GrasslandGeometryInView(camera);
+                        geometry.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0}\t{1}\t{2}", name, tiles, triangles));
+                    }
                 }
             }
             finally
@@ -654,6 +663,7 @@ namespace Vastcore.RegionMap.Editor
                 UnityEngine.Object.DestroyImmediate(pixel);
             }
             File.WriteAllText(Path.Combine(output, key + "-timing.txt"), report.ToString());
+            if (geometry != null) File.WriteAllText(Path.Combine(output, "grassland-geometry.txt"), geometry.ToString());
         }
 
         private const int TimingRounds = 8, TimingBatch = 6;
@@ -663,6 +673,26 @@ namespace Vastcore.RegionMap.Editor
             RegionPropProofSlice slice = look.Scene.PropsSlice;
             return slice?.GrasslandFootViewpoint != null
                 ? new[] { slice.GrasslandFootViewpoint, slice.GrasslandEyeViewpoint } : null;
+        }
+
+        private static void CaptureGrasslandMasks(Camera camera, RegionTerrainView.LookResult look, string output)
+        {
+            RegionLookViewpoint[] ground = GrasslandGroundViews(look);
+            if (!look.HasGrasslandCover || ground == null) return;
+            look.SetGrasslandCoverageMask(true);
+            try
+            {
+                foreach (RegionLookViewpoint view in ground)
+                {
+                    RegionTerrainView.PlaceLook(camera.transform, look.Scene, view);
+                    camera.fieldOfView = view.FovDegrees;
+                    Capture(camera, output, view.Name + "-mask.png");
+                }
+            }
+            finally
+            {
+                look.SetGrasslandCoverageMask(false);
+            }
         }
 
         // 描いて、1 画素を読み戻して GPU の終わりを待つまでの時間（ms）
@@ -935,6 +965,7 @@ namespace Vastcore.RegionMap.Editor
                 + " / 内側 " + scene.Inner.Data.SizeKm.ToString("F2") + " km（1 セル " + scene.InnerCell.ToString("F2") + " m）外側 " + scene.Outer.Data.SizeKm.ToString("F1") + " km"
                 + " / 広域の地図との標高の差の平均 内側 " + scene.Inner.MeanHeightDifference.ToString("F1") + " m 外側 " + scene.Outer.MeanHeightDifference.ToString("F1") + " m"
                 + " / 岩 " + rocks + " 個 / 草株・低木・針葉樹・谷筋の広葉樹 " + string.Join("/", look.PlantCounts) + " / シェーダー " + shader
+                + (look.HasGrasslandCover ? " / 草原の描画 " + scene.Spec.GrasslandStyle : "")
                 + (look.Alcove == null ? " / アルコーブ適地なし" : " / アルコーブ 内側 X" + look.Alcove.Site.Volume.FocusX.ToString("F1")
                 + " Z" + look.Alcove.Site.Volume.FocusZ.ToString("F1") + " m 床 " + look.Alcove.Site.Floor.ToString("F1")
                 + " m 天井頂点率 " + look.Alcove.Patch.DownFacingShare.ToString("P2") + " しみ出し " + look.Alcove.SeepPlants

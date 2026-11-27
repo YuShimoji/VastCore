@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Vastcore.RegionMap
 {
-    public enum RegionGrasslandStyle { Continuous, Previous, Denser, Overlapping }
+    public enum RegionGrasslandStyle { Continuous, Previous, Denser, Overlapping, Tussocks, TussockGeometry }
 
     /// <summary>
     /// 決まった視点 1 つ。位置は、場面の中心（RegionLookSpec.CenterMapX・Y）からの東・南への距離（m）と、その場所の地面からの高さ（m）。
@@ -67,7 +67,7 @@ namespace Vastcore.RegionMap
 
         public bool Vegetation = true;
         public bool GrasslandCover = true;
-        public RegionGrasslandStyle GrasslandStyle = RegionGrasslandStyle.Continuous;
+        public RegionGrasslandStyle GrasslandStyle = RegionGrasslandStyle.Tussocks;
         public bool Props = false;
         public int PropsSeedOffset = 0;
         /// <summary>

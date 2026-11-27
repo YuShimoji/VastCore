@@ -5,11 +5,12 @@ using UnityEngine.Rendering;
 
 namespace Vastcore.RegionMap
 {
-    /// <summary>Grounded grass ribbons shared by the fixed look and the streamed ground camera.</summary>
+    /// <summary>Grounded grass cover shared by the fixed look and the streamed ground camera.</summary>
     [ExecuteAlways]
     internal sealed class RegionGrasslandCover : MonoBehaviour
     {
         private const string ShaderResource = "RegionMap3D/RegionGrasslandCover";
+        private const string TussockAtlas = "RegionMap3D/MeadowTussocks";
         private const int TileSize = 16;
         private const float MeadowRadius = 88f;
         private const float DetailRadius = 34f;
@@ -17,6 +18,7 @@ namespace Vastcore.RegionMap
         private const int ShortGrassLayer = 2;
         private const int DistantLayer = 3;
         private const float DistantRadius = 306f;
+        private const float TussockDistantRadius = 468f;
         private const int TilesPerFrame = 2;
 
         private sealed class Tile
@@ -26,17 +28,25 @@ namespace Vastcore.RegionMap
             public GameObject Object;
         }
 
+        [Serializable]
+        private sealed class AtlasLayout
+        {
+            public Vector4[] frames = Array.Empty<Vector4>();
+        }
+
         internal Camera Camera;
         private RegionChunkStreamer _streamer;
         private RegionLookScene _look;
         private Material _material;
+        private Vector4[] _tussockFrames;
         private bool _visible = true;
-        private RegionGrasslandStyle Style => _look?.Spec.GrasslandStyle ?? RegionGrasslandStyle.Continuous;
+        private RegionGrasslandStyle Style => _look?.Spec.GrasslandStyle ?? RegionGrasslandStyle.Tussocks;
         private readonly Dictionary<Vector3Int, Tile> _tiles = new Dictionary<Vector3Int, Tile>();
         private readonly List<Vector3Int> _remove = new List<Vector3Int>();
         private readonly List<(Vector3Int Key, float Distance)> _pending = new List<(Vector3Int, float)>();
         private readonly List<Vector3> _vertices = new List<Vector3>();
         private readonly List<Vector4> _bladeData = new List<Vector4>();
+        private readonly List<Vector3> _tussockData = new List<Vector3>();
         private readonly List<Color32> _colors = new List<Color32>();
         private readonly List<int> _indices = new List<int>();
 
@@ -85,6 +95,28 @@ namespace Vastcore.RegionMap
                 if (tile.Object != null) tile.Object.SetActive(visible);
         }
 
+        internal void SetCoverageMask(bool enabled)
+        {
+            if (_material == null) return;
+            if (enabled) _material.EnableKeyword("GRASSLAND_COVERAGE_MASK");
+            else _material.DisableKeyword("GRASSLAND_COVERAGE_MASK");
+        }
+
+        internal (int tiles, long triangles) GeometryInView(Camera camera)
+        {
+            Plane[] planes = GeometryUtility.CalculateFrustumPlanes(camera);
+            int tiles = 0;
+            long triangles = 0;
+            foreach (Tile tile in _tiles.Values)
+            {
+                if (tile.Object == null || !GeometryUtility.TestPlanesAABB(planes, tile.Object.GetComponent<MeshRenderer>().bounds))
+                    continue;
+                tiles++;
+                triangles += tile.Mesh.GetIndexCount(0) / 3;
+            }
+            return (tiles, triangles);
+        }
+
         private void Prepare(ScriptableRenderContext context, Camera camera)
         {
             if (!_visible) return;
@@ -115,9 +147,11 @@ namespace Vastcore.RegionMap
                 }
             }
             foreach (Vector3Int key in _remove) _tiles.Remove(key);
-            bool continuous = Style == RegionGrasslandStyle.Continuous;
-            int lastLayer = continuous ? DistantLayer : ShortGrassLayer;
-            if (above >= (continuous ? DistantRadius : MeadowRadius)) return;
+            RegionGrasslandStyle style = Style;
+            bool canopy = HasCanopy(style);
+            bool tussocks = UsesTussocks(style);
+            int lastLayer = canopy ? DistantLayer : ShortGrassLayer;
+            if (above >= Radius(canopy ? DistantLayer : 0)) return;
 
             _pending.Clear();
             for (int layer = 0; layer <= lastLayer; layer++)
@@ -136,6 +170,13 @@ namespace Vastcore.RegionMap
             }
             _pending.Sort((a, b) =>
             {
+                if (tussocks)
+                {
+                    // Fill the close cover first, then advance the medium and distant rings together.
+                    float aProgress = a.Distance * (a.Key.z == DistantLayer ? 0.14f : 1f);
+                    float bProgress = b.Distance * (b.Key.z == DistantLayer ? 0.14f : 1f);
+                    return aProgress.CompareTo(bProgress);
+                }
                 int detailOrder = (a.Key.z == DistantLayer).CompareTo(b.Key.z == DistantLayer);
                 return detailOrder != 0 ? detailOrder : a.Distance.CompareTo(b.Distance);
             });
@@ -172,8 +213,22 @@ namespace Vastcore.RegionMap
 
         private static int TileMetres(int layer) => layer == DistantLayer ? 64 : TileSize;
 
+        private static bool UsesTussocks(RegionGrasslandStyle style) =>
+            style is RegionGrasslandStyle.Tussocks or RegionGrasslandStyle.TussockGeometry;
+
+        internal static bool HasCanopy(RegionGrasslandStyle style) =>
+            style == RegionGrasslandStyle.Continuous || UsesTussocks(style);
+
         private float Radius(int layer)
         {
+            if (UsesTussocks(Style))
+                return layer switch
+                {
+                    ShortGrassLayer => 24f,
+                    1 => 30f,
+                    DistantLayer => TussockDistantRadius,
+                    _ => 177f
+                };
             if (layer == DistantLayer) return DistantRadius;
             bool continuous = Style == RegionGrasslandStyle.Continuous;
             if (layer == ShortGrassLayer) return continuous ? 23f : ShortGrassRadius;
@@ -201,17 +256,29 @@ namespace Vastcore.RegionMap
             var tile = new Tile { Surface = part };
             _vertices.Clear();
             _bladeData.Clear();
+            _tussockData.Clear();
             _colors.Clear();
             _indices.Clear();
             RegionData data = part.Data;
             int layer = key.z;
             int tileSize = TileMetres(layer);
             RegionGrasslandStyle style = Style;
-            bool continuous = style == RegionGrasslandStyle.Continuous;
+            bool tussocks = UsesTussocks(style);
+            bool continuous = HasCanopy(style);
+            if (tussocks && _tussockFrames == null)
+            {
+                TextAsset layout = Resources.Load<TextAsset>(TussockAtlas + "Layout");
+                AtlasLayout atlas = layout != null ? JsonUtility.FromJson<AtlasLayout>(layout.text) : null;
+                if (atlas?.frames == null || atlas.frames.Length != 12)
+                    throw new InvalidOperationException("MeadowTussocks の投影範囲には12面が必要です。");
+                _tussockFrames = atlas.frames;
+            }
             bool overlap = continuous || style == RegionGrasslandStyle.Overlapping;
             bool shortGrass = layer == ShortGrassLayer;
             bool distant = layer == DistantLayer;
             int count = distant ? 27 : shortGrass ? (overlap ? 73 : 80) : layer == 1 ? 44 : 20;
+            if (tussocks)
+                count = layer switch { ShortGrassLayer => 62, 1 => 32, DistantLayer => 25, _ => 17 };
             int blades = layer == 1 ? 7 : 3;
             if (continuous && shortGrass) blades = 4;
             if (style == RegionGrasslandStyle.Denser && layer != 0) blades += shortGrass ? 3 : 5;
@@ -241,21 +308,32 @@ namespace Vastcore.RegionMap
                     continue;
                 float normalY = part.Normals[3 * v + 1];
                 float moisture = Mathf.Clamp01((data.Moisture[v] - 0.14f) / 0.46f);
-                float growth = Growth(east + x, south + z, moisture, continuous);
+                float growth = Growth(east + x, south + z, moisture, style);
                 float trail = props != null ? Trail(east + x - trailEast, south + z - trailSouth) : 0f;
                 float coverage = shortGrass && overlap ? Mathf.Lerp(0.90f, 0.995f, growth)
                     : Mathf.Lerp(shortGrass ? 0.76f : 0.47f, 0.98f, growth);
+                if (tussocks && !shortGrass) coverage = Mathf.Lerp(0.69f, 0.995f, growth);
                 float cover = coverage * RegionNoise.Smooth(0.76f, 0.96f, normalY) * (1f - trail);
                 if (RegionNoise.Hash01(ix, iz, salt + 2) >= cover) continue;
                 if (props != null && Mathf.Abs(east + x - trailEast) < 9f && Mathf.Abs(south + z - trailSouth) < 7f &&
                     OnRock(props, px, pz)) continue;
                 if (!part.TryGridHeight(px, pz, (int)gx + (int)gz * (n - 1), out float height)) continue;
                 float size = RegionNoise.Hash01(ix, iz, salt + 3);
+                var foot = new Vector3(x, height - 0.025f, -z);
+                float tuftAngle = 6.2831853f * RegionNoise.Hash01(ix, iz, salt + 9);
+                if (tussocks)
+                {
+                    var slope = new Vector2(-part.Normals[3 * v], part.Normals[3 * v + 2]) / normalY;
+                    float colony = Noise((east + x) / 2.65f + 31f, (south + z) / 2.1f - 16f);
+                    bool meshLeaves = layer == 1 || (style == RegionGrasslandStyle.TussockGeometry && shortGrass);
+                    bool denseCrown = layer == 1 && style == RegionGrasslandStyle.Tussocks && colony > 0.38f;
+                    AddTussock(foot, slope, layer, growth, part.Sun[v], trail, size, colony, tuftAngle,
+                        RegionNoise.Hash01(ix, iz, salt + 8), meshLeaves, denseCrown, ix, iz, salt);
+                    continue;
+                }
                 float bladeHeight = shortGrass ? Mathf.Lerp(0.085f, 0.18f, growth) : Mathf.Lerp(0.14f, 0.42f, growth);
                 if (distant) bladeHeight = Mathf.Lerp(0.18f, 0.72f, growth);
                 bladeHeight *= Mathf.Lerp(0.58f, 1.45f, size) * (1f - trail * 0.72f);
-                var foot = new Vector3(x, height - 0.025f, -z);
-                float tuftAngle = 6.2831853f * RegionNoise.Hash01(ix, iz, salt + 9);
                 for (int b = 0; b < blades; b++)
                 {
                     uint bladeSalt = salt + (uint)(11 + 7 * b);
@@ -284,11 +362,21 @@ namespace Vastcore.RegionMap
                 if (shader == null || !shader.isSupported) return tile;
                 _material = new Material(shader) { name = "Meadow grass", hideFlags = HideFlags.DontSave };
                 _material.SetFloat("_GrasslandContinuous", continuous ? 1f : 0f);
+                if (tussocks)
+                {
+                    Texture2D atlas = Resources.Load<Texture2D>(TussockAtlas);
+                    if (atlas == null) throw new InvalidOperationException("草株のアトラス MeadowTussocks が見つかりません。");
+                    _material.SetTexture("_MeadowTussocks", atlas);
+                    _material.SetFloat("_GrasslandAlphaToMask", 1f);
+                    _material.EnableKeyword("GRASSLAND_TUSSOCKS");
+                    _material.renderQueue = (int)RenderQueue.AlphaTest;
+                }
             }
             var mesh = new Mesh { name = "Grassland blades", hideFlags = HideFlags.DontSave };
             if (_vertices.Count > 65535) mesh.indexFormat = IndexFormat.UInt32;
             mesh.SetVertices(_vertices);
             mesh.SetUVs(0, _bladeData);
+            if (tussocks) mesh.SetUVs(1, _tussockData);
             mesh.SetColors(_colors);
             mesh.SetTriangles(_indices, 0);
             mesh.UploadMeshData(true);
@@ -303,6 +391,143 @@ namespace Vastcore.RegionMap
             tile.Mesh = mesh;
             tile.Object = go;
             return tile;
+        }
+
+        private void AddTussock(Vector3 foot, Vector2 slope, int layer, float growth, float sun, float trail,
+            float size, float colony, float yaw, float variantPick, bool meshLeaves, bool denseCrown, int ix, int iz, uint salt)
+        {
+            bool low = layer == ShortGrassLayer;
+            float crown = Mathf.Lerp(0.73f, 1.28f, size);
+            float height = layer switch
+            {
+                ShortGrassLayer => Mathf.Lerp(0.24f, 0.37f, growth),
+                1 => Mathf.Lerp(0.32f, 0.97f, RegionNoise.Smooth(0.27f, 0.73f, 0.44f * growth + 0.56f * colony)),
+                DistantLayer => Mathf.Lerp(0.48f, 1.69f, 0.62f * growth + 0.38f * colony),
+                _ => Mathf.Lerp(0.40f, 1.18f, 0.55f * growth + 0.45f * colony),
+            };
+            height *= crown * (1f - trail * 0.72f);
+            float width = layer switch { ShortGrassLayer => 0.86f, 1 => 0.94f, DistantLayer => 3.48f, _ => 1.83f };
+            width *= Mathf.Lerp(0.87f, 1.15f, size) * (1f - trail * 0.72f);
+            int variant = variantPick < 0.65f ? 1
+                : variantPick < 0.94f || low || layer == DistantLayer ? 0 : variantPick < 0.97f ? 2 : 3;
+            var light = new Color32((byte)(255 * growth), (byte)(255 * size), (byte)(255 * sun), 0);
+            var root = new Vector4(foot.x, foot.y, foot.z, layer);
+            if (meshLeaves)
+            {
+                int leaves = low ? 18 : Mathf.RoundToInt(Mathf.Lerp(14f, 25f, colony));
+                AddFineLeaves(foot, root, light, slope, low, width, height, leaves - (denseCrown ? 5 : 0), yaw, ix, iz, salt);
+                if (!denseCrown) return;
+                // The dense scan supplies the inner foliage; the curved ribbons keep the outline three-dimensional.
+                variant = 2;
+                width *= 0.86f;
+                height *= 0.94f;
+            }
+            else AddTussockTop(foot, root, light, layer, slope, variant, yaw, width, height);
+
+            if (low) return;
+
+            int sides = layer == DistantLayer ? 1 : 2;
+            for (int face = 0; face < sides; face++)
+            {
+                float angle = yaw + face * Mathf.PI * 0.5f;
+                float cos = Mathf.Cos(angle), sin = Mathf.Sin(angle);
+                var across = new Vector3(cos, slope.x * cos + slope.y * sin, sin) * (width * 0.5f);
+                var lean = new Vector3(-sin * 0.32f, 1f, cos * 0.32f) * height;
+                Vector3 basePoint = foot - Vector3.up * (height * 0.115f);
+                Vector4 f = _tussockFrames[variant * 3 + face];
+                Vector3 left = basePoint + across * (2f * f.x - 1f);
+                Vector3 right = basePoint + across * (2f * f.z - 1f);
+                int first = _vertices.Count;
+                AddTussockVertex(left + lean * f.y, root, light, AtlasUv(face, variant, f.x, f.y, 1f));
+                AddTussockVertex(right + lean * f.y, root, light, AtlasUv(face, variant, f.z, f.y, 1f));
+                AddTussockVertex(left + lean * f.w, root, light, AtlasUv(face, variant, f.x, f.w, 1f));
+                AddTussockVertex(right + lean * f.w, root, light, AtlasUv(face, variant, f.z, f.w, 1f));
+                AddQuad(first);
+            }
+        }
+
+        private void AddTussockTop(Vector3 foot, Vector4 root, Color32 light, int layer, Vector2 slope,
+            int variant, float yaw, float width, float height)
+        {
+            const int face = 2;
+            Vector4 f = _tussockFrames[variant * 3 + face];
+            float cos = Mathf.Cos(yaw), sin = Mathf.Sin(yaw);
+            var across = new Vector3(cos, slope.x * cos + slope.y * sin, sin) * (width * 0.5f);
+            var length = new Vector3(-sin, slope.y * cos - slope.x * sin, cos) * (width * 0.47f);
+            Vector3 center = foot + Vector3.up * (height * (layer == ShortGrassLayer ? 0.13f : 0.18f));
+            Vector3 left = center + across * (2f * f.x - 1f);
+            Vector3 right = center + across * (2f * f.z - 1f);
+            Vector3 bottom = length * (2f * f.y - 1f);
+            Vector3 top = length * (2f * f.w - 1f);
+            int first = _vertices.Count;
+            AddTussockVertex(left + bottom, root, light, AtlasUv(face, variant, f.x, f.y, 2f));
+            AddTussockVertex(right + bottom, root, light, AtlasUv(face, variant, f.z, f.y, 2f));
+            AddTussockVertex(right + top, root, light, AtlasUv(face, variant, f.z, f.w, 2f));
+            AddTussockVertex(left + top, root, light, AtlasUv(face, variant, f.x, f.w, 2f));
+            AddTussockVertex(center + Vector3.up * (height * 0.36f), root, light, AtlasUv(face, variant, 0.5f, 0.5f, 2f));
+            for (int edge = 0; edge < 4; edge++)
+            {
+                _indices.Add(first + edge);
+                _indices.Add(first + 4);
+                _indices.Add(first + ((edge + 1) % 4));
+            }
+        }
+
+        private static Vector3 AtlasUv(int face, int variant, float u, float v, float projection) =>
+            new Vector3((face + u) * 0.25f, (3f - variant + v) * 0.25f, projection);
+
+        private void AddFineLeaves(Vector3 foot, Vector4 root, Color32 light, Vector2 slope, bool low,
+            float width, float height, int leaves, float yaw, int ix, int iz, uint salt)
+        {
+            var rake = new Vector3(Mathf.Cos(yaw), 0f, Mathf.Sin(yaw)) * (width * 0.16f);
+            for (int blade = 0; blade < leaves; blade++)
+            {
+                float len = RegionNoise.Hash01(ix, iz, salt + (uint)(21 + 8 * blade));
+                float jitter = RegionNoise.Hash01(ix, iz, salt + (uint)(22 + 8 * blade));
+                float angle = yaw + blade * 2.399963f + 0.57f * jitter;
+                var outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                outward.y = slope.x * outward.x + slope.y * outward.z;
+                var side = new Vector3(-outward.z, 0f, outward.x) * Mathf.Lerp(0.0022f, 0.0062f, jitter);
+                float rise = height * Mathf.Lerp(0.26f, low ? 0.66f : 0.98f, len);
+                float spread = width * Mathf.Lerp(0.21f, 0.47f, 1f - len);
+                Vector3 start = foot + outward * (width * (0.020f + 0.073f * jitter));
+                Vector3 curve = outward * spread + rake * len;
+                light.g = (byte)Mathf.Lerp(68f, 236f, jitter);
+                int first = _vertices.Count;
+                for (int row = 0; row < 3; row++)
+                {
+                    float t = row * 0.34f;
+                    Vector3 center = start + curve * (t * t) + Vector3.up * (rise * t * (1.93f - 0.94f * t));
+                    Vector3 edge = side * (1f - 0.68f * t);
+                    AddTussockVertex(center - edge, root, light, Vector3.zero);
+                    AddTussockVertex(center + edge, root, light, Vector3.zero);
+                }
+                Vector3 tip = start + curve + Vector3.up * (rise * (low ? 0.76f : 0.89f));
+                AddTussockVertex(tip, root, light, Vector3.zero);
+                AddQuad(first);
+                AddQuad(first + 2);
+                _indices.Add(first + 4);
+                _indices.Add(first + 6);
+                _indices.Add(first + 5);
+            }
+        }
+
+        private void AddTussockVertex(Vector3 position, Vector4 root, Color32 light, Vector3 atlas)
+        {
+            _vertices.Add(position);
+            _bladeData.Add(root);
+            _colors.Add(light);
+            _tussockData.Add(atlas);
+        }
+
+        private void AddQuad(int first)
+        {
+            _indices.Add(first);
+            _indices.Add(first + 2);
+            _indices.Add(first + 1);
+            _indices.Add(first + 1);
+            _indices.Add(first + 2);
+            _indices.Add(first + 3);
         }
 
         private static bool HasGrassland(RegionData data, float gridX, float gridZ, float span)
@@ -389,14 +614,20 @@ namespace Vastcore.RegionMap
         }
 
         // Match RegionGrasslandHabitat.hlsl so the meadow colour and the blades describe the same patches.
-        private static float Growth(float x, float z, float moisture, bool continuous)
+        private static float Growth(float x, float z, float moisture, RegionGrasslandStyle style)
         {
-            if (!continuous)
+            float along = 0.8f * x + 0.6f * z, across = -0.6f * x + 0.8f * z;
+            if (UsesTussocks(style))
+            {
+                float local = 0.63f * Noise(x / 51f + 8f, z / 37f - 4f)
+                    + 0.37f * Noise(along / 12f + 17f, across / 7.4f - 9f);
+                return RegionNoise.Smooth(0.18f, 0.80f, local * 0.74f + moisture * 0.26f);
+            }
+            if (style != RegionGrasslandStyle.Continuous)
             {
                 float previous = 0.64f * Noise(x / 37f, z / 37f) + 0.36f * Noise(x / 8f + 17f, z / 8f - 9f);
                 return RegionNoise.Smooth(0.16f, 0.83f, previous * 0.78f + moisture * 0.22f);
             }
-            float along = 0.8f * x + 0.6f * z, across = -0.6f * x + 0.8f * z;
             float patch = 0.57f * Noise(along / 62f, across / 29f) +
                 0.43f * Noise(along / 15f + 17f, across / 5.5f - 9f);
             return RegionNoise.Smooth(0.23f, 0.76f, patch * 0.71f + moisture * 0.29f);
@@ -419,9 +650,10 @@ namespace Vastcore.RegionMap
         }
 
         internal static void BindGround(Material material, float east, float south, RegionPropProofSlice props = null,
-            RegionGrasslandStyle style = RegionGrasslandStyle.Continuous)
+            RegionGrasslandStyle style = RegionGrasslandStyle.Tussocks)
         {
-            material.SetVector("_GrasslandSurface", new Vector4(east, south, 1f, style == RegionGrasslandStyle.Continuous ? 1f : 0f));
+            float canopy = UsesTussocks(style) ? 2f : style == RegionGrasslandStyle.Continuous ? 1f : 0f;
+            material.SetVector("_GrasslandSurface", new Vector4(east, south, 1f, canopy));
             if (props != null)
                 material.SetVector("_GrasslandTrail", new Vector4(east + props.CratesCenterX, south + props.CratesCenterZ, 1f, 0f));
         }

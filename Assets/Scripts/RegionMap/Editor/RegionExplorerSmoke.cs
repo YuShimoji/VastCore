@@ -809,7 +809,7 @@ namespace Vastcore.RegionMap.Editor
                     if (world.Mode != RegionWorldMode.OpenWorld3D) return;
                     Transform cover = world.Streamer.transform.Find("Grassland Cover");
                     if (cover == null || cover.childCount == 0) return;
-                    // The 306 m meadow adds distant tiles after the near grass is visible.
+                    // Let the streamed rings build after the first near tiles are visible.
                     _wait = 180;
                     break;
                 case 2:
