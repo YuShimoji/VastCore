@@ -35,6 +35,9 @@ namespace Vastcore.RegionMap.Editor
             {
                 var walk = UnityEngine.Object.FindFirstObjectByType<RegionCaveWalk>();
                 if (!walk) throw new InvalidOperationException("No tunnel controller in the menu scene");
+                string revision = RegionMapMenu.Argument("-caveRevision", "after");
+                if (revision != "before" && revision != "after") throw new ArgumentException("Use -caveRevision before or after.");
+                walk.RefineInterior = revision == "after";
                 string output = Path.GetFullPath(RegionMapMenu.Argument("-regionOut", "artifacts/region-map/cave-walk"));
                 Directory.CreateDirectory(output);
                 ShaderUtil.allowAsyncCompilation = false;
@@ -59,6 +62,8 @@ namespace Vastcore.RegionMap.Editor
                 int propCount = walk.InteriorPropCount;
                 Shot(camera, output, "01-interior", (turn - walk.Feet).normalized + Vector3.up * 0.15f);
                 WalkTo(walk, turn.x, turn.z, turn.y);
+                WalkTo(walk, 0, -12.35f, 0);
+                Shot(camera, output, "02-rockfall", new Vector3(6.2f, 5.55f, -3.5f) - camera.transform.position);
                 WalkTo(walk, 0, -10, 0);
                 Shot(camera, output, "02-lower", new Vector3(0.14f, 0.23f, 1));
                 WalkTo(walk, 0, 2.2f, 0);
@@ -75,25 +80,41 @@ namespace Vastcore.RegionMap.Editor
                 WalkTo(walk, 0, 2.2f, 6.8f);
                 Vector3 above = walk.Feet;
                 Shot(camera, output, "04-upper", new Vector3(-0.5f, -0.47f, -1));
+                Shot(camera, output, "return-01-bridge", new Vector3(-0.86f, -0.18f, -0.12f));
                 WalkTo(walk, -6, 2.1f, 6.45f);
                 WalkTo(walk, -10.7f, 0.5f, 5.9f);
                 WalkTo(walk, -11.8f, -4, 4.45f);
                 WalkTo(walk, -9, -8, 2.6f);
+                Shot(camera, output, "return-02-bank", new Vector3(0.72f, -0.27f, -0.65f));
                 WalkTo(walk, -5, -11, 0.85f);
                 WalkTo(walk, -2, -13, 0);
+                ReturnShot("return-03-passage", turn);
+                Vector3 turnApproach = Vector3.Lerp(new Vector3(-2, 0, -13), turn, 0.61f);
+                WalkTo(walk, turnApproach.x, turnApproach.z, turnApproach.y);
+                ReturnShot("return-04-approach", turn);
                 WalkTo(walk, turn.x, turn.z, turn.y);
+                ReturnShot("return-05-turn", threshold);
                 ApproachDoor(walk, threshold);
+                ReturnShot("return-06-threshold", threshold + Vector3.back * 2.8f);
                 walk.UseDoor();
                 if (walk.Inside || SceneManager.GetActiveScene() != exterior || Vector3.Distance(walk.Feet,start) > 0.5f)
                     throw new InvalidOperationException("Failed to return to the same exterior approach");
                 Shot(camera, output, "05-return", camera.transform.forward);
+                Shot(camera, output, "return-07-outdoors", camera.transform.forward);
                 Approach(walk);
                 walk.UseDoor();
                 if (!walk.Inside || SceneManager.GetActiveScene() != firstInterior ||
                     walk.InteriorTurn != turn || walk.InteriorThreshold != threshold || walk.InteriorPropCount != propCount)
                     throw new InvalidOperationException("Failed to re-enter the same interior");
-                Debug.Log($"[CaveWalk] PASS layout={walk.LayoutSeed}, threshold {threshold}, turn {turn}, props={propCount}, start {start}, under {below}, underside {underside.point}, above {above}, same door twice.");
+                Debug.Log($"[CaveWalk] PASS revision={revision}, layout={walk.LayoutSeed}, threshold {threshold}, turn {turn}, props={propCount}, start {start}, under {below}, underside {underside.point}, above {above}, same door twice.");
                 EditorApplication.Exit(0);
+
+                void ReturnShot(string name, Vector3 toward)
+                {
+                    Vector3 direction = (toward - camera.transform.position).normalized;
+                    Shot(camera, output, name, direction);
+                    Debug.Log($"[CaveWalk] {name} eye={camera.transform.position.ToString("F3")} direction={direction.ToString("F4")}");
+                }
             }
             catch (Exception e)
             {

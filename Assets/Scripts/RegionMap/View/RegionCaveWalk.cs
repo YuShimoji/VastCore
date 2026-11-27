@@ -13,6 +13,7 @@ namespace Vastcore.RegionMap
         [SerializeField] private Vector3 mouth;
         [SerializeField] private Vector3 outward;
         [SerializeField] private int layoutSeed = 9;
+        [SerializeField] private bool refineInterior = true;
         private Camera eye;
         private CharacterController walker;
         private Vector3 outsideFeet;
@@ -80,6 +81,15 @@ namespace Vastcore.RegionMap
         public Vector3 Feet => walker.transform.position;
         public bool Inside => inside;
         public int LayoutSeed => layoutSeed;
+        public bool RefineInterior
+        {
+            get => refineInterior;
+            set
+            {
+                if (geometry != null) throw new System.InvalidOperationException("Set the cave revision before entering.");
+                refineInterior = value;
+            }
+        }
         public Vector3 InteriorThreshold => geometry.Threshold;
         public Vector3 InteriorTurn => geometry.Turn;
         public int InteriorPropCount => geometry.PropCount;
@@ -103,7 +113,7 @@ namespace Vastcore.RegionMap
                     insideScene = SceneManager.CreateScene("Stone Span Cavern");
                     interior = new GameObject("Stone Span Cavern");
                     SceneManager.MoveGameObjectToScene(interior, insideScene);
-                    geometry = RegionCaveInterior.Build(interior, layoutSeed);
+                    geometry = RegionCaveInterior.Build(interior, layoutSeed, refineInterior);
                 }
                 interior.SetActive(true);
                 exterior.SetActive(false);

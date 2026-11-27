@@ -37,10 +37,14 @@ namespace Vastcore.RegionMap
         };
         private readonly List<Vector3> vertices = new List<Vector3>();
         private readonly List<int> triangles = new List<int>();
+        private bool refineRockfall;
+        private const float FallX = 6.2f, FallZ = -3.5f;
+        private const float FallStrike = 31f * Mathf.Deg2Rad;
 
-        internal static RegionCaveInterior Build(GameObject root, int seed)
+        internal static RegionCaveInterior Build(GameObject root, int seed, bool refine)
         {
             var cave = root.AddComponent<RegionCaveInterior>();
+            cave.refineRockfall = refine;
             bool deepPassage = (seed & 1) == 0;
             float thresholdZ = deepPassage ? -32f : -22f;
             var sockets = new[]
@@ -58,12 +62,21 @@ namespace Vastcore.RegionMap
             int rings = cave.BuildShell(sockets);
             cave.RockShelf();
             cave.Formations(seed, rings);
+            int fallStart = cave.vertices.Count;
+            if (refine) cave.FallenRock(seed);
             var mesh = new Mesh { name = "Connected cave modules, stone span and banks" };
             mesh.SetVertices(cave.vertices);
             mesh.SetTriangles(cave.triangles, 0);
             mesh.RecalculateNormals();
             var material = new Material(Resources.Load<Shader>("RegionMap3D/CaveStone"));
             material.SetFloat("_EntranceZ", sockets[0].Z);
+            if (refine)
+            {
+                mesh.SetColors(cave.FreshFaces(rings * RingSize, fallStart));
+                material.SetFloat("_FreshCollapse", 1f);
+                if (deepPassage)
+                    material.SetVector("_ReturnBounce", new Vector4(0.52f, 1.25f, cave.Turn.z + 0.65f, 0.92f));
+            }
             root.AddComponent<MeshFilter>().sharedMesh = mesh;
             root.AddComponent<MeshRenderer>().sharedMaterial = material;
             root.AddComponent<MeshCollider>().sharedMesh = mesh;
@@ -134,6 +147,8 @@ namespace Vastcore.RegionMap
                 float fracture = Mathf.Pow(Mathf.Abs(Noise(i * 0.18f, z * 0.24f)) * 2f, 3f);
                 float x = section.Center + Mathf.Cos(angle) * (section.HalfWidth + sin * (irregular * 2.7f + ledge * 0.53f));
                 float y = Floor(x, z) + sin * (section.Rise + 2.9f * irregular - fracture * 0.82f);
+                if (refineRockfall && y > 8.5f)
+                    y += 2.25f * Scar(x, z);
                 vertices.Add(new Vector3(x, y, z));
             }
         }
@@ -198,14 +213,83 @@ namespace Vastcore.RegionMap
                 int slice = random.Next(1, rings - 1), arch = random.Next(10, 38);
                 Vector3 ceiling = vertices[slice * RingSize + FloorSteps + arch];
                 if (ceiling.z < -9f || ceiling.z > 16f || ceiling.y < 10.4f) continue;
-                RockFragment(ceiling + Vector3.up * 0.38f, 0.45f + 0.76f * Unit(), -0.7f - 1.12f * Unit(), Unit() * 6, 0.49f);
+                float radius = 0.45f + 0.76f * Unit(), height = -0.7f - 1.12f * Unit(), phase = Unit() * 6;
+                if (!refineRockfall || Scar(ceiling.x, ceiling.z) <= 0f)
+                    RockFragment(ceiling + Vector3.up * 0.38f, radius, height, phase, 0.49f);
             }
             for (int i = 0; i < 95; i++)
             {
                 float z = Mathf.Lerp(-14, 13, Unit());
                 float x = (i % 2 == 0 ? 1 : -1) * Mathf.Lerp(3.6f, 7.9f, Unit());
                 float r = 0.13f + 0.65f * Unit();
-                RockFragment(new Vector3(x, Floor(x, z) - 0.13f, z), r, r * (0.47f + Unit()), Unit() * 6, 0.52f);
+                float height = r * (0.47f + Unit()), phase = Unit() * 6;
+                if (!refineRockfall || Mathf.Abs(x - FallX) > 3.4f || Mathf.Abs(z - FallZ) > 4.1f)
+                    RockFragment(new Vector3(x, Floor(x, z) - 0.13f, z), r, height, phase, 0.52f);
+            }
+        }
+
+        private static float Scar(float x, float z)
+        {
+            float dx = x - FallX, dz = z - FallZ;
+            float along = dx * Mathf.Cos(FallStrike) + dz * Mathf.Sin(FallStrike);
+            float across = dz * Mathf.Cos(FallStrike) - dx * Mathf.Sin(FallStrike);
+            float edge = Mathf.Max(Mathf.Abs(along + 0.20f * across) / 3.0f, Mathf.Abs(across) / 2.2f);
+            return 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.49f, 1f, edge));
+        }
+
+        private Color32[] FreshFaces(int lastShellVertex, int firstFallenVertex)
+        {
+            var colors = new Color32[vertices.Count];
+            for (int i = FloorSteps + 1; i < lastShellVertex; i++)
+            {
+                Vector3 p = vertices[i];
+                if (p.y > 8.5f) colors[i].r = (byte)(Scar(p.x, p.z) * 225f);
+            }
+            for (int i = firstFallenVertex; i < colors.Length; i++)
+                colors[i].r = 165;
+            return colors;
+        }
+
+        private void FallenRock(int seed)
+        {
+            // The two large blocks share the direction of the missing ceiling plate.
+            AngularBlock(FallX, FallZ, 1.24f, 0.79f, 1.34f, FallStrike);
+            AngularBlock(FallX + 0.82f, FallZ - 1.45f, 0.78f, 0.58f, 0.84f, FallStrike - 0.23f);
+            AngularBlock(FallX - 1.19f, FallZ - 1.35f, 0.63f, 0.37f, 0.55f, FallStrike + 0.30f);
+            var random = new System.Random(unchecked(seed * 733 + 1723));
+            for (int i = 0; i < 31; i++)
+            {
+                float run = Mathf.Lerp(1.0f, 4.05f, (float)random.NextDouble());
+                float spread = ((float)random.NextDouble() - 0.5f) * Mathf.Lerp(1.5f, 4.45f, run / 4.05f);
+                float x = Mathf.Clamp(FallX + spread - 0.27f * run, 3.75f, 8.85f);
+                float z = FallZ - run;
+                float size = Mathf.Lerp(0.48f, 0.15f, run / 4.05f) * Mathf.Lerp(0.68f, 1.25f, (float)random.NextDouble());
+                AngularBlock(x, z, size, size * Mathf.Lerp(0.57f, 0.88f, (float)random.NextDouble()),
+                    size * Mathf.Lerp(0.40f, 0.98f, (float)random.NextDouble()), FallStrike + ((float)random.NextDouble() - 0.5f) * 1.1f);
+            }
+        }
+
+        private void AngularBlock(float x, float z, float length, float width, float height, float strike)
+        {
+            int start = vertices.Count;
+            float floor = Floor(x, z) - Mathf.Max(0.09f, height * 0.25f);
+            Vector2 axis = new Vector2(Mathf.Cos(strike), Mathf.Sin(strike));
+            Vector2 cross = new Vector2(-axis.y, axis.x);
+            Vector2 center = new Vector2(x, z);
+            Add(-0.93f, -0.80f, 0f); Add(-0.80f, 0.84f, 0f); Add(0.95f, 0.71f, 0f); Add(0.86f, -0.92f, 0f);
+            Add(-0.59f, -0.77f, 0.74f); Add(-0.73f, 0.48f, 0.82f); Add(0.88f, 0.49f, 1f); Add(0.55f, -0.64f, 0.84f);
+            for (int side = 0; side < 4; side++)
+            {
+                int next = (side + 1) % 4;
+                Quad(start + side, start + next, start + next + 4, start + side + 4);
+            }
+            Quad(start + 4, start + 5, start + 6, start + 7);
+            PropCount++;
+
+            void Add(float u, float v, float y)
+            {
+                Vector2 p = center + u * length * axis + v * width * cross;
+                vertices.Add(new Vector3(p.x, floor + y * height, p.y));
             }
         }
 
