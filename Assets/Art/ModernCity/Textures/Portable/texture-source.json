@@ -1,0 +1,48 @@
+{
+    "sets": [
+        {
+            "files": [
+                "Asphalt010_Color.jpg"
+            ],
+            "origin": "downloaded",
+            "source": "https://ambientcg.com/view?id=Asphalt010",
+            "license": "CC0-1.0",
+            "author": "ambientCG",
+            "tileMetres": 4,
+            "notes": "1K JPEG derivative for the standalone kit."
+        },
+        {
+            "files": [
+                "PavingStones073_Color.jpg"
+            ],
+            "origin": "downloaded",
+            "source": "https://ambientcg.com/view?id=PavingStones073",
+            "license": "CC0-1.0",
+            "author": "ambientCG",
+            "tileMetres": 3.5,
+            "notes": "1K JPEG derivative for the standalone kit."
+        },
+        {
+            "files": [
+                "Bricks102_Color.jpg"
+            ],
+            "origin": "downloaded",
+            "source": "https://ambientcg.com/view?id=Bricks102",
+            "license": "CC0-1.0",
+            "author": "ambientCG",
+            "tileMetres": 2.5,
+            "notes": "1K JPEG derivative for the standalone kit."
+        },
+        {
+            "files": [
+                "RawPlankWall_*.jpg"
+            ],
+            "origin": "downloaded",
+            "source": "https://polyhaven.com/a/raw_plank_wall",
+            "license": "CC0-1.0",
+            "author": "Poly Haven",
+            "tileMetres": 2,
+            "notes": "Downsampled from 2K to 1K for the standalone kit."
+        }
+    ]
+}

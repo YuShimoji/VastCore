@@ -10,6 +10,9 @@ namespace Vastcore.ModernCity.Editor
         {
             void Prop(string name, Action<CityModel> author) => kit.Bake(CityKitAssets.Props, name, author);
             BakeStreet(Prop, p);
+            kit.Bake(CityKitAssets.Props, "Street tree", m => Tree(m, p, 37, 1f), m => Tree(m, p, 37, 1f, distant: true));
+            kit.Bake(CityKitAssets.Props, "Courtyard tree", m => Tree(m, p, 197, 0.77f),
+                m => Tree(m, p, 197, 0.77f, distant: true));
             BakeFurniture(Prop, p);
             BakeRetail(Prop, p);
             BakeService(Prop, p);
@@ -44,8 +47,15 @@ namespace Vastcore.ModernCity.Editor
                 }
                 m.CollisionBox(new Vector3(0, 0.25f, 0), new Vector3(1.85f, 0.5f, 0.53f));
             });
-            prop("Street tree", m => Tree(m, p, 37, 1f));
-            prop("Courtyard tree", m => Tree(m, p, 197, 0.77f));
+            prop("Street shelter", m =>
+            {
+                m.BeveledBox(p.Dark, new Vector3(0, 2.66f, 0), new Vector3(3.9f, 0.15f, 1.95f), 0.028f);
+                Box(m, p.Light, 0, 2.574f, -0.3f, 2.52f, 0.023f, 0.085f);
+                Box(m, p.Blue, 0, 0.99f, 0.64f, 3.35f, 1.98f, 0.082f, true);
+                Box(m, p.Timber, 0, 0.48f, 0.41f, 3.02f, 0.09f, 0.54f, true);
+                foreach (float x in new[] { -1.73f, 1.73f })
+                    Box(m, p.Metal, x, 1.3f, 0.62f, 0.095f, 2.6f, 0.092f, true);
+            });
             prop("Limestone planter", m =>
             {
                 Box(m, p.Stone, 0, 0.25f, 0, 1.26f, 0.5f, 0.59f, true);
@@ -127,6 +137,16 @@ namespace Vastcore.ModernCity.Editor
                 Box(m, p.Stone, 0, 1.05f, 0, 2.43f, 0.07f, 0.83f);
                 for (int i = -15; i <= 15; i++)
                     Box(m, p.Timber, i * 0.073f, 0.53f, 0.394f, 0.036f, 0.92f, 0.045f);
+            });
+            prop("Lobby directory", m =>
+            {
+                m.BeveledBox(p.Blue, new Vector3(0, 1.28f, 0), new Vector3(2.76f, 2.56f, 0.19f), 0.033f, true);
+                Box(m, p.Dark, 0, 0.076f, -0.02f, 2.66f, 0.15f, 0.24f);
+                Box(m, p.Light, -0.57f, 1.91f, -0.109f, 1.18f, 0.037f, 0.031f);
+                for (int i = 0; i < 3; i++)
+                    Box(m, p.Paint, -0.65f + i * 0.11f, 1.66f - i * 0.2f, -0.106f, 1.02f - i * 0.18f, 0.031f, 0.024f);
+                for (int i = 0; i < 11; i++)
+                    Box(m, p.Timber, 0.348f + i * 0.08f, 1.28f, -0.107f, 0.04f, 2.37f, 0.081f);
             });
             prop("Office desk", m =>
             {
@@ -366,6 +386,13 @@ namespace Vastcore.ModernCity.Editor
 
         private static void BakeService(Action<string, Action<CityModel>> prop, CityPalette p)
         {
+            prop("Loading stripes", m =>
+            {
+                foreach (float side in new[] { -1f, 1f })
+                    for (int i = 0; i < 5; i++)
+                        m.Box(p.Yellow, new Vector3(side * 1.03f, 0, -0.65f + i * 0.34f),
+                            new Vector3(0.33f, 0.006f, 0.084f), Quaternion.Euler(0, side * 42, 0));
+            });
             prop("Spare storage rack", m => Shelving(m, p, p.Metal, 1.53f, 1.97f, 0.48f));
             prop("Workshop bench", m =>
             {
@@ -565,7 +592,7 @@ namespace Vastcore.ModernCity.Editor
             }
         }
 
-        private static void Tree(CityModel m, CityPalette p, int seed, float scale)
+        private static void Tree(CityModel m, CityPalette p, int seed, float scale, bool distant = false)
         {
             var random = new Random(seed);
             Vector3 trunk = new Vector3(0.12f, 3.17f, 0.15f) * scale;
@@ -579,7 +606,7 @@ namespace Vastcore.ModernCity.Editor
                 float reach = (float)(0.55 + random.NextDouble() * 1.33) * (1.2f - (height - 3) * 0.19f);
                 var branch = new Vector3(Mathf.Cos(angle) * reach, height, Mathf.Sin(angle) * reach) * scale;
                 Vector3 fork = trunk * (0.69f + i % 4 * 0.105f);
-                m.Frustum(p.Bark, fork, branch, 0.043f * scale, 0.013f * scale, 8);
+                m.Frustum(p.Bark, fork, branch, 0.043f * scale, 0.013f * scale, distant ? 5 : 8);
                 for (int leaf = 0; leaf < 94; leaf++)
                 {
                     float theta = (float)random.NextDouble() * 2 * Mathf.PI;
@@ -590,6 +617,11 @@ namespace Vastcore.ModernCity.Editor
                         Mathf.Sin(theta) * spread * 0.65f) * scale;
                     float leafSize = (0.087f + (float)random.NextDouble() * 0.077f) * scale;
                     float tilt = (float)random.NextDouble() - 0.5f;
+                    // Select from the original leaves so both meshes keep the same outline and branch positions.
+                    if (distant && leaf % 6 != 0)
+                        continue;
+                    if (distant)
+                        leafSize *= 1.95f;
                     Vector3 spine = new Vector3(Mathf.Cos(theta + 0.83f), tilt * 1.6f,
                         Mathf.Sin(theta + 0.83f)) * leafSize;
                     Vector3 side = new Vector3(spine.z, spine.x * 0.3f, -spine.x) * 0.48f;
@@ -597,7 +629,8 @@ namespace Vastcore.ModernCity.Editor
                         centre - spine, centre + side, centre + spine, centre - side);
                 }
             }
-            m.CollisionBox(new Vector3(0, 1.05f, 0), new Vector3(0.27f, 2.1f, 0.27f) * scale);
+            if (!distant)
+                m.CollisionBox(new Vector3(0, 1.05f, 0), new Vector3(0.27f, 2.1f, 0.27f) * scale);
         }
 
         private static void Bicycle(CityModel m, CityPalette p)

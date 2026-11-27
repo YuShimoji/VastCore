@@ -45,6 +45,11 @@ namespace Vastcore.ModernCity.Editor
             {
                 // At 12 m the same cabinet and island set up the shop display and leave the middle aisle open.
                 At(Shelves, 0.48f, 0, 1.97f, -90);
+                if (furnished)
+                {
+                    At(Shelves, 0.48f, 0, 5.21f, -90);
+                    At("Glass display case", plot.Width - 1.06f, 0, 3.76f, -90);
+                }
             }
 
             if (furnished)

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
@@ -15,10 +14,12 @@ namespace Vastcore.ModernCity.Editor
     {
         private const string OutputKey = "Vastcore.ModernCity.PlayCheckOutput";
         private const string ResultKey = "Vastcore.ModernCity.PlayCheckExitCode";
+        private const string RouteKey = "Vastcore.ModernCity.PlayCheckRoute";
         private static Gamepad pad;
         private static Camera camera;
         private static Transform walker;
-        private static Transform cafe;
+        private static Transform building;
+        private static string routeName;
         private static List<Vector3> route;
         private static int waypoint;
         private static int upperFloorCheckpoint;
@@ -26,10 +27,21 @@ namespace Vastcore.ModernCity.Editor
 
         public static void RunFromCommandLine()
         {
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            if (!EditorApplication.ExecuteMenuItem("Vastcore/Modern City/Open Sample"))
-                throw new InvalidOperationException("The Modern City menu did not open the sample.");
+            CityReview.OpenSavedSample();
+            var args = Environment.GetCommandLineArgs();
+            int option = Array.IndexOf(args, "-cityWalkRoute");
+            if (option == args.Length - 1)
+                throw new ArgumentException("Provide a route after -cityWalkRoute.");
+            string check = option < 0 ? "cafe" : args[option + 1];
+            var (plot, waypoints, _) = BuildRoute(check);
+            if (check != "cafe")
+            {
+                var player = Camera.main.transform.parent;
+                player.SetPositionAndRotation(waypoints[0] + Vector3.up * 0.035f,
+                    Quaternion.Euler(0, plot.Yaw + (check == "service" ? 180 : 0), 0));
+            }
             SessionState.SetString(OutputKey, CityReview.OutputDirectory());
+            SessionState.SetString(RouteKey, check);
             SessionState.SetInt(ResultKey, 1);
             EditorApplication.EnterPlaymode();
         }
@@ -48,24 +60,18 @@ namespace Vastcore.ModernCity.Editor
             if (state == PlayModeStateChange.EnteredPlayMode)
             {
                 camera = Camera.main;
-                cafe = GameObject.Find("Corner cafe")?.transform;
+                routeName = SessionState.GetString(RouteKey, "cafe");
+                var plan = BuildRoute(routeName);
+                building = GameObject.Find(plan.Plot.Name)?.transform;
                 walker = camera != null ? camera.transform.parent : null;
-                if (cafe == null || walker == null || walker.GetComponent<CityWalkthrough>() == null)
+                if (building == null || walker == null || walker.GetComponent<CityWalkthrough>() == null)
                 {
-                    Finish("Saved scene is missing the cafe or the first-person player.", 1);
+                    Finish("Saved scene is missing the route building or the first-person player.", 1);
                     return;
                 }
                 Application.runInBackground = true;
-                var plot = CityBlock.Design(CityBlock.DefaultSeed, CityStreetPlan.CornerShops)[0];
-                var stairs = CityVerification.MainRoute(plot, maxClimbs: 1);
-                var order = CityVerification.OrderRoute(plot);
-                route = new List<Vector3>(order);
-                route.Add(order[2]);
-                route.Add(order[1]);
-                route.AddRange(stairs.Skip(2));
-                upperFloorCheckpoint = route.Count - 1;
-                stairs.Reverse();
-                route.AddRange(stairs.Skip(1));
+                route = plan.Waypoints;
+                upperFloorCheckpoint = plan.UpperCheckpoint;
                 waypoint = 0;
                 pad = InputSystem.AddDevice<Gamepad>();
                 started = EditorApplication.timeSinceStartup;
@@ -74,19 +80,55 @@ namespace Vastcore.ModernCity.Editor
             else if (state == PlayModeStateChange.EnteredEditMode)
             {
                 SessionState.EraseString(OutputKey);
+                SessionState.EraseString(RouteKey);
                 EditorApplication.Exit(SessionState.GetInt(ResultKey, 1));
             }
+        }
+
+        private static (CityPlot Plot, List<Vector3> Waypoints, int UpperCheckpoint) BuildRoute(string check)
+        {
+            var plots = CityBlock.Design(CityBlock.DefaultSeed, CityStreetPlan.CornerShops);
+            var plot = check switch
+            {
+                "cafe" => plots[0],
+                "office" or "service" => plots[2],
+                _ => throw new ArgumentException("Provide -cityWalkRoute cafe, office or service.")
+            };
+            var stairs = CityVerification.MainRoute(plot, maxClimbs: 1);
+            var waypoints = new List<Vector3>();
+            if (check == "cafe")
+            {
+                var order = CityVerification.OrderRoute(plot);
+                waypoints.AddRange(order);
+                waypoints.Add(order[2]);
+                waypoints.Add(order[1]);
+            }
+            else if (check == "service")
+            {
+                var entrance = CityVerification.ServiceRoute(plot);
+                entrance.Reverse();
+                waypoints.AddRange(entrance);
+            }
+            else
+                waypoints.AddRange(stairs.Take(2));
+            waypoints.AddRange(stairs.Skip(2));
+            int checkpoint = waypoints.Count - 1;
+            stairs.Reverse();
+            waypoints.AddRange(stairs.Skip(1).Take(stairs.Count - (check == "service" ? 2 : 1)));
+            if (check == "service")
+                waypoints.AddRange(CityVerification.ServiceRoute(plot).Skip(1));
+            return (plot, waypoints, checkpoint);
         }
 
         private static void DrivePlayer()
         {
             try
             {
-                Vector3 localFoot = cafe.InverseTransformPoint(walker.position);
+                Vector3 localFoot = building.InverseTransformPoint(walker.position);
                 if (EditorApplication.timeSinceStartup - started > 65)
                 {
                     Finish($"Timed out at waypoint {waypoint + 1}/{route.Count}. "
-                        + $"Foot {localFoot:F3}; target {cafe.InverseTransformPoint(route[waypoint]):F3}.", 1);
+                        + $"Foot {localFoot:F3}; target {building.InverseTransformPoint(route[waypoint]):F3}.", 1);
                     return;
                 }
                 Vector3 goal = route[waypoint];
@@ -94,16 +136,19 @@ namespace Vastcore.ModernCity.Editor
                 var flat = new Vector3(remaining.x, 0, remaining.z);
                 if (flat.magnitude < 0.115f && Mathf.Abs(remaining.y) < 0.22f)
                 {
-                    if (waypoint == 1)
-                        CaptureCheckpoint("play-cafe.png");
+                    if (waypoint == (routeName == "service" ? 2 : 1))
+                        CaptureCheckpoint("play-" + routeName + ".png");
                     if (waypoint == upperFloorCheckpoint)
                         CaptureCheckpoint("play-upper.png");
                     waypoint++;
                     if (waypoint == route.Count)
                     {
                         CaptureCheckpoint("play-return.png");
-                        Finish($"Play mode: real gamepad input from the saved scene. Reached the order counter, "
-                            + $"walked both stair flights to +{CityBuildingKit.Storey:F1} m, and returned to the sidewalk "
+                        string entry = routeName == "cafe" ? "Cafe: reached the order counter."
+                            : routeName == "service" ? "Office: entered through the loading entrance."
+                            : "Office: entered through the reception entrance.";
+                        Finish($"Play mode: real gamepad input from the saved scene. {entry} "
+                            + $"Walked both stair flights to +{CityBuildingKit.Storey:F1} m and returned outside "
                             + $"(foot {localFoot:F3}; {route.Count} waypoints).", 0);
                     }
                     else

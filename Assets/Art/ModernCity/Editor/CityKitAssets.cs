@@ -14,17 +14,46 @@ namespace Vastcore.ModernCity.Editor
         internal const string Buildings = "Buildings";
         internal const string Street = "Street";
         internal const string Props = "Props";
+        internal const string Sky = Root + "/Materials/District horizon.mat";
         private readonly Dictionary<string, GameObject> prefabs = new Dictionary<string, GameObject>();
 
-        internal void Bake(string category, string name, Action<CityModel> author)
+        internal void Bake(string category, string name, Action<CityModel> author, Action<CityModel> distantAuthor = null)
         {
             Folder(Root + "/Meshes/" + category);
             Folder(Root + "/Prefabs/" + category);
+            var instance = new GameObject(name);
+            try
+            {
+                var near = BakeMesh(instance, category, name, author);
+                if (distantAuthor != null)
+                {
+                    var distant = Group("Distant canopy", instance.transform, Vector3.zero);
+                    var reduced = BakeMesh(distant, category, name + " distant", distantAuthor);
+                    var group = instance.AddComponent<LODGroup>();
+                    group.SetLODs(new[]
+                    {
+                        new LOD(0.105f, new Renderer[] { near }), new LOD(0.014f, new Renderer[] { reduced })
+                    });
+                    group.RecalculateBounds();
+                }
+                string prefabPath = PrefabPath(category, name);
+                prefabs[prefabPath] = PrefabUtility.SaveAsPrefabAsset(instance, prefabPath, out bool saved);
+                if (!saved)
+                    throw new InvalidOperationException("Could not save " + prefabPath);
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+
+        private static MeshRenderer BakeMesh(GameObject instance, string category, string name, Action<CityModel> author)
+        {
             string meshPath = Root + "/Meshes/" + category + "/" + name + ".asset";
             var model = new CityModel();
             author(model);
-            Mesh next = model.CreateMesh(name);
-            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
+            var next = model.CreateMesh(name);
+            var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
             if (mesh == null)
             {
                 AssetDatabase.CreateAsset(next, meshPath);
@@ -36,20 +65,7 @@ namespace Vastcore.ModernCity.Editor
                 EditorUtility.SetDirty(mesh);
                 Object.DestroyImmediate(next);
             }
-
-            var instance = new GameObject(name);
-            try
-            {
-                model.Attach(instance, mesh);
-                string prefabPath = PrefabPath(category, name);
-                prefabs[prefabPath] = PrefabUtility.SaveAsPrefabAsset(instance, prefabPath, out bool saved);
-                if (!saved)
-                    throw new InvalidOperationException("Could not save " + prefabPath);
-            }
-            finally
-            {
-                Object.DestroyImmediate(instance);
-            }
+            return model.Attach(instance, mesh);
         }
 
         internal GameObject Place(string category, string name, Transform parent, Vector3 position, float yaw = 0f)
@@ -92,14 +108,16 @@ namespace Vastcore.ModernCity.Editor
 
     internal sealed class CityPalette
     {
-        private const string TimberMaps = "Assets/Art/Textures/CNT/weathered_pine_timber/raw_plank_wall";
-        internal readonly Material Asphalt = Textured("Asphalt", RoadMap("Asphalt010"), "CFD4DB", 4, 0.05f);
-        internal readonly Material Paving = Textured("Paving", RoadMap("PavingStones073"), "CFCCC6", 3.5f, 0.16f);
+        private const string PortableMaps = CityKitAssets.Root + "/Textures/Portable/";
+        internal readonly Material Asphalt = Textured("Asphalt", PortableMaps + "Asphalt010_Color.jpg", "CFD4DB", 4, 0.05f);
+        internal readonly Material Paving = Textured("Paving", PortableMaps + "PavingStones073_Color.jpg", "CFCCC6", 3.5f, 0.16f);
         internal readonly Material Stone = Make("Warm limestone", "A9A396", 0.23f);
-        internal readonly Material Brick = Textured("Brick", RoadMap("Bricks102"), "C8B9AE", 2.5f, 0.15f);
-        internal readonly Material Timber = Textured("Timber", TimberMaps + "_diff_2k.jpg", "BCA78E", 2, 0.34f,
-            TimberMaps + "_nor_gl_2k.jpg");
+        internal readonly Material Brick = Textured("Brick", PortableMaps + "Bricks102_Color.jpg", "C8B9AE", 2.5f, 0.15f);
+        internal readonly Material Timber = Textured("Timber", PortableMaps + "RawPlankWall_Color.jpg", "BCA78E", 2, 0.34f,
+            PortableMaps + "RawPlankWall_NormalGL.jpg");
         internal readonly Material Concrete = Make("Concrete", "90999B", 0.18f);
+        internal readonly Material Terrazzo = Textured("Lobby terrazzo",
+            CityKitAssets.Root + "/Textures/Storefront/Concrete034_1K-JPG_Color.jpg", "9FA9A7", 1.3f, 0.37f);
         internal readonly Material Paint = Make("Porcelain", "D5D8D5", 0.28f);
         internal readonly Material Dark = Make("Charcoal", "3E4850", 0.31f);
         internal readonly Material Rubber = Make("Rubber", "30363C", 0.12f);
@@ -116,15 +134,22 @@ namespace Vastcore.ModernCity.Editor
         internal readonly Material Leaf = Make("Foliage shaded", "4E663D", 0.16f, doubleSided: true);
         internal readonly Material LeafLight = Make("Foliage sunlit", "70824F", 0.2f, doubleSided: true);
         internal readonly Material Soil = Make("Planting soil", "514A42", 0.12f);
+        internal readonly Material Verge = Make("Courtyard ground cover", "6B7456", 0.12f);
         internal readonly Material Glass = Make("Glazing", "91B0BF", 0.83f, glass: true);
         internal readonly Material Light = Make("Warm diffuser", "FFF0CC", 0.3f, emission: 0.73f);
         internal readonly Material Screen = Make("Display", "586E7B", 0.62f, emission: 0.17f);
         internal readonly Material Awning = Make("Ochre canvas", "B79869", 0.13f);
 
-        private static string RoadMap(string name)
+        internal static void BakeSky()
         {
-            string stem = name + "_1K-JPG";
-            return "Assets/Resources/MapGenerator/Textures/" + stem + "/" + stem + "_Color.jpg";
+            var sky = AssetDatabase.LoadAssetAtPath<Material>(CityKitAssets.Sky);
+            if (sky == null)
+            {
+                sky = new Material(Shader.Find("Skybox/Procedural"));
+                AssetDatabase.CreateAsset(sky, CityKitAssets.Sky);
+            }
+            sky.SetColor("_GroundColor", new Color(0.68f, 0.73f, 0.79f));
+            EditorUtility.SetDirty(sky);
         }
 
         internal static Material Textured(string name, string colorPath, string color, float tileMetres, float gloss,

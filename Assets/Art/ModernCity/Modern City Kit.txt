@@ -1,10 +1,16 @@
 Modern City Kit
 
-Open ModernCity.unity, select Play, then click the Game view to walk with WASD and look with the mouse. Esc releases the mouse. Both analog sticks are supported.
-Vastcore > Modern City > Variants builds a new street scene or adds a configurable building to the active scene.
-Prefabs/Buildings, Prefabs/Street and Prefabs/Props can be placed independently. Wall bays face -Z. The 4 m bay and 3 m storey mate at nominal slab height. Leave the rear 4 m bay open above each stair. The demo uses Unity 6 URP and the Input System.
+Install into a URP project. The verified combination is Unity 6000.3.6f1, Universal RP 17.3.0, and Input System 1.18.0. Set Active Input Handling to Input System Package (New) or Both. Import the package through Assets > Import Package > Custom Package.
 
-Reused textures
-Asphalt010, PavingStones073 and Bricks102 by ambientCG (CC0-1.0), https://docs.ambientcg.com/license/
-Raw Plank Wall by Poly Haven (CC0-1.0), https://polyhaven.com/a/raw_plank_wall
-Concrete034 by ambientCG (CC0-1.0), https://ambientcg.com/view?id=Concrete034
+Open Vastcore > Modern City > Open Sample. In Play, click the Game view, walk with WASD and look with the mouse. Esc releases the mouse. A gamepad uses both sticks.
+
+Choose Vastcore > Modern City > Variants. In Street block, try Side Street with seed 1031. In Building, set the entry corner, facing, bay count, storey count, facade and room uses. Reception selects the lobby entrance and canopy. Stone retail uses the recessed shopfront in the street examples.
+
+Browse Assets/Art/ModernCity/Prefabs. Assembled holds ready-to-place buildings. Buildings holds bays, floors, stairs, canopies and roof details. Street holds 4 m road and paving pieces and 8 m planted courts. Props holds furnishings, vegetation and service equipment.
+
+The sample includes a static street reflection cubemap. Update or replace the reflection probe for your own arrangement.
+
+Work in metres with a 4 m bay and 3 m storey. An assembled building starts at its front left corner. A wall bay starts at its bottom centre and faces -Z. Slab and sidewalk pivots sit at the tile centre, with floors aligned to the slab's upper surface. The sidewalk upper surface is 0.14 m above the street origin. Align entries to the walkable surface. Leave the 4 m stair bay open directly above the flight and use the matching landing and guard pieces.
+
+Texture credits
+Asphalt010, PavingStones073, Bricks102 and Concrete034 are from ambientCG (CC0-1.0). Raw Plank Wall is from Poly Haven (CC0-1.0). The source URLs and tile scales are in Textures/Portable/texture-source.json and Textures/Storefront/texture-source.json.

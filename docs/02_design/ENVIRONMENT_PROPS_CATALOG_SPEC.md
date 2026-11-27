@@ -194,10 +194,10 @@ VastCore の現行3D景観（砂岩・乾燥地）と今後の展開予定（古
 
 - Unity の `Vastcore > Region Map > Highway Corridor Preview` で `Seed` と `Road layout` を選び、`Generate preview`。`Country` は片側2車線の高速と片側1車線の幹線、`Sweeping` は同じ断面で曲がりを増やし、`Wide` はそれぞれ片側3・2車線。`Shape only` と遠景・中景・入口・高速の固定視点がある。
 - [道路データ](../../Assets/Scripts/RegionMap/Core/RegionRoads.cs)はメートル単位の中心線、高さの取得関数、幅員から縦断と地形のすり付けを作る。[道路部品](../../Assets/Scripts/RegionMap/View/RegionRoadView.cs)は同じ断面を舗装、標示、防護柵、当たり判定に使う。敷地の `RegionRoadsideSite` は、道路ID、中心線に沿った距離、側、入口・敷地の座標と向きを持つ。敷地IDは生成した場面内で一意。探索マップからの道路・敷地呼び出しは別の接続工程。
-- 舗装は `Asphalt010`、砂利は `Ground007`、地表は `Grass005` と `Ground009`。中遠景の株と樹木は既存の `DesertPlants` から再利用し、畦と浅い溝の高低、畑の畝、植生をまとめる配置を追加した。[素材の出所](../../Assets/Resources/MapGenerator/Textures/texture-source.json)・[植生の配置](../../Assets/Scripts/RegionMap/View/RegionRoadLandscape.cs)
+- 舗装は `Asphalt010`、砂利は `Ground007`、地表は `Grass005` と `Ground009`。低木と林縁は `DesertPlants`、短草と長草は草原の `MeadowTussocks`、代表区間の立体の葉と丘の樹冠は森林環境の `RegionWoodlandGeometry` を再利用する。樹冠は谷底からの距離と粗密の異なる二つの分布で林を作り、幹と樹冠の詳細度を斜面の奥で落とす。[素材の出所](../../Assets/Resources/MapGenerator/Textures/texture-source.json)・[草株の出所](../../Assets/Resources/RegionMap3D/texture-source.json)・[植生の配置](../../Assets/Scripts/RegionMap/View/RegionRoadLandscape.cs)
 - 道路脇は舗装端から砂利2.2 m、法面、底幅3 mの浅い溝、畦、田畑へつなぐ。地形格子を4.5 mから2.25 mへ細かくし、[断面と敷地の除外](../../Assets/Scripts/RegionMap/Core/RegionRoadMargin.cs)を地形・植生・路肩に共用する。既存の砂利・土・草を実寸で混ぜ、畦や溝に沿って丈の違う株を群れと空きに分ける。遠景の尾根は[別の粗い地形](../../Assets/Scripts/RegionMap/View/RegionRoadGroundView.cs)で二重に重ねる。
-- 自然地形へ持ち越す手順は、既存素材を増やす前に単色の形状と実測断面を確認し、土の高さと同じ境界から植生を配置して、別 seed でも接地と除外範囲を確かめること。畝の色画像は Terrain Lit の光沢を避けるため RGB で作る。写真との差は、溝合流部の丸み、林の樹冠の厚み、近景の草の密度に残る。[4視点・完成想定図・実測の比較](<D:/AI-Runs/VastCore/highway-arterial/roadside-detail/index.html>)
-- Unity 6000.3.6f1 の検証用コピーで、Country / 8 と Sweeping / 19 の各版を同じカメラ・日照で比較した。両 seed の修正版は道路179点・入口と敷地80点ずつで突き抜けなし。入口の高さ差は1.14 cm／1.10 cm、敷地の25測点の高低差は表示桁で0.000 cm。生成は0.65→1.88秒／0.68→1.61秒、Mid は+0.86／+0.60 ms（1600×900、CPUとGPU同期込み）。EditMode 6件通過。
+- 自然地形へ持ち越す手順は、単色の断面で高さを確認し、共通の生育分布から路肩の土の露出と草株を配置すること。進入口の舗装と平坦地を除外し、地形に接地する立体の葉を敷地から南北420 mの代表区間に重ねる。畝の色画像は Terrain Lit の光沢を避けるため RGB で作る。写真との差は、溝合流部の丸み、樹冠の多角形と林内の陰影、近景の短草の密度と礫の厚みに残る。[4視点・完成想定図・実測の比較](<D:/AI-Runs/VastCore/highway-arterial/roadside-detail/index.html#finish>)
+- Unity 6000.3.6f1 で通常メニューから Country / 8・Sweeping / 8 を生成し、固定の4視点は Country / 8・Sweeping / 19 を同じカメラと日照で前後比較した。道路179点・入口と敷地80点ずつの値は前版と一致。入口1.14 cm／1.10 cm（水平0.62 m）、平坦部25点の高低差0.000 cm（表示桁）。生成の追加は0.91秒／1.87秒。描画の最大増分は+0.98 ms／+0.96 ms（1600×900、CPU・GPU同期込み）。道路の EditMode 6件通過。
 
 ---
 
@@ -270,23 +270,31 @@ GameProjects の木箱6型・木樽2型・扇状の瓦礫1型を、元GLBのSHA-
 - [Modern City Kit](../../Assets/Art/ModernCity/)の `ModernCity.unity` を開くか、`Vastcore > Modern City > Open Sample` を選ぶ。PlayでGameビューをクリックし、WASDとマウスで歩く。Escでマウスを解放する。ゲームパッドは左右スティック。
 - `Variants` の `Street block` は seed・街路形・Props密度を変えて別シーンを作る。`Building` は間口・奥行き・階数・外装・階の用途を選んで、開いているシーンへ1棟を足す。`Prefabs/Assembled` の3棟や `Buildings`・`Street`・`Props` の単体部材も直接置ける。
 - ブロックを組む基準は幅・奥行き4 m、階高3 m、外装は底面中央を原点に正面が−Z。床上端が各階の基準面。階段の上階側の4 m角を開け、上り終端側には床をつなぎ、開口の縁に柵を付ける。主要入口の開口1.84 m、搬入口1.46 m。幅0.68 m・高さ1.8 mの歩行カプセルで確認する。
-- `Export Asset Package` はパッケージ内のPrefab・Mesh・材質・シーン・コードと、参照先の舗装・レンガ・木材のCC0画像だけを含める。Unity 6 URPとInput Systemが必要。画像の出所は同梱の `Modern City Kit.txt`。DS-011の地形用配置とSP-021の地域生成は、それぞれ既存の入口から使う。
+- `Export Asset Package` は `Assets/Art/ModernCity` 内の部材・見本・コード・画像を配布する。Unity 6000.3.6f1、URP 17.3.0、Input System 1.18.0。出所は同梱の `Modern City Kit.txt` とテクスチャの台帳。DS-011・SP-021は各機能の入口から使う。
 - バッチの入口は [CityReview](../../Assets/Art/ModernCity/Editor/CityReview.cs) の `BuildCaptureAndPlayFromCommandLine`。Unity 6000.3.6f1に `-batchmode -projectPath <VastCore> -executeMethod Vastcore.ModernCity.Editor.CityReview.BuildCaptureAndPlayFromCommandLine -cityOutput <出力先>` を渡す。Prefabと見本シーンを作り直し、歩行・撮影・配布用書き出し・Playモードを順に確認する。
 
 ### 9.2 次の人工物キットへ持ち越す検証
 
-市街の単色試作で歩道・開口・床・階段と距離別の輪郭を確認し、店頭、室用途、搬入口、屋上の順でPropsの組を置いた。初回の撮影では車道の抜けとカフェの空床が目立ち、階段前の光は飽和した。入口の見える歩道側へ視点を移し、街路の端に小広場、店内に客席と陳列のまとまり、階段に低い位置からの明かりを足した。後退した入口では舗装と室内床が重なったため、敷地側の舗装を床面より28 mm下げた。
+単色で輪郭と歩道・開口・床・階段を確認し、店頭・室用途・搬入口・屋上を配置した。初回撮影の車道の途切れ、カフェの空床、飽和した階段灯に対し、歩道から入口を撮り、小広場・客席・陳列・低い階段灯を足した。舗装と敷居の重なりは敷地側を床面より28 mm下げて解消した。
 
-次のキットでも、部材数より先に「外で用途が読めるか」「室内の目的地と階の接続が歩いて分かるか」を試す。棚・椅子・照明は用途間で共有し、什器の組み方で区別する。Propsを増やす前後は別配置を含む2地点で固定カメラと日照をそろえ、通行・場面の生成時間・描画完了までの時間を照合する。近景の材質と室内照明、街路の輪郭はそれぞれの視点で評価する。
+次も外から用途が読め、室内で目的地と階の接続が分かるかを先に歩いて試す。棚・椅子・照明は組み方で用途を出す。別配置を含む2地点で固定カメラと日照を揃え、通行・生成時間・描画時間を測る。輪郭と材質・室内照明には距離別の視点を使う。
 
-初版の配布版は建築部材32、街路部材8、Props 71、組立見本3。seed 417と1031の各9棟で正面と搬入口、22・23か所の階の接続をカプセルで確認した。保存シーンはメニューから開き、Play中のゲームパッド入力でカフェ入口を通過した。[撮影の比較ページ](<D:/AI-Runs/VastCore/modern-city-block/review.html>)では同じ視点で基本構成と拡充後を比較できる。RTX 4060 Tiの街路視点・1600×900で、Props拡充による描画と1画素読み戻しの中央値の増分は0.93 msと1.03 ms。未確認の指標はGPU単独時間。
+初版は建築32・街路8・Props 71・組立見本3。seed 417／1031の各9棟で正面・搬入口と階の22／23接続を確認し、メニューからPlayしてカフェへ入った。Props拡充時の描画＋1画素読み戻し中央値の増分はRTX 4060 Ti・1600×900で0.93／1.03 ms。GPU単独は未計測。[初版比較](<D:/AI-Runs/VastCore/modern-city-block/review.html>)
 
-完成イメージに比べ、店先の用途は判別しやすくなったが、遠景は平らな屋根の反復が残り、近景は石・ガラスの反射と使い込んだ細部が不足する。次の人工物キットで先に手を付ける箇所は、用途が見える地上階の開口と、輪郭を変えるセットバックや屋上部。近景の仕上げは撮影で差が目立つ入口と主役の什器に集中させ、同じ部材で別の建物を組めることを確かめる。
+初版で残った平屋根の反復、石とガラスの反射、使用感は、屋根・入口・主要什器の順で比較し、同じ部材を別棟で使って確かめる。
 
-この端末の検証用作業ツリー `C:\Users\PLANNER007\.codex\worktrees\modern-city-block\VastCore` は、チャットの既定チェックアウトに設定されているためアーカイブできなかった。検証した資産は元のVastCoreへ反映し、`803a724` をpush済み。作業ツリーが既定のチェックアウトから外れた時点でアーカイブできる。
+検証用作業ツリー `C:\Users\PLANNER007\.codex\worktrees\modern-city-block\VastCore` はチャット既定のため保留。正本へ反映済み（`803a724`）。既定から外れた時点でアーカイブできる。
 
 ### 9.3 角のカフェ
 
 [前後と参考の比較](<D:/AI-Runs/VastCore/modern-city-block/corner-cafe/review.html>)はseed 417の4視点を同じ露出・太陽高度38°で撮影。窓を約0.56 m、扉を約0.67 m引き込み、石の目地、庇の木の下面、敷居が読めるようにした。歩道から商品と席、入口から注文台と階段口が見える。Playでは注文台を経由して+3 mの上階から歩道へ往復した。
 
 4 m幅・3 m高の部材を使い、16 mのカフェとseed 1031の12 mの店舗で窓・入口・庇・階段口・什器のPrefab 7種を共有した。配布版は建築36、街路8、Props 77、組立見本3。残る差は石の色むら、ガラスの周囲の映り込み、室内の光の回り込み。次も開口の断面を先に撮り、什器は窓越しと入口から見て、別の間口で視線と通行を確かめる。
+
+### 9.4 街区全体と別プロジェクトへの配布
+
+[形の試作と前後比較](<D:/AI-Runs/VastCore/modern-city-block/district-release/review.html>)。両seedの遠・中・近を太陽高度60／38／20／10°で撮影。上層後退は俯瞰と見上げ、街路延長は東へ歩いた時に効いた。9棟と4 m格子で街路を裏道へ接続し、3棟の最上階を1ベイ後退させた。木の庇と商品棚、業務棟の水平庇と受付、搬入口の荷役表示で用途を分けた。再撮影前に入口を隠す樹木を移し、下向きの照明と街路の反射を足した。[公開デモ](https://alleybits.itch.io/japan-street-modular-pack-low-poly-town/devlog/1772165/building-a-japanese-street-from-one-modular-kit)
+
+配布版は建築41、街路12、Props 80、組立見本3。両seedの22／23階段接続と、Playでカフェ・正面受付・搬入口から+3 mの往復を確認。別URPプロジェクトで見本をPlayし、seed 1031に12 mの受付と16 mの物販を追加。生成直後の撮影では材質の明暗が乱れたため、保存シーンを別起動で開き直して撮った。
+
+RTX 4060 Ti、1600×900、固定カメラで描画＋1画素読み戻しの中央値は俯瞰18.70→9.09 ms、交差点12.36→8.64 ms、受付7.70→8.82 ms。変更後の俯瞰で樹木を近景形状に固定すると12.00 ms。反射は見本の配置から焼いた。窓面の映り込み、石の微細な濃淡、室内の間接光、外周の建物密度に差が残る。次も輪郭のラフ、用途別の実画面、別間口の通行、他プロジェクトへの取り込みを同じ部材で順に照合する。

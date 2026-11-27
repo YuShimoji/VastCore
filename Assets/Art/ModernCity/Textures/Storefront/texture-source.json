@@ -9,6 +9,13 @@
             "retrieved": "2026-11-28",
             "tileMetres": 1.1,
             "notes": "1.1 by 0.55 m; fine concrete grain under modeled storefront cladding joints."
+        },
+        {
+            "files": ["Street_reflection.exr"],
+            "origin": "generated",
+            "generator": "Assets/Art/ModernCity/Editor/CityReview.cs",
+            "license": "project",
+            "notes": "128 px per face HDR reflection captured from the seed 417 sample using Unity."
         }
     ]
 }

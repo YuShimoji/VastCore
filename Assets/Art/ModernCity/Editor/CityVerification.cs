@@ -25,14 +25,7 @@ namespace Vastcore.ModernCity.Editor
                     WalkRoute(capsule, plot.Name + " front entrance and stairs", main);
                     main.Reverse();
                     WalkRoute(capsule, plot.Name + " stairs and front exit", main);
-                    var service = new List<Vector3>
-                    {
-                        plot.World(plot.EntranceX, 0, 3.02f),
-                        plot.World(2, 0, 3.02f),
-                        plot.World(2, 0, plot.Length - 0.66f),
-                        plot.World(2, 0, plot.Length + 1.44f)
-                    };
-                    WalkRoute(capsule, plot.Name + " service exit", service);
+                    WalkRoute(capsule, plot.Name + " service exit", ServiceRoute(plot));
                     if (!Physics.Raycast(plot.World(2, 1.5f, -0.42f),
                             (plot.World(2, 1.5f, 1) - plot.World(2, 1.5f, 0)).normalized, 0.7f))
                         throw new InvalidOperationException("Missing window collision at " + plot.Name);
@@ -59,6 +52,14 @@ namespace Vastcore.ModernCity.Editor
             plot.World(plot.EntranceX, 0, 3.02f),
             plot.World(CityCafeFurnishings.OrderX(plot), 0, 3.02f),
             plot.World(CityCafeFurnishings.OrderX(plot), 0, CityCafeFurnishings.OrderZ - 0.82f)
+        };
+
+        internal static List<Vector3> ServiceRoute(CityPlot plot) => new List<Vector3>
+        {
+            plot.World(plot.EntranceX, 0, 3f),
+            plot.World(2, 0, 3f),
+            plot.World(2, 0, plot.Length - 0.66f),
+            plot.World(2, 0, plot.Length + 1.44f)
         };
 
         private static void CheckSightLines(CityPlot plot)
@@ -102,8 +103,9 @@ namespace Vastcore.ModernCity.Editor
                     At(leftFlight, nextStorey, plot.StairZ - 0.7f);
             }
             float floor = climbs * CityBuildingKit.Storey;
-            At(climbs > 0 ? rightFlight : leftFlight, floor, 3f);
-            At(plot.EntranceX, floor, 3f);
+            float frontApproach = plot.FrontBay(climbs) * CityBuildingKit.Bay + 3f;
+            At(climbs > 0 ? rightFlight : leftFlight, floor, frontApproach);
+            At(plot.EntranceX, floor, frontApproach);
             return waypoints;
         }
 

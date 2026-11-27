@@ -44,10 +44,21 @@ namespace Vastcore.ModernCity.Editor
             Part("Lobby display", m => Window(m, p, p.Dark, 0, 3.64f, 0.19f, 2.67f, false));
             Part("Shop entrance", m => Entrance(m, p, p.Stone, DoorWidth, 2.42f, true));
             Part("Brick shop entrance", m => Entrance(m, p, p.Brick, DoorWidth, 2.42f, true));
-            Part("Lobby entrance", m => Entrance(m, p, p.Dark, 2.2f, 2.58f, true));
+            Part("Lobby entrance", m =>
+            {
+                Entrance(m, p, p.Dark, 2.2f, 2.55f, true);
+                foreach (float side in new[] { -1f, 1f })
+                {
+                    m.BeveledBox(p.Stone, new Vector3(side * 1.54f, 1.45f, -0.22f),
+                        new Vector3(0.63f, 2.9f, 0.42f), 0.024f, true);
+                    m.Box(p.Metal, new Vector3(side * 1.23f, 1.46f, -0.29f), new Vector3(0.05f, 2.87f, 0.26f));
+                }
+            });
             Part("Service entrance", m => Entrance(m, p, p.Concrete, ServiceWidth, 2.29f, false));
             Part("Stone canopy", m => Canopy(m, p, p.Dark));
             Part("Canvas awning", m => Canopy(m, p, p.Awning));
+            Part("Lobby canopy", m => FlatCanopy(m, p, 2.64f, 2.05f, p.Stone));
+            Part("Service canopy", m => FlatCanopy(m, p, 2.45f, 1.55f, p.Metal));
             Part("Timber screen", m =>
             {
                 for (int i = 0; i < 17; i++)
@@ -64,6 +75,7 @@ namespace Vastcore.ModernCity.Editor
             });
             Part("Paved slab", m => Slab(m, p, p.Paving));
             Part("Plaster slab", m => Slab(m, p, p.Stone));
+            Part("Lobby terrazzo slab", m => Slab(m, p, p.Terrazzo));
             Part("Timber slab", m => Slab(m, p, p.Timber));
             Part("Office slab", m => Slab(m, p, p.Textile));
             Part("Roof slab", m => Slab(m, p, p.Concrete));
@@ -71,6 +83,19 @@ namespace Vastcore.ModernCity.Editor
             {
                 m.Box(p.Concrete, new Vector3(0, 0.37f, 0), new Vector3(4, 0.74f, 0.25f), true);
                 m.Box(p.Metal, new Vector3(0, 0.75f, 0), new Vector3(4, 0.075f, 0.31f));
+            });
+            Part("Terrace guard", m =>
+                Guard(m, p, new Vector3(-2, 0, 0), new Vector3(2, 0, 0), true));
+            Part("Roof plant screen", m =>
+            {
+                m.BeveledBox(p.Dark, new Vector3(0, 0.85f, 0), new Vector3(4, 1.7f, 2.35f), 0.045f);
+                m.Box(p.Paint, new Vector3(0, 1.74f, 0), new Vector3(4.12f, 0.08f, 2.47f));
+                for (int i = 0; i < 12; i++)
+                {
+                    float y = 0.26f + i * 0.11f;
+                    m.Box(p.Metal, new Vector3(0, y, -1.21f), new Vector3(3.73f, 0.043f, 0.11f));
+                    m.Box(p.Metal, new Vector3(0, y, 1.21f), new Vector3(3.73f, 0.043f, 0.11f));
+                }
             });
             Part("Stair guard", m =>
                 Guard(m, p, new Vector3(-2, 0, 0), new Vector3(2, 0, 0), true));
@@ -175,6 +200,14 @@ namespace Vastcore.ModernCity.Editor
             m.Box(p.Dark, new Vector3(0, 2.55f, -1.45f), new Vector3(3.92f, 0.11f, 0.1f));
             for (int i = -1; i <= 1; i++)
                 m.Box(p.Light, new Vector3(i * 1.23f, 2.632f, -0.63f), new Vector3(0.19f, 0.036f, 0.22f));
+        }
+
+        private static void FlatCanopy(CityModel m, CityPalette p, float height, float reach, Material fascia)
+        {
+            m.BeveledBox(p.Dark, new Vector3(0, height, -reach * 0.5f), new Vector3(3.94f, 0.23f, reach), 0.022f);
+            m.BeveledBox(fascia, new Vector3(0, height, -reach), new Vector3(3.94f, 0.19f, 0.11f), 0.017f);
+            foreach (float x in new[] { -1.12f, 0f, 1.12f })
+                m.Box(p.Light, new Vector3(x, height - 0.122f, -reach * 0.63f), new Vector3(0.48f, 0.02f, 0.08f));
         }
 
         private static void Stair(CityModel m, CityPalette p)

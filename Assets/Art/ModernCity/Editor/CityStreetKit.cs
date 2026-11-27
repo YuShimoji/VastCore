@@ -7,7 +7,8 @@ namespace Vastcore.ModernCity.Editor
         internal const float Pavement = 0.14f;
         internal const float ApronDrop = 0.028f;
         internal const float RoadEdge = 6f;
-        internal const float StreetEnd = 64f;
+        private const float EastCrossing = 72f;
+        private const float RearStreet = 42f;
 
         internal static void Bake(CityKitAssets kit, CityPalette p)
         {
@@ -24,6 +25,8 @@ namespace Vastcore.ModernCity.Editor
                 Asphalt(m, p, 12);
                 Mark(m, p.White, 0, -5.72f, 4, 0.095f);
             });
+            Part("Crossroad", m => Asphalt(m, p, 12));
+            Part("Rear junction", m => Asphalt(m, p, 8));
             Part("Pedestrian crossing", m =>
             {
                 Asphalt(m, p, 12);
@@ -50,7 +53,18 @@ namespace Vastcore.ModernCity.Editor
             Part("Paving tile", m => m.Box(p.Paving,
                 new Vector3(0, Pavement - 0.12f, 0), new Vector3(4, 0.24f, 4), true));
             Part("Block ground", m => m.Box(p.Concrete,
-                new Vector3(0, -0.23f, 0), new Vector3(160, 0.34f, 115), true));
+                new Vector3(0, -0.23f, 0), new Vector3(550, 0.34f, 550), true));
+            Part("Planted court", m =>
+            {
+                m.Box(p.Stone, new Vector3(0, 0.02f, 0), new Vector3(8, 0.16f, 8), true);
+                m.Box(p.Verge, new Vector3(0, 0.103f, 0), new Vector3(7.68f, 0.025f, 7.68f));
+            });
+            Part("Parking bay", m =>
+            {
+                Asphalt(m, p, 4);
+                Mark(m, p.White, -1.93f, 0, 0.095f, 3.85f);
+                Mark(m, p.White, 0, 1.91f, 3.9f, 0.095f);
+            });
         }
 
         private static void Asphalt(CityModel m, CityPalette p, float width)
@@ -91,12 +105,15 @@ namespace Vastcore.ModernCity.Editor
             var streets = CityKitAssets.Group("Street and sidewalks", city, Vector3.zero).transform;
             kit.Place(CityKitAssets.Street, "Block ground", streets, new Vector3(0, 0, 5));
             float junction = narrow ? 8f : 0f;
-            for (float x = -StreetEnd + 2; x < StreetEnd; x += 4)
+            for (float x = -62; x < 116; x += 4)
             {
                 float fromJunction = Mathf.Abs(x - junction);
-                bool crossing = Mathf.Approximately(fromJunction, 6f);
+                float fromEast = Mathf.Abs(x - EastCrossing);
+                bool crossing = fromJunction == 6f || fromEast == 6f;
                 bool junctionTile = fromJunction < 4f;
-                string road = junctionTile ? "Junction road" : crossing ? "Pedestrian crossing" : "Two lane road";
+                bool through = fromEast < 4f;
+                string road = through ? "Crossroad" : junctionTile ? "Junction road" :
+                    crossing ? "Pedestrian crossing" : "Two lane road";
                 if (x < -44f)
                 {
                     for (int z = -4; z <= 4; z += 4)
@@ -104,24 +121,59 @@ namespace Vastcore.ModernCity.Editor
                 }
                 else
                     kit.Place(CityKitAssets.Street, road, streets, new Vector3(x, 0, 0));
-                kit.Place(CityKitAssets.Street, crossing ? "Crossing walkway" : "Walkway", streets,
-                    new Vector3(x, 0, -8), 180);
+                if (through)
+                    continue;
+                string sidewalk = crossing ? "Crossing walkway" : "Walkway";
+                kit.Place(CityKitAssets.Street, sidewalk, streets, new Vector3(x, 0, -8), 180);
                 if (!junctionTile)
-                    kit.Place(CityKitAssets.Street, crossing ? "Crossing walkway" : "Walkway", streets,
-                        new Vector3(x, 0, 8));
+                    kit.Place(CityKitAssets.Street, sidewalk, streets, new Vector3(x, 0, 8));
                 // The streetside apron extends underneath setback buildings. Its finish sits below their slabs.
                 kit.Place(CityKitAssets.Street, "Paving tile", streets, new Vector3(x, -ApronDrop, -12));
                 if (!junctionTile)
                     kit.Place(CityKitAssets.Street, "Paving tile", streets, new Vector3(x, -ApronDrop, 12));
             }
 
-            for (float z = 8; z < 38; z += 4)
+            SideRun(kit, streets, junction, 36);
+            SideRun(kit, streets, EastCrossing, 36);
+            SideRun(kit, streets, EastCrossing, -76);
+            for (int x = -42; x < 116; x += 4)
             {
-                kit.Place(CityKitAssets.Street, "Side street", streets, new Vector3(junction, 0, z), 90);
-                kit.Place(CityKitAssets.Street, "Walkway", streets, new Vector3(junction + 6, 0, z), -90);
-                kit.Place(CityKitAssets.Street, "Walkway", streets, new Vector3(junction - 6, 0, z), 90);
+                bool joins = Mathf.Abs(x - junction) < 4 || Mathf.Abs(x - EastCrossing) < 4;
+                kit.Place(CityKitAssets.Street, joins ? "Rear junction" : "Side street", streets,
+                    new Vector3(x, 0, RearStreet));
+                if (!joins)
+                    kit.Place(CityKitAssets.Street, "Walkway", streets, new Vector3(x, 0, RearStreet - 6), 180);
+                kit.Place(CityKitAssets.Street, "Walkway", streets, new Vector3(x, 0, RearStreet + 6));
             }
 
+            foreach (int x in new[] { 54, 62, 84, 92, 100 })
+            foreach (int z in new[] { 16, 24, 32, -24, -32 })
+                kit.Place(CityKitAssets.Street, "Planted court", streets, new Vector3(x, 0, z));
+
+            for (int x = 42; x <= 62; x += 4)
+                kit.Place(CityKitAssets.Street, "Parking bay", streets, new Vector3(x, 0, -16), 180);
+
+            for (int x = -42; x < EastCrossing - 4; x += 4)
+            {
+                kit.Place(CityKitAssets.Street, "Side street", streets, new Vector3(x, 0, -34));
+                kit.Place(CityKitAssets.Street, "Walkway", streets, new Vector3(x, -ApronDrop, -28));
+            }
+            for (int x = -38; x <= 42; x += 8)
+                kit.Place(CityKitAssets.Street, "Planted court", streets, new Vector3(x, 0, -42));
+        }
+
+        private static void SideRun(CityKitAssets kit, Transform streets, float axis, int end)
+        {
+            int step = end > 0 ? 4 : -4;
+            for (int z = step * 2; Mathf.Abs(z) <= Mathf.Abs(end); z += step)
+            {
+                kit.Place(CityKitAssets.Street, "Side street", streets, new Vector3(axis, 0, z), 90);
+                // The transverse sidewalks already cover the corner squares.
+                if (Mathf.Abs(z) == 8 || end == 36 && z == 36)
+                    continue;
+                kit.Place(CityKitAssets.Street, "Walkway", streets, new Vector3(axis + 6, 0, z), -90);
+                kit.Place(CityKitAssets.Street, "Walkway", streets, new Vector3(axis - 6, 0, z), 90);
+            }
         }
     }
 }

@@ -249,7 +249,7 @@ namespace Vastcore.ModernCity.Editor
             return mesh;
         }
 
-        internal void Attach(GameObject root, Mesh mesh)
+        internal MeshRenderer Attach(GameObject root, Mesh mesh)
         {
             root.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = root.AddComponent<MeshRenderer>();
@@ -272,6 +272,7 @@ namespace Vastcore.ModernCity.Editor
                     child.AddComponent<BoxCollider>().size = size;
                 }
             }
+            return renderer;
         }
     }
 }

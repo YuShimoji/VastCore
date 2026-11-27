@@ -25,10 +25,11 @@ namespace Vastcore.ModernCity.Editor
         internal readonly CityRoom GroundRoom;
         internal readonly CityRoom UpperRoom;
         internal readonly bool RecessedStorefront;
+        internal readonly bool UpperSetback;
 
         internal CityPlot(string name, float x, float z, int across, int deep, int floors, float yaw,
             CityFacade facade, CityRoom groundRoom, CityRoom upperRoom, float elevation = CityStreetKit.Pavement,
-            bool recessedStorefront = false)
+            bool recessedStorefront = false, bool upperSetback = false)
         {
             Name = name;
             Origin = new Vector3(x, elevation, z);
@@ -40,6 +41,7 @@ namespace Vastcore.ModernCity.Editor
             GroundRoom = groundRoom;
             UpperRoom = upperRoom;
             RecessedStorefront = recessedStorefront;
+            UpperSetback = upperSetback && floors >= 3;
         }
 
         internal float Width => Across * CityBuildingKit.Bay;
@@ -47,6 +49,7 @@ namespace Vastcore.ModernCity.Editor
         internal float EntranceX => (Across / 2 + 0.5f) * CityBuildingKit.Bay;
         internal float StairX => Width - CityBuildingKit.Bay / 2;
         internal float StairZ => Length - CityBuildingKit.Bay;
+        internal int FrontBay(int floor) => UpperSetback && floor >= Floors - 1 ? 1 : 0;
         internal Vector3 World(float x, float y, float z) =>
             Origin + Quaternion.Euler(0, Yaw, 0) * new Vector3(x, y, z);
     }
@@ -98,15 +101,15 @@ namespace Vastcore.ModernCity.Editor
                 new CityPlot("Brick shops", junction - 42 - offset * 4, 10.7f, 3 + rng.Next(2), 3, 2 + rng.Next(2), 0,
                     CityFacade.Brick, CityRoom.Retail, CityRoom.Office),
                 new CityPlot("Corner offices", junction + 8, 10.4f, 5, 4, 5 + rng.Next(2), 0,
-                    CityFacade.Glass, CityRoom.Reception, CityRoom.Office),
+                    CityFacade.Glass, CityRoom.Reception, CityRoom.Office, upperSetback: true),
                 new CityPlot("Stone shop row", junction + 30, 11f, 3, 3 + rng.Next(2), 3 + rng.Next(2), 0,
-                    CityFacade.Stone, CityRoom.Retail, CityRoom.Office, recessedStorefront: narrow),
+                    CityFacade.Stone, CityRoom.Retail, CityRoom.Office, recessedStorefront: true),
                 new CityPlot("Across the street", 26, southEdge, 4 + rng.Next(2), 3, 3 + rng.Next(2), 180,
-                    CityFacade.Brick, CityRoom.Cafe, CityRoom.Studio),
+                    CityFacade.Brick, CityRoom.Cafe, CityRoom.Studio, upperSetback: true),
                 new CityPlot("Lane building", 3, -11.4f, 3, 3, 2 + rng.Next(2), 180,
                     CityFacade.Stone, CityRoom.Retail, CityRoom.Storage),
                 new CityPlot("South offices", -11, southEdge - 0.5f, 4, 4, 4 + rng.Next(2), 180,
-                    CityFacade.Glass, CityRoom.Reception, CityRoom.Office),
+                    CityFacade.Glass, CityRoom.Reception, CityRoom.Office, upperSetback: true),
                 new CityPlot("End of the block", -29, -11.6f, 3, 3, 2 + rng.Next(2), 180,
                     CityFacade.Brick, CityRoom.Retail, CityRoom.Studio),
                 new CityPlot("Market square", -52, -6, 3, 3, 3 + rng.Next(2), -90,
@@ -124,34 +127,46 @@ namespace Vastcore.ModernCity.Editor
                 var level = CityKitAssets.Group($"Floor {floor + 1}", building, new Vector3(0, y, 0)).transform;
                 var use = floor == 0 ? plot.GroundRoom : plot.UpperRoom;
                 string slab = SlabFor(use);
+                int frontBay = plot.FrontBay(floor);
                 for (int x = 0; x < plot.Across; x++)
                 for (int z = 0; z < plot.Deep; z++)
                 {
                     bool stairOpening = floor > 0 && x == plot.Across - 1 && z == plot.Deep - 1;
                     if (!stairOpening)
-                        Place(kit, slab, level, (x + 0.5f) * 4, 0, (z + 0.5f) * 4);
+                        Place(kit, z < frontBay ? "Roof slab" : slab, level, (x + 0.5f) * 4, 0, (z + 0.5f) * 4);
                 }
 
                 AddFacades(kit, plot, level, floor, rng);
                 AddPlan(kit, plot, level, floor, use);
+                if (frontBay != 0)
+                {
+                    for (int x = 0; x < plot.Across; x++)
+                        Place(kit, "Terrace guard", level, (x + 0.5f) * 4, 0, 0);
+                    Place(kit, "Terrace guard", level, 0, 0, 2, 90);
+                    Place(kit, "Terrace guard", level, plot.Width, 0, 2, -90);
+                }
             }
 
             var roof = CityKitAssets.Group("Roof", building,
                 new Vector3(0, plot.Floors * CityBuildingKit.Storey, 0)).transform;
+            int roofFront = plot.FrontBay(plot.Floors - 1);
             for (int x = 0; x < plot.Across; x++)
             {
                 float centre = (x + 0.5f) * CityBuildingKit.Bay;
-                for (int z = 0; z < plot.Deep; z++)
+                for (int z = roofFront; z < plot.Deep; z++)
                     Place(kit, "Roof slab", roof, centre, 0, (z + 0.5f) * CityBuildingKit.Bay);
-                Place(kit, "Parapet", roof, centre, 0, 0);
+                Place(kit, "Parapet", roof, centre, 0, roofFront * CityBuildingKit.Bay);
                 Place(kit, "Parapet", roof, centre, 0, plot.Length, 180);
             }
-            for (int z = 0; z < plot.Deep; z++)
+            for (int z = roofFront; z < plot.Deep; z++)
             {
                 float centre = (z + 0.5f) * CityBuildingKit.Bay;
                 Place(kit, "Parapet", roof, 0, 0, centre, 90);
                 Place(kit, "Parapet", roof, plot.Width, 0, centre, -90);
             }
+
+            if (plot.UpperSetback && plot.Facade == CityFacade.Glass)
+                Place(kit, "Roof plant screen", roof, plot.Width * 0.5f, 0, plot.Length - 5.0f);
 
             // Link service doors to the slab behind each building and to the ground along its side.
             for (int x = 0; x < plot.Across; x++)
@@ -172,26 +187,30 @@ namespace Vastcore.ModernCity.Editor
 
         private static void AddFacades(CityKitAssets kit, CityPlot plot, Transform floorRoot, int floor, Random rng)
         {
+            int frontBay = plot.FrontBay(floor);
             for (int x = 0; x < plot.Across; x++)
             {
                 float cx = (x + 0.5f) * CityBuildingKit.Bay;
                 bool entry = floor == 0 && x == plot.Across / 2;
                 string front = floor == 0 ? StreetFront(plot, entry) : WindowFor(plot.Facade, rng.Next(2));
-                Place(kit, front, floorRoot, cx, 0, 0);
+                Place(kit, front, floorRoot, cx, 0, frontBay * CityBuildingKit.Bay);
                 if (floor == 0 && (entry || x == 0 && plot.Facade != CityFacade.Glass))
                 {
-                    string canopy = plot.RecessedStorefront ? CityStorefrontKit.Canopy
+                    string canopy = entry && plot.GroundRoom == CityRoom.Reception ? "Lobby canopy"
+                        : plot.RecessedStorefront ? CityStorefrontKit.Canopy
                         : plot.Facade == CityFacade.Brick || plot.GroundRoom == CityRoom.Cafe ? "Canvas awning" : "Stone canopy";
                     Place(kit, canopy, floorRoot, cx, 0, 0);
                 }
                 if (floor > 0 && floor % 2 == 0 && x == 0 && plot.Facade == CityFacade.Stone)
-                    Place(kit, "Timber screen", floorRoot, cx, 0, 0);
+                    Place(kit, "Timber screen", floorRoot, cx, 0, frontBay * CityBuildingKit.Bay);
                 string back = floor == 0 && x == 0 ? "Service entrance" :
                     x == plot.Across - 1 ? BlankFor(plot.Facade) : WindowFor(plot.Facade, rng.Next(2));
                 Place(kit, back, floorRoot, cx, 0, plot.Length, 180);
+                if (floor == 0 && x == 0)
+                    Place(kit, "Service canopy", floorRoot, cx, 0, plot.Length, 180);
             }
 
-            for (int z = 0; z < plot.Deep; z++)
+            for (int z = frontBay; z < plot.Deep; z++)
             {
                 float centre = (z + 0.5f) * CityBuildingKit.Bay;
                 string left = WindowFor(plot.Facade, rng.Next(2));
@@ -206,15 +225,16 @@ namespace Vastcore.ModernCity.Editor
         private static void AddPlan(CityKitAssets kit, CityPlot plot, Transform level, int floor, CityRoom use)
         {
             bool storefront = floor == 0 && plot.RecessedStorefront;
-            float division = storefront ? plot.StairZ : plot.Length - 8;
+            float front = plot.FrontBay(floor) * CityBuildingKit.Bay;
+            float division = storefront || use == CityRoom.Reception || front > 0 ? plot.StairZ : plot.Length - 8;
             for (int x = 0; x < plot.Across - 1; x++)
                 Place(kit, x == 0 || x == plot.Across - 2 ? "Open partition" : "Partition",
                     level, (x + 0.5f) * CityBuildingKit.Bay, 0, division);
             Place(kit, "Open partition", level, plot.Width - 4, 0, division + 2, 90);
-            Place(kit, "Column", level, 4, 0, 4);
+            Place(kit, "Column", level, 4, 0, front + 4);
             if (plot.Across >= 4)
-                Place(kit, "Column", level, plot.Width - 4, 0, 4);
-            if (use == CityRoom.Office && plot.Deep > 3)
+                Place(kit, "Column", level, plot.Width - 4, 0, front + 4);
+            if (use == CityRoom.Office && plot.Length - front > 12)
                 Place(kit, "Meeting room screen", level, 8, 0, 6, 90);
             if (floor < plot.Floors - 1)
                 Place(kit, "Switchback stair", level, plot.StairX, 0, plot.StairZ);
@@ -232,6 +252,7 @@ namespace Vastcore.ModernCity.Editor
         private static string SlabFor(CityRoom use) => use switch
         {
             CityRoom.Cafe or CityRoom.Studio => "Timber slab",
+            CityRoom.Reception => "Lobby terrazzo slab",
             CityRoom.Office => "Office slab",
             CityRoom.Storage => "Paved slab",
             _ => "Plaster slab"
@@ -256,6 +277,8 @@ namespace Vastcore.ModernCity.Editor
 
         private static string StreetFront(CityPlot plot, bool entry)
         {
+            if (plot.GroundRoom == CityRoom.Reception)
+                return entry ? "Lobby entrance" : "Lobby display";
             if (plot.RecessedStorefront)
                 return entry ? CityStorefrontKit.Entry : CityStorefrontKit.Window;
             return (plot.Facade, entry) switch
@@ -299,6 +322,7 @@ namespace Vastcore.ModernCity.Editor
 
         private static Light LightScene()
         {
+            RenderSettings.skybox = AssetDatabase.LoadAssetAtPath<Material>(CityKitAssets.Sky);
             RenderSettings.ambientMode = AmbientMode.Trilight;
             RenderSettings.ambientSkyColor = new Color(0.63f, 0.68f, 0.75f);
             RenderSettings.ambientEquatorColor = new Color(0.42f, 0.42f, 0.41f);

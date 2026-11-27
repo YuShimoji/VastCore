@@ -46,7 +46,8 @@ namespace Vastcore.ModernCity.Editor
                 At("Street lamp", x + 2.5f, kerb, -6.55f);
                 if (furnished)
                 {
-                    At("Street tree", curbX + 2.65f, kerb, 7.09f, rng.Next(360));
+                    float treeOffset = x == 14 ? 6.65f : x == 29 ? 4.46f : 2.65f;
+                    At("Street tree", curbX + treeOffset, kerb, x == 29 ? 6.59f : 7.09f, rng.Next(360));
                     At("Courtyard tree", x - 1.6f, kerb, -9.14f, rng.Next(360));
                     At("Storm drain", curbX + 1.1f, 0, 5.77f);
                 }
@@ -75,6 +76,23 @@ namespace Vastcore.ModernCity.Editor
             At("Sedan", junction + 34.85f, 0, -4.59f, 90);
             At("Manhole", junction - 2.5f, 0, 2.17f);
             At("Manhole", junction + 17.9f, 0, -3.21f, 60);
+            At("Street shelter", 58, 0.115f, 12.85f, 180);
+            At("Street shelter", 85, 0.115f, -12.75f);
+            foreach (int x in new[] { 50, 60, 80, 94, 108 })
+            {
+                At("Street lamp", x, kerb, 6.54f, 180);
+                At("Courtyard tree", x + 0.9f, 0.116f, 16.65f, rng.Next(360));
+                At("Courtyard tree", x - 0.56f, 0.116f, -23.8f, rng.Next(360));
+            }
+            foreach (int x in new[] { -29, -17, 16, 30, 49, 61, 87, 104 })
+            {
+                At("Courtyard tree", x, -0.06f, 53.4f + rng.Next(4), rng.Next(360));
+                At("Street lamp", x + 2.2f, kerb, 47.15f);
+            }
+            At("Delivery van", 56, 0, -16, 90);
+            At("Sedan", 44, 0, -16, 90);
+            foreach (int x in new[] { -36, -26, -12, 5, 17, 32, 43 })
+                At("Courtyard tree", x, 0.115f, -42 + rng.Next(-2, 3), rng.Next(360));
             float plaza = kerb - CityStreetKit.ApronDrop;
             At("Street tree", -48.5f, plaza, -4.31f, 28);
             At("Street tree", -49.25f, plaza, 4.47f, 114);
@@ -99,6 +117,8 @@ namespace Vastcore.ModernCity.Editor
                 _ => "Shop sign"
             };
             At(sign, plot.EntranceX, 2.26f, plot.RecessedStorefront ? -0.395f : -0.173f, 180);
+            At("Service sign", 2, 2.1f, plot.Length + 0.17f);
+            At("Loading stripes", 2, 0.006f, plot.Length + 1.35f);
             At("Floor mat", plot.EntranceX, 0.002f, plot.RecessedStorefront ? 1.16f : 0.94f);
             if (furnished)
             {
@@ -111,13 +131,17 @@ namespace Vastcore.ModernCity.Editor
                 }
                 At("Pallet", 4.55f, 0, plot.Length + 0.88f, -8);
                 At("Shipping carton", 4.6f, 0.15f, plot.Length + 0.92f, -12);
+                At("Hand truck", 3.71f, 0, plot.Length + 0.85f, -25);
                 At("Waste cart", 0.63f, 0, plot.Length + 1.27f, 30);
             }
 
             for (int i = 0; i < plot.Floors; i++)
             {
                 var level = building.Find($"Floor {i + 1}");
-                parent = CityKitAssets.Group("Interior props", level, Vector3.zero).transform;
+                var interior = CityKitAssets.Group("Interior props", level, Vector3.zero).transform;
+                float setback = plot.FrontBay(i) * CityBuildingKit.Bay;
+                parent = setback == 0 ? interior :
+                    CityKitAssets.Group("Setback room", interior, Vector3.forward * setback).transform;
                 var use = i == 0 ? plot.GroundRoom : plot.UpperRoom;
                 bool storefront = i == 0 && plot.RecessedStorefront;
                 if (storefront)
@@ -130,14 +154,27 @@ namespace Vastcore.ModernCity.Editor
                     {
                         case CityRoom.Cafe: Cafe(plot, rng); break;
                         case CityRoom.Retail: Retail(plot); break;
-                        case CityRoom.Reception: Reception(); break;
-                        case CityRoom.Office: Office(plot, rng); break;
-                        case CityRoom.Studio: Studio(plot, rng); break;
+                        case CityRoom.Reception: Reception(plot); break;
+                        case CityRoom.Office: Office(plot, rng, plot.Length - setback); break;
+                        case CityRoom.Studio: Studio(plot, rng, plot.Length - setback); break;
                         case CityRoom.Storage: Storage(plot); break;
                     }
                 }
+                parent = interior;
                 ServiceRoom(plot);
-                FloorLighting(plot, use, storefront);
+                FloorLighting(plot, use, storefront, setback);
+                if (i == 0 && (use == CityRoom.Reception || use == CityRoom.Storage))
+                {
+                    At("Bronze wall lantern", 3.23f, 1.62f, plot.Length + 0.16f);
+                    Spot("Loading recess light", 2.18f, 2.27f, plot.Length + 0.68f,
+                        new Vector3(2.08f, 0.72f, plot.Length - 0.19f), 4.2f, 89, 1.5f);
+                }
+                if (setback != 0 && furnished)
+                {
+                    At("Limestone planter", 1.26f, 0, 0.68f);
+                    At("Limestone planter", plot.Width - 1.26f, 0, 0.68f);
+                    At("Street bench", 3.2f, 0, 0.69f);
+                }
             }
 
             parent = CityKitAssets.Group("Roof equipment", building.Find("Roof"), Vector3.zero).transform;
@@ -147,7 +184,7 @@ namespace Vastcore.ModernCity.Editor
                 At("Roof duct", plot.Width * 0.54f + 1.58f, 0, plot.Length * 0.62f, 16);
                 At("Exhaust cowl", 2.2f, 0, plot.Length - 2.34f);
                 At("Service pipe bundle", plot.Width - 2.31f, 0, plot.Length - 1.82f, 90);
-                At("Roof antenna", plot.Width - 1.5f, 0, plot.Length * 0.41f, rng.Next(180));
+                At("Roof antenna", plot.Width - 1.5f, 0, plot.Length * 0.57f, rng.Next(180));
             }
         }
 
@@ -193,23 +230,32 @@ namespace Vastcore.ModernCity.Editor
             At("Desk plant", 4.87f, 0.81f, plot.Length - 5.2f);
         }
 
-        private void Reception()
+        private void Reception(CityPlot plot)
         {
-            At("Reception desk", 3.35f, 0, 1.19f);
-            At("Lobby sofa", 6.27f, 0, 0.66f);
-            At("Low coffee table", 6.21f, 0, 1.62f);
+            float desk = plot.EntranceX - 1.8f;
+            At("Reception desk", desk, 0, 4.75f, 180);
+            At("Lobby directory", desk, 0, 6.28f);
+            At("Lobby sofa", plot.EntranceX - 3.8f, 0, 0.67f);
+            At("Low coffee table", plot.EntranceX - 3.82f, 0, 1.62f);
+            At("Floor mat", desk, 0.002f, 3.97f);
             if (!furnished)
                 return;
 
-            At("Monitor", 3.36f, 1.09f, 1.13f, 180);
-            At("Desk plant", 2.62f, 1.09f, 1.27f);
-            At("Lounge chair", 7.43f, 0, 1.37f, -50);
-            At("Floor lamp", 5.11f, 0, 0.78f);
-            At("Round planter", 1.06f, 0, 0.64f, 40);
-            At("Round planter", 8.38f, 0, 0.66f, 20);
+            At("Monitor", desk + 0.28f, 1.09f, 4.83f, 180);
+            At("Desk plant", desk - 0.76f, 1.09f, 4.69f);
+            At("Lounge chair", plot.EntranceX - 2.65f, 0, 1.35f, -50);
+            At("Floor lamp", plot.EntranceX - 5.18f, 0, 0.77f);
+            At("Round planter", plot.EntranceX + 2.25f, 0, 1.19f, 40);
+            if (plot.Across >= 4)
+            {
+                At("Lounge chair", 4.25f, 0, 5.09f, 42);
+                At("Low coffee table", 4.9f, 0, 5.41f, 30);
+                At("Round planter", 3.44f, 0, 5.86f, 20);
+                At("Floor lamp", 5.42f, 0, 6.38f);
+            }
         }
 
-        private void Office(CityPlot plot, Random rng)
+        private void Office(CityPlot plot, Random rng, float length)
         {
             for (float x = 2.35f; x < plot.Width - 4.2f; x += 2.7f)
             {
@@ -222,7 +268,7 @@ namespace Vastcore.ModernCity.Editor
                 At("Computer tower", x + 0.48f, 0, 0.94f);
                 At(rng.Next(2) == 0 ? "Desk plant" : "Desk lamp", x - 0.46f, 0.74f, 0.99f);
             }
-            if (plot.Deep > 3)
+            if (length > 12)
             {
                 At("Meeting table", 5.26f, 0, 5.99f);
                 At("Visitor chair", 4.67f, 0, 5.05f);
@@ -231,15 +277,15 @@ namespace Vastcore.ModernCity.Editor
             if (furnished)
             {
                 At("Water cooler", 0.42f, 0, 2.18f, 90);
-                At("Sideboard", 0.69f, 0, plot.Length - 5.4f, 90);
-                At("Laser printer", 0.69f, 0.81f, plot.Length - 5.61f, 90);
-                At("Document binders", 0.68f, 0.81f, plot.Length - 4.99f, 90);
+                At("Sideboard", 0.69f, 0, length - 5.4f, 90);
+                At("Laser printer", 0.69f, 0.81f, length - 5.61f, 90);
+                At("Document binders", 0.68f, 0.81f, length - 4.99f, 90);
                 At("Whiteboard", 0.151f, 1.03f, 3.65f, 90);
                 At("Wall clock", 0.15f, 2.22f, 3.65f, 90);
             }
         }
 
-        private void Studio(CityPlot plot, Random rng)
+        private void Studio(CityPlot plot, Random rng, float length)
         {
             At("Lobby sofa", 3.4f, 0, 0.61f);
             At("Low coffee table", 3.41f, 0, 1.6f);
@@ -248,9 +294,9 @@ namespace Vastcore.ModernCity.Editor
             {
                 At("Floor lamp", 2.22f, 0, 0.59f);
                 At("Round planter", plot.Width - 1.08f, 0, 0.82f, 67);
-                At("Sideboard", 0.68f, 0, plot.Length - 5.16f, 90);
-                At("Desk lamp", 0.7f, 0.813f, plot.Length - 4.81f, 90);
-                At("Document binders", 0.61f, 0.813f, plot.Length - 5.59f, 90);
+                At("Sideboard", 0.68f, 0, length - 5.16f, 90);
+                At("Desk lamp", 0.7f, 0.813f, length - 4.81f, 90);
+                At("Document binders", 0.61f, 0.813f, length - 5.59f, 90);
             }
         }
 
@@ -281,17 +327,28 @@ namespace Vastcore.ModernCity.Editor
             At("Service pipe bundle", 0.51f, 0, plot.Length - 3.6f, -2);
         }
 
-        private void FloorLighting(CityPlot plot, CityRoom use, bool storefront)
+        private void FloorLighting(CityPlot plot, CityRoom use, bool storefront, float setback)
         {
             for (float x = 2; x <= plot.Width - 2; x += 4)
             {
-                At("Linear ceiling light", x, 2.753f, 1.98f);
+                At("Linear ceiling light", x, 2.753f, 1.98f + setback);
                 At("Linear ceiling light", x, 2.753f, plot.Length - 6.22f);
             }
-            PointLight("Front room light", Mathf.Min(5.2f, plot.Width * 0.32f), 2.28f, 2.61f, 7.6f,
-                use == CityRoom.Cafe || use == CityRoom.Reception ? new Color(1, 0.82f, 0.61f) : new Color(1, 0.94f, 0.83f));
+            if (use == CityRoom.Reception)
+            {
+                float desk = plot.EntranceX - 1.8f;
+                Spot("Reception and directory", desk + 0.71f, 2.58f, 4.01f,
+                    new Vector3(desk, 0.95f, 6.04f), 5.5f, 76, 3.6f);
+                Spot("Window seating", plot.EntranceX - 3.2f, 2.66f, 2.2f,
+                    new Vector3(plot.EntranceX - 3.8f, 0.56f, 1.24f), 5.1f, 85, 1.6f);
+            }
+            else if (!storefront)
+                PointLight("Front room light", Mathf.Min(5.2f, plot.Width * 0.32f), 2.28f, 2.61f + setback, 7.6f,
+                    use == CityRoom.Cafe ? new Color(1, 0.82f, 0.61f) : new Color(1, 0.94f, 0.83f));
             if (storefront)
             {
+                Spot("Front room fill", plot.EntranceX - 1.54f, 2.65f, 2.05f,
+                    new Vector3(plot.EntranceX - 3.15f, .83f, 2.68f), 6.5f, 112, 2.2f);
                 PointLight("Window merchandise", plot.Width - 2.05f, 1.84f, .76f, 3.62f,
                     new Color(1, 0.87f, 0.71f), 0.59f);
                 PointLight("Order and wall shelves", CityCafeFurnishings.OrderX(plot), 1.94f,
@@ -301,6 +358,19 @@ namespace Vastcore.ModernCity.Editor
                 return;
             }
             PointLight("Landing light", plot.StairX, 2.17f, plot.StairZ - 0.63f, 5.4f, new Color(1, 0.91f, 0.77f));
+        }
+
+        private void Spot(string name, float x, float y, float z, Vector3 aim, float range, float angle, float intensity)
+        {
+            var from = new Vector3(x, y, z);
+            var light = CityKitAssets.Group(name, parent, from).AddComponent<Light>();
+            light.transform.localRotation = Quaternion.LookRotation(aim - from);
+            light.type = LightType.Spot;
+            light.color = new Color(1f, 0.87f, 0.72f);
+            light.range = range;
+            light.spotAngle = angle;
+            light.innerSpotAngle = angle * 0.58f;
+            light.intensity = intensity;
         }
 
         private void PointLight(string name, float x, float y, float z, float range, Color color, float intensity = 0.88f)

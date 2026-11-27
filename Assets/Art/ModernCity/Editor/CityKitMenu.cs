@@ -72,25 +72,33 @@ namespace Vastcore.ModernCity.Editor
             }
         }
 
-        private void CreateVariant()
+        private void CreateVariant() => Selection.activeGameObject = GenerateStreet(seed, street, detail).Root.gameObject;
+
+        internal static CityBlock GenerateStreet(int seed, CityStreetPlan street, CityDetail detail)
         {
             var kit = new CityKitAssets();
             var block = CityBlock.Assemble(kit, seed, street);
             CityFurnishing.Dress(kit, block, detail, seed);
             EditorSceneManager.MarkSceneDirty(block.Scene);
-            Selection.activeGameObject = block.Root.gameObject;
+            return block;
         }
 
         private void AddBuilding()
         {
             var plot = new CityPlot($"{facade} building", origin.x, origin.z, across, deep, floors, facing,
                 facade, ground, upper, origin.y);
-            var kit = new CityKitAssets();
-            var building = CityBlock.AssembleBuilding(kit, plot, null, seed);
-            CityFurnishing.DressBuilding(kit, plot, building, detail, seed);
+            var building = PlaceBuilding(plot, detail, seed);
             Undo.RegisterCreatedObjectUndo(building.gameObject, "Add modern city building");
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
             Selection.activeGameObject = building.gameObject;
+        }
+
+        internal static Transform PlaceBuilding(CityPlot plot, CityDetail detail, int seed)
+        {
+            var kit = new CityKitAssets();
+            var building = CityBlock.AssembleBuilding(kit, plot, null, seed);
+            CityFurnishing.DressBuilding(kit, plot, building, detail, seed);
+            return building;
         }
 
         internal static void Export(string path)
@@ -100,11 +108,14 @@ namespace Vastcore.ModernCity.Editor
                 .ToArray();
             if (!File.Exists(CityKitAssets.SampleScene))
                 throw new InvalidOperationException("The Modern City sample has not been saved.");
-            // Only assets used by this kit are exported. URP and Input System are Unity package prerequisites.
-            string[] assets = AssetDatabase.GetDependencies(library)
-                .Where(p => p.StartsWith("Assets/", StringComparison.Ordinal) && File.Exists(p))
-                .Concat(library).Distinct().OrderBy(p => p, StringComparer.Ordinal).ToArray();
-            AssetDatabase.ExportPackage(assets, path, ExportPackageOptions.Default);
+            // URP and Input System are Unity package prerequisites. Every project asset must live inside the kit.
+            var outside = AssetDatabase.GetDependencies(library)
+                .Where(p => p.StartsWith("Assets/", StringComparison.Ordinal) &&
+                    !p.StartsWith(CityKitAssets.Root + "/", StringComparison.Ordinal)).ToArray();
+            if (outside.Length != 0)
+                throw new InvalidOperationException("Assets outside the Modern City kit: " + string.Join(", ", outside));
+            AssetDatabase.ExportPackage(library.OrderBy(p => p, StringComparer.Ordinal).ToArray(), path,
+                ExportPackageOptions.Default);
             if (!File.Exists(path) || new FileInfo(path).Length == 0)
                 throw new IOException("Unity did not create the asset package at " + path);
         }
