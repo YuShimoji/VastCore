@@ -206,8 +206,10 @@ namespace Vastcore.RegionMap
         /// カメラに近い岩と植生は Unity の影も落とす。
         /// </summary>
         public static LookResult BuildLook(RegionData region, RegionLookSpec spec)
+            => BuildLook(RegionLookScene.Build(region, spec));
+
+        internal static LookResult BuildLook(RegionLookScene scene)
         {
-            RegionLookScene scene = RegionLookScene.Build(region, spec);
             // 遠くまで届く地形の影は、描画のたびに GPU が高さの格子から出す（太陽を回すと影も動く）
             RegionTerrainShadows.Bind(scene);
             // 地層の起伏と岩肌の細かな凹凸を、場面を作る時に一度だけ GPU で焼く
@@ -277,7 +279,7 @@ namespace Vastcore.RegionMap
             }
             if (scene.PropsSlice != null)
             {
-                result.Props = RegionPropView.AddTo(root.transform, scene.PropsSlice, scene.HeightAt);
+                result.Props = RegionPropView.AddTo(root.transform, scene.PropsSlice, scene.HeightAt, scene.RenderedHeightAt);
                 foreach (RegionLookViewpoint vp in new[] { scene.PropsSlice.CratesViewpoint, scene.PropsSlice.RubbleViewpoint })
                 {
                     if (vp == null) continue;

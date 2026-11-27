@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
@@ -123,6 +124,8 @@ namespace Vastcore.RegionMap
         }
 
         private Task<Generated> _task;
+        private Text _footpathLabel;
+        private bool _openingFootpath;
         private RegionData _data;
         private ExplorationSession _session;
         private Texture2D _texture;
@@ -351,6 +354,39 @@ namespace Vastcore.RegionMap
             cloudTime = _cloudTime;
             cloudCrossSeconds = _cloudCrossSeconds;
             return region != null;
+        }
+
+        /// <summary>Open the sandstone path from the exploration screen.</summary>
+        public bool OpenFootpath()
+        {
+            if (!IsReady || _openingFootpath) return false;
+            StartCoroutine(LoadFootpath(_data));
+            return true;
+        }
+
+        private IEnumerator LoadFootpath(RegionData region)
+        {
+            _openingFootpath = true;
+            _footpathLabel.text = "通い道を開いています…";
+            yield return null;
+            var site = Task.Run(() => RegionFootpath.Generate(region));
+            while (!site.IsCompleted) yield return null;
+            try
+            {
+                var prefab = Resources.Load<GameObject>(RegionFootpath.Resource);
+                if (!prefab) throw new InvalidOperationException("The sandstone footpath asset is missing");
+                RegionFootpath.Open(site.GetAwaiter().GetResult(), prefab);
+                _footpathLabel.text = "砂岩の通い道";
+            }
+            catch (Exception error)
+            {
+                Debug.LogException(error);
+                _footpathLabel.text = "通い道を再試行";
+            }
+            finally
+            {
+                _openingFootpath = false;
+            }
         }
 
         /// <summary>地名の出し方の段（0 名前、1 名前と境界、2 なし）。</summary>
@@ -2866,6 +2902,10 @@ namespace Vastcore.RegionMap
             // 音の段（中 → 小 → なし → 大）。今の音はすべて仮（SP-021 軸 F）
             Button soundButton = CreateToolButton(canvas, "音：" + SoundLevelLabel(), ref x, 124f, out _soundLabel);
             soundButton.onClick.AddListener(NextSoundLevel);
+            float footpathX = Margin;
+            Button footpath = CreateToolButton(canvas, "砂岩の通い道", ref footpathX, 232f, out _footpathLabel);
+            ((RectTransform)footpath.transform).anchoredPosition += Vector2.up * (ToolHeight + 8f);
+            footpath.onClick.AddListener(() => OpenFootpath());
         }
 
         private Button CreateToolButton(Transform canvas, string label, ref float x, float width, out Text text)
