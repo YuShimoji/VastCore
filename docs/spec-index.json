@@ -349,5 +349,14 @@
     "cat": "system",
     "file": "docs/02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md",
     "summary": "Megascans/Skyrim Mod系を分析し体系化した7ドメイン・38原型の環境Propsカタログと制作基準・7軸バリエーションデータ(environment-props-catalog.json)"
+  },
+  {
+    "id": "DS-012",
+    "title": "Texture Preparation Pipeline",
+    "status": "done",
+    "pct": 100,
+    "cat": "system",
+    "file": "docs/02_design/TEXTURE_PIPELINE_SPEC.md",
+    "summary": "テクスチャの置き場所・名付け・出所の記録・取り込みの既定と検査(texture-rules.json、scripts/check-textures.ps1、Unity の Vastcore/Textures メニュー、CI)"
   }
 ]

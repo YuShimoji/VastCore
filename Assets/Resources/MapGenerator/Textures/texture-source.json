@@ -1,0 +1,148 @@
+{
+  "sets": [
+    {
+      "files": [
+        "Asphalt010*"
+      ],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=Asphalt010",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "",
+      "tileMetres": 0,
+      "notes": "ambientCG のダウンロード一式（Asphalt010_1K-JPG、.mtlx・.usdc・見本の PNG つき）。取得日は不明（2026-03 にリポジトリへ入った）"
+    },
+    {
+      "files": [
+        "Bricks102*"
+      ],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=Bricks102",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "",
+      "tileMetres": 0,
+      "notes": "ambientCG のダウンロード一式（Bricks102_1K-JPG、.mtlx・.usdc・見本の PNG つき）。取得日は不明（2026-03 にリポジトリへ入った）"
+    },
+    {
+      "files": [
+        "Grass005*"
+      ],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=Grass005",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "",
+      "tileMetres": 0,
+      "notes": "ambientCG のダウンロード一式（Grass005_1K-JPG、.mtlx・.usdc・見本の PNG つき）。取得日は不明（2026-03 にリポジトリへ入った）"
+    },
+    {
+      "files": [
+        "Ground007*"
+      ],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=Ground007",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "",
+      "tileMetres": 0,
+      "notes": "ambientCG のダウンロード一式（Ground007_1K-JPG、.mtlx・.usdc・見本の PNG つき）。取得日は不明（2026-03 にリポジトリへ入った）"
+    },
+    {
+      "files": [
+        "Ground009*"
+      ],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=Ground009",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "",
+      "tileMetres": 0,
+      "notes": "ambientCG のダウンロード一式（Ground009_1K-JPG、.mtlx・.usdc・見本の PNG つき）。取得日は不明（2026-03 にリポジトリへ入った）"
+    },
+    {
+      "files": [
+        "Ground011*"
+      ],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=Ground011",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "",
+      "tileMetres": 0,
+      "notes": "ambientCG のダウンロード一式（Ground011_1K-JPG、.mtlx・.usdc・見本の PNG つき）。取得日は不明（2026-03 にリポジトリへ入った）"
+    },
+    {
+      "files": [
+        "Ground038*"
+      ],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=Ground038",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "",
+      "tileMetres": 0,
+      "notes": "ambientCG のダウンロード一式（Ground038_1K-JPG、.mtlx・.usdc・見本の PNG つき）。取得日は不明（2026-03 にリポジトリへ入った）"
+    },
+    {
+      "files": [
+        "Ground054*"
+      ],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=Ground054",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "",
+      "tileMetres": 0,
+      "notes": "ambientCG のダウンロード一式（Ground054_1K-JPG、.mtlx・.usdc・見本の PNG つき）。取得日は不明（2026-03 にリポジトリへ入った）"
+    },
+    {
+      "files": [
+        "Ground081*"
+      ],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=Ground081",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "",
+      "tileMetres": 0,
+      "notes": "ambientCG のダウンロード一式（Ground081_1K-JPG、.mtlx・.usdc・見本の PNG つき）。取得日は不明（2026-03 にリポジトリへ入った）"
+    },
+    {
+      "files": [
+        "PavingStones003*"
+      ],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=PavingStones003",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "",
+      "tileMetres": 0,
+      "notes": "ambientCG のダウンロード一式（PavingStones003_4K-JPG、.mtlx・.usdc・見本の PNG つき）。取得日は不明（2026-03 にリポジトリへ入った）"
+    },
+    {
+      "files": [
+        "PavingStones073*"
+      ],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=PavingStones073",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "",
+      "tileMetres": 0,
+      "notes": "ambientCG のダウンロード一式（PavingStones073_1K-JPG、.mtlx・.usdc・見本の PNG つき）。取得日は不明（2026-03 にリポジトリへ入った）"
+    },
+    {
+      "files": [
+        "PavingStones099*"
+      ],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=PavingStones099",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "",
+      "tileMetres": 0,
+      "notes": "ambientCG のダウンロード一式（PavingStones099_1K-JPG、.mtlx・.usdc・見本の PNG つき）。取得日は不明（2026-03 にリポジトリへ入った）"
+    }
+  ]
+}

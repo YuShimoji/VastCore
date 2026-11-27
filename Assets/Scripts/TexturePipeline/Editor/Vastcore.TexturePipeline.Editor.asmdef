@@ -1,0 +1,16 @@
+{
+    "name": "Vastcore.TexturePipeline.Editor",
+    "rootNamespace": "Vastcore.TexturePipeline",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

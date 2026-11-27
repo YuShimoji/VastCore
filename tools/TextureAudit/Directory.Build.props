@@ -1,0 +1,7 @@
+<Project>
+  <!-- ビルドの出力と中間ファイルは、git 管理外の artifacts/ へ出す（SDK の読み込み前に決める必要がある） -->
+  <PropertyGroup>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\texture-audit-tool\bin\</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\texture-audit-tool\obj\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

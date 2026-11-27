@@ -238,3 +238,14 @@ Heightmap integration is injected through `IHeightmapFieldFactory` to avoid cycl
 - `Vastcore.Tests.EditMode` に `Vastcore.RegionMap` への参照を追加した（`RegionMapTests.cs` のため）。
 - `Assets/Scripts/RegionMap/Core/` は UnityEngine を参照しない。同じソースを `tools/RegionMapPreview`（dotnet コンソール）からもコンパイルするので、ここへ UnityEngine の型を入れない。
 - `Vastcore.Terrain` などへ依存させない理由: Terrain は Deform・ProBuilder に依存しており、地図の生成と描画にそれらを巻き込まないため。既存アセンブリと結ぶ必要が出たら（SP-021 段5）、上位側（Game など）から `Vastcore.RegionMap` を参照する。
+
+## 8. 2026-11-27 Addendum (TexturePipeline Editor Assembly)
+
+テクスチャの準備の規則と検査（DS-012 [TEXTURE_PIPELINE_SPEC](TEXTURE_PIPELINE_SPEC.md)）。どのアセンブリにも依存しない Editor 専用の島。
+
+| Assembly | Directory | rootNamespace | autoReferenced | References |
+|----------|-----------|---------------|----------------|------------|
+| `Vastcore.TexturePipeline.Editor` (Editor only) | `Assets/Scripts/TexturePipeline/Editor/` | `Vastcore.TexturePipeline` | false | *(none)* |
+
+- `Vastcore.Tests.EditMode` に参照を追加した（`TexturePipelineTests.cs` が `Vastcore.RegionMap` の `RegionSurfaceMaps` と規則の一致を確かめるため）。
+- `Shared/` は UnityEngine を参照しない。同じソースを `tools/TextureAudit`（dotnet コンソール）からもコンパイルするので、ここへ UnityEngine・UnityEditor の型を入れない。

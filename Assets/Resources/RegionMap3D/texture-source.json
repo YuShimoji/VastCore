@@ -1,0 +1,16 @@
+{
+  "sets": [
+    {
+      "files": [
+        "DesertPlants.png"
+      ],
+      "origin": "generated",
+      "generator": "scripts/bake-region-plants.py",
+      "license": "project",
+      "author": "",
+      "retrieved": "",
+      "tileMetres": 0,
+      "notes": "決まった形の植物を2方向から焼いた切り抜きのアトラス。作り直しは python scripts/bake-region-plants.py"
+    }
+  ]
+}

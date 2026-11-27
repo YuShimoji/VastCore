@@ -59,6 +59,8 @@ flowchart LR
 | 地被（生物土壌クラスト） | 手続きの暗い斑 | 未調査 |
 | 転石 | 単色の板 | [Rock Face 03](https://polyhaven.com/a/rock_face_03)（CC0、2.7 m）、崖と同じ素材 |
 
+素材を置く時の出所の記録（`texture-source.json`）・名付け・置く前の検査は [DS-012](TEXTURE_PIPELINE_SPEC.md)（`.\scripts\check-textures.ps1`）。
+
 素材の色は場所の模様で着色し直す（色の画像は明るさの細部として使い、色相は今の手続きの地層の色を保つ）。地層の連続と鉄分の色の違いは場所で決まるため、写真の色をそのまま貼らない。
 
 ### 3.2 自動の凹凸（バンプ）の作り方

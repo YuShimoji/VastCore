@@ -104,6 +104,9 @@ exception, not progress by itself.
 - For code changes, run the narrow relevant check first. Prefer the project
   scripts (`scripts/check-compile.ps1`, `scripts/run-tests.ps1`) when they match
   the change.
+- When adding or changing textures, follow `docs/02_design/TEXTURE_PIPELINE_SPEC.md`
+  and pass `scripts/check-textures.ps1` (no Unity needed; `-Pixels` adds the
+  pixel checks through Unity).
 - Do not run Unity-heavy checks for docs-only edits unless the docs changed an
   executable contract or verification command.
 - If Unity Editor verification is required but not run, state that explicitly.

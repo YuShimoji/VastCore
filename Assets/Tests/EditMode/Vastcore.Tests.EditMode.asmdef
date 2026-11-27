@@ -9,6 +9,7 @@
     "Vastcore.Terrain",
     "Vastcore.WorldGen",
     "Vastcore.RegionMap",
+    "Vastcore.TexturePipeline.Editor",
     "Vastcore.Player",
     "Vastcore.Camera",
     "Vastcore.UI",

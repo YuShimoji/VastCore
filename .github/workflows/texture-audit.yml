@@ -1,0 +1,53 @@
+name: Texture Audit
+
+# テクスチャの静的な検査（docs/02_design/TEXTURE_PIPELINE_SPEC.md）。Unity を使わないので、ライセンス無しで毎回走る。
+on:
+  push:
+    paths:
+      - "Assets/**"
+      - "docs/02_design/texture-rules.json"
+      - "tools/TextureAudit/**"
+      - "scripts/check-textures.ps1"
+      - ".github/workflows/texture-audit.yml"
+  pull_request:
+    paths:
+      - "Assets/**"
+      - "docs/02_design/texture-rules.json"
+      - "tools/TextureAudit/**"
+      - "scripts/check-textures.ps1"
+      - ".github/workflows/texture-audit.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: vastcore-texture-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Self-test the audit
+        shell: pwsh
+        run: ./scripts/check-textures.ps1 -SelfTest
+
+      - name: Audit project textures
+        shell: pwsh
+        run: ./scripts/check-textures.ps1
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: texture-audit
+          path: artifacts/texture-audit/
+          if-no-files-found: ignore
