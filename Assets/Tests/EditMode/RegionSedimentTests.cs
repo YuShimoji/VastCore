@@ -110,6 +110,98 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
+        public void RockField_WithTheCoarseMap_SortsLargeRocksTowardTheToes_AndWithoutItIsUnchanged()
+        {
+            RegionData region = DryRegion();
+            RegionDetailSpec spec = MesaWindow();
+            RegionData plain = RegionDetailBuilder.Build(region, spec).Data;
+            // 地図が無い窓では、分級を頼んでも今の置き方と同じ
+            CollectionAssert.AreEqual(RegionRockField.Build(plain, 1000.0, 2000.0, 0f, 0f, 0f, null).Positions,
+                RegionRockField.Build(plain, 1000.0, 2000.0, 0f, 0f, 0f, null, true).Positions);
+
+            spec.Sediment = 1f;
+            RegionData data = RegionDetailBuilder.Build(region, spec).Data;
+            float before = CoarseGap(data, RegionRockField.Build(data, 1000.0, 2000.0, 0f, 0f, 0f, null));
+            float after = CoarseGap(data, RegionRockField.Build(data, 1000.0, 2000.0, 0f, 0f, 0f, null, true));
+            // 背丈を超える岩は、礫より Coarse の大きい所（錐の裾とその先）に多い
+            Assert.Greater(after, 0.2f);
+            Assert.Greater(after, before + 0.15f);
+        }
+
+        [Test]
+        public void RockGround_SettlesTheRootsAndBandsTheRocks_OnlyWithSedimentMaps()
+        {
+            RegionData region = DryRegion();
+            RegionLookSpec Spec(float sediment, bool rockGround)
+            {
+                return new RegionLookSpec { OuterKm = 1.5f, InnerKm = 0.5f, Resolution = 128, Sediment = sediment, RockGround = rockGround, Vegetation = false };
+            }
+
+            RegionLookScene off = RegionLookScene.Build(region, Spec(1f, false));
+            RegionLookScene on = RegionLookScene.Build(region, Spec(1f, true));
+            Assert.IsNull(off.Rocks.Surface);
+            Assert.IsNotNull(on.Rocks.Surface);
+            Assert.AreEqual(on.Rocks.VertexCount * 4, on.Rocks.Surface.Length);
+            int banded = 0;
+            for (int v = 0; v < on.Rocks.VertexCount; v++)
+            {
+                Assert.GreaterOrEqual(on.Rocks.Surface[v * 4 + 3], 0f);
+                if (on.Rocks.Surface[v * 4 + 3] > 0f) banded++;
+            }
+            Assert.Greater(banded, on.Rocks.VertexCount / 2);
+
+            // 根元では地面を上げて土砂を足すだけ（下げない・減らさない）。岩の無い所は変えない
+            RegionData a = off.Inner.Data, b = on.Inner.Data;
+            int raised = 0;
+            for (int i = 0; i < a.Height.Length; i++)
+            {
+                Assert.GreaterOrEqual(b.Height[i], a.Height[i]);
+                Assert.GreaterOrEqual(b.Deposit[i], a.Deposit[i]);
+                if (b.Height[i] > a.Height[i]) raised++;
+            }
+            Assert.Greater(raised, 0);
+            CollectionAssert.AreEqual(off.Outer.Data.Height, on.Outer.Data.Height);
+
+            UnityEngine.Mesh mesh = RegionTerrainView.LookMesh(on.Rocks);
+            try
+            {
+                var surface = new System.Collections.Generic.List<UnityEngine.Vector4>();
+                mesh.GetUVs(1, surface);
+                Assert.AreEqual(on.Rocks.VertexCount, surface.Count);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(mesh);
+            }
+
+            // Sediment 0 では、なじませを入れても T3 までと同じ岩と地形
+            RegionLookScene zeroOff = RegionLookScene.Build(region, Spec(0f, false));
+            RegionLookScene zeroOn = RegionLookScene.Build(region, Spec(0f, true));
+            Assert.IsNull(zeroOn.Rocks.Surface);
+            CollectionAssert.AreEqual(zeroOff.Inner.Data.Height, zeroOn.Inner.Data.Height);
+            CollectionAssert.AreEqual(zeroOff.Rocks.Positions, zeroOn.Rocks.Positions);
+        }
+
+        /// <summary>1.6 m 以上の岩と 0.4 m 未満の礫の、置かれた所の Coarse の平均の差。</summary>
+        private static float CoarseGap(RegionData data, RegionRockField field)
+        {
+            int n = data.Resolution;
+            float cell = data.CellMeters;
+            double big = 0, small = 0;
+            int bigCount = 0, smallCount = 0;
+            foreach (RegionRock rock in field.Rocks)
+            {
+                int x = Math.Min(n - 1, (int)(rock.X / cell + 0.5f)), z = Math.Min(n - 1, (int)(rock.Z / cell + 0.5f));
+                float c = data.Coarse[x + z * n];
+                if (rock.Size >= 1.6f) { big += c; bigCount++; }
+                else if (rock.Size < 0.4f) { small += c; smallCount++; }
+            }
+            Assert.Greater(bigCount, 5);
+            Assert.Greater(smallCount, 5);
+            return (float)(big / bigCount - small / smallCount);
+        }
+
+        [Test]
         public void Apply_GravityOnly_ConservesVolume_AndLeavesNoLooseSlopeSteeperThanRepose()
         {
             RegionData data = SyntheticButte(out float[] floor);

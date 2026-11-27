@@ -36,6 +36,10 @@
   [string]$Sediment = '',
   # view3d: 土砂の層を切った絵（<OutDir>/sediment-off）と、切・入の描画時間（sediment-timing.txt）も撮る（地形は同じ）
   [switch]$SedimentCompare,
+  # view3d: 岩と地面のなじませと分級（T4、既定 入）。'false' で T3 までの岩の置き方と描き方
+  [string]$RockGround = '',
+  # view3d: 岩の下の方を地面の色へつなぐ描き方を切った絵（<OutDir>/rockground-off）と描画時間（rockground-timing.txt）も撮る（岩と地形は同じ）
+  [switch]$RockGroundCompare,
   # view3d: DS-011 P0 Props Proof Slice の前後比較（props-near-before/after, props-crates, props-rubble）
   [switch]$PropsCompare,
   [switch]$PropsProof,
@@ -96,6 +100,8 @@ if ($Mode -eq 'setup') {
     if ($BlendDepth) { $unityArgs += @('-blendDepth', $BlendDepth) }
     if ($Sediment) { $unityArgs += @('-lookSediment', $Sediment) }
     if ($SedimentCompare) { $unityArgs += @('-sedimentCompare', 'true') }
+    if ($RockGround) { $unityArgs += @('-lookRockGround', $RockGround) }
+    if ($RockGroundCompare) { $unityArgs += @('-rockGroundCompare', 'true') }
     if ($PropsCompare) { $unityArgs += @('-propsCompare', 'true') }
     if ($PropsProof) { $unityArgs += @('-propsProof', 'true') }
     if ($LookSky) { $unityArgs += @('-lookSky', $LookSky) }

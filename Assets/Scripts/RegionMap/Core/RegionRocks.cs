@@ -72,7 +72,18 @@ namespace Vastcore.RegionMap
         public static RegionRockField Build(RegionData data, double worldX, double worldZ, float originX, float originZ,
             float minSize, float[] skip)
         {
+            return Build(data, worldX, worldZ, originX, originZ, minSize, skip, false);
+        }
+
+        /// <summary>
+        /// classify を true にすると、土砂の場の分級の地図（RegionData.Coarse）がある窓では、大きい岩を Coarse の大きい所（錐の裾とその先の転がり出し）へ、
+        /// 小さい岩を Coarse の小さい所（落ち口の下）へ寄せる（設計 docs/02_design/REGION_SURFACE_MATERIALS_SPEC.md 6.3 節の T4）。地図が無い窓では false と同じ。
+        /// </summary>
+        public static RegionRockField Build(RegionData data, double worldX, double worldZ, float originX, float originZ,
+            float minSize, float[] skip, bool classify)
+        {
             if (data == null) throw new ArgumentNullException("data");
+            float[] coarseMap = classify ? data.Coarse : null;
             var positions = new List<float>();
             var normals = new List<float>();
             var tint = new List<float>();
@@ -106,11 +117,14 @@ namespace Vastcore.RegionMap
                             float lz = (float)((wz - worldZ) / cell);
                             if (lx < 1f || lz < 1f || lx >= n - 2 || lz >= n - 2) continue;
                             float amount = Sample(talus, n, lx, lz);
-                            if (amount <= 0.01f) continue;
+                            // 分級の地図が無い時は -1（今の置き方）。裾の先へ転がり出た所（Talus が 0 で Coarse がある）にも置く
+                            float coarse = coarseMap != null ? Sample(coarseMap, n, lx, lz) : -1f;
+                            if (amount <= 0.01f && coarse <= 0.02f) continue;
                             // まとまって落ちている所と、まばらな所がある
                             float clump = 0.35f + 1.3f * RegionNoise.Smooth(-0.35f, 0.45f,
                                 RegionNoise.Fbm((float)(wx / 33.0) + tier * 5.1f, (float)(wz / 33.0) - tier * 3.7f, 2, seed + 31u));
-                            if (RegionNoise.Hash01(ix, iz, tierSeed + 3u) >= Density(tier, amount) * clump) continue;
+                            float density = coarse < 0f ? Density(tier, amount) : SortedDensity(tier, amount, coarse);
+                            if (RegionNoise.Hash01(ix, iz, tierSeed + 3u) >= density * clump) continue;
 
                             int cx = (int)(lx + 0.5f), cz = (int)(lz + 0.5f);
                             int c = cx + cz * n;
@@ -135,6 +149,9 @@ namespace Vastcore.RegionMap
                             // 板のように平たい物から、さいころに近い物まで
                             float sx = size, sy = size * (0.3f + 0.55f * h1 * h1), sz = size * (0.5f + 0.5f * h2);
                             float sink = sy * (0.22f + 0.2f * h3);
+                            // なじませ（T4）を入れる時は、斜面の谷側で岩が浮かないよう、傾きに応じて深く埋める
+                            // （岩は斜面の傾きの 7 割しか傾かないので、谷側の縁は 0.3 × 傾き × 半分の大きさだけ浮く）
+                            if (coarseMap != null) sink += Math.Min(0.3f * sy, 0.15f * size * (float)Math.Sqrt(gx * gx + gz * gz));
                             float ground = Sample(data.Height, n, lx, lz);
                             var rock = new RegionRock
                             {
@@ -184,6 +201,115 @@ namespace Vastcore.RegionMap
                 case 3: return 0.38f * (0.25f * amount + Bump(amount, 0.5f, 0.35f));
                 case 4: return 0.30f * Bump(amount, 0.48f, 0.30f);
                 default: return 0.14f * Bump(amount, 0.45f, 0.25f);
+            }
+        }
+
+        /// <summary>
+        /// 分級の地図のある窓での確率。coarse は RegionData.Coarse（落ち口の下で小さく、錐の裾とその先の転がり出しで大きい）。
+        /// 落ちた岩は大きいほど遠くまで転がるので、礫は Coarse の小さい所に、背丈を超える岩は Coarse の大きい所に寄る。
+        /// 大きい岩は Talus の裾の山を弱く残し、主には Coarse で決める（T0 の答え「重力の錐と分級を主に」）。
+        /// </summary>
+        private static float SortedDensity(int tier, float amount, float coarse)
+        {
+            switch (tier)
+            {
+                case 0: return Density(0, amount) * (1f - 0.75f * RegionNoise.Smooth(0.25f, 0.75f, coarse));
+                case 1: return Density(1, amount) * (1f - 0.55f * RegionNoise.Smooth(0.25f, 0.75f, coarse));
+                case 2: return Density(2, amount) * (0.75f + 0.7f * RegionNoise.Smooth(0.2f, 0.7f, coarse));
+                case 3: return 0.38f * (0.3f * (0.25f * amount + Bump(amount, 0.5f, 0.35f)) + 1.85f * RegionNoise.Smooth(0.3f, 0.75f, coarse));
+                case 4: return 0.30f * (0.2f * Bump(amount, 0.48f, 0.30f) + 1.7f * RegionNoise.Smooth(0.45f, 0.85f, coarse));
+                default: return 0.14f * (0.15f * Bump(amount, 0.45f, 0.25f) + 2.9f * RegionNoise.Smooth(0.55f, 0.9f, coarse));
+            }
+        }
+
+        /// <summary>根元に土砂を寄せる岩の、いちばん小さい大きさ（m）。これより小さい岩は数が多く、地図の 1 セル（約 1 m）より細かい。</summary>
+        public const float SettleMinSize = 1.2f;
+
+        /// <summary>
+        /// 岩の根元に土砂をためる（設計 6.2 節「岩と地面のなじませ」、T4）。data は岩を置いた窓（土砂の地図を持つこと）。
+        /// 岩のまわりの輪に細かい土砂（Deposit）を足し、その輪では大きい岩の割合（Coarse）と崩れの岩屑（Scree）を減らす。
+        /// 輪は斜面の上の側に長い（転がってきた土砂が岩の上の側で止まる）。地面も輪の中で少し上げて、岩を埋める（上げる量は岩の背丈の 1/4 まで）。
+        /// 帽子の岩・水面のセルは変えない。地図の無い窓では何もしない。minX・minZ は data のセル (0,0) の、出力の座標。
+        /// </summary>
+        public static void Settle(RegionData data, RegionRockField field, float minX, float minZ)
+        {
+            if (data == null || field == null || data.Deposit == null || data.Coarse == null || data.Scree == null) return;
+            int n = data.Resolution;
+            float cell = data.CellMeters;
+            float[] height = data.Height;
+            float[] baseHeight = (float[])height.Clone();
+            foreach (RegionRock rock in field.Rocks)
+            {
+                if (rock.Size < SettleMinSize) continue;
+                float lx = (rock.X - minX) / cell, lz = (rock.Z - minZ) / cell;
+                if (lx < 1f || lz < 1f || lx >= n - 2 || lz >= n - 2) continue;
+                // 斜面の上の向き（高さが増す向き）と傾き
+                float gx = (Sample(baseHeight, n, lx + 1f, lz) - Sample(baseHeight, n, lx - 1f, lz)) / (2f * cell);
+                float gz = (Sample(baseHeight, n, lx, lz + 1f) - Sample(baseHeight, n, lx, lz - 1f)) / (2f * cell);
+                float slope = (float)Math.Sqrt(gx * gx + gz * gz);
+                float ux = slope > 1e-4f ? gx / slope : 0f, uz = slope > 1e-4f ? gz / slope : 0f;
+                float uphill = Math.Min(1f, slope * 3f);
+                float footprint = 0.45f * rock.Size;
+                float width = 0.5f + 0.45f * rock.Size;
+                float fill = Math.Min(0.25f * rock.Top, Math.Min(0.04f + 0.05f * rock.Size, 0.85f * Math.Min(0.4f, rock.Size * 0.13f)));
+                float reach = footprint + width * 1.4f;
+                int r = (int)Math.Ceiling(reach / cell);
+                int cx = (int)(lx + 0.5f), cz = (int)(lz + 0.5f);
+                for (int dz = -r; dz <= r; dz++)
+                {
+                    for (int dx = -r; dx <= r; dx++)
+                    {
+                        int x = cx + dx, z = cz + dz;
+                        if (x < 0 || z < 0 || x >= n || z >= n) continue;
+                        float ex = (x - lx) * cell, ez = (z - lz) * cell;
+                        float d = (float)Math.Sqrt(ex * ex + ez * ez);
+                        if (d > reach) continue;
+                        int i = x + z * n;
+                        if (height[i] <= 0f || (data.Caprock != null && data.Caprock[i] != 0)) continue;
+                        if (data.WaterCoverage != null && data.WaterCoverage[i] > 0f) continue;
+                        float up = d > 1e-4f ? Math.Max(0f, (ex * ux + ez * uz) / d) * uphill : 0f;
+                        float outer = footprint + width * (0.6f + 0.8f * up);
+                        float v = 1f - RegionNoise.Smooth(0.7f * footprint, outer, d);
+                        if (v <= 0f) continue;
+                        float collar = v * (0.6f + 0.4f * up);
+                        if (0.45f * collar > data.Deposit[i]) data.Deposit[i] = 0.45f * collar;
+                        data.Coarse[i] *= 1f - 0.7f * v;
+                        data.Scree[i] *= 1f - 0.5f * v;
+                        float raised = baseHeight[i] + fill * v * v;
+                        if (raised > height[i]) height[i] = raised;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 岩の頂点ごとの、岩の下の方を地面の色へつなぐための値（4 つずつ。シェーダーの TEXCOORD1）。
+        /// x 岩の置かれた地面の Talus、y 頂点の、その真下の地面からの高さ（m）、z 地被の湿り気（RegionTerrainView.SandstoneChannels の z と同じ式）、
+        /// w 地面の色にする帯の高さ（m。0 で帯なし）。height は岩を置いた窓の地面（Settle の後）で、頂点 (i, j) が (minX + i * cell, minZ + j * cell)。
+        /// </summary>
+        public static void GroundBand(RegionRockField field, RegionData data, float[] height, float minX, float minZ, float cell, float[] surface, int first)
+        {
+            int n = data.Resolution;
+            foreach (RegionRock rock in field.Rocks)
+            {
+                float lx = (rock.X - minX) / cell, lz = (rock.Z - minZ) / cell;
+                float talus = data.Talus != null ? Sample(data.Talus, n, lx, lz) : 0f;
+                float moisture = data.Moisture != null ? Sample(data.Moisture, n, lx, lz) : 0f;
+                float cover = Math.Max(0f, Math.Min(1f, (moisture - 0.10f) / 0.22f));
+                float deposit = data.Deposit != null ? Sample(data.Deposit, n, lx, lz) : 0f;
+                // 背丈の半分まで。土砂の多い所ほど高く（埋まって、はねた土砂が付く）
+                float band = Math.Min(0.5f * Math.Max(rock.Top, 0.02f), (0.14f + 0.12f * rock.Size) * (0.8f + 0.6f * Math.Min(1f, deposit * 1.6f)));
+                for (int v = 0; v < rock.VertexCount; v++)
+                {
+                    int index = rock.FirstVertex + v;
+                    float px = field.Positions[index * 3], py = field.Positions[index * 3 + 1], pz = field.Positions[index * 3 + 2];
+                    float ground = Sample(height, n, (px - minX) / cell, (pz - minZ) / cell);
+                    int s = (first + index) * 4;
+                    surface[s] = talus;
+                    surface[s + 1] = py - ground;
+                    surface[s + 2] = cover;
+                    surface[s + 3] = band;
+                }
             }
         }
 

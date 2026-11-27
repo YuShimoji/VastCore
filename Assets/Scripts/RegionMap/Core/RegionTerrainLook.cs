@@ -56,6 +56,13 @@ namespace Vastcore.RegionMap
         public float Sediment = 1f;
 
         public bool Rocks = true;
+
+        /// <summary>
+        /// 岩と地面のなじませと分級（T4）。土砂の地図のある窓で、大きい岩を錐の裾とその先へ寄せ、根元に土砂をためて岩を少し埋め、
+        /// 岩の下の方を地面の色へつなぐ。土砂の地図が無い時（Sediment 0）は何もしない。false で T3 までの置き方と描き方。
+        /// </summary>
+        public bool RockGround = true;
+
         public bool Vegetation = true;
         public bool Props = false;
         public int PropsSeedOffset = 0;
@@ -108,6 +115,11 @@ namespace Vastcore.RegionMap
 
         /// <summary>頂点ごとの岩肌の色のむら（0〜1。色に 0.66 + 0.34 × この値 を掛ける。地形は 0.5）。</summary>
         public float[] Tint;
+
+        /// <summary>
+        /// 岩だけ（T4 のなじませを入れた時）。頂点ごとに 4 つ（RegionRockField.GroundBand）。地形と、なじませの無い岩は null。
+        /// </summary>
+        public float[] Surface;
 
         public int VertexCount
         {
@@ -269,13 +281,17 @@ namespace Vastcore.RegionMap
             double worldInnerZ = inner.OriginMapY * (double)metersPerMapUnit + 0.5 * innerCell;
             double worldOuterX = outer.OriginMapX * (double)metersPerMapUnit + 0.5 * outerCell;
             double worldOuterZ = outer.OriginMapY * (double)metersPerMapUnit + 0.5 * outerCell;
+            // T4 は土砂の地図のある窓だけ（Sediment 0 では T3 までと同じ岩と地形）
+            bool rockGround = spec.Rocks && spec.RockGround && innerMaps != null;
             if (spec.Rocks)
             {
-                scene.InnerRocks = RegionRockField.Build(inner.Data, worldInnerX, worldInnerZ, minX, minZ, 0f, null);
+                scene.InnerRocks = RegionRockField.Build(inner.Data, worldInnerX, worldInnerZ, minX, minZ, 0f, null, rockGround);
                 // 外側は遠くからしか見ないので、大きい岩だけ置く
                 scene.OuterRocks = RegionRockField.Build(outer.Data, worldOuterX, worldOuterZ, 0.5f * outerCell, 0.5f * outerCell, 4f,
-                    new[] { scene.InnerMinX, scene.InnerMinZ, scene.InnerMaxX, scene.InnerMaxZ });
+                    new[] { scene.InnerMinX, scene.InnerMinZ, scene.InnerMaxX, scene.InnerMaxZ }, rockGround && outerMaps != null);
             }
+            // 根元に土砂をため、地面を少し上げて岩を埋める（外側は 1 セルが岩より大きいので、内側だけ）
+            if (rockGround) RegionRockField.Settle(inner.Data, scene.InnerRocks, minX, minZ);
 
             // 影を落とす高さ：内側は、1.2 m 以上の岩を地形に足した物（岩の影と、岩の足もとの暗さが地面に出る）
             float[] caster = innerHeight;
@@ -323,6 +339,14 @@ namespace Vastcore.RegionMap
             {
                 scene.Rocks = RockPart(scene.InnerRocks, plainSun, plainSky, m, minX, minZ, innerCell,
                     scene.OuterRocks, outerSun, outerSky, n, 0.5f * outerCell, 0.5f * outerCell, outerCell);
+                if (rockGround)
+                {
+                    // 岩の下の方を地面の色へつなぐ帯（シェーダーは岩の画素で、同じ位置の地面の色を作って混ぜる）
+                    scene.Rocks.Surface = new float[scene.Rocks.VertexCount * 4];
+                    RegionRockField.GroundBand(scene.InnerRocks, inner.Data, innerHeight, minX, minZ, innerCell, scene.Rocks.Surface, 0);
+                    RegionRockField.GroundBand(scene.OuterRocks, outer.Data, outerHeight, 0.5f * outerCell, 0.5f * outerCell, outerCell,
+                        scene.Rocks.Surface, scene.InnerRocks.VertexCount);
+                }
             }
             if (spec.Props)
             {

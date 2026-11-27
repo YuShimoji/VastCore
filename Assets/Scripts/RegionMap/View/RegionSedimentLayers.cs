@@ -23,6 +23,8 @@ namespace Vastcore.RegionMap
         public static void Begin()
         {
             Bound = 0;
+            RockGroundMaterial = null;
+            _rockGround = true;
             SetActive(true);
         }
 
@@ -62,11 +64,43 @@ namespace Vastcore.RegionMap
             return pixels;
         }
 
+        /// <summary>直前の場面で、岩の下の方を地面の色へつなぐ岩のマテリアル（無ければ null）。</summary>
+        public static Material RockGroundMaterial { get; private set; }
+
+        private static bool _rockGround = true;
+
+        /// <summary>
+        /// 岩のマテリアルに、from（内側の地形）の地図をそのまま結び付ける（T4）。岩の画素は、岩の下の方に付ける地面の色をこの地図で作る。
+        /// 地図の範囲の外（外側の窓の岩）は層を出さない地面の色になる。帯の高さは岩の頂点の値（RegionRockField.GroundBand）が持つ。
+        /// </summary>
+        public static bool ShareWithRocks(Material from, Material rocks)
+        {
+            RockGroundMaterial = null;
+            if (from == null || rocks == null || !from.HasTexture(MapProperty) || from.GetTexture(MapProperty) == null) return false;
+            rocks.SetTexture(MapProperty, from.GetTexture(MapProperty));
+            rocks.SetVector(RectProperty, from.GetVector(RectProperty));
+            RockGroundMaterial = rocks;
+            return true;
+        }
+
+        /// <summary>
+        /// 岩の下の方を地面の色へつなぐかを切り替える（同じ場面の前後比較と、重さの計測に使う）。シェーダーの切り替えは全体の値で、
+        /// マテリアルのキーワードは使わない（キーワードで切り替えると、同じコードでも 3840x2160 の近景で 6 ms 重くなった。2026-11-27）。
+        /// </summary>
+        public static void SetRockGround(bool active)
+        {
+            _rockGround = active;
+            SetActive(_layersActive);
+        }
+
         /// <summary>結び付けた地図を残したまま、層を出すかを切り替える（同じ場面の前後比較と、重さの計測に使う）。</summary>
         public static void SetActive(bool active)
         {
-            Shader.SetGlobalVector("_RegionSedimentParams", new Vector4(active && Enabled ? 1f : 0f, 0f, 0f, 0f));
+            _layersActive = active;
+            Shader.SetGlobalVector("_RegionSedimentParams", new Vector4(active && Enabled ? 1f : 0f, _rockGround ? 1f : 0f, 0f, 0f));
         }
+
+        private static bool _layersActive = true;
 
         private static byte Byte(float value)
         {

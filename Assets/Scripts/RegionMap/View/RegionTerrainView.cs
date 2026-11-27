@@ -219,6 +219,7 @@ namespace Vastcore.RegionMap
             var root = new GameObject("Region Terrain Look");
             var plain = new RegionRenderOptions { CloudCover = 0f, Exaggeration = 0f, CastShadow = 0f };
             var result = new LookResult { Root = root, Scene = scene };
+            Material innerMaterial = null;
             foreach (RegionLookPart part in scene.Parts())
             {
                 Texture2D texture;
@@ -248,6 +249,9 @@ namespace Vastcore.RegionMap
                     RegionSedimentLayers.Bind(material, part.Data, scene.InnerMinX, scene.InnerMinZ, scene.InnerCell);
                 else if (part == scene.OuterTerrain)
                     RegionSedimentLayers.Bind(material, part.Data, 0.5f * scene.OuterCell, 0.5f * scene.OuterCell, scene.OuterCell);
+                else if (part == scene.Rocks && part.Surface != null && innerMaterial != null)
+                    RegionSedimentLayers.ShareWithRocks(innerMaterial, material);
+                if (part == scene.InnerTerrain) innerMaterial = material;
                 MeshRenderer renderer = AddPart(root.transform, part.Name, LookMesh(part), material);
                 // 地形の影は頂点に持たせてあるため、地形メッシュによる二重の投影を省く
                 if (part == scene.Rocks)
@@ -335,7 +339,15 @@ namespace Vastcore.RegionMap
             mesh.SetVertices(vertices);
             mesh.SetNormals(normals);
             if (part.Uv != null) mesh.SetUVs(0, uv);
-            if (part.Data?.MesaContactHeight != null)
+            if (part.Surface != null)
+            {
+                // 岩の下の方を地面の色へつなぐ値（RegionRockField.GroundBand）
+                var surface = new Vector4[count];
+                float[] s = part.Surface;
+                for (int v = 0; v < count; v++) surface[v] = new Vector4(s[v * 4], s[v * 4 + 1], s[v * 4 + 2], s[v * 4 + 3]);
+                mesh.SetUVs(1, surface);
+            }
+            else if (part.Data?.MesaContactHeight != null)
             {
                 RegionData data = part.Data;
                 var surface = new Vector4[count];

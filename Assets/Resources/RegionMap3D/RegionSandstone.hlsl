@@ -102,7 +102,7 @@ float4 SandPebbles(float2 uv, float footprint)
 TEXTURE2D(_SedimentMap);
 SAMPLER(sampler_SedimentMap);
 #endif
-float4 _RegionSedimentParams;  // x 1 で層を出す
+float4 _RegionSedimentParams;  // x 1 で層を出す、y 1 で岩の下の方を地面の色へつなぐ（T4）
 
 float4 SandSedimentMaps(float3 p)
 {
@@ -111,7 +111,9 @@ float4 SandSedimentMaps(float3 p)
     {
         // 物体の座標は X 東・Z 北。地図は Core の座標（Z 南）で並ぶ
         float2 uv = float2(p.x - _SedimentRect.x, -p.z - _SedimentRect.y) * _SedimentRect.z + _SedimentRect.w;
-        return SAMPLE_TEXTURE2D(_SedimentMap, sampler_SedimentMap, uv);
+        // 岩のマテリアルは内側の窓の地図を借りるので、範囲の外（外側の窓の岩）では層を出さない（地形の画素は常に範囲の内）
+        float inside = all(uv >= 0.0) && all(uv <= 1.0) ? 1.0 : 0.0;
+        return SAMPLE_TEXTURE2D(_SedimentMap, sampler_SedimentMap, uv) * inside;
     }
 #endif
     return 0.0;
@@ -172,24 +174,43 @@ float SandTop2(float w, float4 others, float2 more)
 // surface = talus density, metres above the caprock contact, moisture for cover, dry-land coverage.
 // 写真素材の置かれた役では、手続きの細かな粒（grains・pores・礫）を写真の明暗に置き換え、大きなむらと地層の色は手続きのまま残す。
 // 写真は 1 画素で重みの大きい 2 役まで読み、カメラからの距離 viewDistance（m）で読む物を減らす（設計 3.3 節の距離の段）。
-half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half looseRock, float viewDistance, out SandstoneExtra extra)
+// 面の向き n で読む大きな雑音と、写真素材を読む場所の値（SandstoneSurface と、岩の下の方に作る地面の色が使う）
+struct SandNoiseSet
 {
+    float3 weights;
+    float mottling;
+    float grains;
+    float broad;
+    float broken;
+    float mineral;
+    float coarseMineral;
+    SandMaterialContext c;
+};
+
+SandNoiseSet SandNoisesAt(float3 p, float3 n, float3 pdx, float3 pdy, float viewDistance)
+{
+    SandNoiseSet s;
     float3 weights = n * n;
     weights *= weights;
     weights /= max(dot(weights, float3(1, 1, 1)), 0.001);
-    float mottling = SandTriplanar(p * 0.22, weights);
-    float grains = SandTriplanar(p * 9.7, weights);
-    float broad = SandNoise(p.xz * 0.023);
-    float broken = SandTriplanar(p * 0.065 + 3.5, weights);
-    float mineral = 0.63 * mottling + 0.37 * grains;
-    float coarseMineral = 0.63 * mottling + 0.37 * 0.5;
-    SandMaterialContext c;
-    c.p = p;
-    c.pdx = ddx(p);
-    c.pdy = ddy(p);
-    c.n = n;
-    c.farFade = RegionSurfaceFarFade(viewDistance);
-    c.nearFade = RegionSurfaceNearFade(viewDistance);
+    s.weights = weights;
+    s.mottling = SandTriplanar(p * 0.22, weights);
+    s.grains = SandTriplanar(p * 9.7, weights);
+    s.broad = SandNoise(p.xz * 0.023);
+    s.broken = SandTriplanar(p * 0.065 + 3.5, weights);
+    s.mineral = 0.63 * s.mottling + 0.37 * s.grains;
+    s.coarseMineral = 0.63 * s.mottling + 0.37 * 0.5;
+    s.c.p = p;
+    s.c.pdx = pdx;
+    s.c.pdy = pdy;
+    s.c.n = n;
+    s.c.farFade = RegionSurfaceFarFade(viewDistance);
+    s.c.nearFade = RegionSurfaceNearFade(viewDistance);
+    return s;
+}
+
+void SandClearExtra(out SandstoneExtra extra)
+{
     extra.bedHeight = 0.0;
     extra.lamina = 0.0;
     extra.gradient = 0.0;
@@ -197,14 +218,19 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
     extra.rockMaterial = 0.0;
     extra.roughness = 0.0;
     extra.specular = 0.0;
-    if (looseRock > 0.5)
-    {
-        float hasLoose = SandHas(5, c.farFade);
-        half3 detail = SandRole(5, 1.0, c, extra);
-        extra.rockMaterial = hasLoose;
-        float3 block = lerp(float3(0.56, 0.37, 0.28), float3(0.85, 0.62, 0.44), broken);
-        return block * (0.79 + 0.43 * lerp(mineral, coarseMineral, hasLoose)) * (0.74 + 0.36 * tint) * detail;
-    }
+}
+
+// 地形の地面と崖（SandstoneSurface の転石でない所）。s は面の向き n で読んだ雑音
+half3 SandstoneGround(float3 p, float3 n, float4 surface, SandNoiseSet s, inout SandstoneExtra extra)
+{
+    float3 weights = s.weights;
+    float mottling = s.mottling;
+    float grains = s.grains;
+    float broad = s.broad;
+    float broken = s.broken;
+    float mineral = s.mineral;
+    float coarseMineral = s.coarseMineral;
+    SandMaterialContext c = s.c;
 
     float bedHeight = surface.y + 1.8 * (broad - 0.5) + 0.28 * (mottling - 0.5);
     extra.bedHeight = bedHeight;
@@ -359,6 +385,60 @@ half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half loose
         groundColor = lerp(lerp(groundColor, silt, depositInRest), washColor, washShare);
     }
     return lerp(groundColor, rock, rockFace);
+}
+
+// 岩の下の方に付ける地面の色（T4）。SandstoneGround の大きな色（砂と土・地被・岩屑・細かい土砂・流路の礫の割合）だけを、
+// 上向きの面の雑音と土砂の地図で作る。細かい粒・割れ目・礫・写真素材は描かない（岩の画素ごとに地面を丸ごと作ると重い）。
+// 縦の面で xz の模様が縦の縞に伸びないよう、細かい粒は岩の面の向きで読んだ grains を使う。
+// mottling・broken は SandTriplanar を上向きの面で読んだ値、sed は SandSedimentMaps（微分を使うので分岐の外で読む）
+float3 SandRockGroundTone(float4 surface, float mottling, float broad, float broken, float grains, float4 sed)
+{
+    float screeAmount = smoothstep(0.06, 0.55, sed.z);
+    float coarse = sed.w;
+    float washAmount = 0.85 * smoothstep(0.12, 0.65, sed.y);
+    float depositAmount = smoothstep(0.08, 0.5, sed.x) * (1.0 - 0.8 * screeAmount);
+    float cover = smoothstep(0.60, 0.78, 0.56 * broad + 0.44 * mottling) * surface.z;
+    float talus = max(smoothstep(0.04, 0.82, surface.x), screeAmount);
+    float driftSand = smoothstep(0.47, 0.80, 0.62 * mottling + 0.38 * broken);
+    float talusMix = max(talus * (1.0 - 0.56 * driftSand * (1.0 - coarse)), 0.6 * coarse * smoothstep(0.25, 0.6, coarse));
+    float sandPatch = 0.52 * broad + 0.30 * mottling + 0.18 * grains;
+    float3 soil = lerp(float3(0.56, 0.40, 0.29), float3(0.87, 0.71, 0.51), sandPatch);
+    soil = lerp(soil, float3(0.43, 0.41, 0.28) * (0.65 + 0.70 * grains), cover);
+    float3 rubble = lerp(float3(0.58, 0.42, 0.33), float3(0.80, 0.63, 0.48), sandPatch) * (1.0 - 0.10 * coarse);
+    float3 color = lerp(soil, rubble, talusMix) * (0.88 + 0.24 * grains);
+    float3 silt = lerp(float3(0.62, 0.47, 0.37), float3(0.81, 0.66, 0.51), 0.5 * broad + 0.3 * mottling + 0.1);
+    float3 washBase = lerp(float3(0.53, 0.41, 0.33), float3(0.74, 0.60, 0.48), sandPatch);
+    return lerp(lerp(color, silt, depositAmount), washBase, washAmount);
+}
+
+half3 SandstoneSurface(float3 p, float3 n, float4 surface, half tint, half looseRock, float viewDistance, out SandstoneExtra extra)
+{
+    float3 pdx = ddx(p);
+    float3 pdy = ddy(p);
+    SandNoiseSet s = SandNoisesAt(p, n, pdx, pdy, viewDistance);
+    SandClearExtra(extra);
+    // 岩の下の方の地面の色（T4）に使う、上向きの面の雑音と土砂の地図。微分を使うので分岐の外で読む。
+    // 式は SandNoisesAt の三平面の上向きの項・SandstoneGround の地図の読みと同じなので、地形の画素では同じ計算にまとまる
+    float mottlingUp = SandNoise((p * 0.22).xz + 7.31);
+    float brokenUp = SandNoise((p * 0.065 + 3.5).xz + 7.31);
+    float4 sedUp = SandSedimentMaps(p);
+    if (looseRock > 0.5)
+    {
+        float hasLoose = SandHas(5, s.c.farFade);
+        half3 detail = SandRole(5, 1.0, s.c, extra);
+        extra.rockMaterial = hasLoose;
+        float3 block = lerp(float3(0.56, 0.37, 0.28), float3(0.85, 0.62, 0.44), s.broken);
+        half3 blockColor = block * (0.79 + 0.43 * lerp(s.mineral, s.coarseMineral, hasLoose)) * (0.74 + 0.36 * tint) * detail;
+        // 岩の下の方を地面の色へつなぐ（T4。UE の RVT の代わり）。surface（RegionRockField.GroundBand）: x 地面の Talus、
+        // y 真下の地面からの高さ m、z 地被の湿り気、w 帯の高さ m（0 で帯なし。帯の値を持たない岩と地形は 0）
+        // 帯の上端は岩肌のむらで揺らす（水平な線にしない）
+        float edge = surface.y / max(surface.w, 1e-3) + 0.6 * (s.mottling - 0.5) + 0.3 * (s.grains - 0.5);
+        float t = (1.0 - smoothstep(0.25, 1.0, edge)) * (surface.w > 1e-4 ? 0.9 * _RegionSedimentParams.y : 0.0);
+        half3 ground = SandRockGroundTone(surface, mottlingUp, s.broad, brokenUp, s.grains, sedUp);
+        extra.rockMaterial = max(hasLoose, t);
+        return lerp(blockColor, ground, t);
+    }
+    return SandstoneGround(p, n, surface, s, extra);
 }
 
 // ---- 表面の凹凸（RegionSurfaceRelief.cs が場面を作る時に焼いた傾きの画像を読む） ----
