@@ -5,6 +5,19 @@ namespace Vastcore.Water
 {
     public enum BankType { Beach, Barrier }
 
+    /// <summary>An elliptical obstacle in shore coordinates (distance inland, then alongshore), in metres.</summary>
+    public readonly struct SwashObstacle
+    {
+        public readonly Vector2 Centre;
+        public readonly Vector2 Radii;
+
+        public SwashObstacle(Vector2 centre, Vector2 radii)
+        {
+            Centre = centre;
+            Radii = radii;
+        }
+    }
+
     /// <summary>
     /// Coordinates are local metres. X increases inland and Z increases alongshore.
     /// The curve moves the waterline in X without changing the cross section.
@@ -24,6 +37,12 @@ namespace Vastcore.Water
         [Min(0.1f)] public float BarrierWidth = 0.62f;
         public float ReceivingHeight = 1.12f;
         [Min(0.5f)] public float ReceivingWidth = 8f;
+        [Range(0f, 1f), Tooltip("Amount of whitewater on top of the film.")]
+        public float FilmFoam = 0.48f;
+        [Range(0f, 12f), Tooltip("Seconds a receiving surface stays visibly wet after the wave recedes.")]
+        public float WetHoldSeconds = 3.4f;
+        [Range(0f, 1f), Tooltip("How strongly beach swash diverts around supplied rock footprints.")]
+        public float SwashDeflection = 0.9f;
         public Color BedTint = new Color(0.33f, 0.27f, 0.21f);
 
         public float X(float distance, float alongshore) => (Offset?.Evaluate(alongshore) ?? 0f) + distance;

@@ -20,8 +20,10 @@ namespace Vastcore.CoastalWater
         private static readonly int BedId = Shader.PropertyToID("_CrossSection");
 
         internal Transform Transform => root.transform;
+        internal Material ReceivingSurface { get; }
+        internal IReadOnlyList<SwashObstacle> SwashObstacles { get; }
 
-        internal CoastalGround(Scene scene, Shoreline shore, float headlands, Shader shader,
+        internal CoastalGround(Scene scene, Shoreline shore, float headlands, float cameraZ, Shader shader,
             Texture2D sand, Texture2D asphalt, Texture2D stone, Texture2D turf)
         {
             this.shore = shore;
@@ -33,6 +35,7 @@ namespace Vastcore.CoastalWater
             Material paving = MaterialFor(shader, asphalt, turf, 1, 2.2f);
             Material wall = MaterialFor(shader, stone, turf, 2, 2.5f);
             Material rocks = MaterialFor(shader, stone, turf, 3, 1.7f);
+            ReceivingSurface = shore.Bank == BankType.Barrier ? paving : land;
             float outerRoad = shore.BarrierWidth + shore.ReceivingWidth;
             if (shore.Bank == BankType.Barrier)
             {
@@ -62,14 +65,16 @@ namespace Vastcore.CoastalWater
             var section = new Vector2[distances.Count];
             for (int i = 0; i < section.Length; i++) section[i].x = distances[i];
             MakeStrip("Beach and headlands", land, section, terrain: true);
-            MakeRocks(rocks);
+            SwashObstacles = MakeRocks(rocks, cameraZ);
         }
 
         public void Dispose()
         {
-            if (!root) return;
-            root.SetActive(false);
-            Release(root);
+            if (root)
+            {
+                root.SetActive(false);
+                Release(root);
+            }
             foreach (UnityEngine.Object item in owned) Release(item);
             owned.Clear();
         }
@@ -139,13 +144,14 @@ namespace Vastcore.CoastalWater
             AddMesh(name, material, vertices, data, indices);
         }
 
-        private void MakeRocks(Material material)
+        private IReadOnlyList<SwashObstacle> MakeRocks(Material material, float cameraZ)
         {
             var vertices = new List<Vector3>();
             var uv = new List<Vector2>();
             var indices = new List<int>();
             var random = new System.Random(1827);
             bool barrier = shore.Bank == BankType.Barrier;
+            var obstacles = new List<SwashObstacle>();
             int count = barrier ? 340 : 860;
             for (int i = 0; i < count; i++)
             {
@@ -159,8 +165,15 @@ namespace Vastcore.CoastalWater
                 float height = Elevation(d, z);
                 Vector3 center = new Vector3(shore.X(d, z), height - size * 0.047f, z);
                 AddRock(center, d, size, flatten, yaw, vertices, uv, indices);
+                if (!barrier && size > 0.16f && d - size < shore.ReceivingWidth && z > cameraZ + 2f && z < cameraZ + 44f)
+                    obstacles.Add(new SwashObstacle(new Vector2(d, z), new Vector2(size * 1.04f, size * 0.80f)));
             }
             AddMesh("Shingle and shore rocks", material, vertices, uv, indices);
+            obstacles.Sort((a, b) => (b.Radii.x / (b.Centre.y - cameraZ)).CompareTo(a.Radii.x / (a.Centre.y - cameraZ)));
+            if (obstacles.Count > CoastalWaterRenderer.MaximumSwashObstacles)
+                obstacles.RemoveRange(CoastalWaterRenderer.MaximumSwashObstacles,
+                    obstacles.Count - CoastalWaterRenderer.MaximumSwashObstacles);
+            return obstacles;
         }
 
         private static void AddRock(Vector3 center, float d, float size, float flatten, float yaw,

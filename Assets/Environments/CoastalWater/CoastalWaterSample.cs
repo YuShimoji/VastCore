@@ -77,8 +77,9 @@ namespace Vastcore.CoastalWater
             try
             {
                 if (crestOverride.HasValue) shore.CrestHeight = crestOverride.Value;
-                ground = new CoastalGround(gameObject.scene, shore, site.Headlands, GroundShader, Sand, Asphalt, Stone, Turf);
-                water = new CoastalWaterRenderer(ground.Transform, shore, OceanShader, ShoreShader);
+                ground = new CoastalGround(gameObject.scene, shore, site.Headlands, site.CameraZ, GroundShader, Sand, Asphalt, Stone, Turf);
+                water = new CoastalWaterRenderer(ground.Transform, shore, OceanShader, ShoreShader,
+                    ground.ReceivingSurface, ground.SwashObstacles);
             }
             finally
             {

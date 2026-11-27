@@ -288,6 +288,9 @@ MonoBehaviour:
       BarrierWidth: 0.62
       ReceivingHeight: 1.12
       ReceivingWidth: 8.7
+      FilmFoam: 0.62
+      WetHoldSeconds: 2.1
+      SwashDeflection: 0.93
       BedTint: {r: 0.33, g: 0.27, b: 0.21, a: 1}
     Headlands: 0.76
     CameraZ: -4
@@ -383,6 +386,8 @@ MonoBehaviour:
       BarrierWidth: 0.62
       ReceivingHeight: 1.18
       ReceivingWidth: 8.4
+      FilmFoam: 0.39
+      WetHoldSeconds: 3.8
       BedTint: {r: 0.33, g: 0.27, b: 0.21, a: 1}
     Headlands: 0.91
     CameraZ: -1
@@ -478,6 +483,8 @@ MonoBehaviour:
       BarrierWidth: 0.62
       ReceivingHeight: 1.24
       ReceivingWidth: 8
+      FilmFoam: 0.39
+      WetHoldSeconds: 3.5
       BedTint: {r: 0.33, g: 0.27, b: 0.21, a: 1}
     Headlands: 1.24
     CameraZ: -3.4

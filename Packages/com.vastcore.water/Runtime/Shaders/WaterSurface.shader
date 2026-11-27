@@ -80,9 +80,10 @@ Shader "Vastcore/Water/Surface"
 
                 float2 shoreDrift = p - _Motion.xy * time * 0.43;
                 float scatter = WaterNoise(shoreDrift * float2(0.3, 0.37));
-                float attenuation = 1.0 - exp2(-ShoreDepth(d) * 0.43);
+                float depth = max(0.01, ShoreDepth(d) + (1.0 - _Bank.x) * input.elevation);
+                float attenuation = 1.0 - exp2(-depth * 0.43);
                 float3 body = lerp(_ShallowWater.rgb, _DeepWater.rgb, attenuation);
-                float seeBed = (1.0 - _Bank.x) * exp2(-ShoreDepth(d) * 7.0) * 0.72;
+                float seeBed = (1.0 - _Bank.x) * exp2(-depth * 5.4) * 0.84;
                 body = lerp(body, _BedTint.rgb, seeBed);
                 float thinCrest = saturate(input.elevation / max(0.05, _Wave.x)) * (1.0 - attenuation * 0.78);
                 body = body * (0.68 + 0.32 * saturate(n.y) + 0.18 * scatter)
@@ -101,10 +102,14 @@ Shader "Vastcore/Water/Surface"
                 float broken = smoothstep(0.67, 0.98, steep + scatter * 0.29)
                     * smoothstep(0.47, 0.73, scatter) * (0.21 + 0.56 * spume);
                 float surf = (1.0 - _Bank.x) * smoothstep(-18.0, -_Shore.w, d) * (1.0 - smoothstep(-0.95, 0.0, d));
+                float2 breaker = float2(p.x - d - _Shore.w, p.y);
+                float age = frac(-MainWavePhase(breaker) * 0.15915494);
+                float spilled = smoothstep(0.028, 0.11, age) * (1.0 - smoothstep(0.48, 0.75, age));
+                broken *= 1.0 - surf * (1.0 - spilled) * 0.68;
                 float crest = cos(MainWavePhase(p) - 0.25);
                 float foamShape = smoothstep(0.70 - scatter * 0.24, 0.96, crest)
                     * smoothstep(0.14, 0.64, spume + 0.23 * scatter);
-                float foam = saturate(broken + surf * foamShape * 0.85) * _Motion.w
+                float foam = saturate(broken + surf * foamShape * spilled * 0.78) * _Motion.w
                     * smoothstep(0.075, 0.55, _Wave.x) * (1.0 - smoothstep(0.4, 1.35, footprint));
                 color = lerp(color, float3(0.69, 0.75, 0.74), foam);
                 return half4(WaterDistanceFog(color, input.positionWS), 1.0);

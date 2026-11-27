@@ -22,6 +22,7 @@ Shader "Vastcore/Water/Sample Ground"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.vastcore.water/Runtime/Shaders/WaterLighting.hlsl"
+            #include "Packages/com.vastcore.water/Runtime/Shaders/ShoreFlow.hlsl"
 
             TEXTURE2D(_Surface); SAMPLER(sampler_Surface);
             TEXTURE2D(_Turf); SAMPLER(sampler_Turf);
@@ -29,6 +30,12 @@ Shader "Vastcore/Water/Sample Ground"
                 float4 _CrossSection;
                 float _Kind;
                 float _Scale;
+                float4 _Wave;
+                float4 _Motion;
+                float4 _Bank;
+                float4 _Shore;
+                float _WaterTime;
+                float _WetHold;
             CBUFFER_END
 
             struct Attributes
@@ -72,6 +79,8 @@ Shader "Vastcore/Water/Sample Ground"
                     tex = float2(input.local.z, input.local.y + 0.76 * input.local.x) / _Scale;
                 float3 photo = SAMPLE_TEXTURE2D(_Surface, sampler_Surface, tex).rgb;
                 float wet = 0.0;
+                float trace = _Kind < 1.5 ? ReceivingWetness(d, p, _Wave, _Motion.xy, _Bank, _Shore, _WaterTime, _WetHold) : 0.0;
+                trace *= 0.48 + 0.52 * smoothstep(0.20, 0.68, WaterNoise(p * float2(1.25, 1.64)) * 0.65 + broad * 0.35);
                 float3 baseColor;
                 if (_Kind < 0.5)
                 {
@@ -81,7 +90,7 @@ Shader "Vastcore/Water/Sample Ground"
                     float rockFace = smoothstep(0.13, 0.54, 1.0 - n.y + WaterNoise(p * 0.075) * 0.29);
                     turf = lerp(turf * float3(0.54, 0.56, 0.43), float3(0.068, 0.057, 0.046) * (0.53 + photo * 1.53), rockFace);
                     turf *= (0.63 + 0.32 * broad + 0.12 * ground);
-                    wet = 1.0 - smoothstep(0.88, 6.4, d + broad * 1.45);
+                    wet = max(trace * 0.86, 1.0 - smoothstep(0.42, 3.8, d + broad * 1.15));
                     float3 sand = photo * lerp(float3(0.41, 0.38, 0.36), float3(0.96, 0.86, 0.72), 1.0 - wet);
                     baseColor = lerp(sand * (0.69 + 0.29 * broad), turf, terrain);
                 }
@@ -98,8 +107,11 @@ Shader "Vastcore/Water/Sample Ground"
                     float farTrack = (road - width * 0.75) * 1.7;
                     float tire = exp(-nearTrack * nearTrack) + exp(-farTrack * farTrack);
                     float wetPatch = WaterNoise(float2(p.x * 2.4, p.y * 0.39)) * 0.68 + broad * 0.32;
-                    wet = saturate(0.28 + wetPatch * 0.82 + tire * 0.16 - smoothstep(0.5, width, road) * 0.16);
-                    baseColor = photo * (0.54 + broad * 0.21) * (1.0 - tire * 0.16) * (1.0 - wet * 0.29);
+                    wet = saturate(0.19 + wetPatch * 0.52 + tire * 0.12 - smoothstep(0.5, width, road) * 0.13);
+                    baseColor = photo * (0.60 + broad * 0.24) * (1.0 - tire * 0.16) * (1.0 - wet * 0.21 - trace * 0.33);
+                    float footprint = max(length(ddx(p)), length(ddy(p)));
+                    float grit = (WaterNoise(p * 42.0) - 0.5) * (1.0 - smoothstep(0.021, 0.077, footprint));
+                    baseColor *= 1.0 + grit * 0.43;
                     baseColor = lerp(baseColor, float3(0.57, 0.51, 0.43), stripe * (0.83 + broad * 0.12));
                     baseColor = lerp(baseColor, float3(0.59, 0.39, 0.095), lane * (0.78 + broad * 0.15));
                 }
@@ -117,8 +129,10 @@ Shader "Vastcore/Water/Sample Ground"
                 float3 color = baseColor * (0.56 + 0.26 * n.y + sun.color * diffuse * 0.21);
                 float glancing = pow(1.0 - saturate(dot(n, view)), 4.0);
                 float3 reflection = reflect(-view, n);
-                float reflectivity = wet * glancing * (_Kind > 0.5 && _Kind < 1.5 ? 0.54 : 0.17);
-                color = lerp(color, WaterSky(reflection) * 0.61, reflectivity);
+                bool paving = _Kind > 0.5 && _Kind < 1.5;
+                float reflectivity = wet * glancing * (paving ? 0.25 : 0.13);
+                reflectivity += trace * pow(1.0 - saturate(dot(n, view)), 2.2) * (paving ? 0.71 : 0.24);
+                color = lerp(color, WaterSky(reflection) * (0.59 + trace * 0.16), saturate(reflectivity));
                 return half4(WaterDistanceFog(color, input.positionWS), 1.0);
             }
             ENDHLSL

@@ -14,6 +14,10 @@ namespace Vastcore.Water
         [Range(0f, 0.85f)] public float Steepness = 0.64f;
         [Range(0f, 1f)] public float Chop = 0.62f;
         [Range(0f, 1f)] public float Foam = 0.72f;
+        [Range(0f, 1f), Tooltip("How far a breaking lip pitches over its body.")]
+        public float BreakerCurl = 0.67f;
+        [Range(0f, 1f), Tooltip("Visibility of airborne droplets and mist.")]
+        public float Spray = 0.65f;
         public Color DeepWater = new Color(0.10f, 0.24f, 0.28f);
         public Color ShallowWater = new Color(0.24f, 0.44f, 0.41f);
         public Texture2D RippleNormal;

@@ -9,6 +9,7 @@ namespace Vastcore.Water
     public sealed class CoastalWaterRenderer : IDisposable
     {
         private const int SprayQuads = 2450;
+        public const int MaximumSwashObstacles = 8;
         private static readonly int WaveId = Shader.PropertyToID("_Wave");
         private static readonly int MotionId = Shader.PropertyToID("_Motion");
         private static readonly int BankId = Shader.PropertyToID("_Bank");
@@ -18,6 +19,11 @@ namespace Vastcore.Water
         private static readonly int BedTintId = Shader.PropertyToID("_BedTint");
         private static readonly int RippleId = Shader.PropertyToID("_RippleNormal");
         private static readonly int FoamMaskId = Shader.PropertyToID("_FoamMask");
+        private static readonly int BreakingId = Shader.PropertyToID("_Breaking");
+        private static readonly int FilmFoamId = Shader.PropertyToID("_FilmFoam");
+        private static readonly int WetHoldId = Shader.PropertyToID("_WetHold");
+        private static readonly int SwashShapeId = Shader.PropertyToID("_SwashShape");
+        private static readonly int SwashObstaclesId = Shader.PropertyToID("_SwashObstacles");
         private static readonly int TimeId = Shader.PropertyToID("_WaterTime");
 
         private readonly GameObject root;
@@ -26,17 +32,26 @@ namespace Vastcore.Water
         private readonly Mesh contactsMesh;
         private readonly Material waterMaterial;
         private readonly Material contactMaterial;
+        private readonly Material receivingSurface;
         private bool disposed;
 
         public CoastalWaterRenderer(Transform parent, Shoreline shore, Shader surface, Shader contact)
+            : this(parent, shore, surface, contact, null)
+        {
+        }
+
+        public CoastalWaterRenderer(Transform parent, Shoreline shore, Shader surface, Shader contact, Material receivingSurface,
+            IReadOnlyList<SwashObstacle> swashObstacles = null)
         {
             if (shore == null || shore.EndZ <= shore.StartZ) throw new ArgumentException("Shoreline needs a positive length.", nameof(shore));
             if (!surface || !contact) throw new ArgumentException("Assign both VastCore water shaders.");
 
+            this.receivingSurface = receivingSurface;
             root = new GameObject("Water");
             root.transform.SetParent(parent, false);
             waterMaterial = new Material(surface) { name = "Sea surface (instance)" };
             contactMaterial = new Material(contact) { name = "Shore contact (instance)" };
+            if (shore.Bank == BankType.Barrier) contactMaterial.EnableKeyword("COASTAL_BARRIER");
 
             surfaceMesh = MakeSurface(shore, Alongshore(shore, 0.85f));
             contactsMesh = MakeContacts(shore, Alongshore(shore, 0.43f));
@@ -52,6 +67,26 @@ namespace Vastcore.Water
             waterMaterial.SetColor(BedTintId, shore.BedTint);
             contactMaterial.SetVector(BankId, bank);
             contactMaterial.SetVector(ShoreId, section);
+            contactMaterial.SetFloat(FilmFoamId, Mathf.Clamp01(shore.FilmFoam));
+            int obstacleCount = shore.Bank == BankType.Beach ? Mathf.Min(swashObstacles?.Count ?? 0, MaximumSwashObstacles) : 0;
+            contactMaterial.SetVector(SwashShapeId, new Vector4(obstacleCount, Mathf.Clamp01(shore.SwashDeflection), 0f, 0f));
+            if (obstacleCount > 0)
+            {
+                var footprints = new Vector4[MaximumSwashObstacles];
+                for (int i = 0; i < obstacleCount; i++)
+                {
+                    SwashObstacle stone = swashObstacles[i];
+                    footprints[i] = new Vector4(stone.Centre.x, stone.Centre.y,
+                        Mathf.Max(0.04f, stone.Radii.x), Mathf.Max(0.04f, stone.Radii.y));
+                }
+                contactMaterial.SetVectorArray(SwashObstaclesId, footprints);
+            }
+            if (receivingSurface)
+            {
+                receivingSurface.SetVector(BankId, bank);
+                receivingSurface.SetVector(ShoreId, section);
+                receivingSurface.SetFloat(WetHoldId, Mathf.Clamp(shore.WetHoldSeconds, 0f, 12f));
+            }
         }
 
         public void Render(SeaState state, float seconds, bool flat = false)
@@ -67,18 +102,25 @@ namespace Vastcore.Water
                 flat ? 0f : Mathf.Clamp01(state.Foam));
             Apply(waterMaterial, state, wave, motion, seconds);
             Apply(contactMaterial, state, wave, motion, seconds);
+            contactMaterial.SetVector(BreakingId, new Vector4(Mathf.Clamp01(state.BreakerCurl), Mathf.Clamp01(state.Spray), 0f, 0f));
+            if (receivingSurface) ApplyClock(receivingSurface, wave, motion, seconds);
             bool showContacts = amplitude > 0.001f;
             if (contacts.activeSelf != showContacts) contacts.SetActive(showContacts);
         }
 
         private static void Apply(Material material, SeaState state, Vector4 wave, Vector4 motion, float seconds)
         {
-            material.SetVector(WaveId, wave);
-            material.SetVector(MotionId, motion);
+            ApplyClock(material, wave, motion, seconds);
             material.SetColor(DeepId, state.DeepWater);
             material.SetColor(ShallowId, state.ShallowWater);
             material.SetTexture(RippleId, state.RippleNormal);
             material.SetTexture(FoamMaskId, state.FoamMask);
+        }
+
+        private static void ApplyClock(Material material, Vector4 wave, Vector4 motion, float seconds)
+        {
+            material.SetVector(WaveId, wave);
+            material.SetVector(MotionId, motion);
             material.SetFloat(TimeId, seconds);
         }
 
@@ -86,7 +128,7 @@ namespace Vastcore.Water
         {
             if (disposed) return;
             disposed = true;
-            root.SetActive(false);
+            if (root) root.SetActive(false);
             Release(root);
             Release(surfaceMesh);
             Release(contactsMesh);
@@ -161,7 +203,7 @@ namespace Vastcore.Water
             var triangles = new List<int>();
             AddContactStrip(shore, along, 11, 0, vertices, uv, parts, triangles);
             if (shore.Bank == BankType.Barrier)
-                AddContactStrip(shore, along, 6, 3, vertices, uv, parts, triangles);
+                AddContactStrip(shore, along, 13, 3, vertices, uv, parts, triangles);
             AddContactStrip(shore, along, 17, 1, vertices, uv, parts, triangles);
 
             var random = new System.Random(17273);
