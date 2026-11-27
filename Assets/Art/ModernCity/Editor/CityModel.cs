@@ -47,6 +47,78 @@ namespace Vastcore.ModernCity.Editor
         internal void CollisionBox(Vector3 centre, Vector3 size) =>
             CollisionBox(centre, size, Quaternion.identity);
 
+        // Independent face, edge and corner normals leave a highlight on the chamfer.
+        internal void BeveledBox(Material material, Vector3 centre, Vector3 size, float bevel, bool solid = false)
+        {
+            Vector3 half = size * 0.5f;
+            float edge = Mathf.Min(bevel, 0.95f * Mathf.Min(half.x, Mathf.Min(half.y, half.z)));
+            Vector3 inner = half - Vector3.one * edge;
+
+            Vector3 Corner(Vector3 signs, int face)
+            {
+                Vector3 extents = inner;
+                extents[face] = half[face];
+                return centre + Vector3.Scale(signs, extents);
+            }
+
+            bool FacesOut(Vector3 a, Vector3 b, Vector3 c) =>
+                Vector3.Dot(Vector3.Cross(b - a, c - a), (a + b + c) / 3f - centre) > 0;
+
+            void Face(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
+            {
+                if (FacesOut(a, b, c))
+                    Quad(material, a, b, c, d);
+                else
+                    Quad(material, a, d, c, b);
+            }
+
+            for (int axis = 0; axis < 3; axis++)
+            for (int side = -1; side <= 1; side += 2)
+            {
+                int u = (axis + 1) % 3;
+                int v = (axis + 2) % 3;
+                Vector3 signs = -Vector3.one;
+                signs[axis] = side;
+                var a = Corner(signs, axis);
+                signs[u] = 1;
+                var b = Corner(signs, axis);
+                signs[v] = 1;
+                var c = Corner(signs, axis);
+                signs[u] = -1;
+                Face(a, b, c, Corner(signs, axis));
+            }
+
+            for (int a = 0; a < 3; a++)
+            for (int b = a + 1; b < 3; b++)
+            for (int firstSide = -1; firstSide <= 1; firstSide += 2)
+            for (int secondSide = -1; secondSide <= 1; secondSide += 2)
+            {
+                Vector3 signs = -Vector3.one;
+                signs[a] = firstSide;
+                signs[b] = secondSide;
+                var startA = Corner(signs, a);
+                var startB = Corner(signs, b);
+                signs[3 - a - b] = 1;
+                Face(startA, startB, Corner(signs, b), Corner(signs, a));
+            }
+
+            for (int x = -1; x <= 1; x += 2)
+            for (int y = -1; y <= 1; y += 2)
+            for (int z = -1; z <= 1; z += 2)
+            {
+                var signs = new Vector3(x, y, z);
+                var a = Corner(signs, 0);
+                var b = Corner(signs, 1);
+                var c = Corner(signs, 2);
+                if (FacesOut(a, b, c))
+                    Triangle(material, a, b, c);
+                else
+                    Triangle(material, a, c, b);
+            }
+            if (solid)
+                CollisionBox(centre, size);
+        }
+
         internal void CollisionBox(Vector3 centre, Vector3 size, Quaternion rotation)
         {
             colliders.Add((centre, size, rotation));

@@ -98,8 +98,8 @@ namespace Vastcore.ModernCity.Editor
                 CityRoom.Storage => "Service sign",
                 _ => "Shop sign"
             };
-            At(sign, plot.EntranceX, 2.26f, -0.173f, 180);
-            At("Floor mat", plot.EntranceX, 0.002f, 0.94f);
+            At(sign, plot.EntranceX, 2.26f, plot.RecessedStorefront ? -0.395f : -0.173f, 180);
+            At("Floor mat", plot.EntranceX, 0.002f, plot.RecessedStorefront ? 1.16f : 0.94f);
             if (furnished)
             {
                 At("Limestone planter", plot.EntranceX + 2.37f, 0, -0.56f, 180);
@@ -119,17 +119,25 @@ namespace Vastcore.ModernCity.Editor
                 var level = building.Find($"Floor {i + 1}");
                 parent = CityKitAssets.Group("Interior props", level, Vector3.zero).transform;
                 var use = i == 0 ? plot.GroundRoom : plot.UpperRoom;
-                switch (use)
+                bool storefront = i == 0 && plot.RecessedStorefront;
+                if (storefront)
                 {
-                    case CityRoom.Cafe: Cafe(plot, rng); break;
-                    case CityRoom.Retail: Retail(plot); break;
-                    case CityRoom.Reception: Reception(); break;
-                    case CityRoom.Office: Office(plot, rng); break;
-                    case CityRoom.Studio: Studio(plot, rng); break;
-                    case CityRoom.Storage: Storage(plot); break;
+                    CityCafeFurnishings.Place(kit, plot, parent, furnished);
+                }
+                else
+                {
+                    switch (use)
+                    {
+                        case CityRoom.Cafe: Cafe(plot, rng); break;
+                        case CityRoom.Retail: Retail(plot); break;
+                        case CityRoom.Reception: Reception(); break;
+                        case CityRoom.Office: Office(plot, rng); break;
+                        case CityRoom.Studio: Studio(plot, rng); break;
+                        case CityRoom.Storage: Storage(plot); break;
+                    }
                 }
                 ServiceRoom(plot);
-                FloorLighting(plot, use);
+                FloorLighting(plot, use, storefront);
             }
 
             parent = CityKitAssets.Group("Roof equipment", building.Find("Roof"), Vector3.zero).transform;
@@ -273,7 +281,7 @@ namespace Vastcore.ModernCity.Editor
             At("Service pipe bundle", 0.51f, 0, plot.Length - 3.6f, -2);
         }
 
-        private void FloorLighting(CityPlot plot, CityRoom use)
+        private void FloorLighting(CityPlot plot, CityRoom use, bool storefront)
         {
             for (float x = 2; x <= plot.Width - 2; x += 4)
             {
@@ -282,17 +290,27 @@ namespace Vastcore.ModernCity.Editor
             }
             PointLight("Front room light", Mathf.Min(5.2f, plot.Width * 0.32f), 2.28f, 2.61f, 7.6f,
                 use == CityRoom.Cafe || use == CityRoom.Reception ? new Color(1, 0.82f, 0.61f) : new Color(1, 0.94f, 0.83f));
+            if (storefront)
+            {
+                PointLight("Window merchandise", plot.Width - 2.05f, 1.84f, .76f, 3.62f,
+                    new Color(1, 0.87f, 0.71f), 0.59f);
+                PointLight("Order and wall shelves", CityCafeFurnishings.OrderX(plot), 1.94f,
+                    CityCafeFurnishings.OrderZ + 0.77f, 3.94f, new Color(1, 0.84f, 0.65f), 0.70f);
+                PointLight("Stair opening wall wash", plot.Width - 0.68f, 1.67f, plot.StairZ - 0.56f,
+                    3.3f, new Color(1, 0.82f, 0.61f), 0.47f);
+                return;
+            }
             PointLight("Landing light", plot.StairX, 2.17f, plot.StairZ - 0.63f, 5.4f, new Color(1, 0.91f, 0.77f));
         }
 
-        private void PointLight(string name, float x, float y, float z, float range, Color color)
+        private void PointLight(string name, float x, float y, float z, float range, Color color, float intensity = 0.88f)
         {
             var fixture = CityKitAssets.Group(name, parent, new Vector3(x, y, z));
             var light = fixture.AddComponent<Light>();
             light.type = LightType.Point;
             light.color = color;
             light.range = range;
-            light.intensity = 0.88f;
+            light.intensity = intensity;
             light.shadows = LightShadows.None;
         }
 

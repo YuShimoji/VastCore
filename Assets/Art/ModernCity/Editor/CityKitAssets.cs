@@ -127,7 +127,7 @@ namespace Vastcore.ModernCity.Editor
             return "Assets/Resources/MapGenerator/Textures/" + stem + "/" + stem + "_Color.jpg";
         }
 
-        private static Material Textured(string name, string colorPath, string color, float tileMetres, float gloss,
+        internal static Material Textured(string name, string colorPath, string color, float tileMetres, float gloss,
             string normalPath = null)
         {
             var albedo = AssetDatabase.LoadAssetAtPath<Texture2D>(colorPath);
@@ -149,8 +149,9 @@ namespace Vastcore.ModernCity.Editor
             return material;
         }
 
-        private static Material Make(string name, string color, float gloss, float metal = 0,
-            bool glass = false, float emission = 0, bool doubleSided = false)
+        internal static Material Make(string name, string color, float gloss, float metal = 0,
+            bool glass = false, float emission = 0, bool doubleSided = false, float glassOpacity = 0.28f,
+            bool preserveSpecular = false)
         {
             var shader = Shader.Find("Universal Render Pipeline/Lit");
             if (shader == null)
@@ -161,17 +162,22 @@ namespace Vastcore.ModernCity.Editor
                 authored.SetFloat("_Cull", (float)CullMode.Off);
             if (glass)
             {
-                tint.a = 0.28f;
+                tint.a = glassOpacity;
                 authored.SetFloat("_Surface", 1);
                 authored.SetFloat("_ZWrite", 0);
                 authored.SetFloat("_Cull", (float)CullMode.Off);
-                authored.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+                authored.SetFloat("_SrcBlend", (float)(preserveSpecular ? BlendMode.One : BlendMode.SrcAlpha));
                 authored.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
                 authored.SetFloat("_SrcBlendAlpha", (float)BlendMode.One);
                 authored.SetFloat("_DstBlendAlpha", (float)BlendMode.OneMinusSrcAlpha);
                 authored.SetOverrideTag("RenderType", "Transparent");
                 authored.SetShaderPassEnabled("ShadowCaster", false);
                 authored.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                if (preserveSpecular)
+                {
+                    authored.SetFloat("_BlendModePreserveSpecular", 1f);
+                    authored.EnableKeyword("_ALPHAPREMULTIPLY_ON");
+                }
                 authored.renderQueue = (int)RenderQueue.Transparent;
             }
 

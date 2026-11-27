@@ -16,22 +16,29 @@ namespace Vastcore.ModernCity.Editor
     {
         private const int AlternateSeed = 1031;
 
-        public static void BuildSampleFromCommandLine()
+        public static void BuildSampleFromCommandLine() => BuildSample(rebuildAllExamples: true);
+
+        public static void ExportSampleFromCommandLine() =>
+            CityKitMenu.Export(Path.Combine(OutputDirectory(), "ModernCity.unitypackage"));
+
+        private static void BuildSample(bool rebuildAllExamples)
         {
             string output = OutputDirectory();
             var timer = Stopwatch.StartNew();
             var kit = new CityKitAssets();
             var palette = new CityPalette();
             CityBuildingKit.Bake(kit, palette);
+            CityStorefrontKit.Bake(kit, palette);
             CityStreetKit.Bake(kit, palette);
             CityProps.Bake(kit, palette);
+            CityCafeFurnishings.Bake(kit, palette);
             AssetDatabase.SaveAssets();
             long baking = timer.ElapsedMilliseconds;
 
             timer.Restart();
             CityBlock sample = Create(kit, CityBlock.DefaultSeed, CityStreetPlan.CornerShops, CityDetail.Furnished);
             long assembly = timer.ElapsedMilliseconds;
-            PersistBuildings(sample);
+            PersistBuildings(sample, rebuildAllExamples);
             if (!EditorSceneManager.SaveScene(sample.Scene, CityKitAssets.SampleScene))
                 throw new IOException("Could not save the Modern City sample scene.");
             Capture(sample, output, "sample", CityBlock.DefaultSun);
@@ -103,6 +110,55 @@ namespace Vastcore.ModernCity.Editor
             CityPlayVerification.RunFromCommandLine();
         }
 
+        public static void CaptureStorefrontFromCommandLine()
+        {
+            string output = OutputDirectory();
+            var kit = new CityKitAssets();
+            var palette = new CityPalette();
+            CityStorefrontKit.Bake(kit, palette);
+            CityCafeFurnishings.Bake(kit, palette);
+            AssetDatabase.SaveAssets();
+            var scene = Create(kit, CityBlock.DefaultSeed, CityStreetPlan.CornerShops, CityDetail.Furnished);
+            Capture(scene, output, "corner-furnished-38", CityBlock.DefaultSun);
+        }
+
+        public static void BuildCafeReviewAndPlayFromCommandLine()
+        {
+            BuildSample(rebuildAllExamples: false);
+            string output = OutputDirectory();
+            var alternate = Create(new CityKitAssets(), AlternateSeed, CityStreetPlan.SideStreet, CityDetail.Furnished);
+            var shop = alternate.Plots.Single(plot => plot.RecessedStorefront);
+            var usedParts = VerifyStorefrontPrefabs(alternate.Buildings[shop]);
+            var saved = EditorSceneManager.OpenScene(CityKitAssets.SampleScene);
+            var cafe = saved.GetRootGameObjects().Select(root => root.transform.Find("Corner cafe")).First(x => x != null);
+            var cornerParts = VerifyStorefrontPrefabs(cafe);
+            if (!usedParts.SequenceEqual(cornerParts))
+                throw new InvalidOperationException("The narrow store should use the same doorway, awning and furnishings.");
+
+            alternate = Create(new CityKitAssets(), AlternateSeed, CityStreetPlan.SideStreet, CityDetail.Furnished);
+            CaptureNarrowShop(alternate, shop, output);
+            File.WriteAllLines(Path.Combine(output, "prefab-reuse.txt"),
+                new[] { $"Seed {AlternateSeed}, {shop.Name}: {shop.Width:F0} m. Corner cafe: 16 m." }.Concat(usedParts));
+            CityPlayVerification.RunFromCommandLine();
+        }
+
+        private static string[] VerifyStorefrontPrefabs(Transform building)
+        {
+            var expected = new[]
+            {
+                CityStorefrontKit.Window, CityStorefrontKit.Entry, CityStorefrontKit.Canopy, CityStorefrontKit.StairPortal,
+                CityCafeFurnishings.Order, CityCafeFurnishings.Shelves, CityCafeFurnishings.WindowDisplay
+            };
+            return expected.Select(name =>
+            {
+                var placed = building.GetComponentsInChildren<Transform>().FirstOrDefault(t => t.name == name);
+                string path = placed != null ? PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(placed.gameObject) : "";
+                if (string.IsNullOrEmpty(path))
+                    throw new InvalidOperationException($"{building.name} is missing the prefab for {name}.");
+                return path;
+            }).ToArray();
+        }
+
         private static CityBlock Create(CityKitAssets kit, int seed, CityStreetPlan street, CityDetail detail)
         {
             CityBlock block = CityBlock.Assemble(kit, seed, street);
@@ -113,11 +169,11 @@ namespace Vastcore.ModernCity.Editor
         private static int Prefabs(string category) =>
             Directory.GetFiles(CityKitAssets.Root + "/Prefabs/" + category, "*.prefab").Length;
 
-        private static void PersistBuildings(CityBlock block)
+        private static void PersistBuildings(CityBlock block, bool rebuildAllExamples)
         {
             string folder = CityKitAssets.Root + "/Prefabs/Assembled";
             CityKitAssets.Folder(folder);
-            foreach (var plot in block.Plots.Take(3))
+            foreach (var plot in block.Plots.Take(3).Where(plot => rebuildAllExamples || plot.RecessedStorefront))
             {
                 var building = block.Buildings[plot];
                 if (PrefabUtility.SaveAsPrefabAsset(building.gameObject, folder + "/" + plot.Name + ".prefab") == null)
@@ -131,6 +187,7 @@ namespace Vastcore.ModernCity.Editor
             var kit = new CityKitAssets();
             var palette = new CityPalette();
             CityBuildingKit.Bake(kit, palette);
+            CityStorefrontKit.Bake(kit, palette);
             CityStreetKit.Bake(kit, palette);
             AssetDatabase.SaveAssets();
             CityBlock block = CityBlock.Assemble(kit, CityBlock.DefaultSeed, CityStreetPlan.CornerShops);
@@ -210,6 +267,28 @@ namespace Vastcore.ModernCity.Editor
             camera.transform.SetPositionAndRotation(from, Quaternion.LookRotation(at - from, Vector3.up));
             camera.fieldOfView = fov;
             SaveFrame(camera, Path.Combine(output, name + ".png"));
+        }
+
+        private static void CaptureNarrowShop(CityBlock block, CityPlot shop, string output)
+        {
+            block.Sun.transform.rotation = Quaternion.Euler(CityBlock.DefaultSun, -36, 0);
+            var rig = new GameObject("Narrow shop review camera");
+            var camera = rig.AddComponent<Camera>();
+            rig.AddComponent<UniversalAdditionalCameraData>().antialiasing =
+                AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+            try
+            {
+                Shot(camera, output, "seed-1031-shopfront",
+                    shop.World(shop.EntranceX - 2.8f, 1.64f, -3.89f),
+                    shop.World(shop.EntranceX + 0.62f, 1.76f, 0.97f), 65);
+                Shot(camera, output, "seed-1031-shop",
+                    shop.World(shop.EntranceX, 1.64f, 1.45f),
+                    shop.World(shop.EntranceX + 0.10f, 1.49f, 5.95f), 73);
+            }
+            finally
+            {
+                Object.DestroyImmediate(rig);
+            }
         }
 
         internal static void SaveFrame(Camera camera, string path)

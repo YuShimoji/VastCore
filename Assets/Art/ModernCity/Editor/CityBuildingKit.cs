@@ -129,7 +129,7 @@ namespace Vastcore.ModernCity.Editor
                     new Vector3(width + 0.1f, 0.064f, 0.38f));
         }
 
-        private static void Pane(CityModel m, Material glass, float x, float width, float bottom, float top, float z)
+        internal static void Pane(CityModel m, Material glass, float x, float width, float bottom, float top, float z)
         {
             float left = x - width / 2;
             float right = x + width / 2;

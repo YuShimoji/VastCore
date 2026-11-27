@@ -1,0 +1,14 @@
+{
+    "sets": [
+        {
+            "files": ["Concrete034_1K-JPG_*"],
+            "origin": "downloaded",
+            "source": "https://ambientcg.com/view?id=Concrete034",
+            "license": "CC0-1.0",
+            "author": "ambientCG",
+            "retrieved": "2026-11-28",
+            "tileMetres": 1.1,
+            "notes": "1.1 by 0.55 m; fine concrete grain under modeled storefront cladding joints."
+        }
+    ]
+}

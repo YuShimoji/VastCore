@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -17,9 +19,10 @@ namespace Vastcore.ModernCity.Editor
         private static Camera camera;
         private static Transform walker;
         private static Transform cafe;
+        private static List<Vector3> route;
+        private static int waypoint;
+        private static int upperFloorCheckpoint;
         private static double started;
-        private static bool crossedDoor;
-        private static Quaternion initialYaw;
 
         public static void RunFromCommandLine()
         {
@@ -53,9 +56,19 @@ namespace Vastcore.ModernCity.Editor
                     return;
                 }
                 Application.runInBackground = true;
+                var plot = CityBlock.Design(CityBlock.DefaultSeed, CityStreetPlan.CornerShops)[0];
+                var stairs = CityVerification.MainRoute(plot, maxClimbs: 1);
+                var order = CityVerification.OrderRoute(plot);
+                route = new List<Vector3>(order);
+                route.Add(order[2]);
+                route.Add(order[1]);
+                route.AddRange(stairs.Skip(2));
+                upperFloorCheckpoint = route.Count - 1;
+                stairs.Reverse();
+                route.AddRange(stairs.Skip(1));
+                waypoint = 0;
                 pad = InputSystem.AddDevice<Gamepad>();
                 started = EditorApplication.timeSinceStartup;
-                crossedDoor = false;
                 EditorApplication.update += DrivePlayer;
             }
             else if (state == PlayModeStateChange.EnteredEditMode)
@@ -70,31 +83,43 @@ namespace Vastcore.ModernCity.Editor
             try
             {
                 Vector3 localFoot = cafe.InverseTransformPoint(walker.position);
-                if (EditorApplication.timeSinceStartup - started > 18)
+                if (EditorApplication.timeSinceStartup - started > 65)
                 {
-                    Finish($"Timed out with the player at cafe coordinates {localFoot:F3}.", 1);
+                    Finish($"Timed out at waypoint {waypoint + 1}/{route.Count}. "
+                        + $"Foot {localFoot:F3}; target {cafe.InverseTransformPoint(route[waypoint]):F3}.", 1);
                     return;
                 }
-                if (!crossedDoor && localFoot.z > 0.79f)
+                Vector3 goal = route[waypoint];
+                Vector3 remaining = goal - walker.position;
+                var flat = new Vector3(remaining.x, 0, remaining.z);
+                if (flat.magnitude < 0.115f && Mathf.Abs(remaining.y) < 0.22f)
                 {
-                    if (Mathf.Abs(localFoot.y) > 0.17f)
-                        throw new InvalidOperationException("The sample player did not remain on the entrance floor.");
-                    crossedDoor = true;
-                    initialYaw = walker.rotation;
-                }
-                if (crossedDoor && Quaternion.Angle(initialYaw, walker.rotation) > 26
-                    && Quaternion.Angle(Quaternion.identity, camera.transform.localRotation) > 5)
-                {
-                    string output = SessionState.GetString(OutputKey, "");
-                    CityReview.SaveFrame(camera, Path.Combine(output, "play-cafe.png"));
-                    Finish($"Play mode: saved scene opened from menu. Gamepad crossed the cafe entrance "
-                        + $"(foot {localFoot:F3}) and rotated yaw and pitch.", 0);
+                    if (waypoint == 1)
+                        CaptureCheckpoint("play-cafe.png");
+                    if (waypoint == upperFloorCheckpoint)
+                        CaptureCheckpoint("play-upper.png");
+                    waypoint++;
+                    if (waypoint == route.Count)
+                    {
+                        CaptureCheckpoint("play-return.png");
+                        Finish($"Play mode: real gamepad input from the saved scene. Reached the order counter, "
+                            + $"walked both stair flights to +{CityBuildingKit.Storey:F1} m, and returned to the sidewalk "
+                            + $"(foot {localFoot:F3}; {route.Count} waypoints).", 0);
+                    }
+                    else
+                    {
+                        InputSystem.QueueStateEvent(pad, new GamepadState());
+                    }
                     return;
                 }
+
+                Vector3 local = walker.InverseTransformDirection(flat);
+                float speed = Mathf.Clamp(flat.magnitude * 2.35f, 0.34f, 0.92f);
+                float yaw = Vector3.SignedAngle(walker.forward, flat, Vector3.up);
                 InputSystem.QueueStateEvent(pad, new GamepadState
                 {
-                    leftStick = crossedDoor ? Vector2.zero : Vector2.up,
-                    rightStick = crossedDoor ? new Vector2(-0.75f, 0.22f) : Vector2.zero
+                    leftStick = new Vector2(local.x, local.z).normalized * speed,
+                    rightStick = new Vector2(Mathf.Clamp(yaw / 43f, -0.68f, 0.68f), 0)
                 });
             }
             catch (Exception error)
@@ -102,6 +127,9 @@ namespace Vastcore.ModernCity.Editor
                 Finish(error.ToString(), 1);
             }
         }
+
+        private static void CaptureCheckpoint(string name) =>
+            CityReview.SaveFrame(camera, Path.Combine(SessionState.GetString(OutputKey, ""), name));
 
         private static void Finish(string message, int exitCode)
         {

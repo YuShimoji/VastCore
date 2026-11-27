@@ -36,10 +36,16 @@ namespace Vastcore.ModernCity.Editor
                     if (!Physics.Raycast(plot.World(2, 1.5f, -0.42f),
                             (plot.World(2, 1.5f, 1) - plot.World(2, 1.5f, 0)).normalized, 0.7f))
                         throw new InvalidOperationException("Missing window collision at " + plot.Name);
+                    if (plot.RecessedStorefront)
+                    {
+                        CheckSightLines(plot);
+                        WalkRoute(capsule, plot.Name + " approach to order counter", OrderRoute(plot));
+                    }
                     verticalConnections += plot.Floors - 1;
                 }
                 return $"{scene.name}: {plots.Length} buildings, {verticalConnections} stair connections. "
-                    + "Front doors, upper floors, return routes, service exits and window collisions pass.";
+                    + "Front doors, upper floors, return routes, service exits and window collisions pass. "
+                    + "Detailed storefront order approaches and sight lines pass.";
             }
             finally
             {
@@ -47,7 +53,29 @@ namespace Vastcore.ModernCity.Editor
             }
         }
 
-        private static List<Vector3> MainRoute(CityPlot plot)
+        internal static List<Vector3> OrderRoute(CityPlot plot) => new List<Vector3>
+        {
+            plot.World(plot.EntranceX, 0, -2),
+            plot.World(plot.EntranceX, 0, 3.02f),
+            plot.World(CityCafeFurnishings.OrderX(plot), 0, 3.02f),
+            plot.World(CityCafeFurnishings.OrderX(plot), 0, CityCafeFurnishings.OrderZ - 0.82f)
+        };
+
+        private static void CheckSightLines(CityPlot plot)
+        {
+            Vector3 eye = plot.World(plot.EntranceX, 1.64f, 1.13f);
+            Visible("order counter", plot.World(CityCafeFurnishings.OrderX(plot), 1.16f, CityCafeFurnishings.OrderZ));
+            Visible("stair opening", plot.World(plot.StairX, 1.53f, plot.StairZ + 0.16f));
+
+            void Visible(string name, Vector3 at)
+            {
+                Vector3 line = at - eye;
+                if (Physics.Raycast(eye, line.normalized, out var hit, line.magnitude - 0.05f))
+                    throw new InvalidOperationException($"{plot.Name}: {hit.collider.name} hides the {name} from the entrance.");
+            }
+        }
+
+        internal static List<Vector3> MainRoute(CityPlot plot, int maxClimbs = int.MaxValue)
         {
             var waypoints = new List<Vector3>();
             void At(float x, float y, float z) => waypoints.Add(plot.World(x, y, z));
@@ -57,7 +85,8 @@ namespace Vastcore.ModernCity.Editor
             At(plot.EntranceX, 0, 3.0f);
             At(leftFlight, 0, 3.0f);
             At(leftFlight, 0, plot.StairZ - 0.7f);
-            for (int f = 0; f < plot.Floors - 1; f++)
+            int climbs = Mathf.Min(plot.Floors - 1, maxClimbs);
+            for (int f = 0; f < climbs; f++)
             {
                 float y = f * CityBuildingKit.Storey;
                 float halfStorey = y + CityBuildingKit.Storey * 0.5f;
@@ -69,11 +98,11 @@ namespace Vastcore.ModernCity.Editor
                 At(rightFlight, halfStorey, plot.StairZ + CityBuildingKit.StairLanding);
                 At(rightFlight, nextStorey, plot.StairZ);
                 At(rightFlight, nextStorey, plot.StairZ - 0.7f);
-                if (f < plot.Floors - 2)
+                if (f < climbs - 1)
                     At(leftFlight, nextStorey, plot.StairZ - 0.7f);
             }
-            float floor = (plot.Floors - 1) * CityBuildingKit.Storey;
-            At(plot.Floors > 1 ? rightFlight : leftFlight, floor, 3f);
+            float floor = climbs * CityBuildingKit.Storey;
+            At(climbs > 0 ? rightFlight : leftFlight, floor, 3f);
             At(plot.EntranceX, floor, 3f);
             return waypoints;
         }
