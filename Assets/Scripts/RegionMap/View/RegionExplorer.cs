@@ -125,7 +125,11 @@ namespace Vastcore.RegionMap
 
         private Task<Generated> _task;
         private Text _footpathLabel;
+        private Button _footpathButton;
+        private Button _diveButton;
+        private Button _droneButton;
         private bool _openingFootpath;
+        private RegionWorldSession _worldSession;
         private RegionData _data;
         private ExplorationSession _session;
         private Texture2D _texture;
@@ -344,6 +348,10 @@ namespace Vastcore.RegionMap
         /// <summary>低い雲の層が一様な流れで動いた量（地図の幅を 1 とした割合。1 で一周して 0 へ戻る）。場所ごとの渦のずれは含まない。</summary>
         public Vector2 CloudDrift { get { return _cloudDrift; } }
 
+        // Explicit ground-view visibility, before the map's zoom-only fade is applied.
+        internal float WorldCloudOpacity { get { return _cloudOpacity; } }
+        internal float WorldCloudTime { get { return _cloudTime; } }
+
         /// <summary>地上を開く時の地域・選択地点と、その時点で地図が描いている雲の条件。</summary>
         public bool TryGetGroundViewInput(out RegionData region, out Vector2 position,
             out float cloudCover, out float cloudTime, out float cloudCrossSeconds)
@@ -356,10 +364,53 @@ namespace Vastcore.RegionMap
             return region != null;
         }
 
+        /// <summary>統合 2D⇄3D セッション（ダイブ遷移・ドローン・オープンワールド）。</summary>
+        public RegionWorldSession WorldSession
+        {
+            get { return _worldSession; }
+        }
+
+        internal bool CanEnterWorld
+        {
+            get { return IsReady && !_openingFootpath && _worldSession != null && _worldSession.Mode == RegionWorldMode.Overview2D; }
+        }
+
+        internal void ReportWorldMessage(string message)
+        {
+            ShowMessage(message, 4f);
+        }
+
+        internal void HideWorldMessage()
+        {
+            HideMessage();
+        }
+
+        internal void SyncWorldCursor(float mapX, float mapY)
+        {
+            MoveCursor(mapX, mapY);
+            ArriveCursor();
+            RefreshOverlay();
+        }
+
+        /// <summary>現在のカーソル地点へシームレスに 3D ダイブし、オープンワールド移動を開始する。</summary>
+        public bool DiveToOpenWorldAtCursor()
+        {
+            if (!CanEnterWorld) return false;
+            return _worldSession.StartDiveToOpenWorld(_cursorMap.x, _cursorMap.y);
+        }
+
+        /// <summary>現在のカーソル地点へドローンを派遣する。</summary>
+        public bool DispatchDroneAtCursor(bool fullScreen = true)
+        {
+            if (!CanEnterWorld) return false;
+            return _worldSession.StartDiveToDrone(_cursorMap.x, _cursorMap.y, fullScreen);
+        }
+
         /// <summary>Open the sandstone path from the exploration screen.</summary>
         public bool OpenFootpath()
         {
-            if (!IsReady || _openingFootpath) return false;
+            if (!CanEnterWorld) return false;
+            _worldSession.ClearOverviewWorld();
             StartCoroutine(LoadFootpath(_data));
             return true;
         }
@@ -367,6 +418,7 @@ namespace Vastcore.RegionMap
         private IEnumerator LoadFootpath(RegionData region)
         {
             _openingFootpath = true;
+            SetButtons(false);
             _footpathLabel.text = "通い道を開いています…";
             yield return null;
             var site = Task.Run(() => RegionFootpath.Generate(region));
@@ -386,6 +438,7 @@ namespace Vastcore.RegionMap
             finally
             {
                 _openingFootpath = false;
+                SetButtons(IsReady);
             }
         }
 
@@ -635,7 +688,9 @@ namespace Vastcore.RegionMap
                 ApplyGenerated(finished.Result);
             }
 
-            if (_data == null) return;
+            if (_data == null || _openingFootpath) return;
+            if (_cloudCrossSeconds > 0f) _cloudTime += Time.deltaTime;
+            if (_worldSession != null && _worldSession.Mode != RegionWorldMode.Overview2D) return;
             HandlePointer();
             HandleKeys();
             RefreshOverlay();
@@ -852,7 +907,8 @@ namespace Vastcore.RegionMap
         /// <summary>seed を 1 つ進めて別の地域を作る。</summary>
         public void NextRegion()
         {
-            if (_task != null) return;
+            if (_task != null || _openingFootpath || (_worldSession != null && _worldSession.Mode != RegionWorldMode.Overview2D)) return;
+            if (_worldSession != null) _worldSession.ClearOverviewWorld();
             PlaySound(RegionSoundCue.NextRegion);
             _spec.Seed++;
             BeginGenerate("別の地域を生成しています…");
@@ -1189,6 +1245,7 @@ namespace Vastcore.RegionMap
 
         private void HandleKeys()
         {
+            if (CanEnterWorld && Input.GetKeyDown(KeyCode.P)) _worldSession.ToggleDronePiP();
             if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return)) SearchAtCursor();
             if (Input.GetKeyDown(KeyCode.Escape)) CloseCard();
             if (Input.GetKeyDown(KeyCode.Home))
@@ -1385,7 +1442,6 @@ namespace Vastcore.RegionMap
 
             // 雲は 2 層を別々の風で流し、場所ごとに渦でずらす（RegionCloudFlow）。
             // 影は低い雲と同じ動きで、雲より南東（u は東、v は北が正なので +u, -v）に落ちる
-            if (_cloudCrossSeconds > 0f) _cloudTime += Time.deltaTime;
             if (_cloudOpacity > 0f)
             {
                 // 写真の縮尺の細部（×128 以上）では雲の下まで寄ったことにして、×64 から ×128 の間で雲と影を消す。
@@ -2384,6 +2440,9 @@ namespace Vastcore.RegionMap
             _styleButton.interactable = enabled;
             _cloudButton.interactable = enabled && _render.Style == RegionMapStyle.Satellite;
             _areaButton.interactable = enabled;
+            _footpathButton.interactable = enabled;
+            _diveButton.interactable = enabled;
+            _droneButton.interactable = enabled;
         }
 
         private static string SignalName(SearchSignal signal)
@@ -2487,6 +2546,10 @@ namespace Vastcore.RegionMap
             BuildDetailBadge(canvasObject.transform);
             BuildMessage(canvasObject.transform);
             BuildEndPanel(canvasObject.transform);
+
+            _worldSession = GetComponent<RegionWorldSession>();
+            if (_worldSession == null) _worldSession = gameObject.AddComponent<RegionWorldSession>();
+            _worldSession.BindExplorer(this, canvas);
         }
 
         private void BuildMap(Transform canvas)
@@ -2903,9 +2966,17 @@ namespace Vastcore.RegionMap
             Button soundButton = CreateToolButton(canvas, "音：" + SoundLevelLabel(), ref x, 124f, out _soundLabel);
             soundButton.onClick.AddListener(NextSoundLevel);
             float footpathX = Margin;
-            Button footpath = CreateToolButton(canvas, "砂岩の通い道", ref footpathX, 232f, out _footpathLabel);
-            ((RectTransform)footpath.transform).anchoredPosition += Vector2.up * (ToolHeight + 8f);
-            footpath.onClick.AddListener(() => OpenFootpath());
+            _footpathButton = CreateToolButton(canvas, "砂岩の通い道", ref footpathX, 232f, out _footpathLabel);
+            ((RectTransform)_footpathButton.transform).anchoredPosition += Vector2.up * (ToolHeight + 8f);
+            _footpathButton.onClick.AddListener(() => OpenFootpath());
+
+            _diveButton = CreateToolButton(canvas, "3Dへダイブ", ref footpathX, 168f, out _);
+            ((RectTransform)_diveButton.transform).anchoredPosition += Vector2.up * (ToolHeight + 8f);
+            _diveButton.onClick.AddListener(() => DiveToOpenWorldAtCursor());
+
+            _droneButton = CreateToolButton(canvas, "ドローン派遣", ref footpathX, 176f, out _);
+            ((RectTransform)_droneButton.transform).anchoredPosition += Vector2.up * (ToolHeight + 8f);
+            _droneButton.onClick.AddListener(() => DispatchDroneAtCursor(true));
         }
 
         private Button CreateToolButton(Transform canvas, string label, ref float x, float width, out Text text)

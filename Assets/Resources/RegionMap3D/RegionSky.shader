@@ -14,6 +14,8 @@ Shader "Vastcore/RegionSky"
         [HideInInspector] _RegionCloudMap ("Region cloud density", 2D) = "black" {}
         [HideInInspector] _RegionCloudTransform ("Region cloud map transform", Vector) = (0, 0, 0, 0)
         [HideInInspector] _RegionCloudView ("Region cloud heights and distance", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _RegionCloudNoiseOffset ("Cloud noise origin", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _RegionCloudDrift ("Cloud layer drift", Vector) = (0, 0, 0, 0)
     }
     SubShader
     {
@@ -43,15 +45,19 @@ Shader "Vastcore/RegionSky"
                 half _SunDiscStrength;
                 float4 _RegionCloudTransform; // 最小の X、Z、範囲の一辺の逆数、有効フラグ
                 float4 _RegionCloudView;      // 低い雲の底・頂、高い雲の高さ、水平の描画距離（m）
+                float4 _RegionCloudNoiseOffset;
+                float4 _RegionCloudDrift;
             CBUFFER_END
 
-            float2 RegionCloudDensity(float2 position, float mipLevel)
+            float RegionCloudDensity(float2 position, float mipLevel, bool high)
             {
                 float2 uv = (position - _RegionCloudTransform.xy) * _RegionCloudTransform.z;
                 float2 edge = min(uv, 1.0 - uv);
                 float edgeFade = smoothstep(0.0, 0.014, min(edge.x, edge.y));
                 // 上流の雲の地図は R が低い雲、G が高い雲。テクスチャの V は北へ増える。
-                return SAMPLE_TEXTURE2D_LOD(_RegionCloudMap, sampler_RegionCloudMap, saturate(uv), mipLevel).rg * edgeFade;
+                float2 drift = high ? _RegionCloudDrift.zw : _RegionCloudDrift.xy;
+                float2 density = SAMPLE_TEXTURE2D_LOD(_RegionCloudMap, sampler_RegionCloudMap, frac(uv - drift), mipLevel).rg;
+                return (high ? density.g : density.r) * edgeFade;
             }
 
             float RegionCloudNoise(float3 position)
@@ -112,7 +118,7 @@ Shader "Vastcore/RegionSky"
                 {
                     float distanceAlongRay = nearDistance + (stepIndex + offset) * stepLength;
                     float3 p = eye + view * distanceAlongRay;
-                    float footprint = RegionCloudDensity(p.xz, mipLevel).r;
+                    float footprint = RegionCloudDensity(p.xz, mipLevel, false);
                     if (footprint <= 0.01) continue;
 
                     // 地図の濃さで雲の頂の高さを変え、細部はその濃さと縁の中だけに入れる。
@@ -121,7 +127,7 @@ Shader "Vastcore/RegionSky"
                     float nearDetail = 1.0 - smoothstep(9000.0, 26000.0, distanceAlongRay);
                     float detail = 0.5;
                     if (nearDetail > 0.0)
-                        detail = RegionCloudNoise(p / 820.0);
+                        detail = RegionCloudNoise(float3(p.x + _RegionCloudNoiseOffset.x, p.y, p.z + _RegionCloudNoiseOffset.y) / 820.0);
                     localTop -= (1.0 - detail) * nearDetail * 0.18;
                     float envelope = smoothstep(0.0, 0.19, height) * (1.0 - smoothstep(localTop - 0.24, localTop, height));
                     float density = footprint * envelope * lerp(0.5, 1.0, smoothstep(0.01, 0.23, footprint));
@@ -131,7 +137,7 @@ Shader "Vastcore/RegionSky"
                     float distanceXZ = distanceAlongRay * horizontalSpeed;
                     float visibility = RegionCloudVisibility(distanceXZ);
                     float opacity = (1.0 - exp(-density * stepLength * 0.0045)) * visibility;
-                    float sunFootprint = RegionCloudDensity(p.xz + sun.xz * 620.0, mipLevel).r;
+                    float sunFootprint = RegionCloudDensity(p.xz + sun.xz * 620.0, mipLevel, false);
                     float lit = saturate(0.48 + height * 0.48 + (footprint - sunFootprint) * 1.10 - density * 0.22);
                     float3 sampleColor = lerp(shadeColor, lightColor, lit) + lightColor * forward * (0.22 + 0.30 * lit);
                     float air = max(RegionTransmittance(p), 0.45 * visibility);
@@ -153,7 +159,7 @@ Shader "Vastcore/RegionSky"
                 float visibility = RegionCloudVisibility(length(p.xz - eye.xz));
                 if (visibility <= 0.0) return 0.0;
 
-                float density = RegionCloudDensity(p.xz, 0.0).g;
+                float density = RegionCloudDensity(p.xz, 0.0, true);
                 float opacity = (1.0 - exp(-1.9 * density / max(abs(view.y), 0.28))) * visibility;
                 float3 color = lerp(horizon, float3(0.92, 0.95, 1.0), max(RegionTransmittance(p), 0.45 * visibility));
                 return float4(color * opacity, opacity);

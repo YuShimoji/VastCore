@@ -5,7 +5,9 @@
     "Vastcore.Core",
     "Vastcore.Player",
     "Vastcore.UI",
-    "Vastcore.Terrain"
+    "Vastcore.Terrain",
+    "Vastcore.RegionMap",
+    "UnityEngine.UI"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

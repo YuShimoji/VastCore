@@ -186,6 +186,31 @@ namespace Vastcore.RegionMap
         public float[] Positions;
         public float[] Normals;
 
+        internal bool TryGridHeight(float x, float z, int cellIndex, out float height)
+        {
+            int start = cellIndex * 6;
+            float[] p = Positions;
+            for (int t = start; t < start + 6; t += 3)
+            {
+                int a = 3 * Indices[t];
+                int b = 3 * Indices[t + 1];
+                int c = 3 * Indices[t + 2];
+                float dx = x - p[a], dz = z - p[a + 2];
+                float bx = p[b] - p[a], bz = p[b + 2] - p[a + 2];
+                float cx = p[c] - p[a], cz = p[c + 2] - p[a + 2];
+                float area = bx * cz - cx * bz;
+                float u = (dx * cz - cx * dz) / area;
+                float v = (bx * dz - dx * bz) / area;
+                if (u >= -0.001f && v >= -0.001f && u + v <= 1.001f)
+                {
+                    height = p[a + 1] + u * (p[b + 1] - p[a + 1]) + v * (p[c + 1] - p[a + 1]);
+                    return true;
+                }
+            }
+            height = 0f;
+            return false;
+        }
+
         /// <summary>頂点ごとの画像上の位置（0〜1）。岩は null（画像を貼らない）。</summary>
         public float[] Uv;
 
@@ -299,23 +324,7 @@ namespace Vastcore.RegionMap
             int n = InnerTerrain.Data.Resolution;
             int i = Math.Min(n - 2, (int)((x - InnerMinX) / InnerCell));
             int j = Math.Min(n - 2, (int)((z - InnerMinZ) / InnerCell));
-            int start = (i + j * (n - 1)) * 6;
-            float[] p = InnerTerrain.Positions;
-            for (int t = start; t < start + 6; t += 3)
-            {
-                int a = 3 * InnerTerrain.Indices[t];
-                int b = 3 * InnerTerrain.Indices[t + 1];
-                int c = 3 * InnerTerrain.Indices[t + 2];
-                float dx = x - p[a], dz = z - p[a + 2];
-                float bx = p[b] - p[a], bz = p[b + 2] - p[a + 2];
-                float cx = p[c] - p[a], cz = p[c + 2] - p[a + 2];
-                float area = bx * cz - cx * bz;
-                float u = (dx * cz - cx * dz) / area;
-                float v = (bx * dz - dx * bz) / area;
-                if (u >= -0.001f && v >= -0.001f && u + v <= 1.001f)
-                    return p[a + 1] + u * (p[b + 1] - p[a + 1]) + v * (p[c + 1] - p[a + 1]);
-            }
-            return HeightAt(x, z);
+            return InnerTerrain.TryGridHeight(x, z, i + j * (n - 1), out float height) ? height : HeightAt(x, z);
         }
 
         /// <summary>視点を場面の座標に直す。eye・target は長さ 3（X・Y・Z）。</summary>
