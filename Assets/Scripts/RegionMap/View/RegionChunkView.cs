@@ -174,6 +174,11 @@ namespace Vastcore.RegionMap
             material.SetColor("_RockColor", new Color(profile.CliffR, profile.CliffG, profile.CliffB, 1f));
             material.SetFloat("_BandAmount", RegionLookScene.BandAmount);
             material.EnableKeyword("REGION_BIOME_SURFACE");
+            if (profile.Biome == RegionBiome.Grassland)
+            {
+                RegionSurfaceMaterials.BindBiomeSurfaces(material, profile);
+                RegionGrasslandCover.BindGround(material, (float)data.MinEastM, (float)data.MinSouthM);
+            }
 
             var filter = go.AddComponent<MeshFilter>();
             filter.sharedMesh = mesh;

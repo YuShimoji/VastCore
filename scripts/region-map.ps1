@@ -46,6 +46,11 @@
   # view3d: DS-011 P0 Props Proof Slice の前後比較（props-near-before/after, props-crates, props-rubble）
   [switch]$PropsCompare,
   [switch]$PropsProof,
+  [switch]$GrasslandSample,
+  [switch]$GrasslandGround,
+  [string]$LookBiome = '',
+  [switch]$GrasslandCoverOff,
+  [switch]$GrasslandTiming,
   # view3d: 表面の写真素材の候補を撮り比べる（T5）。候補の一覧（JSON）を渡すと、-SunAltitudes の太陽の高さごとに場面を作り、
   #         素材なしと各候補（1 役ずつ差し替え）の固定の視点を <OutDir>/sun<高さ>/<候補>/ へ撮る（RegionSurfaceCandidates）。
   #         -CandidateViews search は役が大きく写る近い視点を探して撮り、-Strengths '1:0,2:0.5' は写真の使い方（明暗の強さ:色を混ぜる割合）を並べる
@@ -64,10 +69,12 @@
 )
 
 $ErrorActionPreference = 'Stop'
+if ($GrasslandGround -and $Mode -ne 'explore') { throw '-GrasslandGround は -Mode explore で使います。' }
 $ProjectPath = (Resolve-Path "$PSScriptRoot/..").Path
 # explore / play で探索シーンの地域を替える引数（RegionExplorerSmoke.ApplyRegionArguments が読む）
 $regionArgs = @()
 if ($PSBoundParameters.ContainsKey('Seed')) { $regionArgs += @('-regionSeed', $Seed) }
+elseif ($GrasslandGround) { $regionArgs += @('-regionSeed', '8') }
 if ($ModernDevelopment) { $regionArgs += @('-regionModern', 'true') }
 Set-Location -LiteralPath $ProjectPath
 
@@ -82,6 +89,8 @@ New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 New-Item -ItemType Directory -Force -Path 'artifacts/logs' | Out-Null
 $OutFull = (Resolve-Path $OutDir).Path
 $log = Join-Path $ProjectPath "artifacts/logs/region-map-$Mode.log"
+$grasslandCapture = $Mode -eq 'view3d' -and ($GrasslandSample -or $LookBiome -in 'grassland', 'auto')
+if ($grasslandCapture -or $GrasslandGround) { $log = Join-Path $OutFull 'capture.log' }
 
 if ($Mode -eq 'setup') {
   $kind = if ($ModernDevelopment) { 'modern' } else { 'region' }
@@ -102,13 +111,17 @@ if ($Mode -eq 'setup') {
   if ($Mode -eq 'view3d' -and $SurfaceCandidates) { $type = 'RegionSurfaceCandidates' }
   if ($Mode -eq 'view3d' -and $SurfaceCurrent) { $type = 'RegionSurfaceCandidates'; $method = 'CaptureCurrentFromCommandLine' }
   $unityArgs = @(
-    '-batchmode', '-quit',
+    '-batchmode',
     '-projectPath', "`"$ProjectPath`"",
     '-executeMethod', "Vastcore.RegionMap.Editor.$type.$method",
     '-regionOut', "`"$OutFull`"",
     '-logFile', "`"$log`""
   ) + $regionArgs
   if ($Mode -eq 'view3d') {
+    if ($GrasslandSample) { $unityArgs += @('-grasslandSample', 'true') }
+    if ($LookBiome) { $unityArgs += @('-lookBiome', $LookBiome) }
+    if ($GrasslandCoverOff) { $unityArgs += @('-grasslandCover', 'false') }
+    if ($GrasslandTiming) { $unityArgs += @('-grasslandTiming', 'true') }
     if ($LookCenter) { $unityArgs += @('-lookCenter', $LookCenter) }
     if ($AlcoveReview) { $unityArgs += @('-alcoveReview', 'true') }
     if ($LookPreset) { $unityArgs += @('-lookPreset', $LookPreset) }
@@ -160,19 +173,34 @@ if ($Mode -eq 'setup') {
     '-regionClip', $ClipSeconds,
     '-logFile', "`"$log`""
   ) + $regionArgs
+  if ($GrasslandGround) {
+    $unityArgs += @('-grasslandGround', 'true')
+    if ($LookCenter) { $unityArgs += @('-lookCenter', $LookCenter) }
+  }
 }
 
 Write-Host "Unity: $UnityPath"
 Write-Host "Log:   $log"
-$process = Start-Process -FilePath $UnityPath -ArgumentList $unityArgs -Wait -PassThru -NoNewWindow
+$startedUtc = [DateTime]::UtcNow
+$process = Start-Process -FilePath $UnityPath -ArgumentList $unityArgs -PassThru -WindowStyle Hidden
+$process.WaitForExit()
 Write-Host "exit code: $($process.ExitCode)"
 
 if (Test-Path $log) {
   if ($Mode -in 'view3d', 'view3d-cave') {
-    $shaderFailure = Select-String -LiteralPath $log -Pattern "Shader error in 'Vastcore/Region(Terrain|Plants)'" | Select-Object -First 1
+    $shaderFailure = Select-String -LiteralPath $log -Pattern "Shader error in 'Vastcore/Region(Terrain|Plants|GrasslandCover)'" | Select-Object -First 1
     if ($shaderFailure) { throw $shaderFailure.Line }
   }
   Select-String -Path $log -Pattern 'error CS\d+|\[RegionMap\]|Scripts have compiler errors' |
     Select-Object -First 30 | ForEach-Object { Write-Host $_.Line }
+}
+if (($grasslandCapture -or $GrasslandGround) -and $process.ExitCode -eq 0) {
+  $expected = if ($GrasslandGround) { @('grassland-ground.png', 'grassland-return.png') } else { @('look-far.png', 'look-mid.png', 'look-near.png') }
+  if ($GrasslandSample) { $expected += @('grassland-eye.png', 'grassland-panorama.png', 'grassland-outcrop.png', 'grassland-trail.png') }
+  $fresh = Get-ChildItem -LiteralPath $OutFull -Recurse -Filter '*.png' -File |
+    Where-Object { $_.Length -gt 0 -and $_.LastWriteTimeUtc -ge $startedUtc }
+  foreach ($name in $expected) {
+    if ($name -notin $fresh.Name) { throw "今回の撮影に $name がありません。ログ: $log" }
+  }
 }
 exit $process.ExitCode

@@ -25,6 +25,7 @@ namespace Vastcore.RegionMap
             float extent = outer.Data.SizeKm * 1000f;
             uint seed = unchecked((uint)outer.Data.Spec.Seed * 2654435761u);
             bool hasMesa = scene.Spec.Mesa > 0f;
+            bool hasMeadowCover = scene.Spec.GrasslandCover && scene.PrimaryBiome == RegionBiome.Grassland;
             for (int tier = 0; tier < 3; tier++)
             {
                 float spacing = tier == 0 ? 4.7f : tier == 1 ? 11f : 27f;
@@ -44,6 +45,7 @@ namespace Vastcore.RegionMap
                     if (!ground.Supports(x, z, out int i, out float y, out float slope)) continue;
                     RegionData data = ground.Data;
                     RegionBiome biome = data.Biome != null && i < data.Biome.Length ? data.Biome[i] : RegionBiome.Desert;
+                    if (tier == 0 && biome == RegionBiome.Grassland && hasMeadowCover) continue;
                     float rubble = data.Talus != null ? data.Talus[i] : 0f;
                     bool hasCaprock = data.Caprock != null && data.Caprock[i] != 0;
                     float shelter = 1f - ground.Terrain.Sky[i];

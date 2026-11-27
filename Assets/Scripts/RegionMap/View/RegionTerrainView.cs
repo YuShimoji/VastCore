@@ -199,6 +199,15 @@ namespace Vastcore.RegionMap
             public int[] PlantCounts;
             public RegionAlcoveView Alcove;
             public RegionPropView.Result Props;
+            internal RegionGrasslandCover GroundCover;
+            public bool HasGrasslandCover => GroundCover != null;
+
+            public void BindLookCamera(Camera camera)
+            {
+                if (GroundCover != null) GroundCover.Camera = camera;
+            }
+
+            public void SetGrasslandBladesVisible(bool visible) => GroundCover?.SetVisible(visible);
         }
 
         /// <summary>
@@ -216,8 +225,6 @@ namespace Vastcore.RegionMap
             RegionSurfaceRelief.Bind();
             // Resources/RegionMap3D/Surfaces/<役>/ に置かれた写真素材を配列へ束ねる（無ければ今の手続きの絵）
             RegionSurfaceMaterials.Bind();
-            // バイオーム別 3D 表面（Grassland 等の芝・ローム・花崗岩崖）をバインドする
-            RegionSurfaceMaterials.BindBiomeSurfaces(scene.BiomeSurface);
             // 土砂の地図は窓ごとに画像にして、その窓のマテリアルへ結び付ける（アルコーブは内側のマテリアルを写すので同じ地図を読む）
             RegionSedimentLayers.Begin();
             var root = new GameObject("Region Terrain Look");
@@ -225,6 +232,8 @@ namespace Vastcore.RegionMap
             var result = new LookResult { Root = root, Scene = scene };
             Material innerMaterial = null;
             RegionBiomeSurfaceProfile biomeProfile = scene.BiomeSurface ?? RegionBiomeSurface.ProfileFor(scene.PrimaryBiome);
+            bool meadowCover = scene.Spec.GrasslandCover && scene.Spec.Vegetation && scene.PrimaryBiome == RegionBiome.Grassland;
+            RegionPosition origin = scene.Outer.Data.DevelopmentOrigin;
             foreach (RegionLookPart part in scene.Parts())
             {
                 Texture2D texture;
@@ -258,6 +267,8 @@ namespace Vastcore.RegionMap
                 if (part.Data != null && (!hasSandstone || (scene.PrimaryBiome != RegionBiome.Desert && scene.PrimaryBiome != RegionBiome.Rock)))
                 {
                     material.EnableKeyword("REGION_BIOME_SURFACE");
+                    RegionSurfaceMaterials.BindBiomeSurfaces(material, biomeProfile);
+                    if (meadowCover) RegionGrasslandCover.BindGround(material, (float)origin.X, (float)origin.Y, scene.PropsSlice);
                 }
                 if (part == scene.InnerTerrain)
                     RegionSedimentLayers.Bind(material, part.Data, scene.InnerMinX, scene.InnerMinZ, scene.InnerCell);
@@ -284,6 +295,7 @@ namespace Vastcore.RegionMap
                 PlaceLook(point.transform, scene, viewpoint);
             }
             result.PlantCounts = RegionPlantView.AddTo(root.transform, scene, result.Alcove);
+            if (meadowCover) result.GroundCover = RegionGrasslandCover.AddTo(root.transform, scene);
             if (result.Alcove != null)
             {
                 result.Alcove.AddViewpoints(points.transform);
@@ -292,7 +304,11 @@ namespace Vastcore.RegionMap
             if (scene.PropsSlice != null)
             {
                 result.Props = RegionPropView.AddTo(root.transform, scene.PropsSlice, scene.HeightAt);
-                foreach (RegionLookViewpoint vp in new[] { scene.PropsSlice.CratesViewpoint, scene.PropsSlice.RubbleViewpoint })
+                foreach (RegionLookViewpoint vp in new[]
+                {
+                    scene.PropsSlice.GrasslandEyeViewpoint, scene.PropsSlice.GrasslandPanoramaViewpoint,
+                    scene.PropsSlice.CratesViewpoint, scene.PropsSlice.RubbleViewpoint
+                })
                 {
                     if (vp == null) continue;
                     var point = new GameObject(vp.Name);

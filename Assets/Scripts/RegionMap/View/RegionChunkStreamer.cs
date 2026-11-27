@@ -56,6 +56,19 @@ namespace Vastcore.RegionMap
         private bool _hasNormalPlan;
         private bool _hasFocus;
         private bool _materialsBound;
+        private RegionGrasslandCover _grassland;
+
+        internal void BindGrasslandCamera(Camera camera)
+        {
+            _grassland = RegionGrasslandCover.AddTo(transform, camera, this);
+        }
+
+        internal RegionChunkData NearChunkAt(double eastM, double southM)
+        {
+            if (Coordinates == null || !Coordinates.ContainsWorld(eastM, southM)) return null;
+            return _loaded.TryGetValue(ChunkAt(RegionChunkRing.Near, eastM, southM), out RegionChunkView view)
+                ? view.Data : null;
+        }
 
         public void Initialize(RegionData region, RegionWorldCoordinates coordinates, RegionChunkPlanner planner = null)
         {
@@ -370,6 +383,7 @@ namespace Vastcore.RegionMap
 
         public void ClearAll()
         {
+            if (_grassland != null) _grassland.Clear();
             if (_cts != null)
             {
                 _cts.Cancel();

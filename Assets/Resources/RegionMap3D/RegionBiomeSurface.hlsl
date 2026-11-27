@@ -14,12 +14,8 @@ TEXTURE2D(_BiomeCliffMap);
 TEXTURE2D(_BiomeCliffNormal);
 TEXTURE2D(_BiomeCliffRoughness);
 SAMPLER(sampler_BiomeGroundMap);
+#include "RegionGrasslandHabitat.hlsl"
 
-float4 _RegionBiomeParams;      // x: 1 でテクスチャ有効, y: 細部強さ, z: 法線強さ, w: 鏡面強さ
-float4 _RegionBiomeTile;        // x: 1/groundTileM, y: 1/subsoilTileM, z: 1/cliffTileM, w: 既定粗さ
-float4 _RegionBiomeCliffColor;  // rgb: 線形の崖色, a: 崖色ブレンド強さ
-
-float2 _RegionBiomeGroundBlend; // x: 写真の色の混合率, y: 地面の草と土の分布の強さ
 
 struct BiomeSurfaceExtra
 {
@@ -72,9 +68,13 @@ half3 EvaluateBiomeSurface(
     half detailFade = saturate(1.0h - (viewDistance - 45.0) / 235.0);
     half nearFade = saturate(1.0h - (viewDistance - 25.0) / 95.0);
 
-    float macro = BiomeNoise(positionWS.xz * 0.045);
-    float mid = BiomeNoise(positionWS.xz * 0.19 + float2(5.2, 1.7));
-    float micro = BiomeNoise(positionWS.xz * 1.45 - float2(2.3, 8.1));
+    bool meadow = _GrasslandSurface.z > 0.5;
+    float2 geographic = positionWS.xz;
+    if (meadow)
+        geographic = TransformWorldToObject(positionWS).xz * float2(1.0, -1.0) + _GrasslandSurface.xy;
+    float macro = BiomeNoise(geographic * 0.045);
+    float mid = BiomeNoise(geographic * 0.19 + float2(5.2, 1.7));
+    float micro = BiomeNoise(geographic * 1.45 - float2(2.3, 8.1));
 
     // x: 草地度合い, y: 湿り気, z: ローム/土露出, w: 重み
     half grassBias = saturate(biomeChannels.x * (0.75h + 0.35h * macro) * (1.0h - 0.65h * rockMask));
@@ -83,6 +83,19 @@ half3 EvaluateBiomeSurface(
     half patch = smoothstep(0.30h, 0.72h, macro * 0.55h + mid * 0.45h + (biomeChannels.y - 0.5h) * 0.24h);
     subsoilShare = max(subsoilShare, (1.0h - patch) * _RegionBiomeGroundBlend.y);
     half turfShare = 1.0h - subsoilShare;
+    half3 canopy = baseAlbedoLinear;
+    half trailWear = 0.0h;
+    if (meadow)
+    {
+        half growth = GrasslandGrowth(geographic, biomeChannels.y);
+        trailWear = _GrasslandTrail.z > 0.5 ? GrasslandTrailWear(geographic - _GrasslandTrail.xy) : 0.0h;
+        turfShare = lerp(0.49h, 0.96h, growth) * (1.0h - trailWear) * (1.0h - rockMask);
+        canopy = RegionDisplayToLinear(lerp(half3(0.43h, 0.43h, 0.32h), half3(0.32h, 0.39h, 0.25h), growth));
+        canopy *= 0.89h + 0.23h * mid;
+        // Keep the hills olive and straw coloured once the individual blades no longer resolve.
+        half coverage = (1.0h - rockMask) * (1.0h - trailWear);
+        baseAlbedoLinear = lerp(baseAlbedoLinear, canopy, coverage * lerp(0.61h, 0.95h, smoothstep(38.0, 185.0, viewDistance)));
+    }
 
     half3 resultAlbedo = baseAlbedoLinear;
     half3 cliffTint = _RegionBiomeCliffColor.a > 0.01h
@@ -94,10 +107,10 @@ half3 EvaluateBiomeSurface(
     float subsoilScale = _RegionBiomeTile.y > 0.001 ? _RegionBiomeTile.y : 0.45;
     float cliffScale = _RegionBiomeTile.z > 0.001 ? _RegionBiomeTile.z : 0.36;
 
-    float2 gUv0 = positionWS.xz * groundScale;
-    float2 gUv1 = positionWS.xz * (groundScale * 0.29) + float2(3.7, 1.9);
-    float2 sUv0 = positionWS.xz * subsoilScale;
-    float2 sUv1 = positionWS.xz * (subsoilScale * 0.31) + float2(6.1, 4.3);
+    float2 gUv0 = geographic * groundScale;
+    float2 gUv1 = geographic * (groundScale * 0.29) + float2(3.7, 1.9);
+    float2 sUv0 = geographic * subsoilScale;
+    float2 sUv1 = geographic * (subsoilScale * 0.31) + float2(6.1, 4.3);
 
     // 崖面用の簡易 biplanar UV（横軸 + 高さ）
     half3 absN = abs(normalWS);
@@ -126,6 +139,12 @@ half3 EvaluateBiomeSurface(
         half texLuma = max(dot(groundTex, half3(0.2126h, 0.7152h, 0.0722h)), 0.04h);
         half3 tintedGround = lerp(baseAlbedoLinear * (groundTex / texLuma) * 0.86h, groundTex * 0.92h, _RegionBiomeGroundBlend.x);
         tintedGround *= 0.90h + 0.18h * macro;
+        if (meadow)
+        {
+            // Cooler, darker litter under the leaves. Worn soil catches light through the open tread.
+            tintedGround *= lerp(half3(0.65h, 0.60h, 0.72h), 0.89h, trailWear);
+            tintedGround = lerp(tintedGround, canopy, 0.39h * turfShare);
+        }
 
         half3 cliffX = RegionToLinear(SAMPLE_TEXTURE2D_GRAD(_BiomeCliffMap, sampler_BiomeGroundMap, cUvX, cXDx, cXDy).rgb);
         half3 cliffZ = RegionToLinear(SAMPLE_TEXTURE2D_GRAD(_BiomeCliffMap, sampler_BiomeGroundMap, cUvZ, cZDx, cZDy).rgb);

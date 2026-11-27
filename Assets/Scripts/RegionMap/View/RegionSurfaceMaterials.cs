@@ -165,22 +165,17 @@ namespace Vastcore.RegionMap
                 if (array != null) Object.DestroyImmediate(array);
             detailArray = normalArray = hraArray = null;
             Count = 0;
-            ReleaseBiomeSurfaces();
         }
 
         /// <summary>
         /// 砂岩以外のバイオーム（Grassland / Forest / Savanna 等）用の地面・下層土・崖 PBR テクスチャをシェーダーへ渡す。
         /// テクスチャが存在しない環境でもエラーにせず、手続き色調＋崖色のみでフォールバックする。
         /// </summary>
-        public static void BindBiomeSurfaces(RegionBiomeSurfaceProfile profile)
+        public static void BindBiomeSurfaces(Material material, RegionBiomeSurfaceProfile profile)
         {
-            ReleaseBiomeSurfaces();
             if (profile == null || profile.UsesSandstonePipeline)
             {
-                Shader.SetGlobalVector("_RegionBiomeParams", Vector4.zero);
-                Shader.SetGlobalVector("_RegionBiomeTile", new Vector4(0.4f, 0.45f, 0.36f, 0.88f));
-                Shader.SetGlobalVector("_RegionBiomeCliffColor", Vector4.zero);
-                Shader.SetGlobalVector("_RegionBiomeGroundBlend", Vector4.zero);
+                material.SetVector("_RegionBiomeParams", Vector4.zero);
                 return;
             }
 
@@ -189,38 +184,33 @@ namespace Vastcore.RegionMap
             bool hasTextures = textures != null && ground.IsComplete && textures.Loam.IsComplete && textures.Cliff.IsComplete;
             if (hasTextures)
             {
-                BindBiomeTextureSet("_BiomeGround", ground);
-                BindBiomeTextureSet("_BiomeSubsoil", textures.Loam);
-                BindBiomeTextureSet("_BiomeCliff", textures.Cliff);
+                BindBiomeTextureSet(material, "_BiomeGround", ground);
+                BindBiomeTextureSet(material, "_BiomeSubsoil", textures.Loam);
+                BindBiomeTextureSet(material, "_BiomeCliff", textures.Cliff);
             }
 
             Color cliffDisplay = new Color(profile.CliffR, profile.CliffG, profile.CliffB, 1f);
             Color cliffLinear = QualitySettings.activeColorSpace == ColorSpace.Linear ? cliffDisplay.linear : cliffDisplay;
 
-            Shader.SetGlobalVector("_RegionBiomeParams", new Vector4(
+            material.SetVector("_RegionBiomeParams", new Vector4(
                 hasTextures ? 1f : 0f,
                 profile.DetailStrength,
                 profile.NormalStrength,
                 profile.SpecularStrength));
-            Shader.SetGlobalVector("_RegionBiomeTile", new Vector4(
+            material.SetVector("_RegionBiomeTile", new Vector4(
                 1f / Mathf.Max(0.1f, profile.GroundTileMetres),
                 1f / Mathf.Max(0.1f, profile.SubsoilTileMetres),
                 1f / Mathf.Max(0.1f, profile.CliffTileMetres),
                 profile.DefaultRoughness));
-            Shader.SetGlobalVector("_RegionBiomeCliffColor", new Vector4(cliffLinear.r, cliffLinear.g, cliffLinear.b, 1f));
-            Shader.SetGlobalVector("_RegionBiomeGroundBlend", new Vector4(profile.GroundPhotoColor, profile.GroundPatchStrength, 0f, 0f));
+            material.SetVector("_RegionBiomeCliffColor", new Vector4(cliffLinear.r, cliffLinear.g, cliffLinear.b, 1f));
+            material.SetVector("_RegionBiomeGroundBlend", new Vector4(profile.GroundPhotoColor, profile.GroundPatchStrength, 0f, 0f));
         }
 
-        private static void BindBiomeTextureSet(string prefix, RegionBiomeSurfaceTextures.TextureSet textures)
+        private static void BindBiomeTextureSet(Material material, string prefix, RegionBiomeSurfaceTextures.TextureSet textures)
         {
-            Shader.SetGlobalTexture(prefix + "Map", textures.Color);
-            Shader.SetGlobalTexture(prefix + "Normal", textures.Normal);
-            Shader.SetGlobalTexture(prefix + "Roughness", textures.Roughness);
-        }
-
-        public static void ReleaseBiomeSurfaces()
-        {
-            Shader.SetGlobalVector("_RegionBiomeParams", Vector4.zero);
+            material.SetTexture(prefix + "Map", textures.Color);
+            material.SetTexture(prefix + "Normal", textures.Normal);
+            material.SetTexture(prefix + "Roughness", textures.Roughness);
         }
 
         // 3 枚が揃い、正方形で、先に入った役と大きさ・形式・mip の数が同じか。問題があれば理由を返す

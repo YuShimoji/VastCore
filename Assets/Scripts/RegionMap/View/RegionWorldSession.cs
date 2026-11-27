@@ -92,6 +92,7 @@ namespace Vastcore.RegionMap
             WorldCamera.allowHDR = true;
             WorldCamera.depth = 1f;
             WorldCamera.enabled = false;
+            Streamer.BindGrasslandCamera(WorldCamera);
             UniversalAdditionalCameraData urp = WorldCamera.GetUniversalAdditionalCameraData();
             if (urp != null)
             {

@@ -518,22 +518,26 @@ namespace Vastcore.Tests.EditMode
             Assert.IsNotNull(textures);
             Assert.IsTrue(textures.Turf.IsComplete && textures.Loam.IsComplete && textures.Cliff.IsComplete);
             bool enabled = RegionSurfaceMaterials.Enabled;
+            Shader shader = Resources.Load<Shader>(RegionTerrainView.ShaderResource);
+            var grassland = new Material(shader);
+            var desert = new Material(shader);
             try
             {
                 RegionSurfaceMaterials.Enabled = true;
-                RegionSurfaceMaterials.BindBiomeSurfaces(RegionBiomeSurface.ProfileFor(RegionBiome.Grassland));
-                Assert.AreEqual(1f, Shader.GetGlobalVector("_RegionBiomeParams").x);
-                Assert.AreSame(textures.Turf.Color, Shader.GetGlobalTexture("_BiomeGroundMap"));
-                Assert.AreSame(textures.Loam.Color, Shader.GetGlobalTexture("_BiomeSubsoilMap"));
-                Assert.AreSame(textures.Cliff.Color, Shader.GetGlobalTexture("_BiomeCliffMap"));
+                RegionSurfaceMaterials.BindBiomeSurfaces(grassland, RegionBiomeSurface.ProfileFor(RegionBiome.Grassland));
+                RegionSurfaceMaterials.BindBiomeSurfaces(desert, RegionBiomeSurface.ProfileFor(RegionBiome.Desert));
+                Assert.AreEqual(1f, grassland.GetVector("_RegionBiomeParams").x);
+                Assert.AreSame(textures.Turf.Color, grassland.GetTexture("_BiomeGroundMap"));
+                Assert.AreSame(textures.Loam.Color, grassland.GetTexture("_BiomeSubsoilMap"));
+                Assert.AreSame(textures.Cliff.Color, grassland.GetTexture("_BiomeCliffMap"));
 
-                RegionSurfaceMaterials.BindBiomeSurfaces(RegionBiomeSurface.ProfileFor(RegionBiome.Desert));
-                Assert.AreEqual(0f, Shader.GetGlobalVector("_RegionBiomeParams").x);
+                Assert.AreEqual(0f, desert.GetVector("_RegionBiomeParams").x);
             }
             finally
             {
                 RegionSurfaceMaterials.Enabled = enabled;
-                RegionSurfaceMaterials.ReleaseBiomeSurfaces();
+                UnityEngine.Object.DestroyImmediate(grassland);
+                UnityEngine.Object.DestroyImmediate(desert);
             }
         }
 
@@ -576,7 +580,10 @@ namespace Vastcore.Tests.EditMode
             var plants = RegionPlantField.Build(scene);
             Assert.IsNotEmpty(plants, "Mesa=0 の Grassland でも RegionPlantField が植生を配置すること");
             CollectionAssert.AreEqual(plants, RegionPlantField.Build(scene));
-            Assert.IsTrue(plants.Exists(p => p.Kind == RegionPlantKind.Grass));
+            spec.GrasslandCover = false;
+            Assert.Greater(RegionPlantField.Build(scene).FindAll(p => p.Kind == RegionPlantKind.Grass).Count,
+                plants.FindAll(p => p.Kind == RegionPlantKind.Grass).Count);
+            spec.GrasslandCover = true;
 
             RegionTerrainView.LookResult look = RegionTerrainView.BuildLook(region, spec);
             try
@@ -586,7 +593,8 @@ namespace Vastcore.Tests.EditMode
                 Material mat = innerGo.GetComponent<MeshRenderer>().sharedMaterial;
                 Assert.IsTrue(mat.IsKeywordEnabled("REGION_BIOME_SURFACE"));
                 Assert.IsFalse(mat.IsKeywordEnabled("REGION_SANDSTONE"));
-                Assert.Greater(look.PlantCounts[0], 0);
+                Assert.IsNotNull(look.Root.transform.Find("Grassland Cover"));
+                Assert.AreEqual(1f, mat.GetVector("_GrasslandSurface").z);
             }
             finally
             {

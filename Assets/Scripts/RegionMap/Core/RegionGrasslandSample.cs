@@ -190,6 +190,11 @@ namespace Vastcore.RegionMap
 
             float relE = anchorX - scene.CenterX;
             float relS = anchorZ - scene.CenterZ;
+            slice.GrasslandEyeViewpoint = new RegionLookViewpoint(
+                "grassland-eye",
+                relE - 3.6f, relS + 14.1f, 1.55f,
+                relE + 0.8f, relS - 10f, -1.8f,
+                44f);
             slice.GrasslandPanoramaViewpoint = new RegionLookViewpoint(
                 "grassland-panorama",
                 relE - 14.5f, relS + 16.0f, 5.2f,

@@ -90,6 +90,20 @@ stop condition に触れた、またはユーザーが方向を変えた時だ�
 7. 記録：結果は該当の設計文書と `runtime-state` の行を書き換える。画像と比較ページは
    `D:\AI-Runs\VastCore\<作業名>\` に置く。
 
+### 草原での適用
+
+[USGS・NPS の植生調査](https://irma.nps.gov/DataStore/FileSource/Get/2170394?filename=tallgrassrpt_nrpc.pdf) 図9・26〜27頁の二層の草丈、斜面と湿り気、露岩の周りの草を参照する。完成図と Unity の目の高さの絵で、短い草が土を覆うか、長い葉と穂がその上に重なるか、中景の群落から遠景の色へつながるかを照合する。Mesa との共通の基準は、距離ごとに形と材質がつながり、物の足元が地面に納まること。
+
+固定サンプルは小道・露岩を含む。同じ seed・晴天の前後と、地域探索からの自動生成を PowerShell で撮る。
+
+```powershell
+.\scripts\region-map.ps1 -Mode view3d -GrasslandSample -Seed 8 -LookSky ours -GrasslandCoverOff -OutDir artifacts/region-map/grassland-before
+.\scripts\region-map.ps1 -Mode view3d -GrasslandSample -Seed 8 -LookSky ours -OutDir artifacts/region-map/grassland-after
+.\scripts\region-map.ps1 -Mode explore -GrasslandGround -Seed 8 -OutDir artifacts/region-map/grassland-ground
+```
+
+固定撮影は目の高さ・小道・露岩・俯瞰と遠中近。`-GrasslandTiming` は葉の立体描画を切り替えた描画時間も出す。別地点の固定撮影は `-LookBiome auto -LookCenter 'X,Y'` を使う。Editor の入口は `Vastcore > Region Map > Open 3D Grassland Env Sample`。探索画面では seed 8 の X37.55、Y57.86 から `3Dへダイブ` し、Esc で地図に戻る。
+
 ## Creative Exploration Pulse
 
 主要な成果単位を閉じる前に、現在の主レーンとは異なる視点から最大2件だけ提案する。

@@ -18,6 +18,21 @@ Shader "Vastcore/RegionTerrain"
         [HideInInspector] _SunFromVertex ("Keep the baked sun (overhangs)", Float) = 0
         [HideInInspector][NoScaleOffset] _SedimentMap ("Sediment maps (deposit, wash, scree, coarse)", 2D) = "black" {}
         [HideInInspector] _SedimentRect ("Sediment map placement", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _GrasslandSurface ("Grassland coordinates", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _GrasslandTrail ("Sample trail anchor", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _RegionBiomeParams ("Biome surface settings", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _RegionBiomeTile ("Biome surface scales", Vector) = (0.4, 0.45, 0.36, 0.88)
+        [HideInInspector] _RegionBiomeCliffColor ("Biome cliff tint", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _RegionBiomeGroundBlend ("Biome ground blend", Vector) = (0, 0, 0, 0)
+        [HideInInspector][NoScaleOffset] _BiomeGroundMap ("Biome turf", 2D) = "white" {}
+        [HideInInspector][NoScaleOffset] _BiomeGroundNormal ("Biome turf normals", 2D) = "bump" {}
+        [HideInInspector][NoScaleOffset] _BiomeGroundRoughness ("Biome turf roughness", 2D) = "white" {}
+        [HideInInspector][NoScaleOffset] _BiomeSubsoilMap ("Biome soil", 2D) = "white" {}
+        [HideInInspector][NoScaleOffset] _BiomeSubsoilNormal ("Biome soil normals", 2D) = "bump" {}
+        [HideInInspector][NoScaleOffset] _BiomeSubsoilRoughness ("Biome soil roughness", 2D) = "white" {}
+        [HideInInspector][NoScaleOffset] _BiomeCliffMap ("Biome cliff", 2D) = "white" {}
+        [HideInInspector][NoScaleOffset] _BiomeCliffNormal ("Biome cliff normals", 2D) = "bump" {}
+        [HideInInspector][NoScaleOffset] _BiomeCliffRoughness ("Biome cliff roughness", 2D) = "white" {}
     }
 
     SubShader
@@ -34,6 +49,7 @@ Shader "Vastcore/RegionTerrain"
             #pragma fragment Frag
             #pragma multi_compile_local_fragment _ REGION_SANDSTONE
             #pragma multi_compile_local_fragment _ REGION_BIOME_SURFACE
+            #pragma require integers : REGION_BIOME_SURFACE
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
@@ -55,6 +71,12 @@ Shader "Vastcore/RegionTerrain"
                 half _LooseRock;
                 half _SunFromVertex;
                 float4 _SedimentRect;   // 土砂の地図の置き場所（RegionSedimentLayers）。z が 0 なら地図なし
+                float4 _GrasslandSurface;
+                float4 _GrasslandTrail;
+                float4 _RegionBiomeParams;
+                float4 _RegionBiomeTile;
+                float4 _RegionBiomeCliffColor;
+                float4 _RegionBiomeGroundBlend;
             CBUFFER_END
 
             #if defined(REGION_SANDSTONE)

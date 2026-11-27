@@ -34,7 +34,7 @@ namespace Vastcore.RegionMap.Editor
                 RegionAtmosphere atmosphere = RegionAtmosphere.Create(RegionAtmosphere.Preset.ClearAfternoon);
                 var lookSpec = RegionLookSpec.CreateGrasslandSample();
                 RegionTerrainView.LookResult look = CreateLookScene(new RegionSpec { Seed = 8 }, lookSpec, atmosphere, out Camera camera);
-                RegionLookViewpoint startView = look.Scene.PropsSlice?.GrasslandPanoramaViewpoint ?? look.Scene.Spec.Mid;
+                RegionLookViewpoint startView = look.Scene.PropsSlice?.GrasslandEyeViewpoint ?? look.Scene.Spec.Mid;
                 RegionTerrainView.PlaceLook(camera.transform, look.Scene, startView);
                 camera.fieldOfView = startView.FovDegrees;
                 RegionLookSky.ApplyInteractive(camera, look, atmosphere, RegionLookSky.MixedCloudTime(look.Scene));
@@ -190,6 +190,7 @@ namespace Vastcore.RegionMap.Editor
             float ground = look.Scene.HeightAt(look.Scene.CenterX, look.Scene.CenterZ);
             // 外側の地形の対角線（6 km 四方で約 8.5 km）が収まる距離まで描く
             camera = CreateStage(lookSpec.OuterKm * 1000f * 1.5f + 1000f, atmosphere, ground);
+            look.BindLookCamera(camera);
             return look;
         }
 
@@ -284,6 +285,7 @@ namespace Vastcore.RegionMap.Editor
                     }
                 }
                 // -lookSediment 0 で土砂の場を流さない（T3 より前の地形。地図が無いので層も出ない）
+                spec.GrasslandCover = RegionMapMenu.Argument("-grasslandCover", "true") != "false";
                 string sediment = RegionMapMenu.Argument("-lookSediment", "");
                 if (sediment.Length > 0) spec.Sediment = float.Parse(sediment, CultureInfo.InvariantCulture);
                 // -lookRockGround false で岩と地面のなじませと分級（T4）を入れない（T3 までの岩の置き方と描き方）
@@ -337,6 +339,9 @@ namespace Vastcore.RegionMap.Editor
                     else if ((grasslandSample || look.Scene?.PropsSlice?.UseGrasslandVariants == true) && look.Props != null && look.Scene?.PropsSlice != null)
                         CaptureGrasslandSampleViews(camera, look, look.Scene.PropsSlice, folder);
                     CaptureLookViews(camera, look, folder);
+                    if (RegionMapMenu.Argument("-grasslandTiming", "false") == "true")
+                        CaptureToggleComparison(camera, look, folder, "grassland-blades", "草の立体描画",
+                            look.HasGrasslandCover, look.SetGrasslandBladesVisible);
                     if (RegionMapMenu.Argument("-reliefCompare", "false") == "true")
                         CaptureToggleComparison(camera, look, folder, "relief", "凹凸", RegionSurfaceRelief.Baked, RegionSurfaceRelief.SetActive);
                     if (RegionMapMenu.Argument("-surfaceCompare", "false") == "true")
@@ -515,6 +520,9 @@ namespace Vastcore.RegionMap.Editor
                     if (hdrProbe) steps.Add(() => ProbeHdr(camera, atmosphere.Name + " 太陽側"));
                 }
                 if (compare) RegionLookSky.AddComparisonSteps(steps, () => camera, () => look, () => cloudTime, folder);
+                if (RegionMapMenu.Argument("-grasslandTiming", "false") == "true")
+                    steps.Add(() => CaptureToggleComparison(camera, look, folder, "grassland-blades", "草の立体描画",
+                        look.HasGrasslandCover, look.SetGrasslandBladesVisible));
                 if (propsCompare) steps.Add(() => CapturePropsComparison(camera, look, folder));
                 else if (spec.GrasslandSample) steps.Add(() =>
                 {
@@ -762,6 +770,7 @@ namespace Vastcore.RegionMap.Editor
         {
             foreach (RegionLookViewpoint vp in new[]
             {
+                slice.GrasslandEyeViewpoint,
                 slice.GrasslandPanoramaViewpoint,
                 slice.GrasslandOutcropViewpoint,
                 slice.GrasslandTrailViewpoint
@@ -901,7 +910,7 @@ namespace Vastcore.RegionMap.Editor
             RegionLookScene scene = look.Scene;
             string shader = RegionTerrainView.ShaderResource + (Resources.Load<Shader>(RegionTerrainView.ShaderResource) != null ? "" : "（見つからず、URP の Lit で代用）");
             int rocks = scene.InnerRocks != null ? scene.InnerRocks.Rocks.Length + scene.OuterRocks.Rocks.Length : 0;
-            return "砂岩の台地の場面 中心 X" + scene.Spec.CenterMapX.ToString("F2") + " Y" + scene.Spec.CenterMapY.ToString("F2")
+            return scene.PrimaryBiome + " 中心 X" + scene.Spec.CenterMapX.ToString("F2") + " Y" + scene.Spec.CenterMapY.ToString("F2")
                 + " / 内側 " + scene.Inner.Data.SizeKm.ToString("F2") + " km（1 セル " + scene.InnerCell.ToString("F2") + " m）外側 " + scene.Outer.Data.SizeKm.ToString("F1") + " km"
                 + " / 広域の地図との標高の差の平均 内側 " + scene.Inner.MeanHeightDifference.ToString("F1") + " m 外側 " + scene.Outer.MeanHeightDifference.ToString("F1") + " m"
                 + " / 岩 " + rocks + " 個 / 草株・低木・針葉樹・谷筋の広葉樹 " + string.Join("/", look.PlantCounts) + " / シェーダー " + shader

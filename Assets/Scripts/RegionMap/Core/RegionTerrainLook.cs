@@ -64,6 +64,7 @@ namespace Vastcore.RegionMap
         public bool RockGround = true;
 
         public bool Vegetation = true;
+        public bool GrasslandCover = true;
         public bool Props = false;
         public int PropsSeedOffset = 0;
         /// <summary>

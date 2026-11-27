@@ -18,6 +18,7 @@ namespace Vastcore.RegionMap.Editor
         // 撮る手順の種類。空なら通常の手順、DevelopmentMode なら現代試作の街の拡大
         private const string ModeKey = "Vastcore.RegionMap.Smoke.Mode";
         private const string DevelopmentMode = "development";
+        private const string GrasslandGroundMode = "grassland-ground";
         private const int FramesBetweenSteps = 45;
         private const double TimeoutSeconds = 240.0;
 
@@ -56,8 +57,11 @@ namespace Vastcore.RegionMap.Editor
             Directory.CreateDirectory(output);
             RegionMapMenu.EnsureExplorerScene();
             EditorSceneManager.OpenScene(RegionMapMenu.ExplorerScenePath);
+            bool grassland = RegionMapMenu.Argument("-grasslandGround", "false") == "true";
             // 現代試作を指定した時は、街を写真の縮尺まで拡大して撮る短い手順に替える（DevelopmentStep）
-            SessionState.SetString(ModeKey, ApplyRegionArguments() ? DevelopmentMode : "");
+            bool development = ApplyRegionArguments();
+            SessionState.SetString(ModeKey, grassland ? GrasslandGroundMode : development ? DevelopmentMode : "");
+            if (grassland) RegionTerrainViewMenu.UseBuildQuality();
             SessionState.SetString(OutputKey, output);
             SessionState.SetInt(StepKey, 0);
             SessionState.SetFloat(ClipKey, float.Parse(RegionMapMenu.Argument("-regionClip", "0"), System.Globalization.CultureInfo.InvariantCulture));
@@ -208,6 +212,12 @@ namespace Vastcore.RegionMap.Editor
             }
             if (_motionWait >= MotionWaitFrames) Debug.Log("[RegionMap] 動きが " + MotionWaitFrames + " フレームで落ち着かなかった（手順 " + step + "）");
             _motionWait = 0;
+
+            if (SessionState.GetString(ModeKey, "") == GrasslandGroundMode)
+            {
+                GrasslandGroundStep(explorer, step, output);
+                return;
+            }
 
             if (_awaitDetail)
             {
@@ -766,6 +776,58 @@ namespace Vastcore.RegionMap.Editor
         {
             Debug.Log("[RegionMap] 遠征 " + line);
             ExpeditionLog.Append(line).Append('\n');
+        }
+
+        private static void GrasslandGroundStep(RegionExplorer explorer, int step, string output)
+        {
+            RegionWorldSession world = explorer.WorldSession;
+            if (EditorApplication.timeSinceStartup - _readyAt > 75.0)
+            {
+                Finish(output, "FAIL: 草原の撮影と地図への復帰が時間内に終わらなかった（手順 " + step + "）", 1);
+                return;
+            }
+            switch (step)
+            {
+                case 0:
+                    string[] point = RegionMapMenu.Argument("-lookCenter", "37.55,57.86").Split(',');
+                    if (point.Length != 2 ||
+                        !float.TryParse(point[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float x) ||
+                        !float.TryParse(point[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float y) ||
+                        explorer.Region.BiomeAtMap(x, y) != RegionBiome.Grassland)
+                    {
+                        Finish(output, "FAIL: 地図の指定地点が草原ではない", 1);
+                        return;
+                    }
+                    explorer.MoveCursor(x, y);
+                    if (!explorer.DiveToOpenWorldAtCursor())
+                    {
+                        Finish(output, "FAIL: 草原へダイブを開始できなかった", 1);
+                        return;
+                    }
+                    break;
+                case 1:
+                    if (world.Mode != RegionWorldMode.OpenWorld3D) return;
+                    Transform cover = world.Streamer.transform.Find("Grassland Cover");
+                    if (cover == null || cover.childCount == 0) return;
+                    _wait = 90;
+                    break;
+                case 2:
+                    Capture(output, "grassland-ground.png");
+                    break;
+                case 3:
+                    if (!File.Exists(Path.Combine(output, "grassland-ground.png"))) return;
+                    world.AscendToOverview2D();
+                    break;
+                case 4:
+                    if (world.Mode != RegionWorldMode.Overview2D) return;
+                    Capture(output, "grassland-return.png");
+                    break;
+                case 5:
+                    if (!File.Exists(Path.Combine(output, "grassland-return.png"))) return;
+                    Finish(output, "PASS: 地域探索から草原にダイブし、草のメッシュと地上を撮影して地図に復帰", 0);
+                    return;
+            }
+            SessionState.SetInt(StepKey, step + 1);
         }
 
         private static void Capture(string output, string name)
