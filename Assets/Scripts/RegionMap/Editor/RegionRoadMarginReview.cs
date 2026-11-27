@@ -27,24 +27,25 @@ namespace Vastcore.RegionMap.Editor
             }
         }
 
-        private static void CaptureMargins(string output, int seed, RegionRoadPreset preset)
+        private static void CaptureMargins(string output, int seed, RegionRoadPreset preset, bool refinement = false)
         {
             string folder = Path.Combine(output, $"{preset.ToString().ToLowerInvariant()}-{seed}");
             Directory.CreateDirectory(folder);
             var setup = new double[][] { new double[3], new double[3] };
             // Warm common resources once, then alternate build order.
             for (int state = 0; state < 2; state++)
-                using (Stage warmed = Build(seed, preset, false, state == 1)) { }
+                using (Stage warmed = Build(seed, preset, false, refinement || state == 1, refinement && state == 1)) { }
             for (int trial = 0; trial < 2; trial++)
             for (int i = 0; i < 2; i++)
             {
                 int state = i ^ trial;
-                using (Stage sample = BuildTimed(seed, preset, state == 1, out setup[state][trial])) { }
+                using (Stage sample = BuildTimed(seed, preset, refinement || state == 1, refinement && state == 1,
+                    out setup[state][trial])) { }
             }
-            using (Stage before = BuildTimed(seed, preset, false, out setup[0][2]))
+            using (Stage before = BuildTimed(seed, preset, refinement, false, out setup[0][2]))
             {
                 before.Root.SetActive(false);
-                using (Stage after = BuildTimed(seed, preset, true, out setup[1][2]))
+                using (Stage after = BuildTimed(seed, preset, true, refinement, out setup[1][2]))
                 {
                     after.Root.SetActive(false);
                     Stage[] stages = { before, after };
@@ -78,10 +79,10 @@ namespace Vastcore.RegionMap.Editor
             }
         }
 
-        private static Stage BuildTimed(int seed, RegionRoadPreset preset, bool detailed, out double elapsed)
+        private static Stage BuildTimed(int seed, RegionRoadPreset preset, bool detailed, bool refined, out double elapsed)
         {
             Stopwatch watch = Stopwatch.StartNew();
-            Stage stage = Build(seed, preset, false, detailed);
+            Stage stage = Build(seed, preset, false, detailed, refined);
             elapsed = watch.Elapsed.TotalMilliseconds;
             return stage;
         }

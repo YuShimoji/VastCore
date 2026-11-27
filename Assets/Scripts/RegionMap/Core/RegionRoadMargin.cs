@@ -62,6 +62,12 @@ namespace Vastcore.RegionMap
             return x / width + 0.5f * RegionNoise.Hash01(row, 9, seed) - z * 0.0011f;
         }
 
+        public static float VergeGrowth(Vector2 point, int seed)
+        {
+            float patches = RegionNoise.Fbm(point.X / 8.6f, point.Y / 11.7f, 2, (uint)seed ^ 0x6d21u);
+            return RegionNoise.Smooth(-0.32f, 0.27f, patches);
+        }
+
         public static float GradedTerrain(RegionRoadPlan plan, float x, float z)
         {
             float natural = plan.NaturalHeight(x, z);

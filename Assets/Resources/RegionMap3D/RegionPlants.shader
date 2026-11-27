@@ -5,6 +5,7 @@ Shader "Vastcore/RegionPlants"
         [MainTexture] _BaseMap ("Plant atlas", 2D) = "white" {}
         [HideInInspector] _BaseColor ("Tint", Color) = (1,1,1,1)
         _Cutoff ("Cutoff", Range(0,1)) = 0.34
+        [HideInInspector] _MeadowTurf ("Meadow turf", Float) = 0
         [HideInInspector] _Cull ("Cull", Float) = 0
     }
     SubShader
@@ -31,6 +32,7 @@ Shader "Vastcore/RegionPlants"
                 float4 _BaseMap_ST;
                 half4 _BaseColor;
                 half _Cutoff;
+                half _MeadowTurf;
             CBUFFER_END
             struct Attributes { float4 positionOS : POSITION; float2 uv : TEXCOORD0; half4 light : COLOR; };
             struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; float3 positionWS : TEXCOORD1; half2 light : TEXCOORD2; };
@@ -50,6 +52,12 @@ Shader "Vastcore/RegionPlants"
                 half4 leaf = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv);
                 clip(leaf.a - _Cutoff);
                 half3 albedo = RegionToLinear(leaf.rgb * _BaseColor.rgb);
+                if (_MeadowTurf > 0.5h)
+                {
+                    half luma = dot(albedo, half3(0.21h, 0.72h, 0.07h));
+                    half3 litBlades = RegionDisplayToLinear(half3(0.43h, 0.51h, 0.29h)) * (0.83h + 1.8h * luma);
+                    albedo = lerp(albedo * 1.15h, litBlades, 0.44h);
+                }
                 Light sun = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
                 AmbientOcclusionFactor occlusion = GetScreenSpaceAmbientOcclusion(GetNormalizedScreenSpaceUV(i.positionCS));
                 half terrainSun = RegionShadowsEnabled() ? RegionSunVisibility(i.positionWS, float3(0, 1, 0), 0.0) : i.light.x;

@@ -2,41 +2,20 @@ using System;
 using System.Collections.Generic;
 using NVector2 = System.Numerics.Vector2;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Vastcore.RegionMap
 {
     /// <summary>Plants for the farmland sample, using the existing RegionMap atlas and batched tiles.</summary>
     public static class RegionRoadLandscape
     {
-        public static void PlantFarmland(Transform parent, RegionRoadPlan plan, Func<float, float, float> height, bool detailed = false)
+        public static void PlantFarmland(Transform parent, RegionRoadPlan plan, Func<float, float, float> height,
+            bool detailed = false, bool refined = false)
         {
             var plants = new List<RegionPlant>();
             uint seed = (uint)plan.Seed ^ 0xa7c1u;
-            float treeSpacing = detailed ? 12.5f : 16f;
-            int treeLimit = (int)(2176f / treeSpacing);
-            for (int z = -treeLimit; z <= treeLimit; z++)
-            for (int x = -treeLimit; x <= treeLimit; x++)
-            {
-                var p = new NVector2(treeSpacing * (x + RegionNoise.Hash01(x, z, seed)), treeSpacing * (z + RegionNoise.Hash01(x, z, seed + 1)));
-                float valley = Math.Abs(p.X + 65f * Mathf.Sin(p.Y / 680f));
-                float patch = RegionNoise.Fbm(p.X / 155f, p.Y / 215f, 2, seed + 2);
-                float forest = detailed
-                    ? RegionNoise.Smooth(290f, 860f, valley) * RegionNoise.Smooth(-0.07f, 0.15f, patch)
-                    : RegionNoise.Smooth(430f, 1010f, valley) * RegionNoise.Smooth(-0.11f, 0.21f, patch);
-                float crest = 0.36f * RegionNoise.Smooth(1190f, 1770f, p.Y) * RegionNoise.Smooth(-0.4f, 0.24f, patch);
-                if (RegionNoise.Hash01(x, z, seed + 3) > Mathf.Max(forest, crest) * 0.91f || Reserved(plan, p)) continue;
-                RegionPlantKind kind = patch > 0.16f ? RegionPlantKind.Juniper : RegionPlantKind.RiparianTree;
-                float size = 4.2f + 7.8f * RegionNoise.Hash01(x, z, seed + 4) +
-                    (detailed ? 3.2f * RegionNoise.Smooth(0.28f, 0.73f, forest) : 0f);
-                Add(plants, height, p, kind, size, seed, x, z);
-                if (detailed && forest > 0.67f)
-                {
-                    var neighbor = p + 9f * new NVector2(RegionNoise.Hash01(x, z, seed + 5) - 0.5f,
-                        RegionNoise.Hash01(x, z, seed + 6) - 0.5f);
-                    if (!Reserved(plan, neighbor))
-                        Add(plants, height, neighbor, kind, size * 0.72f, seed + 91u, x, z);
-                }
-            }
+            if (refined) PlantWoodland(parent, plan, height, plants, seed);
+            else PlantPreviousWoodland(plan, height, plants, seed, detailed);
 
             // Hedgerows follow selected field boundaries. Short runs and gaps keep the broad fields legible.
             for (int row = -15; row <= 15; row++)
@@ -69,7 +48,122 @@ namespace Vastcore.RegionMap
                 detailed ? new Color(0.70f, 0.79f, 0.67f) : new Color(0.77f, 0.85f, 0.74f), "Farmland canopy");
         }
 
-        public static void PlantMargins(Transform parent, RegionRoadPlan plan, Func<float, float, float> height)
+        private static void PlantPreviousWoodland(RegionRoadPlan plan, Func<float, float, float> height,
+            List<RegionPlant> plants, uint seed, bool detailed)
+        {
+            float treeSpacing = detailed ? 12.5f : 16f;
+            int treeLimit = (int)(2176f / treeSpacing);
+            for (int z = -treeLimit; z <= treeLimit; z++)
+            for (int x = -treeLimit; x <= treeLimit; x++)
+            {
+                var p = new NVector2(treeSpacing * (x + RegionNoise.Hash01(x, z, seed)), treeSpacing * (z + RegionNoise.Hash01(x, z, seed + 1)));
+                float valley = Math.Abs(p.X + 65f * Mathf.Sin(p.Y / 680f));
+                float patch = RegionNoise.Fbm(p.X / 155f, p.Y / 215f, 2, seed + 2);
+                float forest = detailed
+                    ? RegionNoise.Smooth(290f, 860f, valley) * RegionNoise.Smooth(-0.07f, 0.15f, patch)
+                    : RegionNoise.Smooth(430f, 1010f, valley) * RegionNoise.Smooth(-0.11f, 0.21f, patch);
+                float crest = 0.36f * RegionNoise.Smooth(1190f, 1770f, p.Y) * RegionNoise.Smooth(-0.4f, 0.24f, patch);
+                if (RegionNoise.Hash01(x, z, seed + 3) > Mathf.Max(forest, crest) * 0.91f || Reserved(plan, p)) continue;
+                RegionPlantKind kind = patch > 0.16f ? RegionPlantKind.Juniper : RegionPlantKind.RiparianTree;
+                float size = 4.2f + 7.8f * RegionNoise.Hash01(x, z, seed + 4) +
+                    (detailed ? 3.2f * RegionNoise.Smooth(0.28f, 0.73f, forest) : 0f);
+                Add(plants, height, p, kind, size, seed, x, z);
+                if (!detailed || forest <= 0.67f) continue;
+                var neighbor = p + 9f * new NVector2(RegionNoise.Hash01(x, z, seed + 5) - 0.5f,
+                    RegionNoise.Hash01(x, z, seed + 6) - 0.5f);
+                if (!Reserved(plan, neighbor))
+                    Add(plants, height, neighbor, kind, size * 0.72f, seed + 91u, x, z);
+            }
+        }
+
+        private static void PlantWoodland(Transform parent, RegionRoadPlan plan, Func<float, float, float> height,
+            List<RegionPlant> edgeTrees, uint seed)
+        {
+            var shader = Resources.Load<Shader>("RegionMap3D/RegionWoodland");
+            if (!shader) throw new InvalidOperationException("The woodland shader is missing.");
+            var tiles = new Dictionary<Vector2Int, RegionWoodlandGeometry>();
+            const int variations = 8;
+            var crowns = new RegionWoodlandGeometry[2 * variations];
+            for (int i = 0; i < crowns.Length; i++)
+            {
+                int variation = i % variations;
+                bool distant = i >= variations;
+                var rng = new System.Random(1681 + 193 * variation);
+                var crown = new RegionWoodlandGeometry();
+                float spread = Mathf.Lerp(0.39f, 0.57f, (float)rng.NextDouble());
+                float depth = Mathf.Lerp(0.66f, 0.99f, (float)rng.NextDouble());
+                float skirt = Mathf.Lerp(0.49f, 0.66f, (float)rng.NextDouble());
+                var leaves = Color32.Lerp(new Color32(57, 83, 56, 255), new Color32(78, 101, 62, 255), variation / 7f);
+                if (!distant)
+                    crown.Tube(Vector3.down * 0.025f, Vector3.up * 0.53f, 0.027f, 0.010f, new Color32(72, 61, 45, 255), 3);
+                crown.Blob(new Vector3(-0.10f, skirt, 0.06f), new Vector3(spread, 0.30f, spread * depth), leaves, rng,
+                    distant ? 5 : 6, distant ? 2 : 3);
+                crown.Blob(new Vector3(0.16f, skirt + 0.20f, -0.10f), new Vector3(spread * 0.65f, 0.23f, spread * 0.72f), leaves, rng,
+                    distant ? 4 : 5, distant ? 2 : 3);
+                crowns[i] = crown;
+            }
+
+            const float spacing = 16f;
+            const float tileSize = 256f;
+            int count = (int)(2176f / spacing);
+            for (int z = -count; z <= count; z++)
+            for (int x = -count; x <= count; x++)
+            {
+                float east = spacing * (x + 1.48f * (RegionNoise.Hash01(x, z, seed) - 0.5f));
+                float north = spacing * (z + 1.48f * (RegionNoise.Hash01(x, z, seed + 1) - 0.5f));
+                var p = new NVector2(east + 19f * RegionNoise.Gradient(east / 83f, north / 139f, seed + 8u),
+                    north + 19f * RegionNoise.Gradient(east / 121f, north / 93f, seed + 9u));
+                float valley = Math.Abs(p.X + 65f * Mathf.Sin(p.Y / 680f));
+                if (valley < 380f && p.Y < 1300f) continue;
+                float hill = RegionNoise.Smooth(405f, 1100f, valley);
+                float largePatch = RegionNoise.Fbm(p.X / 310f, p.Y / 390f, 2, seed + 2);
+                float smallPatch = RegionNoise.Fbm(p.X / 95f, p.Y / 121f, 2, seed + 63u);
+                float cover = RegionNoise.Smooth(-0.33f, 0.35f, largePatch + 0.48f * smallPatch + 0.34f * hill);
+                float forest = hill * cover;
+                float rim = 0.41f * RegionNoise.Smooth(1300f, 2020f, p.Y) * cover;
+                if (RegionNoise.Hash01(x, z, seed + 3) > Mathf.Max(forest, rim) || Reserved(plan, p)) continue;
+                float size = Mathf.Lerp(8.6f, 21.4f, RegionNoise.Hash01(x, z, seed + 4)) + 4.1f * forest + 4.3f * smallPatch;
+                if (forest < 0.45f)
+                {
+                    Add(edgeTrees, height, p, smallPatch > 0.15f ? RegionPlantKind.Juniper : RegionPlantKind.RiparianTree,
+                        size * 0.78f, seed, x, z);
+                    continue;
+                }
+                var key = new Vector2Int(Mathf.FloorToInt(p.X / tileSize), Mathf.FloorToInt(p.Y / tileSize));
+                if (!tiles.TryGetValue(key, out RegionWoodlandGeometry tile))
+                    tiles.Add(key, tile = new RegionWoodlandGeometry());
+                int form = Mathf.Min(variations - 1, (int)(RegionNoise.Hash01(x, z, seed + 5) * variations));
+                if (valley > 1050f) form += variations;
+                tile.Append(crowns[form], new Vector3(p.X, height(p.X, p.Y), p.Y), size,
+                    360f * RegionNoise.Hash01(x, z, seed + 12));
+            }
+
+            AddGeometryTiles(parent, "Woodland crowns above the fields", shader, tiles);
+        }
+
+        private static void AddGeometryTiles(Transform parent, string groupName, Shader shader,
+            Dictionary<Vector2Int, RegionWoodlandGeometry> tiles)
+        {
+            if (tiles.Count == 0) return;
+            var material = new Material(shader) { name = groupName, hideFlags = HideFlags.DontSave };
+            var group = new GameObject(groupName);
+            group.transform.SetParent(parent, false);
+            foreach (var batch in tiles)
+            {
+                string name = $"{batch.Key.x}, {batch.Key.y}";
+                var tile = new GameObject(name);
+                tile.transform.SetParent(group.transform, false);
+                var mesh = batch.Value.ToMesh(name);
+                mesh.UploadMeshData(true);
+                tile.AddComponent<MeshFilter>().sharedMesh = mesh;
+                var renderer = tile.AddComponent<MeshRenderer>();
+                renderer.sharedMaterial = material;
+                // Vertex colour and crown normals carry the distant shade beyond the shadow range.
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+            }
+        }
+
+        public static void PlantMargins(Transform parent, RegionRoadPlan plan, Func<float, float, float> height, bool refined = false)
         {
             var grasses = new List<RegionPlant>();
             var hedges = new List<RegionPlant>();
@@ -84,7 +178,7 @@ namespace Vastcore.RegionMap
                     float run = RegionNoise.Fbm(distance / 28f, 1.1f * side, 2, seed);
                     float open = RegionNoise.Hash01(i, side, seed + 71);
                     float mix = RegionNoise.Smooth(-0.30f, 0.21f, run);
-                    for (int plant = 0; plant < 5; plant++)
+                    for (int plant = 0; !refined && plant < 5; plant++)
                     {
                         uint offsetSeed = seed + (uint)(11 * plant);
                         float which = RegionNoise.Hash01(i, side, offsetSeed + 2);
@@ -107,12 +201,121 @@ namespace Vastcore.RegionMap
                         var foot = bank + frame.Right * (side * 1.1f) + frame.Forward * 1.35f;
                         if (!RegionRoadMargin.InSite(plan.Site, foot, 2.8f))
                             Add(hedges, height, foot, RegionPlantKind.Shrub, crown * 0.67f, seed + 33, i, side);
+                        if (refined && run > 0.105f)
+                        {
+                            var skirt = bank + frame.Right * (side * 1.9f) - frame.Forward * 0.78f;
+                            if (!RegionRoadMargin.InSite(plan.Site, skirt, 2.8f))
+                                Add(hedges, height, skirt, RegionPlantKind.Shrub, crown * 0.51f, seed + 39, i, side);
+                        }
                     }
                 }
                 seed += 2783u;
             }
-            RegionPlantView.AddPlants(parent, grasses, "Short and tall verge grass", new Color(0.77f, 0.88f, 0.69f), "Roadside grass");
+            if (refined) PlantVergeCover(parent, plan, height);
+            else RegionPlantView.AddPlants(parent, grasses, "Short and tall verge grass", new Color(0.77f, 0.88f, 0.69f), "Roadside grass");
             RegionPlantView.AddPlants(parent, hedges, "Broken hedges above the ditch", new Color(0.73f, 0.83f, 0.66f), "Roadside shrubs");
+        }
+
+        private static void PlantVergeCover(Transform parent, RegionRoadPlan plan, Func<float, float, float> height)
+        {
+            var tufts = new List<RegionPlant>();
+            uint seed = (uint)plan.Seed ^ 0x4421u;
+            const float spacing = 1.02f;
+            foreach (RegionRoadCorridor road in new[] { plan.Highway, plan.Arterial })
+            {
+                for (int i = 8; i * spacing < road.Length - 9f; i++)
+                {
+                    RegionRoadStation frame = road.At((i + RegionNoise.Hash01(i, 3, seed)) * spacing);
+                    for (int side = -1; side <= 1; side += 2)
+                    for (int row = 0; row < 9; row++)
+                    {
+                        int stream = row * side + (side > 0 ? 1 : -1);
+                        float jitter = RegionNoise.Hash01(i, stream, seed + 15u);
+                        float edge = 1.45f + (row + jitter) * 0.72f;
+                        var p = MarginPoint(road, frame, side, edge, (jitter - 0.5f) * spacing * 0.9f);
+                        float growth = RegionRoadMargin.VergeGrowth(p, plan.Seed);
+                        float turf = RegionNoise.Smooth(1.55f, 4.0f, edge + 1.55f * (growth - 0.5f));
+                        float density = turf * Mathf.Lerp(0.31f, 0.98f, growth);
+                        if (RegionNoise.Hash01(i, stream, seed + 16u) > density ||
+                            RegionRoadMargin.InSite(plan.Site, p, 0.70f)) continue;
+                        AddTuft(p, i, stream, growth, turf);
+                    }
+                }
+                seed += 3613u;
+            }
+
+            RegionRoadsideSite site = plan.Site;
+            float near = RegionRoadsideSite.Setback, far = near + RegionRoadsideSite.Depth;
+            float half = RegionRoadsideSite.Frontage * 0.5f;
+            NVector2 Point(float reach, float along) => site.Entrance + site.Outward * reach + site.Station.Forward * along;
+            PlantPlotEdge(Point(near, -half), Point(far, -half), -site.Station.Forward);
+            PlantPlotEdge(Point(far, -half), Point(far, half), site.Outward);
+            PlantPlotEdge(Point(far, half), Point(near, half), site.Station.Forward);
+            PlantPlotEdge(Point(near, half), Point(near, -half), -site.Outward);
+            RegionPlantView.AddMeadowTufts(parent, tufts, height, "Grass colonies on the gravel fringe", new Color(0.95f, 1.0f, 0.84f));
+            AddVergeBlades(parent, plan, tufts);
+
+            void AddTuft(NVector2 p, int i, int stream, float growth, float turf)
+            {
+                float size = RegionNoise.Hash01(i, stream, seed + 17u);
+                float tall = growth * turf * RegionNoise.Smooth(0.55f, 1f, size);
+                float metres = Mathf.Lerp(0.16f + 0.19f * size, 0.72f, tall);
+                tufts.Add(new RegionPlant
+                {
+                    X = p.X, Y = height(p.X, p.Y), Z = -p.Y, Height = metres,
+                    Yaw = (2f * Mathf.PI) * RegionNoise.Hash01(i, stream, seed + 18u),
+                    Variant = tall < 0.14f ? (size < 0.58f ? 0 : 1) : (size < 0.90f ? 2 : 3),
+                    Sun = 1f, Sky = Mathf.Lerp(0.64f, 0.96f, turf),
+                });
+            }
+
+            void PlantPlotEdge(NVector2 from, NVector2 to, NVector2 outward)
+            {
+                seed += 797u;
+                int steps = Mathf.CeilToInt(NVector2.Distance(from, to) / 0.92f);
+                for (int i = 0; i < steps; i++)
+                for (int row = 0; row < 4; row++)
+                {
+                    float run = RegionNoise.Hash01(i, row, seed + 5u);
+                    float edge = 0.60f + 0.94f * (row + RegionNoise.Hash01(i, row, seed + 6u));
+                    var point = NVector2.Lerp(from, to, (i + run) / steps) + outward * edge;
+                    if (RegionRoadMargin.InSite(site, point, 0.58f)) continue;
+                    float growth = RegionRoadMargin.VergeGrowth(point, plan.Seed);
+                    float turf = RegionNoise.Smooth(0.45f, 2.7f, edge + growth - 0.5f);
+                    if (run < turf * Mathf.Lerp(0.36f, 0.94f, growth)) AddTuft(point, i, row, growth, turf);
+                }
+            }
+        }
+
+        private static void AddVergeBlades(Transform parent, RegionRoadPlan plan, List<RegionPlant> tufts)
+        {
+            var shader = Resources.Load<Shader>("RegionMap3D/RegionWoodland");
+            if (!shader) throw new InvalidOperationException("The woodland shader is missing.");
+            var forms = new RegionWoodlandGeometry[6];
+            for (int i = 0; i < forms.Length; i++)
+                forms[i] = RegionWoodlandGeometry.Plant(RegionWoodlandForm.Grass, 12 + i, false);
+
+            const float frontageReach = 420f;
+            const float tileSize = 64f;
+            uint salt = (uint)plan.Seed ^ 0x19d73u;
+            var tiles = new Dictionary<Vector2Int, RegionWoodlandGeometry>();
+            foreach (RegionPlant tuft in tufts)
+            {
+                float north = -tuft.Z;
+                // The adjacent field frontage gets leaf geometry; other reaches still use the tuft atlas.
+                float fade = 1f - RegionNoise.Smooth(frontageReach - 65f, frontageReach,
+                    Mathf.Abs(north - plan.Site.Entrance.Y));
+                int x = Mathf.FloorToInt(tuft.X * 10f), z = Mathf.FloorToInt(north * 10f);
+                float variation = RegionNoise.Hash01(x, z, salt);
+                if (variation > fade * 0.69f) continue;
+                var key = new Vector2Int(Mathf.FloorToInt(tuft.X / tileSize), Mathf.FloorToInt(north / tileSize));
+                if (!tiles.TryGetValue(key, out RegionWoodlandGeometry tile))
+                    tiles.Add(key, tile = new RegionWoodlandGeometry());
+                int form = (int)(forms.Length * RegionNoise.Hash01(x, z, salt + 1u));
+                float metres = Mathf.Clamp(tuft.Height * 1.14f, 0.22f, 0.64f);
+                tile.Append(forms[form], new Vector3(tuft.X, tuft.Y - 0.025f, north), metres, tuft.Yaw * Mathf.Rad2Deg);
+            }
+            AddGeometryTiles(parent, "Grass blades by the field frontage", shader, tiles);
         }
 
         private static NVector2 MarginPoint(RegionRoadCorridor road, RegionRoadStation frame, int side, float edge, float advance) =>

@@ -129,7 +129,7 @@ namespace Vastcore.RegionMap.Editor
             }
         }
 
-        private static Stage Build(int seed, RegionRoadPreset preset, bool shapeOnly, bool detailed = true)
+        private static Stage Build(int seed, RegionRoadPreset preset, bool shapeOnly, bool detailed = true, bool refineVerge = true)
         {
             var stage = new Stage { Plan = new RegionRoadPlan(seed, preset), Detailed = detailed };
             stage.Root = new GameObject($"Highway Corridor – {preset} / {seed}") { hideFlags = HideFlags.DontSaveInEditor };
@@ -145,7 +145,8 @@ namespace Vastcore.RegionMap.Editor
                 if (!shapeOnly)
                 {
                     float Ground(float x, float z) => stage.Terrain.SampleHeight(new Vector3(x, 0f, z));
-                    RegionRoadLandscape.PlantFarmland(stage.Root.transform, stage.Plan, Ground, detailed);
+                    bool refined = detailed && refineVerge;
+                    RegionRoadLandscape.PlantFarmland(stage.Root.transform, stage.Plan, Ground, detailed, refined);
                     if (detailed)
                     {
                         var shader = Resources.Load<Shader>("RegionMap3D/RegionRoadMargin");
@@ -154,8 +155,9 @@ namespace Vastcore.RegionMap.Editor
                         verge.SetTexture("_Gravel", Surface("Ground007"));
                         verge.SetTexture("_Soil", Surface("Ground009"));
                         verge.SetTexture("_Turf", Surface("Grass005"));
-                        RegionRoadGroundView.AddMargins(stage.Roads.transform, stage.Plan, Ground, verge);
-                        RegionRoadLandscape.PlantMargins(stage.Roads.transform, stage.Plan, Ground);
+                        verge.SetFloat("_Refined", refined ? 1f : 0f);
+                        RegionRoadGroundView.AddMargins(stage.Roads.transform, stage.Plan, Ground, verge, refined);
+                        RegionRoadLandscape.PlantMargins(stage.Roads.transform, stage.Plan, Ground, refined);
                         RegionRoadGroundView.AddRidges(stage.Root.transform, stage.Plan, Ground,
                             Lit(stage, "Distant hills", new Color(0.30f, 0.40f, 0.35f)));
                     }
@@ -425,6 +427,11 @@ namespace Vastcore.RegionMap.Editor
                     CaptureMarginShape(Path.Combine(output, "shape"), chosenSeed);
                     CaptureMargins(output, chosenSeed, RegionRoadPreset.Country);
                     CaptureMargins(output, unchecked(chosenSeed + 11), RegionRoadPreset.Sweeping);
+                }
+                else if (mode == "roadside-review")
+                {
+                    CaptureMargins(output, chosenSeed, RegionRoadPreset.Country, true);
+                    CaptureMargins(output, unchecked(chosenSeed + 11), RegionRoadPreset.Sweeping, true);
                 }
                 else if (mode == "draft")
                 {

@@ -154,7 +154,7 @@ namespace Vastcore.RegionMap
             AddAnchor(entrance.transform, "Plot center", site.PlotCenter, site.PlotElevation, -site.Outward);
         }
 
-        private static Vector3 EntranceEdge(RegionRoadsideSite site, float reach, float along)
+        internal static Vector3 EntranceEdge(RegionRoadsideSite site, float reach, float along)
         {
             NVector2 point = site.Entrance + site.Outward * reach + site.Station.Forward * along;
             RegionRoadStation frame = site.Road.At(site.Station.Distance + along);

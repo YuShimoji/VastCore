@@ -9,7 +9,7 @@ Last Updated: 2026-11-28
 | Project | VastCore Terrain Engine |
 | Branch | `codex/vc-development-readiness-20260711` |
 | Integrated baseline | 湖と平野の筋 `9e825c5` と3D砂岩 `a7907cb` を統合。探索画面の拡大 `63e0fc9`、写真の縮尺の細部 `b8795a6`、現代試作 `439a92b`。以前の版は [履歴](archive/REGION_MAP_EXPLORATION_HISTORY.md) |
-| Active outcome | SP-021 現代試作。2都市・都市間幹線・空港・郊外を同じ座標で広域と拡大に描く。×4 で地形、×128〜512（1画素3 m未満）で敷地・屋根・屋上設備・樹木・車・車線・影を描く。[道路パッケージ](02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md#61-平野田園の高速道路と一般幹線)は3プリセットと幹線から敷地への入口を持ち、路側・農地・尾根を2 seed の4視点で比較済み。 |
+| Active outcome | SP-021 現代試作。2都市・都市間幹線・空港・郊外を同じ座標で広域と拡大に描く。×4 で地形、×128〜512（1画素3 m未満）で敷地・屋根・屋上設備・樹木・車・車線・影を描く。[道路パッケージ](02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md#61-平野田園の高速道路と一般幹線)は3プリセットと幹線から敷地への入口を持つ。林の樹冠と砂利・短草・長草を仕上げ、2 seed の4視点で接地と負荷を比較済み。 |
 | Active artifact | `docs/02_design/REGION_MAP_EXPLORATION_SPEC.md` |
 | Next mission | 探索画面で寄って見られるようにした写真の縮尺の細部（2026-11-24 の[建物の見え方の依頼](USER_REQUEST_LEDGER.md)）に、本人の確認を受ける。開発は工場・基地と中世・未来の都市への展開（順は開発担当の整理）。 |
 | Current bottleneck | 写真の縮尺の細部は、探索画面で寄ってから絵が出るまで 10〜36 秒かかり、窓は画面より粗く輪郭がやわらかい（内訳と条件は SP-021 8節）。街区は 570 m の格子、建物の枠は1街区に最大9個のままで、細部はその枠の中を展開している（曲がった道・不整形の敷地は無い）。空港・郊外の建物は従来の面のまま。他時代・施設への展開が残る。地域の規模と採用解像度、平野の筋を減らすしきい値は未決（SP-021 8節・9節）。巨大構造物は形の画像の道具待ち（`01M821KYJMRRFKP1VY1F6Q1HS2`）。 |
