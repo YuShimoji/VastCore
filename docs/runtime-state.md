@@ -76,6 +76,8 @@ Last Updated: 2026-11-28
    - Props の差し替え・比較撮影とモデル71個をcommit（本人選択はFBX、[DS-011 7節](02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md)）。岩色は本人選択で赤い砂岩に寄せた（画面 r/g 1.16〜1.24→1.40〜1.46、地形1.64〜1.68。瓦礫の小片は淡色。8.1節）。P0のFBXは15/17。海岸・洞窟は [DS-014](02_design/NATURAL_ENVIRONMENT_PACKAGES_SPEC.md)。
 - 草原（2026-11-28）：細葉と株の投影を重ね、株の立体を斜面の中遠景まで描く。固定配置・別地点を撮影し、探索の往復を確認。[完成図・Unity・描画方式の比較](<D:/AI-Runs/VastCore/review-20261127-grassland-multibiome/ground-cover/tussocks/index.html>)・[素材拡充と再撮影](OPERATOR_WORKFLOW.md#草原での適用)。4系統のカタログ登録・美術採否は本人。
 
+- [水環境 DS-013](02_design/COASTAL_WATER_SPEC.md) の Unity サンプル。
+
 ## External Pulse And Remote Resume
 
 [#48 Project Pulse](https://github.com/YuShimoji/VastCore/issues/48) は `.github/workflows/project-pulse.yml` による本ファイルの外部投影。`PROJECT_PULSE_BRANCH` はこのreadiness branch。Draft [PR #49](https://github.com/YuShimoji/VastCore/pull/49) は祖先 `f145df6` のworkflow変更。GitHubのdefault branchは歴史的な `master` のまま。

@@ -250,3 +250,13 @@ Heightmap integration is injected through `IHeightmapFieldFactory` to avoid cycl
 
 - `Vastcore.Tests.EditMode` に参照を追加した（`TexturePipelineTests.cs` が `Vastcore.RegionMap` の `RegionSurfaceMaps` と規則の一致を確かめるため）。
 - `Shared/` は UnityEngine を参照しない。同じソースを `tools/TextureAudit`（dotnet コンソール）からもコンパイルするので、ここへ UnityEngine・UnityEditor の型を入れない。
+
+## 9. 水環境（DS-013）
+
+| Assembly | Directory | autoReferenced | References |
+|----------|-----------|----------------|------------|
+| `Vastcore.Water` | `Packages/com.vastcore.water/Runtime/` | false | UnityEngine。シェーダーは URP 17.3 の HLSL を使用 |
+| `Vastcore.CoastalWater` | `Assets/Environments/CoastalWater/` | false | `Vastcore.Water`, `Unity.InputSystem` |
+| `Vastcore.CoastalWater.Editor` | `Assets/Environments/CoastalWater/Editor/` | false | `Vastcore.Water`, `Vastcore.CoastalWater`, `Unity.RenderPipelines.Core.Runtime`, `Unity.RenderPipelines.Universal.Runtime` |
+
+岸の断面と海況は水パッケージへ渡す。浜・道路・撮影は上位の環境サンプルが持つ。地域探索への接続点も上位に置く。

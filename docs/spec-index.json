@@ -367,5 +367,14 @@
     "cat": "system",
     "file": "docs/02_design/NATURAL_ENVIRONMENT_PACKAGES_SPEC.md",
     "summary": "硬岩の岬と入り江、崩落岩と二層の石橋が最初の試作。海岸の横展開は岩礁の湾、砂浜と砂丘の順。地形、探索経路、Props、Playerの受入を管理"
+  },
+  {
+    "id": "DS-013",
+    "title": "Coastal Water Package and Environments",
+    "status": "partial",
+    "pct": 75,
+    "cat": "system",
+    "file": "docs/02_design/COASTAL_WATER_SPEC.md",
+    "summary": "共通の海況と岸の断面から水面・浜の遡上・護岸の越波を描く。浜と海岸道路のシーン、海況3種、水中の雛形"
   }
 ]

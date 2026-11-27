@@ -331,6 +331,14 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.vastcore.water": {
+      "version": "file:com.vastcore.water",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.render-pipelines.universal": "17.3.0"
+      }
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,

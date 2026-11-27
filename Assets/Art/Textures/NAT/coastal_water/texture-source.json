@@ -1,0 +1,20 @@
+{
+  "sets": [
+    {
+      "files": ["CoastalFoam_Mask.png"],
+      "origin": "generated",
+      "generator": "scripts/bake-coastal-water.py",
+      "license": "project",
+      "tileMetres": 2.4,
+      "notes": "周期化した泡の密度。遡上、水膜、砕波の縁、飛沫に共用。線形の単一チャンネル。"
+    },
+    {
+      "files": ["CoastalRipples_Normal.png"],
+      "origin": "generated",
+      "generator": "scripts/bake-coastal-water.py",
+      "license": "project",
+      "tileMetres": 2.8,
+      "notes": "複数方向の周期波から生成した微細水面の接空間法線。"
+    }
+  ]
+}

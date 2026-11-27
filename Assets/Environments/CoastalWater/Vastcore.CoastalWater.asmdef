@@ -1,0 +1,6 @@
+{
+  "name": "Vastcore.CoastalWater",
+  "rootNamespace": "Vastcore.CoastalWater",
+  "references": ["Vastcore.Water", "Unity.InputSystem"],
+  "autoReferenced": false
+}

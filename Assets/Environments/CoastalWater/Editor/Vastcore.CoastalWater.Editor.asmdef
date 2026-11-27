@@ -1,0 +1,10 @@
+{
+  "name": "Vastcore.CoastalWater.Editor",
+  "rootNamespace": "Vastcore.CoastalWater.Editor",
+  "references": [
+    "Vastcore.CoastalWater", "Vastcore.Water",
+    "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"
+  ],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false
+}
