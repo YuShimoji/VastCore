@@ -395,7 +395,7 @@ namespace Vastcore.Weather
             Mathf.Lerp(low, high, (float)random.NextDouble());
         private static Color Tone(int rgb) => WeatherSamplePresets.Tone(rgb);
 
-        private sealed class Blocks
+        internal sealed class Blocks
         {
             private readonly List<Vector3> positions = new List<Vector3>();
             private readonly List<Color> colors = new List<Color>();

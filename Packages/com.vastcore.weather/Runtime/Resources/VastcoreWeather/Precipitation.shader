@@ -29,6 +29,7 @@ Shader "Vastcore/Weather/Precipitation"
                 float3 _RainObserver;
                 float _WeatherTime;
                 float _RainIntensity;
+                float _DropVisibility;
                 float _WeatherSeed;
                 float _RenderBolt;
             CBUFFER_END
@@ -75,7 +76,7 @@ Shader "Vastcore/Weather/Precipitation"
                 p += motion * (input.uv.y - 0.5) * lerp(0.037, 0.079, variant) + side * input.uv.x * width;
                 output.positionCS = TransformWorldToHClip(p);
                 output.opacity = smoothstep(0.55, 2.0, distanceToEye) * (1.0 - smoothstep(12.0, 18.0, distanceToEye)) *
-                    smoothstep(variant * 0.82, variant * 0.82 + 0.13, strength) * 0.52;
+                    smoothstep(variant * 0.82, variant * 0.82 + 0.13, strength) * 0.52 * _DropVisibility;
                 return output;
             }
 

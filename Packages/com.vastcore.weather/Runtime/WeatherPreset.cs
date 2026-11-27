@@ -37,6 +37,7 @@ namespace Vastcore.Weather
         public Vector2 RadiusMeters = new Vector2(300f, 400f);
         public Vector3 DriftMetersPerSecond;
         public Vector2 WindMetersPerSecond = new Vector2(2f, 0f);
+        [Range(0f, 1f)] public float DropVisibility = 1f;
         [Min(1f)] public float CloudBaseMeters = 1000f;
         [Min(0f)] public float StartSeconds;
         [Min(0f)] public float FadeInSeconds = 5f;

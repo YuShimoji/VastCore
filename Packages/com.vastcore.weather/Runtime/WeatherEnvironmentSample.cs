@@ -10,6 +10,7 @@ namespace Vastcore.Weather
         [SerializeField] private WeatherSampleSite site;
         [SerializeField] private int seed = 17;
         [SerializeField] private bool showControls = true;
+        [SerializeField] private WeatherStreetAssets streetAssets;
 
         private GameObject world;
         private WeatherField field;
@@ -17,6 +18,7 @@ namespace Vastcore.Weather
         private WeatherPreset clear;
         private Light sun;
         private WeatherSampleGeometry geometry;
+        private WeatherStreetScene street;
         private Material sky;
         private Material previousSky;
         private float seconds;
@@ -38,6 +40,13 @@ namespace Vastcore.Weather
         public int ViewIndex { get; private set; }
         public float FeaturedTime => site == WeatherSampleSite.StreetThunderstorm ? 42f : 12f;
         public bool ShowControls { get => showControls; set => showControls = value; }
+        public bool HasDetailedStreet => street != null;
+        public bool HasPuddleReflection => street != null && street.ReflectionAvailable;
+
+        public void SetStreetAssets(WeatherStreetAssets assets) => streetAssets = assets;
+
+        public void PrepareStreetReflection(bool enabled = true, bool forceRefresh = false) =>
+            street?.RenderReflection(SampleCamera, enabled, forceRefresh);
 
         private void OnEnable()
         {
@@ -74,6 +83,7 @@ namespace Vastcore.Weather
             sun = light.GetComponent<Light>();
             sun.type = LightType.Directional;
             sun.shadows = LightShadows.None;
+            bool detailedStreet = site == WeatherSampleSite.StreetThunderstorm && streetAssets != null && streetAssets.Available;
 
             sky = WeatherField.NewMaterial("SampleSky");
             Color zenith;
@@ -105,6 +115,19 @@ namespace Vastcore.Weather
                     altitude = 42f;
                     break;
             }
+            if (detailedStreet)
+            {
+                zenith = Tone(0x72838C);
+                haze = Tone(0xA1ACAD);
+                sunlight = Tone(0xF0ECDD);
+                sun.intensity = 1.08f;
+                sun.shadows = LightShadows.Soft;
+                sun.shadowStrength = 0.58f;
+                preset.AerialHaze = haze;
+                preset.Rain.CurtainColor = Tone(0x89969A);
+                preset.Rain.CurtainExtinctionPerKilometer = 1.85f;
+                preset.Rain.DropVisibility = 0.62f;
+            }
             sun.transform.rotation = Quaternion.Euler(altitude, 47f, 0f);
             sun.color = sunlight;
             Vector3 toSun = -sun.transform.forward;
@@ -121,11 +144,18 @@ namespace Vastcore.Weather
             camera.fieldOfView = 47f;
 
             var fieldObject = new GameObject("Weather Field") { hideFlags = HideFlags.DontSave };
+            if (detailedStreet)
+                fieldObject.layer = 2; // Isolate weather particles from the sample's reflection camera.
             fieldObject.transform.SetParent(world.transform, false);
             field = fieldObject.AddComponent<WeatherField>();
             field.Configure(preset, camera, sun, seed, false);
-            geometry = new WeatherSampleGeometry(world.transform, field, haze, sunlight, toSun, preset.HazePerKilometer, seed);
-            geometry.Build(site);
+            if (detailedStreet)
+                street = new WeatherStreetScene(world.transform, field, streetAssets, haze, seed);
+            else
+            {
+                geometry = new WeatherSampleGeometry(world.transform, field, haze, sunlight, toSun, preset.HazePerKilometer, seed);
+                geometry.Build(site);
+            }
             PlaceView(0);
             SetFrame(FeaturedTime, false);
         }
@@ -192,7 +222,8 @@ namespace Vastcore.Weather
             if (field.Preset != active)
                 field.Configure(active, SampleCamera, sun, seed, false);
             field.SetFrame(seconds);
-            geometry.UpdateWetness();
+            geometry?.UpdateWetness();
+            street?.RefreshWeather();
         }
 
         private void Update()
@@ -201,6 +232,12 @@ namespace Vastcore.Weather
                 Open(site, seed);
             else if (playing && Application.IsPlaying(gameObject))
                 SetFrame(Mathf.Repeat(seconds + Time.deltaTime, 110f), clearSky);
+        }
+
+        private void LateUpdate()
+        {
+            if (Application.IsPlaying(gameObject))
+                PrepareStreetReflection();
         }
 
         private void OnGUI()
@@ -243,12 +280,14 @@ namespace Vastcore.Weather
 
         private void Release()
         {
+            geometry?.Dispose();
+            street?.Dispose();
             WeatherField.Dispose(world);
             WeatherField.Dispose(preset);
             WeatherField.Dispose(clear);
             WeatherField.Dispose(sky);
-            geometry?.Dispose();
             geometry = null;
+            street = null;
             world = null;
         }
 

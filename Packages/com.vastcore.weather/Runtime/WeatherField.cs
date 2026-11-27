@@ -183,6 +183,7 @@ namespace Vastcore.Weather
                 properties.SetVector("_RainObserver", eye);
                 properties.SetFloat("_WeatherTime", weatherSeconds);
                 properties.SetFloat("_RainIntensity", strength);
+                properties.SetFloat("_DropVisibility", Mathf.Clamp01(rain.DropVisibility));
                 properties.SetFloat("_WeatherSeed", seed & 4095);
                 streaks.SetPropertyBlock(properties);
             }

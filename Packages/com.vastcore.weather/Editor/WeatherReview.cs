@@ -47,13 +47,156 @@ namespace Vastcore.Weather.Editor
         private static bool CanSaveCurrentPreset() =>
             !EditorApplication.isPlaying && UnityEngine.Object.FindFirstObjectByType<WeatherEnvironmentSample>();
 
-        private static WeatherEnvironmentSample CreateScene()
+        private static WeatherEnvironmentSample CreateScene(bool detailedStreet = true)
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var viewer = new GameObject("Weather Environment Sample", typeof(Camera), typeof(Skybox));
+            viewer.SetActive(false);
             viewer.tag = "MainCamera";
             viewer.GetComponent<Camera>().GetUniversalAdditionalCameraData().requiresDepthTexture = true;
-            return viewer.AddComponent<WeatherEnvironmentSample>();
+            var sample = viewer.AddComponent<WeatherEnvironmentSample>();
+            if (detailedStreet)
+                sample.SetStreetAssets(LoadStreetAssets());
+            viewer.SetActive(true);
+            return sample;
+        }
+
+        private static WeatherStreetAssets LoadStreetAssets()
+        {
+            const string maps = "Assets/Resources/MapGenerator/Textures/";
+            const string prefabs = "Assets/Art/ModernCity/Prefabs/";
+            Texture2D Map(string set, string kind)
+            {
+                string name = set + "_1K-JPG";
+                return AssetDatabase.LoadAssetAtPath<Texture2D>(maps + name + "/" + name + "_" + kind + ".jpg");
+            }
+            GameObject Prefab(string name) => AssetDatabase.LoadAssetAtPath<GameObject>(prefabs + name + ".prefab");
+            return new WeatherStreetAssets
+            {
+                AsphaltColor = Map("Asphalt010", "Color"),
+                AsphaltNormal = Map("Asphalt010", "NormalGL"),
+                AsphaltRoughness = Map("Asphalt010", "Roughness"),
+                PavingColor = Map("PavingStones073", "Color"),
+                PavingNormal = Map("PavingStones073", "NormalGL"),
+                PavingRoughness = Map("PavingStones073", "Roughness"),
+                CornerCafe = Prefab("Assembled/Corner cafe"),
+                BrickShops = Prefab("Assembled/Brick shops"),
+                CornerOffices = Prefab("Assembled/Corner offices"),
+                Drain = Prefab("Props/Storm drain"),
+                StreetLamp = Prefab("Props/Street lamp")
+            };
+        }
+
+        public static void CaptureStreetComparisonFromCommandLine()
+        {
+            string[] args = Environment.GetCommandLineArgs();
+            string output = Argument(args, "-weatherOut");
+            if (string.IsNullOrWhiteSpace(output))
+                throw new ArgumentException("Specify -weatherOut with the street comparison directory.");
+            bool draft = Array.IndexOf(args, "-weatherDraft") >= 0;
+            int width = draft ? 1088 : 1600;
+            int height = draft ? 612 : 900;
+            RequireShaders();
+            Directory.CreateDirectory(output);
+
+            var report = new StringBuilder();
+            report.AppendLine(Application.unityVersion + " / " + SystemInfo.graphicsDeviceType + " / " + SystemInfo.graphicsDeviceName);
+            report.AppendLine(width + " x " + height + " / median of seven camera renders with synchronous pixel readback, ms");
+            var poses = new StringBuilder().AppendLine("Version\tView\tPosition\tRotation\tVertical FOV\tNear\tFar");
+            foreach (bool detailed in new[] { false, true })
+            {
+                string look = detailed ? "after" : "before";
+                string folder = Path.Combine(output, look);
+                Directory.CreateDirectory(folder);
+                WeatherEnvironmentSample sample = CreateScene(detailed);
+                if (sample.HasDetailedStreet != detailed)
+                    throw new InvalidOperationException("The detailed sample requires the Modern City prefabs and both pavement material sets.");
+                sample.ShowControls = false;
+                var timer = Stopwatch.StartNew();
+                sample.Open(WeatherSampleSite.StreetThunderstorm, 17);
+                timer.Stop();
+                report.AppendLine(look + " setup=" + Format(timer.Elapsed.TotalMilliseconds) + " ms");
+                report.AppendLine("View\tClear\tRain\tPassed\tRain with reflection disabled\tRain with reflection cached");
+                bool reflect = true;
+                bool forceRefresh = true;
+                using var frame = new Capture(sample.SampleCamera, width, height,
+                    () => sample.PrepareStreetReflection(reflect, forceRefresh));
+                foreach (int view in new[] { 2, 0, 1 })
+                {
+                    var camera = sample.SampleCamera;
+                    sample.PlaceView(view);
+                    poses.AppendLine(string.Join("\t", look, view.ToString(CultureInfo.InvariantCulture),
+                        camera.transform.position.ToString("F5"), camera.transform.rotation.ToString("F6"),
+                        Format(camera.fieldOfView), Format(camera.nearClipPlane), Format(camera.farClipPlane)));
+                    report.Append(view);
+                    foreach (string phase in new[] { "clear", "rain", "passed" })
+                    {
+                        sample.SetFrame(phase == "passed" ? 77f : 42f, phase == "clear");
+                        frame.Save(Path.Combine(folder, $"view{view}-{phase}.png"));
+                        if (detailed && view == 2 && phase != "clear" && !sample.HasPuddleReflection)
+                            throw new InvalidOperationException("The low camera did not receive a puddle reflection.");
+                        report.Append('\t').Append(draft ? "-" : Format(frame.MedianRenderMilliseconds()));
+                    }
+                    if (detailed && view == 2)
+                    {
+                        reflect = false;
+                        sample.SetFrame(42f, false);
+                        frame.Save(Path.Combine(folder, "view2-rain-sky-only.png"));
+                        report.Append('\t').Append(draft ? "-" : Format(frame.MedianRenderMilliseconds()));
+                        reflect = true;
+                        if (!draft)
+                        {
+                            forceRefresh = false;
+                            report.Append('\t').Append(Format(frame.MedianRenderMilliseconds()));
+                            forceRefresh = true;
+                        }
+                        WeatherRainCell rain = sample.Field.Preset.Rain;
+                        float extinction = rain.CurtainExtinctionPerKilometer;
+                        rain.CurtainExtinctionPerKilometer = 0f;
+                        sample.SetFrame(42f, false);
+                        frame.Save(Path.Combine(folder, "view2-rain-no-curtain.png"));
+                        rain.CurtainExtinctionPerKilometer = extinction;
+                        sample.SetFrame(42f, true);
+                        CaptureStreetForm(frame, Path.Combine(folder, "view2-form.png"));
+                    }
+                    report.AppendLine();
+                }
+            }
+            File.WriteAllText(Path.Combine(output, "camera-poses.tsv"), poses.ToString());
+            File.WriteAllText(Path.Combine(output, "capture-timing.tsv"), report.ToString());
+        }
+
+        private static void CaptureStreetForm(Capture frame, string path)
+        {
+            var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            var renderers = System.Array.FindAll(Resources.FindObjectsOfTypeAll<MeshRenderer>(),
+                renderer => renderer.gameObject.scene == scene && renderer.gameObject.activeInHierarchy);
+            var originals = new Material[renderers.Length][];
+            var clay = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            clay.SetColor("_BaseColor", new Color(0.65f, 0.65f, 0.65f));
+            clay.SetFloat("_Smoothness", 0.08f);
+            try
+            {
+                for (int index = 0; index < renderers.Length; index++)
+                {
+                    MeshRenderer renderer = renderers[index];
+                    Material[] slots = renderer.sharedMaterials;
+                    originals[index] = slots;
+                    var substitute = new Material[slots.Length];
+                    Array.Fill(substitute, clay);
+                    renderer.sharedMaterials = substitute;
+                }
+                frame.Save(path);
+            }
+            finally
+            {
+                for (int index = 0; index < renderers.Length; index++)
+                {
+                    if (originals[index] != null)
+                        renderers[index].sharedMaterials = originals[index];
+                }
+                UnityEngine.Object.DestroyImmediate(clay);
+            }
         }
 
         public static void CaptureFromCommandLine()
@@ -78,7 +221,7 @@ namespace Vastcore.Weather.Editor
             report.AppendLine(width + " x " + height + " / median milliseconds for Camera.Render plus synchronous pixel readback");
             report.AppendLine("Preset\tSetup ms\tClear render ms\tWeather render ms");
             int captured = 0;
-            using (var frame = new Capture(sample.SampleCamera, width, height))
+            using (var frame = new Capture(sample.SampleCamera, width, height, () => sample.PrepareStreetReflection()))
             {
                 foreach (WeatherSampleSite site in Enum.GetValues(typeof(WeatherSampleSite)))
                 {
@@ -132,7 +275,7 @@ namespace Vastcore.Weather.Editor
 
         private static void RequireShaders()
         {
-            foreach (string resource in new[] { "Volume", "Precipitation", "Puddle", "SampleSurface", "SampleSky" })
+            foreach (string resource in new[] { "Volume", "Precipitation", "Puddle", "SampleSurface", "SampleSky", "StreetPaving" })
             {
                 Shader shader = Resources.Load<Shader>("VastcoreWeather/" + resource);
                 if (!shader || !shader.isSupported || ShaderUtil.ShaderHasError(shader))
@@ -173,10 +316,12 @@ namespace Vastcore.Weather.Editor
             private readonly RenderTexture target;
             private readonly Texture2D image;
             private readonly RenderTexture previous;
+            private readonly Action prepareFrame;
 
-            public Capture(Camera camera, int width, int height)
+            public Capture(Camera camera, int width, int height, Action prepareFrame)
             {
                 this.camera = camera;
+                this.prepareFrame = prepareFrame;
                 previous = camera.targetTexture;
                 target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
                 target.Create();
@@ -208,6 +353,7 @@ namespace Vastcore.Weather.Editor
 
             private void Render(Rect readback)
             {
+                prepareFrame?.Invoke();
                 camera.Render();
                 RenderTexture previousTarget = RenderTexture.active;
                 RenderTexture.active = target;

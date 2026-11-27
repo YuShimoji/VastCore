@@ -11,12 +11,19 @@ namespace Vastcore.Weather
         [SerializeField] private Color wetGround = new Color(0.095f, 0.11f, 0.13f);
         [SerializeField] private Color reflectedSky = new Color(0.55f, 0.64f, 0.72f);
         [SerializeField] private int outlineSeed = 15;
+        [Tooltip("Place the horizontal surface at the full water level. Opaque ground defines the shore.")]
+        [SerializeField] private bool groundDefinesShore;
+        [SerializeField, Min(0f)] private float drawdownMeters = 0.012f;
 
         private GameObject projection;
         private Mesh mesh;
         private Material material;
-        private MeshRenderer renderer;
+        private MeshRenderer surfaceRenderer;
         private MaterialPropertyBlock properties;
+
+        internal bool HasWater => projection && projection.activeSelf;
+        internal Vector3 SurfacePosition => projection ? projection.transform.position : transform.position;
+        internal MeshRenderer SurfaceRenderer => surfaceRenderer;
 
         public void Configure(WeatherField field, Vector2 size, Color ground, Color sky, int seed)
         {
@@ -26,6 +33,26 @@ namespace Vastcore.Weather
             reflectedSky = sky;
             outlineSeed = seed;
             Refresh();
+        }
+
+        public void UseGroundShore(float recessionMeters)
+        {
+            groundDefinesShore = true;
+            drawdownMeters = Mathf.Max(0f, recessionMeters);
+            Refresh();
+        }
+
+        internal void SetReflection(Texture texture, Matrix4x4 viewProjection)
+        {
+            if (!surfaceRenderer)
+                return;
+            properties.SetFloat("_HasPlanarReflection", texture ? 1f : 0f);
+            if (texture)
+            {
+                properties.SetTexture("_PlanarReflection", texture);
+                properties.SetMatrix("_ReflectionViewProjection", viewProjection);
+            }
+            surfaceRenderer.SetPropertyBlock(properties);
         }
 
         public void Refresh()
@@ -47,13 +74,15 @@ namespace Vastcore.Weather
                 return;
 
             projection.transform.localScale = new Vector3(Mathf.Max(0.05f, sizeMeters.x), 1f, Mathf.Max(0.05f, sizeMeters.y));
+            projection.transform.localPosition = groundDefinesShore ? Vector3.down * drawdownMeters * (1f - wetness) : Vector3.zero;
             properties.SetFloat("_Wetness", wetness);
             properties.SetFloat("_RainIntensity", weather.RainAt(transform.position));
             properties.SetFloat("_WeatherTime", weather.WeatherSeconds);
             properties.SetFloat("_OutlineSeed", outlineSeed & 4095);
+            properties.SetFloat("_GroundDefinesShore", groundDefinesShore ? 1f : 0f);
             properties.SetColor("_WetGround", wetGround);
             properties.SetColor("_ReflectedSky", reflectedSky);
-            renderer.SetPropertyBlock(properties);
+            surfaceRenderer.SetPropertyBlock(properties);
         }
 
         private void OnEnable() => Refresh();
@@ -82,10 +111,10 @@ namespace Vastcore.Weather
             };
             material = WeatherField.NewMaterial("Puddle");
             projection.AddComponent<MeshFilter>().sharedMesh = mesh;
-            renderer = projection.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = material;
-            renderer.shadowCastingMode = ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
+            surfaceRenderer = projection.AddComponent<MeshRenderer>();
+            surfaceRenderer.sharedMaterial = material;
+            surfaceRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            surfaceRenderer.receiveShadows = false;
             properties = new MaterialPropertyBlock();
         }
 
@@ -99,7 +128,7 @@ namespace Vastcore.Weather
             projection = null;
             mesh = null;
             material = null;
-            renderer = null;
+            surfaceRenderer = null;
         }
     }
 }
