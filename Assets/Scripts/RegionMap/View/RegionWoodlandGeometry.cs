@@ -50,16 +50,16 @@ namespace Vastcore.RegionMap
             indices.Add(c);
         }
 
-        public static RegionWoodlandGeometry Plant(RegionWoodlandForm form, int shape, bool detailed)
+        public static RegionWoodlandGeometry Plant(RegionWoodlandForm form, int shape, bool detailed, bool fineLeaves = false)
         {
             var geometry = new RegionWoodlandGeometry();
             var rng = new System.Random(71 * (int)form + 1103 * shape + 509);
             switch (form)
             {
-                case RegionWoodlandForm.Conifer: geometry.Tree(rng, true, false, detailed); break;
-                case RegionWoodlandForm.SpreadingTree: geometry.Tree(rng, false, false, detailed); break;
-                case RegionWoodlandForm.TallBroadleaf: geometry.Tree(rng, false, true, detailed); break;
-                case RegionWoodlandForm.Shrub: geometry.Shrub(rng); break;
+                case RegionWoodlandForm.Conifer: geometry.Tree(rng, true, false, detailed, fineLeaves); break;
+                case RegionWoodlandForm.SpreadingTree: geometry.Tree(rng, false, false, detailed, fineLeaves); break;
+                case RegionWoodlandForm.TallBroadleaf: geometry.Tree(rng, false, true, detailed, fineLeaves); break;
+                case RegionWoodlandForm.Shrub: geometry.Shrub(rng, fineLeaves); break;
                 case RegionWoodlandForm.Fern: geometry.GroundPlant(rng, detailed ? 7 : 4, true, 0.83f, detailed); break;
                 case RegionWoodlandForm.BroadleafHerb: geometry.GroundPlant(rng, detailed ? 10 : 6, false, 0.92f, detailed); break;
                 case RegionWoodlandForm.Grass: geometry.Grass(rng); break;
@@ -73,7 +73,7 @@ namespace Vastcore.RegionMap
             (byte)Mathf.Min(255, colour.r * factor), (byte)Mathf.Min(255, colour.g * factor),
             (byte)Mathf.Min(255, colour.b * factor), colour.a);
 
-        private void Tree(System.Random rng, bool conifer, bool tall, bool detailed)
+        private void Tree(System.Random rng, bool conifer, bool tall, bool detailed, bool fineLeaves)
         {
             var bark = tall ? new Color32(83, 68, 53, 255) : new Color32(97, 71, 51, 255);
             var leaf = conifer ? new Color32(52, 80, 56, 255) : tall ? new Color32(63, 96, 41, 255) : new Color32(85, 117, 60, 255);
@@ -110,7 +110,9 @@ namespace Vastcore.RegionMap
                     float radius = (0.25f - 0.18f * t) * Range(crown, 0.72f, 1.12f);
                     Vector3 middle = level * (lean + Vector3.up);
                     var tierRng = new System.Random(crown.Next());
-                    Blob(middle, new Vector3(radius * 0.54f, 0.032f + radius * 0.14f, radius * 0.47f),
+                    float coreWidth = fineLeaves ? 0.28f : 0.54f;
+                    float coreHeight = fineLeaves ? radius * 0.19f : 0.032f + radius * 0.14f;
+                    Blob(middle, new Vector3(radius * coreWidth, coreHeight, radius * (coreWidth - 0.07f)),
                         Tone(leaf, 0.88f + t * 0.16f), tierRng, 5, 3);
                     const int branches = 5;
                     for (int j = 0; j < branches; j++)
@@ -120,6 +122,11 @@ namespace Vastcore.RegionMap
                         Vector3 tip = middle + direction * radius - Vector3.up * Range(tierRng, 0.005f, 0.054f);
                         if (detailed) Tube(middle, tip, 0.0065f, 0.0015f, bark, 4);
                         Color32 branchColour = Tone(leaf, Range(tierRng, 0.80f, 1.19f));
+                        if (fineLeaves)
+                        {
+                            NeedleSprays(middle, tip, direction, radius, branchColour, tierRng);
+                            continue;
+                        }
                         for (int k = detailed ? 0 : 1; k < 3; k++)
                         {
                             Vector3 c = Vector3.Lerp(middle, tip, 0.39f + k * 0.29f);
@@ -129,7 +136,7 @@ namespace Vastcore.RegionMap
                         }
                     }
                 }
-                Blob((lean + Vector3.up) * 0.95f, new Vector3(0.031f, 0.06f, 0.027f), leaf, rng, 5, 3);
+                Blob((lean + Vector3.up) * 0.95f, new Vector3(0.031f, fineLeaves ? 0.043f : 0.06f, 0.027f), leaf, rng, 5, 3);
                 return;
             }
 
@@ -150,7 +157,7 @@ namespace Vastcore.RegionMap
                 Tube(elbow, tip, rootRadius * 0.20f, 0.002f, bark, detailed ? 5 : 3);
                 float spread = crownWidth * Range(bough, 0.49f, 0.71f);
                 var scale = new Vector3(1.07f * spread, spread * (tall ? 0.60f : 0.87f), spread);
-                Foliage(tip, scale, Tone(leaf, Range(bough, 0.83f, 1.15f)), bough, detailed);
+                Foliage(tip, scale, Tone(leaf, Range(bough, 0.83f, 1.15f)), bough, detailed, fineLeaves);
             }
             if (tall && detailed && rng.NextDouble() < 0.86)
             {
@@ -176,8 +183,48 @@ namespace Vastcore.RegionMap
             }
         }
 
-        private void Foliage(Vector3 centre, Vector3 scale, Color32 colour, System.Random rng, bool detailed)
+        private void NeedleSprays(Vector3 branch, Vector3 tip, Vector3 forward, float radius, Color32 colour, System.Random rng)
         {
+            Vector3 side = Vector3.Cross(forward, Vector3.up);
+            for (int j = 0; j < 3; j++)
+            {
+                float along = 0.29f + j * 0.24f;
+                Vector3 tuft = Vector3.Lerp(branch, tip, along) +
+                    radius * (side * Range(rng, -0.11f, 0.11f) + Vector3.up * Range(rng, -0.032f, 0.076f));
+                float length = radius * (0.24f - 0.037f * j);
+                var scale = new Vector3(0.66f + 0.40f * Mathf.Abs(forward.x), 0.48f, 0.66f + 0.40f * Mathf.Abs(forward.z)) * length;
+                Blob(tuft, scale, Tone(colour, Range(rng, 0.92f, 1.14f)), rng, 5, 2);
+            }
+            for (int j = 0; j < 8; j++)
+            {
+                float phase = j / 8f;
+                float sign = j % 2 == 0 ? -1f : 1f;
+                Vector3 start = Vector3.Lerp(branch, tip, 0.22f + 0.92f * phase);
+                Vector3 axis = (forward * 0.55f + side * sign * 0.83f + Vector3.up * Range(rng, -0.23f, 0.38f)).normalized;
+                float length = radius * (0.34f - 0.17f * phase) * Range(rng, 0.87f, 1.20f);
+                Vector3 cross = Vector3.Cross(axis, Vector3.up).normalized;
+                Color32 twig = Tone(colour, Range(rng, 0.84f, 1.24f));
+                BroadBlade(start, start + axis * length, cross * length * 0.20f, twig, 0.45f);
+                for (int k = 0; k < 3; k++)
+                {
+                    Vector3 fork = start + axis * (length * (0.23f + 0.20f * k));
+                    Vector3 leaf = (axis * 0.68f + cross * ((k & 1) == 0 ? -0.68f : 0.68f) + Vector3.up * 0.21f).normalized;
+                    float span = length * (0.42f - 0.07f * k);
+                    Leaf(fork, fork + leaf * span, Vector3.Cross(leaf, Vector3.up).normalized * span * 0.19f, Tone(twig, 1.07f));
+                }
+            }
+        }
+
+        private void Foliage(Vector3 centre, Vector3 scale, Color32 colour, System.Random rng, bool detailed, bool fineLeaves)
+        {
+            if (fineLeaves)
+            {
+                // A reduced inner mass holds the crown together. Overlapping sprays at different
+                // angles read as leaves at the path, and leave sky in the silhouette.
+                Blob(centre, scale * (detailed ? 0.54f : 0.43f), Tone(colour, 0.91f), rng, 8, 4);
+                BroadleafSprigs(centre, scale, colour, rng, detailed ? 18 : 9);
+                return;
+            }
             Blob(centre, scale * (detailed ? 0.81f : 0.99f), colour, rng, detailed ? 9 : 6, detailed ? 5 : 3);
             int count = detailed ? 37 : 6;
             for (int i = 0; i < count; i++)
@@ -192,14 +239,42 @@ namespace Vastcore.RegionMap
             }
         }
 
-        private void Shrub(System.Random rng)
+        private void BroadleafSprigs(Vector3 centre, Vector3 scale, Color32 colour, System.Random rng, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                float up = 1f - 2f * (i + 0.5f) / count;
+                Vector3 radial = Compass(i * 2.40f + Range(rng, -0.24f, 0.24f));
+                Vector3 direction = radial * Mathf.Sqrt(1f - up * up) + Vector3.up * up;
+                Vector3 radius = Vector3.Scale(direction, scale);
+                Vector3 start = centre + radius * Range(rng, 0.50f, 0.70f);
+                Vector3 axis = (direction + Vector3.up * 0.22f).normalized;
+                Vector3 side = Vector3.Cross(axis, Vector3.up).normalized;
+                float stem = radius.magnitude * Range(rng, 0.36f, 0.50f);
+                Color32 tint = Tone(colour, Range(rng, 0.84f, 1.24f));
+                Tube(start - axis * stem * 0.35f, start + axis * stem, scale.x * 0.016f, scale.x * 0.005f,
+                    Tone(tint, 0.58f), 3);
+                for (int j = 0; j < 6; j++)
+                {
+                    float sign = (j & 1) == 0 ? -1f : 1f;
+                    Vector3 node = start + axis * (stem * (0.18f + 0.14f * j));
+                    Vector3 leaf = (axis * 0.73f + side * sign * 0.67f + Vector3.up * Range(rng, -0.34f, 0.30f)).normalized;
+                    Vector3 cross = Vector3.Cross(leaf, Vector3.up).normalized + Vector3.up * Range(rng, -0.36f, 0.36f);
+                    float length = scale.x * Range(rng, 0.24f, 0.43f) * (1f - 0.065f * j);
+                    BroadBlade(node, node + leaf * length, cross * length * Range(rng, 0.26f, 0.40f),
+                        Tone(tint, Range(rng, 0.86f, 1.19f)), 0.64f);
+                }
+            }
+        }
+
+        private void Shrub(System.Random rng, bool fineLeaves)
         {
             var colour = new Color32(85, 111, 59, 255);
             for (int j = 0; j < 5; j++)
             {
                 Vector3 crown = Compass(j * 2.40f) * Range(rng, 0.20f, 0.54f) + Vector3.up * Range(rng, 0.27f, 0.75f);
                 Tube(Vector3.down * 0.035f, crown, 0.026f, 0.008f, new Color32(89, 68, 45, 255), 5);
-                Foliage(crown, new Vector3(0.45f, 0.30f, 0.39f), Tone(colour, Range(rng, 0.87f, 1.16f)), rng, false);
+                Foliage(crown, new Vector3(0.45f, 0.30f, 0.39f), Tone(colour, Range(rng, 0.87f, 1.16f)), rng, false, fineLeaves);
             }
         }
 
@@ -315,19 +390,21 @@ namespace Vastcore.RegionMap
             Tri(d, a, e);
         }
 
-        private void BroadBlade(Vector3 root, Vector3 tip, Vector3 width, Color32 colour)
+        private void BroadBlade(Vector3 root, Vector3 tip, Vector3 width, Color32 colour, float fold = 0f)
         {
             Vector3 up = Vector3.Cross(tip - root, width).normalized;
             if (up.y < 0f) up = -up;
             Vector3 a = Vector3.Lerp(root, tip, 0.29f);
             Vector3 b = Vector3.Lerp(root, tip, 0.67f);
+            Vector3 left = (up + width.normalized * fold).normalized;
+            Vector3 right = (up - width.normalized * fold).normalized;
             int i = Add(root, up, Tone(colour, 0.80f));
-            Add(a + width * 0.88f, up, colour);
-            Add(b + width * 0.72f, up, colour);
+            Add(a + width * 0.88f, left, colour);
+            Add(b + width * 0.72f, left, colour);
             Add(tip, up, Tone(colour, 1.09f));
-            Add(b - width * 0.72f, up, Tone(colour, 0.88f));
-            Add(a - width * 0.88f, up, Tone(colour, 0.89f));
-            int rib = Add(Vector3.Lerp(a, b, 0.4f) + up * width.magnitude * 0.34f, up, Tone(colour, 1.16f));
+            Add(b - width * 0.72f, right, Tone(colour, 0.88f));
+            Add(a - width * 0.88f, right, Tone(colour, 0.89f));
+            int rib = Add(Vector3.Lerp(a, b, 0.4f) + up * width.magnitude * (0.34f + fold * 0.39f), up, Tone(colour, 1.16f));
             for (int k = 0; k < 6; k++) Tri(i + k, i + (k + 1) % 6, rib);
         }
     }

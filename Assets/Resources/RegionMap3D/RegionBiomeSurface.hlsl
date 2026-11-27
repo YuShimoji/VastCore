@@ -52,6 +52,27 @@ half3 BiomeBlendWorldNormal(half3 geomNormal, half3 tangentNormal, half strength
     return normalize(tangent * t.x + bitangent * t.y + geomNormal * t.z);
 }
 
+#if defined(REGION_WOODLAND_TRAIL)
+TEXTURE2D(_WoodlandTrailRows);
+SAMPLER(sampler_WoodlandTrailRows);
+
+half WoodlandTrailWear(float3 positionWS)
+{
+    float2 p = TransformWorldToObject(positionWS).xz - _WoodlandTrail.xy;
+    float along = 0.5 - p.y * _WoodlandTrail.z;
+    [branch]
+    if (_WoodlandTrail.w < 2.0 || along < 0.0 || along > 1.0 || abs(p.x) > 16.0) return 0.0h;
+    float u = (0.5 + along * (_WoodlandTrail.w - 1.0)) / _WoodlandTrail.w;
+    // Rows carry the centre and width, plus independent support for the tread and its shoulder.
+    float4 section = SAMPLE_TEXTURE2D_LOD(_WoodlandTrailRows, sampler_WoodlandTrailRows, float2(u, 0.5), 0);
+    float distance = abs(p.x - section.x);
+    float noise = (BiomeNoise(p * 2.8) - 0.5) * 0.27 + (BiomeNoise(p * 0.91 + 2.9) - 0.5) * 0.22;
+    distance += noise * lerp(0.45, 1.0, section.w);
+    float edge = section.y + lerp(section.y * 0.11, 0.43, section.w);
+    return section.z * (1.0h - smoothstep(section.y * 0.43, edge, distance));
+}
+#endif
+
 half3 EvaluateBiomeSurface(
     float3 positionWS,
     half3 normalWS,
@@ -87,6 +108,12 @@ half3 EvaluateBiomeSurface(
     half patch = smoothstep(0.30h, 0.72h, macro * 0.55h + mid * 0.45h + (biomeChannels.y - 0.5h) * 0.24h);
     subsoilShare = max(subsoilShare, (1.0h - patch) * _RegionBiomeGroundBlend.y);
     half turfShare = 1.0h - subsoilShare;
+    #if defined(REGION_WOODLAND_TRAIL)
+    half woodlandWear = WoodlandTrailWear(positionWS) * (1.0h - rockMask);
+    turfShare *= 1.0h - 0.91h * woodlandWear;
+    baseAlbedoLinear *= 1.0h + 0.14h * woodlandWear;
+    nearFade *= 1.0h - 0.54h * woodlandWear;
+    #endif
     half3 canopy = baseAlbedoLinear;
     half trailWear = 0.0h;
     half growth = 0.0h;

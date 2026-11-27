@@ -12,6 +12,7 @@ namespace Vastcore.RegionMap
             internal GameObject Baseline, Canopy, Trail, Understory;
             internal MeshRenderer Ground;
             internal Material BaselineGround, WoodlandGround;
+            internal bool SurfaceTrail;
             public int CanopyTriangles { get; internal set; }
             public int UnderstoryTriangles { get; internal set; }
             public int RealProps { get; internal set; }
@@ -20,7 +21,7 @@ namespace Vastcore.RegionMap
             {
                 if (Baseline) Baseline.SetActive(!woodland);
                 Canopy.SetActive(woodland);
-                Trail.SetActive(woodland);
+                Trail.SetActive(woodland && (!detail || !SurfaceTrail));
                 Understory.SetActive(woodland && detail);
                 Ground.sharedMaterial = woodland && detail ? WoodlandGround : BaselineGround;
             }
@@ -36,6 +37,7 @@ namespace Vastcore.RegionMap
             var trail = new Material(shader) { name = "Woodland Trail", hideFlags = HideFlags.DontSave };
             trail.SetFloat("_Ground", 1f);
             MeshRenderer ground = parent.Find(scene.InnerTerrain.Name).GetComponent<MeshRenderer>();
+            bool forest = layout.Preset == RegionWoodlandPreset.Forest;
             var result = new Result
             {
                 Baseline = parent.Find("Vegetation")?.gameObject,
@@ -45,11 +47,13 @@ namespace Vastcore.RegionMap
                 Ground = ground,
                 BaselineGround = ground.sharedMaterial,
                 WoodlandGround = BakeForestFloor(scene, layout, ground.sharedMaterial),
+                SurfaceTrail = forest,
             };
-            result.CanopyTriangles = BuildPlants(result.Canopy.transform, plants, scene, layout.Canopy, true);
-            result.UnderstoryTriangles = BuildPlants(result.Understory.transform, plants, scene, layout.Understory, false);
+            result.CanopyTriangles = BuildPlants(result.Canopy.transform, plants, scene, layout.Canopy, true, forest);
+            result.UnderstoryTriangles = BuildPlants(result.Understory.transform, plants, scene, layout.Understory, false, forest);
             result.RealProps = AddForestFloor(result.Understory.transform, plants, scene, layout);
-            AddMesh(result.Trail.transform, "Ground ribbon", BuildTrail(scene, layout), trail, ShadowCastingMode.Off);
+            RegionWoodlandGeometry ribbon = BuildTrail(scene, layout, forest ? result.WoodlandGround : null);
+            AddMesh(result.Trail.transform, "Ground ribbon", ribbon, trail, ShadowCastingMode.Off);
             result.Show(true, true);
             return result;
         }
@@ -72,9 +76,9 @@ namespace Vastcore.RegionMap
         }
 
         private static int BuildPlants(Transform parent, Material material, RegionLookScene scene,
-            List<RegionWoodlandPlant> plants, bool tall)
+            List<RegionWoodlandPlant> plants, bool tall, bool forest)
         {
-            var forms = new Dictionary<(RegionWoodlandForm, int, bool), RegionWoodlandGeometry>();
+            var forms = new Dictionary<(RegionWoodlandForm, int, bool, bool), RegionWoodlandGeometry>();
             var tiles = new Dictionary<Vector2Int, RegionWoodlandGeometry>();
             foreach (RegionWoodlandPlant plant in plants)
             {
@@ -83,10 +87,11 @@ namespace Vastcore.RegionMap
                 bool detailed = tall
                     ? Mathf.Abs(plant.East) < 54f && Mathf.Abs(plant.South) < 82f
                     : Mathf.Abs(plant.East) < 29f && Mathf.Abs(plant.South) < 52f;
-                var form = (plant.Form, plant.Shape, detailed);
+                bool fineLeaves = forest && detailed && Mathf.Abs(plant.East) < 38f && Mathf.Abs(plant.South) < 55f;
+                var form = (plant.Form, plant.Shape, detailed, fineLeaves);
                 if (!forms.TryGetValue(form, out RegionWoodlandGeometry template))
                 {
-                    template = RegionWoodlandGeometry.Plant(plant.Form, plant.Shape, detailed);
+                    template = RegionWoodlandGeometry.Plant(plant.Form, plant.Shape, detailed, fineLeaves);
                     forms.Add(form, template);
                 }
                 float size = tall ? 52f : 23f;
@@ -184,11 +189,17 @@ namespace Vastcore.RegionMap
             return material;
         }
 
-        private static RegionWoodlandGeometry BuildTrail(RegionLookScene scene, RegionWoodlandLayout layout)
+        private static float TrailWidth(RegionWoodlandLayout layout, float south) =>
+            layout.TrailHalfWidth * (1f + 0.25f * RegionNoise.Gradient(south / 13f, 2.6f, 917u));
+
+        private static RegionWoodlandGeometry BuildTrail(RegionLookScene scene, RegionWoodlandLayout layout, Material surface)
         {
             var mesh = new RegionWoodlandGeometry();
             const int columns = 7;
             const float halfLength = RegionWoodlandLayout.TrailLength / 2f;
+            const float step = 0.62f;
+            int rowCount = Mathf.CeilToInt(RegionWoodlandLayout.TrailLength / step) + 1;
+            Vector4[] rows = surface ? new Vector4[rowCount] : null;
             var heights = new float[columns];
             Color32 trailColour = layout.Preset switch
             {
@@ -197,23 +208,30 @@ namespace Vastcore.RegionMap
                 _ => new Color32(143, 122, 94, 255),
             };
             int previous = -1;
-            for (float south = -halfLength; south <= halfLength; south += 0.62f)
+            float previousStep = -halfLength;
+            for (int r = 0; r < rowCount; r++, previousStep += step)
             {
+                float south = rows == null ? previousStep : Mathf.Lerp(-halfLength, halfLength, r / (float)(rowCount - 1));
+                if (south > halfLength) break;
                 float centre = layout.TrailEast(south);
-                float width = layout.TrailHalfWidth * (1f + 0.25f * RegionNoise.Gradient(south / 13f, 2.6f, 917u));
+                float width = TrailWidth(layout, south);
                 bool supported = true;
+                bool shoulder = true;
                 for (int j = 0; j < columns; j++)
                 {
                     float t = j * (2f / (columns - 1)) - 1f;
                     supported &= layout.TryGround(scene, centre + t * width * 1.34f, south, out heights[j], out _);
+                    if (rows != null)
+                        shoulder &= layout.TryGround(scene, centre + t * (width + 0.68f), south, out _, out _);
                 }
+                float cap = Mathf.Clamp01((halfLength - Mathf.Abs(south)) / 5f);
+                if (rows != null) rows[r] = new Vector4(centre, width, supported ? cap : 0f, shoulder ? 1f : 0f);
                 if (!supported)
                 {
                     previous = -1;
                     continue;
                 }
                 int row = -1;
-                byte cap = (byte)(255f * Mathf.Clamp01((halfLength - Mathf.Abs(south)) / 5f));
                 for (int j = 0; j < columns; j++)
                 {
                     float t = j * (2f / (columns - 1)) - 1f;
@@ -222,7 +240,7 @@ namespace Vastcore.RegionMap
                     float y = heights[j] + 0.041f;
                     bool edge = j == 0 || j == columns - 1;
                     Color32 color = trailColour;
-                    color.a = edge ? (byte)0 : cap;
+                    color.a = edge ? (byte)0 : (byte)(255f * cap);
                     int v = mesh.Add(new Vector3(x, y, -z), Vector3.up, color);
                     if (row < 0) row = v;
                 }
@@ -235,6 +253,19 @@ namespace Vastcore.RegionMap
                     }
                 }
                 previous = row;
+            }
+            if (rows != null)
+            {
+                var sections = new Texture2D(rowCount, 1, TextureFormat.RGBAFloat, false, true)
+                {
+                    name = "Forest trail sections", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear,
+                    hideFlags = HideFlags.DontSave,
+                };
+                sections.SetPixelData(rows, 0);
+                sections.Apply(false, true);
+                surface.SetTexture("_WoodlandTrailRows", sections);
+                surface.SetVector("_WoodlandTrail", new Vector4(scene.CenterX, -scene.CenterZ, 1f / RegionWoodlandLayout.TrailLength, rowCount));
+                surface.EnableKeyword("REGION_WOODLAND_TRAIL");
             }
             return mesh;
         }
@@ -290,10 +321,12 @@ namespace Vastcore.RegionMap
 
         private static void AddLeafLitter(RegionWoodlandGeometry mesh, RegionLookScene scene, RegionWoodlandLayout layout, System.Random rng)
         {
+            bool forest = layout.Preset == RegionWoodlandPreset.Forest;
             for (int i = 0; i < 88; i++)
             {
                 float south = -19f + 64f * (float)rng.NextDouble();
-                float fringe = layout.TrailHalfWidth + 0.10f + 3.1f * (float)rng.NextDouble();
+                float scatter = (float)rng.NextDouble();
+                float fringe = forest ? TrailWidth(layout, south) - 0.26f + 2.05f * scatter : layout.TrailHalfWidth + 0.10f + 3.1f * scatter;
                 float east = layout.TrailEast(south) + ((i & 1) == 0 ? fringe : -fringe);
                 if (!layout.TryGround(scene, east, south, out _, out _)) continue;
                 for (int j = 0; j < 13; j++)
@@ -303,7 +336,16 @@ namespace Vastcore.RegionMap
                     float z = scene.CenterZ + south + 0.88f * ((float)rng.NextDouble() - 0.5f);
                     float size = 0.05f + 0.16f * (float)rng.NextDouble();
                     var direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * size;
-                    var a = new Vector3(x, scene.RenderedHeightAt(x, z) + 0.032f, -z);
+                    float height = scene.RenderedHeightAt(x, z);
+                    if (forest)
+                    {
+                        float localZ = z - scene.CenterZ;
+                        float localX = x - scene.CenterX;
+                        float edge = Mathf.Abs(localX - layout.TrailEast(localZ)) - TrailWidth(layout, localZ);
+                        if (edge < -0.28f || rng.NextDouble() > Mathf.InverseLerp(-0.29f, 0.50f, edge) ||
+                            !layout.TryGround(scene, localX, localZ, out height, out _)) continue;
+                    }
+                    var a = new Vector3(x, height + 0.032f, -z);
                     var b = a + direction;
                     b.y = scene.RenderedHeightAt(b.x, -b.z) + 0.019f;
                     var colour = Color32.Lerp(new Color32(91, 62, 40, 255), new Color32(168, 126, 72, 255), (float)rng.NextDouble());
