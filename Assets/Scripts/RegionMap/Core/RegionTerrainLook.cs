@@ -72,6 +72,88 @@ namespace Vastcore.RegionMap
         /// </summary>
         public bool PropsRealAssets = false;
 
+        /// <summary>DS-012 草原環境セットサンプル用。true で草原座標に 8 ファミリ・19 変種の実モデルサンプルを並べる。</summary>
+        public bool GrasslandSample = false;
+
+        /// <summary>場面の代表バイオームを明示上書きする場合に指定。null の場合は中心座標の地形バイオームから自動判定する。</summary>
+        public RegionBiome? BiomeOverride = null;
+
+        public static RegionLookSpec CreateGrasslandSample(float centerMapX = 37.55f, float centerMapY = 57.86f)
+        {
+            return new RegionLookSpec
+            {
+                CenterMapX = centerMapX,
+                CenterMapY = centerMapY,
+                Mesa = 0f,
+                Sediment = 0f,
+                Rocks = false,
+                RockGround = false,
+                Vegetation = true,
+                Props = true,
+                PropsRealAssets = true,
+                GrasslandSample = true,
+                BiomeOverride = RegionBiome.Grassland,
+                Far = new RegionLookViewpoint("far", -140f, 110f, 32f, 0f, 0f, 2f, 36f),
+                Mid = new RegionLookViewpoint("mid", -28f, 32f, 11f, -0.5f, -0.5f, 1.0f, 44f),
+                Near = new RegionLookViewpoint("near", -6.5f, 8.8f, 2.1f, -0.5f, -0.5f, 0.8f, 46f),
+            };
+        }
+
+        /// <summary>指定バイオーム・地図座標向けの 3D 場面設定を生成する。</summary>
+        public static RegionLookSpec ForBiome(RegionBiome biome, float centerMapX, float centerMapY,
+            bool withProps = false, bool withRealAssets = false)
+        {
+            if (biome == RegionBiome.Desert)
+            {
+                return new RegionLookSpec
+                {
+                    CenterMapX = centerMapX,
+                    CenterMapY = centerMapY,
+                    Props = withProps,
+                    PropsRealAssets = withRealAssets,
+                    BiomeOverride = biome,
+                };
+            }
+
+            if (biome == RegionBiome.Grassland)
+            {
+                return new RegionLookSpec
+                {
+                    CenterMapX = centerMapX,
+                    CenterMapY = centerMapY,
+                    Mesa = 0f,
+                    Sediment = 0f,
+                    Rocks = false,
+                    RockGround = false,
+                    Vegetation = true,
+                    Props = withProps,
+                    PropsRealAssets = withRealAssets,
+                    GrasslandSample = withProps,
+                    BiomeOverride = biome,
+                    Far = new RegionLookViewpoint("far", -140f, 110f, 32f, 0f, 0f, 2f, 36f),
+                    Mid = new RegionLookViewpoint("mid", -28f, 32f, 11f, -0.5f, -0.5f, 1.0f, 44f),
+                    Near = new RegionLookViewpoint("near", -6.5f, 8.8f, 2.1f, -0.5f, -0.5f, 0.8f, 46f),
+                };
+            }
+
+            return new RegionLookSpec
+            {
+                CenterMapX = centerMapX,
+                CenterMapY = centerMapY,
+                Mesa = 0f,
+                Sediment = 0f,
+                Rocks = false,
+                RockGround = false,
+                Vegetation = true,
+                Props = withProps,
+                PropsRealAssets = withRealAssets,
+                BiomeOverride = biome,
+                Far = new RegionLookViewpoint("far", -160f, 120f, 36f, 0f, 0f, 2f, 36f),
+                Mid = new RegionLookViewpoint("mid", -32f, 36f, 12f, -0.5f, -0.5f, 1.0f, 44f),
+                Near = new RegionLookViewpoint("near", -7.5f, 9.5f, 2.2f, -0.5f, -0.5f, 0.8f, 48f),
+            };
+        }
+
         // 3 つの視点は、既定の場所（seed 9 の X43.61 Y76.92）に合わせて決めた値。太陽は北西から差すので、
         // 西と北を向いた崖に光が斜めに当たる向きから見る。場所を変えたら、視点も決め直す。
 
@@ -151,6 +233,8 @@ namespace Vastcore.RegionMap
         public const float BandAmount = 0.06f;
 
         public RegionLookSpec Spec;
+        public RegionBiome PrimaryBiome;
+        public RegionBiomeSurfaceProfile BiomeSurface;
         public RegionDetail Outer;
         public RegionDetail Inner;
         public RegionRockField InnerRocks;
@@ -284,6 +368,11 @@ namespace Vastcore.RegionMap
                 CenterX = centerX, CenterZ = centerZ,
                 MetersPerMapUnit = metersPerMapUnit, RegionSeed = region.Spec.Seed, RegionResolution = region.Spec.Resolution,
             };
+            RegionBiome detectedBiome = RegionBiomeSurface.ResolvePrimaryBiome(inner.Data, centerX - minX, centerZ - minZ, innerCell);
+            if (!RegionBiomeSurface.IsLandBiome(detectedBiome))
+                detectedBiome = region.BiomeAtMap(spec.CenterMapX, spec.CenterMapY);
+            scene.PrimaryBiome = spec.BiomeOverride ?? detectedBiome;
+            scene.BiomeSurface = RegionBiomeSurface.ProfileFor(scene.PrimaryBiome);
 
             // 内側の縁を、外側の地形へなじませる。土砂の地図も同じ幅で外側の地図へなじませる（窓の境で層が切り替わらない）
             float[] outerHeight = outer.Data.Height;
@@ -382,7 +471,12 @@ namespace Vastcore.RegionMap
                         scene.Rocks.Surface, scene.InnerRocks.VertexCount);
                 }
             }
-            if (spec.Props)
+            if (spec.GrasslandSample || (spec.Props && scene.PrimaryBiome == RegionBiome.Grassland))
+            {
+                scene.PropsSlice = RegionGrasslandSample.BuildSlice(scene, spec.PropsSeedOffset);
+                scene.PropsSlice.UseRealAssets = spec.PropsRealAssets;
+            }
+            else if (spec.Props)
             {
                 string catalogPath = RegionPropCatalog.FindDefaultCatalogPath();
                 if (catalogPath != null)

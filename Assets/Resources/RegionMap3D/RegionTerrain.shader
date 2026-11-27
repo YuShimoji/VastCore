@@ -33,6 +33,7 @@ Shader "Vastcore/RegionTerrain"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_local_fragment _ REGION_SANDSTONE
+            #pragma multi_compile_local_fragment _ REGION_BIOME_SURFACE
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
@@ -60,6 +61,9 @@ Shader "Vastcore/RegionTerrain"
             #define REGION_SEDIMENT_MATERIAL
             #include "RegionSandstone.hlsl"
             #endif
+            #if defined(REGION_BIOME_SURFACE)
+            #include "RegionBiomeSurface.hlsl"
+            #endif
 
             struct Attributes
             {
@@ -67,6 +71,7 @@ Shader "Vastcore/RegionTerrain"
                 float3 normalOS : NORMAL;
                 float2 uv : TEXCOORD0;
                 float4 surface : TEXCOORD1;
+                float4 biomeSurface : TEXCOORD2;
                 half4 color : COLOR;
             };
 
@@ -78,6 +83,7 @@ Shader "Vastcore/RegionTerrain"
                 float2 uv : TEXCOORD2;
                 half4 color : COLOR;
                 float4 surface : TEXCOORD4;
+                float4 biomeSurface : TEXCOORD5;
             };
 
             Varyings Vert(Attributes input)
@@ -90,6 +96,7 @@ Shader "Vastcore/RegionTerrain"
                 output.uv = input.uv;
                 output.color = input.color;
                 output.surface = input.surface;
+                output.biomeSurface = input.biomeSurface;
                 return output;
             }
 
@@ -126,8 +133,25 @@ Shader "Vastcore/RegionTerrain"
                 }
                 surfaceOcclusion = lerp(1.0, extra.occlusion, sandstoneWeight);
                 // 写真素材のある所だけ、粗さから弱い鏡面を足す（素材が無い所と遠くは今の描き方のまま）
-                specularWeight = extra.specular * sandstoneWeight;
+                specularWeight = extra.specular * sandstoneWeight * _RegionSurfaceParams.y;
                 roughness = extra.specular > 0.0 ? extra.roughness / extra.specular : 1.0;
+                #endif
+                #if defined(REGION_BIOME_SURFACE)
+                float biomeWeight = input.biomeSurface.w;
+                #if defined(REGION_SANDSTONE)
+                biomeWeight *= (1.0 - sandstoneWeight);
+                #endif
+                if (biomeWeight > 0.001)
+                {
+                    float biomeDist = distance(input.positionWS, _WorldSpaceCameraPos);
+                    BiomeSurfaceExtra bExtra;
+                    half3 biomeAlbedo = EvaluateBiomeSurface(
+                        input.positionWS, normal, rock, albedo, input.biomeSurface, input.color.a, biomeDist, bExtra);
+                    albedo = lerp(albedo, biomeAlbedo, biomeWeight);
+                    shade = normalize(lerp(shade, bExtra.normalWS, biomeWeight));
+                    specularWeight = lerp(specularWeight, bExtra.specular, biomeWeight);
+                    roughness = lerp(roughness, bExtra.roughness, biomeWeight);
+                }
                 #endif
 
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
@@ -148,11 +172,11 @@ Shader "Vastcore/RegionTerrain"
                 half3 bounce = _RegionBounceColor.rgb * saturate(0.55 - 0.45 * shade.y) * (0.45 + 0.55 * (1.0 - sunlit)) * (0.5 + 0.5 * open);
                 // 写真素材の AO は、空の光と照り返しだけを弱める（日の光は形の影が受け持つ）
                 half3 color = albedo * (light.color * direct + (ambient + bounce) * occlusion.indirectAmbientOcclusion * surfaceOcclusion);
-                #if defined(REGION_SANDSTONE)
+                #if defined(REGION_SANDSTONE) || defined(REGION_BIOME_SURFACE)
                 [branch]
                 if (specularWeight > 0.001)
                 {
-                    // URP の Lit と同じ近似の GGX（反射率 0.04）。乾いた砂岩なので強さを絞る（設計 3.3 節、初期値 18%）
+                    // URP の Lit と同じ近似の GGX（反射率 0.04）。乾いた砂岩・草地なので強さを絞る（設計 3.3 節）
                     float3 viewDirection = normalize(_WorldSpaceCameraPos - input.positionWS);
                     float3 halfDirection = SafeNormalize(float3(light.direction) + viewDirection);
                     float r = max(roughness * roughness, 0.0078125);
@@ -161,7 +185,7 @@ Shader "Vastcore/RegionTerrain"
                     float lh = saturate(dot(float3(light.direction), halfDirection));
                     float d = nh * nh * (r2 - 1.0) + 1.00001;
                     float specularTerm = r2 / ((d * d) * max(0.1, lh * lh) * (r * 4.0 + 2.0));
-                    color += light.color * direct * (0.04 * specularTerm * _RegionSurfaceParams.y * specularWeight);
+                    color += light.color * direct * (0.04 * specularTerm * specularWeight);
                 }
                 #endif
                 color = RegionApplyAir(color, input.positionWS);

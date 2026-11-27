@@ -13,28 +13,37 @@ namespace Vastcore.RegionMap
         public static int[] AddTo(Transform root, RegionLookScene scene, RegionAlcoveView alcove)
         {
             List<RegionPlant> plants = RegionPlantField.Build(scene);
-            if (alcove == null) return AddPlants(root, plants, "Vegetation");
+            RegionBiomeSurfaceProfile profile = scene.BiomeSurface ?? RegionBiomeSurface.ProfileFor(scene.PrimaryBiome);
+            var tint = new Color(profile.PlantTintR, profile.PlantTintG, profile.PlantTintB, 1f);
+            string label = profile.Biome + " plants";
+            if (alcove == null) return AddPlants(root, plants, "Vegetation", tint, label);
             var displaced = plants.FindAll(p => alcove.LostSupport(p.X, p.Y, p.Z, 0.10f));
-            if (displaced.Count == 0) return AddPlants(root, plants, "Vegetation");
+            if (displaced.Count == 0) return AddPlants(root, plants, "Vegetation", tint, label);
             var lost = new HashSet<RegionPlant>(displaced);
             plants.RemoveAll(lost.Contains);
             var holder = new GameObject("Vegetation");
             holder.transform.SetParent(root, false);
-            int[] counts = AddPlants(holder.transform, plants, "Rooted");
-            AddPlants(holder.transform, displaced, "Before carving");
+            int[] counts = AddPlants(holder.transform, plants, "Rooted", tint, label);
+            AddPlants(holder.transform, displaced, "Before carving", tint, label);
             alcove.UnsupportedPlants = holder.transform.Find("Before carving").gameObject;
             return counts;
         }
 
         internal static int[] AddPlants(Transform root, List<RegionPlant> plants, string name)
         {
+            return AddPlants(root, plants, name, Color.white, "Desert plants");
+        }
+
+        internal static int[] AddPlants(Transform root, List<RegionPlant> plants, string name, Color tint, string materialName)
+        {
             var counts = new int[4];
             if (plants.Count == 0) return counts;
             Shader shader = Resources.Load<Shader>("RegionMap3D/RegionPlants");
             Texture2D atlas = Resources.Load<Texture2D>("RegionMap3D/DesertPlants");
-            if (!shader || !atlas) throw new InvalidOperationException("砂岩の植生用シェーダーまたは株のアトラスが見つかりません。");
-            var material = new Material(shader) { name = "Desert plants", hideFlags = HideFlags.DontSave };
+            if (!shader || !atlas) throw new InvalidOperationException("植生用シェーダーまたは株のアトラスが見つかりません。");
+            var material = new Material(shader) { name = materialName, hideFlags = HideFlags.DontSave };
             material.SetTexture("_BaseMap", atlas);
+            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", tint);
             material.EnableKeyword("_ALPHATEST_ON"); // Also cuts holes in the URP shadow and depth passes.
             var parent = new GameObject(name);
             parent.transform.SetParent(root, false);

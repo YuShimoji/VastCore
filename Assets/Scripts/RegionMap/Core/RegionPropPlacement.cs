@@ -60,6 +60,7 @@ namespace Vastcore.RegionMap
     public sealed class RegionPropProofSlice
     {
         public readonly List<RegionPropInstance> Instances = new List<RegionPropInstance>();
+        public RegionBiome Biome = RegionBiome.Desert;
         public RegionLookViewpoint CratesViewpoint;
         public RegionLookViewpoint RubbleViewpoint;
         public float CratesCenterX, CratesCenterZ;
@@ -68,6 +69,15 @@ namespace Vastcore.RegionMap
         public Func<float, float, float> RenderedHeightAt;
         /// <summary>true で、RegionPropView がプレースホルダの組に加えて実アセットの組（DS011_Props_Real）も作る（RegionLookSpec.PropsRealAssets）。</summary>
         public bool UseRealAssets;
+        /// <summary>true で、草原向けのモデル変種と地面なじませ色を使う。</summary>
+        public bool UseGrasslandVariants;
+        public bool HasGroundColor;
+        public float GroundRed = 0.72f;
+        public float GroundGreen = 0.56f;
+        public float GroundBlue = 0.40f;
+        public RegionLookViewpoint GrasslandPanoramaViewpoint;
+        public RegionLookViewpoint GrasslandOutcropViewpoint;
+        public RegionLookViewpoint GrasslandTrailViewpoint;
     }
 
     /// <summary>
@@ -91,7 +101,8 @@ namespace Vastcore.RegionMap
             float? yawOverride = null,
             string constructionOverride = null,
             string materialOverride = null,
-            string damageOverride = null)
+            string damageOverride = null,
+            RegionBiome biome = RegionBiome.Desert)
         {
             if (prop == null) throw new ArgumentNullException("prop");
             RegionPropVariationRules vr = prop.VariationRules;
@@ -188,10 +199,14 @@ namespace Vastcore.RegionMap
             if (prop.Id == "cnt_wood_barrel" && construction == "tipped_sideways" && !attachments.Contains("wooden_chock_wedge"))
                 attachments.Add("wooden_chock_wedge");
 
-            // V7: 環境順応
+            // V7: 環境順応（バイオームに応じて砂塵と苔の重みを切り替える）
             RegionPropOvergrowthRules v7 = vr.V7_BiomeOvergrowth;
-            float topDust = Lerp(v7.TopDustMin, v7.TopDustMax, Hash01(index, 19, s));
-            float mossMask = Lerp(v7.MossMaskMin, v7.MossMaskMax, Hash01(index, 20, s));
+            RegionBiomeSurfaceProfile biomeProfile = RegionBiomeSurface.ProfileFor(biome);
+            float topDust = Lerp(v7.TopDustMin, v7.TopDustMax, Hash01(index, 19, s)) * biomeProfile.TopDustScale;
+            float baseMoss = v7.MossMaskMax > 0f
+                ? Lerp(v7.MossMaskMin, v7.MossMaskMax, Hash01(index, 20, s))
+                : (biomeProfile.MossMaskScale > 0f ? Lerp(0.12f, 0.38f, Hash01(index, 20, s)) : 0f);
+            float mossMask = Clamp(baseMoss * biomeProfile.MossMaskScale, 0f, 1f);
 
             bool needsPallet = prop.SpawningRules.UsePalletUnderOnSlopeOverDeg >= 0f &&
                                slopeDeg > prop.SpawningRules.UsePalletUnderOnSlopeOverDeg;
@@ -465,7 +480,16 @@ namespace Vastcore.RegionMap
             if (scene == null) throw new ArgumentNullException("scene");
 
             uint seed = unchecked((uint)(scene.RegionSeed + seedOffset) * 2654435761u + 131u);
-            var slice = new RegionPropProofSlice { RenderedHeightAt = scene.RenderedHeightAt };
+            RegionBiomeSurfaceProfile biomeProfile = scene.BiomeSurface ?? RegionBiomeSurface.ProfileFor(scene.PrimaryBiome);
+            var slice = new RegionPropProofSlice
+            {
+                Biome = scene.PrimaryBiome,
+                RenderedHeightAt = scene.RenderedHeightAt,
+                HasGroundColor = scene.PrimaryBiome != RegionBiome.Desert,
+                GroundRed = biomeProfile.GroundSkirtR,
+                GroundGreen = biomeProfile.GroundSkirtG,
+                GroundBlue = biomeProfile.GroundSkirtB,
+            };
 
             // 1. 木箱・補給キャンプ区画: Near 視点（Eye: -121, -69）の前方手前、緩斜面を探す
             FindGentleSpot(scene, scene.CenterX - 120f, scene.CenterZ - 81f, 7f,

@@ -216,12 +216,15 @@ namespace Vastcore.RegionMap
             RegionSurfaceRelief.Bind();
             // Resources/RegionMap3D/Surfaces/<役>/ に置かれた写真素材を配列へ束ねる（無ければ今の手続きの絵）
             RegionSurfaceMaterials.Bind();
+            // バイオーム別 3D 表面（Grassland 等の芝・ローム・花崗岩崖）をバインドする
+            RegionSurfaceMaterials.BindBiomeSurfaces(scene.BiomeSurface, RegionPropAssets.Source);
             // 土砂の地図は窓ごとに画像にして、その窓のマテリアルへ結び付ける（アルコーブは内側のマテリアルを写すので同じ地図を読む）
             RegionSedimentLayers.Begin();
             var root = new GameObject("Region Terrain Look");
             var plain = new RegionRenderOptions { CloudCover = 0f, Exaggeration = 0f, CastShadow = 0f };
             var result = new LookResult { Root = root, Scene = scene };
             Material innerMaterial = null;
+            RegionBiomeSurfaceProfile biomeProfile = scene.BiomeSurface ?? RegionBiomeSurface.ProfileFor(scene.PrimaryBiome);
             foreach (RegionLookPart part in scene.Parts())
             {
                 Texture2D texture;
@@ -240,12 +243,21 @@ namespace Vastcore.RegionMap
                 texture.hideFlags = HideFlags.DontSave;
                 Material material = CreateMaterial(texture);
                 material.name = part.Name;
-                material.SetColor("_RockColor", new Color(RegionLookScene.RockRed, RegionLookScene.RockGreen, RegionLookScene.RockBlue, 1f));
-                material.SetFloat("_BandAmount", RegionLookScene.BandAmount);
-                if (part.Data?.MesaContactHeight != null || (part.Data == null && scene.Spec.Mesa > 0f))
+                bool hasSandstone = part.Data?.MesaContactHeight != null || (part.Data == null && scene.Spec.Mesa > 0f);
+                if (hasSandstone)
                 {
+                    material.SetColor("_RockColor", new Color(RegionLookScene.RockRed, RegionLookScene.RockGreen, RegionLookScene.RockBlue, 1f));
                     material.EnableKeyword("REGION_SANDSTONE");
                     material.SetFloat("_LooseRock", part.Data == null ? 1f : 0f);
+                }
+                else
+                {
+                    material.SetColor("_RockColor", new Color(biomeProfile.CliffR, biomeProfile.CliffG, biomeProfile.CliffB, 1f));
+                }
+                material.SetFloat("_BandAmount", RegionLookScene.BandAmount);
+                if (part.Data != null && (!hasSandstone || (scene.PrimaryBiome != RegionBiome.Desert && scene.PrimaryBiome != RegionBiome.Rock)))
+                {
+                    material.EnableKeyword("REGION_BIOME_SURFACE");
                 }
                 if (part == scene.InnerTerrain)
                     RegionSedimentLayers.Bind(material, part.Data, scene.InnerMinX, scene.InnerMinZ, scene.InnerCell);
@@ -358,6 +370,19 @@ namespace Vastcore.RegionMap
                     surface[v] = SandstoneChannels(data, v, vertices[v].y);
                 }
                 mesh.SetUVs(1, surface);
+            }
+            if (part.Data != null)
+            {
+                RegionData data = part.Data;
+                bool hasSandstone = data.MesaContactHeight != null;
+                var biomeChannels = new Vector4[count];
+                for (int v = 0; v < count; v++)
+                {
+                    RegionBiomeSurface.ComputeTerrainChannels(data, v, hasSandstone,
+                        out float bx, out float by, out float bz, out float bw);
+                    biomeChannels[v] = new Vector4(bx, by, bz, bw);
+                }
+                mesh.SetUVs(2, biomeChannels);
             }
             mesh.SetColors(colors);
             mesh.SetTriangles(triangles, 0, true);

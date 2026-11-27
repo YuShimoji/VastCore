@@ -190,6 +190,24 @@
       "triangles": 334
     },
     {
+      "fbx": "NAT/nat_dry_root_log/nat_dry_root_log__mossy_fallen_branch_lod0.fbx",
+      "glb": "NAT/nat_dry_root_log/nat_dry_root_log__mossy_fallen_branch_lod0.glb",
+      "glbSha256": "9e523b4782a89b81d419defbe98b936583660e431ee36458b31bbe0d93d9b1a6",
+      "fbxSha256": "2625d235e7900673ce7fb128cd2fcf4f4adda19cf92cfc2f08ca5f8287481a3b",
+      "triangles": 492,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_dry_root_log/nat_dry_root_log__mossy_fallen_branch_lod1.fbx",
+      "glb": "NAT/nat_dry_root_log/nat_dry_root_log__mossy_fallen_branch_lod1.glb",
+      "glbSha256": "8b9659aeece7d9089f6a7f8b0f1efcd153140e9d8a50d6cf71dae22a052fd6de",
+      "fbxSha256": "6208e3f44463a2b7c485c742dcea058bb1e7cb2ff80e6f56d785414ba681ce0b",
+      "triangles": 232,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
       "fbx": "NAT/nat_dry_root_log/nat_dry_root_log__twisted_juniper_snag_lod0.fbx",
       "glb": "NAT/nat_dry_root_log/nat_dry_root_log__twisted_juniper_snag_lod0.glb",
       "glbSha256": "a2f4bcc4ba8f8d72943a411a03ebf7b559ee2c973e0b3a88927e9410b70c7f8d",
@@ -202,6 +220,186 @@
       "glbSha256": "17e66fe06eacc0832de9f5ff61eaa8998fd803645a5c78e8de8a5c451fd4eaab",
       "fbxSha256": "b6145e36b536ddc26845839e17f877795365706320e24d4f16f336eeb546366b",
       "triangles": 218
+    },
+    {
+      "fbx": "NAT/nat_grass_tussock/nat_grass_tussock__lush_meadow_clump_lod0.fbx",
+      "glb": "NAT/nat_grass_tussock/nat_grass_tussock__lush_meadow_clump_lod0.glb",
+      "glbSha256": "9fa4d908ce709968d989837a84b0e4b46b8dc49e8bddca67b21a4d9e5ed2cf9a",
+      "fbxSha256": "65a4b28ae6da864eaba5a368df2a684101180d0c037a48e95d0c9f6ac420d95b",
+      "triangles": 824,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_grass_tussock/nat_grass_tussock__lush_meadow_clump_lod1.fbx",
+      "glb": "NAT/nat_grass_tussock/nat_grass_tussock__lush_meadow_clump_lod1.glb",
+      "glbSha256": "aba8380571b2f6405679c3bce521af71563128a58a9cb74c6e66e9b00cebfde8",
+      "fbxSha256": "8de6d5128eb9365f4f83d0c689bde4f3a3862606662ef1588b8c959840bc849f",
+      "triangles": 422,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_grass_tussock/nat_grass_tussock__seeded_tall_grass_lod0.fbx",
+      "glb": "NAT/nat_grass_tussock/nat_grass_tussock__seeded_tall_grass_lod0.glb",
+      "glbSha256": "3009be168f5042a2bc5a2af1db66946a046986541589cc188516f6ab0a4a475f",
+      "fbxSha256": "d531ccd35a38ab8f9d0bd655b464cf2963f29ebcc9443e44c4a980020464a19f",
+      "triangles": 903,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_grass_tussock/nat_grass_tussock__seeded_tall_grass_lod1.fbx",
+      "glb": "NAT/nat_grass_tussock/nat_grass_tussock__seeded_tall_grass_lod1.glb",
+      "glbSha256": "e290689f01d2267f11e881d329860c6c91eec8f616d9014e79ceec65909c9bf8",
+      "fbxSha256": "6fa7b8dd55f90b5909b0e8ea035ebaea6b4faeb712ec025e2a3363860328e14a",
+      "triangles": 490,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_grass_tussock/nat_grass_tussock__trailside_short_tuft_lod0.fbx",
+      "glb": "NAT/nat_grass_tussock/nat_grass_tussock__trailside_short_tuft_lod0.glb",
+      "glbSha256": "0bb4375bfc2ff098228995459075b7f4beded60ccb06e3893417d29caf8eee3e",
+      "fbxSha256": "9f42547f497a4cc8e58a3abcb2d7324303e65ccc1fe07270df654876adc919e1",
+      "triangles": 532,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_grass_tussock/nat_grass_tussock__trailside_short_tuft_lod1.fbx",
+      "glb": "NAT/nat_grass_tussock/nat_grass_tussock__trailside_short_tuft_lod1.glb",
+      "glbSha256": "14262e4087ab9a61ff58df51618689c0b3d877bfb276ca6b295f4ef875454b11",
+      "fbxSha256": "2efc6fdd2d8acf1f5ca5c4e9797811986e9ed7a9b0bff6b6f390bd55a9abc91e",
+      "triangles": 244,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_grassland_outcrop/nat_grassland_outcrop__moss_capped_boulder_lod0.fbx",
+      "glb": "NAT/nat_grassland_outcrop/nat_grassland_outcrop__moss_capped_boulder_lod0.glb",
+      "glbSha256": "ad9ce2c7f0371e4eda3c61a47388bceae12c1b5d296274efe91eb8ab3d6a531f",
+      "fbxSha256": "de166cfe920a0d3daca922ba2883d6f4d258f5a4a0e9def6172d20498fa95df0",
+      "triangles": 5120,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_grassland_outcrop/nat_grassland_outcrop__moss_capped_boulder_lod1.fbx",
+      "glb": "NAT/nat_grassland_outcrop/nat_grassland_outcrop__moss_capped_boulder_lod1.glb",
+      "glbSha256": "26333b984db626fce20fe9a455a2fc1cbe4b091963bfa753ad2f2f2a78015264",
+      "fbxSha256": "b43db3044a1b38fad791078a2087770b93bb710b9cae44c1a9c0652a862eea33",
+      "triangles": 2048,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_grassland_outcrop/nat_grassland_outcrop__rounded_granite_shelf_lod0.fbx",
+      "glb": "NAT/nat_grassland_outcrop/nat_grassland_outcrop__rounded_granite_shelf_lod0.glb",
+      "glbSha256": "8532d29e0b4722d9c6210afebcb7704d6809450221271ad226f98970ea4782a6",
+      "fbxSha256": "34a395effa2d8a12d16fd37e2ae6b74784f806774f610644ea41aa1541746871",
+      "triangles": 5120,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_grassland_outcrop/nat_grassland_outcrop__rounded_granite_shelf_lod1.fbx",
+      "glb": "NAT/nat_grassland_outcrop/nat_grassland_outcrop__rounded_granite_shelf_lod1.glb",
+      "glbSha256": "eeef3a6ea97c64375bfde3f378e63b8fa0351ef8df862fb50ceec69ed2ff9f9d",
+      "fbxSha256": "61de723f1ba4260eb01c88d356e9c7091cdb91f276e426705ddb51b757233056",
+      "triangles": 2048,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_grassland_outcrop/nat_grassland_outcrop__split_fieldstone_cluster_lod0.fbx",
+      "glb": "NAT/nat_grassland_outcrop/nat_grassland_outcrop__split_fieldstone_cluster_lod0.glb",
+      "glbSha256": "feb266a333f539fb5b1aa0afb0b30bde64af4b582f56067d67bc62a11d26c194",
+      "fbxSha256": "608e03b1e02cef994190716e7093c6ea4aa8259b1047580f731babc51bed7f6d",
+      "triangles": 2560,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_grassland_outcrop/nat_grassland_outcrop__split_fieldstone_cluster_lod1.fbx",
+      "glb": "NAT/nat_grassland_outcrop/nat_grassland_outcrop__split_fieldstone_cluster_lod1.glb",
+      "glbSha256": "631164b0dd8ae6270763e0379b60a33cd36eef1da1d39a7aabe7cbf83a40648f",
+      "fbxSha256": "fa83b4b7efde642e99812d8904f8298348ef0ee4dbb4933f58bf3c5c6b42b7be",
+      "triangles": 1024,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_meadow_shrub/nat_meadow_shrub__leafy_hedge_shrub_lod0.fbx",
+      "glb": "NAT/nat_meadow_shrub/nat_meadow_shrub__leafy_hedge_shrub_lod0.glb",
+      "glbSha256": "0076443a679ece72719567fd7eb8dd450fdc37f94bb065d7fdd383df08e2c175",
+      "fbxSha256": "c31d01160e2df02d4c52ea06fe61f97cbfe28ebe8a2aa1c3c67ce74bf9d5f818",
+      "triangles": 4432,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_meadow_shrub/nat_meadow_shrub__leafy_hedge_shrub_lod1.fbx",
+      "glb": "NAT/nat_meadow_shrub/nat_meadow_shrub__leafy_hedge_shrub_lod1.glb",
+      "glbSha256": "305b9bd92ca9e202333e794a1ea87fb63460c32f7c6dce97d6ae827bfaffc8fd",
+      "fbxSha256": "13f7b248cd89a0d5095d37f526adbbe94ade17fd46cbc7c6b873c2b846d028cb",
+      "triangles": 2361,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_meadow_shrub/nat_meadow_shrub__windswept_low_bush_lod0.fbx",
+      "glb": "NAT/nat_meadow_shrub/nat_meadow_shrub__windswept_low_bush_lod0.glb",
+      "glbSha256": "4fba830c211ad5b2d4698bfb03e7781e1fde47e5f180d888e618564e4017787f",
+      "fbxSha256": "2367e172b4b1b28fa32af4003d0e293b2ad40d1b6a4c4ff52ed045308cc7ad8d",
+      "triangles": 3324,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_meadow_shrub/nat_meadow_shrub__windswept_low_bush_lod1.fbx",
+      "glb": "NAT/nat_meadow_shrub/nat_meadow_shrub__windswept_low_bush_lod1.glb",
+      "glbSha256": "859f91f4fa22cd30225e88c689ab52a7d63c91036862f6c52635a2a75f70d113",
+      "fbxSha256": "0377bf6753289c2df5b2cd31db0b162914206b69184f46a271648513369477af",
+      "triangles": 1771,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_meadow_turf_skirt/nat_meadow_turf_skirt__turf_mound_ring_lod0.fbx",
+      "glb": "NAT/nat_meadow_turf_skirt/nat_meadow_turf_skirt__turf_mound_ring_lod0.glb",
+      "glbSha256": "48aa5bf571b5883135f96e847134c867e6326498e267646a918ac3b621a17aef",
+      "fbxSha256": "e31ee1e4f2e52c560e10a21e08764034633d07c886f5ba9e92fe0c000b4f43b4",
+      "triangles": 2016,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_meadow_turf_skirt/nat_meadow_turf_skirt__turf_mound_ring_lod1.fbx",
+      "glb": "NAT/nat_meadow_turf_skirt/nat_meadow_turf_skirt__turf_mound_ring_lod1.glb",
+      "glbSha256": "8ee5ae6b55a86df376f5b96d7fb373c441caaf2e36af7d053b4af7c9b0c00f67",
+      "fbxSha256": "6c59775f931a1147409c380be517473383134a3add831b75017e8d6efda68d52",
+      "triangles": 966,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_meadow_turf_skirt/nat_meadow_turf_skirt__worn_trail_verge_lod0.fbx",
+      "glb": "NAT/nat_meadow_turf_skirt/nat_meadow_turf_skirt__worn_trail_verge_lod0.glb",
+      "glbSha256": "0b52b214e0312a66ffce3fdcc30956c697c7e23b610529b20a38b90039eb76d8",
+      "fbxSha256": "fea249665898d4324eff8b233abdeb98b1d5391d6e2899024700f45532fea7c0",
+      "triangles": 2016,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_meadow_turf_skirt/nat_meadow_turf_skirt__worn_trail_verge_lod1.fbx",
+      "glb": "NAT/nat_meadow_turf_skirt/nat_meadow_turf_skirt__worn_trail_verge_lod1.glb",
+      "glbSha256": "74777bd9b31afe1d07a92450b23c6dac4ae867fe504a98ee1e57a16c0fec5c70",
+      "fbxSha256": "2748e6e5ecc75b808f3e9d65cd87f26fab11e5fad4d9ead985fc5cee9823a5aa",
+      "triangles": 967,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
     },
     {
       "fbx": "NAT/nat_pebble_cluster/nat_pebble_cluster__dense_talus_patch_lod0.fbx",
@@ -218,6 +416,24 @@
       "triangles": 1360
     },
     {
+      "fbx": "NAT/nat_pebble_cluster/nat_pebble_cluster__mossy_field_cobbles_lod0.fbx",
+      "glb": "NAT/nat_pebble_cluster/nat_pebble_cluster__mossy_field_cobbles_lod0.glb",
+      "glbSha256": "737daaeb50bd3b294051984c4954f78e01aa927e0dfedd56ad24614ab1f24d14",
+      "fbxSha256": "735e3661a470815e35df4c999c621c53f89d77f5c5779a98fc1709b2f64a78f6",
+      "triangles": 1600,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_pebble_cluster/nat_pebble_cluster__mossy_field_cobbles_lod1.fbx",
+      "glb": "NAT/nat_pebble_cluster/nat_pebble_cluster__mossy_field_cobbles_lod1.glb",
+      "glbSha256": "e161c7acb9c13299ec457f9c4930bedbd968c8575b18366365578fc31230369f",
+      "fbxSha256": "d778f09ada4319ee1ac20d03060f353f95e3aef25b2ac528044510291ec4fb07",
+      "triangles": 800,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
       "fbx": "NAT/nat_pebble_cluster/nat_pebble_cluster__sparse_angular_gravel_lod0.fbx",
       "glb": "NAT/nat_pebble_cluster/nat_pebble_cluster__sparse_angular_gravel_lod0.glb",
       "glbSha256": "0874a1a929339eca956c0414e6ce587bfdaebaad7abe046874f58a09274e88cf",
@@ -230,6 +446,24 @@
       "glbSha256": "c258117e7849e278461b815deb85fa03ad318be2b7ad661fa3ed08c4656ffb6d",
       "fbxSha256": "4d529820ee2055d4ecdd6eccb68eb45eaedae2a2ee99616bbba6b6c303b11060",
       "triangles": 880
+    },
+    {
+      "fbx": "NAT/nat_pebble_cluster/nat_pebble_cluster__trail_gravel_patch_lod0.fbx",
+      "glb": "NAT/nat_pebble_cluster/nat_pebble_cluster__trail_gravel_patch_lod0.glb",
+      "glbSha256": "b345cb022db6fe9ba1e070779791738b57e95e2cc663525dac713c9067407be6",
+      "fbxSha256": "24eb05fd7cc5f94b75e01ca2f2b533f9cc4df20686a4c69d59d42bd1f2dbc00d",
+      "triangles": 2240,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "NAT/nat_pebble_cluster/nat_pebble_cluster__trail_gravel_patch_lod1.fbx",
+      "glb": "NAT/nat_pebble_cluster/nat_pebble_cluster__trail_gravel_patch_lod1.glb",
+      "glbSha256": "58efa2c7dd5689911bc2c9f235219b37d35ab7f1a696be57dfe6d94a2072f6e0",
+      "fbxSha256": "7d762e14ffaba916376afbcf627766c325ad25612f9020e9c79928c76d887f1a",
+      "triangles": 1120,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
     },
     {
       "fbx": "NAT/nat_pebble_cluster/nat_pebble_cluster__wash_sorted_cobbles_lod0.fbx",
@@ -507,6 +741,42 @@
       "triangles": 1116
     },
     {
+      "fbx": "SET/set_trail_signpost/set_trail_signpost__meadow_wood_post_lod0.fbx",
+      "glb": "SET/set_trail_signpost/set_trail_signpost__meadow_wood_post_lod0.glb",
+      "glbSha256": "b666361429f13c026decad3a6e3661e5a6b43b29ec54570bfa5bf961948a9a11",
+      "fbxSha256": "96038cbd8750b0566d335a33f6b6e675d2ba8e9dbc1e6315122eec33b85aee86",
+      "triangles": 1892,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "SET/set_trail_signpost/set_trail_signpost__meadow_wood_post_lod1.fbx",
+      "glb": "SET/set_trail_signpost/set_trail_signpost__meadow_wood_post_lod1.glb",
+      "glbSha256": "1e4fa3190e39fffaccc5c1fc9a2f73117ed57951172e75963ca1d729f75cb764",
+      "fbxSha256": "53c3aa1116607f3765abdfc04ddf74cfd4176591a06fe13ad66d7c1bf4bda53e",
+      "triangles": 952,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "SET/set_trail_signpost/set_trail_signpost__mossy_stone_cairn_lod0.fbx",
+      "glb": "SET/set_trail_signpost/set_trail_signpost__mossy_stone_cairn_lod0.glb",
+      "glbSha256": "21dde0c8a3721e7579e5139bb688d9a45bab77070c85440a2b95a3920b1ae4cf",
+      "fbxSha256": "7bee7b59a16e24d79c097134517859514023a49b37c46287f17625adbd5d9689",
+      "triangles": 1528,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "SET/set_trail_signpost/set_trail_signpost__mossy_stone_cairn_lod1.fbx",
+      "glb": "SET/set_trail_signpost/set_trail_signpost__mossy_stone_cairn_lod1.glb",
+      "glbSha256": "1d4af847235201544f33da9ea57eeb623641b37dfff508fd19f56e353f1e6bb0",
+      "fbxSha256": "2258bb714d9ad7ff15b30f3f368d0fcd0f53e2f313948bd2eaa884a125576de4",
+      "triangles": 764,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
       "fbx": "STR/str_ruin_pillar/str_ruin_pillar__broken_mid_diagonal_lod0.fbx",
       "glb": "STR/str_ruin_pillar/str_ruin_pillar__broken_mid_diagonal_lod0.glb",
       "glbSha256": "97b1533189078234b7ecae2aae440ef70ad6fde5e04cef59dc2cf9cbb21ef4bd",
@@ -582,6 +852,78 @@
       "glbSha256": "e94ea4b11820b86e58eebca7476408a3e02e589ba81d9d13f07743c14285d6b4",
       "fbxSha256": "48bf1cc8c23e69530d9e1e12b9aa42320e7a5e3b232aa6b1dfa54d25a4df2d4c",
       "triangles": 10800
+    },
+    {
+      "fbx": "STR/str_wooden_fence/str_wooden_fence__post_end_cairn_lod0.fbx",
+      "glb": "STR/str_wooden_fence/str_wooden_fence__post_end_cairn_lod0.glb",
+      "glbSha256": "c14510f0922c1607a4e007ebd64c2a7445e24d4c6d7d1451d018ffdec38b05ab",
+      "fbxSha256": "9d794176ba719b4dc492592563bc88091e338e790572a3353a8b6079b5dca8f4",
+      "triangles": 2272,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "STR/str_wooden_fence/str_wooden_fence__post_end_cairn_lod1.fbx",
+      "glb": "STR/str_wooden_fence/str_wooden_fence__post_end_cairn_lod1.glb",
+      "glbSha256": "84490b184ad0528df5a32c698818bb2cdae8b6fd532f63e4f153eca2fd9809de",
+      "fbxSha256": "c8db0027c49e45c96471de294229f770528813d2db1a4e11ab3c3ec823fb4de4",
+      "triangles": 1080,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "STR/str_wooden_fence/str_wooden_fence__rail_2bar_intact_lod0.fbx",
+      "glb": "STR/str_wooden_fence/str_wooden_fence__rail_2bar_intact_lod0.glb",
+      "glbSha256": "003ca7737647649c3102ab4d6805d76f14a945ed254cec2504047bd589fcd50d",
+      "fbxSha256": "1f466f8dc80aa79954474cd3f844edd0ba69ddaa8089fda7adb5fc1e2ab77094",
+      "triangles": 528,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "STR/str_wooden_fence/str_wooden_fence__rail_2bar_intact_lod1.fbx",
+      "glb": "STR/str_wooden_fence/str_wooden_fence__rail_2bar_intact_lod1.glb",
+      "glbSha256": "074bef6234fa8e4a008b892ccee7f95d49db5d038ea97f19caaae78819b603b8",
+      "fbxSha256": "666c4cebe6de88779ee8108c826118eac00022ca76e93fbbcec8ee0e3bb844a7",
+      "triangles": 240,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "STR/str_wooden_fence/str_wooden_fence__rail_3bar_pasture_lod0.fbx",
+      "glb": "STR/str_wooden_fence/str_wooden_fence__rail_3bar_pasture_lod0.glb",
+      "glbSha256": "22cafaa5ba875b51aac4bb69134285d2fdf6549cc9e0a9a50aaae3bb758c5ea3",
+      "fbxSha256": "412089ec18479e71085158f806b83dee28d0a14bf175109b99ef8adf1f1e863a",
+      "triangles": 600,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "STR/str_wooden_fence/str_wooden_fence__rail_3bar_pasture_lod1.fbx",
+      "glb": "STR/str_wooden_fence/str_wooden_fence__rail_3bar_pasture_lod1.glb",
+      "glbSha256": "8dca9e1510f29a3ed2f88f7ae4582f1ee43e502274bd666fc78ca77d7ecf527a",
+      "fbxSha256": "152de7cc8a791b8b1356d4594f738917e846e51043eda66502f2d63d4346af41",
+      "triangles": 268,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "STR/str_wooden_fence/str_wooden_fence__sagging_weathered_span_lod0.fbx",
+      "glb": "STR/str_wooden_fence/str_wooden_fence__sagging_weathered_span_lod0.glb",
+      "glbSha256": "037379597f3306de4fa2d478bfd5844130794c260cc045259e582ca8c9c22692",
+      "fbxSha256": "ef66e7bc500c06d49483e6651b287eaaf95c80a92ed473338d7762d75044c4f8",
+      "triangles": 506,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "STR/str_wooden_fence/str_wooden_fence__sagging_weathered_span_lod1.fbx",
+      "glb": "STR/str_wooden_fence/str_wooden_fence__sagging_weathered_span_lod1.glb",
+      "glbSha256": "7ffd6005255846bd610b619800abc788c524e388ce8ba683adf11241d8e0ab8d",
+      "fbxSha256": "ae8a87cef5127659dfd5a8d2740669cae73512ac66eb4a7ec1921bc21bd42489",
+      "triangles": 240,
+      "source": "GameProjects studio-slice/model-library/grassland-env-modpack (handoff grassland-handoff-staging-20261127)",
+      "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS)"
     }
   ]
 }

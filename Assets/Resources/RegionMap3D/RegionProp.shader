@@ -17,8 +17,9 @@ Shader "Vastcore/RegionProp"
         _Metallic ("Metallic", Range(0, 1)) = 0
         _UvScale ("UV scale", Float) = 1
         [HideInInspector] _PropGround ("Ground plane and skirt (per instance)", Vector) = (0, 0, 0, 0)
-        [HideInInspector] _PropParams ("Dust, value, warmth (per instance)", Vector) = (0, 1, 0, 0)
+        [HideInInspector] _PropParams ("Dust, value, warmth, moss (per instance)", Vector) = (0, 1, 0, 0)
         [HideInInspector] _PropGroundColor ("Ground color (display sRGB, not converted)", Vector) = (0.72, 0.56, 0.40, 1)
+        [HideInInspector] _PropMossColor ("Moss color (display sRGB, not converted)", Vector) = (0.22, 0.34, 0.14, 1)
     }
 
     SubShader
@@ -57,6 +58,7 @@ Shader "Vastcore/RegionProp"
                 float4 _PropGround;
                 float4 _PropParams;
                 float4 _PropGroundColor;
+                float4 _PropMossColor;
             CBUFFER_END
 
             struct Attributes
@@ -143,6 +145,18 @@ Shader "Vastcore/RegionProp"
                 albedo = lerp(albedo, ground * 1.08, dust);
                 roughness = lerp(roughness, 1.0, dust);
                 shade = normalize(lerp(shade, geometricNormal, dust * 0.6));
+
+                // V7 MossMask: 湿潤バイオームでの上面・北/陰側の苔堆積
+                half moss = 0.0;
+                if (_PropParams.w > 1e-4)
+                {
+                    half mossUp = smoothstep(0.15, 0.78, geometricNormal.y * 0.7 + shade.y * 0.3);
+                    half mossNoise = smoothstep(0.28, 0.72, 0.55 * n1 + 0.45 * n2 + 0.20 * _PropParams.w);
+                    moss = saturate(_PropParams.w * 1.15 * mossUp * mossNoise);
+                }
+                half3 mossColor = RegionDisplayToLinear(_PropMossColor.rgb) * (0.78 + 0.40 * n1);
+                albedo = lerp(albedo, mossColor, moss);
+                roughness = lerp(roughness, 0.92, moss);
 
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light light = GetMainLight(shadowCoord);

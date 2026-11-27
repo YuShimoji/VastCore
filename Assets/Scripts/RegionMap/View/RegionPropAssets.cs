@@ -63,6 +63,10 @@ namespace Vastcore.RegionMap
         public const string ModelsRoot = "Assets/Art/Models";
         public const string WoodSet = "Assets/Art/Textures/CNT/weathered_pine_timber/";
         public const string StoneSet = "Assets/Art/Textures/RUB/sandstone_rubble_weathered/";
+        public const string GraniteSet = "Assets/Art/Textures/NAT/mossy_granite_outcrop/";
+        public const string MeadowTurfSet = "Assets/Art/Textures/NAT/grassland_meadow_turf/";
+        public const string MeadowLoamSet = "Assets/Art/Textures/NAT/grassland_loam_soil/";
+        public const string MeadowFoliageSet = "Assets/Art/Textures/NAT/meadow_foliage_blade/";
         // 砂は既にある ambientCG Ground054 の色だけを使う（MapGenerator の法線は取り込みの設定が legacy のままなので使わない）
         public const string SandColor = "Assets/Resources/MapGenerator/Textures/Ground054_1K-JPG/Ground054_1K-JPG_Color.jpg";
 
@@ -96,6 +100,72 @@ namespace Vastcore.RegionMap
             LooseRockMean.r / StoneTextureMean.r * StoneRenderCalibration.r,
             LooseRockMean.g / StoneTextureMean.g * StoneRenderCalibration.g,
             LooseRockMean.b / StoneTextureMean.b * StoneRenderCalibration.b, 1f);
+
+        /// <summary>草原（DS-012 サンプル）専用のモデル変種・ファミリか判定する（砂岩シーンへの混入防止用）。</summary>
+        public static bool IsGrasslandVariant(string propId, string variant)
+        {
+            if (propId == "nat_grass_tussock" || propId == "nat_grassland_outcrop" ||
+                propId == "nat_meadow_shrub" || propId == "nat_meadow_turf_skirt")
+                return true;
+            if (string.IsNullOrEmpty(variant)) return false;
+            string v = variant.ToLowerInvariant();
+            return v.Contains("mossy_") || v.Contains("meadow_") || v.Contains("trail_gravel_patch") ||
+                   v.Contains("post_end_cairn") || v.Contains("rail_2bar_intact") ||
+                   v.Contains("rail_3bar_pasture") || v.Contains("sagging_weathered_span") ||
+                   v.Contains("lush_meadow_clump") || v.Contains("seeded_tall_grass") ||
+                   v.Contains("trailside_short_tuft") || v.Contains("moss_capped_boulder") ||
+                   v.Contains("rounded_granite_shelf") || v.Contains("split_fieldstone_cluster") ||
+                   v.Contains("leafy_hedge_shrub") || v.Contains("windswept_low_bush") ||
+                   v.Contains("turf_mound_ring") || v.Contains("worn_trail_verge");
+        }
+
+        /// <summary>バイオームに応じて配置候補のモデル変種を明示分離する。</summary>
+        public static IReadOnlyList<RegionPropModel> FilterModelsForBiome(
+            string propId, IReadOnlyList<RegionPropModel> models, RegionBiome biome, bool allowGrasslandVariants)
+        {
+            if (models == null || models.Count == 0) return Array.Empty<RegionPropModel>();
+            var filtered = new List<RegionPropModel>(models.Count);
+            if (!allowGrasslandVariants || biome == RegionBiome.Desert)
+            {
+                for (int i = 0; i < models.Count; i++)
+                {
+                    if (!IsGrasslandVariant(propId, models[i].Variant))
+                        filtered.Add(models[i]);
+                }
+                return filtered;
+            }
+
+            // 草原・湿潤バイオーム側: 草原専用バリアントがあれば優先し、砂岩専用（marker- / sandstone）は除外する
+            for (int i = 0; i < models.Count; i++)
+            {
+                string v = models[i].Variant ?? "";
+                if (IsGrasslandVariant(propId, v))
+                    filtered.Add(models[i]);
+            }
+            if (filtered.Count > 0) return filtered;
+
+            for (int i = 0; i < models.Count; i++)
+            {
+                string v = (models[i].Variant ?? "").ToLowerInvariant();
+                if (!v.Contains("sandstone") && !v.StartsWith("marker-", StringComparison.Ordinal))
+                    filtered.Add(models[i]);
+            }
+            return filtered;
+        }
+
+        /// <summary>バイオーム別の地面なじませ色（display sRGB）。</summary>
+        public static Color GroundColorFor(RegionBiome biome)
+        {
+            RegionBiomeSurfaceProfile profile = RegionBiomeSurface.ProfileFor(biome);
+            return new Color(profile.GroundSkirtR, profile.GroundSkirtG, profile.GroundSkirtB, 1f);
+        }
+
+        /// <summary>バイオーム別の苔色（display sRGB）。</summary>
+        public static Color MossColorFor(RegionBiome biome)
+        {
+            RegionBiomeSurfaceProfile profile = RegionBiomeSurface.ProfileFor(biome);
+            return new Color(profile.MossR, profile.MossG, profile.MossB, 1f);
+        }
 
         /// <summary>カタログ ID の頭（nat_・rub_ …）をドメインのフォルダの名前（NAT・RUB …）にする。</summary>
         public static string DomainOf(string catalogId)
@@ -216,15 +286,65 @@ namespace Vastcore.RegionMap
                 s.Roughness = 0.83f;
                 return s;
             }
-            if (n.Contains("wood") || n.Contains("plank") || n.Contains("timber"))
+            if (n.Contains("wood") || n.Contains("plank") || n.Contains("timber") || n.Contains("bark"))
             {
                 s.ColorPath = WoodSet + "raw_plank_wall_diff_2k.jpg";
                 s.NormalPath = WoodSet + "raw_plank_wall_nor_gl_2k.jpg";
                 s.RoughnessPath = WoodSet + "raw_plank_wall_rough_2k.jpg";
                 if (n.Contains("charred")) s.Value = 0.36f;
+                else if (n.Contains("bark")) { s.Value = 0.62f; s.Warmth = 0.1f; s.Roughness = 0.92f; }
                 else if (n.Contains("bleached") || n.Contains("drift")) { s.Value = 1.22f; s.Warmth = -0.6f; }
                 else if (n.Contains("light")) s.Value = 1.12f;
                 else if (n.Contains("split")) s.Value = 1.05f;
+                else if (n.Contains("end")) { s.Value = 0.88f; s.Warmth = 0.2f; }
+                return s;
+            }
+            if (n.Contains("rope") || n.Contains("lashing"))
+            {
+                s.ColorPath = WoodSet + "raw_plank_wall_diff_2k.jpg";
+                s.NormalPath = WoodSet + "raw_plank_wall_nor_gl_2k.jpg";
+                s.RoughnessPath = WoodSet + "raw_plank_wall_rough_2k.jpg";
+                s.Value = 1.18f;
+                s.Warmth = 0.35f;
+                s.Roughness = 0.94f;
+                return s;
+            }
+            if (n.Contains("granite"))
+            {
+                s.ColorPath = GraniteSet + "mossy_granite_outcrop_diff_1k.jpg";
+                s.NormalPath = GraniteSet + "mossy_granite_outcrop_nor_gl_1k.jpg";
+                s.RoughnessPath = GraniteSet + "mossy_granite_outcrop_rough_1k.jpg";
+                s.Roughness = 0.85f;
+                if (n.Contains("pale") || n.Contains("limestone")) { s.Value = 1.16f; s.Warmth = 0.15f; }
+                else if (n.Contains("shaded")) { s.Value = 0.78f; s.Warmth = -0.15f; }
+                else if (n.Contains("mossy")) { s.Value = 0.98f; s.Warmth = -0.10f; }
+                return s;
+            }
+            if (n.Contains("turf"))
+            {
+                s.ColorPath = MeadowTurfSet + "Grass005_1K-JPG_Color.jpg";
+                s.NormalPath = MeadowTurfSet + "Grass005_1K-JPG_NormalGL.jpg";
+                s.RoughnessPath = MeadowTurfSet + "Grass005_1K-JPG_Roughness.jpg";
+                s.Roughness = 0.90f;
+                return s;
+            }
+            if (n.Contains("loam"))
+            {
+                s.ColorPath = MeadowLoamSet + "Ground009_1K-JPG_Color.jpg";
+                s.NormalPath = MeadowLoamSet + "Ground009_1K-JPG_NormalGL.jpg";
+                s.RoughnessPath = MeadowLoamSet + "Ground009_1K-JPG_Roughness.jpg";
+                s.Roughness = 0.95f;
+                return s;
+            }
+            if (n.Contains("grass") || n.Contains("foliage") || n.Contains("shrub") || n.Contains("leaf"))
+            {
+                s.ColorPath = MeadowFoliageSet + "meadow_foliage_blade_diff_1k.jpg";
+                s.NormalPath = MeadowFoliageSet + "meadow_foliage_blade_nor_gl_1k.jpg";
+                s.RoughnessPath = MeadowFoliageSet + "meadow_foliage_blade_rough_1k.jpg";
+                s.Roughness = 0.68f;
+                if (n.Contains("seeded") || n.Contains("ochre")) { s.Value = 1.14f; s.Warmth = 0.85f; }
+                else if (n.Contains("shrub") || n.Contains("leaf")) { s.Value = 0.86f; s.Warmth = -0.15f; }
+                else { s.Value = 1.02f; s.Warmth = -0.05f; }
                 return s;
             }
             if ((n.Contains("sand") && !n.Contains("sandstone")) || n.Contains("skirt") || n.Contains("ash"))

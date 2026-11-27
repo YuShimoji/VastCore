@@ -74,6 +74,11 @@ namespace Vastcore.RegionMap
         {
             public Shader Shader;
             public IRegionPropAssetSource Source;
+            public RegionBiome Biome = RegionBiome.Desert;
+            public bool UseGrasslandVariants;
+            public bool HasGroundColor;
+            public Vector4 GroundColor = new Vector4(0.72f, 0.56f, 0.40f, 1f);
+            public Vector4 MossColor = new Vector4(0.22f, 0.34f, 0.14f, 1f);
             public readonly Dictionary<string, Material> Materials = new Dictionary<string, Material>(StringComparer.Ordinal);
             public readonly Dictionary<string, IReadOnlyList<RegionPropModel>> Models = new Dictionary<string, IReadOnlyList<RegionPropModel>>(StringComparer.Ordinal);
             public readonly SortedDictionary<string, int> Used = new SortedDictionary<string, int>(StringComparer.Ordinal);
@@ -87,10 +92,18 @@ namespace Vastcore.RegionMap
             realRoot.transform.SetParent(parent, false);
             result.RealRoot = realRoot;
             Shader propShader = Shader.Find(PropShaderName);
+            Color moss = RegionPropAssets.MossColorFor(slice.Biome);
             var ctx = new RealContext
             {
                 Shader = propShader != null ? propShader : palette.Shader,
                 Source = RegionPropAssets.Source,
+                Biome = slice.Biome,
+                UseGrasslandVariants = slice.UseGrasslandVariants || slice.Biome == RegionBiome.Grassland,
+                HasGroundColor = slice.HasGroundColor || slice.Biome != RegionBiome.Desert,
+                GroundColor = slice.HasGroundColor
+                    ? new Vector4(slice.GroundRed, slice.GroundGreen, slice.GroundBlue, 1f)
+                    : (Vector4)RegionPropAssets.GroundColorFor(slice.Biome),
+                MossColor = new Vector4(moss.r, moss.g, moss.b, 1f),
                 Block = new MaterialPropertyBlock()
             };
             float rootY = realRoot.transform.position.y;
@@ -108,7 +121,7 @@ namespace Vastcore.RegionMap
                     models.FirstOrDefault(candidate => candidate.Variant == inst.ClusterModelVariant);
                 bool covered = RegionPropAssets.CoveredByClusterModel(inst) ||
                     (assembly != null && !completeClusters.Add((inst.PropId, inst.ClusterIndex)));
-                RegionPropModel model = assembly ?? SelectPlacementModel(inst, models);
+                RegionPropModel model = assembly ?? SelectPlacementModel(inst, models, ctx.Biome, ctx.UseGrasslandVariants);
                 GameObject go;
                 if (model == null)
                 {
@@ -151,8 +164,15 @@ namespace Vastcore.RegionMap
             result.RealSummary = summary.ToString().TrimEnd();
         }
 
-        private static RegionPropModel SelectPlacementModel(RegionPropInstance inst, IReadOnlyList<RegionPropModel> models)
+        private static RegionPropModel SelectPlacementModel(RegionPropInstance inst, IReadOnlyList<RegionPropModel> models, RegionBiome biome, bool useGrasslandVariants)
         {
+            if (models.Count == 0) return null;
+            if (useGrasslandVariants && !string.IsNullOrEmpty(inst.MeshVariant))
+            {
+                RegionPropModel exact = models.FirstOrDefault(model => string.Equals(model.Variant, inst.MeshVariant, StringComparison.Ordinal));
+                if (exact != null) return exact;
+            }
+            models = RegionPropAssets.FilterModelsForBiome(inst.PropId, models, biome, useGrasslandVariants);
             if (models.Count == 0) return null;
             // 別の荷を載せる土台に、箱が焼き込まれた cargo 付きパレットを重ねない。
             if (inst.Role == "PalletBase" && inst.PropId == "cnt_supply_pallet")
@@ -303,7 +323,11 @@ namespace Vastcore.RegionMap
             float warmth = ((h & 1023) / 1023f) * 2f - 1f;
             ctx.Block.Clear();
             ctx.Block.SetVector("_PropGround", new Vector4(groundY, slopeX, slopeZ, skirt));
-            ctx.Block.SetVector("_PropParams", new Vector4(Mathf.Clamp01(inst.TopDust), Mathf.Clamp(1f + inst.TintShift, 0.78f, 1.22f), warmth * 0.5f, 0f));
+            ctx.Block.SetVector("_PropParams", new Vector4(
+                Mathf.Clamp01(inst.TopDust),
+                Mathf.Clamp(1f + inst.TintShift, 0.78f, 1.22f),
+                warmth * 0.5f,
+                Mathf.Clamp01(inst.MossMask)));
 
             foreach (GameObject part in new[] { lod0, lod1 })
             {
@@ -403,6 +427,10 @@ namespace Vastcore.RegionMap
             if (mat.HasProperty("_Roughness")) mat.SetFloat("_Roughness", surface.Roughness);
             if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 1f - surface.Roughness);
             if (mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", surface.Metallic);
+            if (ctx.HasGroundColor && mat.HasProperty("_PropGroundColor"))
+                mat.SetVector("_PropGroundColor", ctx.GroundColor);
+            if (mat.HasProperty("_PropMossColor"))
+                mat.SetVector("_PropMossColor", ctx.MossColor);
             ctx.Materials[surface.Key] = mat;
             return mat;
         }

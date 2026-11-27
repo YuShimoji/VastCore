@@ -49,7 +49,7 @@ Shader "Vastcore/RegionPlants"
             {
                 half4 leaf = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv);
                 clip(leaf.a - _Cutoff);
-                half3 albedo = RegionToLinear(leaf.rgb);
+                half3 albedo = RegionToLinear(leaf.rgb * _BaseColor.rgb);
                 Light sun = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
                 AmbientOcclusionFactor occlusion = GetScreenSpaceAmbientOcclusion(GetNormalizedScreenSpaceUV(i.positionCS));
                 half terrainSun = RegionShadowsEnabled() ? RegionSunVisibility(i.positionWS, float3(0, 1, 0), 0.0) : i.light.x;

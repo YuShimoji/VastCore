@@ -1,0 +1,21 @@
+{
+  "sets": [
+    {
+      "files": [
+        "Ground009_1K-JPG_AmbientOcclusion.jpg",
+        "Ground009_1K-JPG_Color.jpg",
+        "Ground009_1K-JPG_Displacement.jpg",
+        "Ground009_1K-JPG_NormalGL.jpg",
+        "Ground009_1K-JPG_Roughness.jpg"
+      ],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=Ground009",
+      "generator": "",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "2026-11-27",
+      "tileMetres": 2.0,
+      "notes": "Staged from VastCore MapGenerator CC0 library for Grassland temperate loam/trail soil role."
+    }
+  ]
+}

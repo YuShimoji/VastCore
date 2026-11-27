@@ -156,6 +156,68 @@ namespace Vastcore.RegionMap
                 if (array != null) Object.DestroyImmediate(array);
             detailArray = normalArray = hraArray = null;
             Count = 0;
+            ReleaseBiomeSurfaces();
+        }
+
+        /// <summary>
+        /// 砂岩以外のバイオーム（Grassland / Forest / Savanna 等）用の地面・下層土・崖 PBR テクスチャをシェーダーへ渡す。
+        /// テクスチャが存在しない環境でもエラーにせず、手続き色調＋崖色のみでフォールバックする。
+        /// </summary>
+        public static void BindBiomeSurfaces(RegionBiomeSurfaceProfile profile, IRegionPropAssetSource assetSource = null)
+        {
+            ReleaseBiomeSurfaces();
+            if (profile == null || profile.UsesSandstonePipeline)
+            {
+                Shader.SetGlobalVector("_RegionBiomeParams", Vector4.zero);
+                Shader.SetGlobalVector("_RegionBiomeTile", new Vector4(0.4f, 0.45f, 0.36f, 0.88f));
+                Shader.SetGlobalVector("_RegionBiomeCliffColor", Vector4.zero);
+                return;
+            }
+
+            IRegionPropAssetSource source = assetSource ?? RegionPropAssets.Source;
+            Texture2D groundColor = source != null && !string.IsNullOrEmpty(profile.GroundColorPath) ? source.Texture(profile.GroundColorPath) : null;
+            Texture2D groundNormal = source != null && !string.IsNullOrEmpty(profile.GroundNormalPath) ? source.Texture(profile.GroundNormalPath) : null;
+            Texture2D groundRough = source != null && !string.IsNullOrEmpty(profile.GroundRoughnessPath) ? source.Texture(profile.GroundRoughnessPath) : null;
+            Texture2D subsoilColor = source != null && !string.IsNullOrEmpty(profile.SubsoilColorPath) ? source.Texture(profile.SubsoilColorPath) : null;
+            Texture2D subsoilNormal = source != null && !string.IsNullOrEmpty(profile.SubsoilNormalPath) ? source.Texture(profile.SubsoilNormalPath) : null;
+            Texture2D subsoilRough = source != null && !string.IsNullOrEmpty(profile.SubsoilRoughnessPath) ? source.Texture(profile.SubsoilRoughnessPath) : null;
+            Texture2D cliffColor = source != null && !string.IsNullOrEmpty(profile.CliffColorPath) ? source.Texture(profile.CliffColorPath) : null;
+            Texture2D cliffNormal = source != null && !string.IsNullOrEmpty(profile.CliffNormalPath) ? source.Texture(profile.CliffNormalPath) : null;
+            Texture2D cliffRough = source != null && !string.IsNullOrEmpty(profile.CliffRoughnessPath) ? source.Texture(profile.CliffRoughnessPath) : null;
+
+            bool hasTextures = Enabled && groundColor != null;
+            if (hasTextures)
+            {
+                Shader.SetGlobalTexture("_BiomeGroundMap", groundColor);
+                Shader.SetGlobalTexture("_BiomeGroundNormal", groundNormal != null ? groundNormal : Texture2D.normalTexture);
+                Shader.SetGlobalTexture("_BiomeGroundRoughness", groundRough != null ? groundRough : Texture2D.whiteTexture);
+                Shader.SetGlobalTexture("_BiomeSubsoilMap", subsoilColor != null ? subsoilColor : groundColor);
+                Shader.SetGlobalTexture("_BiomeSubsoilNormal", subsoilNormal != null ? subsoilNormal : (groundNormal != null ? groundNormal : Texture2D.normalTexture));
+                Shader.SetGlobalTexture("_BiomeSubsoilRoughness", subsoilRough != null ? subsoilRough : (groundRough != null ? groundRough : Texture2D.whiteTexture));
+                Shader.SetGlobalTexture("_BiomeCliffMap", cliffColor != null ? cliffColor : groundColor);
+                Shader.SetGlobalTexture("_BiomeCliffNormal", cliffNormal != null ? cliffNormal : Texture2D.normalTexture);
+                Shader.SetGlobalTexture("_BiomeCliffRoughness", cliffRough != null ? cliffRough : Texture2D.whiteTexture);
+            }
+
+            Color cliffDisplay = new Color(profile.CliffR, profile.CliffG, profile.CliffB, 1f);
+            Color cliffLinear = QualitySettings.activeColorSpace == ColorSpace.Linear ? cliffDisplay.linear : cliffDisplay;
+
+            Shader.SetGlobalVector("_RegionBiomeParams", new Vector4(
+                hasTextures ? 1f : 0f,
+                profile.DetailStrength,
+                profile.NormalStrength,
+                profile.SpecularStrength));
+            Shader.SetGlobalVector("_RegionBiomeTile", new Vector4(
+                1f / Mathf.Max(0.1f, profile.GroundTileMetres),
+                1f / Mathf.Max(0.1f, profile.SubsoilTileMetres),
+                1f / Mathf.Max(0.1f, profile.CliffTileMetres),
+                profile.DefaultRoughness));
+            Shader.SetGlobalVector("_RegionBiomeCliffColor", new Vector4(cliffLinear.r, cliffLinear.g, cliffLinear.b, 1f));
+        }
+
+        public static void ReleaseBiomeSurfaces()
+        {
+            Shader.SetGlobalVector("_RegionBiomeParams", Vector4.zero);
         }
 
         // 3 枚が揃い、正方形で、先に入った役と大きさ・形式・mip の数が同じか。問題があれば理由を返す

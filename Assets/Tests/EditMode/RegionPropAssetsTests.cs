@@ -140,5 +140,81 @@ namespace Vastcore.Tests.EditMode
             Assert.AreEqual("NAT", RegionPropAssets.DomainOf("nat_stratified_slab"));
             Assert.AreEqual("", RegionPropAssets.DomainOf(""));
         }
+
+        [Test]
+        public void SurfaceFor_MapsGrasslandMaterialsAndSampleSliceIncludes19Variants()
+        {
+            Assert.AreEqual(RegionPropAssets.GraniteSet + "mossy_granite_outcrop_diff_1k.jpg", RegionPropAssets.SurfaceFor("Mat_Granite_Mossy").ColorPath);
+            Assert.AreEqual(RegionPropAssets.MeadowTurfSet + "Grass005_1K-JPG_Color.jpg", RegionPropAssets.SurfaceFor("Mat_Meadow_Turf").ColorPath);
+            Assert.AreEqual(RegionPropAssets.MeadowLoamSet + "Ground009_1K-JPG_Color.jpg", RegionPropAssets.SurfaceFor("Mat_Meadow_Loam").ColorPath);
+            Assert.AreEqual(RegionPropAssets.MeadowFoliageSet + "meadow_foliage_blade_diff_1k.jpg", RegionPropAssets.SurfaceFor("Mat_Grass_LushBlade").ColorPath);
+            Assert.Greater(RegionPropAssets.SurfaceFor("Mat_Grass_SeededOchre").Warmth, 0.5f);
+            Assert.Less(RegionPropAssets.SurfaceFor("Mat_Bark_ShrubLog").Value, 0.7f);
+            Assert.Greater(RegionPropAssets.SurfaceFor("Mat_Rope_Lashing").Warmth, 0.2f);
+
+            RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = 8, Resolution = 256 });
+            RegionLookSpec spec = RegionLookSpec.CreateGrasslandSample();
+            spec.Resolution = 128;
+            spec.OuterKm = 1.5f;
+            spec.InnerKm = 0.5f;
+            RegionLookScene scene = RegionLookScene.Build(region, spec);
+            Assert.AreEqual(RegionBiome.Grassland, scene.PrimaryBiome);
+            Assert.NotNull(scene.PropsSlice);
+            Assert.IsTrue(scene.PropsSlice.UseGrasslandVariants);
+            Assert.IsTrue(scene.PropsSlice.HasGroundColor);
+            var variants = new HashSet<string>();
+            bool anyMoss = false;
+            foreach (RegionPropInstance inst in scene.PropsSlice.Instances)
+            {
+                variants.Add(inst.MeshVariant);
+                if (inst.MossMask > 0.2f) anyMoss = true;
+                Assert.LessOrEqual(inst.TopDust, 0.1f);
+            }
+            Assert.AreEqual(19, variants.Count);
+            Assert.IsTrue(anyMoss, "草原サンプル Props に MossMask が設定されること");
+        }
+
+        [Test]
+        public void FilterModelsForBiome_SeparatesDesertAndGrasslandVariants()
+        {
+            var signModels = new[]
+            {
+                new RegionPropModel { Variant = "marker-intact" },
+                new RegionPropModel { Variant = "marker-damaged" },
+                new RegionPropModel { Variant = "set_trail_signpost__meadow_wood_post" },
+                new RegionPropModel { Variant = "set_trail_signpost__mossy_stone_cairn" },
+            };
+            IReadOnlyList<RegionPropModel> desertSigns = RegionPropAssets.FilterModelsForBiome("set_trail_signpost", signModels, RegionBiome.Desert, false);
+            Assert.AreEqual(2, desertSigns.Count);
+            foreach (RegionPropModel m in desertSigns) Assert.IsTrue(m.Variant.StartsWith("marker-"));
+
+            IReadOnlyList<RegionPropModel> grassSigns = RegionPropAssets.FilterModelsForBiome("set_trail_signpost", signModels, RegionBiome.Grassland, true);
+            Assert.AreEqual(2, grassSigns.Count);
+            foreach (RegionPropModel m in grassSigns) Assert.IsFalse(m.Variant.StartsWith("marker-"));
+
+            var fenceModels = new[]
+            {
+                new RegionPropModel { Variant = "str_wooden_fence__post_end_cairn" },
+                new RegionPropModel { Variant = "str_wooden_fence__rail_2bar_intact" },
+                new RegionPropModel { Variant = "str_wooden_fence__rail_3bar_pasture" },
+                new RegionPropModel { Variant = "str_wooden_fence__sagging_weathered_span" },
+            };
+            Assert.AreEqual(0, RegionPropAssets.FilterModelsForBiome("str_wooden_fence", fenceModels, RegionBiome.Desert, false).Count);
+            Assert.AreEqual(4, RegionPropAssets.FilterModelsForBiome("str_wooden_fence", fenceModels, RegionBiome.Grassland, true).Count);
+        }
+
+        [Test]
+        public void BiomeOvergrowth_SwitchesTopDustAndMossMaskByBiome()
+        {
+            RegionPropCatalog catalog = RegionPropCatalog.LoadDefault();
+            RegionPropDefinition log = catalog.GetProp("nat_dry_root_log");
+            RegionPropInstance desertLog = RegionPropPlacementSolver.ResolveSingle(log, 101u, 1, 0f, 0f, 0f, 5f, 0f, 1f, biome: RegionBiome.Desert);
+            RegionPropInstance grassLog = RegionPropPlacementSolver.ResolveSingle(log, 101u, 1, 0f, 0f, 0f, 5f, 0f, 1f, biome: RegionBiome.Grassland);
+
+            Assert.AreEqual(0f, desertLog.MossMask, 1e-5f);
+            Assert.Greater(desertLog.TopDust, 0.15f);
+            Assert.Greater(grassLog.MossMask, 0.0f);
+            Assert.Less(grassLog.TopDust, desertLog.TopDust * 0.2f);
+        }
     }
 }

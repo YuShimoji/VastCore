@@ -511,6 +511,64 @@ namespace Vastcore.Tests.EditMode
             Assert.IsEmpty(RegionPlantField.Build(scene));
         }
 
+        [Test]
+        public void GrasslandLookScene_BuildsBiomeSurfaceChannels_AndVegetatesWithoutMesa()
+        {
+            RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = 8, Resolution = 256 });
+            Assert.AreEqual(RegionBiome.Grassland, region.BiomeAtMap(37.55f, 57.86f));
+
+            RegionLookSpec spec = RegionLookSpec.ForBiome(RegionBiome.Grassland, 37.55f, 57.86f, withProps: true, withRealAssets: true);
+            spec.OuterKm = 1.5f;
+            spec.InnerKm = 0.5f;
+            spec.Resolution = 128;
+
+            RegionLookScene scene = RegionLookScene.Build(region, spec);
+            Assert.AreEqual(RegionBiome.Grassland, scene.PrimaryBiome);
+            Assert.IsNull(scene.Inner.Data.MesaContactHeight);
+            Assert.IsNotNull(scene.PropsSlice);
+
+            UnityEngine.Mesh innerMesh = RegionTerrainView.LookMesh(scene.InnerTerrain);
+            try
+            {
+                var biomeUv = new System.Collections.Generic.List<Vector4>();
+                innerMesh.GetUVs(2, biomeUv);
+                Assert.AreEqual(scene.InnerTerrain.VertexCount, biomeUv.Count);
+                int grassVertices = 0;
+                foreach (Vector4 ch in biomeUv)
+                {
+                    if (ch.w > 0.5f && ch.x > 0.5f) grassVertices++;
+                }
+                Assert.Greater(grassVertices, scene.InnerTerrain.VertexCount / 4);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(innerMesh);
+            }
+
+            var plants = RegionPlantField.Build(scene);
+            Assert.IsNotEmpty(plants, "Mesa=0 の Grassland でも RegionPlantField が植生を配置すること");
+            CollectionAssert.AreEqual(plants, RegionPlantField.Build(scene));
+            Assert.IsTrue(plants.Exists(p => p.Kind == RegionPlantKind.Grass));
+
+            RegionTerrainView.LookResult look = RegionTerrainView.BuildLook(region, spec);
+            try
+            {
+                UnityEngine.Transform innerGo = look.Root.transform.Find("Inner Terrain");
+                Assert.IsNotNull(innerGo);
+                Material mat = innerGo.GetComponent<MeshRenderer>().sharedMaterial;
+                Assert.IsTrue(mat.IsKeywordEnabled("REGION_BIOME_SURFACE"));
+                Assert.IsFalse(mat.IsKeywordEnabled("REGION_SANDSTONE"));
+                Assert.Greater(look.PlantCounts[0], 0);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(look.Root);
+                RegionSurfaceMaterials.Release();
+                RegionSurfaceRelief.Release();
+                RegionTerrainShadows.Release();
+            }
+        }
+
         /// <summary>60 度より急な陸のセルの数。</summary>
         private static int SteepLandCells(RegionData data)
         {
