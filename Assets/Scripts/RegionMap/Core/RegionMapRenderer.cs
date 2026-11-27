@@ -53,6 +53,12 @@ namespace Vastcore.RegionMap
 
         public static byte[] Render(RegionData data, RegionRenderOptions options)
         {
+            return Render(data, options, 0, 0, null);
+        }
+
+        internal static byte[] Render(RegionData data, RegionRenderOptions options, int originX, int originY,
+            Func<int, int, float> sampleOutside)
+        {
             if (options == null) options = new RegionRenderOptions();
             int n = data.Resolution;
             int count = n * n;
@@ -87,12 +93,14 @@ namespace Vastcore.RegionMap
             // 行ごとに独立なので並列に描く
             Parallel.For(0, n, y =>
             {
-                float v = y * inv;
+                int worldY = originY + y;
+                float v = worldY * inv;
                 int yu = y > 0 ? y - 1 : y;
                 int yd = y < n - 1 ? y + 1 : y;
                 for (int x = 0; x < n; x++)
                 {
-                    float u = x * inv;
+                    int worldX = originX + x;
+                    float u = worldX * inv;
                     int i = x + y * n;
                     int xl = x > 0 ? x - 1 : x;
                     int xr = x < n - 1 ? x + 1 : x;
@@ -101,14 +109,14 @@ namespace Vastcore.RegionMap
 
                     if (height <= 0f)
                     {
-                        OceanColor(options.Style, -height, x, y, u, v, seed, out r, out g, out b);
+                        OceanColor(options.Style, -height, worldX, worldY, u, v, seed, out r, out g, out b);
                     }
                     else
                     {
-                        float a = h[xl + y * n];
-                        float bb = h[xr + y * n];
-                        float c = h[x + yu * n];
-                        float d = h[x + yd * n];
+                        float a = x == 0 && sampleOutside != null ? sampleOutside(-1, y) : h[xl + y * n];
+                        float bb = x == n - 1 && sampleOutside != null ? sampleOutside(n, y) : h[xr + y * n];
+                        float c = y == 0 && sampleOutside != null ? sampleOutside(x, -1) : h[x + yu * n];
+                        float d = y == n - 1 && sampleOutside != null ? sampleOutside(x, n) : h[x + yd * n];
                         if (a < 0f) a = 0f;
                         if (bb < 0f) bb = 0f;
                         if (c < 0f) c = 0f;
@@ -131,7 +139,8 @@ namespace Vastcore.RegionMap
                                 ReliefLand(data, i, height, slope, out r, out g, out b);
                                 break;
                             default:
-                                SatelliteLand(data, i, x, y, u, v, height, slope, seed, riverThreshold, out r, out g, out b);
+                                SatelliteLand(data, i, worldX, worldY, u, v, height, slope, seed, riverThreshold,
+                                    out r, out g, out b);
                                 break;
                         }
 

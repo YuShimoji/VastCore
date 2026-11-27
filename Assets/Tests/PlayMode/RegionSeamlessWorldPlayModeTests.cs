@@ -266,6 +266,21 @@ namespace Vastcore.Tests.PlayMode
             for (int i = 0; i < 6; i++) yield return new WaitForFixedUpdate();
             Assert.That(loco.Buggy.Root.position.y, Is.GreaterThanOrEqualTo(gy - 10f));
 
+            Rigidbody buggyBody = loco.Buggy.GetComponent<Rigidbody>();
+            Vector3 physicsBefore = buggyBody.position;
+            Vector3 velocityBefore = buggyBody.linearVelocity;
+            Vector3 shift = Vector3.zero;
+            streamer.OnOriginShifted += delta =>
+            {
+                shift = delta;
+                loco.ApplyOriginShift(delta);
+                Physics.SyncTransforms();
+            };
+            Assert.IsTrue(streamer.CheckAndRecenter(new Vector3(0f, 0f, 2500f)));
+            Assert.That(Vector3.Distance(buggyBody.position, physicsBefore + shift), Is.LessThan(0.01f));
+            Assert.That(Vector3.Distance(loco.Buggy.Root.position, buggyBody.position), Is.LessThan(0.01f));
+            Assert.That(Vector3.Distance(buggyBody.linearVelocity, velocityBefore), Is.LessThan(0.01f));
+
             // Dismount back to OnFoot
             Assert.IsTrue(loco.ToggleMountVehicle());
             Assert.That(loco.Mode, Is.EqualTo(LocomotionMode.OnFoot));

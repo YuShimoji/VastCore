@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Threading.Tasks;
+using Unity.Profiling;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
@@ -15,6 +17,8 @@ namespace Vastcore.RegionMap
     [DisallowMultipleComponent]
     public sealed class RegionWorldSession : MonoBehaviour
     {
+        private static readonly ProfilerMarker AtmosphereMarker = new ProfilerMarker(ProfilerCategory.Scripts, "VastCore.Region.Atmosphere");
+        private static readonly ProfilerMarker CloudUploadMarker = new ProfilerMarker(ProfilerCategory.Scripts, "VastCore.Region.UploadClouds");
         public RegionWorldMode Mode { get; private set; } = RegionWorldMode.Overview2D;
         public RegionChunkStreamer Streamer { get; private set; }
         public DiveTransitionController DiveController { get; private set; }
@@ -240,7 +244,7 @@ namespace Vastcore.RegionMap
             }
 
             Mode = RegionWorldMode.Diving;
-            Streamer.PrefetchDive(targetE, targetS);
+            Streamer.PrefetchDive(targetE, targetS, backdropOnly: true);
             QueueCloudSnapshot();
             SetMapInput(false);
             UpdatePipVisibility();
@@ -447,6 +451,7 @@ namespace Vastcore.RegionMap
 
         private void EnsureAtmosphere(float groundH)
         {
+            using var atmosphereScope = AtmosphereMarker.Auto();
             ReleaseAtmosphere();
             _overviewSkybox = RenderSettings.skybox;
             var atmosphere = RegionAtmosphere.Create(RegionAtmosphere.Preset.ClearAfternoon);
@@ -501,6 +506,7 @@ namespace Vastcore.RegionMap
         private void ApplyCloudSnapshot()
         {
             if (_worldSkybox == null || _cloudBuild == null || !_cloudBuild.IsCompleted) return;
+            using var cloudUploadScope = CloudUploadMarker.Auto();
             Task<(Color[] Pixels, int Side)> build = _cloudBuild;
             _cloudBuild = null;
             if (build.IsFaulted)
@@ -590,7 +596,7 @@ namespace Vastcore.RegionMap
             UpdateCloudDrift();
             if (Mode == RegionWorldMode.Diving)
             {
-                if (Input.GetKeyDown(KeyCode.M) || Input.GetKeyDown(KeyCode.Escape)) AscendToOverview2D();
+                if (ReturnKeyPressed()) AscendToOverview2D();
             }
             else if (Mode == RegionWorldMode.OpenWorld3D)
             {
@@ -639,7 +645,7 @@ namespace Vastcore.RegionMap
 
         private void Handle3DHotkeys()
         {
-            if (Input.GetKeyDown(KeyCode.M) || Input.GetKeyDown(KeyCode.Escape))
+            if (ReturnKeyPressed())
             {
                 AscendToOverview2D();
                 return;
@@ -658,6 +664,13 @@ namespace Vastcore.RegionMap
             {
                 Drone.CycleIdleBehavior();
             }
+        }
+
+        private static bool ReturnKeyPressed()
+        {
+            Keyboard keyboard = Keyboard.current;
+            return Input.GetKeyDown(KeyCode.M) || Input.GetKeyDown(KeyCode.Escape) ||
+                   keyboard?.mKey.wasPressedThisFrame == true || keyboard?.escapeKey.wasPressedThisFrame == true;
         }
 
         private void UpdateHudText(double eastM, double southM)

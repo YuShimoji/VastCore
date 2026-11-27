@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Vastcore.RegionMap
 {
@@ -186,6 +187,7 @@ namespace Vastcore.RegionMap
         private float _steerInput;
         private float _throttleInput;
         private bool _brakeInput;
+        private Vector2 _keyboardAxes;
         private RegionWorldPoint? _recoveryPoint;
 
         public void Initialize(RegionChunkStreamer streamer)
@@ -214,6 +216,7 @@ namespace Vastcore.RegionMap
             {
                 _throttleInput = 0f;
                 _steerInput = 0f;
+                _keyboardAxes = Vector2.zero;
                 _brakeInput = true;
             }
         }
@@ -233,7 +236,12 @@ namespace Vastcore.RegionMap
         public void ApplyOriginShift(Vector3 localDelta)
         {
             if (_rb != null)
-                _rb.position += localDelta;
+            {
+                // Streaming, the HUD, and the camera read the Transform in this frame.
+                Vector3 shiftedPosition = _rb.position + localDelta;
+                _rb.position = shiftedPosition;
+                transform.position = shiftedPosition;
+            }
             else
                 transform.position += localDelta;
         }
@@ -241,14 +249,26 @@ namespace Vastcore.RegionMap
         private void Update()
         {
             if (!IsActive) return;
-            _steerInput = Input.GetAxis("Horizontal");
-            _throttleInput = Input.GetAxis("Vertical");
-            _brakeInput = Input.GetKey(KeyCode.Space);
+            Keyboard keyboard = Keyboard.current;
+            float steer = keyboard == null ? 0f : AxisFromKeys(keyboard.aKey.isPressed, keyboard.dKey.isPressed);
+            float throttle = keyboard == null ? 0f : AxisFromKeys(keyboard.sKey.isPressed, keyboard.wKey.isPressed);
+            float step = 3f * Time.deltaTime;
+            _keyboardAxes.x = Mathf.MoveTowards(_keyboardAxes.x * steer < 0f ? 0f : _keyboardAxes.x, steer, step);
+            _keyboardAxes.y = Mathf.MoveTowards(_keyboardAxes.y * throttle < 0f ? 0f : _keyboardAxes.y, throttle, step);
+            _steerInput = StrongerAxis(Input.GetAxis("Horizontal"), _keyboardAxes.x);
+            _throttleInput = StrongerAxis(Input.GetAxis("Vertical"), _keyboardAxes.y);
+            _brakeInput = Input.GetKey(KeyCode.Space) || keyboard?.spaceKey.isPressed == true;
 
             // R キーまたは横転・スタック時のリカバー
-            if (Input.GetKeyDown(KeyCode.R))
+            if (Input.GetKeyDown(KeyCode.R) || keyboard?.rKey.wasPressedThisFrame == true)
                 RecoverUpright();
         }
+
+        private static float AxisFromKeys(bool negative, bool positive)
+            => (positive ? 1f : 0f) - (negative ? 1f : 0f);
+
+        private static float StrongerAxis(float mapped, float keyboard)
+            => Mathf.Abs(mapped) >= Mathf.Abs(keyboard) ? mapped : keyboard;
 
         public void RecoverUpright()
         {
@@ -626,8 +646,10 @@ namespace Vastcore.RegionMap
         private void Update()
         {
             if (!IsEnabled) return;
-            if (Input.GetKeyDown(KeyCode.F)) ToggleMountVehicle();
-            if (Mode == LocomotionMode.OnFoot && Input.GetKeyDown(KeyCode.B)) SummonBuggyNearby();
+            Keyboard keyboard = Keyboard.current;
+            if (Input.GetKeyDown(KeyCode.F) || keyboard?.fKey.wasPressedThisFrame == true) ToggleMountVehicle();
+            if (Mode == LocomotionMode.OnFoot && (Input.GetKeyDown(KeyCode.B) || keyboard?.bKey.wasPressedThisFrame == true))
+                SummonBuggyNearby();
         }
     }
 }

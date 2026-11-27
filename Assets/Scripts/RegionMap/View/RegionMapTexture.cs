@@ -65,14 +65,19 @@ namespace Vastcore.RegionMap
 
         public static void Apply(Texture2D texture, byte[] rgba, int size)
         {
+            texture.LoadRawTextureData(FlipRows(rgba, size));
+            texture.Apply(false, false);
+        }
+
+        internal static byte[] FlipRows(byte[] rgba, int size)
+        {
             int stride = size * 4;
             var flipped = new byte[rgba.Length];
             for (int y = 0; y < size; y++)
             {
                 System.Buffer.BlockCopy(rgba, y * stride, flipped, (size - 1 - y) * stride, stride);
             }
-            texture.LoadRawTextureData(flipped);
-            texture.Apply(false, false);
+            return flipped;
         }
 
         /// <summary>輪の形の白い画像。カーソルの範囲や地点の印に色を付けて使う。</summary>

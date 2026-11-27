@@ -232,7 +232,7 @@ Heightmap integration is injected through `IHeightmapFieldFactory` to avoid cycl
 
 | Assembly | Directory | rootNamespace | autoReferenced | References |
 |----------|-----------|---------------|----------------|------------|
-| `Vastcore.RegionMap` | `Assets/Scripts/RegionMap/` | `Vastcore.RegionMap` | false | `UnityEngine.UI` |
+| `Vastcore.RegionMap` | `Assets/Scripts/RegionMap/` | `Vastcore.RegionMap` | false | `UnityEngine.UI`, `Unity.InputSystem`, `Unity.RenderPipelines.Core.Runtime`, `Unity.RenderPipelines.Universal.Runtime` |
 | `Vastcore.RegionMap.Editor` (Editor only) | `Assets/Scripts/RegionMap/Editor/` | `Vastcore.RegionMap.Editor` | false | `Vastcore.RegionMap` |
 
 - `Vastcore.Tests.EditMode` に `Vastcore.RegionMap` への参照を追加した（`RegionMapTests.cs` のため）。

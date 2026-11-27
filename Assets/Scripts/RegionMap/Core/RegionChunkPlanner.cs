@@ -95,7 +95,6 @@ namespace Vastcore.RegionMap
                     RadiusChunks = 1, // 3x3 = 1536m x 1536m
                     HasCollider = true,
                     HasDetails = true,
-                    SkirtDepthMeters = 8f,
                 },
                 new RegionChunkRingSpec
                 {
@@ -209,6 +208,7 @@ namespace Vastcore.RegionMap
             var result = new List<RegionChunkId>(20);
             result.Add(ChunkWithinWorld(RegionChunkRing.Near, targetEastM, targetSouthM, worldSizeMeters));
             AddRingBox(result, RegionChunkRing.Far, targetEastM, targetSouthM, 1, worldSizeMeters);
+            AddRingBox(result, RegionChunkRing.Mid, targetEastM, targetSouthM, 1, worldSizeMeters);
             return result;
         }
 

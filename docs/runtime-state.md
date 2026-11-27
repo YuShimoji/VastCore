@@ -58,7 +58,7 @@ Last Updated: 2026-11-27
 - 本人の回答（2026-11-24）：動きの受入（`01M831H77K6HV96N1BYM6J0JZK`）は「一部直したい」。段6の残り3設問（`01M84QPNKRE5XXVTF20ZHEN8RF`）は「保留」。遠征の規則の受入（`01M82V588FZE0C05C0YP34DNGN`）は差し戻し。原文は [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md)。
 - 本人の回答（2026-11-22）：エリア・雲の流れ・地点の根拠を足した版（`01M80215JPBGRPF79KE7J0YQQF`）は「近い」、「エリアと地点の呼び名」だけ「直したい（次の前に）」、他は「軽微」、次は「ここで十分」。進め方（`01M80219XNGW9T27XQMXDZJQFG`）は SP-021 4.1節。拡大した地形（`01M81JA2CC4WC37TF841JJ8ZEE`）は「近い」・全項目「軽微」・次は「今回の続き」。呼び名と形（`01M81JA6HWR4TJQXZA6T07TC6J`）は SP-021 4.1節。命名の仕組みの方向（`01M81SA3GF8YMRZRETVZCHBGE2`、2026-11-23）は SP-021 5節。
 - DS-011 Props（PLANNER007、2026-11-27）：プレースホルダは seed 9 で撮影・目視（EditMode 700/700）。実アセットは GLB を Blender で FBX にした物（`Assets/Art/Models/`）で seed 9・8 を撮り、実モデル 14・8 個、LOD0 三角形 64,572・31,628（[DS-011 8.1節](02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md)）。EditMode 717/717、texture audit 106 枚 error 0・warning 0。未確認：Props の GPU 時間、Weather Maker の空での比較。
-- シームレス移動（2026-11-27）：seed 7 で地図→着地、B/F・P/V/Tab、Esc。Unity EditMode 734・PlayMode 13 件通過。着地2.44秒・p95 35.7ms／最大163.5ms。斜面に境界線。未確認：長距離走行、雲の個々の輪郭。
+- シームレス移動（2026-11-27、seed 7）：降下p95 11.9–19.1→4.1–4.6ms、雪斜面の境界を修正。バギー3.105km・近景7チャンク・原点移動1回、Escで地図復帰。着地後0.3秒p95 35–55ms。ドローンP/V/Tab確認。Unity EditMode 734・PlayMode 13件通過。未確認：雲の個々の輪郭。
 
 ## Next Action
 

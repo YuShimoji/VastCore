@@ -134,22 +134,25 @@ namespace Vastcore.Tests.EditMode
             var sw = Stopwatch.StartNew();
             RegionChunkData left = RegionChunkBuilder.Build(region, planner, leftId, renderAlbedo: true);
             sw.Stop();
-            RegionChunkData right = RegionChunkBuilder.Build(region, planner, rightId, renderAlbedo: false);
+            RegionChunkData right = RegionChunkBuilder.Build(region, planner, rightId, renderAlbedo: true);
 
             Assert.That(sw.ElapsedMilliseconds, Is.LessThan(1500), "Single 512m chunk build should be fast");
             Assert.That(left.Resolution, Is.EqualTo(257));
-            Assert.That(left.MeshPart.VertexCount, Is.EqualTo(257 * 257 + 4 * 257));
+            Assert.That(left.MeshPart.VertexCount, Is.EqualTo(257 * 257));
 
             int n = left.Resolution;
-            float maxDiff = 0f;
             for (int y = 0; y < n; y++)
             {
-                float hLeft = left.TerrainData.Height[(n - 1) + y * n];
-                float hRight = right.TerrainData.Height[0 + y * n];
-                float diff = Math.Abs(hLeft - hRight);
-                if (diff > maxDiff) maxDiff = diff;
+                int a = n - 1 + y * n;
+                int b = y * n;
+                Assert.That(left.TerrainData.Height[a], Is.EqualTo(right.TerrainData.Height[b]), $"Height at row {y}");
+                for (int i = 0; i < 3; i++)
+                    Assert.That(left.MeshPart.Normals[a * 3 + i], Is.EqualTo(right.MeshPart.Normals[b * 3 + i]),
+                        $"Normal at row {y}, component {i}");
+                for (int i = 0; i < 3; i++)
+                    Assert.That(left.AlbedoPixels[a * 4 + i], Is.EqualTo(right.AlbedoPixels[b * 4 + i]),
+                        $"Albedo at row {y}, channel {i}");
             }
-            Assert.That(maxDiff, Is.LessThan(1e-3f), "Adjacent chunks must share identical border heights");
         }
 
         // ---- Phase 2: Dive Transition Curve ----

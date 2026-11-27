@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Vastcore.RegionMap
@@ -15,6 +16,12 @@ namespace Vastcore.RegionMap
     /// </summary>
     public sealed class RegionChunkStreamer : MonoBehaviour
     {
+        private static readonly ProfilerMarker StreamMarker = new ProfilerMarker(ProfilerCategory.Scripts, "VastCore.Region.Stream");
+        private static readonly ProfilerMarker AttachMarker = new ProfilerMarker(ProfilerCategory.Scripts, "VastCore.Region.AttachChunk");
+        // Parallel.For inside each build also uses this scheduler; leave capacity for Unity's render and input threads.
+        private static readonly TaskScheduler BackgroundBuilds = new ConcurrentExclusiveSchedulerPair(
+            TaskScheduler.Default, Math.Max(1, Environment.ProcessorCount / 2)).ConcurrentScheduler;
+
         [Tooltip("1 フレームあたりのチャンク実体化・破棄に使う最大時間（ms）。")]
         public float FrameBudgetMs = 3.5f;
 
@@ -29,14 +36,16 @@ namespace Vastcore.RegionMap
         public RegionTraversalSpec TraversalSpec { get; private set; } = new RegionTraversalSpec();
 
         public int LoadedChunkCount { get { return _loaded.Count; } }
-        public int PendingBuildCount { get { return _inFlight.Count + _buildOrder.Count; } }
+        public int PendingBuildCount { get { return _inFlight.Count + _buildOrder.Count + _scheduledCoverage.Count; } }
 
         private readonly Dictionary<RegionChunkId, RegionChunkView> _loaded = new Dictionary<RegionChunkId, RegionChunkView>();
         private readonly HashSet<RegionChunkId> _inFlight = new HashSet<RegionChunkId>();
         private readonly HashSet<RegionChunkId> _desired = new HashSet<RegionChunkId>();
         private readonly List<RegionChunkId> _buildOrder = new List<RegionChunkId>();
-        private ConcurrentQueue<(RegionChunkId Id, RegionChunkData Data, Exception Error)> _readyQueue =
-            new ConcurrentQueue<(RegionChunkId, RegionChunkData, Exception)>();
+        private ConcurrentQueue<(RegionChunkId Id, RegionChunkView.PreparedChunk Data, Exception Error)> _readyQueue =
+            new ConcurrentQueue<(RegionChunkId, RegionChunkView.PreparedChunk, Exception)>();
+        private readonly Queue<RegionChunkView> _coverageQueue = new Queue<RegionChunkView>();
+        private readonly HashSet<RegionChunkView> _scheduledCoverage = new HashSet<RegionChunkView>();
         private readonly Stopwatch _frameWatch = new Stopwatch();
 
         private Transform _chunkRoot;
@@ -96,7 +105,7 @@ namespace Vastcore.RegionMap
         }
 
         /// <summary>ダイブ直前の最優先プリフェッチ（着地チャンク＋周辺中景・遠景）を投入する。</summary>
-        public void PrefetchDive(double targetEastM, double targetSouthM)
+        public void PrefetchDive(double targetEastM, double targetSouthM, bool backdropOnly = false)
         {
             if (Region == null || Planner == null) return;
             _hasFocus = true;
@@ -105,7 +114,8 @@ namespace Vastcore.RegionMap
             _desired.Clear();
             _buildOrder.Clear();
             AddToPlan(_divePriority);
-            AddToPlan(Planner.PlanRequiredChunks(targetEastM, targetSouthM, Coordinates.WorldSizeMeters));
+            if (!backdropOnly)
+                AddToPlan(Planner.PlanRequiredChunks(targetEastM, targetSouthM, Coordinates.WorldSizeMeters));
         }
 
         private void AddToPlan(List<RegionChunkId> plan, RegionChunkRing nearest = RegionChunkRing.Near)
@@ -121,7 +131,8 @@ namespace Vastcore.RegionMap
         {
             if (_divePriority == null) return false;
             foreach (RegionChunkId id in _divePriority)
-                if (!_loaded.TryGetValue(id, out RegionChunkView view) || (view.Data.Spec.HasCollider && view.Collider == null))
+                if (!_loaded.TryGetValue(id, out RegionChunkView view) || (view.Data.Spec.HasCollider && view.Collider == null) ||
+                    _scheduledCoverage.Contains(view))
                     return false;
             return true;
         }
@@ -170,6 +181,7 @@ namespace Vastcore.RegionMap
         public void TickStreaming()
         {
             if (Region == null || _cts == null) return;
+            using var streamScope = StreamMarker.Auto();
             _frameWatch.Restart();
 
             foreach (RegionChunkView view in _loaded.Values)
@@ -178,8 +190,10 @@ namespace Vastcore.RegionMap
                 if (_frameWatch.Elapsed.TotalMilliseconds >= FrameBudgetMs) return;
             }
 
-            // 1. 完了したバックグラウンドチャンクを時間予算内でメインスレッド適用
-            while (_readyQueue.TryDequeue(out var result))
+            // Each coarse tile needs only one update even if several neighbouring tiles arrived or left.
+            UpdateCoverageWithinBudget();
+
+            while (_frameWatch.Elapsed.TotalMilliseconds < FrameBudgetMs && _readyQueue.TryDequeue(out var result))
             {
                 _inFlight.Remove(result.Id);
                 if (!_desired.Contains(result.Id) || _loaded.ContainsKey(result.Id)) continue;
@@ -188,13 +202,14 @@ namespace Vastcore.RegionMap
                     UnityEngine.Debug.LogException(result.Error);
                     continue;
                 }
-                RegionChunkView view = RegionChunkView.Create(_chunkRoot, result.Data, Coordinates);
+                RegionChunkView view;
+                using (AttachMarker.Auto()) view = RegionChunkView.Create(_chunkRoot, result.Data, Coordinates);
                 _loaded[result.Id] = view;
-                if (result.Id.Ring != RegionChunkRing.Near) view.UpdateTerrainCoverage(_loaded.Values);
-                RefreshCoarserTerrain(view);
-                if (_frameWatch.Elapsed.TotalMilliseconds >= FrameBudgetMs)
-                    break;
+                if (result.Id.Ring != RegionChunkRing.Near) ScheduleCoverage(view);
+                ScheduleCoarserCoverage(view);
             }
+
+            UpdateCoverageWithinBudget();
 
             // 2. 不要になったチャンクを時間予算内でアンロード
             if (_frameWatch.Elapsed.TotalMilliseconds < FrameBudgetMs)
@@ -213,8 +228,9 @@ namespace Vastcore.RegionMap
                         RegionChunkId id = toRemove[i];
                         RegionChunkView view = _loaded[id];
                         _loaded.Remove(id);
+                        _scheduledCoverage.Remove(view);
                         view.Dispose();
-                        RefreshCoarserTerrain(view);
+                        ScheduleCoarserCoverage(view);
                         if (_frameWatch.Elapsed.TotalMilliseconds >= FrameBudgetMs)
                             break;
                     }
@@ -233,27 +249,44 @@ namespace Vastcore.RegionMap
                 RegionChunkPlanner planner = Planner;
                 CancellationToken token = _cts.Token;
                 var queue = _readyQueue;
-                Task.Run(() =>
+                Task.Factory.StartNew(() =>
                 {
                     if (token.IsCancellationRequested) return;
                     try
                     {
                         RegionChunkData built = RegionChunkBuilder.Build(region, planner, next, renderAlbedo: true);
-                        if (!token.IsCancellationRequested) queue.Enqueue((next, built, null));
+                        if (token.IsCancellationRequested) return;
+                        RegionChunkView.PreparedChunk prepared = RegionChunkView.Prepare(built);
+                        if (!token.IsCancellationRequested) queue.Enqueue((next, prepared, null));
                     }
                     catch (Exception error)
                     {
                         if (!token.IsCancellationRequested) queue.Enqueue((next, null, error));
                     }
-                }, token);
+                }, token, TaskCreationOptions.DenyChildAttach, BackgroundBuilds);
             }
         }
 
-        private void RefreshCoarserTerrain(RegionChunkView changed)
+        private void ScheduleCoarserCoverage(RegionChunkView changed)
         {
             foreach (RegionChunkView view in _loaded.Values)
-                if (view.Data.Id.Ring > changed.Data.Id.Ring && _desired.Contains(view.Data.Id) && view.Overlaps(changed))
+                if (view.Data.Id.Ring > changed.Data.Id.Ring && _desired.Contains(view.Data.Id) && view.TouchesOrOverlaps(changed))
+                    ScheduleCoverage(view);
+        }
+
+        private void ScheduleCoverage(RegionChunkView view)
+        {
+            if (_scheduledCoverage.Add(view)) _coverageQueue.Enqueue(view);
+        }
+
+        private void UpdateCoverageWithinBudget()
+        {
+            while (_coverageQueue.Count != 0 && _frameWatch.Elapsed.TotalMilliseconds < FrameBudgetMs)
+            {
+                RegionChunkView view = _coverageQueue.Dequeue();
+                if (_scheduledCoverage.Remove(view) && _desired.Contains(view.Data.Id))
                     view.UpdateTerrainCoverage(_loaded.Values);
+            }
         }
 
         /// <summary>
@@ -343,7 +376,9 @@ namespace Vastcore.RegionMap
                 _cts.Dispose();
                 _cts = null;
             }
-            _readyQueue = new ConcurrentQueue<(RegionChunkId, RegionChunkData, Exception)>();
+            _readyQueue = new ConcurrentQueue<(RegionChunkId, RegionChunkView.PreparedChunk, Exception)>();
+            _coverageQueue.Clear();
+            _scheduledCoverage.Clear();
             _inFlight.Clear();
             _desired.Clear();
             _buildOrder.Clear();

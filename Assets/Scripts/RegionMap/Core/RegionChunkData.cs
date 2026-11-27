@@ -92,9 +92,10 @@ namespace Vastcore.RegionMap
             int n = Math.Max(17, spec.Resolution);
             float cell = sizeMeters / (n - 1);
 
+            Func<int, int, float> sampleOutside;
             RegionData terrainData = id.Ring == RegionChunkRing.Far
-                ? BuildFarData(region, minEastM, minSouthM, sizeMeters, n)
-                : BuildDetailData(region, minEastM, minSouthM, sizeMeters, n, cell);
+                ? BuildFarData(region, minEastM, minSouthM, sizeMeters, n, out sampleOutside)
+                : BuildDetailData(region, minEastM, minSouthM, sizeMeters, n, cell, out sampleOutside);
 
             double centerEastM = minEastM + sizeMeters * 0.5;
             double centerSouthM = minSouthM + sizeMeters * 0.5;
@@ -105,14 +106,14 @@ namespace Vastcore.RegionMap
             if (!RegionBiomeSurface.IsLandBiome(biome))
                 biome = RegionBiomeSurface.ResolvePrimaryBiome(terrainData, sizeMeters * 0.5f, sizeMeters * 0.5f, cell);
 
-            RegionLookPart part = BuildMeshPart(id.ToString(), terrainData, cell, spec.SkirtDepthMeters);
+            RegionLookPart part = BuildMeshPart(id.ToString(), terrainData, cell, spec.SkirtDepthMeters, sampleOutside);
 
             byte[] albedo = null;
             int albedoSize = 0;
             if (renderAlbedo)
             {
                 var plain = new RegionRenderOptions { CloudCover = 0f, Exaggeration = 0f, CastShadow = 0f };
-                albedo = RegionMapRenderer.Render(terrainData, plain);
+                albedo = RegionMapRenderer.Render(terrainData, plain, id.X * (n - 1), id.Z * (n - 1), sampleOutside);
                 albedoSize = terrainData.Resolution;
             }
 
@@ -140,7 +141,7 @@ namespace Vastcore.RegionMap
         /// 隣接チャンクの共有辺は完全に同じ標高値になる。
         /// </summary>
         private static RegionData BuildDetailData(RegionData region, double minEastM, double minSouthM,
-            float sizeMeters, int n, float cell)
+            float sizeMeters, int n, float cell, out Func<int, int, float> sampleOutside)
         {
             RegionSpec windowSpec = region.Spec.Clone();
             windowSpec.Resolution = n;
@@ -171,21 +172,26 @@ namespace Vastcore.RegionMap
             byte[] area = data.Area;
             RegionBiome[] biome = data.Biome;
 
+            // Light and terrain color use the same central difference on both sides of a shared edge.
+            sampleOutside = (x, y) =>
+            {
+                double worldX = minEastM + x * (double)cell;
+                double worldY = minSouthM + y * (double)cell;
+                WarpDetailPoint(worldX, worldY, coarseCell, seed, out float qx, out float qy);
+                int sx = ClampInt((int)Math.Floor(qx + 0.5f), 0, coarse - 1);
+                int sy = ClampInt((int)Math.Floor(qy + 0.5f), 0, coarse - 1);
+                float baseH = SampleCoarseBilinear(coarseHeight, coarse, qx, qy);
+                return DetailHeight(baseH, coarseHeight, coarse, sx, sy, worldX, worldY, seed);
+            };
+
             Parallel.For(0, n, y =>
             {
                 double worldY = minSouthM + y * (double)cell;
-                double gy = worldY / coarseCell - 0.5;
                 for (int x = 0; x < n; x++)
                 {
                     int idx = x + y * n;
                     double worldX = minEastM + x * (double)cell;
-                    double gx = worldX / coarseCell - 0.5;
-
-                    // ワールド絶対座標ベースの小領域ワープ（RegionDetailBuilder と同系だがチャンク境界不変）
-                    float ax = (float)(worldX / 1100.0);
-                    float ay = (float)(worldY / 1100.0);
-                    float qx = (float)gx + 0.35f * RegionNoise.Fbm(ax + 31.7f, ay + 12.9f, 3, seed + 201u);
-                    float qy = (float)gy + 0.35f * RegionNoise.Fbm(ax + 7.3f, ay + 44.2f, 3, seed + 202u);
+                    WarpDetailPoint(worldX, worldY, coarseCell, seed, out float qx, out float qy);
 
                     float baseH = SampleCoarseBilinear(coarseHeight, coarse, qx, qy);
                     float nearT = SampleCoarseBilinear(coarseTemp, coarse, qx, qy);
@@ -198,24 +204,6 @@ namespace Vastcore.RegionMap
                     int src = sx + sy * coarse;
                     area[idx] = coarseArea[src];
 
-                    float h;
-                    if (baseH <= 0f)
-                    {
-                        h = baseH;
-                    }
-                    else
-                    {
-                        // 局所起伏に応じた細部ディテール（世界座標決定論なので隣接チャンクと完全一致）
-                        float localRelief = CoarseRelief(coarseHeight, coarse, sx, sy);
-                        float broad = RegionNoise.Fbm((float)(worldX / 420.0), (float)(worldY / 420.0), 4, seed + 211u);
-                        float ridged = RegionNoise.Ridged((float)(worldX / 260.0), (float)(worldY / 260.0), 3, seed + 212u);
-                        float fine = RegionNoise.Fbm((float)(worldX / 46.0), (float)(worldY / 46.0), 2, seed + 213u);
-                        float coastRamp = RegionNoise.Smooth(0f, 18f, baseH);
-                        float amp = (0.8f + 0.24f * localRelief) * coastRamp;
-                        h = baseH + amp * (0.65f * broad + 0.55f * (ridged - 0.45f)) + (0.4f + 0.04f * localRelief) * coastRamp * fine;
-                        if (h < 0.1f) h = 0.1f;
-                    }
-
                     if (nearLake > 0.05f && baseH > 0f)
                     {
                         lake[idx] = nearLake;
@@ -226,7 +214,7 @@ namespace Vastcore.RegionMap
                         water[idx] = Math.Min(1f, nearFlow / (riverThreshold * 3f));
                     }
 
-                    height[idx] = h;
+                    height[idx] = DetailHeight(baseH, coarseHeight, coarse, sx, sy, worldX, worldY, seed);
                     temp[idx] = nearT;
                     moist[idx] = nearM;
                     flow[idx] = nearFlow;
@@ -251,9 +239,35 @@ namespace Vastcore.RegionMap
             return data;
         }
 
+        private static void WarpDetailPoint(double worldX, double worldY, float coarseCell, uint seed,
+            out float qx, out float qy)
+        {
+            float ax = (float)(worldX / 1100.0);
+            float ay = (float)(worldY / 1100.0);
+            qx = (float)(worldX / coarseCell - 0.5) +
+                0.35f * RegionNoise.Fbm(ax + 31.7f, ay + 12.9f, 3, seed + 201u);
+            qy = (float)(worldY / coarseCell - 0.5) +
+                0.35f * RegionNoise.Fbm(ax + 7.3f, ay + 44.2f, 3, seed + 202u);
+        }
+
+        private static float DetailHeight(float baseH, float[] coarseHeight, int coarse, int sx, int sy,
+            double worldX, double worldY, uint seed)
+        {
+            if (baseH <= 0f) return baseH;
+            float localRelief = CoarseRelief(coarseHeight, coarse, sx, sy);
+            float broad = RegionNoise.Fbm((float)(worldX / 420.0), (float)(worldY / 420.0), 4, seed + 211u);
+            float ridged = RegionNoise.Ridged((float)(worldX / 260.0), (float)(worldY / 260.0), 3, seed + 212u);
+            float fine = RegionNoise.Fbm((float)(worldX / 46.0), (float)(worldY / 46.0), 2, seed + 213u);
+            float coastRamp = RegionNoise.Smooth(0f, 18f, baseH);
+            float amp = (0.8f + 0.24f * localRelief) * coastRamp;
+            float height = baseH + amp * (0.65f * broad + 0.55f * (ridged - 0.45f)) +
+                (0.4f + 0.04f * localRelief) * coastRamp * fine;
+            return Math.Max(0.1f, height);
+        }
+
         /// <summary>Ring 2（遠景スカート）用：広域 RegionData を高速バイリニアサンプリングする。</summary>
         private static RegionData BuildFarData(RegionData region, double minEastM, double minSouthM,
-            float sizeMeters, int n)
+            float sizeMeters, int n, out Func<int, int, float> sampleOutside)
         {
             RegionSpec windowSpec = region.Spec.Clone();
             windowSpec.Resolution = n;
@@ -264,6 +278,9 @@ namespace Vastcore.RegionMap
             int coarse = region.Resolution;
             float coarseCell = region.CellMeters;
             float cell = sizeMeters / (n - 1);
+            sampleOutside = (x, y) => SampleCoarseBilinear(region.Height, coarse,
+                (float)((minEastM + x * (double)cell) / coarseCell - 0.5),
+                (float)((minSouthM + y * (double)cell) / coarseCell - 0.5));
 
             Parallel.For(0, n, y =>
             {
@@ -291,7 +308,8 @@ namespace Vastcore.RegionMap
         /// <summary>
         /// 高速メッシュ構築（CPU BakeSun/BakeSky を省略し、法線ベースの簡易空開け度と外周スカートを付与）。
         /// </summary>
-        private static RegionLookPart BuildMeshPart(string name, RegionData data, float cell, float skirtDepth)
+        private static RegionLookPart BuildMeshPart(string name, RegionData data, float cell, float skirtDepth,
+            Func<int, int, float> sampleOutside)
         {
             int n = data.Resolution;
             float[] height = data.Height;
@@ -320,18 +338,12 @@ namespace Vastcore.RegionMap
                     positions[v * 3 + 1] = h;
                     positions[v * 3 + 2] = j * cell;
 
-                    int left = (i > 0 ? i - 1 : i) + j * n;
-                    int right = (i < n - 1 ? i + 1 : i) + j * n;
-                    int up = i + (j > 0 ? j - 1 : j) * n;
-                    int down = i + (j < n - 1 ? j + 1 : j) * n;
-                    float hL = height[left] > 0f ? height[left] : 0f;
-                    float hR = height[right] > 0f ? height[right] : 0f;
-                    float hU = height[up] > 0f ? height[up] : 0f;
-                    float hD = height[down] > 0f ? height[down] : 0f;
-                    float dxSpan = (i > 0 && i < n - 1) ? 2f * cell : cell;
-                    float dzSpan = (j > 0 && j < n - 1) ? 2f * cell : cell;
-                    float slopeX = (hR - hL) / dxSpan;
-                    float slopeZ = (hD - hU) / dzSpan;
+                    float hL = Math.Max(0f, i > 0 ? height[v - 1] : sampleOutside(-1, j));
+                    float hR = Math.Max(0f, i < n - 1 ? height[v + 1] : sampleOutside(n, j));
+                    float hU = Math.Max(0f, j > 0 ? height[v - n] : sampleOutside(i, -1));
+                    float hD = Math.Max(0f, j < n - 1 ? height[v + n] : sampleOutside(i, n));
+                    float slopeX = (hR - hL) / (2f * cell);
+                    float slopeZ = (hD - hU) / (2f * cell);
                     float invLen = 1f / (float)Math.Sqrt(slopeX * slopeX + 1f + slopeZ * slopeZ);
                     float nx = -slopeX * invLen;
                     float ny = invLen;
