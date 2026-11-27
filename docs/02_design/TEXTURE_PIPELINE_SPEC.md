@@ -108,9 +108,19 @@ legacy の場所の指摘はすべて info になり、合否に数えない。T
 
 ## 6. 現状（2026-11-27、PLANNER007）
 
-101 枚を検査して error 0・warning 0（静的な検査と画素の検査）。出所の記録は `Assets/Resources/RegionMap3D/texture-source.json`（植物のアトラス、`scripts/bake-region-plants.py` で作る）と `Assets/Resources/MapGenerator/Textures/texture-source.json`（ambientCG の 12 組、CC0）を置いた。GPU メモリの見積りは 134.6 MB で、そのうち Resources が 128.2 MB（ほぼ MapGenerator）。地形の表面の素材（`Surfaces/`）はこの端末のリポジトリにはまだ無い（写しで試しただけ）。
+106 枚を検査して error 0・warning 0・info 131（静的な検査 `-Strict` と画素の検査）。出所の記録は `Assets/Resources/RegionMap3D/texture-source.json`（植物のアトラス、`scripts/bake-region-plants.py` で作る）、`Assets/Resources/MapGenerator/Textures/texture-source.json`（ambientCG の 12 組、CC0）、`Assets/Art/Textures/CNT/weathered_pine_timber/` と `Assets/Art/Textures/RUB/sandstone_rubble_weathered/` の各 `texture-source.json`（Poly Haven の 2 組、CC0、DS-011 の Props 用。.meta は TextureImportDefaults が作った）を置いた。GPU メモリの見積りは 161.3 MB で、そのうち Resources が 128.2 MB（ほぼ MapGenerator）、art の 5 枚が 26.7 MB（2K、各 5.3 MB）。地形の表面の素材（`Surfaces/`）はこの端末のリポジトリにはまだ無い（写しで試しただけ）。
 
-legacy の info は 132 件で、多いもの:
+Poly Haven の 5 枚の画素の値（Unity の検査と同じ計算。GameProjects 側の Python の継ぎ目 0.577・0.887 と一致）:
+
+| ファイル | 継ぎ目 | 白飛び・黒潰れ | p1・p99 | 照明のむら（CV） | 法線 |
+|---|---|---|---|---|---|
+| `raw_plank_wall_diff_2k` | 0.577 | 0.00% | 67・162 | 5.9% | |
+| `raw_plank_wall_nor_gl_2k` | 0.729 | | | | GL、比 0.67 |
+| `raw_plank_wall_rough_2k` | 0.600 | 0.00% | 173・199 | 0.4% | |
+| `worn_rock_natural_01_diff_2k` | 0.887 | 0.00% | 114・171 | 0.9% | |
+| `worn_rock_natural_01_nor_gl_2k` | 0.904 | | | | GL、比 0.27 |
+
+legacy の info は 131 件で、多いもの:
 
 | code | 件数 | 中身 |
 |---|---|---|
@@ -123,4 +133,4 @@ legacy の info は 132 件で、多いもの:
 ## 7. 範囲の外と未確認
 
 - 保留中の MapGenerator の画像の設定を直すこと・消すこと（Resources の 128 MB を減らす）は、その経路を再開する時に持ち主が決める。
-- 未確認: CI の workflow の初回の実行（GitHub 上）。画素の検査のしきい値は ambientCG の地面・舗石・煉瓦・岩でだけ確かめた（Poly Haven の素材、Props のアトラス、UI の画像では未確認）。照明のむら（TQ104）と明るさの範囲（TQ103）は実物の写真で警告が出た例が1件（Ground011 の暗部 25）だけ。
+- 未確認: CI の workflow の初回の実行（GitHub 上）。画素の検査のしきい値は ambientCG の地面・舗石・煉瓦・岩と Poly Haven の板・岩（6節）で確かめた（Props のアトラス、UI の画像では未確認）。照明のむら（TQ104）と明るさの範囲（TQ103）は実物の写真で警告が出た例が1件（Ground011 の暗部 25）だけ。

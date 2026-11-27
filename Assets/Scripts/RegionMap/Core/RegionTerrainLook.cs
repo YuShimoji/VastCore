@@ -66,6 +66,11 @@ namespace Vastcore.RegionMap
         public bool Vegetation = true;
         public bool Props = false;
         public int PropsSeedOffset = 0;
+        /// <summary>
+        /// DS-011 の実アセットの差し替え口。true で、Props の Proof に加えて Assets/Art/Models/ の実モデル（Unity が取り込める形式）と
+        /// 共有の写真素材の材質（V4 の明るさ・V7 の砂塵と地面なじませ）で置いた組も作る。既定は切（今までの比較は変わらない）。
+        /// </summary>
+        public bool PropsRealAssets = false;
 
         // 3 つの視点は、既定の場所（seed 9 の X43.61 Y76.92）に合わせて決めた値。太陽は北西から差すので、
         // 西と北を向いた崖に光が斜めに当たる向きから見る。場所を変えたら、視点も決め直す。
@@ -355,6 +360,7 @@ namespace Vastcore.RegionMap
                 {
                     RegionPropCatalog catalog = RegionPropCatalog.LoadFromFile(catalogPath);
                     scene.PropsSlice = RegionPropPlacementSolver.BuildProofSlice(catalog, scene, spec.PropsSeedOffset);
+                    scene.PropsSlice.UseRealAssets = spec.PropsRealAssets;
                 }
             }
             return scene;

@@ -1,0 +1,19 @@
+{
+  "sets": [
+    {
+      "files": [
+        "raw_plank_wall_diff_2k.jpg",
+        "raw_plank_wall_nor_gl_2k.jpg",
+        "raw_plank_wall_rough_2k.jpg"
+      ],
+      "origin": "downloaded",
+      "source": "https://polyhaven.com/a/raw_plank_wall",
+      "generator": "",
+      "license": "CC0-1.0",
+      "author": "Poly Haven",
+      "retrieved": "2026-11-27",
+      "tileMetres": 2.0,
+      "notes": "Staged from GameProjects realistic-pbr preflight pipeline."
+    }
+  ]
+}

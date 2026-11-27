@@ -207,6 +207,8 @@ namespace Vastcore.RegionMap.Editor
                 bool propsCompare = RegionMapMenu.Argument("-propsCompare", "false") == "true";
                 bool propsProof = propsCompare || RegionMapMenu.Argument("-propsProof", "false") == "true";
                 spec.Props = propsProof;
+                // -propsReal true で、Props の Proof に実アセット（Assets/Art/Models/ のモデルと共有の写真素材）の組も作り、比較に *-real を足す（DS-011）
+                spec.PropsRealAssets = propsProof && RegionMapMenu.Argument("-propsReal", "false") == "true";
                 // -lookSediment 0 で土砂の場を流さない（T3 より前の地形。地図が無いので層も出ない）
                 string sediment = RegionMapMenu.Argument("-lookSediment", "");
                 if (sediment.Length > 0) spec.Sediment = float.Parse(sediment, CultureInfo.InvariantCulture);
@@ -612,27 +614,23 @@ namespace Vastcore.RegionMap.Editor
             RegionPropProofSlice slice = look.Scene.PropsSlice;
             RegionLookViewpoint near = look.Scene.Spec.Near;
 
+            GameObject real = look.Props.RealRoot;
             look.Props.Root.SetActive(false);
+            if (real != null) real.SetActive(false);
             RegionTerrainView.PlaceLook(camera.transform, look.Scene, near);
             camera.fieldOfView = near.FovDegrees;
             Capture(camera, output, "props-near-before.png");
 
             look.Props.Root.SetActive(true);
-            RegionTerrainView.PlaceLook(camera.transform, look.Scene, near);
-            camera.fieldOfView = near.FovDegrees;
-            Capture(camera, output, "props-near-after.png");
-
-            if (slice.CratesViewpoint != null)
+            CapturePropsViews(camera, look, slice, output, "");
+            if (real != null)
             {
-                RegionTerrainView.PlaceLook(camera.transform, look.Scene, slice.CratesViewpoint);
-                camera.fieldOfView = slice.CratesViewpoint.FovDegrees;
-                Capture(camera, output, "props-crates.png");
-            }
-            if (slice.RubbleViewpoint != null)
-            {
-                RegionTerrainView.PlaceLook(camera.transform, look.Scene, slice.RubbleViewpoint);
-                camera.fieldOfView = slice.RubbleViewpoint.FovDegrees;
-                Capture(camera, output, "props-rubble.png");
+                // 同じ場面・同じ視点で、プレースホルダの組を実アセットの組に入れ替えて撮る
+                look.Props.Root.SetActive(false);
+                real.SetActive(true);
+                CapturePropsViews(camera, look, slice, output, "-real");
+                Debug.Log("[RegionMap] DS-011 実アセット: モデル " + look.Props.RealModelCount + " 個、LOD0 の三角形 " + look.Props.RealTriangles
+                    + "、変種 " + look.Props.RealSummary);
             }
 
             var report = new System.Text.StringBuilder();
@@ -643,7 +641,29 @@ namespace Vastcore.RegionMap.Editor
                 report.AppendLine(FormattableString.Invariant(
                     $"[{i:D2}] {inst.PropId} role={inst.Role} layer={inst.StackLayer} pos=({inst.X:F2},{inst.Y:F2},{inst.Z:F2}) rot=({inst.PitchDeg:F1},{inst.YawDeg:F1},{inst.RollDeg:F1}) v2={inst.DamageState} v3={inst.ConstructionVariant} v4={inst.MaterialVariant} mesh={inst.MeshVariant} dust={inst.TopDust:F2}"));
             }
+            if (real != null)
+                report.AppendLine(FormattableString.Invariant($"real assets: models {look.Props.RealModelCount}, LOD0 triangles {look.Props.RealTriangles}, variants {look.Props.RealSummary}"));
             File.WriteAllText(Path.Combine(output, "props-proof-report.txt"), report.ToString());
+        }
+
+        private static void CapturePropsViews(Camera camera, RegionTerrainView.LookResult look, RegionPropProofSlice slice, string output, string suffix)
+        {
+            RegionLookViewpoint near = look.Scene.Spec.Near;
+            RegionTerrainView.PlaceLook(camera.transform, look.Scene, near);
+            camera.fieldOfView = near.FovDegrees;
+            Capture(camera, output, "props-near-after" + suffix + ".png");
+            if (slice.CratesViewpoint != null)
+            {
+                RegionTerrainView.PlaceLook(camera.transform, look.Scene, slice.CratesViewpoint);
+                camera.fieldOfView = slice.CratesViewpoint.FovDegrees;
+                Capture(camera, output, "props-crates" + suffix + ".png");
+            }
+            if (slice.RubbleViewpoint != null)
+            {
+                RegionTerrainView.PlaceLook(camera.transform, look.Scene, slice.RubbleViewpoint);
+                camera.fieldOfView = slice.RubbleViewpoint.FovDegrees;
+                Capture(camera, output, "props-rubble" + suffix + ".png");
+            }
         }
 
         private static void CaptureAlcoveComparison(Camera camera, RegionTerrainView.LookResult look, string output)

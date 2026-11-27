@@ -1,0 +1,18 @@
+{
+  "sets": [
+    {
+      "files": [
+        "worn_rock_natural_01_diff_2k.jpg",
+        "worn_rock_natural_01_nor_gl_2k.jpg"
+      ],
+      "origin": "downloaded",
+      "source": "https://polyhaven.com/a/worn_rock_natural_01",
+      "generator": "",
+      "license": "CC0-1.0",
+      "author": "Poly Haven",
+      "retrieved": "2026-11-27",
+      "tileMetres": 1.6,
+      "notes": "Staged from GameProjects realistic-pbr preflight pipeline."
+    }
+  ]
+}

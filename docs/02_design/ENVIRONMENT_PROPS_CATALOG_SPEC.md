@@ -194,3 +194,38 @@ VastCore の現行3D景観（砂岩・乾燥地）と今後の展開予定（古
 
 - **制作手法の採否**: 本カタログの P0 Props を「Blender 等での手動/プロシージャル造形＋ベイク」で作るか、「既存所有アセット／CC0 スキャン素材（Poly Haven 等）の規格変換」で揃えるか。
 - **現代・未来（P2）の着手順**: SP-021 の現行優先（3D砂岩と鳥瞰図詳細化）に合わせ、本仕様では **P0（砂岩・探索拠点・基礎自然/遺構）を先、P1/P2 を後続**としている。
+- **モデルの取り込み経路（2026-11-27、本人の判断待ち）**: GameProjects の主経路はハイブリッド（CC0 スキャン PBR＋構造・反復回避の生成＋近景の主役だけ手編集。GameProjects `docs/decision-log.md` 2026-11-27）。受け取った P0 の GLB 71 個（`D:\AI-Runs\GameProjects\operations\vastcore-handoff-staging-20261127\bundle-full`、175 MB。各ファイルが 2K の画像を埋め込む）は、このプロジェクトに glTF の取り込み手段が無い（`Packages/manifest.json` に glTFast 等なし）ので Unity で読めない。選択肢は (A) Blender で形と材質の名前だけの FBX に変換して `Assets/Art/Models/` に置く（Packages は変えない。71 個で 12 MB。画像は 8節の共有の材質）、(B) glTFast を Packages に足して GLB を直接読む（依存の追加。埋め込みの画像がモデルごとに重複する）。8節の差し替え口はどちらでも同じに動く。検証は (A) を作業ツリーで試しただけで、FBX は commit していない。
+
+---
+
+## 8. 実アセットの差し替え口（2026-11-27）
+
+Proof Slice（`RegionLookSpec.Props`）に、実モデルで置いた組を足す入口。既定は切（`RegionLookSpec.PropsRealAssets = false`）で、今までの比較と既定の場面は変わらない。入れると同じ配置でプレースホルダの組（`DS011_Props_Proof`）と実アセットの組（`DS011_Props_Real`）を作り、実アセットの組を出す。
+
+| 部分 | 中身 |
+|---|---|
+| 置き場所 | `Assets/Art/Models/<ドメイン>/<カタログ ID>/<変種>_lod0.*`・`_lod1.*`（lod の無い名前は LOD0 だけ）。Unity が GameObject として取り込めた物だけを数え、無い Props（木箱・樽など）はプレースホルダのまま置く。取り込みの既定は `RegionPropModelImport`（カメラ・光・動き・当たり判定なし、接線を計算、材質は名前だけ） |
+| 読み出し | `IRegionPropAssetSource`（Editor は `RegionPropAssetDatabase` が AssetDatabase で読む）。選び方は `RegionPropAssets`（EditMode で試験） |
+| 変種 | 損傷・組み方・形の値（`fallen_drum`・`broken_mid`・`intact` など）を変種の名前に探し、無ければ全部から。同じ群れの隣どうしは別の変種（瓦礫を2つ以上並べても同じ物に見えない） |
+| 大きさ | 横の大きい方をカタログの寸法×個体の倍率に合わせる。瓦礫（`rub_stone_rubble_pile`・`rub_masonry_blocks`）の GLB は1つで群れ全体（大・中・細の3層）なので、作った大きさのまま CorePile にだけ置き、中と細の個体は置かない。傾きは地面の法線に合わせる |
+| 材質（V4） | 元の材質の名前から共有の材質へ: 木は Poly Haven `raw_plank_wall`、砂岩は `worn_rock_natural_01`（粗さの画像が無いので一定 0.88）、砂・灰は既存の ambientCG Ground054 の色。Pale・Warm・Deep・Dark・Charred などは明るさと暖かさで変える。個体ごとの明るさ（`TintShift`）と暖かさは MaterialPropertyBlock |
+| 環境順応（V7） | シェーダー `Vastcore/RegionProp`: 上を向いた面に砂塵（`TopDust`）、足元の地面（傾いた平面）から帯の高さ（`GroundSkirtBlendM`、大きい物ほど広い）までを地面の色へ。光と空気は地形と同じ |
+| 入口 | `-propsCompare true -propsReal true` で `props-*-real.png` を足して撮る（`region-map.ps1` には未接続。Unity の `-executeMethod Vastcore.RegionMap.Editor.RegionTerrainViewMenu.CaptureFromCommandLine` に直接渡す） |
+
+配置の傾きの符号を直した（`RegionPropPlacementSolver.ResolveTilt`）。前と右の向きを Core の座標で取り違えていて、斜面の向きによって下り側が浮いていた（プレースホルダも同じ）。
+
+### 8.1 比較の結果（2026-11-27、PLANNER007、Unity 6000.3.6f1、Linear、PC 品質、自前の空）
+
+GLB 71 個を Blender 5.2 で FBX に変換（変換の道具と報告は `D:\AI-Runs\VastCore\ds011-glb-fbx-20261127\`）し、作業ツリーの `Assets/Art/Models/` に置いて撮った（commit しない）。seed 9 は既定の場所、seed 8 は `-lookCenter 82.93144,62.38425`。
+
+| | seed 9 | seed 8 |
+|---|---|---|
+| 実モデルで置いた個体 | 14（瓦礫は群れ全体のモデル 2、層状岩 4、石柱 1、道標 1、荷置き台 6） | 8 |
+| LOD0 の三角形 | 64,572 | 31,628 |
+| プレースホルダの組との差（8階調を超える画素） | rubble 22.0%・crates 4.2%・near 2.8% | 13.9%・0.8%・0.1% |
+
+見えたこと: 瓦礫・層状岩の多面体の面が、写真の欠け・層・凹凸に替わり、瓦礫は大・中・細の3層が1つの山として斜面に載る。木箱・樽はモデルが無くプレースホルダのまま。砂岩の写真素材（`worn_rock_natural_01`）は周りの赤い砂岩と地面より淡く黄白に見える（色合わせは本人の採否）。`rubble_low_radial` は幅 0.7 m 前後で、CorePile（1〜6 m）としては小さい。初めの版で瓦礫の中・細の個体（51 個）に群れ全体のモデルを縮めて置き、三角形が 558,512 になったので、群れ全体のモデルは CorePile にだけ置くようにした。
+
+画像は撮影端末の `artifacts/region-map/ds011-real-20261127/`（`s9/`・`s8/` の `props-*.png` と `props-*-real.png`、`pair-*.png` は左右の対、`s9-rubble-zoom.png`）。EditMode 717/717（`RegionPropAssetsTests` 6 件を含む）。
+
+未確認: Props を足した時の GPU 時間（三角形の数だけ測った）、LOD1 へ切り替わる距離の見え方、通常 Editor のメニュー（`Open 3D Mesa Look + DS-011 Props Proof`）からの実アセットの表示。

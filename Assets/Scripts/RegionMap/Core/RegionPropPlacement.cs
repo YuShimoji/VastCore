@@ -63,6 +63,8 @@ namespace Vastcore.RegionMap
         public float CratesCenterX, CratesCenterZ;
         public float RubbleCenterX, RubbleCenterZ;
         public float RubbleFlowDirX, RubbleFlowDirZ;
+        /// <summary>true で、RegionPropView がプレースホルダの組に加えて実アセットの組（DS011_Props_Real）も作る（RegionLookSpec.PropsRealAssets）。</summary>
+        public bool UseRealAssets;
     }
 
     /// <summary>
@@ -682,7 +684,12 @@ namespace Vastcore.RegionMap
             return NormalizeAngle(Lerp(v1.YawMinDeg, v1.YawMaxDeg, h0));
         }
 
-        private static void ResolveTilt(
+        /// <summary>
+        /// 斜面に沿う傾き。pitch・roll は RegionPropView が Unity で Euler(pitch, yaw, -roll) として掛ける値で、
+        /// 物の前（ローカル +Z）と右（+X）は Core の座標（X 東・Z 南）で前 = (sin yaw, -cos yaw)、右 = (cos yaw, sin yaw)。
+        /// 下り（slopeDir）へ向いた側が下がる向きに傾ける（2026-11-27 に符号を直した。以前は Z の成分で前、X の成分で右が逆で、下り側が浮いた）。
+        /// </summary>
+        public static void ResolveTilt(
             RegionPropDefinition prop,
             RegionPropTransformRules v1,
             float slopeDeg,
@@ -698,9 +705,9 @@ namespace Vastcore.RegionMap
         {
             float yawRad = yawDeg * (float)(Math.PI / 180.0);
             float fwdX = (float)Math.Sin(yawRad);
-            float fwdZ = (float)Math.Cos(yawRad);
+            float fwdZ = -(float)Math.Cos(yawRad);
             float rightX = (float)Math.Cos(yawRad);
-            float rightZ = -(float)Math.Sin(yawRad);
+            float rightZ = (float)Math.Sin(yawRad);
 
             float slopeAlign = Math.Min(slopeDeg, tiltLimitDeg);
             if (prop.PivotRule == RegionPropPivotRule.StackableUpright || prop.PivotRule == RegionPropPivotRule.ModularSnap)
@@ -708,14 +715,14 @@ namespace Vastcore.RegionMap
                 // 人工物は直立優先: 斜面追従を弱め、ランダム傾きは極小に抑える
                 float follow = slopeAlign * 0.55f;
                 pitchDeg = (slopeDirX * fwdX + slopeDirZ * fwdZ) * follow + (hPitch * 2f - 1f) * Math.Min(1.5f, tiltLimitDeg * 0.3f);
-                rollDeg = -(slopeDirX * rightX + slopeDirZ * rightZ) * follow + (hRoll * 2f - 1f) * Math.Min(1.5f, tiltLimitDeg * 0.3f);
+                rollDeg = (slopeDirX * rightX + slopeDirZ * rightZ) * follow + (hRoll * 2f - 1f) * Math.Min(1.5f, tiltLimitDeg * 0.3f);
             }
             else
             {
                 float flatFactor = (v1.FlatFaceDownBias > 0f && hFlat < v1.FlatFaceDownBias) ? 0.35f : 1f;
                 float follow = slopeAlign * 0.7f;
                 pitchDeg = (slopeDirX * fwdX + slopeDirZ * fwdZ) * follow + (hPitch * 2f - 1f) * (tiltLimitDeg * 0.55f * flatFactor);
-                rollDeg = -(slopeDirX * rightX + slopeDirZ * rightZ) * follow + (hRoll * 2f - 1f) * (tiltLimitDeg * 0.55f * flatFactor);
+                rollDeg = (slopeDirX * rightX + slopeDirZ * rightZ) * follow + (hRoll * 2f - 1f) * (tiltLimitDeg * 0.55f * flatFactor);
             }
 
             pitchDeg = Clamp(pitchDeg, -tiltLimitDeg, tiltLimitDeg);

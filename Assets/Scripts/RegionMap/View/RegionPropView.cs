@@ -15,6 +15,11 @@ namespace Vastcore.RegionMap
         {
             public GameObject Root;
             public int PlacedCount;
+            /// <summary>実アセットで置いた組（slice.UseRealAssets で読み出し口がある時だけ。モデルの無い Props はプレースホルダのまま入る）。</summary>
+            public GameObject RealRoot;
+            public int RealModelCount;
+            public int RealTriangles;
+            public string RealSummary = "";
         }
 
         private sealed class Palette
@@ -23,7 +28,12 @@ namespace Vastcore.RegionMap
             public readonly Dictionary<string, Material> Materials = new Dictionary<string, Material>(StringComparer.Ordinal);
         }
 
-        public static Result AddTo(Transform parent, RegionPropProofSlice slice)
+        public const string PropShaderName = "Vastcore/RegionProp";
+
+        /// <summary>
+        /// Props を置く。heightAt（Core 座標の地面の高さ）を渡すと、実アセットの地面なじませ（V7 Ground Skirt）が足元の地面の傾きに沿う。
+        /// </summary>
+        public static Result AddTo(Transform parent, RegionPropProofSlice slice, Func<float, float, float> heightAt = null)
         {
             var root = new GameObject("DS011_Props_Proof");
             root.transform.SetParent(parent, false);
@@ -36,13 +46,227 @@ namespace Vastcore.RegionMap
             {
                 RegionPropInstance inst = slice.Instances[i];
                 GameObject go = BuildInstanceObject(inst, palette, i);
-                go.transform.SetParent(root.transform, false);
-                go.transform.localPosition = new Vector3(inst.X, inst.Y, -inst.Z);
-                go.transform.localRotation = Quaternion.Euler(inst.PitchDeg, inst.YawDeg, -inst.RollDeg);
+                PlaceInstance(go.transform, root.transform, inst);
                 result.PlacedCount++;
             }
 
+            if (slice.UseRealAssets && RegionPropAssets.Source != null)
+            {
+                AddRealAssets(parent, slice, palette, heightAt, result);
+                // 同じ場所に2組を重ねないよう、実アセットの組を出してプレースホルダの組を隠す（比較の撮影で入れ替える）
+                root.SetActive(false);
+            }
             return result;
+        }
+
+        private static void PlaceInstance(Transform go, Transform root, RegionPropInstance inst)
+        {
+            go.SetParent(root, false);
+            go.localPosition = new Vector3(inst.X, inst.Y, -inst.Z);
+            go.localRotation = Quaternion.Euler(inst.PitchDeg, inst.YawDeg, -inst.RollDeg);
+        }
+
+        // ---- 実アセットの差し替え口（DS-011 7節の造形方式の比較用。既定は切） ----
+
+        private sealed class RealContext
+        {
+            public Shader Shader;
+            public IRegionPropAssetSource Source;
+            public readonly Dictionary<string, Material> Materials = new Dictionary<string, Material>(StringComparer.Ordinal);
+            public readonly Dictionary<string, IReadOnlyList<RegionPropModel>> Models = new Dictionary<string, IReadOnlyList<RegionPropModel>>(StringComparer.Ordinal);
+            public readonly SortedDictionary<string, int> Used = new SortedDictionary<string, int>(StringComparer.Ordinal);
+            public MaterialPropertyBlock Block;
+        }
+
+        private static void AddRealAssets(Transform parent, RegionPropProofSlice slice, Palette palette, Func<float, float, float> heightAt, Result result)
+        {
+            var realRoot = new GameObject("DS011_Props_Real");
+            realRoot.transform.SetParent(parent, false);
+            result.RealRoot = realRoot;
+            Shader propShader = Shader.Find(PropShaderName);
+            var ctx = new RealContext
+            {
+                Shader = propShader != null ? propShader : palette.Shader,
+                Source = RegionPropAssets.Source,
+                Block = new MaterialPropertyBlock()
+            };
+            float rootY = realRoot.transform.position.y;
+            for (int i = 0; i < slice.Instances.Count; i++)
+            {
+                RegionPropInstance inst = slice.Instances[i];
+                if (!ctx.Models.TryGetValue(inst.PropId, out IReadOnlyList<RegionPropModel> models))
+                {
+                    models = ctx.Source.Models(RegionPropAssets.DomainOf(inst.PropId), inst.PropId) ?? Array.Empty<RegionPropModel>();
+                    ctx.Models[inst.PropId] = models;
+                }
+                GameObject go;
+                if (models.Count == 0)
+                {
+                    // モデルの無い Props（木箱・樽など）は、比較の絵が欠けないようプレースホルダのまま置く
+                    go = BuildInstanceObject(inst, palette, i);
+                    go.name += "_placeholder";
+                }
+                else if (RegionPropAssets.CoveredByClusterModel(inst))
+                {
+                    // 瓦礫の中・細かい層は、CorePile に置いた群れ全体のモデルが持っている
+                    go = new GameObject(string.Format("{0:D2}_{1}_{2}_inModel", i, inst.PropId, inst.Role));
+                }
+                else
+                {
+                    go = BuildRealInstance(inst, models, ctx, i, heightAt, rootY, result);
+                    result.RealModelCount++;
+                }
+                PlaceInstance(go.transform, realRoot.transform, inst);
+                if (heightAt != null && models.Count > 0 && RegionPropAssets.IsClusterModel(inst.PropId) && !RegionPropAssets.CoveredByClusterModel(inst))
+                {
+                    // 群れ全体のモデル（幅 2 m 前後）は、配置の傾き（斜面の 7 割に沿う、塊1つ用）では下り側の縁が浮くので、地面の法線へ合わせる
+                    float gx = 0.5f * (heightAt(inst.X + 1f, inst.Z) - heightAt(inst.X - 1f, inst.Z));
+                    float gz = 0.5f * (heightAt(inst.X, inst.Z + 1f) - heightAt(inst.X, inst.Z - 1f));
+                    var normal = new Vector3(-gx, 1f, gz).normalized; // Unity の Z は Core の -Z
+                    go.transform.localRotation = Quaternion.FromToRotation(Vector3.up, normal) * Quaternion.Euler(0f, inst.YawDeg, 0f);
+                    go.transform.localPosition = new Vector3(inst.X, heightAt(inst.X, inst.Z) - 0.03f, -inst.Z);
+                }
+            }
+            var summary = new System.Text.StringBuilder();
+            foreach (KeyValuePair<string, int> pair in ctx.Used)
+                summary.Append(pair.Key).Append('×').Append(pair.Value).Append(' ');
+            result.RealSummary = summary.ToString().TrimEnd();
+        }
+
+        private static GameObject BuildRealInstance(RegionPropInstance inst, IReadOnlyList<RegionPropModel> models, RealContext ctx, int index,
+            Func<float, float, float> heightAt, float rootY, Result result)
+        {
+            var names = new string[models.Count];
+            for (int m = 0; m < models.Count; m++) names[m] = models[m].Variant;
+            RegionPropModel model = models[RegionPropAssets.PickVariant(inst, names)];
+            string key = inst.PropId + "/" + model.Variant;
+            ctx.Used[key] = ctx.Used.TryGetValue(key, out int used) ? used + 1 : 1;
+
+            var go = new GameObject(string.Format("{0:D2}_{1}_{2}", index, inst.PropId, model.Variant));
+            var body = new GameObject("Model");
+            body.transform.SetParent(go.transform, false);
+            GameObject lod0 = InstantiateModel(model.Lod0, body.transform, "LOD0");
+            GameObject lod1 = model.Lod1 != null ? InstantiateModel(model.Lod1, body.transform, "LOD1") : null;
+
+            // カタログの寸法へ合わせる（足元の原点はモデルのまま。GameProjects のモデルは接地点が原点で、下へ少し埋まる分を持つ）
+            Bounds bounds = LocalBounds(lod0, body.transform);
+            body.transform.localScale = RegionPropAssets.FitScale(inst, bounds.size);
+
+            // V7: 足元の地面の高さと傾き（Unity 座標）。V4: 明るさと暖かさ
+            float groundY = (heightAt != null ? heightAt(inst.X, inst.Z) : inst.Y + inst.EmbedDepthM) + rootY;
+            float slopeX = 0f, slopeZ = 0f;
+            if (heightAt != null)
+            {
+                slopeX = 0.5f * (heightAt(inst.X + 1f, inst.Z) - heightAt(inst.X - 1f, inst.Z));
+                slopeZ = -0.5f * (heightAt(inst.X, inst.Z + 1f) - heightAt(inst.X, inst.Z - 1f));
+            }
+            float skirt = inst.GroundSkirtBlendM > 1e-3f ? inst.GroundSkirtBlendM : 0.15f;
+            skirt = Math.Max(skirt, 0.08f + 0.06f * bounds.size.y * body.transform.localScale.y);
+            uint h = RegionNoise.Hash(index, inst.ClusterIndex, 7717u);
+            float warmth = ((h & 1023) / 1023f) * 2f - 1f;
+            ctx.Block.Clear();
+            ctx.Block.SetVector("_PropGround", new Vector4(groundY, slopeX, slopeZ, skirt));
+            ctx.Block.SetVector("_PropParams", new Vector4(Mathf.Clamp01(inst.TopDust), Mathf.Clamp(1f + inst.TintShift, 0.78f, 1.22f), warmth * 0.5f, 0f));
+
+            foreach (GameObject part in new[] { lod0, lod1 })
+            {
+                if (part == null) continue;
+                foreach (Renderer renderer in part.GetComponentsInChildren<Renderer>(true))
+                {
+                    Material[] source = renderer.sharedMaterials;
+                    var replaced = new Material[source.Length];
+                    for (int s = 0; s < source.Length; s++)
+                        replaced[s] = RealMaterial(ctx, source[s] != null ? source[s].name : "");
+                    renderer.sharedMaterials = replaced;
+                    renderer.SetPropertyBlock(ctx.Block);
+                    renderer.shadowCastingMode = ShadowCastingMode.On;
+                    renderer.receiveShadows = true;
+                    if (part == lod0) result.RealTriangles += Triangles(renderer);
+                }
+            }
+
+            if (lod1 != null)
+            {
+                var group = go.AddComponent<LODGroup>();
+                group.SetLODs(new[]
+                {
+                    new LOD(0.10f, lod0.GetComponentsInChildren<Renderer>(true)),
+                    new LOD(0.012f, lod1.GetComponentsInChildren<Renderer>(true))
+                });
+                group.RecalculateBounds();
+            }
+            return go;
+        }
+
+        private static GameObject InstantiateModel(GameObject template, Transform parent, string name)
+        {
+            GameObject copy = UnityEngine.Object.Instantiate(template, parent, false);
+            copy.name = name;
+            copy.hideFlags = HideFlags.DontSave;
+            foreach (Collider collider in copy.GetComponentsInChildren<Collider>(true))
+                UnityEngine.Object.DestroyImmediate(collider);
+            return copy;
+        }
+
+        private static Bounds LocalBounds(GameObject model, Transform space)
+        {
+            bool any = false;
+            var bounds = new Bounds();
+            foreach (MeshFilter filter in model.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (filter.sharedMesh == null) continue;
+                Bounds mb = filter.sharedMesh.bounds;
+                Matrix4x4 toSpace = space.worldToLocalMatrix * filter.transform.localToWorldMatrix;
+                for (int c = 0; c < 8; c++)
+                {
+                    var corner = new Vector3((c & 1) == 0 ? mb.min.x : mb.max.x, (c & 2) == 0 ? mb.min.y : mb.max.y, (c & 4) == 0 ? mb.min.z : mb.max.z);
+                    Vector3 p = toSpace.MultiplyPoint3x4(corner);
+                    if (!any) { bounds = new Bounds(p, Vector3.zero); any = true; }
+                    else bounds.Encapsulate(p);
+                }
+            }
+            return bounds;
+        }
+
+        private static int Triangles(Renderer renderer)
+        {
+            var filter = renderer.GetComponent<MeshFilter>();
+            if (filter == null || filter.sharedMesh == null) return 0;
+            int count = 0;
+            for (int s = 0; s < filter.sharedMesh.subMeshCount; s++) count += (int)filter.sharedMesh.GetIndexCount(s) / 3;
+            return count;
+        }
+
+        private static Material RealMaterial(RealContext ctx, string sourceName)
+        {
+            RegionPropSurface surface = RegionPropAssets.SurfaceFor(sourceName);
+            if (ctx.Materials.TryGetValue(surface.Key, out Material cached)) return cached;
+            var mat = new Material(ctx.Shader) { name = "DS011_Real_" + surface.Key, hideFlags = HideFlags.DontSave };
+            Texture2D color = surface.ColorPath.Length > 0 ? ctx.Source.Texture(surface.ColorPath) : null;
+            Texture2D normal = surface.NormalPath.Length > 0 ? ctx.Source.Texture(surface.NormalPath) : null;
+            Texture2D rough = surface.RoughnessPath.Length > 0 ? ctx.Source.Texture(surface.RoughnessPath) : null;
+            // 写真の色に掛ける値（線形）。彩度は灰色との混ぜで近似する（画素ごとの式はシェーダーを増やさない）
+            Color tint = color != null ? new Color(surface.Value, surface.Value, surface.Value, 1f) : surface.Linear;
+            if (color != null)
+            {
+                tint.r *= 1f + 0.05f * surface.Warmth;
+                tint.b *= 1f - 0.07f * surface.Warmth;
+            }
+            if (color != null && mat.HasProperty("_BaseMap")) mat.SetTexture("_BaseMap", color);
+            if (normal != null && mat.HasProperty("_NormalMap")) mat.SetTexture("_NormalMap", normal);
+            if (rough != null && mat.HasProperty("_RoughnessMap"))
+            {
+                mat.SetTexture("_RoughnessMap", rough);
+                mat.SetFloat("_UseRoughnessMap", 1f);
+            }
+            // tint は線形の値。Linear の色空間では Unity がマテリアルの色を sRGB とみなして線形へ直して渡すので、先に gamma へ戻す
+            Color baseColor = QualitySettings.activeColorSpace == ColorSpace.Linear ? tint.gamma : tint;
+            if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", baseColor);
+            if (mat.HasProperty("_Roughness")) mat.SetFloat("_Roughness", surface.Roughness);
+            if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 1f - surface.Roughness);
+            if (mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", surface.Metallic);
+            ctx.Materials[surface.Key] = mat;
+            return mat;
         }
 
         private static GameObject BuildInstanceObject(RegionPropInstance inst, Palette palette, int index)
