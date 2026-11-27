@@ -12,6 +12,8 @@ TEXTURE2D_ARRAY(_RegionSurfaceNormal);   // 法線（赤 x・緑 y、OpenGL 向�
 TEXTURE2D_ARRAY(_RegionSurfaceHRA);      // 赤 高さ（0.5 が平均の面）、緑 粗さ、青 AO
 float4 _RegionSurfaceRoles[REGION_SURFACE_ROLES];  // x 配列の番号（-1 で無し）、y 1 / 横 1 枚の m、z 法線の強さ、w 粗さの既定
 float4 _RegionSurfaceParams;                        // x 1 で有効、y 鏡面の強さ（0.04 の反射率に掛ける）
+float4 _RegionSurfaceBoost;  // 候補の撮り比べ用: x 写真の明暗の強さ（比を x 倍に広げる。0 以下は 1）、y 写真の平均の色を混ぜる割合（既定 0）
+float4 _RegionSurfaceTints[REGION_SURFACE_ROLES];  // 役ごとの写真の平均の色（Linear）。y が 0 の時は使わない
 float4 _RegionSurfaceTiers;  // 距離の段（m）: x〜y で高さ粗さAO を読まなくなる（近）、z〜w で写真を読まなくなる（中、その先は遠）
 
 struct RegionSurfaceSample

@@ -44,9 +44,12 @@
   [switch]$PropsCompare,
   [switch]$PropsProof,
   # view3d: 表面の写真素材の候補を撮り比べる（T5）。候補の一覧（JSON）を渡すと、-SunAltitudes の太陽の高さごとに場面を作り、
-  #         素材なしと各候補（1 役ずつ差し替え）の固定の視点を <OutDir>/sun<高さ>/<候補>/ へ撮る（RegionSurfaceCandidates）
+  #         素材なしと各候補（1 役ずつ差し替え）の固定の視点を <OutDir>/sun<高さ>/<候補>/ へ撮る（RegionSurfaceCandidates）。
+  #         -CandidateViews search は役が大きく写る近い視点を探して撮り、-Strengths '1:0,2:0.5' は写真の使い方（明暗の強さ:色を混ぜる割合）を並べる
   [string]$SurfaceCandidates = '',
   [string]$SunAltitudes = '',
+  [string]$CandidateViews = '',
+  [string]$Strengths = '',
   [string]$LookSky = '',
   [string]$UnityPath = ''
 )
@@ -113,6 +116,8 @@ if ($Mode -eq 'setup') {
     if ($LookSky) { $unityArgs += @('-lookSky', $LookSky) }
     if ($SurfaceCandidates) { $unityArgs += @('-surfaceCandidates', "`"$((Resolve-Path $SurfaceCandidates).Path)`"") }
     if ($SunAltitudes) { $unityArgs += @('-sunAltitudes', $SunAltitudes) }
+    if ($CandidateViews) { $unityArgs += @('-candidateViews', $CandidateViews) }
+    if ($Strengths) { $unityArgs += @('-strengths', $Strengths) }
   }
 } elseif ($Mode -eq 'play') {
   $unityArgs = @(

@@ -40,6 +40,17 @@ namespace Vastcore.RegionMap
         /// <summary>同上。役ごとの横の実寸（m）。0 以下を返した役は設定の値のまま。</summary>
         public static System.Func<int, float> TileOverride;
 
+        /// <summary>同上。役ごとの写真の平均の色（Linear）。PhotoColor が 0 より大きい時だけ使う。</summary>
+        public static System.Func<int, Color> TintOverride;
+
+        /// <summary>候補の撮り比べ用: 写真の明暗の比を何倍に広げるか（既定 1 で画像のまま）。</summary>
+        public static float Contrast = 1f;
+
+        /// <summary>候補の撮り比べ用: 写真の平均の色を手続きの色へ混ぜる割合（既定 0 で混ぜない）。</summary>
+        public static float PhotoColor;
+
+        private static readonly Vector4[] tints = new Vector4[RegionSurfaceMaps.Folders.Length];
+
         private static Vector4 blendHeights, blendHeights2;
         private static float blendDepth, blendSpan = RegionSurfaceSettings.DefaultBlendSpan;
 
@@ -58,7 +69,11 @@ namespace Vastcore.RegionMap
             Release();
             var notes = new List<string>();
             var slices = new List<(int role, Texture2D detail, Texture2D normal, Texture2D hra)>();
-            for (int i = 0; i < roles.Length; i++) roles[i] = new Vector4(-1f, 0f, 0f, 0f);
+            for (int i = 0; i < roles.Length; i++)
+            {
+                roles[i] = new Vector4(-1f, 0f, 0f, 0f);
+                tints[i] = TintOverride != null ? (Vector4)TintOverride(i) : new Vector4(0.5f, 0.5f, 0.5f, 1f);
+            }
             bool canCopy = (SystemInfo.copyTextureSupport & CopyTextureSupport.DifferentTypes) != 0
                            && SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null;
             if (Enabled && canCopy)
@@ -131,6 +146,8 @@ namespace Vastcore.RegionMap
             Shader.SetGlobalVector("_RegionSurfaceBlend", new Vector4(blend ? depth / blendSpan : 0f, 0f, 0f, 0f));
             Shader.SetGlobalVector("_RegionSurfaceBlendHeights", blendHeights);
             Shader.SetGlobalVector("_RegionSurfaceBlendHeights2", blendHeights2);
+            Shader.SetGlobalVector("_RegionSurfaceBoost", new Vector4(Contrast, PhotoColor, 0f, 0f));
+            Shader.SetGlobalVectorArray("_RegionSurfaceTints", tints);
         }
 
         public static void Release()

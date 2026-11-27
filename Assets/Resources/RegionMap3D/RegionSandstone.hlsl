@@ -152,7 +152,9 @@ half3 SandRole(int role, float weight, SandMaterialContext c, inout SandstoneExt
     if (w > 0.01 && RegionSurfaceHas(role))
     {
         RegionSurfaceSample s = RegionSurfaceRead(role, c.p, c.pdx, c.pdy, c.n, c.nearFade);
-        detail = lerp(1.0, s.detail, c.farFade);
+        // 明暗の強さ 1 で lerp(1, 写真の比, 遠さ) と同じ
+        float contrast = _RegionSurfaceBoost.x > 0.0 ? _RegionSurfaceBoost.x : 1.0;
+        detail = max(0.0, 1.0 + (s.detail - 1.0) * (contrast * c.farFade));
         extra.gradient += s.gradient * w;
         extra.occlusion -= (1.0 - s.occlusion) * w;
         extra.roughness += s.roughness * w;
@@ -163,6 +165,13 @@ half3 SandRole(int role, float weight, SandMaterialContext c, inout SandstoneExt
 
 // 素材があれば 1（遠くでは 0 へ）。手続きの細かな粒を写真に置き換える度合い
 float SandHas(int role, float farFade) { return RegionSurfaceHas(role) ? farFade : 0.0; }
+
+// 素材のある役の所だけ、写真の平均の色を混ぜる（_RegionSurfaceBoost.y。既定 0 で今の手続きの色のまま）
+float3 SandTint(float3 color, int role, float farFade)
+{
+    float t = _RegionSurfaceBoost.y * SandHas(role, farFade);
+    return lerp(color, _RegionSurfaceTints[role].rgb, t);
+}
 
 // 他の 6 役のうち、重みが w より大きいものが 2 つ未満なら 1（重みの大きい 2 つだけ読む）
 float SandTop2(float w, float4 others, float2 more)
@@ -339,7 +348,7 @@ half3 SandstoneGround(float3 p, float3 n, float4 surface, SandNoiseSet s, inout 
     rock = lerp(rock, float3(0.27, 0.20, 0.18) * (0.78 + 0.50 * mineral), varnish * 0.88);
     half3 cliffDetail = SandRole(0, wCliff * SandTop2(eCliff, float4(eMud, eTalus, eSand, eCrust), eSediment), c, extra);
     half3 mudDetail = SandRole(1, wMud * SandTop2(eMud, float4(eCliff, eTalus, eSand, eCrust), eSediment), c, extra);
-    rock *= lerp(cliffDetail, mudDetail, mud);
+    rock = lerp(SandTint(rock, 0, c.farFade), SandTint(rock, 1, c.farFade), mud) * lerp(cliffDetail, mudDetail, mud);
     extra.rockMaterial = rockFace * rockMaterial;
 
     float sandPatch = 0.52 * broad + 0.30 * mottling + 0.18 * grains;
@@ -347,7 +356,8 @@ half3 SandstoneGround(float3 p, float3 n, float4 surface, SandNoiseSet s, inout 
     half3 sandDetail = SandRole(3, wSand * SandTop2(eSand, float4(eCliff, eMud, eTalus, eCrust), eSediment), c, extra);
     half3 crustDetail = SandRole(4, wCrust * SandTop2(eCrust, float4(eCliff, eMud, eTalus, eSand), eSediment), c, extra);
     half3 talusDetail = SandRole(2, wTalus * SandTop2(eTalus, float4(eCliff, eMud, eSand, eCrust), eSediment), c, extra);
-    soil = lerp(soil * sandDetail, float3(0.43, 0.41, 0.28) * (0.65 + 0.70 * lerp(grains, 0.5, hasCrust)) * crustDetail, cover);
+    soil = lerp(SandTint(soil, 3, c.farFade) * sandDetail,
+                SandTint(float3(0.43, 0.41, 0.28) * (0.65 + 0.70 * lerp(grains, 0.5, hasCrust)), 4, c.farFade) * crustDetail, cover);
     float groundMaterial = lerp(lerp(hasSand, hasCrust, cover), hasTalus, talusMix);
     float2 ground = float2(0.8 * p.x + 0.6 * p.z, -0.6 * p.x + 0.8 * p.z);
     float2 drift = float2(mottling, pores);
@@ -356,7 +366,7 @@ half3 SandstoneGround(float3 p, float3 n, float4 surface, SandNoiseSet s, inout 
     gravel += 1.3 * coarse * SandChips(ground * 1.4 - 2.0 * drift);
     // Talus is broken from the orange cliff above, so it stays warmer than the mudstone it covers.
     float3 rubble = lerp(float3(0.58, 0.42, 0.33), float3(0.80, 0.63, 0.48), sandPatch);
-    rubble = lerp(rubble, mudstone, mud * 0.45) * talusDetail * (1.0 - 0.10 * coarse);
+    rubble = SandTint(lerp(rubble, mudstone, mud * 0.45), 2, c.farFade) * talusDetail * (1.0 - 0.10 * coarse);
     float3 groundColor = lerp(soil, rubble, talusMix);
     groundColor *= lerp(0.82 + 0.24 * grains + 0.14 * pores + (0.55 + talus) * gravel, 1.0, groundMaterial);
 
@@ -372,7 +382,7 @@ half3 SandstoneGround(float3 p, float3 n, float4 surface, SandNoiseSet s, inout 
         float crack = SandCracks(p.xz * 1.7 + 0.25 * drift, footprint * 1.7, 0.06, plate) * smoothstep(0.25, 0.75, sed.x);
         // 色は周りの砂と同じ赤みを保ち、少しだけ淡くする（灰白にすると、離れた所で雪や塗り残しに見える）
         float3 silt = lerp(float3(0.62, 0.47, 0.37), float3(0.81, 0.66, 0.51), 0.5 * broad + 0.3 * mottling + 0.2 * plate);
-        silt *= lerp((0.94 + 0.08 * grains) * (1.0 - 0.38 * crack), 1.0, hasDeposit) * depositDetail;
+        silt = SandTint(silt, 6, c.farFade) * (lerp((0.94 + 0.08 * grains) * (1.0 - 0.38 * crack), 1.0, hasDeposit) * depositDetail);
         // 流路の礫は、水に転がされた丸い礫と粗い砂。色は崖の赤だけでなく、灰と白の礫が混ざる。大きい岩の多い所は大きい礫も
         // 礫の間の粗い砂は岩屑と同じ赤み。礫が画素より小さくなる中景からは、岩屑と同じ角ばった塊の影でむらを残す
         float3 washBase = lerp(float3(0.53, 0.41, 0.33), float3(0.74, 0.60, 0.48), sandPatch) * (0.9 + 0.2 * grains);
@@ -381,7 +391,7 @@ half3 SandstoneGround(float3 p, float3 n, float4 surface, SandNoiseSet s, inout 
         float3 washMix = lerp(washBase, pebble.rgb, 0.85 * pebble.w);
         washMix = lerp(washMix, cobble.rgb, 0.85 * cobble.w * (0.3 + 0.7 * coarse));
         washMix *= 0.8 + 0.14 * pores + 1.05 * gravel;
-        float3 washColor = lerp(washMix, washBase, hasWash) * washDetail;
+        float3 washColor = SandTint(lerp(washMix, washBase, hasWash), 7, c.farFade) * washDetail;
         groundColor = lerp(lerp(groundColor, silt, depositInRest), washColor, washShare);
     }
     return lerp(groundColor, rock, rockFace);
