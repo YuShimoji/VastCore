@@ -236,7 +236,7 @@ Heightmap integration is injected through `IHeightmapFieldFactory` to avoid cycl
 | `Vastcore.RegionMap.Editor` (Editor only) | `Assets/Scripts/RegionMap/Editor/` | `Vastcore.RegionMap.Editor` | false | `Vastcore.RegionMap` |
 
 - `Vastcore.Tests.EditMode` に `Vastcore.RegionMap` への参照を追加した（`RegionMapTests.cs` のため）。
-- `Vastcore.Tests.PlayMode` は探索シーンとそのボタン操作を検証するため、`Vastcore.RegionMap` と `UnityEngine.UI` を参照する。
+- `Vastcore.Tests.PlayMode` は探索シーンのボタンとゲームパッド操作を検証するため、`Vastcore.RegionMap`、`UnityEngine.UI`、`Unity.InputSystem` を参照する。
 - `Assets/Scripts/RegionMap/Core/` は UnityEngine を参照しない。同じソースを `tools/RegionMapPreview`（dotnet コンソール）からもコンパイルするので、ここへ UnityEngine の型を入れない。
 - `Vastcore.Terrain` などへ依存させない理由: Terrain は Deform・ProBuilder に依存しており、地図の生成と描画にそれらを巻き込まないため。既存アセンブリと結ぶ必要が出たら（SP-021 段5）、上位側（Game など）から `Vastcore.RegionMap` を参照する。
 

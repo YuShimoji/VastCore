@@ -248,7 +248,9 @@ namespace Vastcore.RegionMap
             QueueCloudSnapshot();
             SetMapInput(false);
             UpdatePipVisibility();
-            ReportStatus("3D地形を準備しています…  [Esc] キャンセル");
+            Gamepad gamepad = Gamepad.current;
+            string cancel = gamepad == null ? "Esc" : RegionGamepad.Label(gamepad.buttonEast);
+            ReportStatus($"3D地形を準備しています…  [{cancel}] キャンセル");
             _terrainPreparation = StartCoroutine(PrepareDive(destination, targetE, targetS, fromDrone: false));
             return true;
         }
@@ -638,8 +640,10 @@ namespace Vastcore.RegionMap
             if (_pipPanel != null && _pipPanel.activeSelf && Drone != null && Drone.IsActive)
             {
                 DroneTelemetry dt = Drone.Autopilot.Telemetry;
+                Gamepad gamepad = Gamepad.current;
+                string close = gamepad == null ? "P" : RegionGamepad.Label(gamepad.rightShoulder);
                 _pipCaption.text = "DRONE [" + dt.State + "]  AGL " + Mathf.RoundToInt(dt.AltitudeAgl)
-                    + "m  |  " + Drone.Autopilot.IdleBehavior.DisplayName + "  [P] 閉じる";
+                    + "m  |  " + Drone.Autopilot.IdleBehavior.DisplayName + $"  [{close}] 閉じる";
             }
         }
 
@@ -650,17 +654,19 @@ namespace Vastcore.RegionMap
                 AscendToOverview2D();
                 return;
             }
-            if (Input.GetKeyDown(KeyCode.V))
+            Gamepad gamepad = Gamepad.current;
+            if (Input.GetKeyDown(KeyCode.V) || gamepad?.buttonNorth.wasPressedThisFrame == true)
             {
                 ToggleDroneAndOpenWorld();
                 return;
             }
-            if (Input.GetKeyDown(KeyCode.P))
+            if (Input.GetKeyDown(KeyCode.P) || gamepad?.rightShoulder.wasPressedThisFrame == true)
             {
                 ToggleDronePiP();
                 return;
             }
-            if (Input.GetKeyDown(KeyCode.Tab) && Drone != null && Drone.IsActive)
+            if (Drone != null && Drone.IsActive &&
+                (Input.GetKeyDown(KeyCode.Tab) || gamepad?.leftShoulder.wasPressedThisFrame == true))
             {
                 Drone.CycleIdleBehavior();
             }
@@ -670,32 +676,51 @@ namespace Vastcore.RegionMap
         {
             Keyboard keyboard = Keyboard.current;
             return Input.GetKeyDown(KeyCode.M) || Input.GetKeyDown(KeyCode.Escape) ||
-                   keyboard?.mKey.wasPressedThisFrame == true || keyboard?.escapeKey.wasPressedThisFrame == true;
+                   keyboard?.mKey.wasPressedThisFrame == true || keyboard?.escapeKey.wasPressedThisFrame == true ||
+                   Gamepad.current?.buttonEast.wasPressedThisFrame == true;
         }
 
         private void UpdateHudText(double eastM, double southM)
         {
             if (_hudModeText == null || Streamer == null || Streamer.Coordinates == null) return;
             Streamer.Coordinates.WorldMetersToMap(eastM, southM, out float mx, out float my);
+            Gamepad gamepad = Gamepad.current;
             if (Mode == RegionWorldMode.DroneRecon3D)
             {
                 DroneTelemetry t = Drone.Autopilot.Telemetry;
                 _hudModeText.text = "ドローン上空モード  (" + t.State + " / " + Drone.Autopilot.IdleBehavior.DisplayName + ")";
                 _hudStatusText.text = "X " + mx.ToString("0.00") + "  Y " + my.ToString("0.00")
                     + "  |  AGL " + Mathf.RoundToInt(t.AltitudeAgl) + " m  |  "
-                    + "[V] 地上へ降下  [Tab] 旋回切替  [M/Esc] 2D地図へ戻る";
+                    + (gamepad == null
+                        ? "[V] 地上へ降下  [Tab] 旋回切替  [M/Esc] 2D地図へ戻る"
+                        : $"[{RegionGamepad.Label(gamepad.buttonNorth)}] 地上へ降下  " +
+                          $"[{RegionGamepad.Label(gamepad.leftShoulder)}] 旋回切替  [{RegionGamepad.Label(gamepad.buttonEast)}] 地図へ戻る");
             }
             else
             {
                 bool driving = Locomotion.Mode == LocomotionMode.Vehicle;
                 string loco = driving ? "バギー乗車中" : "徒歩";
                 _hudModeText.text = "オープンワールド 3D  (" + loco + ")";
-                _hudStatusText.text = "X " + mx.ToString("0.00") + "  Y " + my.ToString("0.00")
-                    + "  |  [WASD] 移動  [右ドラッグ] 視点  "
-                    + (driving ? "[F] 降車  [Space] ブレーキ  [R] 復帰  " : "[F] 乗車  [B] バギー呼出  ")
-                    + "[V] ドローン  [P] PiP  [M/Esc] 地図へ戻る";
+                string controls = gamepad == null
+                    ? "[WASD] 移動  [右ドラッグ] 視点  "
+                      + (driving ? "[F] 降車  [Space] ブレーキ  [R] 復帰  " : "[F] 乗車  [B] バギー呼出  ")
+                      + "[V] ドローン  [P] PiP  [M/Esc] 地図へ戻る"
+                    : DescribeGroundGamepad(gamepad, driving);
+                _hudStatusText.text = "X " + mx.ToString("0.00") + "  Y " + my.ToString("0.00") + "  |  " + controls;
             }
             if (_statusUntil > Time.unscaledTime) _hudStatusText.text = _statusMessage;
+        }
+
+        private static string DescribeGroundGamepad(Gamepad gamepad, bool driving)
+        {
+            string action = RegionGamepad.Label(gamepad.buttonSouth);
+            string interact = RegionGamepad.Label(gamepad.buttonWest);
+            string movement = driving
+                ? $"左スティック ハンドル  [{RegionGamepad.Label(gamepad.leftTrigger)}/{RegionGamepad.Label(gamepad.rightTrigger)}] 後退/前進  " +
+                  $"[{action}] ブレーキ  [{interact}] 降車  [十字↓] 復帰"
+                : $"左スティック 移動  [左押込] ダッシュ  [{action}] ジャンプ  [{interact}] 乗車  [十字↓] バギー呼出";
+            return movement + $"  右スティック 視点  [{RegionGamepad.Label(gamepad.buttonNorth)}] ドローン  " +
+                   $"[{RegionGamepad.Label(gamepad.rightShoulder)}] PiP  [{RegionGamepad.Label(gamepad.buttonEast)}] 地図へ戻る";
         }
 
         private void SetHudVisible(bool visible)

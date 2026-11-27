@@ -5,7 +5,8 @@
   # view3d  : 砂岩の台地の 3D 表示（見え方の想定 docs/02_design/REGION_TERRAIN_LOOK_SPEC.md と見比べる場面）を Unity で作り、
   #           決まった 3 つの視点の画像 look-far.png・look-mid.png・look-near.png を <OutDir> へ書き出す（バッチ。-Seed を書かなければ seed 9）
   # view3d-cave : 崖と洞窟（局所の体積の試作）の 3 つの視点の画像を <OutDir> へ書き出す（バッチ）
-  [ValidateSet('setup','explore','play','view3d','view3d-cave')] [string]$Mode = 'setup',
+  # build-windows : 探索シーンから起動する Windows x64 Player を <OutDir> にビルドする
+  [ValidateSet('setup','explore','play','view3d','view3d-cave','build-windows')] [string]$Mode = 'setup',
   [int]$Seed = 7,
   [int]$Resolution = 1024,
   [string]$Style = 'satellite',
@@ -132,6 +133,14 @@ if ($Mode -eq 'setup') {
     if ($AlsoOff) { $unityArgs += @('-alsoOff', 'true') }
     if ($ViewsFrom) { $unityArgs += @('-viewsFrom', "`"$((Resolve-Path $ViewsFrom).Path)`"") }
   }
+} elseif ($Mode -eq 'build-windows') {
+  $unityArgs = @(
+    '-batchmode', '-nographics', '-quit', '-buildTarget', 'Win64',
+    '-projectPath', ('"' + $ProjectPath + '"'),
+    '-executeMethod', 'Vastcore.RegionMap.Editor.RegionFootpathBuild.BuildExplorerFromCommandLine',
+    '-regionOut', ('"' + $OutFull + '"'),
+    '-logFile', ('"' + $log + '"')
+  )
 } elseif ($Mode -eq 'play') {
   $unityArgs = @(
     '-projectPath', "`"$ProjectPath`"",

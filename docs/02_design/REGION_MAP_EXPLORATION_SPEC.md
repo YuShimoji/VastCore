@@ -170,6 +170,7 @@ scripts/region-map.ps1                 Unity のバッチ入口（setup / explor
 - `RegionExplorer`（MonoBehaviour）: `IsReady`、`Region`、`Session`、`Rules`・`SetRules(SearchRules)`（`Expedition` 既定／`Signal` は前の反応だけの規則）、`Expedition`、`RestartExpedition()`、`ReadClue(clue)`、`LastDirection`、`CursorMapPosition`、`MoveCursor(x, y)`、`SearchAtCursor()`、`NextRegion()`、`NextStyle()`、`NextCloudOpacity()`、`NextAreaDisplay()`、`CloudLevel`、`AreaDisplay`、`CloudDrift`、`Detail`（`RegionDetailLayer`。状態 `Phase`・作成時間 `LastBuildMs`・`LastRenderMs`）、`SetView(zoom, mapX, mapY)`。
 - 遠征の規則（軸 H、`RegionExpedition`）・動き（軸 E、`RegionMotion`）・音（軸 F、`RegionSound`）の説明は [履歴](../archive/REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-25 3D化の試作・段階 B（正本から移した行）」 へ原文のまま移した。3つとも止めている軸で、コードは残っており、説明は今も効く。
 - 探索画面の操作: 地図を左クリックでカーソル移動、Space / Enter / ボタンでサーチ、矢印キーで微調整（1回分は拡大に応じて小さくなる）、ホイールで拡大（最大 ×512。×4 以上で細部の地形、×128 以上で街の写真の縮尺の細部。雲は ×64〜×128 で消える＝開発担当の仮の扱い）、右または中ドラッグで地図を動かす。「雲」ボタンで 濃い → 薄い → なし（衛星写真の時だけ）。「地名」ボタンで 名前 → 名前と境界 → なし。カーソル位置の部品に、その場所のエリア名が出る。低い雲は東南東へ、地図の幅を420秒で横切る速さで流れる（`_cloudCrossSeconds`）。
+- ゲームパッド接続時は地図と3Dにボタン案内を出す。Xbox表記では、地図で左スティックと十字キーが地点選択、LT/RTが縮小・拡大、Aがダイブ、Xがサーチ。3Dでは右スティックが視点、十字下がバギー呼出、Xが乗降、LT/RTが後退・前進。Yがドローン、RBがPiP、3DのBが地図復帰。Windows x64のビルドは `scripts/region-map.ps1 -Mode build-windows -OutDir <出力先>`。
 
 ### 画像の差し替え手順
 

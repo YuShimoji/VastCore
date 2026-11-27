@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -15,10 +17,16 @@ namespace Vastcore.Tests.PlayMode
         private GameObject _root;
         private Scene _explorerScene;
         private Scene _previousScene;
+        private Gamepad _gamepad;
 
         [UnityTearDown]
         public IEnumerator TearDown()
         {
+            if (_gamepad != null)
+            {
+                InputSystem.RemoveDevice(_gamepad);
+                _gamepad = null;
+            }
             if (_root != null)
             {
                 Object.Destroy(_root);
@@ -37,11 +45,7 @@ namespace Vastcore.Tests.PlayMode
         [Timeout(150000)]
         public IEnumerator ExplorerButtons_DiveAndReconRoundTrip_PreserveMapAndGround()
         {
-            const string scenePath = "Assets/Scenes/RegionExplorer.unity";
-            _previousScene = SceneManager.GetActiveScene();
-            yield return SceneManager.LoadSceneAsync(scenePath, LoadSceneMode.Additive);
-            _explorerScene = SceneManager.GetSceneByPath(scenePath);
-            SceneManager.SetActiveScene(_explorerScene);
+            yield return LoadExplorer();
 
             RegionExplorer explorer = Object.FindFirstObjectByType<RegionExplorer>();
             yield return WaitFor(() => explorer.IsReady, 90f, "The exploration scene should finish generating its map");
@@ -112,6 +116,114 @@ namespace Vastcore.Tests.PlayMode
             Assert.IsNull(world.Streamer.Region);
             yield return WaitFor(() => explorer.IsReady, 90f, "A second region should become available");
             Assert.AreNotSame(region, explorer.Region);
+        }
+
+        [UnityTest]
+        [Timeout(150000)]
+        public IEnumerator Gamepad_ExploresMap_DrivesBuggy_AndReturnsToMap()
+        {
+            yield return LoadExplorer();
+            _gamepad = InputSystem.AddDevice<Gamepad>();
+            RegionExplorer explorer = Object.FindFirstObjectByType<RegionExplorer>();
+            yield return WaitFor(() => explorer.IsReady, 90f, "The map should be ready for gamepad input");
+            RegionWorldSession world = explorer.WorldSession;
+            Transform map = explorer.transform.Find("Region Explorer Canvas");
+            Assert.IsTrue(map.Find("Gamepad Hints").gameObject.activeSelf);
+
+            explorer.MoveCursor(37.06f, 48.88f);
+            float startX = explorer.CursorMapPosition.x;
+            Send(new GamepadState { leftStick = Vector2.right * 0.6f });
+            yield return WaitFor(() => explorer.CursorMapPosition.x > startX + 0.1f, 3f, "The left stick should move the map cursor");
+            float startZoom = explorer.Zoom;
+            Send(new GamepadState { rightTrigger = 0.7f });
+            yield return WaitFor(() => explorer.Zoom > startZoom * 1.08f, 3f, "The right trigger should zoom into the map");
+            Send(new GamepadState { leftTrigger = 0.7f });
+            yield return WaitFor(() => explorer.Zoom < startZoom * 1.04f, 3f, "The left trigger should zoom out of the map");
+            Send(default);
+            yield return null;
+
+            // A short run on the flat seed 7 route used for the long driving check.
+            explorer.MoveCursor(37.06f, 48.88f);
+            int searches = explorer.Session.SearchCount;
+            yield return Tap(GamepadButton.West);
+            Assert.That(explorer.Session.SearchCount, Is.EqualTo(searches + 1), "X should search at the current cursor");
+            world.Streamer.MaxConcurrentBuilds = 0;
+            yield return Tap(GamepadButton.South);
+            Assert.That(world.Mode, Is.EqualTo(RegionWorldMode.Diving));
+            yield return Tap(GamepadButton.East);
+            Assert.That(world.Mode, Is.EqualTo(RegionWorldMode.Overview2D), "B should cancel the dive while terrain is loading");
+            world.Streamer.MaxConcurrentBuilds = 3;
+            yield return Tap(GamepadButton.South);
+            yield return WaitFor(() => world.Mode == RegionWorldMode.OpenWorld3D, 25f, "A should enter the open world");
+
+            Vector3 foot = world.Locomotion.Foot.Root.position;
+            Send(new GamepadState { leftStick = Vector2.up * 0.7f });
+            yield return WaitFor(() => world.Locomotion.Foot.Root.position.z > foot.z + 1f, 3f, "The left stick should move the walker");
+            var follow = world.WorldCamera.GetComponent<RegionOpenWorldCamera>();
+            float yaw = follow.YawDegrees;
+            Send(new GamepadState { rightStick = Vector2.right * 0.65f });
+            yield return WaitFor(() => follow.YawDegrees > yaw + 8f, 3f, "The right stick should turn the ground camera");
+            Send(default);
+            yield return null;
+
+            yield return Tap(GamepadButton.DpadDown);
+            Assert.IsTrue(world.Locomotion.Buggy.IsSpawned);
+            yield return Tap(GamepadButton.West);
+            Assert.That(world.Locomotion.Mode, Is.EqualTo(LocomotionMode.Vehicle), "X should mount the buggy");
+            RegionBuggyController buggy = world.Locomotion.Buggy;
+            Vector3 before = buggy.Root.position;
+            Vector3 forward = buggy.Root.forward;
+            Send(new GamepadState { rightTrigger = 0.8f });
+            yield return WaitFor(() => Vector3.Dot(buggy.Root.position - before, forward) > 3f, 6f, "RT should drive forward");
+            yaw = buggy.Root.eulerAngles.y;
+            Send(new GamepadState { rightTrigger = 0.65f, leftStick = Vector2.right * 0.65f });
+            yield return WaitFor(() => Mathf.DeltaAngle(yaw, buggy.Root.eulerAngles.y) > 5f, 4f, "The left stick should steer the buggy");
+            Send(new GamepadState().WithButton(GamepadButton.South));
+            yield return WaitFor(() => buggy.Velocity.magnitude < 0.8f, 6f, "A should brake");
+            before = buggy.Root.position;
+            forward = buggy.Root.forward;
+            Send(new GamepadState { leftTrigger = 0.8f });
+            yield return WaitFor(() => Vector3.Dot(buggy.Root.position - before, forward) < -1f, 6f, "LT should reverse");
+            Send(new GamepadState().WithButton(GamepadButton.South));
+            yield return WaitFor(() => buggy.Velocity.magnitude < 0.8f, 6f, "The buggy should slow before returning");
+            yield return Tap(GamepadButton.RightShoulder);
+            Assert.That(world.Drone.CameraRig.DisplayMode, Is.EqualTo(DroneDisplayMode.PictureInPicture));
+            yield return Tap(GamepadButton.RightShoulder);
+            Assert.That(world.Drone.CameraRig.DisplayMode, Is.EqualTo(DroneDisplayMode.Hidden));
+
+            Vector3 parked = buggy.Root.position;
+            world.Streamer.Coordinates.LocalToWorld(parked.x, parked.y, parked.z, out double east, out _, out double south);
+            world.Streamer.Coordinates.WorldMetersToMap(east, south, out float x, out float y);
+            yield return Tap(GamepadButton.East);
+            yield return WaitFor(() => world.Mode == RegionWorldMode.Overview2D, 15f, "B should return from the buggy to the map");
+            Assert.That(Vector2.Distance(explorer.CursorMapPosition, new Vector2(x, y)), Is.LessThan(0.001f));
+
+            yield return Tap(GamepadButton.North);
+            yield return WaitFor(() => world.Mode == RegionWorldMode.DroneRecon3D, 25f, "Y should dispatch the map drone");
+            string pattern = world.Drone.Autopilot.IdleBehavior.Id;
+            yield return Tap(GamepadButton.LeftShoulder);
+            Assert.That(world.Drone.Autopilot.IdleBehavior.Id, Is.Not.EqualTo(pattern));
+            yield return Tap(GamepadButton.East);
+            yield return WaitFor(() => world.Mode == RegionWorldMode.Overview2D, 15f, "B should return from the drone to the map");
+        }
+
+        private IEnumerator LoadExplorer()
+        {
+            const string scenePath = "Assets/Scenes/RegionExplorer.unity";
+            _previousScene = SceneManager.GetActiveScene();
+            yield return SceneManager.LoadSceneAsync(scenePath, LoadSceneMode.Additive);
+            _explorerScene = SceneManager.GetSceneByPath(scenePath);
+            SceneManager.SetActiveScene(_explorerScene);
+        }
+
+        private void Send(GamepadState state) => InputSystem.QueueStateEvent(_gamepad, state);
+
+        private IEnumerator Tap(GamepadButton button)
+        {
+            Send(new GamepadState().WithButton(button));
+            yield return null;
+            Send(default);
+            yield return null;
         }
 
         private static IEnumerator WaitFor(System.Func<bool> condition, float seconds, string message)

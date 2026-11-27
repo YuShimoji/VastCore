@@ -93,8 +93,17 @@ namespace Vastcore.RegionMap
             if (!IsActive || _cc == null || _streamer == null) return;
             float dt = Mathf.Min(Time.deltaTime, 0.05f);
 
-            float h = Input.GetAxisRaw("Horizontal");
-            float v = Input.GetAxisRaw("Vertical");
+            Gamepad gamepad = Gamepad.current;
+            Vector2 move;
+            if (gamepad == null)
+            {
+                move = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+            }
+            else
+            {
+                Vector2 keys = RegionGamepad.KeyboardMove(Keyboard.current);
+                move = keys.sqrMagnitude > 0f ? keys : gamepad.leftStick.ReadValue();
+            }
             Vector3 moveDir = Vector3.zero;
             if (_cameraTransform != null)
             {
@@ -104,15 +113,16 @@ namespace Vastcore.RegionMap
                 Vector3 right = _cameraTransform.right;
                 right.y = 0f;
                 right.Normalize();
-                moveDir = fwd * v + right * h;
+                moveDir = fwd * move.y + right * move.x;
             }
             else
             {
-                moveDir = new Vector3(h, 0f, v);
+                moveDir = new Vector3(move.x, 0f, move.y);
             }
             if (moveDir.sqrMagnitude > 1f) moveDir.Normalize();
 
-            float speed = Input.GetKey(KeyCode.LeftShift) ? SprintSpeed : WalkSpeed;
+            bool sprint = Input.GetKey(KeyCode.LeftShift) || gamepad?.leftStickButton.isPressed == true;
+            float speed = sprint ? SprintSpeed : WalkSpeed;
             Vector3 horiz = moveDir * speed;
 
             // 進行先の RegionTraversal 区分で崖・水域への進入を抑制
@@ -134,7 +144,8 @@ namespace Vastcore.RegionMap
 
             bool grounded = _cc.isGrounded;
             if (grounded && _velocity.y < 0f) _velocity.y = -2f;
-            if (grounded && Input.GetKeyDown(KeyCode.Space)) _velocity.y = JumpSpeed;
+            if (grounded && (Input.GetKeyDown(KeyCode.Space) || gamepad?.buttonSouth.wasPressedThisFrame == true))
+                _velocity.y = JumpSpeed;
             _velocity.y -= Gravity * dt;
 
             _velocity.x = horiz.x;
@@ -250,22 +261,21 @@ namespace Vastcore.RegionMap
         {
             if (!IsActive) return;
             Keyboard keyboard = Keyboard.current;
-            float steer = keyboard == null ? 0f : AxisFromKeys(keyboard.aKey.isPressed, keyboard.dKey.isPressed);
-            float throttle = keyboard == null ? 0f : AxisFromKeys(keyboard.sKey.isPressed, keyboard.wKey.isPressed);
+            Gamepad gamepad = Gamepad.current;
+            Vector2 keys = RegionGamepad.KeyboardMove(keyboard);
             float step = 3f * Time.deltaTime;
-            _keyboardAxes.x = Mathf.MoveTowards(_keyboardAxes.x * steer < 0f ? 0f : _keyboardAxes.x, steer, step);
-            _keyboardAxes.y = Mathf.MoveTowards(_keyboardAxes.y * throttle < 0f ? 0f : _keyboardAxes.y, throttle, step);
-            _steerInput = StrongerAxis(Input.GetAxis("Horizontal"), _keyboardAxes.x);
-            _throttleInput = StrongerAxis(Input.GetAxis("Vertical"), _keyboardAxes.y);
-            _brakeInput = Input.GetKey(KeyCode.Space) || keyboard?.spaceKey.isPressed == true;
+            _keyboardAxes.x = Mathf.MoveTowards(_keyboardAxes.x * keys.x < 0f ? 0f : _keyboardAxes.x, keys.x, step);
+            _keyboardAxes.y = Mathf.MoveTowards(_keyboardAxes.y * keys.y < 0f ? 0f : _keyboardAxes.y, keys.y, step);
+            float steer = gamepad == null ? Input.GetAxis("Horizontal") : gamepad.leftStick.ReadValue().x;
+            float throttle = gamepad == null ? Input.GetAxis("Vertical") : RegionGamepad.TriggerAxis(gamepad);
+            _steerInput = StrongerAxis(steer, _keyboardAxes.x);
+            _throttleInput = StrongerAxis(throttle, _keyboardAxes.y);
+            _brakeInput = Input.GetKey(KeyCode.Space) || keyboard?.spaceKey.isPressed == true || gamepad?.buttonSouth.isPressed == true;
 
             // R キーまたは横転・スタック時のリカバー
-            if (Input.GetKeyDown(KeyCode.R) || keyboard?.rKey.wasPressedThisFrame == true)
+            if (Input.GetKeyDown(KeyCode.R) || keyboard?.rKey.wasPressedThisFrame == true || gamepad?.dpad.down.wasPressedThisFrame == true)
                 RecoverUpright();
         }
-
-        private static float AxisFromKeys(bool negative, bool positive)
-            => (positive ? 1f : 0f) - (negative ? 1f : 0f);
 
         private static float StrongerAxis(float mapped, float keyboard)
             => Mathf.Abs(mapped) >= Mathf.Abs(keyboard) ? mapped : keyboard;
@@ -473,6 +483,14 @@ namespace Vastcore.RegionMap
                 YawDegrees += Input.GetAxis("Mouse X") * Sensitivity * 2.5f;
                 PitchDegrees = Mathf.Clamp(PitchDegrees - Input.GetAxis("Mouse Y") * Sensitivity * 2.0f, -10f, 78f);
             }
+            Gamepad gamepad = Gamepad.current;
+            if (gamepad != null)
+            {
+                Vector2 look = gamepad.rightStick.ReadValue();
+                float degrees = Sensitivity * 60f * Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+                YawDegrees += look.x * degrees;
+                PitchDegrees = Mathf.Clamp(PitchDegrees - look.y * degrees, -10f, 78f);
+            }
             float scroll = Input.mouseScrollDelta.y;
             if (Mathf.Abs(scroll) > 0.01f)
                 Distance = Mathf.Clamp(Distance - scroll * 1.2f, 2.5f, 26f);
@@ -647,8 +665,11 @@ namespace Vastcore.RegionMap
         {
             if (!IsEnabled) return;
             Keyboard keyboard = Keyboard.current;
-            if (Input.GetKeyDown(KeyCode.F) || keyboard?.fKey.wasPressedThisFrame == true) ToggleMountVehicle();
-            if (Mode == LocomotionMode.OnFoot && (Input.GetKeyDown(KeyCode.B) || keyboard?.bKey.wasPressedThisFrame == true))
+            Gamepad gamepad = Gamepad.current;
+            if (Input.GetKeyDown(KeyCode.F) || keyboard?.fKey.wasPressedThisFrame == true || gamepad?.buttonWest.wasPressedThisFrame == true)
+                ToggleMountVehicle();
+            if (Mode == LocomotionMode.OnFoot &&
+                (Input.GetKeyDown(KeyCode.B) || keyboard?.bKey.wasPressedThisFrame == true || gamepad?.dpad.down.wasPressedThisFrame == true))
                 SummonBuggyNearby();
         }
     }

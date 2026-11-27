@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace Vastcore.RegionMap
@@ -255,7 +256,11 @@ namespace Vastcore.RegionMap
         private RectTransform _daysFill;
         private Text _costText;
         private Text _searchLabel;
+        private Text _searchKeyText;
         private RectTransform _searchKeyCap;
+        private RectTransform _mouseAndKeyboardHints;
+        private Text _gamepadHints;
+        private Gamepad _hintGamepad;
         private RectTransform _cluePart;
         private Text _clueHeader;
         private readonly List<GameObject> _clueItems = new List<GameObject>();
@@ -658,6 +663,8 @@ namespace Vastcore.RegionMap
             _sounds.Volume = _soundVolume;
             _sounds.Tick(_fx.Time);
             FadeMessage();
+            Gamepad gamepad = Gamepad.current;
+            UpdateGamepadHints(gamepad);
             // クリックしたボタンが選択されたままだと、Space と Enter がそのボタンの「決定」にもなり、
             // 下の HandleKeys と合わせて 1 回の押下で 2 回動く。選択は毎フレーム外す
             EventSystem events = EventSystem.current;
@@ -693,6 +700,7 @@ namespace Vastcore.RegionMap
             if (_worldSession != null && _worldSession.Mode != RegionWorldMode.Overview2D) return;
             HandlePointer();
             HandleKeys();
+            if (gamepad != null) HandleGamepad(gamepad);
             RefreshOverlay();
             UpdateDetail();
         }
@@ -1171,8 +1179,8 @@ namespace Vastcore.RegionMap
                     ShowMessage("都市・幹線・空港を配置できる場所が見つかりませんでした。「別の地域」で探せます。", 8f);
                 else
                     ShowMessage(_rules == SearchRules.Expedition
-                        ? "野営地から " + _expedition.StartDays + " 日の遠征。手掛かりを読み、地図をクリックしてサーチする"
-                        : "地図をクリックして位置を決め、サーチで調べる", 8f);
+                        ? "野営地から " + _expedition.StartDays + " 日の遠征。手掛かりを読み、地図で地点を選んでサーチする"
+                        : "地図で地点を選び、サーチで調べる", 8f);
             }
             else
             {
@@ -1262,6 +1270,35 @@ namespace Vastcore.RegionMap
             if (Input.GetKeyDown(KeyCode.UpArrow)) dy -= step;
             if (Input.GetKeyDown(KeyCode.DownArrow)) dy += step;
             if (dx != 0f || dy != 0f) MoveCursor(_cursorMap.x + dx, _cursorMap.y + dy);
+        }
+
+        private void HandleGamepad(Gamepad gamepad)
+        {
+            float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+            Vector2 fine = gamepad.dpad.ReadValue();
+            Vector2 motion = fine.sqrMagnitude > 0f
+                ? fine.normalized * 5f
+                : gamepad.leftStick.ReadValue() * 32f;
+            if (motion.sqrMagnitude > 0f)
+            {
+                _hovering = false;
+                motion *= dt / _zoom;
+                MoveCursor(_cursorMap.x + motion.x, _cursorMap.y - motion.y);
+            }
+
+            float zoom = RegionGamepad.TriggerAxis(gamepad);
+            if (Mathf.Abs(zoom) > 0.05f)
+                ZoomAt(MapToLocal(_cursorMap), Mathf.Pow(2f, zoom * 2f * dt));
+            if (gamepad.leftStickButton.wasPressedThisFrame)
+            {
+                if (_zoom > MinZoom() + 0.001f) ShowWholeRegion(); else ShowFullWidth();
+            }
+
+            if (gamepad.buttonEast.wasPressedThisFrame) CloseCard();
+            else if (gamepad.buttonSouth.wasPressedThisFrame) DiveToOpenWorldAtCursor();
+            else if (gamepad.buttonNorth.wasPressedThisFrame) DispatchDroneAtCursor();
+            else if (gamepad.buttonWest.wasPressedThisFrame) SearchAtCursor();
+            else if (CanEnterWorld && gamepad.rightShoulder.wasPressedThisFrame) _worldSession.ToggleDronePiP();
         }
 
         private void ZoomAt(Vector2 local, float factor)
@@ -2946,6 +2983,7 @@ namespace Vastcore.RegionMap
             Stretch(key.rectTransform);
             // 遠征の規則では「サーチ　3 日」のように文字が替わる（SetSearchLabel が並べ直す）
             _searchLabel = label;
+            _searchKeyText = key;
             _searchKeyCap = cap;
         }
 
@@ -3026,6 +3064,37 @@ namespace Vastcore.RegionMap
                 x += actionWidth + (k < keys.Length - 1 ? 20f : 14f);
             }
             rect.sizeDelta = new Vector2(x, ToolHeight);
+            _mouseAndKeyboardHints = rect;
+
+            Image pad = CreateImage(canvas, "Gamepad Hints", PartColor, null);
+            RectTransform padRect = pad.rectTransform;
+            padRect.anchorMin = rect.anchorMin;
+            padRect.anchorMax = rect.anchorMax;
+            padRect.pivot = rect.pivot;
+            padRect.anchoredPosition = rect.anchoredPosition;
+            AddFrame(padRect, LineColor);
+            _gamepadHints = CreateText(padRect, "Controls", "", 16, TextColor, TextAnchor.MiddleCenter, _font);
+            Stretch(_gamepadHints.rectTransform);
+            pad.gameObject.SetActive(false);
+        }
+
+        private void UpdateGamepadHints(Gamepad gamepad)
+        {
+            if (gamepad == _hintGamepad) return;
+            _hintGamepad = gamepad;
+            bool connected = gamepad != null;
+            _mouseAndKeyboardHints.gameObject.SetActive(!connected);
+            RectTransform pad = (RectTransform)_gamepadHints.transform.parent;
+            pad.gameObject.SetActive(connected);
+            _searchKeyText.text = connected ? RegionGamepad.Label(gamepad.buttonWest) : "Space";
+            if (!connected) return;
+
+            _gamepadHints.text =
+                $"左スティック 位置　十字キー 微調整　[{RegionGamepad.Label(gamepad.leftTrigger)}/{RegionGamepad.Label(gamepad.rightTrigger)}] 縮小/拡大　左押込 全体\n" +
+                $"[{RegionGamepad.Label(gamepad.buttonSouth)}] ダイブ　[{RegionGamepad.Label(gamepad.buttonWest)}] サーチ　" +
+                $"[{RegionGamepad.Label(gamepad.buttonNorth)}] ドローン　[{RegionGamepad.Label(gamepad.rightShoulder)}] PiP　" +
+                $"[{RegionGamepad.Label(gamepad.buttonEast)}] 閉じる";
+            pad.sizeDelta = new Vector2(_gamepadHints.preferredWidth + 26f, 58f);
         }
 
         /// <summary>右上の札。拡大率と、地形が広域か細部か（作成中ならその経過）を出す。</summary>

@@ -35,17 +35,7 @@ namespace Vastcore.RegionMap.Editor
                         item => !item || !item.shader || !item.shader.isSupported || item.shader.name == "Hidden/InternalErrorShader")))
                     throw new InvalidDataException("The playable footpath has missing geometry or materials");
 
-                string output = Path.GetFullPath(RegionMapMenu.Argument("-regionOut", "artifacts/region-map/footpath"));
-                Directory.CreateDirectory(output);
-                var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
-                {
-                    scenes = new[] { "Assets/Scenes/RegionExplorer.unity" },
-                    locationPathName = Path.Combine(output, "VastCoreRegionExplorer.exe"),
-                    target = BuildTarget.StandaloneWindows64,
-                    options = BuildOptions.Development
-                });
-                if (report.summary.result != BuildResult.Succeeded)
-                    throw new InvalidOperationException($"VastCore Player build: {report.summary.result}");
+                BuildWindowsPlayer("artifacts/region-map/footpath", BuildOptions.Development);
                 EditorApplication.Exit(0);
             }
             catch (Exception error)
@@ -53,6 +43,36 @@ namespace Vastcore.RegionMap.Editor
                 Debug.LogException(error);
                 EditorApplication.Exit(1);
             }
+        }
+
+        internal static void BuildExplorerFromCommandLine()
+        {
+            try
+            {
+                BuildWindowsPlayer("artifacts/region-map/windows", BuildOptions.None);
+                EditorApplication.Exit(0);
+            }
+            catch (Exception error)
+            {
+                Debug.LogException(error);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        private static void BuildWindowsPlayer(string defaultOutput, BuildOptions options)
+        {
+            string output = Path.GetFullPath(RegionMapMenu.Argument("-regionOut", defaultOutput));
+            Directory.CreateDirectory(output);
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = new[] { RegionMapMenu.ExplorerScenePath },
+                locationPathName = Path.Combine(output, "VastCoreRegionExplorer.exe"),
+                target = BuildTarget.StandaloneWindows64,
+                options = options
+            });
+            if (report.summary.result != BuildResult.Succeeded)
+                throw new InvalidOperationException($"VastCore Player build: {report.summary.result}");
+            Debug.Log($"[RegionMap] Windows Player: {report.summary.totalSize} bytes, {report.summary.totalTime}");
         }
     }
 }
