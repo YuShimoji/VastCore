@@ -1,0 +1,7 @@
+{
+  "name": "Vastcore.Weather.Editor",
+  "rootNamespace": "Vastcore.Weather.Editor",
+  "references": ["Vastcore.Weather", "Unity.RenderPipelines.Universal.Runtime"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false
+}

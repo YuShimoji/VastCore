@@ -1,0 +1,10 @@
+{
+  "name": "com.vastcore.weather",
+  "version": "0.1.0",
+  "displayName": "VastCore Weather",
+  "description": "World-space cloud volumes, localized rain, valley fog and puddles for Unity URP.",
+  "unity": "6000.3",
+  "dependencies": {
+    "com.unity.render-pipelines.universal": "17.3.0"
+  }
+}

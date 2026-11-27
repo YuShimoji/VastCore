@@ -226,6 +226,15 @@ Heightmap integration is injected through `IHeightmapFieldFactory` to avoid cycl
 
 ---
 
+## 気象パッケージ（SP-015）
+
+| Assembly | Directory | rootNamespace | autoReferenced | References |
+|----------|-----------|---------------|----------------|------------|
+| `Vastcore.Weather` | `Packages/com.vastcore.weather/Runtime/` | `Vastcore.Weather` | false | UnityEngine、シェーダーは URP 17.3 |
+| `Vastcore.Weather.Editor` (Editor only) | `Packages/com.vastcore.weather/Editor/` | `Vastcore.Weather.Editor` | false | `Vastcore.Weather`、`Unity.RenderPipelines.Universal.Runtime` |
+
+気象の配置・時刻・濡れはシーン単位。地域データからつなぐ場合は上位側が位置・向き・時刻を渡す。
+
 ## 7. 2026-11-21 Addendum (RegionMap Assembly)
 
 地域鳥瞰図と探索（SP-021）のためのアセンブリ。既存のどのアセンブリにも依存せず、既存のどのランタイムアセンブリからも参照されない（依存グラフの独立した島）。
