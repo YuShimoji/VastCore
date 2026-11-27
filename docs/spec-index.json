@@ -358,5 +358,14 @@
     "cat": "system",
     "file": "docs/02_design/TEXTURE_PIPELINE_SPEC.md",
     "summary": "テクスチャの置き場所・名付け・出所の記録・取り込みの既定と検査(texture-rules.json、scripts/check-textures.ps1、Unity の Vastcore/Textures メニュー、CI)"
+  },
+  {
+    "id": "DS-014",
+    "title": "Natural Environment Packages (Coast and Cave)",
+    "status": "partial",
+    "pct": 20,
+    "cat": "system",
+    "file": "docs/02_design/NATURAL_ENVIRONMENT_PACKAGES_SPEC.md",
+    "summary": "硬岩の岬と入り江、崩落岩と二層の石橋が最初の試作。海岸の横展開は岩礁の湾、砂浜と砂丘の順。地形、探索経路、Props、Playerの受入を管理"
   }
 ]

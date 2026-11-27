@@ -48,6 +48,7 @@ namespace Vastcore.RegionMap.Preview
             string view3dFocus = null;
             bool view3dLit = false;
             bool steepCoasts = false;
+            bool coastSurvey = false;
             bool routes = false;
             bool volume = false;
             float voxel = 1f;
@@ -129,6 +130,7 @@ namespace Vastcore.RegionMap.Preview
                     case "--view3d-focus": view3dFocus = value; a++; break;
                     case "--view3d-lit": view3dLit = true; break;
                     case "--steep-coasts": steepCoasts = true; break;
+                    case "--coast-survey": coastSurvey = true; break;
                     case "--routes": routes = true; break;
                     case "--volume": volume = true; break;
                     case "--voxel": voxel = Float(value); a++; break;
@@ -246,6 +248,7 @@ namespace Vastcore.RegionMap.Preview
                 foreach (string size in developmentSizes.Split(','))
                     WriteDevelopmentDetails(data, options.Style, stem, detailSpec.Resolution, Float(size), developmentAt);
             if (steepCoasts) DescribeSteepCoasts(data);
+            if (coastSurvey) CoastSurvey.Write(data, stem);
             if (mesaSites) LookView.DescribeMesaSites(data);
             if (look != null) LookView.Write(data, stem, look, lookAt, lookCenter);
             if (sedimentOut != null) LookView.WriteSediment(data, sedimentOut, lookCenter, sedimentAmount, sedimentGravity, sedimentWater);

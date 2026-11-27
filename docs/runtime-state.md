@@ -73,7 +73,7 @@ Last Updated: 2026-11-28
 5. 進め方：問いは、答えで方式が分かれる時だけ送る（[INTERACTION_NOTES](INTERACTION_NOTES.md)、[INVARIANTS](INVARIANTS.md)）。本人が Unity Editor を開いている間は写し `D:\vcv\VastCore` で確かめて1回で戻し、写しの Unity が動いている間は写しの C# を編集しない。
 6. 砂岩の3Dはアルコーブ・光と空気・表面の段3まで。晴れは Weather Maker、砂塵は自作。本人の選択は Linear・雲量上限0.8（形を優先）・夕方の雲は今の淡さ（2026-11-27、sky-trial m36）。空・雲・霞の作業は終了。終了後の追加は本人の選択「模様を2Dの風で流す」で、塊が2Dと同じ向き・速さで流れる（一周で戻さない。m43）。thank 端末にも Weather Maker を導入し、PC・Mobile の描画設定を維持した。探索から地上へ地点と雲の時刻を渡せる。個々の雲の輪郭の照合には差が残る。[通常の入口と確認結果](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)・[本人の選択](USER_REQUEST_LEDGER.md)。
    - 探索メニューからseed 8・9を開き、既存の砂・礫を比較用に適用したPC品質の動画とフレーム間隔を確認。[動画と計測](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)。表面の [T0〜T5](02_design/REGION_SURFACE_MATERIALS_SPEC.md) は済み（各段の結果は同4節）。中景より先の崖は本人が選んだ方式 A（板ごとの平面と崖・棚・崖の段）で直した（2026-11-28、前後は `D:\AI-Runs\VastCore\mesa-cliff-form\result\`）。残りは錐・扇状地の面の形。GPU予算は本人の選択で1.2 ms（seed 9の1視点が約1.1 ms）。アーチ・峡谷は後続。
-   - DS-011 Props は差し替え口・比較撮影・モデル 71 個の commit まで（取り込み経路は本人の選択で A＝FBX、[DS-011 7節](02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md)）。岩の色は本人の選択で地形の赤い砂岩へ寄せた（Props の岩は画面の r/g 1.16〜1.24→1.40〜1.46、地形の岩 1.64〜1.68。瓦礫の小さな欠片は淡いまま、8.1節）。次は P0 残件（17種）。
+   - Props の差し替え・比較撮影とモデル71個をcommit（本人選択はFBX、[DS-011 7節](02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md)）。岩色は本人選択で赤い砂岩に寄せた（画面 r/g 1.16〜1.24→1.40〜1.46、地形1.64〜1.68。瓦礫の小片は淡色。8.1節）。P0のFBXは15/17。海岸・洞窟は [DS-014](02_design/NATURAL_ENVIRONMENT_PACKAGES_SPEC.md)。
 - 草原（2026-11-28）：細葉と株の投影を重ね、株の立体を斜面の中遠景まで描く。固定配置・別地点を撮影し、探索の往復を確認。[完成図・Unity・描画方式の比較](<D:/AI-Runs/VastCore/review-20261127-grassland-multibiome/ground-cover/tussocks/index.html>)・[素材拡充と再撮影](OPERATOR_WORKFLOW.md#草原での適用)。4系統のカタログ登録・美術採否は本人。
 
 ## External Pulse And Remote Resume
