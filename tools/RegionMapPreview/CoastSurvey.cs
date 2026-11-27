@@ -65,7 +65,7 @@ namespace Vastcore.RegionMap.Preview
         {
             var sites = new List<Site>();
             int n = data.Resolution;
-            bool[] sea = ConnectedSea(data);
+            bool[] sea = RegionOceanMask.ConnectedSea(data);
             int margin = Math.Max(2, (int)Math.Ceiling(WindowKm * 500f / data.CellMeters) + 1);
             for (int y = margin; y < n - margin; y++)
             {
@@ -80,38 +80,6 @@ namespace Vastcore.RegionMap.Preview
                 }
             }
             return sites;
-        }
-
-        private static bool[] ConnectedSea(RegionData data)
-        {
-            // 標高が海面以下でも、地域の外周につながっていない水域は海岸の候補から外す。
-            int n = data.Resolution;
-            var sea = new bool[data.Height.Length];
-            var queue = new int[sea.Length];
-            int count = 0;
-            void Enqueue(int i)
-            {
-                if (sea[i] || data.IsLand(i)) return;
-                sea[i] = true;
-                queue[count++] = i;
-            }
-            for (int i = 0; i < n; i++)
-            {
-                Enqueue(i);
-                Enqueue(i + (n - 1) * n);
-                Enqueue(i * n);
-                Enqueue(i * n + n - 1);
-            }
-            for (int head = 0; head < count; head++)
-            {
-                int current = queue[head];
-                int x = current % n;
-                if (x > 0) Enqueue(current - 1);
-                if (x + 1 < n) Enqueue(current + 1);
-                if (current >= n) Enqueue(current - n);
-                if (current < (n - 1) * n) Enqueue(current + n);
-            }
-            return sea;
         }
 
         private static void AddSite(RegionData data, bool[] sea, float x, float y, int edgeSeaX, int edgeSeaY, List<Site> sites)
@@ -223,7 +191,7 @@ namespace Vastcore.RegionMap.Preview
             float yaw = yawDegrees * MathF.PI / 180f;
             float dx = MathF.Sin(yaw), dy = MathF.Cos(yaw);
             int stepX = Math.Sign(dx), stepY = Math.Sign(dy);
-            bool[] sea = ConnectedSea(data);
+            bool[] sea = RegionOceanMask.ConnectedSea(data);
             float best = float.PositiveInfinity;
             float bestX = center, bestY = center;
             void Consider(float x, float y)

@@ -5,6 +5,7 @@ Shader "Vastcore/RegionCoastWater"
         [NoScaleOffset] _Shore ("Shore depth and exposure", 2D) = "black" {}
         _Extent ("Terrain span in metres", Float) = 3200
         _WaveStrength ("Shore wave strength", Range(0,1)) = 1
+        [HideInInspector] _FixedTime ("Fixed comparison time", Float) = -1
     }
     SubShader
     {
@@ -23,6 +24,7 @@ Shader "Vastcore/RegionCoastWater"
             CBUFFER_START(UnityPerMaterial)
                 float _Extent;
                 float _WaveStrength;
+                float _FixedTime;
             CBUFFER_END
 
             struct Varyings
@@ -66,7 +68,7 @@ Shader "Vastcore/RegionCoastWater"
                 half offshore = saturate(length(distanceOutside) / 90.0);
                 half depth = lerp(bathymetry.r * 31.875, 32.0, offshore);
                 half exposure = bathymetry.g * (1.0 - offshore);
-                float time = _Time.y;
+                float time = _FixedTime >= 0.0 ? _FixedTime : _Time.y;
                 float spread = CoastNoise(p * 0.037);
                 float swell = dot(p, float2(0.42, 0.31)) + 7.0 * spread - time * 1.1;
                 float capillary = dot(p, float2(-1.9, 1.6)) - time * 2.3;

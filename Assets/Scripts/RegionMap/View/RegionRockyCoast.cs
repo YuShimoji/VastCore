@@ -14,6 +14,7 @@ namespace Vastcore.RegionMap
         public int PropsSeed = 8;
         [Range(12f, 60f)] public float CliffHeight = 35f;
         [Range(12f, 55f)] public float ShelfWidth = 27f;
+        public float FixedWaveTime = -1f;
     }
 
     /// <summary>広域の海岸線に合わせて、岬の岩棚・崖・海面を組み立てる。</summary>
@@ -39,9 +40,17 @@ namespace Vastcore.RegionMap
             public float ShoreAgreement { get; internal set; }
             public float RaisedCliffMeters { get; internal set; }
             public int RaisedCells { get; internal set; }
+            public RegionPropView.Result RockfallProps { get; internal set; }
+            public float CliffFootMeters { get; internal set; }
+            public float CliffRiseMeters { get; internal set; }
+            public float JointYaw { get; internal set; }
+            public float LocalStepMeters { get; internal set; }
+            public int LocalTriangles { get; internal set; }
+            public float LocalHeightDelta { get; internal set; }
         }
 
-        public static Result Build(RegionData region, RegionRockyCoastSpec spec, bool shape, RegionPropCatalog catalog = null)
+        public static Result Build(RegionData region, RegionRockyCoastSpec spec, bool shape, RegionPropCatalog catalog = null,
+            bool refineCliff = true)
         {
             RegionDetail detail = RegionDetailBuilder.Build(region, new RegionDetailSpec
             {
@@ -113,10 +122,12 @@ namespace Vastcore.RegionMap
                 }
             }
 
-            var root = new GameObject(shape ? "Rocky Coast" : "Coast Before");
             var grid = RegionTerrainMesh.Build(terrain, 1, 1f);
             for (int i = 0; i < ground.Length; i++) grid.Positions[i * 3 + 1] = ground[i];
+            var rockfall = shape ? RegionCoastRockfall.Locate(region, detail, ground, grid.Indices, spec.SeaYaw) : null;
+            var root = new GameObject(shape ? "Rocky Coast" : "Coast Before");
             Mesh mesh = RegionTerrainView.TerrainMesh(grid, null);
+            Mesh ledge = rockfall != null && refineCliff ? rockfall.Refine(mesh) : null;
             var texture = RegionMapTexture.Create(albedo, n);
             var terrainMat = new Material(Resources.Load<Shader>(RegionTerrainView.ShaderResource)) { hideFlags = HideFlags.DontSave };
             terrainMat.SetTexture("_BaseMap", texture);
@@ -133,6 +144,7 @@ namespace Vastcore.RegionMap
                 RegionSurfaceMaterials.BindBiomeSurfaces(terrainMat, profile);
             }
             RegionTerrainView.AddPart(root.transform, "Headlands and ledges", mesh, terrainMat);
+            if (ledge != null) RegionTerrainView.AddPart(root.transform, ledge.name, ledge, terrainMat);
 
             var waterMat = new Material(Resources.Load<Shader>("RegionMap3D/RegionCoastWater")) { hideFlags = HideFlags.DontSave };
             var depth = new Texture2D(n, n, TextureFormat.RGBA32, false, true)
@@ -144,26 +156,57 @@ namespace Vastcore.RegionMap
             waterMat.SetTexture("_Shore", depth);
             waterMat.SetFloat("_Extent", span);
             waterMat.SetFloat("_WaveStrength", shape ? 1f : 0f);
+            waterMat.SetFloat("_FixedTime", spec.FixedWaveTime);
             Mesh water = WaterMesh(span);
             MeshRenderer waterRenderer = RegionTerrainView.AddPart(root.transform, "Sea", water, waterMat);
             waterRenderer.shadowCastingMode = ShadowCastingMode.Off;
             root.AddComponent<RegionRockyCoast>()._generated = new UnityEngine.Object[]
             {
-                mesh, texture, terrainMat, water, depth, waterMat,
+                mesh, ledge, texture, terrainMat, water, depth, waterMat,
             };
 
+            Vector2 waterline = rockfall?.Waterline ?? focus;
             var view = new RegionTerrainView.Result
             {
                 Root = root, Terrain = terrain,
-                Focus = new Vector3(focus.x, 3f, -focus.y), FacingYawDegrees = spec.SeaYaw,
+                Focus = new Vector3(waterline.x, shape ? 0f : 3f, -waterline.y), FacingYawDegrees = spec.SeaYaw,
             };
             var result = new Result
             {
                 Root = root, View = view, ShoreAgreement = detail.CoastAgreement,
                 RaisedCliffMeters = maxRaised, RaisedCells = raised,
+                CliffFootMeters = rockfall?.FootDistance ?? 0f, CliffRiseMeters = rockfall?.CliffRise ?? 0f,
+                JointYaw = rockfall?.JointYaw ?? 0f, LocalStepMeters = rockfall?.StepMeters ?? 0f,
+                LocalTriangles = rockfall?.AddedTriangles ?? 0, LocalHeightDelta = rockfall?.HeightDelta ?? 0f,
             };
-            if (shape && catalog != null) result.Props = AddProps(root.transform, catalog, spec, terrain, ground, shore, focus);
+            if (shape && catalog != null)
+            {
+                result.Props = AddProps(root.transform, catalog, spec, terrain, ground, shore, focus, ledge != null ? rockfall : null);
+                if (ledge != null)
+                {
+                    var deposit = new GameObject("Debris below the joint");
+                    deposit.transform.SetParent(root.transform, false);
+                    result.RockfallProps = RegionPropView.AddTo(deposit.transform, rockfall.Deposits(catalog, spec.PropsSeed), rockfall.HeightAt);
+                    MatchDepositColor(result.RockfallProps.RealRoot);
+                }
+            }
             return result;
+        }
+
+        private static void MatchDepositColor(GameObject roots)
+        {
+            if (roots == null) return;
+            int baseColor = Shader.PropertyToID("_BaseColor");
+            var block = new MaterialPropertyBlock();
+            foreach (Renderer renderer in roots.GetComponentsInChildren<Renderer>(true))
+            {
+                Material mat = renderer.sharedMaterial;
+                if (mat == null || !mat.HasProperty(baseColor)) continue;
+                Color tint = mat.GetColor(baseColor);
+                renderer.GetPropertyBlock(block);
+                block.SetColor(baseColor, new Color(tint.r * 0.64f, tint.g * 0.91f, tint.b * 1.13f, tint.a));
+                renderer.SetPropertyBlock(block);
+            }
         }
 
         private static void Tint(byte[] pixels, int i, float weight, float tone)
@@ -252,7 +295,7 @@ namespace Vastcore.RegionMap
         }
 
         private static RegionPropView.Result AddProps(Transform parent, RegionPropCatalog catalog, RegionRockyCoastSpec spec,
-            RegionData data, float[] ground, float[] shore, Vector2 focus)
+            RegionData data, float[] ground, float[] shore, Vector2 focus, RegionCoastRockfall rockfall)
         {
             var slice = new RegionPropProofSlice
             {
@@ -285,6 +328,7 @@ namespace Vastcore.RegionMap
                     float yaw = spec.SeaYaw + 90f + (float)(random.NextDouble() * 38f - 19f);
                     var item = RegionPropPlacementSolver.ResolveSingle(prop, unchecked((uint)spec.PropsSeed), i, x * cell,
                         h, z * cell, slope, dx, dz, yawOverride: yaw, biome: RegionBiome.Coast);
+                    if (rockfall != null && rockfall.InDeposit(item.X, item.Z)) continue;
                     item.Y = SampleHeight(item.X, item.Z) - item.EmbedDepthM;
                     if (item.Y > 1.25f) slice.Instances.Add(item);
                 }
@@ -293,6 +337,7 @@ namespace Vastcore.RegionMap
 
             float SampleHeight(float x, float z)
             {
+                if (rockfall != null) return rockfall.HeightAt(x, z);
                 float gx = Mathf.Clamp(x / cell, 0f, n - 1);
                 float gz = Mathf.Clamp(z / cell, 0f, n - 1);
                 int ix = Mathf.Min(n - 2, (int)gx), iz = Mathf.Min(n - 2, (int)gz);
