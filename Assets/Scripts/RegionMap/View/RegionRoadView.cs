@@ -17,7 +17,7 @@ namespace Vastcore.RegionMap
         private const float PaintLift = 0.018f;
 
         public static GameObject Build(Transform parent, RegionRoadCorridor road, RegionRoadMaterials materials,
-            RegionRoadsideSite site = null, bool shapeOnly = false)
+            RegionRoadsideSite site = null, bool shapeOnly = false, bool blendedVerge = false)
         {
             if (road == null) throw new ArgumentNullException(nameof(road));
             if (materials == null) throw new ArgumentNullException(nameof(materials));
@@ -39,7 +39,8 @@ namespace Vastcore.RegionMap
                 main.FlatBand(road, side * median, side * outer);
                 shoulder.FlatBand(road, side * outer, side * half);
                 shoulder.Band(road, side * half, 0f, side * (half + 0.16f), -0.09f, 0f, road.Length);
-                gravel.Band(road, side * (half + 0.16f), -0.09f, side * (half + 2.1f), -0.18f, 0f, road.Length);
+                if (!blendedVerge)
+                    gravel.Band(road, side * (half + 0.16f), -0.09f, side * (half + 2.1f), -0.18f, 0f, road.Length);
             }
             if (median > 0f) gravel.FlatBand(road, -median, median, -0.06f);
             if (section.ControlledAccess)

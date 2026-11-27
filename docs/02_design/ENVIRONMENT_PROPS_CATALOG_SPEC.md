@@ -195,8 +195,9 @@ VastCore の現行3D景観（砂岩・乾燥地）と今後の展開予定（古
 - Unity の `Vastcore > Region Map > Highway Corridor Preview` で `Seed` と `Road layout` を選び、`Generate preview`。`Country` は片側2車線の高速と片側1車線の幹線、`Sweeping` は同じ断面で曲がりを増やし、`Wide` はそれぞれ片側3・2車線。`Shape only` と遠景・中景・入口・高速の固定視点がある。
 - [道路データ](../../Assets/Scripts/RegionMap/Core/RegionRoads.cs)はメートル単位の中心線、高さの取得関数、幅員から縦断と地形のすり付けを作る。[道路部品](../../Assets/Scripts/RegionMap/View/RegionRoadView.cs)は同じ断面を舗装、標示、防護柵、当たり判定に使う。敷地の `RegionRoadsideSite` は、道路ID、中心線に沿った距離、側、入口・敷地の座標と向きを持つ。敷地IDは生成した場面内で一意。探索マップからの道路・敷地呼び出しは別の接続工程。
 - 舗装は `Asphalt010`、砂利は `Ground007`、地表は `Grass005` と `Ground009`。中遠景の株と樹木は既存の `DesertPlants` から再利用し、畦と浅い溝の高低、畑の畝、植生をまとめる配置を追加した。[素材の出所](../../Assets/Resources/MapGenerator/Textures/texture-source.json)・[植生の配置](../../Assets/Scripts/RegionMap/View/RegionRoadLandscape.cs)
-- 自然地形のパッケージにも、形状だけの遠中景、着色した初稿、同じカメラの修正版を残す。畑の色と孤立した樹木を増やすだけでは境界が読みにくかったため、高低差と植生のまとまりを追加した。別 seed では、地形の接触と植生の除外を確認する。仕上げの残差は遠景の尾根の重なりと近景の路肩から草地への移り変わり。[完成想定図・Unity・計測の比較](<D:/AI-Runs/VastCore/highway-arterial/index.html>)
-- 畝は Unity Terrain Lit がアルファを光沢に読むため、色だけの RGB で生成する。検証用コピーの Unity 6000.3.6f1 は3プリセットで路面・進入口・敷地の合計537点と EditMode 4件を確認。場面生成0.56〜0.96秒、1600×900で道路と路肩の草を加えた描画の増分0.18〜1.51 ms（CPUとGPU同期込み）。[Terrain Layer のチャンネルの意味](https://docs.unity.com/en-us/engine/6000.3/manual/creating-environments/script-terrain/terrain-textures/class-terrain-layer#diffuse-settings)
+- 道路脇は舗装端から砂利2.2 m、法面、底幅3 mの浅い溝、畦、田畑へつなぐ。地形格子を4.5 mから2.25 mへ細かくし、[断面と敷地の除外](../../Assets/Scripts/RegionMap/Core/RegionRoadMargin.cs)を地形・植生・路肩に共用する。既存の砂利・土・草を実寸で混ぜ、畦や溝に沿って丈の違う株を群れと空きに分ける。遠景の尾根は[別の粗い地形](../../Assets/Scripts/RegionMap/View/RegionRoadGroundView.cs)で二重に重ねる。
+- 自然地形へ持ち越す手順は、既存素材を増やす前に単色の形状と実測断面を確認し、土の高さと同じ境界から植生を配置して、別 seed でも接地と除外範囲を確かめること。畝の色画像は Terrain Lit の光沢を避けるため RGB で作る。写真との差は、溝合流部の丸み、林の樹冠の厚み、近景の草の密度に残る。[4視点・完成想定図・実測の比較](<D:/AI-Runs/VastCore/highway-arterial/roadside-detail/index.html>)
+- Unity 6000.3.6f1 の検証用コピーで、Country / 8 と Sweeping / 19 の各版を同じカメラ・日照で比較した。両 seed の修正版は道路179点・入口と敷地80点ずつで突き抜けなし。入口の高さ差は1.14 cm／1.10 cm、敷地の25測点の高低差は表示桁で0.000 cm。生成は0.65→1.88秒／0.68→1.61秒、Mid は+0.86／+0.60 ms（1600×900、CPUとGPU同期込み）。EditMode 6件通過。
 
 ---
 

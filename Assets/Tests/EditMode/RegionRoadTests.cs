@@ -49,5 +49,34 @@ namespace Vastcore.Tests.EditMode
             Assert.That(road.TryProject(new Vector2(0f, -1f), out _, out _), Is.False);
             Assert.That(road.TryProject(new Vector2(10f, 701f), out _, out _), Is.False);
         }
+
+        [TestCase(8, RegionRoadPreset.Country)]
+        [TestCase(19, RegionRoadPreset.Sweeping)]
+        public void RoadsideRelief_KeepsRoadAndSiteClearWithADitchBelowTheBank(int seed, RegionRoadPreset preset)
+        {
+            var plan = new RegionRoadPlan(seed, preset);
+            RegionRoadCorridor road = plan.Arterial;
+            RegionRoadStation station = road.At(plan.Site.Station.Distance + 32f);
+
+            float Slope(float fromPaving)
+            {
+                Vector2 point = station.AtOffset(-road.Profile.HalfWidth - fromPaving);
+                return RegionRoadMargin.GradedTerrain(plan, point.X, point.Y);
+            }
+
+            Vector2 pavement = station.AtOffset(-road.Profile.HalfWidth + 1f);
+            Assert.That(RegionRoadMargin.GradedTerrain(plan, pavement.X, pavement.Y),
+                Is.EqualTo(plan.GroundHeight(pavement.X, pavement.Y)).Within(0.01f));
+            Assert.That(Slope(RegionRoadMargin.DitchCenter), Is.LessThan(Slope(RegionRoadMargin.SlopeToe) - 0.30f));
+            Assert.That(Slope(RegionRoadMargin.BankCrest), Is.GreaterThan(Slope(RegionRoadMargin.DitchCenter) + 0.65f));
+
+            Vector2 approach = plan.Site.Entrance + plan.Site.Outward * 12f;
+            Assert.That(RegionRoadMargin.InSite(plan.Site, approach), Is.True);
+            Assert.That(RegionRoadMargin.InSite(plan.Site, approach + plan.Site.Station.Forward * 15f), Is.False);
+            Vector2 plot = plan.Site.PlotCenter;
+            Assert.That(RegionRoadMargin.InSite(plan.Site, plot), Is.True);
+            Assert.That(RegionRoadMargin.GradedTerrain(plan, plot.X, plot.Y),
+                Is.EqualTo(plan.Site.PlotElevation - 0.2f).Within(0.01f));
+        }
     }
 }

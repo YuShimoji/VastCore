@@ -15,12 +15,14 @@ using NVector2 = System.Numerics.Vector2;
 
 namespace Vastcore.RegionMap.Editor
 {
-    public sealed class RegionRoadEnvironment : EditorWindow
+    public sealed partial class RegionRoadEnvironment : EditorWindow
     {
         private static readonly string[] Views = { "Far", "Mid", "Entrance", "Highway" };
         private const string TextureRoot = "Assets/Resources/MapGenerator/Textures/";
         private const int GroundResolution = 1025;
+        private const int DetailedGroundResolution = 2049;
         private const int FieldResolution = 512;
+        private const int DetailedFieldResolution = 1024;
         private const float HeightRange = 420f;
         private const float Span = 2f * RegionRoadPlan.Extent;
 
@@ -96,8 +98,10 @@ namespace Vastcore.RegionMap.Editor
             public GameObject Root, Roads;
             public Camera Camera;
             public Light Sun;
+            public Material Sky;
             public Terrain Terrain;
             public RegionRoadPlan Plan;
+            public bool Detailed;
             public readonly List<UnityEngine.Object> Assets = new List<UnityEngine.Object>();
 
             public T Own<T>(T asset) where T : UnityEngine.Object
@@ -125,9 +129,9 @@ namespace Vastcore.RegionMap.Editor
             }
         }
 
-        private static Stage Build(int seed, RegionRoadPreset preset, bool shapeOnly)
+        private static Stage Build(int seed, RegionRoadPreset preset, bool shapeOnly, bool detailed = true)
         {
-            var stage = new Stage { Plan = new RegionRoadPlan(seed, preset) };
+            var stage = new Stage { Plan = new RegionRoadPlan(seed, preset), Detailed = detailed };
             stage.Root = new GameObject($"Highway Corridor – {preset} / {seed}") { hideFlags = HideFlags.DontSaveInEditor };
             try
             {
@@ -135,13 +139,27 @@ namespace Vastcore.RegionMap.Editor
                 stage.Roads = new GameObject("Road kit");
                 stage.Roads.transform.SetParent(stage.Root.transform, false);
                 RegionRoadMaterials materials = CreateRoadMaterials(stage, shapeOnly);
-                RegionRoadView.Build(stage.Roads.transform, stage.Plan.Highway, materials, shapeOnly: shapeOnly);
-                RegionRoadView.Build(stage.Roads.transform, stage.Plan.Arterial, materials, stage.Plan.Site, shapeOnly);
+                bool blendedVerge = detailed && !shapeOnly;
+                RegionRoadView.Build(stage.Roads.transform, stage.Plan.Highway, materials, shapeOnly: shapeOnly, blendedVerge: blendedVerge);
+                RegionRoadView.Build(stage.Roads.transform, stage.Plan.Arterial, materials, stage.Plan.Site, shapeOnly, blendedVerge);
                 if (!shapeOnly)
                 {
                     float Ground(float x, float z) => stage.Terrain.SampleHeight(new Vector3(x, 0f, z));
-                    RegionRoadLandscape.PlantFarmland(stage.Root.transform, stage.Plan, Ground);
-                    RegionRoadLandscape.PlantVerges(stage.Roads.transform, stage.Plan, Ground);
+                    RegionRoadLandscape.PlantFarmland(stage.Root.transform, stage.Plan, Ground, detailed);
+                    if (detailed)
+                    {
+                        var shader = Resources.Load<Shader>("RegionMap3D/RegionRoadMargin");
+                        if (!shader) throw new InvalidOperationException("The roadside surface shader is missing.");
+                        var verge = stage.Own(new Material(shader) { name = "Gravel, loam and turf" });
+                        verge.SetTexture("_Gravel", Surface("Ground007"));
+                        verge.SetTexture("_Soil", Surface("Ground009"));
+                        verge.SetTexture("_Turf", Surface("Grass005"));
+                        RegionRoadGroundView.AddMargins(stage.Roads.transform, stage.Plan, Ground, verge);
+                        RegionRoadLandscape.PlantMargins(stage.Roads.transform, stage.Plan, Ground);
+                        RegionRoadGroundView.AddRidges(stage.Root.transform, stage.Plan, Ground,
+                            Lit(stage, "Distant hills", new Color(0.30f, 0.40f, 0.35f)));
+                    }
+                    else RegionRoadLandscape.PlantVerges(stage.Roads.transform, stage.Plan, Ground);
                 }
 
                 var sun = new GameObject("Sun");
@@ -157,7 +175,7 @@ namespace Vastcore.RegionMap.Editor
                 atmosphere.SunAltitudeDegrees = 38f;
                 atmosphere.SunIntensity = 2.05f;
                 atmosphere.Contrast = 4f;
-                atmosphere.Saturation = -5f;
+                atmosphere.Saturation = shapeOnly ? -100f : -5f;
                 atmosphere.VignetteIntensity = 0f;
                 float previousSun = RegionVolumePatch.SunAltitudeDegrees;
                 try
@@ -167,6 +185,7 @@ namespace Vastcore.RegionMap.Editor
                     volume.transform.SetParent(stage.Root.transform, false);
                 }
                 finally { RegionVolumePatch.SunAltitudeDegrees = previousSun; }
+                stage.Sky = RenderSettings.skybox;
                 // The road kit uses URP/Lit, so use Unity fog for roads as well as terrain.
                 RenderSettings.fog = true;
                 RenderSettings.fogMode = FogMode.ExponentialSquared;
@@ -212,15 +231,18 @@ namespace Vastcore.RegionMap.Editor
             return material;
         }
 
-        private static float[,] HeightMap(RegionRoadPlan plan, bool graded)
+        private static float[,] HeightMap(Stage stage, bool graded)
         {
-            var heights = new float[GroundResolution, GroundResolution];
-            Func<float, float, float> height = graded ? plan.GroundHeight : plan.NaturalHeight;
-            float stride = Span / (GroundResolution - 1);
-            Parallel.For(0, GroundResolution, z =>
+            int resolution = stage.Detailed ? DetailedGroundResolution : GroundResolution;
+            RegionRoadPlan plan = stage.Plan;
+            var heights = new float[resolution, resolution];
+            float stride = Span / (resolution - 1);
+            Func<float, float, float> height = plan.NaturalHeight;
+            if (graded) height = stage.Detailed ? (x, z) => RegionRoadMargin.GradedTerrain(plan, x, z) : plan.GroundHeight;
+            Parallel.For(0, resolution, z =>
             {
                 float worldZ = z * stride - RegionRoadPlan.Extent;
-                for (int x = 0; x < GroundResolution; x++)
+                for (int x = 0; x < resolution; x++)
                     heights[z, x] = height(x * stride - RegionRoadPlan.Extent, worldZ) / HeightRange;
             });
             return heights;
@@ -230,12 +252,12 @@ namespace Vastcore.RegionMap.Editor
         {
             var data = stage.Own(new TerrainData
             {
-                heightmapResolution = GroundResolution,
-                alphamapResolution = FieldResolution,
+                heightmapResolution = stage.Detailed ? DetailedGroundResolution : GroundResolution,
+                alphamapResolution = stage.Detailed ? DetailedFieldResolution : FieldResolution,
                 baseMapResolution = 1024,
                 size = new Vector3(Span, HeightRange, Span),
             });
-            data.SetHeights(0, 0, HeightMap(stage.Plan, true));
+            data.SetHeights(0, 0, HeightMap(stage, true));
             Texture2D grass = shapeOnly ? Texture2D.whiteTexture : Surface("Grass005");
             Texture2D soil = shapeOnly ? null : Surface("Ground009");
             Texture2D normal = shapeOnly ? null : Surface("Grass005", "NormalGL");
@@ -251,7 +273,7 @@ namespace Vastcore.RegionMap.Editor
                     Layer(stage, grass, normal, new Color(0.91f, 0.95f, 0.65f), new Vector2(2.7f, 6f)),
                     Layer(stage, soil, null, new Color(0.98f, 0.88f, 0.76f), new Vector2(2.4f, 7f)),
                 };
-                data.SetAlphamaps(0, 0, FieldCoverage(stage.Plan, true));
+                data.SetAlphamaps(0, 0, FieldCoverage(stage, true));
             }
 
             GameObject ground = Terrain.CreateTerrainGameObject(data);
@@ -294,31 +316,54 @@ namespace Vastcore.RegionMap.Editor
                 tileSize = size, diffuseRemapMax = tint, smoothness = 0.06f,
             });
 
-        private static float[,,] FieldCoverage(RegionRoadPlan plan, bool roads)
+        private static float[,,] FieldCoverage(Stage stage, bool roads)
         {
-            var weights = new float[FieldResolution, FieldResolution, 4];
-            float stride = Span / (FieldResolution - 1);
-            for (int z = 0; z < FieldResolution; z++)
-            for (int x = 0; x < FieldResolution; x++)
+            RegionRoadPlan plan = stage.Plan;
+            int resolution = stage.Detailed ? DetailedFieldResolution : FieldResolution;
+            var weights = new float[resolution, resolution, 4];
+            float stride = Span / (resolution - 1);
+            void PaintRow(int z)
             {
-                var world = new NVector2(x * stride - RegionRoadPlan.Extent, z * stride - RegionRoadPlan.Extent);
-                float row = world.Y / RegionRoadPlan.FieldDepth + world.X * RegionRoadPlan.FieldSkew;
-                int parcelRow = Mathf.FloorToInt(row);
-                float u = world.X / (105f + 35f * RegionNoise.Hash01(parcelRow, 6, (uint)plan.Seed))
-                    + 0.5f * RegionNoise.Hash01(parcelRow, 9, (uint)plan.Seed) - world.Y * 0.0011f;
-                int parcelCol = Mathf.FloorToInt(u);
-                float boundary = Mathf.Min(1f - Mathf.Abs(2f * (u - parcelCol) - 1f),
-                    1f - Mathf.Abs(2f * (row - parcelRow) - 1f));
-                float extent = Mathf.Abs(world.X + 65f * Mathf.Sin(world.Y / 680f));
-                float field = Mathf.SmoothStep(0f, 1f, boundary * 8f) * (1f - Mathf.SmoothStep(0f, 1f, (extent - 415f) / 730f));
-                var plotDelta = world - plan.Site.PlotCenter;
-                if (roads && (plan.Highway.TryProject(world, out _, out _) || plan.Arterial.TryProject(world, out _, out _) ||
-                    plotDelta.LengthSquared() < 53f * 53f)) field = 0f;
-                float choice = RegionNoise.Hash01(parcelCol, parcelRow, (uint)plan.Seed);
-                int layer = choice < 0.45f ? 1 : choice < 0.77f ? 2 : 3;
-                weights[z, x, 0] = 1f - field;
-                weights[z, x, layer] = field;
+                for (int x = 0; x < resolution; x++)
+                {
+                    var world = new NVector2(x * stride - RegionRoadPlan.Extent, z * stride - RegionRoadPlan.Extent);
+                    float row = world.Y / RegionRoadPlan.FieldDepth + world.X * RegionRoadPlan.FieldSkew;
+                    int parcelRow = Mathf.FloorToInt(row);
+                    float u = RegionRoadMargin.FieldColumn(world.X, world.Y, parcelRow, (uint)plan.Seed, out _);
+                    int parcelCol = Mathf.FloorToInt(u);
+                    float boundary = Mathf.Min(1f - Mathf.Abs(2f * (u - parcelCol) - 1f),
+                        1f - Mathf.Abs(2f * (row - parcelRow) - 1f));
+                    float extent = Mathf.Abs(world.X + 65f * Mathf.Sin(world.Y / 680f));
+                    float field = Mathf.SmoothStep(0f, 1f, boundary * 8f) * (1f - Mathf.SmoothStep(0f, 1f, (extent - 415f) / 730f));
+                    var plotDelta = world - plan.Site.PlotCenter;
+                    float soil = 0f;
+                    if (roads)
+                    {
+                        RegionRoadCorridor verge = plan.Highway;
+                        bool margin = verge.TryProject(world, out RegionRoadStation section, out float offset);
+                        if (!margin)
+                        {
+                            verge = plan.Arterial;
+                            margin = verge.TryProject(world, out section, out offset);
+                        }
+                        if (margin || plotDelta.LengthSquared() < 53f * 53f) field = 0f;
+                        if (stage.Detailed && margin && !RegionRoadMargin.InSite(plan.Site, world, 0.7f))
+                        {
+                            float edge = Mathf.Abs(offset) - verge.Profile.HalfWidth;
+                            float bare = 0.42f + 0.58f * RegionNoise.Smooth(-0.18f, 0.28f,
+                                RegionNoise.Fbm(section.Distance / 14f, offset * 0.19f, 2, (uint)plan.Seed));
+                            soil = 0.69f * bare * (1f - RegionNoise.Smooth(0.9f, 4f, Mathf.Abs(edge - RegionRoadMargin.DitchCenter)));
+                        }
+                    }
+                    float choice = RegionNoise.Hash01(parcelCol, parcelRow, (uint)plan.Seed);
+                    int layer = choice < 0.45f ? 1 : choice < 0.77f ? 2 : 3;
+                    weights[z, x, 0] = 1f - field - soil;
+                    weights[z, x, layer] = field;
+                    weights[z, x, 3] += soil;
+                }
             }
+            if (stage.Detailed) Parallel.For(0, resolution, PaintRow);
+            else for (int z = 0; z < resolution; z++) PaintRow(z);
             return weights;
         }
 
@@ -373,7 +418,15 @@ namespace Vastcore.RegionMap.Editor
                 if (pc >= 0) QualitySettings.SetQualityLevel(pc, true);
                 EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
                 Directory.CreateDirectory(output);
-                if (mode == "draft")
+                if (mode == "margin-shape")
+                    CaptureMarginShape(output, chosenSeed);
+                else if (mode == "margin-review")
+                {
+                    CaptureMarginShape(Path.Combine(output, "shape"), chosenSeed);
+                    CaptureMargins(output, chosenSeed, RegionRoadPreset.Country);
+                    CaptureMargins(output, unchecked(chosenSeed + 11), RegionRoadPreset.Sweeping);
+                }
+                else if (mode == "draft")
                 {
                     using (Stage stage = Build(chosenSeed, RegionRoadPreset.Country, true))
                     {
@@ -420,11 +473,11 @@ namespace Vastcore.RegionMap.Editor
                     }
                     stage.Sun.transform.rotation = RegionTerrainView.SunRotation(38f);
                     stage.Roads.SetActive(false);
-                    stage.Terrain.terrainData.SetHeights(0, 0, HeightMap(stage.Plan, false));
-                    stage.Terrain.terrainData.SetAlphamaps(0, 0, FieldCoverage(stage.Plan, false));
+                    stage.Terrain.terrainData.SetHeights(0, 0, HeightMap(stage, false));
+                    stage.Terrain.terrainData.SetAlphamaps(0, 0, FieldCoverage(stage, false));
                     CaptureViews(stage, folder, "natural", Views.Length);
-                    stage.Terrain.terrainData.SetHeights(0, 0, HeightMap(stage.Plan, true));
-                    stage.Terrain.terrainData.SetAlphamaps(0, 0, FieldCoverage(stage.Plan, true));
+                    stage.Terrain.terrainData.SetHeights(0, 0, HeightMap(stage, true));
+                    stage.Terrain.terrainData.SetAlphamaps(0, 0, FieldCoverage(stage, true));
                     stage.Roads.SetActive(true);
                 }
                 string report = FormattableString.Invariant($"{preset} seed={seed} setup_ms={setup:F1} highway_m={stage.Plan.Highway.Length:F1} arterial_m={stage.Plan.Arterial.Length:F1} surface_checks={checks}\n");
@@ -476,6 +529,26 @@ namespace Vastcore.RegionMap.Editor
                 Place(stage, view);
                 RegionTerrainViewMenu.Capture(stage.Camera, folder, $"{prefix}-{Views[view].ToLowerInvariant()}.png");
             }
+        }
+
+        private static string SampleMidSection(Stage stage)
+        {
+            Physics.SyncTransforms();
+            RegionRoadsideSite site = stage.Plan.Site;
+            RegionRoadCorridor road = site.Road;
+            RegionRoadStation station = road.At(site.Station.Distance + 32f);
+            float pavement = station.SurfaceAt(road.Profile.HalfWidth, road.Profile);
+            var terrain = stage.Terrain.GetComponent<TerrainCollider>();
+            var result = new StringBuilder("offset_m,terrain_y_relative_m,top_y_relative_m,world_x,world_z\n");
+            for (float offset = -2f; offset <= 24f; offset += 0.25f)
+            {
+                NVector2 point = station.AtOffset(-road.Profile.HalfWidth - offset);
+                var ray = new Ray(Position(point, pavement + 12f), Vector3.down);
+                if (!terrain.Raycast(ray, out RaycastHit ground, 24f) || !Physics.Raycast(ray, out RaycastHit top, 24f))
+                    throw new InvalidOperationException("The mid-distance road section missed terrain.");
+                result.AppendLine(FormattableString.Invariant($"{offset:F2},{ground.point.y - pavement:F3},{top.point.y - pavement:F3},{point.X:F3},{point.Y:F3}"));
+            }
+            return result.ToString();
         }
 
         private static string Measure(Stage stage)
