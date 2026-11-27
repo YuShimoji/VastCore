@@ -1,5 +1,6 @@
 Shader "Vastcore/Cave Stone"
 {
+    Properties { _EntranceZ ("Entrance plane", Float) = -26.0 }
     SubShader
     {
         Tags { "RenderType"="Opaque" "RenderPipeline"="UniversalPipeline" }
@@ -9,6 +10,10 @@ Shader "Vastcore/Cave Stone"
             #pragma vertex Vert
             #pragma fragment Frag
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            CBUFFER_START(UnityPerMaterial)
+                float _EntranceZ;
+            CBUFFER_END
 
             struct Varyings { float4 clip : SV_POSITION; float3 pos : TEXCOORD0; half3 normal : TEXCOORD1; };
             Varyings Vert(float3 position : POSITION, float3 normal : NORMAL)
@@ -59,18 +64,18 @@ Shader "Vastcore/Cave Stone"
                 float mineral = smoothstep(0.56, 0.72, fault);
                 float3 stone = lerp(float3(0.24,0.20,0.16), float3(0.38,0.37,0.335), mineral);
                 stone *= 0.61 + bedding * 0.72 + grit * 0.18 - seam * 0.12;
-                // Cool reflected light from the roof fissure and warm mineral alcoves at the two turns.
+                // Light spreads from the entrance and the roof fissure. Wall bounce is muted.
                 float3 light = float3(0.082,0.096,0.12);
                 light += float3(0.67,1.09,1.49) * Diffuse(p,n,float3(-3,11,7),9.5);
-                light += float3(2.6,1.05,0.32) * Diffuse(p,n,float3(9,4.6,10),6.7);
-                light += float3(1.55,0.72,0.27) * Diffuse(p,n,float3(-10,6,-3),5.5);
-                light += float3(0.65,0.79,1.0) * Diffuse(p,n,float3(0,2.6,-23),6);
+                light += float3(1.16,0.86,0.63) * Diffuse(p,n,float3(9,4.6,10),6.7);
+                light += float3(0.76,0.66,0.56) * Diffuse(p,n,float3(-10,6,-3),5.5);
+                light += float3(0.65,0.79,1.0) * Diffuse(p,n,float3(0,2.6,_EntranceZ+3),6);
                 light += float3(0.26,0.25,0.23) * Diffuse(p,n,_WorldSpaceCameraPos,3.2);
                 float fissure = smoothstep(12.6,13.6,p.y) * saturate(-n.y) *
                     exp(-0.7*abs(p.x+3+sin(p.z*0.45)+fault)*3 - 0.08*abs(p.z-7));
                 float3 color = stone * light + fissure * float3(0.65,1.1,1.5);
                 // Daylight at the end of the narrow exit passage gives the return door a silhouette.
-                float opening = saturate((-p.z - 25.85) * 7) * smoothstep(0.6,1.05, 2.7 - abs(p.x + 0.6) -
+                float opening = saturate((_EntranceZ + 0.15 - p.z) * 7) * smoothstep(0.6,1.05, 2.7 - abs(p.x) -
                     abs(p.y - 1.2) * 0.76 + fault * 0.38);
                 color += opening * float3(0.59,0.83,1.0);
                 return half4(color,1);

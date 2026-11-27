@@ -3,11 +3,28 @@ using UnityEngine;
 
 namespace Vastcore.RegionMap
 {
-    // One chamber. The lower trail runs north under the span, climbs the east bank,
-    // crosses west on the span and descends back to the entrance.
+    // The lower trail runs under the span and returns over the west bank.
+    // Passage and chamber modules consume the same ring at each join.
     internal sealed class RegionCaveInterior : MonoBehaviour
     {
-        internal static readonly Vector3 Threshold = new Vector3(0, 0, -22);
+        private readonly struct Socket
+        {
+            internal readonly float Z, Center, HalfWidth, Rise;
+            internal Socket(float z, float center, float halfWidth, float rise)
+            {
+                Z = z;
+                Center = center;
+                HalfWidth = halfWidth;
+                Rise = rise;
+            }
+
+            internal Vector3 FloorPoint => new Vector3(Center, Floor(Center, Z), Z);
+        }
+
+        internal Vector3 Threshold { get; private set; }
+        internal Vector3 Turn { get; private set; }
+        internal int PropCount { get; private set; }
+
         private static readonly Vector3[] Shelf =
         {
             new Vector3(2, -0.55f, 12), new Vector3(7, 0.9f, 14),
@@ -21,17 +38,32 @@ namespace Vastcore.RegionMap
         private readonly List<Vector3> vertices = new List<Vector3>();
         private readonly List<int> triangles = new List<int>();
 
-        internal static void Build(GameObject root)
+        internal static RegionCaveInterior Build(GameObject root, int seed)
         {
             var cave = root.AddComponent<RegionCaveInterior>();
-            cave.Chamber();
+            bool deepPassage = (seed & 1) == 0;
+            float thresholdZ = deepPassage ? -32f : -22f;
+            var sockets = new[]
+            {
+                new Socket(thresholdZ - 4f, 0f, 2.3f, 3.65f),
+                new Socket(thresholdZ, 0f, 2.3f, 3.65f),
+                new Socket(deepPassage ? -23f : -17.8f, deepPassage ? 3.35f : -1.4f, 3.35f, 4.4f),
+                new Socket(-11f, -0.75f, 16.1f, 12.5f),
+                new Socket(2f, 0.3f, 18.0f, 14.3f),
+                new Socket(14f, -0.1f, 16.7f, 13.5f),
+                new Socket(deepPassage ? 27f : 21f, deepPassage ? -3.1f : 1.2f, deepPassage ? 7.3f : 9.5f, 9.5f),
+            };
+            cave.Threshold = sockets[1].FloorPoint;
+            cave.Turn = sockets[2].FloorPoint;
+            int rings = cave.BuildShell(sockets);
             cave.RockShelf();
-            cave.Formations();
-            var mesh = new Mesh { name = "Chamber, crossing and rock banks" };
+            cave.Formations(seed, rings);
+            var mesh = new Mesh { name = "Connected cave modules, stone span and banks" };
             mesh.SetVertices(cave.vertices);
             mesh.SetTriangles(cave.triangles, 0);
             mesh.RecalculateNormals();
             var material = new Material(Resources.Load<Shader>("RegionMap3D/CaveStone"));
+            material.SetFloat("_EntranceZ", sockets[0].Z);
             root.AddComponent<MeshFilter>().sharedMesh = mesh;
             root.AddComponent<MeshRenderer>().sharedMaterial = material;
             root.AddComponent<MeshCollider>().sharedMesh = mesh;
@@ -39,6 +71,7 @@ namespace Vastcore.RegionMap
             cave.material = material;
             cave.vertices.Clear();
             cave.triangles.Clear();
+            return cave;
         }
 
         private static float Noise(float x, float z) => Mathf.PerlinNoise(26.1f + x, 19.6f + z) - 0.5f;
@@ -51,53 +84,57 @@ namespace Vastcore.RegionMap
             triangles.Add(a); triangles.Add(c); triangles.Add(d);
         }
 
-        private const int FloorSteps = 20, ArchSteps = 48, Slices = 84;
+        private const int FloorSteps = 20, ArchSteps = 48;
         private const int RingSize = FloorSteps + ArchSteps;
 
-        private void Chamber()
+        private int BuildShell(Socket[] sockets)
         {
-            const int sides = RingSize;
-            for (int s = 0; s <= Slices; s++)
+            AddRing(sockets[0]);
+            for (int module = 1; module < sockets.Length; module++)
             {
-                float z = Mathf.Lerp(-26f, 21f, s / (float)Slices);
-                float hall = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(-22, -11, z));
-                float farEnd = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(14, 22, z));
-                float width = Mathf.Lerp(2.3f, 16.6f + 1.4f * Mathf.Sin(z * 0.22f), hall) - 8 * farEnd;
-                float height = Mathf.Lerp(3.6f, 13.7f + 1.3f * Mathf.Cos(z * 0.34f), hall) - 4 * farEnd;
-                float center = 0.9f * Mathf.Sin(z * 0.19f);
-                for (int i = 0; i < sides; i++)
+                Socket from = sockets[module - 1], to = sockets[module];
+                int rings = Mathf.CeilToInt((to.Z - from.Z) / 0.55f);
+                for (int ring = 1; ring <= rings; ring++)
                 {
-                    float x, y;
-                    if (i <= FloorSteps)
+                    float t = ring / (float)rings;
+                    float bend = Mathf.SmoothStep(0f, 1f, t);
+                    int prev = vertices.Count - RingSize;
+                    AddRing(new Socket(Mathf.Lerp(from.Z, to.Z, t), Mathf.Lerp(from.Center, to.Center, bend),
+                        Mathf.Lerp(from.HalfWidth, to.HalfWidth, bend), Mathf.Lerp(from.Rise, to.Rise, bend)));
+                    for (int i = 0; i < RingSize; i++)
                     {
-                        x = center + width * (2f * i / FloorSteps - 1f);
-                        y = Floor(x, z);
+                        int next = (i + 1) % RingSize;
+                        Quad(prev + i, prev + RingSize + i, prev + RingSize + next, prev + next);
                     }
-                    else
-                    {
-                        float angle = (i - FloorSteps) * Mathf.PI / ArchSteps;
-                        float sin = Mathf.Sin(angle);
-                        float irregular = Noise(i * 0.29f, z * 0.34f) + 1.35f * Noise(i * 0.11f, z * 0.15f);
-                        float ledge = Mathf.Sin(sin * height * 3.1f + z * 0.19f);
-                        x = center + Mathf.Cos(angle) * (width + sin * (irregular * 2.7f + ledge * 0.45f));
-                        y = Floor(x, z) + sin * (height + 2.9f * irregular);
-                    }
-                    vertices.Add(new Vector3(x, y, z));
-                }
-                if (s == 0) continue;
-                int prev = (s - 1) * sides;
-                for (int i = 0; i < sides; i++)
-                {
-                    int next = (i + 1) % sides;
-                    Quad(prev + i, prev + sides + i, prev + sides + next, prev + next);
                 }
             }
-            // The entrance passage and the far end both terminate in rock.
-            for (int i = 1; i < sides - 1; i++)
+            int end = vertices.Count - RingSize;
+            for (int i = 1; i < RingSize - 1; i++)
             {
                 triangles.Add(0); triangles.Add(i); triangles.Add(i + 1);
-                int end = Slices * sides;
                 triangles.Add(end); triangles.Add(end + i + 1); triangles.Add(end + i);
+            }
+            return vertices.Count / RingSize;
+        }
+
+        private void AddRing(Socket section)
+        {
+            float z = section.Z;
+            for (int i = 0; i <= FloorSteps; i++)
+            {
+                float x = section.Center + section.HalfWidth * (2f * i / FloorSteps - 1f);
+                vertices.Add(new Vector3(x, Floor(x, z), z));
+            }
+            for (int i = FloorSteps + 1; i < RingSize; i++)
+            {
+                float angle = (i - FloorSteps) * Mathf.PI / ArchSteps;
+                float sin = Mathf.Sin(angle);
+                float irregular = Noise(i * 0.29f, z * 0.34f) + 1.35f * Noise(i * 0.11f, z * 0.15f);
+                float ledge = Mathf.Sin(sin * section.Rise * 3.1f + z * 0.19f);
+                float fracture = Mathf.Pow(Mathf.Abs(Noise(i * 0.18f, z * 0.24f)) * 2f, 3f);
+                float x = section.Center + Mathf.Cos(angle) * (section.HalfWidth + sin * (irregular * 2.7f + ledge * 0.53f));
+                float y = Floor(x, z) + sin * (section.Rise + 2.9f * irregular - fracture * 0.82f);
+                vertices.Add(new Vector3(x, y, z));
             }
         }
 
@@ -144,37 +181,37 @@ namespace Vastcore.RegionMap
             }
         }
 
-        private void Formations()
+        private void Formations(int seed, int rings)
         {
-            // Broken talus and taller ribs along the walls, leaving both paths clear.
-            var random = new System.Random(541);
+            // Rockfall lies along the walls; ceiling fragments stay clear of the crossing.
+            var random = new System.Random(unchecked(seed * 15731 + 541));
             float Unit() => (float)random.NextDouble();
-            for (int i = 0; i < 105; i++)
+            for (int i = 0; i < 68; i++)
             {
-                float z = Mathf.Lerp(-12, 16, Unit());
-                float x = (i % 2 == 0 ? 1 : -1) * Mathf.Lerp(13.5f, 15.8f, Unit());
-                float radius = 0.35f + 1.5f * Unit();
-                Spire(new Vector3(x, Floor(x, z) - 0.4f, z), radius, radius * (1.1f + 3.9f * Unit()), Unit() * 6);
+                float z = Mathf.Lerp(-9, 14, Unit());
+                float x = (i % 2 == 0 ? 1 : -1) * Mathf.Lerp(13.55f, 15.5f, Unit());
+                float radius = 0.45f + 1.05f * Unit();
+                RockFragment(new Vector3(x, Floor(x, z) - 0.23f, z), radius, radius * (0.6f + 2.05f * Unit()), Unit() * 6, 0.33f);
             }
-            // Pendants cluster beside the crossing where silhouettes mark the height.
-            for (int i = 0; i < 65; i++)
+            for (int i = 0; i < 40; i++)
             {
-                int slice = random.Next(28, 72), arch = random.Next(10, 38);
+                int slice = random.Next(1, rings - 1), arch = random.Next(10, 38);
                 Vector3 ceiling = vertices[slice * RingSize + FloorSteps + arch];
-                Spire(ceiling + Vector3.up * 0.38f, 0.35f + 0.8f * Unit(), -1.1f - 2.8f * Unit(), Unit() * 6);
+                if (ceiling.z < -9f || ceiling.z > 16f || ceiling.y < 10.4f) continue;
+                RockFragment(ceiling + Vector3.up * 0.38f, 0.45f + 0.76f * Unit(), -0.7f - 1.12f * Unit(), Unit() * 6, 0.49f);
             }
-            // Scattered scree beside the trail makes the scale of the crossing visible.
             for (int i = 0; i < 95; i++)
             {
                 float z = Mathf.Lerp(-14, 13, Unit());
                 float x = (i % 2 == 0 ? 1 : -1) * Mathf.Lerp(3.6f, 7.9f, Unit());
                 float r = 0.13f + 0.65f * Unit();
-                Spire(new Vector3(x, Floor(x, z) - 0.13f, z), r, r * (0.6f + Unit()), Unit() * 6);
+                RockFragment(new Vector3(x, Floor(x, z) - 0.13f, z), r, r * (0.47f + Unit()), Unit() * 6, 0.52f);
             }
         }
 
-        private void Spire(Vector3 basePoint, float radius, float height, float phase)
+        private void RockFragment(Vector3 basePoint, float radius, float height, float phase, float cap)
         {
+            PropCount++;
             int first = vertices.Count;
             const int sides = 7;
             for (int ring = 0; ring < 3; ring++)
@@ -183,9 +220,9 @@ namespace Vastcore.RegionMap
                 {
                     float angle = phase + i * 2f * Mathf.PI / sides;
                     float r = radius * (1.1f + 0.19f * Mathf.Cos(angle * 3 + phase))
-                        * (ring == 0 ? 1f : ring == 1 ? 0.69f : 0.07f);
+                        * (ring == 0 ? 1f : ring == 1 ? 0.78f : cap);
                     vertices.Add(basePoint + new Vector3(r * Mathf.Cos(angle) + ring * radius * 0.13f,
-                        height * (ring == 0 ? 0 : ring == 1 ? 0.55f : 1), r * Mathf.Sin(angle)));
+                        height * (ring == 0 ? 0 : ring == 1 ? 0.55f : 1), r * Mathf.Sin(angle) * 0.78f));
                 }
             }
             for (int j = 0; j < 2 * sides; j++)
@@ -193,6 +230,13 @@ namespace Vastcore.RegionMap
                 int a = first + j, b = first + j / sides * sides + (j + 1) % sides;
                 if (height > 0) Quad(a, a + sides, b + sides, b);
                 else Quad(a, b, b + sides, a + sides);
+            }
+            int top = first + 2 * sides;
+            for (int i = 1; i < sides - 1; i++)
+            {
+                triangles.Add(top);
+                triangles.Add(top + (height > 0 ? i + 1 : i));
+                triangles.Add(top + (height > 0 ? i : i + 1));
             }
         }
 

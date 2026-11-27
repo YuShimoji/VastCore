@@ -19,7 +19,9 @@ namespace Vastcore.RegionMap.Editor
 
         public static void Run()
         {
-            if (!EditorApplication.ExecuteMenuItem("Vastcore/Region Map/Open 3D Cliff And Cave Prototype"))
+            const string menu = "Vastcore/Region Map/Open 3D Cliff And Cave Prototype";
+            bool longPassage = RegionMapMenu.Argument("-caveLayout", "short") == "long";
+            if (!EditorApplication.ExecuteMenuItem(longPassage ? menu + " (Long Passage)" : menu))
                 throw new InvalidOperationException("Could not open the cliff and cave prototype");
             SessionState.SetBool(Pending, true);
             EditorApplication.EnterPlaymode();
@@ -52,6 +54,11 @@ namespace Vastcore.RegionMap.Editor
                 if (!walk.Inside || SceneManager.GetActiveScene() == exterior)
                     throw new InvalidOperationException("Failed to enter a separate scene");
                 var firstInterior = SceneManager.GetActiveScene();
+                Vector3 turn = walk.InteriorTurn;
+                Vector3 threshold = walk.InteriorThreshold;
+                int propCount = walk.InteriorPropCount;
+                Shot(camera, output, "01-interior", (turn - walk.Feet).normalized + Vector3.up * 0.15f);
+                WalkTo(walk, turn.x, turn.z, turn.y);
                 WalkTo(walk, 0, -10, 0);
                 Shot(camera, output, "02-lower", new Vector3(0.14f, 0.23f, 1));
                 WalkTo(walk, 0, 2.2f, 0);
@@ -74,16 +81,18 @@ namespace Vastcore.RegionMap.Editor
                 WalkTo(walk, -9, -8, 2.6f);
                 WalkTo(walk, -5, -11, 0.85f);
                 WalkTo(walk, -2, -13, 0);
-                WalkTo(walk, 0, -22, 0);
+                WalkTo(walk, turn.x, turn.z, turn.y);
+                ApproachDoor(walk, threshold);
                 walk.UseDoor();
                 if (walk.Inside || SceneManager.GetActiveScene() != exterior || Vector3.Distance(walk.Feet,start) > 0.5f)
                     throw new InvalidOperationException("Failed to return to the same exterior approach");
                 Shot(camera, output, "05-return", camera.transform.forward);
                 Approach(walk);
                 walk.UseDoor();
-                if (!walk.Inside || SceneManager.GetActiveScene() != firstInterior)
+                if (!walk.Inside || SceneManager.GetActiveScene() != firstInterior ||
+                    walk.InteriorTurn != turn || walk.InteriorThreshold != threshold || walk.InteriorPropCount != propCount)
                     throw new InvalidOperationException("Failed to re-enter the same interior");
-                Debug.Log($"[CaveWalk] PASS start {start}, under {below}, underside {underside.point}, above {above}, same door twice.");
+                Debug.Log($"[CaveWalk] PASS layout={walk.LayoutSeed}, threshold {threshold}, turn {turn}, props={propCount}, start {start}, under {below}, underside {underside.point}, above {above}, same door twice.");
                 EditorApplication.Exit(0);
             }
             catch (Exception e)
@@ -99,6 +108,16 @@ namespace Vastcore.RegionMap.Editor
             for (int i = 0; i < 550 && !walk.CanUseDoor; i++)
                 walk.Walk(forward, 1f / 60);
             if (!walk.CanUseDoor) throw new InvalidOperationException("Could not walk to exterior door at " + walk.Feet);
+        }
+
+        private static void ApproachDoor(RegionCaveWalk walk, Vector3 threshold)
+        {
+            for (int i = 0; i < 450 && !walk.CanUseDoor; i++)
+            {
+                Vector3 direction = Vector3.ProjectOnPlane(threshold - walk.Feet, Vector3.up);
+                walk.Walk(direction.normalized, 1f / 60);
+            }
+            if (!walk.CanUseDoor) throw new InvalidOperationException("Could not walk to the interior door at " + walk.Feet);
         }
 
         private static void WalkTo(RegionCaveWalk walk, float x, float z, float floor)

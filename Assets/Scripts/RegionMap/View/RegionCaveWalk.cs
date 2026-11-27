@@ -12,20 +12,23 @@ namespace Vastcore.RegionMap
         [SerializeField] private Mesh groundCollision;
         [SerializeField] private Vector3 mouth;
         [SerializeField] private Vector3 outward;
+        [SerializeField] private int layoutSeed = 9;
         private Camera eye;
         private CharacterController walker;
         private Vector3 outsideFeet;
         private Scene outsideScene, insideScene;
         private GameObject interior;
+        private RegionCaveInterior geometry;
         private bool inside;
         private float pitch, verticalSpeed;
         private GUIStyle hint;
 
-        public void Configure(RegionTerrainView.Result land, RegionSpec regionSpec, RegionTerrainViewSpec viewSpec)
+        public void Configure(RegionTerrainView.Result land, RegionSpec regionSpec, RegionTerrainViewSpec viewSpec, int caveLayoutSeed = 9)
         {
             exterior = land.Root;
             region = regionSpec;
             window = viewSpec;
+            layoutSeed = caveLayoutSeed;
             // A 3-cell stride spans the 1024-cell window, including its last edge.
             var ground = RegionTerrainMesh.Build(land.Terrain, 3, 1f);
             groundCollision = RegionTerrainView.TerrainMesh(ground, land.Patch);
@@ -45,7 +48,7 @@ namespace Vastcore.RegionMap
                 exterior.SetActive(false);
                 Destroy(exterior);
                 var land = RegionTerrainView.Build(RegionGenerator.Generate(region), window);
-                Configure(land, region, window);
+                Configure(land, region, window, layoutSeed);
             }
             exterior.AddComponent<MeshCollider>().sharedMesh = groundCollision;
             var volume = exterior.transform.Find("Volume").GetComponent<MeshFilter>();
@@ -76,12 +79,16 @@ namespace Vastcore.RegionMap
 
         public Vector3 Feet => walker.transform.position;
         public bool Inside => inside;
+        public int LayoutSeed => layoutSeed;
+        public Vector3 InteriorThreshold => geometry.Threshold;
+        public Vector3 InteriorTurn => geometry.Turn;
+        public int InteriorPropCount => geometry.PropCount;
         public bool CanUseDoor
         {
             get
             {
                 if (!walker) return false;
-                Vector3 delta = inside ? Feet - RegionCaveInterior.Threshold : Feet + Vector3.up * 1.1f - mouth;
+                Vector3 delta = inside ? Feet - InteriorThreshold : Feet + Vector3.up * 1.1f - mouth;
                 return Mathf.Abs(delta.y) < 2.5f && delta.x * delta.x + delta.z * delta.z < 3.2f * 3.2f;
             }
         }
@@ -96,14 +103,14 @@ namespace Vastcore.RegionMap
                     insideScene = SceneManager.CreateScene("Stone Span Cavern");
                     interior = new GameObject("Stone Span Cavern");
                     SceneManager.MoveGameObjectToScene(interior, insideScene);
-                    RegionCaveInterior.Build(interior);
+                    geometry = RegionCaveInterior.Build(interior, layoutSeed);
                 }
                 interior.SetActive(true);
                 exterior.SetActive(false);
                 SceneManager.SetActiveScene(insideScene);
                 SceneManager.MoveGameObjectToScene(walker.gameObject, insideScene);
                 inside = true;
-                PlaceWalker(RegionCaveInterior.Threshold + Vector3.up * 0.15f, Vector3.forward);
+                PlaceWalker(InteriorThreshold + Vector3.up * 0.15f, Vector3.forward);
             }
             else
             {
@@ -154,7 +161,7 @@ namespace Vastcore.RegionMap
             verticalSpeed = walker.isGrounded ? -2f : Mathf.Max(-20f, verticalSpeed - 18f * dt);
             walker.Move((Vector3.ClampMagnitude(direction, 1f) * 4f + Vector3.up * verticalSpeed) * dt);
             if (inside && Feet.y < -5f)
-                PlaceWalker(RegionCaveInterior.Threshold + Vector3.up * 0.15f, Vector3.forward);
+                PlaceWalker(InteriorThreshold + Vector3.up * 0.15f, Vector3.forward);
             if (!inside && Feet.y < outsideFeet.y - 45f)
                 PlaceWalker(outsideFeet, -outward);
         }

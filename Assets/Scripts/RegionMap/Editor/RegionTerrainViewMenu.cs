@@ -38,7 +38,12 @@ namespace Vastcore.RegionMap.Editor
         }
 
         [MenuItem("Vastcore/Region Map/Open 3D Cliff And Cave Prototype")]
-        public static void OpenPrototype()
+        public static void OpenPrototype() => OpenPrototype(9);
+
+        [MenuItem("Vastcore/Region Map/Open 3D Cliff And Cave Prototype (Long Passage)")]
+        public static void OpenLongPassage() => OpenPrototype(10);
+
+        private static void OpenPrototype(int layoutSeed)
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             try
@@ -48,7 +53,7 @@ namespace Vastcore.RegionMap.Editor
                 var window = new RegionTerrainViewSpec();
                 RegionTerrainView.Result result = CreateScene(region, window, out Camera camera);
                 if (result.Volume != null && result.Volume.Cavities.Count >= 2)
-                    camera.gameObject.AddComponent<RegionCaveWalk>().Configure(result, region, window);
+                    camera.gameObject.AddComponent<RegionCaveWalk>().Configure(result, region, window, layoutSeed);
                 RegionTerrainView.Place(camera.transform, result, 20f, 7f, 150f);
                 SceneView view = SceneView.lastActiveSceneView;
                 if (view != null) view.LookAt(result.Focus, camera.transform.rotation, 60f);
