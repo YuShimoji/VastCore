@@ -187,39 +187,59 @@ Shader "Vastcore/Water/Shore Contact"
                 else
                 {
                     float3 seed = input.part.yzw;
+                    #if defined(COASTAL_BARRIER)
+                    bool mist = seed.z > 0.63;
+                    // Mist is released during the whole strike as the lip shatters against the wall.
+                    float start = mist ? lerp(0.032, 0.164, seed.x) : lerp(0.032, 0.108, seed.x);
+                    float lifetime = mist ? lerp(0.103, 0.198, seed.y) : lerp(0.105, 0.248, seed.y);
+                    #else
+                    bool mist = seed.z > 0.78;
                     float start = lerp(0.032, 0.099, seed.x);
                     float lifetime = lerp(0.105, 0.265, seed.y);
+                    #endif
                     float flight = saturate((age - start) / lifetime);
                     float fade = smoothstep(0.0, 0.14, flight) * (1.0 - smoothstep(0.51, 1.0, flight));
                     float energy = (0.32 + burst * 0.68) * (barrier ? over : smoothstep(0.15, 1.08, amp) * 0.56);
                     float arch = 4.0 * flight * (1.0 - flight);
-                    bool mist = seed.z > 0.78;
                     #if defined(COASTAL_BARRIER)
-                    float2 birth = RoadBreaker(input.positionOS.xz, lerp(0.58, 0.92, seed.y), start,
+                    float2 birth = RoadBreaker(input.positionOS.xz, lerp(0.62, 0.94, seed.y), start,
                         over * (0.35 + 0.65 * burst), false);
                     float seconds = max(0.0, age - start) * TWO_PI / max(0.1, _Wave.z);
                     float drift = lerp(1.5, 4.4, seed.x) * (0.6 + energy * 0.40);
-                    d = birth.x + drift * seconds;
                     float riseSpeed = lerp(0.95, 4.6, seed.y) * energy;
-                    y = birth.y + seconds * (riseSpeed - (mist ? 2.60 : 4.91) * seconds);
+                    if (mist)
+                    {
+                        float fromWall = smoothstep(0.63, 1.0, seed.z);
+                        birth = lerp(birth, float2(_Shore.y * 0.72, _Bank.z + 0.14), fromWall * 0.86);
+                        drift = lerp(0.67, 3.10, seed.x) * (0.60 + energy * 0.40);
+                        riseSpeed = lerp(0.64, 2.75, seed.y) * energy;
+                        z += seconds * lerp(-2.15, 2.35, seed.y);
+                    }
+                    d = birth.x + drift * seconds;
+                    y = birth.y + seconds * (riseSpeed - (mist ? 0.59 : 4.91) * seconds);
                     fade *= smoothstep(_Bank.w + 0.08, _Bank.w + 0.34, y);
+                    float radius = mist ? lerp(0.17, 0.42, seed.y) * (0.60 + flight * 1.18)
+                        : lerp(0.008, 0.039, seed.z) * (0.66 + flight * 0.41);
+                    float stretch = mist ? 1.07 + flight * 0.31 : 1.15 + (1.0 - arch) * 1.28;
+                    float density = mist ? lerp(0.56, 0.26, flight) : 1.0;
                     #else
                     d = edge + seed.y * 0.47 + flight * lerp(1.3, 6.2, seed.z) * energy;
                     float lift = min(amp * 2.19, 5.2) * lerp(0.36, 1.0, seed.x) * (mist ? 0.69 : 1.0);
                     y = 0.16 + arch * energy * lift - flight * flight * 0.19;
+                    float radius = (mist ? lerp(0.066, 0.215, seed.y) : lerp(0.008, 0.035, seed.z)) * 0.68;
+                    radius *= 0.66 + flight * (mist ? 0.82 : 0.41);
+                    float stretch = 1.15 + (1.0 - arch) * 1.28;
+                    float density = mist ? 0.49 : 1.0;
                     #endif
                     z += (_Motion.y * 0.85 + seed.x - 0.41) * flight * 5.4;
-                    float radius = (mist ? lerp(0.066, 0.215, seed.y) : lerp(0.008, 0.035, seed.z))
-                        * (barrier ? 1.0 : 0.68);
-                    radius *= 0.66 + flight * (mist ? 0.82 : 0.41);
                     float2 corner = input.uv * 2.0 - 1.0;
                     float3 center = TransformObjectToWorld(float3(input.positionOS.x + d, _Shore.x + y, z));
                     float3 right = UNITY_MATRIX_I_V._m00_m10_m20;
                     float3 up = UNITY_MATRIX_I_V._m01_m11_m21;
-                    output.positionWS = center + radius * (right * corner.x + up * corner.y * (1.15 + (1.0 - arch) * 1.28));
+                    output.positionWS = center + radius * (right * corner.x + up * corner.y * stretch);
                     output.positionCS = TransformWorldToHClip(output.positionWS);
                     output.uv = input.uv;
-                    output.flow = float4(d, z, mist ? 1.0 : 0.0, fade * energy * (mist ? 0.49 : 1.0) * _Breaking.y);
+                    output.flow = float4(d, z, mist ? 1.0 : 0.0, fade * energy * density * _Breaking.y);
                     output.part = mode;
                     return output;
                 }
@@ -257,11 +277,26 @@ Shader "Vastcore/Water/Shore Contact"
                 if (input.part > 1.5)
                 {
                     float2 c = input.uv * 2.0 - 1.0;
-                    float breakup = phase < 0.5 ? 1.0 : lerp(0.12, 0.90, ShoreFoam(input.uv * 1.64 + p.y * 0.32));
                     float closeFade = smoothstep(2.0, 6.0, length(input.positionWS - GetCameraPositionWS()));
                     float radial = dot(c, c);
+                    #if defined(COASTAL_BARRIER)
+                    if (phase > 0.5)
+                    {
+                        // Broad, low-opacity fringes overlap near the wall without individual round puffs.
+                        float2 air = input.positionWS.xy * float2(2.9, 3.7) + input.positionWS.z * float2(1.37, 0.53);
+                        float wisps = WaterNoise(air) * 0.72 + WaterNoise(air * 2.81 + 1.2) * 0.28;
+                        float fringe = 1.0 - smoothstep(0.0, 0.96, radial);
+                        alpha = fringe * fringe * strength * lerp(0.32, 0.90, wisps) * closeFade;
+                    }
+                    else
+                    {
+                        alpha = (1.0 - smoothstep(0.07, 0.95, radial)) * strength * closeFade;
+                    }
+                    #else
+                    float breakup = phase < 0.5 ? 1.0 : lerp(0.12, 0.90, ShoreFoam(input.uv * 1.64 + p.y * 0.32));
                     if (phase > 0.5) radial += (WaterNoise(c * 3.1 + p.y * 0.49) - 0.5) * 0.36;
                     alpha = (1.0 - smoothstep(0.07, 0.95, radial)) * strength * breakup * closeFade;
+                    #endif
                     color = white;
                 }
                 else if (input.part < 0.5)
