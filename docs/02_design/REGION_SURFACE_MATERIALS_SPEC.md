@@ -48,20 +48,22 @@ flowchart LR
 
 ### 3.1 素材の差し替え口
 
-役割は6つ。素材は `Assets/Resources/RegionMap3D/Surfaces/<役割>/`（`Cliff`・`Mudstone`・`Talus`・`Sand`・`Crust`・`LooseRock`、下の表の順）に1組ずつ置き、実寸（m）・高さの幅・強さを1つの設定 `Surfaces/SurfaceSettings.asset`（[RegionSurfaceSettings](../../Assets/Scripts/RegionMap/View/RegionSurfaceSettings.cs)、無ければ横 2 m など既定の値）に持つ。置かれていない役割は今の手続きの色で描く（素材が無い環境・有料素材を置けない公開リポジトリでも動く。空と霞の Weather Maker と同じ扱い）。横の面は画像の上を空へ向けて貼る。
+役割は8つ。素材は `Assets/Resources/RegionMap3D/Surfaces/<役割>/`（`Cliff`・`Mudstone`・`Talus`・`Sand`・`Crust`・`LooseRock`・`Deposit`・`Wash`、下の表の順）に1組ずつ置き、実寸（m）・高さの幅・強さ・写真の平均の色を1つの設定 `Surfaces/SurfaceSettings.asset`（[RegionSurfaceSettings](../../Assets/Scripts/RegionMap/View/RegionSurfaceSettings.cs)、無ければ横 2 m など既定の値）に持つ。置かれていない役割は今の手続きの色で描く（素材が無い環境・有料素材を置けない公開リポジトリでも動く。空と霞の Weather Maker と同じ扱い）。横の面は画像の上を空へ向けて貼る。
 
-| 役割 | 今の描き方 | 候補（開発担当の提示。採否は本人） |
+| 役割 | 採用した素材（T5、本人の選択 2026-11-27。すべて CC0） | 横の実寸 |
 |---|---|---|
-| 崖の岩肌（帽子の砂岩） | 手続きの赤橙と縞 | [Red Sandstone Wall](https://polyhaven.com/a/red_sandstone_wall)（CC0、2 m）、[Sandstone Cracks](https://polyhaven.com/a/sandstone_cracks)（CC0、2 m） |
-| 泥岩の帯 | 手続きの灰紫 | 未調査 |
-| 岩屑 | 手続きの礫と色 | Ground081（CC0、礫。所有済み） |
-| 砂と土 | 手続きの砂色 | Ground054（CC0、砂。所有済み） |
-| 地被（生物土壌クラスト） | 手続きの暗い斑 | 未調査 |
-| 転石 | 単色の板 | [Rock Face 03](https://polyhaven.com/a/rock_face_03)（CC0、2.7 m）、崖と同じ素材 |
+| 崖の岩肌（帽子の砂岩） | [Rock Boulder Cracked](https://polyhaven.com/a/rock_boulder_cracked) | 1.39 m |
+| 泥岩の帯 | [Dark Rock 02](https://polyhaven.com/a/dark_rock_02) | 2 m |
+| 岩屑 | [Rocks Ground 06](https://polyhaven.com/a/rocks_ground_06) | 6 m |
+| 砂と土 | Ground054（ambientCG） | 2 m |
+| 地被（生物土壌クラスト） | Ground038（ambientCG） | 2 m |
+| 転石 | 未選択（手続きの色。T5 の問いに入れていない） | — |
+| 細かい土砂 | [Dry Ground 01](https://polyhaven.com/a/dry_ground_01) | 4 m |
+| 流路の礫 | Ground007（ambientCG） | 2 m |
 
-素材を置く時の出所の記録（`texture-source.json`）・名付け・置く前の検査は [DS-012](TEXTURE_PIPELINE_SPEC.md)（`.\scripts\check-textures.ps1`）。
+素材を置く時の出所の記録（`Surfaces/texture-source.json`）・名付け・置く前の検査は [DS-012](TEXTURE_PIPELINE_SPEC.md)（`.\scripts\check-textures.ps1`）。
 
-素材の色は場所の模様で着色し直す（色の画像は明るさの細部として使い、色相は今の手続きの地層の色を保つ）。地層の連続と鉄分の色の違いは場所で決まるため、写真の色をそのまま貼らない。
+写真の使い方は本人の選択「強い」（[RegionSurfaceMaterials](../../Assets/Scripts/RegionMap/View/RegionSurfaceMaterials.cs) の `DefaultContrast` 2・`DefaultPhotoColor` 0.5）。色の画像の明暗と色のむら（平均に対する比）を2倍に広げ、色相は今の手続きの地層の色に写真の平均の色を 50% 混ぜる。平均の色（Linear）は取り込み時の処理が色の画像から設定の役割の `Tint` へ書き、記録の無い役割は混ぜない。地層の連続と鉄分の色の違いは場所で決まるため、写真の色をそのまま貼らない。
 
 ### 3.2 自動の凹凸（バンプ）の作り方
 
@@ -84,7 +86,7 @@ flowchart LR
 | 投影を減らす | 平らな地面は真上から1回。崖と転石は biplanar（2回）を使い、triplanar（3回）は使わない。biplanar は向きの切り替えで mip の線が出るので、勾配を渡して読む（[Quilez の biplanar](https://iquilezles.org/articles/biplanar)） |
 | 混ぜる数の上限 | 1画素で混ぜる役割は重みの大きい2つまで |
 | 距離の段 | 近（約60 m まで）は色・法線・高さ粗さAO。中（約400 m まで）は色と法線を大きい周期で。遠は写真を読まず、今の手続きの色と地層の柱だけ。境は距離の連続した分岐なので画面の中でまとまる。距離は推定で、計測で決める |
-| 繰り返しを崩す | 割れ目の板ごとに UV をずらして回す（板の番号を頂点に持たせる。割れ目は [RegionDetailMesa.cs](../../Assets/Scripts/RegionMap/Core/RegionDetailMesa.cs) が決めている）。周期の違う2つの色を掛ける。読みが3回になる確率的タイル（stochastic）は使わない |
+| 繰り返しを崩す | 入れた物（T5、2026-11-27）: 横4枚ほどの大きさで変わる雑音で、読む位置を8通りにずらした2か所を混ぜる（[Quilez の方式3](https://iquilezles.org/articles/texturerepetition/)。読みは2回、ずらすだけなので法線の向きはそのまま、微分は元の UV のものを使い mip は跳ねない）。高さの混合も同じずらしで読む。`RegionSurfaceMaterials.TileBreak`（既定 入）。入れていない物: 割れ目の板ごとに UV をずらして回す（板の番号を頂点に持たせる。割れ目は [RegionDetailMesa.cs](../../Assets/Scripts/RegionMap/Core/RegionDetailMesa.cs) が決めている。メッシュと Core を変える）。読みが3回になる確率的タイル（stochastic）は使わない |
 | 圧縮と解像度 | 色 BC7、法線 BC5、高さ粗さAO BC7。配列は1本の中で同じ大きさが要るので揃える（段2は所有素材に合わせ 1K。`RegionSurfaceMaps.Texels`）。品質設定の mip の上限で落とせる |
 | メモリ | 2K の BC7・BC5 は mip 込みで1枚 約5.3 MB。6役割×3種で 約96 MB（1K に落とすと 約24 MB）。開発機の GPU は RTX 4060 Ti 8 GB |
 | 光 | 粗さが入るので URP の鏡面を使う。乾いた砂岩は鏡面を弱める（5.2節の 18% を初期値にする） |
@@ -109,19 +111,7 @@ flowchart LR
 
 段1・2・3 は素材の選択に依存しない。段4 は本人の選択を待つ。
 
-**段1の結果（2026-11-26、Unity 6000.3.6f1、seed 9、clear、写し `D:\vcv\VastCore`）。** [RegionSurfaceRelief.cs](../../Assets/Scripts/RegionMap/View/RegionSurfaceRelief.cs) が場面を作る時に [RegionReliefBake.shader](../../Assets/Resources/RegionMap3D/RegionReliefBake.shader) で高さ→傾きを焼き、[RegionSandstone.hlsl](../../Assets/Resources/RegionMap3D/RegionSandstone.hlsl) の `SandstoneReliefNormal` が光を受ける向きを傾ける（影の計算と岩肌の判定は形の法線のまま）。
-
-同じ場面で切／入を切り替えて撮った。アルコーブ中景で層の境に溝の陰、手前の段の斜めの縞に稜の明暗が出た（画素の 20.5% が変化）。近景の崖と転石は 10〜11%、遠景は 1.3%。描画1回の時間（GPU の終わりまで、MSAA4、各48回の中央値）の差は 1600×900 で −0.27〜+0.26 ms（揺れの範囲）、GPU が律速の 3840×2160 で +0.10〜+0.91 ms（近景が最大。画素数で 1600×900 に直すと 約0.16 ms）。予算 1.0 ms の内。
-
-値のノイズの等高線で作った割れ目は、閉じた丸い線の網に見えたので外した。比較画像は撮影端末の `artifacts/region-map/relief-20261126/v3/`。再現は `.\scripts\region-map.ps1 -Mode view3d -Seed 9 -ReliefCompare -OutDir <出力>`（`<出力>/relief-off/` と `relief-timing.txt`）。見た目の採否は本人。層の境の溝は細く均一で暗く、手前の稜はやや規則的（強さは `RegionSurfaceRelief.StrataStrength`）。
-
-**段2の結果（2026-11-26、同じ条件、写し）。** 写しの `Surfaces/Sand` に Ground054 の一式、`Talus` に Ground081 の一式（1024×512 は縦に2回並べた）、`Cliff` に Ground007 の色の画像だけを置くと、取り込み時に3役の3枚ができ（崖は色から法線と高さを作成、砂と岩屑は GL の法線と高さ・粗さ・AO）、場面で配列に束ねられた。同じ場面の切／入で画素の 25〜56% が変化し、岩屑の斜面に写真の礫の欠片が光を受けて陰影を持ち、色相は手続きの地層の色のまま。崖の Ground007 は機構の試験用の地面の礫で、岩壁が紙やすりのような粒に見える（崖の素材は段4で本人が選ぶ）。
-
-元の画像だけを消すと、取り込み時の処理が3枚も消し、絵は素材を置く前と同じ（5視点で違う画素は1つ）。素材が無い時は段1の絵と同じ（5視点で 0.001% 未満）。描画1回の時間の差は 3840×2160 で +0.45〜+1.77 ms（画素数で 1600×900 に直すと最大 約0.31 ms、段1と合わせて 約0.47 ms）。距離の段・上位2つの混合の前で、遠景でも読んでいる。比較画像は撮影端末の `artifacts/region-map/surface-20261126/`（`a-none`・`b-placed`（`surface-off/` と `surface-timing.txt`）・`c-removed`）。再現は素材を置いて `.\scripts\region-map.ps1 -Mode view3d -Seed 9 -SurfaceCompare -OutDir <出力>`。
-
-**段3の結果（2026-11-26、同じ条件と素材、写し）。** [RegionSandstone.hlsl](../../Assets/Resources/RegionMap3D/RegionSandstone.hlsl)・[RegionSurfaceMaterials.hlsl](../../Assets/Resources/RegionMap3D/RegionSurfaceMaterials.hlsl)・[RegionTerrain.shader](../../Assets/Resources/RegionMap3D/RegionTerrain.shader) に入れた。カメラから 40〜60 m で高さ粗さAO を読まなくなり（粗さは役の既定、AO は 1）、300〜400 m で写真を読まなくなる（その先は素材が無い時と同じ絵）。境は距離の smoothstep。値は `RegionSurfaceMaterials.NearStart` など。崖・泥岩・岩屑・砂・地被の重みのうち、素材のある役の大きい2つだけを読む。鏡面は URP の Lit と同じ近似の GGX（反射率 0.04 × 強さ 18%）を、素材のある所だけに足す。中の段で周期を大きくする案と板ごとの UV は入れていない。
-
-素材が無い時の絵は段2と同じ（5視点で 0.000%）。look-far の画面の上半分（遠い所）は切／入の変化が 0.3% 以下（段2は 6.3%）、look-mid の中ほどの帯は 30.6% → 0.9%。近景は日の当たる岩屑の粒に弱い照りが付き、平均の明るさが 4〜7 階調上がった（濡れた光り方ではない）。描画1回の時間の差は 3840×2160 で +0.38〜+1.90 ms（段2は +0.45〜+1.77 ms）。遠い所を含む視点で減り（look-mid 1.37 → 0.38 ms、alcove-mid 1.22 → 0.81 ms）、全部が近い look-near は同じ。1600×900 に直すと最大 約0.33 ms で予算 1.0 ms の内。計測中に別の Unity が4つ動き、1600×900 の差は −0.73〜+0.69 ms と揺れの範囲。比較画像は `surface-20261126/d-stage3/`（`pair3-*.png` は切・段2・段3・段2と段3の差）。
+段1〜段3の結果（2026-11-26、凹凸・差し替え口・重さの仕組み）は [履歴](../archive/REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-27 REGION_SURFACE_MATERIALS_SPEC 4節から移した段1〜段3の結果」へ原文のまま移した（文書の上限、2026-11-27）。
 
 板ごとの UV は、割れ目の板の番号を頂点に持たせるため、地形・アルコーブ・転石の3つのメッシュの組み立てと、Core の割れ目の式（[RegionDetailMesa.cs](../../Assets/Scripts/RegionMap/Core/RegionDetailMesa.cs)）を変える。段2・段3の画像で繰り返しは見えていないので、繰り返しが見えた時に入れる（本人の判断、2026-11-26「繰り返しが見えたら」）。
 
@@ -141,6 +131,13 @@ flowchart LR
 HEAD→T4 で変わった画素（far/mid/near/alcove-mid/alcove-near）は seed 9 で 0.3/7.8/78.7/99.3/2.7%、seed 8 で 0.3/4.2/77.7/99.8/15.5%。近景は大きい岩の位置が変わり（seed 8 はカメラの前に大きい岩が来る）、alcove-mid は視線上の岩を避けて目が上がるため。帯だけの切／入は 0.0〜7.2%。描画1回の時間の差（帯の切／入）は 1600×900 で −0.28〜+0.53 ms（揺れ）、3840×2160 で −0.32〜+0.32 ms（1600×900 に直すと約 0.06 ms。段1〜T3 と合わせ予算 1.0 ms の内）。Sediment 0 は HEAD と5視点で画素一致、`-RockGround false` は遠景の小さい岩の 8 画素（0.001%）だけ違う。場面の作成は seed 9 で 107 s。写しで EditMode 704/704。
 比較画像は撮影端末の `artifacts/region-map/t4-20261127/`（`before-s9`・`before-s8` が HEAD、`final-s9`・`final-s8` と各 `rockground-off/`、`final-pairs-*` は対、`zoom-final-s9-near.png` は上から HEAD・帯の切・T4）。再現は `.\scripts\region-map.ps1 -Mode view3d -Seed 9 -RockGroundCompare [-RockGround false] [-Sediment 0] -LookSky ours -OutDir <出力>`。
 
+**T5 の結果（2026-11-27、写し、Linear、空は自前、PC 品質、1600×900）。** 本人が選んだ7素材（3.1節）を `Surfaces/<役>/` に置き、写真の使い方「強い」を既定にした。取り込み時の処理が写真の平均の色を `SurfaceSettings.asset` の `Tint` に書く。前は素材を置く前の版（81bd59f）、後は採用した素材を置いた版で、固定の5視点と、候補の撮影で選んだ役ごとの近い視点（25 m・60 m 先）を太陽4つで撮った（seed 9 は 76 対、seed 8 は地被の視点が無く 68 対）。同じ場面で素材を切った絵は前の絵と 8 階調を超える差が 0.02% 以下なので、前の絵をそのまま対にした。HEAD→後で 8 階調を超えて変わった画素（太陽 38°、far/mid/near/alcove-mid/alcove-near）は seed 9 で 36/34/75/69/81%、seed 8 で 39/42/44/89/82%。
+繰り返し: 岩屑の Rocks Ground 06（横 6 m）は、中景の斜面で白い礫が格子状に並んで見えた（seed 8 の砂の近い視点 v1、seed 9 の岩屑の v1 で強い）。崖・砂・地被には、近い視点で目立つ格子は見えなかった。繰り返しの崩し（3.3節）を入れると格子の列は不揃いになるが、礫の白い帯は残る（素材そのものの明暗が強く、明暗2倍でさらに強まる）。伸び: biplanar の2面が半々に混ざる急な斜面で、板状の模様が斜面に沿う筋になる（seed 8 の崖の v1 の岩屑の山、seed 9 の岩屑の v1 の手前）。崖の面には見えない。
+のっぺりの残り: 地面から約 60 m までは割れ・礫・板の陰が出て、のっぺりはほぼ消えた。残るのは、中景より先の崖の面（写真は 300〜400 m で読まなくなる。崖は布を垂らしたような滑らかな柱の形のまま）と、岩屑の錐・扇状地の滑らかな面で、どちらも形の問題で素材では変わらない。素材の側の残りは、岩屑・泥岩の写真の色（灰〜黒）が混色 50% で赤い砂岩の中に浮く所（seed 8 の崖の v1 の岩屑の山が黒い）。
+描画1回の時間の差（MSAA4、48回の中央値）。写真素材の切／入は 3840×2160 で +1.01〜+4.64 ms（1600×900 に直して最大 約0.81 ms、seed 9 の alcove-mid。seed 8 は最大 約0.49 ms）、うち崩しは +0.19〜+1.78 ms（直して最大 約0.31 ms。混ぜる帯を4割に絞り片方だけ読む所を作る前は 約0.44 ms）。1600×900 の直接の値は −0.19〜+1.37 ms で揺れの範囲。段1の凹凸と T3・T4 を足すと seed 9 の alcove-mid で 約1.1 ms になり、予算 1.0 ms をこの1視点だけ超える見込み（予算の扱いは本人）。写しで EditMode 725/725、PlayMode 通過。
+画像は `D:\AI-Runs\VastCore\t5-adopt\`（git の外。`page/index.html` が前後の対、`head-s*` が前、`after2-s*` が後、`after-s*` は崩しを入れる前、`timing/` と `timing-v1/` が描画時間、`review/tb-*` は上から前・崩しなし・崩し入り）。再現は `.\scripts
+egion-map.ps1 -Mode view3d -Seed 9 -SurfaceCurrent <名前> -ViewsFrom <views.json> -SunAltitudes 60,38,20,10 -AlsoOff -OutDir <出力>`（seed 8 は `-LookCenter 82.93144,62.38425`）、時間は `-SurfaceCompare -TileBreakCompare -LookSky ours`。
+
 ## 5. 未確認
 
 - 地層の柱へ置き換えた時に、今の縞の見え方（5.1節 N1）が保てるか。
@@ -148,7 +145,7 @@ HEAD→T4 で変わった画素（far/mid/near/alcove-mid/alcove-near）は seed
 - 距離の段の境が、移動中にちらつかないか（Player 未計測）。
 - Weather Maker の霞が、このシェーダーの鏡面にどう掛かるか（組み込みは写し `D:\VastCore-sky-trial` で進行中）。
 - 段1の凹凸と段2の素材の、seed 8 などの別地点・golden と dust の光・Player での見え方と GPU 時間（計測は Editor のバッチ描画）。
-- 段2の、泥岩・地被・転石の役（素材を置いて試していない）、PNG と JPG 以外の素材、2K 以上の素材の縮め方の見え方、実寸の既定 2 m が所有素材の実寸と合っているか。
+- 段2の、転石の役（素材を置いていない）、PNG と JPG 以外の素材、2K 以上の素材の縮め方の見え方。T5 の素材の Player・golden と dust の光での見え方。
 
 ## 6. 土砂と複合材質（2026-11-26 追加）
 
@@ -194,6 +191,6 @@ Codex への依頼は、この端末の実行経路が読み取り専用で書�
 | T2 | 複合材質の基盤（高さによる混合。土砂の地図の画像の結び付けは T1 の取り込み後に T3 で行う） | Claude（セッション） | 素材を置いた同じ場面の前後で、礫と砂の境が高さで混ざる。素材が無い時は今の絵と同じ。予算（3.3節）内 | 実装済み（2026-11-27、4節の T2 の結果）。機構は動き、素材が無い時は段3と画素一致、GPU 時間の増分は揺れの範囲。見える変化は岩屑と砂の混ざる細い帯だけで、境を広く出すのは T3。見え方の採否は本人 |
 | T3 | 土砂の層をつなぐ（新しい役 Deposit・Wash、T1 の地図で層を選ぶ） | Claude（セッション） | T0 で選んだ方向の想定と、固定の遠中近とアルコーブで見比べる | 実装済み（2026-11-27、4節の T3 の結果）。seed 9・8 の5視点で、岩屑の斜面に溝に沿う流路の礫の筋、近景に割れた土と礫。GPU 時間は予算内。場面の作成が 18 s → 61〜94 s。写真素材を置いた見え方と、見え方の採否は本人（T5） |
 | T4 | 岩と地面のなじませと分級 | Claude（セッション。Codex の実行は読み取り専用で書けない間） | 転石の根元に土砂、岩の下の方の色が地面へつながる。大きい岩が裾の先に多い | 実装済み（2026-11-27、4節の T4 の結果）。1.6 m 以上の岩の Coarse の平均が 0.27 前後 → 0.54〜0.78、1.2 m 以上の岩の根元にたまり、岩の下の方が地面の色へつながる。GPU 時間は揺れの範囲。固定の近景とアルコーブ中景は岩の位置で絵が変わる。見え方の採否は本人（T5） |
-| T5 | 素材の採否（4節の段4と、新しい役2つの候補） | 本人 | 役ごとに素材を選ぶ | 回答待ち（第2版）。第1版（問い `01M8DPRZDZK8W0QAYSZ14GRXJV`、固定の5視点で880枚）は7役とも「違いが分からない」で保留。第2版を問い `01M8DW5S02TEH1V393DFYBR173`（添付 `01M8DW4NHKPGXGXMQQM4XEW3X3`）で送った（2026-11-27）。役ごとに候補 A・B の差が大きい視点（地面から 25 m・60 m 先）を探して撮り、写真の使い方「今」と「強い」（明暗2倍・写真の平均色を50%。採ると3.1節を変える）を並べた（seed 9・8、太陽4つ、760枚）。岩屑に Rocks Ground 06 の横 6 m 版を足した。素材と画像は `D:\AI-Runs\VastCore	5-candidates\`（git の外）、再現は `region-map.ps1 -Mode view3d -SurfaceCandidates <一覧> -CandidateViews search -Strengths 1:0,2:0.5`。Rock 06・Rocks Ground 06 は繰り返しの格子が見える。素材を置くと高さの混合で地被の範囲が広がる。取り込みと撮り直しは回答後 |
+| T5 | 素材の採否（4節の段4と、新しい役2つの候補） | 本人 | 役ごとに素材を選ぶ | 選択済み・取り込み済み（2026-11-27、4節の T5 の結果）。問い `01M8DW5S02TEH1V393DFYBR173` の回答で7役とも「強い」、転石は未選択。素材を置いて seed 9・8 の前後を撮り直し、岩屑の格子の繰り返しに崩しを入れた。のっぺりの残りは中景より先の崖と錐・扇状地の面（形）。GPU は seed 9 の1視点で予算を約 0.1 ms 超える見込み。素材の候補は `D:\AI-Runs\VastCore\t5-candidates\`（git の外） |
 
 範囲の外に置く物: 崖の形の細部（縞が面に描いた線に見える、柱が押し出した板に見える）は形の作業（2節の C、[5.4節](REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)）で、この割り振りに入れない。

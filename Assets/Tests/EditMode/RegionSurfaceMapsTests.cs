@@ -45,6 +45,45 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
+        public void MeanLinear_AveragesAfterConvertingEachPixelToLinear()
+        {
+            // 表示の色 0 と 1 の平均は Linear で 0.5（表示の色のまま平均すると 0.5 → Linear 0.214 になり暗くなる）
+            Color mean = RegionSurfaceMaps.MeanLinear(new[] { new Color(0f, 0f, 1f, 1f), new Color(1f, 0.5f, 1f, 1f) });
+            Assert.AreEqual(0.5f, mean.r, 1e-4f);
+            Assert.AreEqual(0.5f * Mathf.GammaToLinearSpace(0.5f), mean.g, 1e-4f);
+            Assert.AreEqual(1f, mean.b, 1e-4f);
+            Assert.AreEqual(1f, mean.a);
+        }
+
+        // 本人の選択（T5、2026-11-27、問い 01M8DW5S02TEH1V393DFYBR173）: 役ごとの素材の横の実寸（m）。転石は選んでいない
+        private static readonly (RegionSurfaceRole role, float tile)[] Adopted =
+        {
+            (RegionSurfaceRole.Cliff, 1.39f), (RegionSurfaceRole.Mudstone, 2f), (RegionSurfaceRole.Talus, 6f), (RegionSurfaceRole.Sand, 2f),
+            (RegionSurfaceRole.Crust, 2f), (RegionSurfaceRole.Deposit, 4f), (RegionSurfaceRole.Wash, 2f),
+        };
+
+        [Test]
+        public void AdoptedSurfaces_AreImportedWithTheChosenTileAndStrongPhotoUse()
+        {
+            Assert.AreEqual(2f, RegionSurfaceMaterials.DefaultContrast);
+            Assert.AreEqual(0.5f, RegionSurfaceMaterials.DefaultPhotoColor);
+            Assert.IsTrue(RegionSurfaceMaterials.TileBreak, "繰り返しの崩しは既定で入");
+            RegionSurfaceSettings.Entry[] settings = RegionSurfaceSettings.Load();
+            foreach ((RegionSurfaceRole role, float tile) in Adopted)
+            {
+                string folder = RegionSurfaceMaps.Root + "/" + RegionSurfaceMaps.Folders[(int)role] + "/";
+                foreach (string name in new[] { RegionSurfaceMaps.DetailName, RegionSurfaceMaps.NormalName, RegionSurfaceMaps.HraName })
+                    Assert.IsNotNull(Resources.Load<Texture2D>(folder + name), role + " の " + name);
+                RegionSurfaceSettings.Entry entry = settings[(int)role];
+                Assert.AreEqual(tile, entry.TileMetres, 1e-4f, role + " の横の実寸");
+                // 取り込み時に写真の平均の色が記録されている（色を混ぜる役）
+                Assert.AreEqual(1f, entry.Tint.a, role + " の平均の色");
+                Assert.Greater(entry.Tint.r + entry.Tint.g + entry.Tint.b, 0.03f, role + " の平均の色");
+            }
+            Assert.IsNull(Resources.Load<Texture2D>(RegionSurfaceMaps.Root + "/LooseRock/" + RegionSurfaceMaps.DetailName));
+        }
+
+        [Test]
         public void SedimentLayers_PackDepositWashScreeAndCoarse()
         {
             var data = new RegionData(new RegionSpec { Resolution = 2, SizeKm = 0.002f });

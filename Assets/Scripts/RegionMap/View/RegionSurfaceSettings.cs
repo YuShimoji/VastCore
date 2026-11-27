@@ -22,6 +22,11 @@ namespace Vastcore.RegionMap
             public float Strength;
             /// <summary>粗さの画像が無い時の粗さ。</summary>
             public float Roughness;
+            /// <summary>
+            /// 写真の平均の色（Linear）。取り込み時の処理（RegionSurfaceImport）が色の画像から書く。a が 0 の役は色を混ぜない
+            /// （RegionSurfaceMaterials.PhotoColor、設計 3.1 節）。
+            /// </summary>
+            public Color Tint;
         }
 
         /// <summary>役ごとの値（RegionSurfaceRole の並び）。</summary>

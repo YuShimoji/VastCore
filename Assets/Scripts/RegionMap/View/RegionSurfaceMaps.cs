@@ -163,6 +163,23 @@ namespace Vastcore.RegionMap
         }
 
         /// <summary>
+        /// 色の画像（表示の色 sRGB の値のまま）の平均の色を Linear で出す（画素ごとに Linear へ直してから平均する。a は 1）。
+        /// シェーダーが写真の平均の色を手続きの色へ混ぜる時に使う（RegionSurfaceMaterials.PhotoColor）。
+        /// </summary>
+        public static Color MeanLinear(Color[] color)
+        {
+            double r = 0, g = 0, b = 0;
+            foreach (Color c in color)
+            {
+                r += Mathf.GammaToLinearSpace(c.r);
+                g += Mathf.GammaToLinearSpace(c.g);
+                b += Mathf.GammaToLinearSpace(c.b);
+            }
+            int n = Math.Max(1, color.Length);
+            return new Color((float)(r / n), (float)(g / n), (float)(b / n), 1f);
+        }
+
+        /// <summary>
         /// 色の画像から高さを推定する（m、平均 0）。明るい所を高いとみなし、実寸 blurMetres のぼかしとの差で写真の大きな明暗を除き、
         /// 標準偏差が heightMetres / 4 になるよう揃える。影と凹みを取り違えるので、高さか法線の画像がある素材はそちらを使う。
         /// </summary>

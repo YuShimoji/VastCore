@@ -341,6 +341,12 @@ namespace Vastcore.RegionMap.Editor
                         CaptureToggleComparison(camera, look, folder, "relief", "凹凸", RegionSurfaceRelief.Baked, RegionSurfaceRelief.SetActive);
                     if (RegionMapMenu.Argument("-surfaceCompare", "false") == "true")
                         CaptureToggleComparison(camera, look, folder, "surface", "写真素材", RegionSurfaceMaterials.Count > 0, RegionSurfaceMaterials.SetActive);
+                    if (RegionMapMenu.Argument("-tileBreakCompare", "false") == "true")
+                        CaptureToggleComparison(camera, look, folder, "tilebreak", "繰り返しの崩し", RegionSurfaceMaterials.Count > 0, on =>
+                        {
+                            RegionSurfaceMaterials.TileBreak = on;
+                            RegionSurfaceMaterials.SetActive(true);
+                        });
                     if (RegionMapMenu.Argument("-sedimentCompare", "false") == "true")
                         CaptureToggleComparison(camera, look, folder, "sediment", "土砂の層", RegionSedimentLayers.Bound > 0, RegionSedimentLayers.SetActive);
                     if (RegionMapMenu.Argument("-rockGroundCompare", "false") == "true")
@@ -558,7 +564,8 @@ namespace Vastcore.RegionMap.Editor
         /// <summary>
         /// 同じ場面・視点のまま、ある描き方を切った絵を &lt;出力&gt;/&lt;key&gt;-off へ撮り、
         /// 描画 1 回の時間（GPU の終わりを待つまで）を、切と入を交互に繰り返して測る（&lt;key&gt;-timing.txt）。
-        /// -reliefCompare true は表面の凹凸（RegionSurfaceRelief）、-surfaceCompare true は表面の写真素材（RegionSurfaceMaterials）。
+        /// -reliefCompare true は表面の凹凸（RegionSurfaceRelief）、-surfaceCompare true は表面の写真素材（RegionSurfaceMaterials）、
+        /// -tileBreakCompare true は写真素材の繰り返しの崩し（RegionSurfaceMaterials.TileBreak）。
         /// </summary>
         private static void CaptureToggleComparison(Camera camera, RegionTerrainView.LookResult look, string output,
             string key, string label, bool available, Action<bool> setActive)

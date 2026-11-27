@@ -1312,3 +1312,21 @@ seed 9 の北西側の雲を追った。30km四方の雲濃度と地上投影の
 - 未取得の資料は、アルコーブの幅・高さ・奥行き、崖錐の傾きと岩の大きさ、フィン・尖塔の寸法、細い峡谷の実測（Narrows 以外）、崖を越える道筋の体系的な説明、この地域の霞と陰の実測値、Utah Geological Survey の記事。現地写真の撮影者と地層名は [NPS の写真原典](https://www.nps.gov/colm/learn/nature/rock-layers.htm)、転載条件は [NPS の Ownership](https://www.nps.gov/aboutus/disclaimer.htm) による。
 - 写真: Wikimedia Commons。ページが開けることを確かめ、遠景・中景・近景の1枚目は開発担当が実際に見た。
 - 構成の原則: James Gurney のブログ gurneyjourney。制作現場の資料は [履歴](../archive/REGION_MAP_EXPLORATION_HISTORY.md) の「2026-11-25 3D化の見え方の訂正」。
+
+## 2026-11-27 REGION_SURFACE_MATERIALS_SPEC 4節から移した段1〜段3の結果
+
+[表面材質の設計](../02_design/REGION_SURFACE_MATERIALS_SPEC.md) 4節から原文のまま移した（T5 の結果を足すための文書の上限）。リンクは元の文書の位置からの相対パス。
+
+**段1の結果（2026-11-26、Unity 6000.3.6f1、seed 9、clear、写し `D:\vcv\VastCore`）。** [RegionSurfaceRelief.cs](../../Assets/Scripts/RegionMap/View/RegionSurfaceRelief.cs) が場面を作る時に [RegionReliefBake.shader](../../Assets/Resources/RegionMap3D/RegionReliefBake.shader) で高さ→傾きを焼き、[RegionSandstone.hlsl](../../Assets/Resources/RegionMap3D/RegionSandstone.hlsl) の `SandstoneReliefNormal` が光を受ける向きを傾ける（影の計算と岩肌の判定は形の法線のまま）。
+
+同じ場面で切／入を切り替えて撮った。アルコーブ中景で層の境に溝の陰、手前の段の斜めの縞に稜の明暗が出た（画素の 20.5% が変化）。近景の崖と転石は 10〜11%、遠景は 1.3%。描画1回の時間（GPU の終わりまで、MSAA4、各48回の中央値）の差は 1600×900 で −0.27〜+0.26 ms（揺れの範囲）、GPU が律速の 3840×2160 で +0.10〜+0.91 ms（近景が最大。画素数で 1600×900 に直すと 約0.16 ms）。予算 1.0 ms の内。
+
+値のノイズの等高線で作った割れ目は、閉じた丸い線の網に見えたので外した。比較画像は撮影端末の `artifacts/region-map/relief-20261126/v3/`。再現は `.\scripts\region-map.ps1 -Mode view3d -Seed 9 -ReliefCompare -OutDir <出力>`（`<出力>/relief-off/` と `relief-timing.txt`）。見た目の採否は本人。層の境の溝は細く均一で暗く、手前の稜はやや規則的（強さは `RegionSurfaceRelief.StrataStrength`）。
+
+**段2の結果（2026-11-26、同じ条件、写し）。** 写しの `Surfaces/Sand` に Ground054 の一式、`Talus` に Ground081 の一式（1024×512 は縦に2回並べた）、`Cliff` に Ground007 の色の画像だけを置くと、取り込み時に3役の3枚ができ（崖は色から法線と高さを作成、砂と岩屑は GL の法線と高さ・粗さ・AO）、場面で配列に束ねられた。同じ場面の切／入で画素の 25〜56% が変化し、岩屑の斜面に写真の礫の欠片が光を受けて陰影を持ち、色相は手続きの地層の色のまま。崖の Ground007 は機構の試験用の地面の礫で、岩壁が紙やすりのような粒に見える（崖の素材は段4で本人が選ぶ）。
+
+元の画像だけを消すと、取り込み時の処理が3枚も消し、絵は素材を置く前と同じ（5視点で違う画素は1つ）。素材が無い時は段1の絵と同じ（5視点で 0.001% 未満）。描画1回の時間の差は 3840×2160 で +0.45〜+1.77 ms（画素数で 1600×900 に直すと最大 約0.31 ms、段1と合わせて 約0.47 ms）。距離の段・上位2つの混合の前で、遠景でも読んでいる。比較画像は撮影端末の `artifacts/region-map/surface-20261126/`（`a-none`・`b-placed`（`surface-off/` と `surface-timing.txt`）・`c-removed`）。再現は素材を置いて `.\scripts\region-map.ps1 -Mode view3d -Seed 9 -SurfaceCompare -OutDir <出力>`。
+
+**段3の結果（2026-11-26、同じ条件と素材、写し）。** [RegionSandstone.hlsl](../../Assets/Resources/RegionMap3D/RegionSandstone.hlsl)・[RegionSurfaceMaterials.hlsl](../../Assets/Resources/RegionMap3D/RegionSurfaceMaterials.hlsl)・[RegionTerrain.shader](../../Assets/Resources/RegionMap3D/RegionTerrain.shader) に入れた。カメラから 40〜60 m で高さ粗さAO を読まなくなり（粗さは役の既定、AO は 1）、300〜400 m で写真を読まなくなる（その先は素材が無い時と同じ絵）。境は距離の smoothstep。値は `RegionSurfaceMaterials.NearStart` など。崖・泥岩・岩屑・砂・地被の重みのうち、素材のある役の大きい2つだけを読む。鏡面は URP の Lit と同じ近似の GGX（反射率 0.04 × 強さ 18%）を、素材のある所だけに足す。中の段で周期を大きくする案と板ごとの UV は入れていない。
+
+素材が無い時の絵は段2と同じ（5視点で 0.000%）。look-far の画面の上半分（遠い所）は切／入の変化が 0.3% 以下（段2は 6.3%）、look-mid の中ほどの帯は 30.6% → 0.9%。近景は日の当たる岩屑の粒に弱い照りが付き、平均の明るさが 4〜7 階調上がった（濡れた光り方ではない）。描画1回の時間の差は 3840×2160 で +0.38〜+1.90 ms（段2は +0.45〜+1.77 ms）。遠い所を含む視点で減り（look-mid 1.37 → 0.38 ms、alcove-mid 1.22 → 0.81 ms）、全部が近い look-near は同じ。1600×900 に直すと最大 約0.33 ms で予算 1.0 ms の内。計測中に別の Unity が4つ動き、1600×900 の差は −0.73〜+0.69 ms と揺れの範囲。比較画像は `surface-20261126/d-stage3/`（`pair3-*.png` は切・段2・段3・段2と段3の差）。

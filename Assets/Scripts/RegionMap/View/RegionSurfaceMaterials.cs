@@ -25,6 +25,9 @@ namespace Vastcore.RegionMap
         /// <summary>鏡面の強さ（反射率 0.04 に掛ける）。乾いた砂岩なので弱める（設計 3.3 節の初期値 18%）。</summary>
         public static float Specular = 0.18f;
 
+        /// <summary>横 1 枚の繰り返しを崩すか（ずらした 2 か所を大きなむらで混ぜる。設計 3.3 節。前後比較用に切れる）。</summary>
+        public static bool TileBreak = true;
+
         /// <summary>高さによる層の混合を使うか（前後比較用）。境の深さ・幅は RegionSurfaceSettings。</summary>
         public static bool HeightBlend = true;
 
@@ -40,14 +43,19 @@ namespace Vastcore.RegionMap
         /// <summary>同上。役ごとの横の実寸（m）。0 以下を返した役は設定の値のまま。</summary>
         public static System.Func<int, float> TileOverride;
 
-        /// <summary>同上。役ごとの写真の平均の色（Linear）。PhotoColor が 0 より大きい時だけ使う。</summary>
+        /// <summary>同上。役ごとの写真の平均の色（Linear）。null なら設定（RegionSurfaceSettings の Tint）の色。PhotoColor が 0 より大きい時だけ使う。</summary>
         public static System.Func<int, Color> TintOverride;
 
-        /// <summary>候補の撮り比べ用: 写真の明暗の比を何倍に広げるか（既定 1 で画像のまま）。</summary>
-        public static float Contrast = 1f;
+        /// <summary>
+        /// 写真の使い方の既定（本人の選択「強い」、T5 2026-11-27）: 明暗の比を 2 倍に広げ、写真の平均の色を 50% 混ぜる（設計 3.1 節）。
+        /// </summary>
+        public const float DefaultContrast = 2f, DefaultPhotoColor = 0.5f;
 
-        /// <summary>候補の撮り比べ用: 写真の平均の色を手続きの色へ混ぜる割合（既定 0 で混ぜない）。</summary>
-        public static float PhotoColor;
+        /// <summary>写真の明暗の比を何倍に広げるか（1 で画像のまま）。</summary>
+        public static float Contrast = DefaultContrast;
+
+        /// <summary>写真の平均の色を手続きの色へ混ぜる割合（0 で混ぜない）。</summary>
+        public static float PhotoColor = DefaultPhotoColor;
 
         private static readonly Vector4[] tints = new Vector4[RegionSurfaceMaps.Folders.Length];
 
@@ -69,10 +77,12 @@ namespace Vastcore.RegionMap
             Release();
             var notes = new List<string>();
             var slices = new List<(int role, Texture2D detail, Texture2D normal, Texture2D hra)>();
+            RegionSurfaceSettings.Entry[] settings = RegionSurfaceSettings.Load();
             for (int i = 0; i < roles.Length; i++)
             {
                 roles[i] = new Vector4(-1f, 0f, 0f, 0f);
-                tints[i] = TintOverride != null ? (Vector4)TintOverride(i) : new Vector4(0.5f, 0.5f, 0.5f, 1f);
+                // a はシェーダーで混ぜる割合に掛ける（色が記録されていない役は混ぜない）
+                tints[i] = TintOverride != null ? (Vector4)TintOverride(i) : (Vector4)settings[i].Tint;
             }
             bool canCopy = (SystemInfo.copyTextureSupport & CopyTextureSupport.DifferentTypes) != 0
                            && SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null;
@@ -110,7 +120,6 @@ namespace Vastcore.RegionMap
                 detailArray = Gather(slices, s => s.detail, "Region surfaces: detail");
                 normalArray = Gather(slices, s => s.normal, "Region surfaces: normal");
                 hraArray = Gather(slices, s => s.hra, "Region surfaces: height roughness occlusion");
-                RegionSurfaceSettings.Entry[] settings = RegionSurfaceSettings.Load();
                 for (int slice = 0; slice < slices.Count; slice++)
                 {
                     int role = slices[slice].role;
@@ -139,7 +148,7 @@ namespace Vastcore.RegionMap
         /// <summary>配列を残したまま、素材を使うかを切り替える（同じ場面の前後比較と、重さの計測に使う）。</summary>
         public static void SetActive(bool active)
         {
-            Shader.SetGlobalVector("_RegionSurfaceParams", new Vector4(active && Count > 0 ? 1f : 0f, Specular, 0f, 0f));
+            Shader.SetGlobalVector("_RegionSurfaceParams", new Vector4(active && Count > 0 ? 1f : 0f, Specular, TileBreak ? 1f : 0f, 0f));
             Shader.SetGlobalVector("_RegionSurfaceTiers", new Vector4(NearStart, NearEnd, FarStart, FarEnd));
             float depth = BlendDepthOverride >= 0f ? BlendDepthOverride : blendDepth;
             bool blend = active && Count > 0 && HeightBlend && depth > 0f;

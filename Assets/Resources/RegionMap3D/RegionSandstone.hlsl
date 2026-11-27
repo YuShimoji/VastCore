@@ -166,10 +166,10 @@ half3 SandRole(int role, float weight, SandMaterialContext c, inout SandstoneExt
 // 素材があれば 1（遠くでは 0 へ）。手続きの細かな粒を写真に置き換える度合い
 float SandHas(int role, float farFade) { return RegionSurfaceHas(role) ? farFade : 0.0; }
 
-// 素材のある役の所だけ、写真の平均の色を混ぜる（_RegionSurfaceBoost.y。既定 0 で今の手続きの色のまま）
+// 素材のある役の所だけ、写真の平均の色を混ぜる（_RegionSurfaceBoost.y、既定 0.5。色が記録されていない役は a が 0 で混ぜない）
 float3 SandTint(float3 color, int role, float farFade)
 {
-    float t = _RegionSurfaceBoost.y * SandHas(role, farFade);
+    float t = _RegionSurfaceBoost.y * _RegionSurfaceTints[role].a * SandHas(role, farFade);
     return lerp(color, _RegionSurfaceTints[role].rgb, t);
 }
 

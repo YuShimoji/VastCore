@@ -10,7 +10,7 @@ namespace Vastcore.RegionMap.Editor
     /// 表面の写真素材の取り込み。<c>Assets/Resources/RegionMap3D/Surfaces/&lt;役&gt;/</c> に素材の画像（色・法線・高さ・粗さ・AO）を置くと、
     /// 同じフォルダへ配列に入れる 3 枚（surface-detail・surface-normal・surface-hra、1024²）を作る。
     /// 法線は、法線の画像 → 高さの画像 → 色の画像の順にある物から作る。元の画像は材料なので、画像としては 32² で取り込む（実行ファイルを重くしない）。
-    /// 素材を外すと 3 枚も消す。設計は docs/02_design/REGION_SURFACE_MATERIALS_SPEC.md 3.1・3.2 節。
+    /// 写真の平均の色（Linear）は設定 SurfaceSettings.asset の役の Tint へ書く。素材を外すと 3 枚も消す。設計は docs/02_design/REGION_SURFACE_MATERIALS_SPEC.md 3.1・3.2 節。
     /// </summary>
     public sealed class RegionSurfaceImport : AssetPostprocessor
     {
@@ -114,6 +114,7 @@ namespace Vastcore.RegionMap.Editor
             float metresPerPixel = entry.TileMetres / size;
             Color[] color = Load(sources[RegionSurfaceMaps.MapKind.Color], size);
             Color[] detail = RegionSurfaceMaps.Detail(color);
+            if (StoreTints) StoreTint(role, RegionSurfaceMaps.MeanLinear(color));
 
             float[] height;
             string heightFrom;
@@ -163,6 +164,32 @@ namespace Vastcore.RegionMap.Editor
             Debug.Log("[RegionMap] 表面の素材 " + roleName + ": 色 " + Path.GetFileName(sources[RegionSurfaceMaps.MapKind.Color])
                       + "、法線は" + normalFrom + "、高さは" + heightFrom + (roughness != null ? "、粗さあり" : "") + (occlusion != null ? "、AO あり" : "")
                       + "、横 " + entry.TileMetres.ToString("0.##") + " m（書き換え " + written + " 枚）");
+        }
+
+        /// <summary>false の間は、写真の平均の色を設定へ書かない（候補の撮り比べが素材を一時的に置く間）。</summary>
+        public static bool StoreTints = true;
+
+        // 写真の平均の色を設定（SurfaceSettings.asset）の役へ書く。変わった時だけ保存する（設定の取り込みで作り直しが繰り返さない）
+        private static void StoreTint(int role, Color tint)
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<RegionSurfaceSettings>(SettingsPath);
+            if (settings == null)
+            {
+                Debug.LogWarning("[RegionMap] 表面の素材 " + RegionSurfaceMaps.Folders[role] + ": " + SettingsPath
+                                 + " が無いので写真の平均の色を記録しない（この役は色を混ぜない）");
+                return;
+            }
+            if (settings.Roles == null || settings.Roles.Length < RegionSurfaceMaps.Folders.Length)
+            {
+                RegionSurfaceSettings.Entry[] roles = RegionSurfaceSettings.Defaults();
+                if (settings.Roles != null) Array.Copy(settings.Roles, roles, settings.Roles.Length);
+                settings.Roles = roles;
+            }
+            Color old = settings.Roles[role].Tint;
+            if (old.a > 0.5f && Mathf.Abs(old.r - tint.r) < 1e-4f && Mathf.Abs(old.g - tint.g) < 1e-4f && Mathf.Abs(old.b - tint.b) < 1e-4f) return;
+            settings.Roles[role].Tint = tint;
+            EditorUtility.SetDirty(settings);
+            AssetDatabase.SaveAssetIfDirty(settings);
         }
 
         private static RegionSurfaceSettings.Entry[] LoadSettings()

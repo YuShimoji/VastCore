@@ -11,9 +11,9 @@ SAMPLER(sampler_RegionSurfaceDetail);
 TEXTURE2D_ARRAY(_RegionSurfaceNormal);   // 法線（赤 x・緑 y、OpenGL 向き）
 TEXTURE2D_ARRAY(_RegionSurfaceHRA);      // 赤 高さ（0.5 が平均の面）、緑 粗さ、青 AO
 float4 _RegionSurfaceRoles[REGION_SURFACE_ROLES];  // x 配列の番号（-1 で無し）、y 1 / 横 1 枚の m、z 法線の強さ、w 粗さの既定
-float4 _RegionSurfaceParams;                        // x 1 で有効、y 鏡面の強さ（0.04 の反射率に掛ける）
-float4 _RegionSurfaceBoost;  // 候補の撮り比べ用: x 写真の明暗の強さ（比を x 倍に広げる。0 以下は 1）、y 写真の平均の色を混ぜる割合（既定 0）
-float4 _RegionSurfaceTints[REGION_SURFACE_ROLES];  // 役ごとの写真の平均の色（Linear）。y が 0 の時は使わない
+float4 _RegionSurfaceParams;                        // x 1 で有効、y 鏡面の強さ（0.04 の反射率に掛ける）、z 1 で繰り返しを崩す
+float4 _RegionSurfaceBoost;  // x 写真の明暗の強さ（比を x 倍に広げる。0 以下は 1、既定 2）、y 写真の平均の色を混ぜる割合（既定 0.5）
+float4 _RegionSurfaceTints[REGION_SURFACE_ROLES];  // 役ごとの写真の平均の色（Linear）。a は混ぜる割合に掛ける（記録の無い役は 0）。y が 0 の時は使わない
 float4 _RegionSurfaceTiers;  // 距離の段（m）: x〜y で高さ粗さAO を読まなくなる（近）、z〜w で写真を読まなくなる（中、その先は遠）
 
 struct RegionSurfaceSample
@@ -41,6 +41,43 @@ void RegionSurfaceFrame(int axis, out int u, out int v)
     v = axis == 1 ? 2 : 1;
 }
 
+bool RegionSurfaceTileBreak() { return _RegionSurfaceParams.z > 0.5; }
+
+float RegionSurfaceHash(float2 c)
+{
+    float3 p3 = frac(c.xyx * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return frac((p3.x + p3.y) * p3.z);
+}
+
+// 横 1 枚の繰り返しを崩す（設計 3.3 節）。横 4 枚ほどの大きさで変わるむらで、画像を読む位置を 8 通りにずらし、
+// 隣り合う 2 通りを混ぜる（ずらすだけなので法線の向きはそのまま。微分は元の uv のものを使うので mip は跳ねない）。
+// 混ぜる帯は段の 4 割だけにし、残りは片方だけを読む（重さの予算、2026-11-27 の計測）。
+// 高さによる層の混合（RegionSurfaceHeight）も同じずらしで読む
+void RegionSurfaceTileOffsets(float2 uv, float slice, out float2 offA, out float2 offB, out float t)
+{
+    float2 x = uv * 0.23 + slice * 17.0;
+    float2 i = floor(x), f = frac(x);
+    f = f * f * (3.0 - 2.0 * f);
+    float n = lerp(lerp(RegionSurfaceHash(i), RegionSurfaceHash(i + float2(1, 0)), f.x),
+                   lerp(RegionSurfaceHash(i + float2(0, 1)), RegionSurfaceHash(i + float2(1, 1)), f.x), f.y);
+    float k = n * 8.0;
+    float ia = floor(k);
+    offA = sin(float2(3.0, 7.0) * ia);
+    offB = sin(float2(3.0, 7.0) * (ia + 1.0));
+    t = smoothstep(0.3, 0.7, k - ia);
+}
+
+void RegionSurfaceReadAt(float slice, float2 uv, float2 dx, float2 dy, float nearFade, out half3 detail, out float2 nxy, out half3 hra)
+{
+    detail = SAMPLE_TEXTURE2D_ARRAY_GRAD(_RegionSurfaceDetail, sampler_RegionSurfaceDetail, uv, slice, dx, dy).rgb * 2.0;
+    nxy = SAMPLE_TEXTURE2D_ARRAY_GRAD(_RegionSurfaceNormal, sampler_RegionSurfaceDetail, uv, slice, dx, dy).rg * 2.0 - 1.0;
+    hra = half3(0.5, 0.0, 1.0);
+    [branch]
+    if (nearFade > 0.0)
+        hra = SAMPLE_TEXTURE2D_ARRAY_GRAD(_RegionSurfaceHRA, sampler_RegionSurfaceDetail, uv, slice, dx, dy).rgb;
+}
+
 void RegionSurfaceRead1(float slice, float scale, int axis, float3 p, float3 pdx, float3 pdy, float strength, float nearFade,
     out half3 detail, out float3 gradient, out half3 hra)
 {
@@ -49,15 +86,30 @@ void RegionSurfaceRead1(float slice, float scale, int axis, float3 p, float3 pdx
     float2 uv = float2(p[u], p[v]) * scale;
     float2 dx = float2(pdx[u], pdx[v]) * scale;
     float2 dy = float2(pdy[u], pdy[v]) * scale;
-    detail = SAMPLE_TEXTURE2D_ARRAY_GRAD(_RegionSurfaceDetail, sampler_RegionSurfaceDetail, uv, slice, dx, dy).rgb * 2.0;
-    float2 nxy = SAMPLE_TEXTURE2D_ARRAY_GRAD(_RegionSurfaceNormal, sampler_RegionSurfaceDetail, uv, slice, dx, dy).rg * 2.0 - 1.0;
+    float2 nxy;
+    [branch]
+    if (RegionSurfaceTileBreak())
+    {
+        float2 offA, offB;
+        float t;
+        RegionSurfaceTileOffsets(uv, slice, offA, offB, t);
+        RegionSurfaceReadAt(slice, uv + (t < 1.0 ? offA : offB), dx, dy, nearFade, detail, nxy, hra);
+        [branch]
+        if (t > 0.0 && t < 1.0)
+        {
+            half3 dB, hB;
+            float2 nB;
+            RegionSurfaceReadAt(slice, uv + offB, dx, dy, nearFade, dB, nB, hB);
+            detail = lerp(detail, dB, t);
+            nxy = lerp(nxy, nB, t);
+            hra = lerp(hra, hB, t);
+        }
+    }
+    else
+        RegionSurfaceReadAt(slice, uv, dx, dy, nearFade, detail, nxy, hra);
     float nz = sqrt(saturate(1.0 - dot(nxy, nxy)));
     float2 slope = -nxy / max(nz, 0.2) * strength;
     gradient = slope.x * RegionSurfaceAxis(u) + slope.y * RegionSurfaceAxis(v);
-    hra = half3(0.5, 0.0, 1.0);
-    [branch]
-    if (nearFade > 0.0)
-        hra = SAMPLE_TEXTURE2D_ARRAY_GRAD(_RegionSurfaceHRA, sampler_RegionSurfaceDetail, uv, slice, dx, dy).rgb;
 }
 
 // 1 つの役の素材を biplanar（向きの重みの大きい 2 面）で読む。uv の微分は分岐の外で出したものを受け取る。
@@ -110,8 +162,20 @@ float RegionSurfaceHeight(int role, float3 p, float3 pdx, float3 pdy, float3 n)
         int u, v;
         RegionSurfaceFrame(axes[i], u, v);
         float2 uv = float2(p[u], p[v]) * r.y;
-        h[i] = SAMPLE_TEXTURE2D_ARRAY_GRAD(_RegionSurfaceHRA, sampler_RegionSurfaceDetail, uv, r.x,
-            float2(pdx[u], pdx[v]) * r.y, float2(pdy[u], pdy[v]) * r.y).r;
+        float2 dx = float2(pdx[u], pdx[v]) * r.y, dy = float2(pdy[u], pdy[v]) * r.y;
+        [branch]
+        if (RegionSurfaceTileBreak())
+        {
+            float2 offA, offB;
+            float t;
+            RegionSurfaceTileOffsets(uv, r.x, offA, offB, t);
+            h[i] = SAMPLE_TEXTURE2D_ARRAY_GRAD(_RegionSurfaceHRA, sampler_RegionSurfaceDetail, uv + (t < 1.0 ? offA : offB), r.x, dx, dy).r;
+            [branch]
+            if (t > 0.0 && t < 1.0)
+                h[i] = lerp(h[i], SAMPLE_TEXTURE2D_ARRAY_GRAD(_RegionSurfaceHRA, sampler_RegionSurfaceDetail, uv + offB, r.x, dx, dy).r, t);
+        }
+        else
+            h[i] = SAMPLE_TEXTURE2D_ARRAY_GRAD(_RegionSurfaceHRA, sampler_RegionSurfaceDetail, uv, r.x, dx, dy).r;
     }
     float2 w = saturate((float2(a[ma], a[me]) - 0.5773) / (1.0 - 0.5773));
     w = (w.x + w.y) > 1e-4 ? w / (w.x + w.y) : float2(1.0, 0.0);

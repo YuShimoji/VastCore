@@ -29,6 +29,8 @@
   [switch]$ReliefCompare,
   # view3d: 表面の写真素材を切った絵（<OutDir>/surface-off）と、切・入の描画時間（surface-timing.txt）も撮る
   [switch]$SurfaceCompare,
+  # view3d: 写真素材の繰り返しの崩しを切った絵（<OutDir>/tilebreak-off）と描画時間（tilebreak-timing.txt）も撮る
+  [switch]$TileBreakCompare,
   # view3d: 高さによる層の混合を切った絵（<OutDir>/blend-off）と描画時間（blend-timing.txt）も撮る。-BlendDepth は境の深さ（m）
   [switch]$BlendCompare,
   [string]$BlendDepth = '',
@@ -50,6 +52,12 @@
   [string]$SunAltitudes = '',
   [string]$CandidateViews = '',
   [string]$Strengths = '',
+  # view3d: 置かれた素材（Surfaces）のまま、-SunAltitudes の太陽の高さごとに固定の視点を <OutDir>/sun<高さ>/fixed/<名前>/ へ、
+  #         -ViewsFrom の views.json（候補の撮影が選んだ近い視点）を <OutDir>/sun<高さ>/<役>/v<番号>/<名前>.png へ撮る（素材を置く前後の対）
+  [string]$SurfaceCurrent = '',
+  [string]$ViewsFrom = '',
+  # -SurfaceCurrent の時: 同じ場面で素材を切った絵も名前 off で撮る
+  [switch]$AlsoOff,
   [string]$LookSky = '',
   [string]$UnityPath = ''
 )
@@ -91,6 +99,7 @@ if ($Mode -eq 'setup') {
   $method = if ($Mode -eq 'view3d') { 'CaptureFromCommandLine' } else { 'CaptureCaveFromCommandLine' }
   $type = 'RegionTerrainViewMenu'
   if ($Mode -eq 'view3d' -and $SurfaceCandidates) { $type = 'RegionSurfaceCandidates' }
+  if ($Mode -eq 'view3d' -and $SurfaceCurrent) { $type = 'RegionSurfaceCandidates'; $method = 'CaptureCurrentFromCommandLine' }
   $unityArgs = @(
     '-batchmode', '-quit',
     '-projectPath', "`"$ProjectPath`"",
@@ -105,6 +114,7 @@ if ($Mode -eq 'setup') {
     if ($SunSweep) { $unityArgs += @('-sunSweep', $SunSweep) }
     if ($ReliefCompare) { $unityArgs += @('-reliefCompare', 'true') }
     if ($SurfaceCompare) { $unityArgs += @('-surfaceCompare', 'true') }
+    if ($TileBreakCompare) { $unityArgs += @('-tileBreakCompare', 'true') }
     if ($BlendCompare) { $unityArgs += @('-blendCompare', 'true') }
     if ($BlendDepth) { $unityArgs += @('-blendDepth', $BlendDepth) }
     if ($Sediment) { $unityArgs += @('-lookSediment', $Sediment) }
@@ -118,6 +128,9 @@ if ($Mode -eq 'setup') {
     if ($SunAltitudes) { $unityArgs += @('-sunAltitudes', $SunAltitudes) }
     if ($CandidateViews) { $unityArgs += @('-candidateViews', $CandidateViews) }
     if ($Strengths) { $unityArgs += @('-strengths', $Strengths) }
+    if ($SurfaceCurrent) { $unityArgs += @('-shotName', $SurfaceCurrent) }
+    if ($AlsoOff) { $unityArgs += @('-alsoOff', 'true') }
+    if ($ViewsFrom) { $unityArgs += @('-viewsFrom', "`"$((Resolve-Path $ViewsFrom).Path)`"") }
   }
 } elseif ($Mode -eq 'play') {
   $unityArgs = @(

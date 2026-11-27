@@ -1,0 +1,74 @@
+{
+  "sets": [
+    {
+      "files": ["rock_boulder_cracked*"],
+      "origin": "downloaded",
+      "source": "https://polyhaven.com/a/rock_boulder_cracked",
+      "license": "CC0-1.0",
+      "author": "Dario Barresi, Dimitrios Savva",
+      "retrieved": "2026-11-27",
+      "tileMetres": 1.39,
+      "notes": "崖の岩肌（Cliff）。T5 で本人が選んだ（問い 01M8DW5S02TEH1V393DFYBR173、C・強い）。1K の diff・nor_gl・disp・rough・ao"
+    },
+    {
+      "files": ["dark_rock_02*"],
+      "origin": "downloaded",
+      "source": "https://polyhaven.com/a/dark_rock_02",
+      "license": "CC0-1.0",
+      "author": "Amal Kumar",
+      "retrieved": "2026-11-27",
+      "tileMetres": 2,
+      "notes": "泥岩の帯（Mudstone）。T5 で本人が選んだ（A・強い）。1K の diff・nor_gl・disp・rough・ao"
+    },
+    {
+      "files": ["rocks_ground_06*"],
+      "origin": "downloaded",
+      "source": "https://polyhaven.com/a/rocks_ground_06",
+      "license": "CC0-1.0",
+      "author": "Rob Tuytel",
+      "retrieved": "2026-11-27",
+      "tileMetres": 6,
+      "notes": "岩屑（Talus）。T5 で本人が選んだ横 6 m 版（C・強い）。1K のまま横 6 m に貼るので画素密度は 171 px/m（TX017）"
+    },
+    {
+      "files": ["Ground054*"],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=Ground054",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "",
+      "tileMetres": 2,
+      "notes": "砂と土（Sand）。T5 で本人が選んだ（A・強い）。Assets/Resources/MapGenerator/Textures/Ground054_1K-JPG と同じファイル（DX の法線は置かない）"
+    },
+    {
+      "files": ["Ground038*"],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=Ground038",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "",
+      "tileMetres": 2,
+      "notes": "地被（Crust）。T5 で本人が選んだ（A・強い）。MapGenerator/Textures/Ground038_1K-JPG と同じファイル"
+    },
+    {
+      "files": ["dry_ground_01*"],
+      "origin": "downloaded",
+      "source": "https://polyhaven.com/a/dry_ground_01",
+      "license": "CC0-1.0",
+      "author": "Rob Tuytel",
+      "retrieved": "2026-11-27",
+      "tileMetres": 4,
+      "notes": "細かい土砂（Deposit）。T5 で本人が選んだ（C・強い）。1K の diff・nor_gl・disp・rough・ao"
+    },
+    {
+      "files": ["Ground007*"],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=Ground007",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "",
+      "tileMetres": 2,
+      "notes": "流路の礫（Wash）。T5 で本人が選んだ（A・強い）。MapGenerator/Textures/Ground007_1K-JPG と同じファイル"
+    }
+  ]
+}

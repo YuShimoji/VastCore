@@ -20,7 +20,8 @@ namespace Vastcore.RegionMap.Editor
     ///            6 つの向きの地面を見る視点を並べ（間を地形が遮る物は除く）、小さな画像で役の最初の 2 つの候補を描き比べ、違う画素の割合が大きい物を選ぶ。
     ///            「素材なし」と比べないのは、どれか 1 役に素材を置くだけで全体の描き方（鏡面・高さの混合）が変わり、役に関係なく点が付くため。
     ///            出力は &lt;出力&gt;/sun&lt;高さ&gt;/&lt;役&gt;/v&lt;番号&gt;/&lt;候補&gt;[@&lt;強さ&gt;].png と、選んだ視点の views.json。
-    /// -strengths "1:0,2:0.5" は写真の使い方（明暗の強さ:写真の色を混ぜる割合）の並び。最初の物を既定とし、他は名前に @強さ を付ける。
+    /// -strengths "1:0,2:0.5" は写真の使い方（明暗の強さ:写真の色を混ぜる割合）の並び。最初の物を既定とし、他は名前に @強さ を付ける
+    /// （既定の -strengths は 1:0。置かれた素材の既定の強さは RegionSurfaceMaterials.DefaultContrast・DefaultPhotoColor）。
     /// 指定: -surfaceCandidates 候補の一覧（JSON）-regionOut 出力先 -sunAltitudes 60,38,20,10 -regionSeed 9 [-lookCenter X,Y]。
     /// 置いたフォルダは終わると消す（リポジトリへ素材を残さない）。
     /// </summary>
@@ -143,13 +144,121 @@ namespace Vastcore.RegionMap.Editor
             EditorApplication.Exit(exitCode);
         }
 
+        /// <summary>
+        /// 置かれた素材（Resources の Surfaces、既定の強さ）のまま撮る（T5 の採否の後の撮り直し。素材の無い版で撮れば前の絵になる）。
+        /// 太陽の高さごとに場面を作り、固定の遠景・中景・近景とアルコーブを &lt;出力&gt;/sun&lt;高さ&gt;/fixed/&lt;名前&gt;/ へ、
+        /// -viewsFrom の views.json（候補の撮影が選んだ近い視点）の視点を &lt;出力&gt;/sun&lt;高さ&gt;/&lt;役&gt;/v&lt;番号&gt;/&lt;名前&gt;.png へ撮る。
+        /// 指定: -regionOut 出力先 -shotName 名前（既定 current）-viewsFrom views.json -sunAltitudes 60,38,20,10 -regionSeed 9 [-lookCenter X,Y]
+        /// [-alsoOff true（同じ場面で素材を切った絵も名前 off で撮る）]。
+        /// </summary>
+        public static void CaptureCurrentFromCommandLine()
+        {
+            int exitCode = 0;
+            try
+            {
+                string output = Path.GetFullPath(RegionMapMenu.Argument("-regionOut", "artifacts/region-map/surface-current"));
+                string name = RegionMapMenu.Argument("-shotName", "current");
+                bool alsoOff = RegionMapMenu.Argument("-alsoOff", "false") == "true";
+                string viewsPath = RegionMapMenu.Argument("-viewsFrom", "");
+                Dictionary<string, View[]> roleViews = viewsPath.Length > 0 ? ReadViews(File.ReadAllText(viewsPath)) : new Dictionary<string, View[]>();
+                ShaderUtil.allowAsyncCompilation = false;
+                RegionTerrainViewMenu.UseBuildQuality();
+                var regionSpec = new RegionSpec { Seed = int.Parse(RegionMapMenu.Argument("-regionSeed", "9")) };
+                var spec = new RegionLookSpec();
+                string center = RegionMapMenu.Argument("-lookCenter", "");
+                if (center.Length > 0)
+                {
+                    string[] xy = center.Split(',');
+                    spec.CenterMapX = float.Parse(xy[0], CultureInfo.InvariantCulture);
+                    spec.CenterMapY = float.Parse(xy[1], CultureInfo.InvariantCulture);
+                }
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                foreach (string value in RegionMapMenu.Argument("-sunAltitudes", "60,38,20,10").Split(','))
+                {
+                    float altitude = float.Parse(value, CultureInfo.InvariantCulture);
+                    RegionAtmosphere atmosphere = RegionAtmosphere.Create(RegionAtmosphere.Preset.ClearAfternoon);
+                    atmosphere.SunAltitudeDegrees = altitude;
+                    watch.Restart();
+                    Reset();
+                    RegionTerrainView.LookResult look = RegionTerrainViewMenu.CreateLookScene(regionSpec, spec, atmosphere, out Camera camera);
+                    RegionLookSky.UseOwnClouds(camera, look, RegionLookSky.MixedCloudTime(look.Scene), highOnly: RegionLookSky.HighOnly);
+                    RegionSurfaceMaterials.Bind();
+                    Debug.Log("[RegionMap] 置かれた素材で撮る（" + name + "）: 太陽 " + value + " 度の場面 " + watch.ElapsedMilliseconds + "ms、素材 "
+                              + RegionSurfaceMaterials.Summary);
+                    string sunFolder = Path.Combine(output, "sun" + altitude.ToString("00", CultureInfo.InvariantCulture));
+                    ShootCurrent(camera, look, sunFolder, name, roleViews);
+                    // -alsoOff true: 同じ場面で素材を切った絵（素材を置く前と同じ描き方）も「off」の名前で撮る
+                    if (alsoOff && RegionSurfaceMaterials.Count > 0)
+                    {
+                        RegionSurfaceMaterials.SetActive(false);
+                        ShootCurrent(camera, look, sunFolder, "off", roleViews);
+                        RegionSurfaceMaterials.SetActive(true);
+                    }
+                }
+                RegionVolumePatch.SunAltitudeDegrees = RegionVolumePatch.DefaultSunAltitudeDegrees;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError("[RegionMap] 置かれた素材での撮影に失敗: " + exception);
+                exitCode = 1;
+            }
+            finally
+            {
+                Reset();
+            }
+            EditorApplication.Exit(exitCode);
+        }
+
+        // 固定の視点を sun/fixed/name/ へ、役ごとの近い視点を sun/役/v番号/name.png へ撮る
+        private static void ShootCurrent(Camera camera, RegionTerrainView.LookResult look, string sunFolder, string name, Dictionary<string, View[]> roleViews)
+        {
+            ShootFixedViews(camera, look, Path.Combine(sunFolder, "fixed", name));
+            foreach (KeyValuePair<string, View[]> pair in roleViews)
+            {
+                if (pair.Value.Length == 0) continue;
+                Place(camera, pair.Value[0]);
+                RegionTerrainViewMenu.Capture(camera, null, null);
+                for (int i = 0; i < pair.Value.Length; i++)
+                {
+                    string folder = Path.Combine(sunFolder, pair.Key, "v" + (i + 1));
+                    Directory.CreateDirectory(folder);
+                    Place(camera, pair.Value[i]);
+                    RegionTerrainViewMenu.Capture(camera, folder, name + ".png");
+                }
+            }
+        }
+
+        // WriteViews の書式（{"役": [{"x": …, "y": …, "z": …, "yaw": …, "pitch": …, "fov": …, "distance": …, "score": …}, …], …}）を読む
+        private static Dictionary<string, View[]> ReadViews(string text)
+        {
+            var result = new Dictionary<string, View[]>();
+            foreach (System.Text.RegularExpressions.Match role in System.Text.RegularExpressions.Regex.Matches(text, "\"(\\w+)\"\\s*:\\s*\\[([^\\]]*)\\]"))
+            {
+                var views = new List<View>();
+                foreach (System.Text.RegularExpressions.Match item in System.Text.RegularExpressions.Regex.Matches(role.Groups[2].Value, "\\{([^}]*)\\}"))
+                {
+                    var values = new Dictionary<string, float>();
+                    foreach (System.Text.RegularExpressions.Match field in System.Text.RegularExpressions.Regex.Matches(item.Groups[1].Value, "\"(\\w+)\"\\s*:\\s*(-?[0-9.]+)"))
+                        values[field.Groups[1].Value] = float.Parse(field.Groups[2].Value, CultureInfo.InvariantCulture);
+                    views.Add(new View
+                    {
+                        Position = new Vector3(values["x"], values["y"], values["z"]), Yaw = values["yaw"], Pitch = values["pitch"],
+                        Distance = values["distance"], Score = values["score"],
+                    });
+                }
+                result[role.Groups[1].Value] = views.ToArray();
+            }
+            return result;
+        }
+
         private static void Reset()
         {
             RegionSurfaceMaterials.SourceOverride = null;
             RegionSurfaceMaterials.TileOverride = null;
             RegionSurfaceMaterials.TintOverride = null;
-            RegionSurfaceMaterials.Contrast = 1f;
-            RegionSurfaceMaterials.PhotoColor = 0f;
+            RegionSurfaceMaterials.Contrast = RegionSurfaceMaterials.DefaultContrast;
+            RegionSurfaceMaterials.PhotoColor = RegionSurfaceMaterials.DefaultPhotoColor;
+            RegionSurfaceMaterials.TileBreak = true;
         }
 
         private static Strength[] ParseStrengths(string text)
@@ -185,6 +294,12 @@ namespace Vastcore.RegionMap.Editor
         {
             Use(candidate, prepared, new Strength { Contrast = 1f });
             Debug.Log("[RegionMap] 素材の候補 " + (candidate == null ? "none" : candidate.id) + ": " + RegionSurfaceMaterials.Summary);
+            ShootFixedViews(camera, look, folder);
+        }
+
+        // 固定の遠景・中景・近景とアルコーブ（中・近）を folder へ撮る
+        private static void ShootFixedViews(Camera camera, RegionTerrainView.LookResult look, string folder)
+        {
             Directory.CreateDirectory(folder);
             // 配列を替えた直後の 1 枚を捨てる
             RegionTerrainView.PlaceLook(camera.transform, look.Scene, look.Scene.Spec.Far);
@@ -370,6 +485,8 @@ namespace Vastcore.RegionMap.Editor
             string folder = AssetRoot + "/" + candidate.role;
             if (AssetDatabase.IsValidFolder(folder)) throw new InvalidOperationException(folder + " が既にある。素材を置いた写しでは撮らない");
             AssetDatabase.CreateFolder(AssetRoot, candidate.role);
+            // 一時的に置く素材の平均の色を設定へ書かない（候補の色は TintOverride で渡す）
+            RegionSurfaceImport.StoreTints = false;
             try
             {
                 int copied = 0;
@@ -406,6 +523,7 @@ namespace Vastcore.RegionMap.Editor
             finally
             {
                 AssetDatabase.DeleteAsset(folder);
+                RegionSurfaceImport.StoreTints = true;
             }
         }
 
@@ -415,17 +533,7 @@ namespace Vastcore.RegionMap.Editor
             var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false, true);
             try
             {
-                if (!texture.LoadImage(File.ReadAllBytes(path))) return Color.gray;
-                Color32[] pixels = texture.GetPixels32();
-                double r = 0, g = 0, b = 0;
-                foreach (Color32 p in pixels)
-                {
-                    r += Mathf.GammaToLinearSpace(p.r / 255f);
-                    g += Mathf.GammaToLinearSpace(p.g / 255f);
-                    b += Mathf.GammaToLinearSpace(p.b / 255f);
-                }
-                int n = Math.Max(1, pixels.Length);
-                return new Color((float)(r / n), (float)(g / n), (float)(b / n), 1f);
+                return texture.LoadImage(File.ReadAllBytes(path)) ? RegionSurfaceMaps.MeanLinear(texture.GetPixels()) : Color.gray;
             }
             finally
             {
