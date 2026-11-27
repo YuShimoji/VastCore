@@ -128,18 +128,22 @@ half GrasslandColonyOcclusion(half growth)
     return lerp(0.82h, 0.62h, growth);
 }
 
-// Approximate sunlight filtered by the deeper layer of leaves, with a longer path at a low sun angle.
+// Growth already varies smoothly. Treat it as optical depth so the shade does not acquire a second threshold.
 half GrasslandColonyTransmission(half growth, half sunElevation)
 {
-    half depth = smoothstep(0.22h, 0.82h, growth);
-    return exp2(-1.36h * depth * lerp(1.0h, 0.44h, saturate(sunElevation)));
+    return exp2(-1.28h * growth * lerp(1.0h, 0.44h, saturate(sunElevation)));
+}
+
+half GrasslandColonyDiffuse(half facing, half transmission)
+{
+    return (0.10h + 0.90h * facing) * transmission;
 }
 
 // Directional foliage texture, filtered in screen space as the canopy recedes.
 half GrasslandColonyGrain(float2 metres, half growth)
 {
     float2 flow = float2(dot(metres, float2(0.80, 0.60)), dot(metres, float2(-0.60, 0.80)));
-    float2 mid = flow * float2(0.62, 1.17);
+    float2 mid = flow * float2(0.24, 0.68);
     float2 fine = flow * float2(2.3, 7.2) + float2(0.0, 1.8 * growth);
     float midWeight = 1.0 - smoothstep(0.31, 1.36, max(length(ddx(mid)), length(ddy(mid))));
     float fineWeight = 1.0 - smoothstep(0.37, 1.34, max(length(ddx(fine)), length(ddy(fine))));

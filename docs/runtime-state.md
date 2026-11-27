@@ -74,7 +74,7 @@ Last Updated: 2026-11-28
 6. 砂岩の3Dはアルコーブ・光と空気・表面の段3まで。晴れは Weather Maker、砂塵は自作。本人の選択は Linear・雲量上限0.8（形を優先）・夕方の雲は今の淡さ（2026-11-27、sky-trial m36）。空・雲・霞の作業は終了。終了後の追加は本人の選択「模様を2Dの風で流す」で、塊が2Dと同じ向き・速さで流れる（一周で戻さない。m43）。thank 端末にも Weather Maker を導入し、PC・Mobile の描画設定を維持した。探索から地上へ地点と雲の時刻を渡せる。個々の雲の輪郭の照合には差が残る。[通常の入口と確認結果](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)・[本人の選択](USER_REQUEST_LEDGER.md)。
    - 探索メニューからseed 8・9を開き、既存の砂・礫を比較用に適用したPC品質の動画とフレーム間隔を確認。[動画と計測](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)。表面の [T0〜T5](02_design/REGION_SURFACE_MATERIALS_SPEC.md) は済み（各段の結果は同4節）。中景より先の崖は本人が選んだ方式 A（板ごとの平面と崖・棚・崖の段）で直した（2026-11-28、前後は `D:\AI-Runs\VastCore\mesa-cliff-form\result\`）。残りは錐・扇状地の面の形。GPU予算は本人の選択で1.2 ms（seed 9の1視点が約1.1 ms）。アーチ・峡谷は後続。
    - Props の差し替え・比較撮影とモデル71個をcommit（本人選択はFBX、[DS-011 7節](02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md)）。岩色は本人選択で赤い砂岩に寄せた（画面 r/g 1.16〜1.24→1.40〜1.46、地形1.64〜1.68。瓦礫の小片は淡色。8.1節）。P0のFBXは15/17。海岸・洞窟は [DS-014](02_design/NATURAL_ENVIRONMENT_PACKAGES_SPEC.md)。
-- 草原（2026-11-28）：足元を維持し、草丈・密度・陰影を斜面に沿わせた。2地点を撮影。探索往復テスト合格、地上撮影は地域生成待ちで時間切れ。[三枚比較と設計](<D:/AI-Runs/VastCore/review-20261127-grassland-multibiome/ground-cover/colonies/index.html>)・[制作手順](OPERATOR_WORKFLOW.md#草原での適用)。4系統のカタログ登録・美術採否は本人。
+- 草原（2026-11-28）：足元を保ち、右奥の葉先と草の面の照明をつないだ。2地点と探索のダイブ・復帰を実画面で確認。[三枚比較と設計](<D:/AI-Runs/VastCore/review-20261127-grassland-multibiome/ground-cover/canopy-light/index.html>)・[制作手順](OPERATOR_WORKFLOW.md#草原での適用)。4系統のカタログ登録・美術採否は本人。
 
 - [水環境 DS-013](02_design/COASTAL_WATER_SPEC.md) の Unity サンプル。
 

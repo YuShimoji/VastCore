@@ -95,7 +95,7 @@ stop condition、またはユーザーが方向を変えた時に発行する。
 
 ### 草原での適用
 
-[USGS・NPS の植生調査](https://irma.nps.gov/DataStore/FileSource/Get/2170394?filename=tallgrassrpt_nrpc.pdf) 図9・26〜27頁の二層の草丈、斜面と湿り気、露岩の周りの草を参照する。完成図と Unity の目の高さの絵で、短い草が土を覆うか、長い葉と穂がその上に重なるか、中景の群落から遠景の色へつながるかを照合する。Mesa との共通の基準は、距離ごとに形と材質がつながり、物の足元が地面に納まること。
+[USGS・NPS の植生調査](https://kindscher.ku.edu/sites/kindscher/files/documents/2011-Vegetation-Classification-and-Mapping-of-Tallgrass-Prairie-National-Preserve.pdf#page=38) の図9・26〜27頁で二層の草丈、斜面と湿り気、露岩まわりを見る。完成図と Unity の同じ目の高さで、短い草の被覆、長い葉と穂の重なり、中遠景のつながりを照合する。Mesa と同様に距離別の形と材質、物の接地を確かめる。
 
 固定サンプルは小道・露岩を含む。同じ seed・晴天の前後と、地域探索からの自動生成を PowerShell で撮る。
 

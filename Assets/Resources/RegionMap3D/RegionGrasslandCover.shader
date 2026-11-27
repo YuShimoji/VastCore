@@ -122,7 +122,7 @@ Shader "Vastcore/RegionGrasslandCover"
                 if (layer > 2.5) fade *= distantTips ? smoothstep(38.0, 108.0, eyeDistance)
                     : smoothstep(54.0, 119.0, eyeDistance);
                 half amount = colonyTips ? smoothstep(28.0, 61.0, eyeDistance) : 0.0h;
-                half group = input.plant.r;
+                half shadeGrowth = input.plant.r;
                 float3 groupNormal = float3(0, 1, 0);
                 [branch]
                 if (amount > 0.0h)
@@ -130,13 +130,20 @@ Shader "Vastcore/RegionGrasslandCover"
                     float3 groundNormal = distantTips ? TransformObjectToWorldNormal(input.normalOS) : float3(0, 1, 0);
                     float2 slope = GrasslandTerrainSlope(groundNormal);
                     float3 stand = GrasslandColony(GrasslandMetres(rootWS), rootWS.y, slope, input.plant.a);
-                    group = stand.x;
+                    half growth = stand.x;
+                    shadeGrowth = growth;
                     // Tips remain more numerous and stand taller in the thick part of the same colony.
-                    fade *= lerp(1.0h, lerp(distantTips ? 0.72h : 0.52h, 1.0h, group), amount);
-                    float rootPlane = dot(slope, offset.xz * float2(1.0, -1.0));
-                    float tipsHeight = distantTips ? lerp(0.54, 1.68, group) : lerp(0.79, 1.18, group);
+                    fade *= lerp(1.0h, lerp(distantTips ? 0.72h : 0.52h, 1.0h, growth), amount);
+                    float2 groundOffset = offset.xz * float2(1.0, -1.0);
+                    float rootPlane = dot(slope, groundOffset);
+                    float tipsHeight = distantTips ? lerp(0.54, 1.68, growth) : lerp(0.79, 1.18, growth);
                     offset.y = rootPlane + (offset.y - rootPlane) * lerp(1.0, tipsHeight, amount);
-                    if (distantTips) groupNormal = GrasslandColonyNormal(groundNormal, stand, 0.82);
+                    if (distantTips)
+                    {
+                        // Continue the canopy's local shade across the wide card while its height stays fixed at the root.
+                        shadeGrowth = saturate(growth + clamp(dot(stand.yz, groundOffset), -0.16, 0.16));
+                        groupNormal = GrasslandColonyNormal(groundNormal, stand, 0.65);
+                    }
                 }
                 o.atlasAndFade = float4(input.tussock.xy, fade, eyeDistance);
                 float2 radial = offset.xz / max(0.10, length(offset.xz) + max(0.0, offset.y) * 0.38);
@@ -148,7 +155,7 @@ Shader "Vastcore/RegionGrasslandCover"
                     float scale = fade > 0.004 ? lerp(0.70, 1.0, fade) : 0.0;
                     o.positionWS = TransformObjectToWorld(root + offset * scale);
                     o.positionCS = TransformWorldToHClip(o.positionWS);
-                    o.leaf = half4(lerp(input.plant.r, group, amount), input.plant.g, amount, input.plant.b);
+                    o.leaf = half4(lerp(input.plant.r, shadeGrowth, amount), input.plant.g, amount, input.plant.b);
                     return o;
                 }
                 #endif
@@ -208,8 +215,8 @@ Shader "Vastcore/RegionGrasslandCover"
                     sun.shadowAttenuation = MainLightRealtimeShadow(TransformWorldToShadowCoord(i.positionWS));
                 half3 normal = normalize(i.crown.xyz);
                 half sunlit = min(sun.shadowAttenuation, i.leaf.a);
-                half direct = (0.10h + 0.90h * saturate(dot(normal, sun.direction))) *
-                    GrasslandColonyTransmission(growth, sun.direction.y);
+                half direct = GrasslandColonyDiffuse(saturate(dot(normal, sun.direction)),
+                    GrasslandColonyTransmission(growth, sun.direction.y));
                 half3 ambient = SampleSH(normal) + _RegionBounceColor.rgb * 0.16h;
                 half3 color = albedo * (sun.color * sunlit * direct + ambient * GrasslandColonyOcclusion(growth));
                 return GrasslandOutput(color, i.positionWS, alpha);
@@ -233,22 +240,33 @@ Shader "Vastcore/RegionGrasslandCover"
                 float2 frameUv = frac(i.atlasAndFade.xy * 4.0);
                 half height = i.crown.w > 1.5 ? saturate(1.31 - 2.1 * length(frameUv - 0.5))
                     : saturate((frameUv.y - 0.11) * 2.1);
-                if (i.leaf.b > 0.0h)
-                {
-                    half3 colony = RegionDisplayToLinear(GrasslandColonyColor(i.leaf.r)) * lerp(0.72h, 1.15h, height);
-                    albedo = lerp(albedo, colony, 0.84h * i.leaf.b);
-                }
                 half3 normal = normalize(i.crown.xyz);
                 half sunlit = min(sun.shadowAttenuation, i.leaf.a);
-                half direct = (0.22h + 0.82h * saturate(dot(normal, sun.direction))) * lerp(0.68h, 1.12h, height);
+                half facing = saturate(dot(normal, sun.direction));
+                half direct = (0.22h + 0.82h * facing) * lerp(0.68h, 1.12h, height);
+                half3 ambientNormal = half3(0, 1, 0);
+                half bounce = 0.23h;
+                half occlusion = lerp(0.58h, 1.03h, height);
                 if (i.leaf.b > 0.0h)
                 {
-                    half filtered = GrasslandColonyTransmission(i.leaf.r, sun.direction.y);
+                    half growth = i.leaf.r;
+                    // Keep a little contrast on projected leaves as their lighting approaches the lower canopy.
+                    half blend = 0.82h * i.leaf.b * smoothstep(56.0, 136.0, i.atlasAndFade.w);
+                    half detail = lerp(lerp(0.72h, 1.15h, height), 0.90h * lerp(0.92h, 1.16h, height), blend);
+                    half3 colony = RegionDisplayToLinear(GrasslandColonyColor(growth)) * detail;
+                    albedo = lerp(albedo, colony, lerp(0.84h * i.leaf.b, 1.0h, blend));
+
+                    half filtered = GrasslandColonyTransmission(growth, sun.direction.y);
                     half exposedTips = 0.67h * smoothstep(0.40h, 0.98h, height);
                     direct *= lerp(1.0h, lerp(filtered, 1.0h, exposedTips), i.leaf.b);
+                    // Keep the silhouette and let subpixel tips settle into the same light as the lower canopy.
+                    direct = lerp(direct, GrasslandColonyDiffuse(facing, filtered), blend);
+                    ambientNormal = normalize(lerp(ambientNormal, normal, blend));
+                    bounce = lerp(bounce, 0.16h, blend);
+                    occlusion = lerp(occlusion, GrasslandColonyOcclusion(growth), blend);
                 }
-                half3 ambient = SampleSH(half3(0, 1, 0)) + _RegionBounceColor.rgb * 0.23h;
-                half3 color = albedo * (sun.color * sunlit * direct + ambient * lerp(0.58h, 1.03h, height));
+                half3 ambient = SampleSH(ambientNormal) + _RegionBounceColor.rgb * bounce;
+                half3 color = albedo * (sun.color * sunlit * direct + ambient * occlusion);
                 return GrasslandOutput(color, i.positionWS, alpha);
             }
             #endif
