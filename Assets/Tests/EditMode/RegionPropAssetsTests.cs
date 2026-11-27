@@ -42,6 +42,24 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
+        public void PickVariant_CrateUsesNamedMeshUnlessDamageSelectsAnother()
+        {
+            string[] crates = { "broken_slat_open", "slat_open_1m" };
+            var inst = new RegionPropInstance
+            {
+                PropId = "cnt_wood_crate",
+                DamageState = "worn_chipped",
+                ConstructionVariant = "slat_open",
+                MeshVariant = "slat_open_1m",
+                ClusterIndex = 1,
+                MemberIndex = 1,
+            };
+            Assert.AreEqual(1, RegionPropAssets.PickVariant(inst, crates));
+            inst.DamageState = "broken_slat_open";
+            Assert.AreEqual(0, RegionPropAssets.PickVariant(inst, crates));
+        }
+
+        [Test]
         public void PickVariant_NeighbouringClusterMembersGetDifferentVariants()
         {
             string[] rubble = { "rubble_cone_a", "rubble_cone_b", "rubble_low_radial", "rubble_split_mound" };

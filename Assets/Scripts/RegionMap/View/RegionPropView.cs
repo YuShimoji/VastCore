@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -20,6 +21,7 @@ namespace Vastcore.RegionMap
             public int RealModelCount;
             public int RealTriangles;
             public string RealSummary = "";
+            public readonly List<string> ContactMeasurements = new List<string>();
         }
 
         private sealed class Palette
@@ -52,7 +54,7 @@ namespace Vastcore.RegionMap
 
             if (slice.UseRealAssets && RegionPropAssets.Source != null)
             {
-                AddRealAssets(parent, slice, palette, heightAt, result);
+                AddRealAssets(parent, slice, palette, heightAt, slice.RenderedHeightAt ?? heightAt, result);
                 // 同じ場所に2組を重ねないよう、実アセットの組を出してプレースホルダの組を隠す（比較の撮影で入れ替える）
                 root.SetActive(false);
             }
@@ -78,7 +80,8 @@ namespace Vastcore.RegionMap
             public MaterialPropertyBlock Block;
         }
 
-        private static void AddRealAssets(Transform parent, RegionPropProofSlice slice, Palette palette, Func<float, float, float> heightAt, Result result)
+        private static void AddRealAssets(Transform parent, RegionPropProofSlice slice, Palette palette,
+            Func<float, float, float> heightAt, Func<float, float, float> renderedHeightAt, Result result)
         {
             var realRoot = new GameObject("DS011_Props_Real");
             realRoot.transform.SetParent(parent, false);
@@ -91,6 +94,8 @@ namespace Vastcore.RegionMap
                 Block = new MaterialPropertyBlock()
             };
             float rootY = realRoot.transform.position.y;
+            var completeClusters = new HashSet<(string, int)>();
+            var crateSupports = new Dictionary<(int, int), Transform>();
             for (int i = 0; i < slice.Instances.Count; i++)
             {
                 RegionPropInstance inst = slice.Instances[i];
@@ -99,25 +104,36 @@ namespace Vastcore.RegionMap
                     models = ctx.Source.Models(RegionPropAssets.DomainOf(inst.PropId), inst.PropId) ?? Array.Empty<RegionPropModel>();
                     ctx.Models[inst.PropId] = models;
                 }
+                RegionPropModel assembly = string.IsNullOrEmpty(inst.ClusterModelVariant) ? null :
+                    models.FirstOrDefault(candidate => candidate.Variant == inst.ClusterModelVariant);
+                bool covered = RegionPropAssets.CoveredByClusterModel(inst) ||
+                    (assembly != null && !completeClusters.Add((inst.PropId, inst.ClusterIndex)));
+                RegionPropModel model = assembly ?? SelectPlacementModel(inst, models);
                 GameObject go;
-                if (models.Count == 0)
+                if (model == null)
                 {
-                    // モデルの無い Props（木箱・樽など）は、比較の絵が欠けないようプレースホルダのまま置く
                     go = BuildInstanceObject(inst, palette, i);
                     go.name += "_placeholder";
                 }
-                else if (RegionPropAssets.CoveredByClusterModel(inst))
+                else if (covered)
                 {
-                    // 瓦礫の中・細かい層は、CorePile に置いた群れ全体のモデルが持っている
+                    // 同じ群れの中片・小片や2つ目の芯は群れ全体のモデルに含まれる。
                     go = new GameObject(string.Format("{0:D2}_{1}_{2}_inModel", i, inst.PropId, inst.Role));
                 }
                 else
                 {
-                    go = BuildRealInstance(inst, models, ctx, i, heightAt, rootY, result);
+                    go = BuildRealInstance(inst, model, ctx, i, heightAt, rootY, result);
                     result.RealModelCount++;
                 }
                 PlaceInstance(go.transform, realRoot.transform, inst);
-                if (heightAt != null && models.Count > 0 && RegionPropAssets.IsClusterModel(inst.PropId) && !RegionPropAssets.CoveredByClusterModel(inst))
+                if (model != null && !covered && inst.PropId == "cnt_wood_crate")
+                {
+                    if (inst.Role == "BaseLayer") crateSupports[(inst.ClusterIndex, inst.MemberIndex)] = go.transform;
+                    if (inst.StackSupportMemberIndex >= 0 &&
+                        crateSupports.TryGetValue((inst.ClusterIndex, inst.StackSupportMemberIndex), out Transform support))
+                        SeatCrate(go.transform, support, result);
+                }
+                if (heightAt != null && model != null && !covered && RegionPropAssets.IsClusterModel(inst.PropId))
                 {
                     // 群れ全体のモデル（幅 2 m 前後）は、配置の傾き（斜面の 7 割に沿う、塊1つ用）では下り側の縁が浮くので、地面の法線へ合わせる
                     float gx = 0.5f * (heightAt(inst.X + 1f, inst.Z) - heightAt(inst.X - 1f, inst.Z));
@@ -125,6 +141,8 @@ namespace Vastcore.RegionMap
                     var normal = new Vector3(-gx, 1f, gz).normalized; // Unity の Z は Core の -Z
                     go.transform.localRotation = Quaternion.FromToRotation(Vector3.up, normal) * Quaternion.Euler(0f, inst.YawDeg, 0f);
                     go.transform.localPosition = new Vector3(inst.X, heightAt(inst.X, inst.Z) - 0.03f, -inst.Z);
+                    if (assembly != null)
+                        SettleRubble(go.transform, renderedHeightAt, result);
                 }
             }
             var summary = new System.Text.StringBuilder();
@@ -133,12 +151,131 @@ namespace Vastcore.RegionMap
             result.RealSummary = summary.ToString().TrimEnd();
         }
 
-        private static GameObject BuildRealInstance(RegionPropInstance inst, IReadOnlyList<RegionPropModel> models, RealContext ctx, int index,
+        private static RegionPropModel SelectPlacementModel(RegionPropInstance inst, IReadOnlyList<RegionPropModel> models)
+        {
+            if (models.Count == 0) return null;
+            // 別の荷を載せる土台に、箱が焼き込まれた cargo 付きパレットを重ねない。
+            if (inst.Role == "PalletBase" && inst.PropId == "cnt_supply_pallet")
+                models = models.Where(model => !model.Variant.StartsWith("cargo-", StringComparison.Ordinal)).ToArray();
+            if (models.Count == 0) return null;
+            RegionPropModel chosen = models[RegionPropAssets.PickVariant(inst, models.Select(model => model.Variant).ToArray())];
+            if (inst.PropId == "cnt_wood_barrel" && inst.ConstructionVariant == "tipped_sideways" &&
+                !chosen.Variant.Contains("tipped"))
+                return null;
+            if (inst.PropId == "cnt_wood_crate" && inst.DamageState == "collapsed_wreck" &&
+                !chosen.Variant.Contains("collapsed"))
+                return null;
+            return chosen;
+        }
+
+        private static void SeatCrate(Transform upper, Transform lower, Result result)
+        {
+            var lid = lower.Find("Model/LOD0").GetComponentsInChildren<MeshFilter>(true)
+                .Where(part => PartNamed(part, "Lid board")).ToArray();
+            var skids = upper.Find("Model/LOD0").GetComponentsInChildren<MeshFilter>(true)
+                .Where(part => PartNamed(part, "Skid")).ToArray();
+            if (lid.Length == 0 || skids.Length == 0) return;
+
+            upper.rotation = Quaternion.FromToRotation(upper.up, lower.up) * upper.rotation;
+            upper.position = lower.position;
+            float deck = lid.Max(part => PartHeight(part, lower).y);
+            float bottom = skids.Min(part => PartHeight(part, lower).x);
+            upper.position += lower.up * (deck - bottom);
+            float maxGap = skids.Max(part => Math.Abs(PartHeight(part, lower).x - deck));
+            result.ContactMeasurements.Add(FormattableString.Invariant(
+                $"crate stack: lower={lower.name} upper={upper.name} skids={skids.Length} maxGapCm={maxGap * 100f:F3}"));
+        }
+
+        private static bool PartNamed(MeshFilter part, string name) =>
+            part.sharedMesh != null && part.name.Replace('_', ' ').StartsWith(name, StringComparison.OrdinalIgnoreCase);
+
+        private static Vector2 PartHeight(MeshFilter part, Transform frame)
+        {
+            Matrix4x4 toFrame = frame.worldToLocalMatrix * part.transform.localToWorldMatrix;
+            Bounds bounds = part.sharedMesh.bounds;
+            Vector3 extent = bounds.extents;
+            float center = toFrame.MultiplyPoint3x4(bounds.center).y;
+            float half = Mathf.Abs(toFrame.m10) * extent.x + Mathf.Abs(toFrame.m11) * extent.y + Mathf.Abs(toFrame.m12) * extent.z;
+            return new Vector2(center - half, center + half);
+        }
+
+        private static void SettleRubble(Transform heap, Func<float, float, float> heightAt, Result result)
+        {
+            var parts = heap.Find("Model/LOD0").GetComponentsInChildren<MeshFilter>(true);
+            var core = parts.Where(part => PartNamed(part, "CorePile")).ToArray();
+            var trail = parts.Where(part => PartNamed(part, "MicroScatter")).ToArray();
+            if (core.Length < 3 || trail.Length == 0 || parts.Any(part => !part.sharedMesh || !part.sharedMesh.isReadable))
+                return;
+
+            Transform frame = heap.parent;
+            Vector3 anchor = heap.localPosition;
+            const float step = 0.15f;
+            Vector3 normal = new Vector3(
+                heightAt(anchor.x - step, -anchor.z) - heightAt(anchor.x + step, -anchor.z), 2f * step,
+                heightAt(anchor.x, -anchor.z + step) - heightAt(anchor.x, -anchor.z - step)).normalized;
+            heap.localRotation = Quaternion.FromToRotation(heap.localRotation * Vector3.up, normal) * heap.localRotation;
+            Vector3 downhill = Vector3.ProjectOnPlane(Vector3.down, normal);
+            if (downhill.sqrMagnitude > 0.0001f)
+            {
+                Vector3 from = Vector3.ProjectOnPlane(PartCenter(trail, frame) - PartCenter(core, frame), normal);
+                heap.localRotation = Quaternion.FromToRotation(from, downhill) * heap.localRotation;
+            }
+            heap.localPosition = new Vector3(anchor.x, heightAt(anchor.x, -anchor.z), anchor.z);
+
+            // 原本の芯は2片を上に積んでいる。下の石の移動に追従させる。
+            var upper = core.OrderByDescending(part => PartHeight(part, heap).x).Take(2).ToArray();
+            var groundCore = core.Except(upper).ToArray();
+            var offsets = new Dictionary<MeshFilter, float>();
+            float min = float.PositiveInfinity, max = float.NegativeInfinity;
+            foreach (MeshFilter part in parts.Except(upper))
+            {
+                Vector3[] vertices = part.sharedMesh.vertices;
+                float clearance = BottomClearance(part, frame, vertices, heightAt);
+                float inset = PartNamed(part, "MicroScatter") ? 0.003f : 0.012f;
+                float lift = -clearance - inset;
+                part.transform.position += frame.TransformVector(Vector3.up * lift);
+                offsets.Add(part, lift);
+                float settled = BottomClearance(part, frame, vertices, heightAt);
+                min = Mathf.Min(min, settled);
+                max = Mathf.Max(max, settled);
+            }
+            foreach (MeshFilter part in upper)
+            {
+                Vector3 position = part.GetComponent<Renderer>().bounds.center;
+                MeshFilter below = groundCore.OrderBy(candidate =>
+                {
+                    Vector3 delta = frame.InverseTransformVector(candidate.GetComponent<Renderer>().bounds.center - position);
+                    return delta.x * delta.x + delta.z * delta.z;
+                }).First();
+                part.transform.position += frame.TransformVector(Vector3.up * offsets[below]);
+            }
+            result.ContactMeasurements.Add(FormattableString.Invariant(
+                $"rubble contact: model={heap.name} slopeDeg={Vector3.Angle(Vector3.up, normal):F1} groundParts={offsets.Count} raisedParts={upper.Length} minCm={min * 100f:F3} maxCm={max * 100f:F3}"));
+        }
+
+        private static Vector3 PartCenter(MeshFilter[] parts, Transform frame)
+        {
+            Vector3 sum = Vector3.zero;
+            foreach (MeshFilter part in parts) sum += part.GetComponent<Renderer>().bounds.center;
+            return frame.InverseTransformPoint(sum / parts.Length);
+        }
+
+        private static float BottomClearance(MeshFilter part, Transform frame, Vector3[] vertices,
+            Func<float, float, float> heightAt)
+        {
+            Matrix4x4 toFrame = frame.worldToLocalMatrix * part.transform.localToWorldMatrix;
+            float bottom = float.PositiveInfinity;
+            foreach (Vector3 vertex in vertices)
+            {
+                Vector3 p = toFrame.MultiplyPoint3x4(vertex);
+                bottom = Mathf.Min(bottom, p.y - heightAt(p.x, -p.z));
+            }
+            return bottom;
+        }
+
+        private static GameObject BuildRealInstance(RegionPropInstance inst, RegionPropModel model, RealContext ctx, int index,
             Func<float, float, float> heightAt, float rootY, Result result)
         {
-            var names = new string[models.Count];
-            for (int m = 0; m < models.Count; m++) names[m] = models[m].Variant;
-            RegionPropModel model = models[RegionPropAssets.PickVariant(inst, names)];
             string key = inst.PropId + "/" + model.Variant;
             ctx.Used[key] = ctx.Used.TryGetValue(key, out int used) ? used + 1 : 1;
 

@@ -13,6 +13,8 @@ namespace Vastcore.RegionMap
         public int ClusterIndex;
         public int MemberIndex;
         public int StackLayer;
+        public int StackSupportMemberIndex = -1;
+        public string ClusterModelVariant = "";
 
         public float X;
         public float Y;
@@ -63,6 +65,7 @@ namespace Vastcore.RegionMap
         public float CratesCenterX, CratesCenterZ;
         public float RubbleCenterX, RubbleCenterZ;
         public float RubbleFlowDirX, RubbleFlowDirZ;
+        public Func<float, float, float> RenderedHeightAt;
         /// <summary>true で、RegionPropView がプレースホルダの組に加えて実アセットの組（DS011_Props_Real）も作る（RegionLookSpec.PropsRealAssets）。</summary>
         public bool UseRealAssets;
     }
@@ -244,7 +247,8 @@ namespace Vastcore.RegionMap
             Func<float, float, float> heightAt,
             float flowDirX = 0f,
             float flowDirZ = 0f,
-            string parentMaterial = null)
+            string parentMaterial = null,
+            int minimumStackCrates = 0)
         {
             if (prop == null) throw new ArgumentNullException("prop");
             var result = new List<RegionPropInstance>();
@@ -292,6 +296,7 @@ namespace Vastcore.RegionMap
                             slopeDeg, dirX, dirZ, coreMat, layer.Role, gradScale);
                         inst.ClusterIndex = anchorIndex;
                         inst.MemberIndex = member;
+                        inst.ClusterModelVariant = v6.ClusterModelVariant;
                         result.Add(inst);
                         member++;
                     }
@@ -304,7 +309,9 @@ namespace Vastcore.RegionMap
             {
                 int total = PickIntRange(v6.ClusterCountMin, v6.ClusterCountMax, Hash01(anchorIndex, 70, s));
                 int maxLayers = Math.Max(1, v6.MaxStackLayers);
-                int baseCount = maxLayers > 1 && total >= 3 ? (total + 1) / 2 : total;
+                total = Math.Max(total, Math.Min(minimumStackCrates, v6.ClusterCountMax));
+                bool stack = maxLayers > 1 && (total >= 3 || (total == 2 && minimumStackCrates >= 2));
+                int baseCount = stack ? (total + 1) / 2 : total;
                 if (baseCount < 1) baseCount = 1;
                 if (baseCount > 3) baseCount = 3;
 
@@ -367,13 +374,16 @@ namespace Vastcore.RegionMap
 
                 // 2段目の積み上げ
                 int remaining = total - baseCount;
+                var occupied = new HashSet<int>();
                 for (int top = 0; top < remaining && maxLayers >= 2; top++)
                 {
                     RegionPropInstance support = null;
                     for (int k = 0; k < baseCrates.Count; k++)
                     {
                         RegionPropInstance cand = baseCrates[(top + k) % baseCrates.Count];
-                        if (cand.DamageState == "collapsed_wreck" || cand.ConstructionVariant == "lid_ajar" || cand.ConstructionVariant == "long_box")
+                        if (occupied.Contains(cand.MemberIndex) ||
+                            (cand.DamageState != "pristine" && cand.DamageState != "worn_chipped") ||
+                            (cand.ConstructionVariant != "plank_closed" && cand.ConstructionVariant != "framed_reinforced"))
                             continue;
                         support = cand;
                         break;
@@ -386,12 +396,11 @@ namespace Vastcore.RegionMap
                         prop, seed, anchorIndex * 1000 + member,
                         support.X, support.Y + support.EffectiveHeightM, support.Z,
                         0f, slopeDirX, slopeDirZ, support.MaterialVariant, "StackedLayer",
-                        topScale, topYaw, support.ConstructionVariant == "long_box" ? "plank_closed" : null);
-                    // 上段は傾かない・蓋開き/崩壊にしない
-                    if (stacked.DamageState == "collapsed_wreck") stacked.DamageState = "worn_chipped";
-                    if (stacked.ConstructionVariant == "lid_ajar") stacked.ConstructionVariant = "plank_closed";
-                    stacked.PitchDeg = support.PitchDeg * 0.5f;
-                    stacked.RollDeg = support.RollDeg * 0.5f;
+                        topScale, topYaw, support.ConstructionVariant, damageOverride: "worn_chipped");
+                    stacked.PitchDeg = support.PitchDeg;
+                    stacked.RollDeg = support.RollDeg;
+                    stacked.StackSupportMemberIndex = support.MemberIndex;
+                    occupied.Add(support.MemberIndex);
                     stacked.ClusterIndex = anchorIndex;
                     stacked.MemberIndex = member++;
                     stacked.StackLayer = 1;
@@ -456,7 +465,7 @@ namespace Vastcore.RegionMap
             if (scene == null) throw new ArgumentNullException("scene");
 
             uint seed = unchecked((uint)(scene.RegionSeed + seedOffset) * 2654435761u + 131u);
-            var slice = new RegionPropProofSlice();
+            var slice = new RegionPropProofSlice { RenderedHeightAt = scene.RenderedHeightAt };
 
             // 1. 木箱・補給キャンプ区画: Near 視点（Eye: -121, -69）の前方手前、緩斜面を探す
             FindGentleSpot(scene, scene.CenterX - 120f, scene.CenterZ - 81f, 7f,
@@ -501,7 +510,7 @@ namespace Vastcore.RegionMap
             SampleSlope(scene, stackX, stackZ, out float stackSlope, out float stackDx, out float stackDz);
             slice.Instances.AddRange(PlaceCluster(
                 catalog, crateProp, seed, 2, stackX, stackY, stackZ,
-                stackSlope, stackDx, stackDz, scene.HeightAt));
+                stackSlope, stackDx, stackDz, scene.HeightAt, minimumStackCrates: 2));
 
             // 木樽（立置き＋横倒し楔）と道標（木箱列と重ならないよう左右に離す）
             if (catalog.TryGetProp("cnt_wood_barrel", out RegionPropDefinition barrelProp))

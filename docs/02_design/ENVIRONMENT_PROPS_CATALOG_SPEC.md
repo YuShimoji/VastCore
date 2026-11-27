@@ -204,7 +204,7 @@ Proof Slice（`RegionLookSpec.Props`）に、実モデルで置いた組を足�
 
 | 部分 | 中身 |
 |---|---|
-| 置き場所 | `Assets/Art/Models/<ドメイン>/<カタログ ID>/<変種>_lod0.*`・`_lod1.*`（lod の無い名前は LOD0 だけ）。Unity が GameObject として取り込めた物だけを数え、無い Props（木箱・樽など）はプレースホルダのまま置く。取り込みの既定は `RegionPropModelImport`（カメラ・光・動き・当たり判定なし、接線を計算、材質は名前だけ） |
+| 置き場所 | `Assets/Art/Models/<ドメイン>/<カタログ ID>/<変種>_lod0.*`・`_lod1.*`（lod の無い名前は LOD0 だけ）。Unity が GameObject として取り込めた物だけを数え、対応する実モデルが無い状態はプレースホルダで置く。取り込みの既定は `RegionPropModelImport`（カメラ・光・動き・当たり判定なし、接線を計算、材質は名前だけ） |
 | 読み出し | `IRegionPropAssetSource`（Editor は `RegionPropAssetDatabase` が AssetDatabase で読む）。選び方は `RegionPropAssets`（EditMode で試験） |
 | 変種 | 損傷・組み方・形の値（`fallen_drum`・`broken_mid`・`intact` など）を変種の名前に探し、無ければ全部から。同じ群れの隣どうしは別の変種（瓦礫を2つ以上並べても同じ物に見えない） |
 | 大きさ | 横の大きい方をカタログの寸法×個体の倍率に合わせる。瓦礫（`rub_stone_rubble_pile`・`rub_masonry_blocks`）の GLB は1つで群れ全体（大・中・細の3層）なので、作った大きさのまま CorePile にだけ置き、中と細の個体は置かない。傾きは地面の法線に合わせる |
@@ -239,3 +239,13 @@ GLB 71 個を Blender 5.2 で FBX に変換し（`scripts/glb-to-fbx.py`）、`A
 平たい岩（Warm）は地形の岩に近い赤みのある橙になった（seed 9 の手前の範囲で r/g 1.57）。瓦礫の山の小さな欠片は淡いまま（r/g 1.42）で、裾の砂を寄せても変わらなかった。残る黄みは V7 の砂塵・足元のなじみの色（`_PropGroundColor` は個体ごとに渡さず既定の (0.72,0.56,0.40)）と考えるが未検証。画像は `artifacts/region-map/ds011-color-20261127/`（`pair-s9-rubble-color.png`・`pair-s8-rubble-color.png`、途中の段は `-step1`・`-step2`）。
 
 未確認: Props を足した時の GPU 時間（三角形の数だけ測った）、LOD1 へ切り替わる距離の見え方、通常 Editor のメニュー（`Open 3D Mesa Look + DS-011 Props Proof`）からの実アセットの表示。
+
+### 8.2 木箱・木樽・瓦礫の通常配置（2026-11-27）
+
+`Vastcore > Region Map > Open 3D Mesa Look + DS-011 Props Proof` で、通常の AssetDatabase 読み出しから `DS011_Props_Real` を表示する。撮影は既存の `CaptureFromCommandLine` に `-regionSeed 9 -propsCompare true -propsReal true -lookSky ours` を渡す。実モデルの二段積みは `props-stack-real.png`、斜面は `props-rubble-real.png`、接地の値は `props-proof-report.txt`。
+
+GameProjects の木箱6型・木樽2型・扇状の瓦礫1型を、元GLBのSHA-256を既存71点と照合して通常の `Assets/Art/Models/` に追加。元GLBと変換後FBXは `model-source.json` で照合できる。既存の瓦礫4型（各LOD0/LOD1）は維持する。カタログの `clusterModelVariant` に指定された群れ全体モデルがあれば、同じ群れに1点だけ置く。未取得時は従来のモデル選択に戻る。
+
+積み上げは閉じた木箱を支持に選び、上段の敷木を下段の蓋の高さに合わせる。箱を別に置く荷台は土台として使い、積荷付きパレットをそこへ重ねない。開口と蓋付きの樽は実モデルを使い、横倒し樽に対応するFBXが無い場合は仮モデルで姿勢を保つ。瓦礫は下り方向へ向け、描画地形の三角形から各石の沈み込みを求める。
+
+[seed 9の通常配置での撮影結果](<D:/AI-Runs/VastCore/ds011-glb-fbx-20261127/seed9-placement/props-proof-report.txt>)では、筋交い入り木箱の敷木2本と蓋の高さの差は最大0.043 cm。斜度30.6°の瓦礫は地面に触れる28片の最低点を地表から0.3〜1.2 cm下へ収め、上の2片は支持する石に追従させた。

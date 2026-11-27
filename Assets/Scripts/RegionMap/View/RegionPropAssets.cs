@@ -164,7 +164,10 @@ namespace Vastcore.RegionMap
         private static IEnumerable<string> MatchTokens(RegionPropInstance inst)
         {
             // 直接の値を先に、言い換え（pristine→intact、broken→damaged など）を後に試す
-            string[] direct = { inst.DamageState, inst.ConstructionVariant, inst.MeshVariant };
+            // 木箱は正確な形の指定を組み方の部分一致より先に見る（slat_open は破損型の名前にも入る）。
+            string[] direct = inst.PropId == "cnt_wood_crate"
+                ? new[] { inst.DamageState, inst.MeshVariant, inst.ConstructionVariant }
+                : new[] { inst.DamageState, inst.ConstructionVariant, inst.MeshVariant };
             foreach (string value in direct)
                 if (!string.IsNullOrEmpty(value) && value != "default") yield return value;
             string damage = (inst.DamageState ?? "").ToLowerInvariant();

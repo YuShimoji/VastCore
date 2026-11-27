@@ -205,6 +205,35 @@ namespace Vastcore.RegionMap
             return value > 0f ? value : 0f;
         }
 
+        /// <summary>内側の描画メッシュの三角形から地表高を得る。格子の外では通常の地面高に戻る。</summary>
+        public float RenderedHeightAt(float x, float z)
+        {
+            if (InnerTerrain == null || x < InnerMinX || z < InnerMinZ ||
+                x > InnerMaxX || z > InnerMaxZ)
+                return HeightAt(x, z);
+
+            int n = InnerTerrain.Data.Resolution;
+            int i = Math.Min(n - 2, (int)((x - InnerMinX) / InnerCell));
+            int j = Math.Min(n - 2, (int)((z - InnerMinZ) / InnerCell));
+            int start = (i + j * (n - 1)) * 6;
+            float[] p = InnerTerrain.Positions;
+            for (int t = start; t < start + 6; t += 3)
+            {
+                int a = 3 * InnerTerrain.Indices[t];
+                int b = 3 * InnerTerrain.Indices[t + 1];
+                int c = 3 * InnerTerrain.Indices[t + 2];
+                float dx = x - p[a], dz = z - p[a + 2];
+                float bx = p[b] - p[a], bz = p[b + 2] - p[a + 2];
+                float cx = p[c] - p[a], cz = p[c + 2] - p[a + 2];
+                float area = bx * cz - cx * bz;
+                float u = (dx * cz - cx * dz) / area;
+                float v = (bx * dz - dx * bz) / area;
+                if (u >= -0.001f && v >= -0.001f && u + v <= 1.001f)
+                    return p[a + 1] + u * (p[b + 1] - p[a + 1]) + v * (p[c + 1] - p[a + 1]);
+            }
+            return HeightAt(x, z);
+        }
+
         /// <summary>視点を場面の座標に直す。eye・target は長さ 3（X・Y・Z）。</summary>
         public void Resolve(RegionLookViewpoint viewpoint, float[] eye, float[] target)
         {

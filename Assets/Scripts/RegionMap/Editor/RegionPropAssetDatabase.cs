@@ -78,7 +78,8 @@ namespace Vastcore.RegionMap.Editor
             importer.importAnimation = false;
             importer.animationType = ModelImporterAnimationType.None;
             importer.addCollider = false;
-            importer.isReadable = false;
+            // 地形へ部品ごとに接地する瓦礫だけは、配置時に底面の頂点を読む。
+            importer.isReadable = assetPath == RegionPropAssets.ModelsRoot + "/RUB/rub_stone_rubble_pile/directional_cone.fbx";
             importer.importTangents = ModelImporterTangents.CalculateMikk;
             importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
             importer.materialLocation = ModelImporterMaterialLocation.InPrefab;

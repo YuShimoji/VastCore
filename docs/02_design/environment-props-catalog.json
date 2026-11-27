@@ -194,6 +194,7 @@
         "V5_ContentsAttachment": ["dust_mound_skirt", "broken_timber_beam"],
         "V6_ClusterSpread": {
           "pattern": "DirectionalCone",
+          "clusterModelVariant": "directional_cone",
           "layers": [
             { "role": "CorePile", "count": [1, 2], "scale": [0.85, 1.3], "distNorm": [0.0, 0.25] },
             { "role": "MidFragments", "count": [3, 8], "scale": [0.6, 1.2], "distNorm": [0.2, 0.65] },

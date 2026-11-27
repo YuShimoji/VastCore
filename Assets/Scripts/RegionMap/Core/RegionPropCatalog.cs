@@ -168,6 +168,7 @@ namespace Vastcore.RegionMap
         public float RowSpacingM;
         public float GapProbability;
         public string SizeGradient = "";
+        public string ClusterModelVariant = "";
         public string CollapsedSpills = "";
         public string RequireDebrisSkirt = "";
         public string[] ActsAsBaseFor = Array.Empty<string>();
@@ -573,6 +574,7 @@ namespace Vastcore.RegionMap
                     RowSpacingM = GetFloat(v6, "rowSpacingM", 0f),
                     GapProbability = GetFloat(v6, "gapProbability", 0f),
                     SizeGradient = GetString(v6, "sizeGradient"),
+                    ClusterModelVariant = GetString(v6, "clusterModelVariant"),
                     CollapsedSpills = GetString(v6, "collapsedSpills"),
                     RequireDebrisSkirt = GetString(v6, "requireDebrisSkirt"),
                     ActsAsBaseFor = GetStringArray(v6, "actsAsBaseFor"),

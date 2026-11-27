@@ -45,7 +45,7 @@ namespace Vastcore.RegionMap.Editor
             {
                 EditorUtility.DisplayProgressBar("Region Map", "地域と、砂岩の台地の場面を作っています…", 0.3f);
                 RegionAtmosphere atmosphere = RegionAtmosphere.Create(preset);
-                var lookSpec = new RegionLookSpec { Props = withPropsProof };
+                var lookSpec = new RegionLookSpec { Props = withPropsProof, PropsRealAssets = withPropsProof };
                 RegionTerrainView.LookResult look = CreateLookScene(new RegionSpec { Seed = 9 }, lookSpec,
                     atmosphere, out Camera camera);
                 RegionLookViewpoint startView = withPropsProof && look.Scene.PropsSlice != null
@@ -57,7 +57,7 @@ namespace Vastcore.RegionMap.Editor
                     RegionLookSky.ApplyInteractive(camera, look, atmosphere, RegionLookSky.MixedCloudTime(look.Scene));
                 SceneView view = SceneView.lastActiveSceneView;
                 if (view != null) view.AlignViewToObject(camera.transform);
-                Selection.activeGameObject = withPropsProof && look.Props != null ? look.Props.Root : look.Root;
+                Selection.activeGameObject = withPropsProof && look.Props != null ? look.Props.RealRoot ?? look.Props.Root : look.Root;
                 Debug.Log("[RegionMap] 3D: " + DescribeLook(look) + "。視点は「Region Terrain Look/Viewpoints」の far・mid・near と、適地がある場合は alcove-mid・alcove-near・alcove-shelf" +
                     (withPropsProof ? "、Props Proof は props-crates・props-rubble" : ""));
             }
@@ -644,6 +644,8 @@ namespace Vastcore.RegionMap.Editor
             }
             if (real != null)
                 report.AppendLine(FormattableString.Invariant($"real assets: models {look.Props.RealModelCount}, LOD0 triangles {look.Props.RealTriangles}, variants {look.Props.RealSummary}"));
+            foreach (string contact in look.Props.ContactMeasurements)
+                report.AppendLine(contact);
             File.WriteAllText(Path.Combine(output, "props-proof-report.txt"), report.ToString());
         }
 
@@ -658,6 +660,20 @@ namespace Vastcore.RegionMap.Editor
                 RegionTerrainView.PlaceLook(camera.transform, look.Scene, slice.CratesViewpoint);
                 camera.fieldOfView = slice.CratesViewpoint.FovDegrees;
                 Capture(camera, output, "props-crates" + suffix + ".png");
+            }
+            RegionPropInstance upper = slice.Instances.Find(inst => inst.StackSupportMemberIndex >= 0);
+            if (upper != null)
+            {
+                RegionPropInstance lower = slice.Instances.Find(inst => inst.PropId == upper.PropId &&
+                    inst.ClusterIndex == upper.ClusterIndex && inst.MemberIndex == upper.StackSupportMemberIndex && inst.StackLayer == 0);
+                if (lower != null)
+                {
+                    var focus = new Vector3(lower.X, lower.Y + 0.9f, -lower.Z);
+                    var offset = new Vector3(3f, 1.15f, -3.2f);
+                    camera.transform.SetPositionAndRotation(focus + offset, Quaternion.LookRotation(-offset));
+                    camera.fieldOfView = 38f;
+                    Capture(camera, output, "props-stack" + suffix + ".png");
+                }
             }
             if (slice.RubbleViewpoint != null)
             {

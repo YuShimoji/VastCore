@@ -20,6 +20,78 @@
       "triangles": 5076
     },
     {
+      "fbx": "CNT/cnt_wood_barrel/upright_closed.fbx",
+      "glb": "CNT/cnt_wood_barrel/upright_closed.glb",
+      "glbSha256": "8019f22edb0d3bd75599d673c3019ebe96f5b38d9e537dbd9fb8df8b9d620386",
+      "fbxSha256": "617ea808d92247d85e2b3519c24a5b627e5cdd8be3529bd92c1eab3b3c2174e8",
+      "triangles": 3656,
+      "source": "GameProjects ds011-props-review/pack.json",
+      "converter": "GameProjects export_ds011_seed9_fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "CNT/cnt_wood_barrel/upright_open_filled.fbx",
+      "glb": "CNT/cnt_wood_barrel/upright_open_filled.glb",
+      "glbSha256": "0d8787e51fd77dff17c278814b4a46106cdf4dd9bbe2da0d9b933121ea0a3b9e",
+      "fbxSha256": "135cd48d2657b084b31468224680a4a8858783d543699e47ddd8539b622c69b6",
+      "triangles": 3684,
+      "source": "GameProjects ds011-props-review/pack.json",
+      "converter": "GameProjects export_ds011_seed9_fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "CNT/cnt_wood_crate/broken_slat_open.fbx",
+      "glb": "CNT/cnt_wood_crate/broken_slat_open.glb",
+      "glbSha256": "179aa267a0bacd1c75eb611d66c09fbd20537b105e1c763655e02c7c1b525610",
+      "fbxSha256": "f438be1682f89441b3432c3760cac2262e51ac8781c5a80346a53ab915b56e5d",
+      "triangles": 3212,
+      "source": "GameProjects ds011-props-review/pack.json",
+      "converter": "GameProjects export_ds011_seed9_fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "CNT/cnt_wood_crate/framed_xbrace_1m.fbx",
+      "glb": "CNT/cnt_wood_crate/framed_xbrace_1m.glb",
+      "glbSha256": "3591ca61f0d5a8e85a7da166a9e53b21a800d3bf607db745c6419b9c885c0319",
+      "fbxSha256": "124228207ffb136608888dfb7ae5247ddd0e9fcd437558e8dddbf59772755429",
+      "triangles": 3544,
+      "source": "GameProjects ds011-props-review/pack.json",
+      "converter": "GameProjects export_ds011_seed9_fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "CNT/cnt_wood_crate/lid_open_1m.fbx",
+      "glb": "CNT/cnt_wood_crate/lid_open_1m.glb",
+      "glbSha256": "5a6f7e5408e5e87e3f1c538f9819d7399a4e2965cfa8170b62bba263666ab9e4",
+      "fbxSha256": "635e339209cb434dc639f324d98745f09934a1910a257aa243cf7ee67864349a",
+      "triangles": 3804,
+      "source": "GameProjects ds011-props-review/pack.json",
+      "converter": "GameProjects export_ds011_seed9_fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "CNT/cnt_wood_crate/long_crate_15x05m.fbx",
+      "glb": "CNT/cnt_wood_crate/long_crate_15x05m.glb",
+      "glbSha256": "a35ea2a991da85ae71f8580422047f06e311c4165ef742ab4b27b25012f12772",
+      "fbxSha256": "c0c1cc23f5fe5f4e3add695cda76180d9cee4ea81b53b35f37274db7b5aedd1d",
+      "triangles": 2348,
+      "source": "GameProjects ds011-props-review/pack.json",
+      "converter": "GameProjects export_ds011_seed9_fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "CNT/cnt_wood_crate/plank_closed_1m.fbx",
+      "glb": "CNT/cnt_wood_crate/plank_closed_1m.glb",
+      "glbSha256": "f3f0e3d4e466c7e89c97fc0da03c2d2c63c8b2121feb41eab2311b5ce7c46536",
+      "fbxSha256": "007538d0b2a3c4d1f32ee22ae9cc11079dd67bcb4b5160d1aa0956a8ba87e5b8",
+      "triangles": 3156,
+      "source": "GameProjects ds011-props-review/pack.json",
+      "converter": "GameProjects export_ds011_seed9_fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
+      "fbx": "CNT/cnt_wood_crate/slat_open_1m.fbx",
+      "glb": "CNT/cnt_wood_crate/slat_open_1m.glb",
+      "glbSha256": "3c25e28233bda10707f772995f306b35eff1336ce20763d8a8ab866b3eebc346",
+      "fbxSha256": "b3ab01cbcdf14f9ec84421da2704f9305989128a109feccf89edfdf8ba97a88c",
+      "triangles": 3012,
+      "source": "GameProjects ds011-props-review/pack.json",
+      "converter": "GameProjects export_ds011_seed9_fbx.py (Blender 5.2.0 LTS)"
+    },
+    {
       "fbx": "EXP/exp_monolith_fragment/exp_monolith_fragment__split_twin_slabs_lod0.fbx",
       "glb": "EXP/exp_monolith_fragment/exp_monolith_fragment__split_twin_slabs_lod0.glb",
       "glbSha256": "4a266ff068b01a65d9f7bf9cb80e307578949886620aea92ef75bb05b1b5e4c2",
@@ -312,6 +384,15 @@
       "glbSha256": "2a64aeff0fdf17d03ad9eed4070cd1985e16ab7d3ac4ff83d24d3a46805dc119",
       "fbxSha256": "6390e08a2ed07dce10c230aa6bc84e7c17239f79486605e052dcaf2ed49fc548",
       "triangles": 5454
+    },
+    {
+      "fbx": "RUB/rub_stone_rubble_pile/directional_cone.fbx",
+      "glb": "RUB/rub_stone_rubble_pile/directional_cone.glb",
+      "glbSha256": "4249c65e2ef373d69048e9bdbb79ecb2c56b3fc70f71d3b4ca8622ee1733743d",
+      "fbxSha256": "d1d7da6809a830d610ceb34a2f6324f2540dfe81438e3d335fc3c56d872185ee",
+      "triangles": 2280,
+      "source": "GameProjects ds011-props-review/pack.json",
+      "converter": "GameProjects export_ds011_seed9_fbx.py (Blender 5.2.0 LTS)"
     },
     {
       "fbx": "RUB/rub_stone_rubble_pile/rubble_cone_a_lod0.fbx",
