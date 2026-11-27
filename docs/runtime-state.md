@@ -71,7 +71,7 @@ Last Updated: 2026-11-27
 5. 進め方：問いは、答えで方式が分かれる時だけ送る（[INTERACTION_NOTES](INTERACTION_NOTES.md)、[INVARIANTS](INVARIANTS.md)）。本人が Unity Editor を開いている間は写し `D:\vcv\VastCore` で確かめて1回で戻し、写しの Unity が動いている間は写しの C# を編集しない。
 6. 砂岩の3Dはアルコーブ・光と空気・表面の段3まで。晴れは Weather Maker、砂塵は自作。本人の選択は Linear・雲量上限0.8（形を優先）・夕方の雲は今の淡さ（2026-11-27、sky-trial m36）。空・雲・霞の作業は終了。終了後の追加は本人の選択「模様を2Dの風で流す」で、塊が2Dと同じ向き・速さで流れる（一周で戻さない。m43）。thank 端末にも Weather Maker を導入し、PC・Mobile の描画設定を維持した。探索から地上へ地点と雲の時刻を渡せる。個々の雲の輪郭の照合には差が残る。[通常の入口と確認結果](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)・[本人の選択](USER_REQUEST_LEDGER.md)。
    - 探索メニューからseed 8・9を開き、既存の砂・礫を比較用に適用したPC品質の動画とフレーム間隔を確認。[動画と計測](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)。表面の [T0〜T5](02_design/REGION_SURFACE_MATERIALS_SPEC.md) はT0〜T4済み（T0は本人の回答「B主・A従」、T3 ac3d822で3Dの場面は土砂の場を標準の1で描く、T4で大きい岩が錐の裾の先に寄り根元と下の方が地面へなじむ）。残りはT5（素材の採否、本人）。見た目と素材の採否は本人。アーチ・峡谷は後続。
-   - DS-011 Props は差し替え口・比較撮影・モデル 71 個の commit まで（取り込み経路は本人の選択で A＝FBX、[DS-011 7節](02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md)）。残る本人の判断は比較画像での美術の採否（砂岩の写真素材の色など、8.1節）。採否の後に P0 残件（17種）へ進む。
+   - DS-011 Props は差し替え口・比較撮影・モデル 71 個の commit まで（取り込み経路は本人の選択で A＝FBX、[DS-011 7節](02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md)）。岩の色は本人の選択で地形の赤い砂岩へ寄せた（Props の岩は画面の r/g 1.16〜1.24→1.40〜1.46、地形の岩 1.64〜1.68。瓦礫の小さな欠片は淡いまま、8.1節）。次は P0 残件（17種）。
 
 ## External Pulse And Remote Resume
 

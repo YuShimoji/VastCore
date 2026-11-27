@@ -208,7 +208,7 @@ Proof Slice（`RegionLookSpec.Props`）に、実モデルで置いた組を足�
 | 読み出し | `IRegionPropAssetSource`（Editor は `RegionPropAssetDatabase` が AssetDatabase で読む）。選び方は `RegionPropAssets`（EditMode で試験） |
 | 変種 | 損傷・組み方・形の値（`fallen_drum`・`broken_mid`・`intact` など）を変種の名前に探し、無ければ全部から。同じ群れの隣どうしは別の変種（瓦礫を2つ以上並べても同じ物に見えない） |
 | 大きさ | 横の大きい方をカタログの寸法×個体の倍率に合わせる。瓦礫（`rub_stone_rubble_pile`・`rub_masonry_blocks`）の GLB は1つで群れ全体（大・中・細の3層）なので、作った大きさのまま CorePile にだけ置き、中と細の個体は置かない。傾きは地面の法線に合わせる |
-| 材質（V4） | 元の材質の名前から共有の材質へ: 木は Poly Haven `raw_plank_wall`、砂岩は `worn_rock_natural_01`（粗さの画像が無いので一定 0.88）、砂・灰は既存の ambientCG Ground054 の色。Pale・Warm・Deep・Dark・Charred などは明るさと暖かさで変える。個体ごとの明るさ（`TintShift`）と暖かさは MaterialPropertyBlock |
+| 材質（V4） | 元の材質の名前から共有の材質へ: 木は Poly Haven `raw_plank_wall`、砂岩は `worn_rock_natural_01`（粗さの画像が無いので一定 0.88）、砂・灰は既存の ambientCG Ground054 の色。砂岩と砂は地形の岩と土の色へ寄せる（8.1節）。Pale・Warm・Deep・Dark・Charred などは明るさと暖かさで変える。個体ごとの明るさ（`TintShift`）と暖かさは MaterialPropertyBlock |
 | 環境順応（V7） | シェーダー `Vastcore/RegionProp`: 上を向いた面に砂塵（`TopDust`）、足元の地面（傾いた平面）から帯の高さ（`GroundSkirtBlendM`、大きい物ほど広い）までを地面の色へ。光と空気は地形と同じ |
 | 入口 | `-propsCompare true -propsReal true` で `props-*-real.png` を足して撮る（`region-map.ps1` には未接続。Unity の `-executeMethod Vastcore.RegionMap.Editor.RegionTerrainViewMenu.CaptureFromCommandLine` に直接渡す） |
 
@@ -224,8 +224,18 @@ GLB 71 個を Blender 5.2 で FBX に変換し（`scripts/glb-to-fbx.py`）、`A
 | LOD0 の三角形 | 64,572 | 31,628 |
 | プレースホルダの組との差（8階調を超える画素） | rubble 22.0%・crates 4.2%・near 2.8% | 13.9%・0.8%・0.1% |
 
-見えたこと: 瓦礫・層状岩の多面体の面が、写真の欠け・層・凹凸に替わり、瓦礫は大・中・細の3層が1つの山として斜面に載る。木箱・樽はモデルが無くプレースホルダのまま。砂岩の写真素材（`worn_rock_natural_01`）は周りの赤い砂岩と地面より淡く黄白に見える（色合わせは本人の採否）。`rubble_low_radial` は幅 0.7 m 前後で、CorePile（1〜6 m）としては小さい。初めの版で瓦礫の中・細の個体（51 個）に群れ全体のモデルを縮めて置き、三角形が 558,512 になったので、群れ全体のモデルは CorePile にだけ置くようにした。
+見えたこと: 瓦礫・層状岩の多面体の面が、写真の欠け・層・凹凸に替わり、瓦礫は大・中・細の3層が1つの山として斜面に載る。木箱・樽はモデルが無くプレースホルダのまま。砂岩の写真素材（`worn_rock_natural_01`）は周りの赤い砂岩と地面より淡く黄白に見えた（下の色合わせで直した）。`rubble_low_radial` は幅 0.7 m 前後で、CorePile（1〜6 m）としては小さい。初めの版で瓦礫の中・細の個体（51 個）に群れ全体のモデルを縮めて置き、三角形が 558,512 になったので、群れ全体のモデルは CorePile にだけ置くようにした。
 
 画像は撮影端末の `artifacts/region-map/ds011-real-20261127/`（`s9/`・`s8/` の `props-*.png` と `props-*-real.png`、`pair-*.png` は左右の対、`s9-rubble-zoom.png`）。EditMode 717/717（`RegionPropAssetsTests` 6 件を含む）。
+
+**色合わせ（本人の選択「赤い砂岩に合わせる」、2026-11-27）**: 写真の模様は残し、チャンネルごとの倍率（`RegionPropAssets.StoneMatch`）で平均の色を地形の転がる岩（`RegionSandstone.hlsl` の block の式の平均）へ寄せ、同じ絵の地形の岩との比で画面の補正（`StoneRenderCalibration`）を掛けた。瓦礫の裾の砂は Ground054 を地形の土の色へ寄せた（`SandMatch`）。瓦礫の視点で、影を落とさない物とその物が無い絵の差を物の画素とし、明るい半分の線形の平均を比べた（`props-rubble-mask-*.png`）:
+
+| r/g・b/g | seed 9 | seed 8 |
+|---|---|---|
+| 地形の岩 | 1.64・0.52 | 1.68・0.50 |
+| Props 前 | 1.16・0.58 | 1.24・0.56 |
+| Props 後 | 1.40・0.52 | 1.46・0.51 |
+
+平たい岩（Warm）は地形の岩に近い赤みのある橙になった（seed 9 の手前の範囲で r/g 1.57）。瓦礫の山の小さな欠片は淡いまま（r/g 1.42）で、裾の砂を寄せても変わらなかった。残る黄みは V7 の砂塵・足元のなじみの色（`_PropGroundColor` は個体ごとに渡さず既定の (0.72,0.56,0.40)）と考えるが未検証。画像は `artifacts/region-map/ds011-color-20261127/`（`pair-s9-rubble-color.png`・`pair-s8-rubble-color.png`、途中の段は `-step1`・`-step2`）。
 
 未確認: Props を足した時の GPU 時間（三角形の数だけ測った）、LOD1 へ切り替わる距離の見え方、通常 Editor のメニュー（`Open 3D Mesa Look + DS-011 Props Proof`）からの実アセットの表示。

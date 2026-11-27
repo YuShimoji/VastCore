@@ -70,6 +70,16 @@ namespace Vastcore.Tests.EditMode
             Assert.AreEqual(RegionPropAssets.StoneSet + "worn_rock_natural_01_diff_2k.jpg", pale.ColorPath);
             Assert.AreEqual("", pale.RoughnessPath, "worn_rock_natural_01 は粗さの画像が無い");
             Assert.Greater(pale.Value, deep.Value);
+            // 砂岩の写真の平均に倍率を掛けると、地形の転がる岩の色（r/g 2.14・b/g 0.51）に画面での補正を掛けた色になる
+            Color matched = RegionPropAssets.StoneTextureMean * pale.Match;
+            Color target = RegionPropAssets.LooseRockMean * RegionPropAssets.StoneRenderCalibration;
+            Assert.AreEqual(target.r / target.g, matched.r / matched.g, 1e-3f);
+            Assert.AreEqual(target.b / target.g, matched.b / matched.g, 1e-3f);
+            Assert.Greater(matched.r / matched.g, 2f, "黄白の写真（r/g 1.44）を赤い砂岩へ寄せる");
+            Assert.AreEqual(Color.white, RegionPropAssets.SurfaceFor("wood-light").Match, "木は写真の色のまま");
+            Color sand = RegionPropAssets.SandTextureMean * RegionPropAssets.SurfaceFor("Dryland_Skirt_PBR").Match;
+            Assert.AreEqual(RegionPropAssets.SoilMean.r / RegionPropAssets.SoilMean.g, sand.r / sand.g, 1e-3f, "裾の砂は地形の土の色");
+            Assert.AreEqual(Color.white, RegionPropAssets.SurfaceFor("P0_Ash").Match, "灰は暖かさで灰色にする");
             Assert.AreEqual(RegionPropAssets.SandColor, RegionPropAssets.SurfaceFor("Dryland_Skirt_PBR").ColorPath);
             Assert.AreEqual(RegionPropAssets.SandColor, RegionPropAssets.SurfaceFor("P0_Fine_Sand").ColorPath);
             Assert.AreEqual(RegionPropAssets.StoneSet + "worn_rock_natural_01_diff_2k.jpg", RegionPropAssets.SurfaceFor("sandstone-dark").ColorPath);

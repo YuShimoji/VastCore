@@ -629,6 +629,7 @@ namespace Vastcore.RegionMap.Editor
                 look.Props.Root.SetActive(false);
                 real.SetActive(true);
                 CapturePropsViews(camera, look, slice, output, "-real");
+                CaptureRubbleMasks(camera, look, slice, output, real);
                 Debug.Log("[RegionMap] DS-011 実アセット: モデル " + look.Props.RealModelCount + " 個、LOD0 の三角形 " + look.Props.RealTriangles
                     + "、変種 " + look.Props.RealSummary);
             }
@@ -664,6 +665,39 @@ namespace Vastcore.RegionMap.Editor
                 camera.fieldOfView = slice.RubbleViewpoint.FovDegrees;
                 Capture(camera, output, "props-rubble" + suffix + ".png");
             }
+        }
+
+        /// <summary>
+        /// 瓦礫の視点で、色を測るための対を撮る（DS-011 8.1節）。影を落とさない物と、その物が無い絵の差が、物の画素だけになる。
+        /// `props-rubble-mask-props.png`／`-none.png` は実アセットの組、`-rocks.png`／`-norocks.png` は地形の岩（Props は出さない）。
+        /// </summary>
+        private static void CaptureRubbleMasks(Camera camera, RegionTerrainView.LookResult look, RegionPropProofSlice slice, string output, GameObject real)
+        {
+            if (slice.RubbleViewpoint == null) return;
+            RegionTerrainView.PlaceLook(camera.transform, look.Scene, slice.RubbleViewpoint);
+            camera.fieldOfView = slice.RubbleViewpoint.FovDegrees;
+            Transform rocks = look.Root.transform.Find("Rocks");
+            SetShadows(real, false);
+            Capture(camera, output, "props-rubble-mask-props.png");
+            SetShadows(real, true);
+            real.SetActive(false);
+            Capture(camera, output, "props-rubble-mask-none.png");
+            if (rocks != null)
+            {
+                SetShadows(rocks.gameObject, false);
+                Capture(camera, output, "props-rubble-mask-rocks.png");
+                SetShadows(rocks.gameObject, true);
+                rocks.gameObject.SetActive(false);
+                Capture(camera, output, "props-rubble-mask-norocks.png");
+                rocks.gameObject.SetActive(true);
+            }
+            real.SetActive(true);
+        }
+
+        private static void SetShadows(GameObject root, bool on)
+        {
+            foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(true))
+                renderer.shadowCastingMode = on ? ShadowCastingMode.On : ShadowCastingMode.Off;
         }
 
         private static void CaptureAlcoveComparison(Camera camera, RegionTerrainView.LookResult look, string output)

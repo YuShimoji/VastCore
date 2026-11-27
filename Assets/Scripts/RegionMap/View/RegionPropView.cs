@@ -246,7 +246,8 @@ namespace Vastcore.RegionMap
             Texture2D normal = surface.NormalPath.Length > 0 ? ctx.Source.Texture(surface.NormalPath) : null;
             Texture2D rough = surface.RoughnessPath.Length > 0 ? ctx.Source.Texture(surface.RoughnessPath) : null;
             // 写真の色に掛ける値（線形）。彩度は灰色との混ぜで近似する（画素ごとの式はシェーダーを増やさない）
-            Color tint = color != null ? new Color(surface.Value, surface.Value, surface.Value, 1f) : surface.Linear;
+            Color tint = color != null ? surface.Value * surface.Match : surface.Linear;
+            tint.a = 1f;
             if (color != null)
             {
                 tint.r *= 1f + 0.05f * surface.Warmth;

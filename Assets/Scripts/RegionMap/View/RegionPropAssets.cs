@@ -43,6 +43,8 @@ namespace Vastcore.RegionMap
         public string RoughnessPath = "";
         /// <summary>写真素材の無い材質の色（線形）。</summary>
         public Color Linear = Color.white;
+        /// <summary>写真の色に掛けるチャンネルごとの倍率（線形）。地形の色へ寄せる時に使う。</summary>
+        public Color Match = Color.white;
         /// <summary>写真の色に掛ける明るさと暖かさ（-1〜1）。</summary>
         public float Value = 1f;
         public float Warmth;
@@ -63,6 +65,37 @@ namespace Vastcore.RegionMap
         public const string StoneSet = "Assets/Art/Textures/RUB/sandstone_rubble_weathered/";
         // 砂は既にある ambientCG Ground054 の色だけを使う（MapGenerator の法線は取り込みの設定が legacy のままなので使わない）
         public const string SandColor = "Assets/Resources/MapGenerator/Textures/Ground054_1K-JPG/Ground054_1K-JPG_Color.jpg";
+
+        /// <summary>
+        /// `worn_rock_natural_01_diff_2k` の画素の平均（線形、2048² 全部）。黄白で r/g 1.44。
+        /// </summary>
+        public static readonly Color StoneTextureMean = new Color(0.3968f, 0.2761f, 0.1449f, 1f);
+
+        /// <summary>
+        /// 地形の転がる岩の色の平均（線形、r/g 2.14）。`RegionSandstone.hlsl` の block の式
+        /// （(0.56,0.37,0.28)〜(0.85,0.62,0.44) × 鉱物 0.79〜1.22 × むら 0.74〜1.10、sRGB）を一様な乱数で平均して線形にした値。
+        /// 本人の選択（2026-11-27「赤い砂岩に合わせる」）で、砂岩の Props の写真の平均をこの色へ寄せる。
+        /// </summary>
+        public static readonly Color LooseRockMean = new Color(0.4051f, 0.1889f, 0.0957f, 1f);
+
+        /// <summary>Ground054 の色の画素の平均（線形、r/g 1.29）と、地形の土の色の平均（`RegionSandstone.hlsl` の soil の式、線形、r/g 1.73）。</summary>
+        public static readonly Color SandTextureMean = new Color(0.3331f, 0.2588f, 0.1562f, 1f);
+        public static readonly Color SoilMean = new Color(0.4798f, 0.2779f, 0.1370f, 1f);
+
+        /// <summary>瓦礫の裾の砂（Dryland_Skirt・Fine_Sand）に掛ける倍率。Ground054 の黄色い砂を地形の土の色へそろえる。</summary>
+        public static Color SandMatch => new Color(SoilMean.r / SandTextureMean.r, SoilMean.g / SandTextureMean.g, SoilMean.b / SandTextureMean.b, 1f);
+
+        /// <summary>
+        /// 画面での補正（線形）。平均の色をそろえただけでは、砂塵・足元のなじみ（V7）と材質の変種で Props の岩が地形の岩より黄色く残った。
+        /// 瓦礫の視点（seed 9・8）で、同じ絵の地形の岩と Props の岩の画素の平均の比（チャンネルごと、4 通りの平均）を掛ける（DS-011 8.1節）。
+        /// </summary>
+        public static readonly Color StoneRenderCalibration = new Color(0.950f, 0.771f, 0.731f, 1f);
+
+        /// <summary>砂岩の写真に掛けるチャンネルごとの倍率（線形）。写真の模様は残し、平均の色だけを地形の岩にそろえる。</summary>
+        public static Color StoneMatch => new Color(
+            LooseRockMean.r / StoneTextureMean.r * StoneRenderCalibration.r,
+            LooseRockMean.g / StoneTextureMean.g * StoneRenderCalibration.g,
+            LooseRockMean.b / StoneTextureMean.b * StoneRenderCalibration.b, 1f);
 
         /// <summary>カタログ ID の頭（nat_・rub_ …）をドメインのフォルダの名前（NAT・RUB …）にする。</summary>
         public static string DomainOf(string catalogId)
@@ -196,11 +229,13 @@ namespace Vastcore.RegionMap
                 s.ColorPath = SandColor;
                 s.Roughness = 0.95f;
                 if (n.Contains("ash")) { s.Value = 0.55f; s.Warmth = -0.8f; }
+                else s.Match = SandMatch;
                 return s;
             }
             // 残りは砂岩（sandstone・Sandstone_PBR_*・P0_Sandstone*・P0_Monolith_Stone・P0_Charred_Stone）
             s.ColorPath = StoneSet + "worn_rock_natural_01_diff_2k.jpg";
             s.NormalPath = StoneSet + "worn_rock_natural_01_nor_gl_2k.jpg";
+            s.Match = StoneMatch;
             s.Roughness = 0.88f;
             if (n.Contains("charred")) s.Value = 0.42f;
             else if (n.Contains("pale")) { s.Value = 1.14f; s.Warmth = -0.2f; }
