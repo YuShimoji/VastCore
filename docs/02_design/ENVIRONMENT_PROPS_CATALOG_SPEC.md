@@ -196,6 +196,7 @@ VastCore の現行3D景観（砂岩・乾燥地）と今後の展開予定（古
 - [道路データ](../../Assets/Scripts/RegionMap/Core/RegionRoads.cs)はメートル単位の中心線、高さの取得関数、幅員から縦断と地形のすり付けを作る。[道路部品](../../Assets/Scripts/RegionMap/View/RegionRoadView.cs)は同じ断面を舗装、標示、防護柵、当たり判定に使う。敷地の `RegionRoadsideSite` は、道路ID、中心線に沿った距離、側、入口・敷地の座標と向きを持つ。敷地IDは生成した場面内で一意。探索マップからの道路・敷地呼び出しは別の接続工程。
 - 舗装は `Asphalt010`、砂利は `Ground007`、地表は `Grass005` と `Ground009`。中遠景の株と樹木は既存の `DesertPlants` から再利用し、畦と浅い溝の高低、畑の畝、植生をまとめる配置を追加した。[素材の出所](../../Assets/Resources/MapGenerator/Textures/texture-source.json)・[植生の配置](../../Assets/Scripts/RegionMap/View/RegionRoadLandscape.cs)
 - 自然地形のパッケージにも、形状だけの遠中景、着色した初稿、同じカメラの修正版を残す。畑の色と孤立した樹木を増やすだけでは境界が読みにくかったため、高低差と植生のまとまりを追加した。別 seed では、地形の接触と植生の除外を確認する。仕上げの残差は遠景の尾根の重なりと近景の路肩から草地への移り変わり。[完成想定図・Unity・計測の比較](<D:/AI-Runs/VastCore/highway-arterial/index.html>)
+- 畝は Unity Terrain Lit がアルファを光沢に読むため、色だけの RGB で生成する。検証用コピーの Unity 6000.3.6f1 は3プリセットで路面・進入口・敷地の合計537点と EditMode 4件を確認。場面生成0.56〜0.96秒、1600×900で道路と路肩の草を加えた描画の増分0.18〜1.51 ms（CPUとGPU同期込み）。[Terrain Layer のチャンネルの意味](https://docs.unity.com/en-us/engine/6000.3/manual/creating-environments/script-terrain/terrain-textures/class-terrain-layer#diffuse-settings)
 
 ---
 
@@ -280,3 +281,5 @@ GameProjects の木箱6型・木樽2型・扇状の瓦礫1型を、元GLBのSHA-
 現行の配布版は建築部材32、街路部材8、Props 71、組立見本3。seed 417と1031の各9棟で正面と搬入口、22・23か所の階の接続をカプセルで確認した。保存シーンはメニューから開き、Play中のゲームパッド入力でカフェ入口を通過した。[撮影の比較ページ](<D:/AI-Runs/VastCore/modern-city-block/review.html>)では同じ視点で基本構成と拡充後を比較できる。RTX 4060 Tiの街路視点・1600×900で、Props拡充による描画と1画素読み戻しの中央値の増分は0.93 msと1.03 ms。未確認の指標はGPU単独時間。
 
 完成イメージに比べ、店先の用途は判別しやすくなったが、遠景は平らな屋根の反復が残り、近景は石・ガラスの反射と使い込んだ細部が不足する。次の人工物キットで先に手を付ける箇所は、用途が見える地上階の開口と、輪郭を変えるセットバックや屋上部。近景の仕上げは撮影で差が目立つ入口と主役の什器に集中させ、同じ部材で別の建物を組めることを確かめる。
+
+この端末の検証用作業ツリー `C:\Users\PLANNER007\.codex\worktrees\modern-city-block\VastCore` は、チャットの既定チェックアウトに設定されているためアーカイブできなかった。検証した資産は元のVastCoreへ反映し、`803a724` をpush済み。作業ツリーが既定のチェックアウトから外れた時点でアーカイブできる。
