@@ -12,6 +12,9 @@ namespace Vastcore.RegionMap
     /// 1. 帽子の岩が残っている範囲を、地域全体の座標（m）で引くノイズから決める（広い台地）。台地の近くには、離れ岩（ビュートと尖塔）を置く。
     ///    範囲は、2 方向の縦の割れ目で区切った岩の塊ごとに決めるので、崖の線は直線の板と直角の角でできる。
     ///    縁の塊は、低く欠けたり、段になって崩れ落ちたり、割れ目で壁から離れたりする。
+    ///    崖の面は、粗い板（34 × 48 m）ごとに、割れ目の向きの平面へそろえる（細かな塊ごとに決めると、4〜5 m ごとの
+    ///    折れが全高を通る縦溝に見える）。外に接するセルは、面がセルの中のどこを通るかで高さを中間にする。
+    ///    広い上面を持つ岩の崖は、崖・棚・崖の段と、いちばん上の薄い層の段で奥へ下がる。
     /// 2. 帽子の岩からの距離を測り、距離から断面を作る。岩屑の斜面は安息角（約 34 度）で一定に下る。
     /// 3. 床（広域から引いた標高に細部を足したもの）より高い所だけを置き換える。海・川・湖のセルは動かさない。
     ///
@@ -39,6 +42,18 @@ namespace Vastcore.RegionMap
 
         /// <summary>帽子の岩から、裾（斜面・棚・次の崖）が届く最大の距離（m）。窓の外をこの幅だけ余分に調べる。</summary>
         private const float MesaSkirtMeters = 270f;
+
+        /// <summary>いちばん上の薄い帽子の層の厚さ（m）。上端の段になる。</summary>
+        private const float MesaRimThickness = 8f;
+
+        /// <summary>段を付ける岩に要る、縁からの内側の広さ（m）。これより細い岩（尖塔・細いビュート）には段を付けない。</summary>
+        private const float MesaTierCore = 22f;
+
+        /// <summary>崖の面を板ごとの平面で決め直す、なめらかな縁からの幅（m）。広げると、台地どうしのすき間に新しい塊が立つ。</summary>
+        private const float MesaFaceBand = 14f;
+
+        /// <summary>板の平面を、なめらかな縁からどこまで離してよいか（m）。</summary>
+        private const float MesaFaceSlack = 6f;
 
         private const float MesaThreshold = 0.17f;
 
@@ -188,14 +203,17 @@ namespace Vastcore.RegionMap
             // 距離で前後させるので、ノイズの傾きがゆるい所でも、縁の出入りの幅は変わらない
             float[] inward = MesaDistance(smoothOut, n, null, null, cell);
             float[] outward = MesaDistance(smoothIn, n, null, null, cell);
+            // 崖の面までの距離（m。内側が正）。板ごとの平面で決めるので、斜めの面でも格子の階段にならない。縁の帯の外は NaN
+            var face = new float[n * n];
+            for (int j = 0; j < face.Length; j++) face[j] = float.NaN;
             Parallel.For(0, n, py =>
             {
                 for (int px = 0; px < n; px++)
                 {
                     int j = px + py * n;
                     if (skirt[j] <= 0f) continue;
-                    if (inward[j] > 14f) { outside[j] = 0; continue; }
-                    if (outward[j] > 14f) continue;
+                    if (inward[j] > MesaFaceBand) { outside[j] = 0; continue; }
+                    if (outward[j] > MesaFaceBand) continue;
                     double worldX = worldLeft + px * (double)cell;
                     double worldY = worldTop + py * (double)cell;
                     // 割れ目の座標（2 方向）と、その場所の岩の塊
@@ -210,27 +228,60 @@ namespace Vastcore.RegionMap
                     JointBlock(v, 12.5f, seed + 272u, out bv, out bVc, out bVd);
                     JointBlock(u, 34f, seed + 273u, out mu, out mUc, out mUd);
                     JointBlock(v, 48f, seed + 274u, out mv, out mVc, out mVd);
-                    // いちばん細かい塊の中心で、縁からの距離を読む
-                    int centerPx = ClampInt(px + (int)Math.Round((fUc * ca - fVc * sa) / cell), 0, n - 1);
-                    int centerPy = ClampInt(py + (int)Math.Round((fUc * sa + fVc * ca) / cell), 0, n - 1);
-                    int c = centerPx + centerPy * n;
-                    if (skirt[c] <= 0f) continue;
-                    // 板・柱・面ごとに、縁の位置が前後する（±10 m、±5 m、±1.4 m）
-                    float shift = (RegionNoise.Hash01(mu, mv, seed + 266u) - 0.5f) * 20f + (RegionNoise.Hash01(bu, bv, seed + 263u) - 0.5f) * 10f
-                        + (RegionNoise.Hash01(fu, fv, seed + 269u) - 0.5f) * 2.8f;
-                    if (inward[c] - outward[c] + shift > 0f) outside[j] = 0;
+                    // 板の面：板の中心で、なめらかな縁からの距離とその傾きを読み、割れ目の 2 方向のうち縁に向き合う方へ
+                    // まっすぐな面を立てる。細かな塊ごとに縁を決めると、面が 4〜5 m ごとのジグザグになり、同じ幅の縦溝に見える
+                    int pcx = ClampInt(px + (int)Math.Round((mUc * ca - mVc * sa) / cell), 2, n - 3);
+                    int pcy = ClampInt(py + (int)Math.Round((mUc * sa + mVc * ca) / cell), 2, n - 3);
+                    int pc = pcx + pcy * n;
+                    float sideX = (inward[pc + 2] - outward[pc + 2]) - (inward[pc - 2] - outward[pc - 2]);
+                    float sideY = (inward[pc + 2 * n] - outward[pc + 2 * n]) - (inward[pc - 2 * n] - outward[pc - 2 * n]);
+                    float centre = inward[pc] - outward[pc];
+                    float smooth = inward[j] - outward[j];
+                    float plane = float.NaN;
+                    if (Math.Abs(centre) < 1e6f && Math.Abs(sideX) < 1e6f && Math.Abs(sideY) < 1e6f)
+                    {
+                        float alongU = sideX * (float)ca + sideY * (float)sa;
+                        float alongV = -sideX * (float)sa + sideY * (float)ca;
+                        plane = Math.Abs(alongU) >= Math.Abs(alongV)
+                            ? centre - Math.Sign(alongU) * mUc
+                            : centre - Math.Sign(alongV) * mVc;
+                    }
+                    // 平面が元の縁から大きく離れる所は、その板の面ではない（板の中心が別の台地の中にあり、横の小さな岩や
+                    // 曲がった縁にまで平面を延ばしている）。そこは細かな塊の中心で縁を決める（以前の決め方）
+                    if (float.IsNaN(plane) || Math.Abs(plane - smooth) > 2f * MesaFaceSlack)
+                    {
+                        int fineX = ClampInt(px + (int)Math.Round((fUc * ca - fVc * sa) / cell), 0, n - 1);
+                        int fineY = ClampInt(py + (int)Math.Round((fUc * sa + fVc * ca) / cell), 0, n - 1);
+                        int c = fineX + fineY * n;
+                        if (skirt[c] <= 0f) continue;
+                        float old = (RegionNoise.Hash01(mu, mv, seed + 266u) - 0.5f) * 20f + (RegionNoise.Hash01(bu, bv, seed + 263u) - 0.5f) * 10f
+                            + (RegionNoise.Hash01(fu, fv, seed + 269u) - 0.5f) * 2.8f;
+                        if (inward[c] - outward[c] + old > 0f) outside[j] = 0;
+                        continue;
+                    }
+                    // 縁が曲がっている板では、平面が元の縁から離れて台地の形が変わるので、元の縁の前後 MesaFaceSlack に収める
+                    if (plane > smooth + MesaFaceSlack) plane = smooth + MesaFaceSlack;
+                    else if (plane < smooth - MesaFaceSlack) plane = smooth - MesaFaceSlack;
+                    // 板ごとに縁の位置が前後する（±10 m）。柱は一部だけが控え壁として前へ出るか、奥へ下がる。
+                    // 残りの柱は板の面にそろうので、数十 m の平らな面が残る（柱をすべて前後させると、同じ幅の縦溝が並ぶ）
+                    float columnHash = RegionNoise.Hash01(bu, bv, seed + 263u);
+                    float column = columnHash > 0.82f ? 1.5f + 4.5f * (columnHash - 0.82f) / 0.18f
+                        : columnHash < 0.10f ? -(1.5f + 3f * columnHash / 0.10f) : 0f;
+                    float shift = (RegionNoise.Hash01(mu, mv, seed + 266u) - 0.5f) * 20f + column;
+                    face[j] = plane + shift;
+                    if (face[j] > 0f) outside[j] = 0;
                 }
             });
 
             // 2 段目：縁からの距離（m）で、欠け・崩れ・割れ目を決める。縁から離れた上面には手を入れない（平らなまま）
             float[] toEdge = MesaDistance(outside, n, null, null, cell);
-            // 幅 4 m ほどより細い板や針は立っていられないので取り除く（柱 1 本ぶんの太さがあれば残る）
+            // 幅 7 m ほどより細い板や針は取り除く（板の平面どうしの間に残る細い切れ端。柱 1 本ぶんの太さがあれば残る）
             if (cell < 2.2f)
             {
                 var core = new byte[n * n];
-                for (int j = 0; j < core.Length; j++) core[j] = (byte)(toEdge[j] > 2.2f ? 1 : 0);
+                for (int j = 0; j < core.Length; j++) core[j] = (byte)(toEdge[j] > 3.6f ? 1 : 0);
                 float[] toCore = MesaDistance(core, n, null, null, cell);
-                for (int j = 0; j < core.Length; j++) if (outside[j] == 0 && toCore[j] > 2.2f + 0.5f * cell) outside[j] = 1;
+                for (int j = 0; j < core.Length; j++) if (outside[j] == 0 && toCore[j] > 3.6f + 0.5f * cell) outside[j] = 1;
             }
             else
             {
@@ -252,6 +303,10 @@ namespace Vastcore.RegionMap
                 }
             }
             toEdge = MesaDistance(outside, n, null, null, cell);
+            // 段を付けてよい所：縁から MesaTierCore より内側の広い上面が近くにある岩。細いビュートと尖塔は段で痩せさせない
+            var wideTop = new byte[n * n];
+            for (int j = 0; j < wideTop.Length; j++) wideTop[j] = (byte)(outside[j] == 0 && toEdge[j] > MesaTierCore ? 1 : 0);
+            float[] toWide = MesaDistance(wideTop, n, null, null, cell);
             Parallel.For(0, n, py =>
             {
                 for (int px = 0; px < n; px++)
@@ -310,18 +365,85 @@ namespace Vastcore.RegionMap
                         if (slot > 0f) drop = Math.Max(drop, MesaCapThickness * deep * slot);
                         if (edge < 9f)
                         {
+                            // 柱の間の細い割れ目は少しだけ（多いと同じ幅の縦溝が並ぶ）
                             float crack = Math.Max(
-                                JointSlot(bUd, bu, (int)Math.Floor(v / 12.0), 0.9f, 0.6f, 0.45f, seed + 283u),
-                                JointSlot(bVd, bv, (int)Math.Floor(u / 12.0), 0.9f, 0.6f, 0.45f, seed + 284u));
+                                JointSlot(bUd, bu, (int)Math.Floor(v / 12.0), 0.9f, 0.6f, 0.15f, seed + 283u),
+                                JointSlot(bVd, bv, (int)Math.Floor(u / 12.0), 0.9f, 0.6f, 0.15f, seed + 284u));
                             if (crack > 0f) drop = Math.Max(drop, MesaCapThickness * (0.08f + 0.5f * hashBlock3) * crack * slotScale);
                         }
                     }
 
+                    // 段：層の境で壁が奥へ下がる（崖・棚・崖）。下の壁の上端が棚になり、上の壁と、いちばん上の薄い帽子の層が
+                    // それぞれ奥に立つ。棚の幅は板ごと・柱ごとに変わり、段の無い板もある。層の境の高さは場所でゆるく変わるだけ
+                    // （同じ層なので台地ごとにほぼ水平）。高さの格子では上の層を張り出させられないので、帽子の層も奥へ下げる
+                    // 段を付ける岩に近い所は、突き出した控え壁や小さな張り出しも同じ段にそろえる（そろえないと細い柱が残る）
+                    // 広い上面から離れた所では段を少しずつ弱める（境で切ると、段の無い細い張り出しが上の段より高い柱として残る）
+                    if (toWide[j] < MesaTierCore + 40f)
+                    {
+                        float tierFade = 1f - RegionNoise.Smooth(MesaTierCore + 12f, MesaTierCore + 40f, toWide[j]);
+                        float bench = RegionNoise.Hash01(mu, mv, seed + 310u) < 0.28f ? 0f
+                            : 4f + 6f * RegionNoise.Hash01(mu, mv, seed + 311u) + (RegionNoise.Hash01(bu, bv, seed + 312u) - 0.5f) * 4f;
+                        // 粗い格子（外側の窓）では、棚が 1 セルより細いと写らないので、遠景の輪郭に出る幅にする
+                        if (bench > 0f && cell > 2.2f && bench < 1.6f * cell) bench = 1.6f * cell;
+                        float rim = RegionNoise.Hash01(mu, mv, seed + 313u) < 0.45f ? 0f : 1.5f + 2.5f * RegionNoise.Hash01(bu, bv, seed + 314u);
+                        // 段の縁も、セルの中のどこを通るかで高さを中間にする（下の「縁の線」と同じ理由）
+                        float wall = PlaneOrEdge(face[j], edge, cell);
+                        float onUpper = RegionNoise.Clamp01(0.5f + (wall - bench) / cell);
+                        float onTop = RegionNoise.Clamp01(0.5f + (wall - bench - rim) / cell);
+                        float tierDrop = 0f;
+                        if (bench > 0f)
+                            tierDrop += (1f - onUpper) * MesaCapThickness * (0.44f + 0.06f * RegionNoise.Fbm((float)(worldX / 700.0) + 1.9f, (float)(worldY / 700.0) + 4.6f, 2, seed + 315u));
+                        if (rim > 0f)
+                            tierDrop += (onUpper - onTop) * (MesaRimThickness + 2f * RegionNoise.Fbm((float)(worldX / 300.0) + 6.2f, (float)(worldY / 300.0) + 3.1f, 2, seed + 316u));
+                        tierDrop *= tierFade;
+                        if (tierDrop > drop) drop = tierDrop;
+                    }
+
+                    // 縁の線：崖の線は割れ目の向き（格子に斜め）に走るので、セルの有無だけで決めると 1 セルの階段になり、
+                    // 段ごとに光の向きが変わって、全高を通る細い縦縞に見える。外に接するセルは、割れ目の線がセルの中の
+                    // どこを通るかで高さを中間にして、壁の位置を格子より細かく置く
+                    // 立っている岩かは、縁の線をずらす前の高さで決める（ずらした縁のセルを崩れた塊にしない）
+                    bool stands = drop < 0.72f * MesaCapThickness;
+                    bool rimCell = (px > 0 && outside[j - 1] != 0) || (px < n - 1 && outside[j + 1] != 0)
+                        || (py > 0 && outside[j - n] != 0) || (py < n - 1 && outside[j + n] != 0);
+                    if (rimCell)
+                    {
+                        float lean = RegionNoise.Clamp01(0.5f + PlaneOrEdge(face[j], edge, cell) / cell);
+                        drop += (1f - lean) * (MesaCapThickness - drop);
+                    }
+
                     // 上面は平らで、ゆるい起伏だけがある
                     capTop[j] = capLevel[j] - drop + 0.9f * RegionNoise.Fbm((float)(worldX / 38.0), (float)(worldY / 38.0), 3, seed + 268u);
-                    if (drop < 0.72f * MesaCapThickness) standing[j] = 1;
+                    if (stands) standing[j] = 1;
                 }
             });
+            // 板の平面と段の境が食い違う所に、1〜2 セル幅の針や細いひれが上面より高く残る。周り 8 セルのうち
+            // 同じ高さの岩が 3 つ未満のセルは、3 番目に高い隣の高さまで下げる（2 セル以上の幅の板と柱は残る）
+            var spikeFree = (float[])capTop.Clone();
+            Parallel.For(1, n - 1, py =>
+            {
+                var around = new float[8];
+                for (int px = 1; px < n - 1; px++)
+                {
+                    int j = px + py * n;
+                    if (outside[j] != 0) continue;
+                    int count = 0, k = 0;
+                    for (int dy = -1; dy <= 1; dy++)
+                        for (int dx = -1; dx <= 1; dx++)
+                        {
+                            if (dx == 0 && dy == 0) continue;
+                            int q = j + dx + dy * n;
+                            float h = outside[q] != 0 ? float.MinValue : capTop[q];
+                            around[k++] = h;
+                            if (h >= capTop[j] - 1.5f) count++;
+                        }
+                    if (count >= 3) continue;
+                    Array.Sort(around);
+                    float third = around[5];
+                    if (third > float.MinValue && third < capTop[j]) spikeFree[j] = third;
+                }
+            });
+            Array.Copy(spikeFree, capTop, capTop.Length);
 
             float[] toCap = MesaDistance(standing, n, null, null, cell);
             // 棚の範囲：帽子の岩から、斜面の幅 + 棚の幅まで。棚の幅は場所で変わり、無い所もある
@@ -458,6 +580,16 @@ namespace Vastcore.RegionMap
             data.Talus = talus;
             data.Caprock = caprock;
             data.MesaContactHeight = contactHeight;
+        }
+
+        /// <summary>
+        /// 崖の面までの距離（m）。板ごとの平面の距離が使える所はそれを、無い所（縁の帯の外、割れ目や細い岩を除いて
+        /// 縁が動いた所）はセルの中心から外のセルまでの距離から半セル引いた値を使う。
+        /// </summary>
+        private static float PlaneOrEdge(float plane, float edge, float cell)
+        {
+            float fromCells = edge - 0.5f * cell;
+            return float.IsNaN(plane) || plane > fromCells + cell ? fromCells : plane;
         }
 
         /// <summary>
