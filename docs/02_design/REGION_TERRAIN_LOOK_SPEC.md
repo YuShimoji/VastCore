@@ -202,6 +202,10 @@ seed 9 の X38.8・Y60.9 では、傾いた岩棚の下に通路を通し、片�
 
 岩肌と転石には Poly Haven の CC0 素材 [Rock Face 03](https://polyhaven.com/a/rock_face_03) と [Boulder 01](https://polyhaven.com/a/boulder_01) を使用。通常の洞窟試作を Play し、プレイヤーの開始位置・入口のすぐ手前・屋外へ戻った位置から見え方を確認する。
 
+短い配置の広間では、石橋の中央をくぐれる高さに保ちつつ、左右は厚みを増して洞壁の張り出しへつなぐ。岩棚の踏み面は曲がりに沿わせ、根元に大小の礫を寄せて下道を空ける。橋・棚・壁の岩肌と法線を同じメートル単位の座標で三方向から投影し、床からの反射で橋の下面を読む。[Kachina Bridge の下面](https://home.nps.gov/thingstodo/kachina-bridge-trail.htm) · [Lehman Caves の Talus Room](https://www.nps.gov/articles/000/lehman-caves-little-understood-but-world-class-part-2.htm) · [Skyrim の洞窟シェルの図版](https://www.gamedeveloper.com/design/skyrim-s-modular-approach-to-level-design)
+
+確認は Unity 6000.3.6f1 の通常の洞窟試作を Play し、下道から橋をくぐる → 東の岩棚を登る → 橋を渡る → 西側を下って入口へ帰還 → 同じ洞窟へ再入場。橋の真下の眼は洞内座標で約 (0, 1.49, 2.10)、橋上の眼は約 (-3.87, 8.25, 2.10)、ともに垂直画角68°。中央断面の厚みはこの経路で約1.6 mから2.5 mになった。短・長の両配置で往復を確認した。
+
 ## 6. 出典と、取れなかった物
 
 - 米国国立公園局の [地層の色と岩質](https://www.nps.gov/colm/learn/nature/rock-layers.htm)・[崖を流れる黒い筋](https://www.nps.gov/colm/learn/nature/geology-faq.htm)、Unity の [三方向投影](https://docs.unity3d.com/Packages/com.unity.shadergraph@17.0/manual/Triplanar-Node.html) を第2区切りの参照にした。先行調査は Zion Geology 2007 と Capitol Reef Geologic Features が全文、Canyonlands・Arches・Bryce・Mesa Verde・Glen Canyon・Natural Bridges・Colorado NM は要約として読めた範囲。

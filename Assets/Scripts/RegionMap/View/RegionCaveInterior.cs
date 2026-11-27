@@ -35,6 +35,19 @@ namespace Vastcore.RegionMap
             new Vector3(-9, 2.6f, -8), new Vector3(-5, 0.85f, -11),
             new Vector3(-2, -0.55f, -13)
         };
+        // Cross-section around the walkable tread, clockwise from the entrance-facing lip.
+        // X is a fraction of the shelf width, Y is a fraction of the rock thickness.
+        private static readonly Vector2[] ShelfProfile =
+        {
+            new Vector2(-1.00f, 0.08f), new Vector2(-0.78f, 0.025f),
+            new Vector2(-0.45f, 0.002f), new Vector2(0, 0),
+            new Vector2(0.45f, -0.008f), new Vector2(0.76f, 0.015f),
+            new Vector2(0.98f, 0.06f), new Vector2(1.04f, 0.21f),
+            new Vector2(0.90f, 0.40f), new Vector2(0.96f, 0.61f),
+            new Vector2(0.77f, 0.83f), new Vector2(0.37f, 0.98f),
+            new Vector2(-0.17f, 1.06f), new Vector2(-0.62f, 0.97f),
+            new Vector2(-0.98f, 0.67f), new Vector2(-0.91f, 0.36f)
+        };
         private readonly List<Vector3> vertices = new List<Vector3>();
         private readonly List<int> triangles = new List<int>();
         private bool refineRockfall;
@@ -45,6 +58,7 @@ namespace Vastcore.RegionMap
         {
             var cave = root.AddComponent<RegionCaveInterior>();
             cave.refineRockfall = refine;
+            bool bedrockChamber = seed == 9;
             bool deepPassage = (seed & 1) == 0;
             float thresholdZ = deepPassage ? -32f : -22f;
             var sockets = new[]
@@ -59,9 +73,15 @@ namespace Vastcore.RegionMap
             };
             cave.Threshold = sockets[1].FloorPoint;
             cave.Turn = sockets[2].FloorPoint;
-            int rings = cave.BuildShell(sockets);
-            cave.RockShelf();
-            cave.Formations(seed, rings);
+            int rings = cave.BuildShell(sockets, bedrockChamber);
+            cave.RockShelf(bedrockChamber);
+            if (bedrockChamber)
+            {
+                cave.BedrockSpur(new Vector3(10.1f, 4.53f, 0.33f), new Vector3(18.2f, 7.72f, -0.55f), 3.65f);
+                cave.BedrockSpur(new Vector3(-9.2f, 4.36f, 1.40f), new Vector3(-18.25f, 7.1f, 0.32f), 2.95f);
+            }
+            cave.Formations(seed, rings, bedrockChamber);
+            if (bedrockChamber) cave.ShelfScree(seed);
             int fallStart = cave.vertices.Count;
             if (refine) cave.FallenRock(seed);
             var mesh = new Mesh { name = "Connected cave modules, stone span and banks" };
@@ -70,6 +90,14 @@ namespace Vastcore.RegionMap
             mesh.RecalculateNormals();
             var material = new Material(Resources.Load<Shader>("RegionMap3D/CaveStone"));
             material.SetFloat("_EntranceZ", sockets[0].Z);
+            if (bedrockChamber)
+            {
+                material.SetFloat("_BedrockDetail", 1f);
+                material.SetTexture("_CliffPhoto", Resources.Load<Texture2D>("RegionMap3D/CaveMouth/CliffColor"));
+                material.SetTexture("_CliffNormal", Resources.Load<Texture2D>("RegionMap3D/CaveMouth/CliffNormal"));
+                material.SetTexture("_CaveGravel", Resources.Load<Texture2D>(
+                    "MapGenerator/Textures/Ground081_1K-JPG/Ground081_1K-JPG_Color"));
+            }
             if (refine)
             {
                 mesh.SetColors(cave.FreshFaces(rings * RingSize, fallStart));
@@ -100,9 +128,9 @@ namespace Vastcore.RegionMap
         private const int FloorSteps = 20, ArchSteps = 48;
         private const int RingSize = FloorSteps + ArchSteps;
 
-        private int BuildShell(Socket[] sockets)
+        private int BuildShell(Socket[] sockets, bool bedrock)
         {
-            AddRing(sockets[0]);
+            AddRing(sockets[0], bedrock);
             for (int module = 1; module < sockets.Length; module++)
             {
                 Socket from = sockets[module - 1], to = sockets[module];
@@ -113,7 +141,7 @@ namespace Vastcore.RegionMap
                     float bend = Mathf.SmoothStep(0f, 1f, t);
                     int prev = vertices.Count - RingSize;
                     AddRing(new Socket(Mathf.Lerp(from.Z, to.Z, t), Mathf.Lerp(from.Center, to.Center, bend),
-                        Mathf.Lerp(from.HalfWidth, to.HalfWidth, bend), Mathf.Lerp(from.Rise, to.Rise, bend)));
+                        Mathf.Lerp(from.HalfWidth, to.HalfWidth, bend), Mathf.Lerp(from.Rise, to.Rise, bend)), bedrock);
                     for (int i = 0; i < RingSize; i++)
                     {
                         int next = (i + 1) % RingSize;
@@ -130,7 +158,7 @@ namespace Vastcore.RegionMap
             return vertices.Count / RingSize;
         }
 
-        private void AddRing(Socket section)
+        private void AddRing(Socket section, bool bedrock)
         {
             float z = section.Z;
             for (int i = 0; i <= FloorSteps; i++)
@@ -142,10 +170,20 @@ namespace Vastcore.RegionMap
             {
                 float angle = (i - FloorSteps) * Mathf.PI / ArchSteps;
                 float sin = Mathf.Sin(angle);
+                float cos = Mathf.Cos(angle);
                 float irregular = Noise(i * 0.29f, z * 0.34f) + 1.35f * Noise(i * 0.11f, z * 0.15f);
                 float ledge = Mathf.Sin(sin * section.Rise * 3.1f + z * 0.19f);
                 float fracture = Mathf.Pow(Mathf.Abs(Noise(i * 0.18f, z * 0.24f)) * 2f, 3f);
-                float x = section.Center + Mathf.Cos(angle) * (section.HalfWidth + sin * (irregular * 2.7f + ledge * 0.53f));
+                float x = section.Center + cos * (section.HalfWidth + sin * (irregular * 2.7f + ledge * 0.53f));
+                if (bedrock)
+                {
+                    // These two spurs share the height of the shoulders on the span.
+                    float along = Mathf.Abs(z - (cos > 0f ? 2.6f : 0.15f));
+                    float local = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(1.0f, 6.4f, along));
+                    float band = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.075f, 0.36f, sin))
+                        * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.78f, 0.49f, sin));
+                    x -= Mathf.Sign(cos) * local * band * (2.25f + 1.30f * irregular);
+                }
                 float y = Floor(x, z) + sin * (section.Rise + 2.9f * irregular - fracture * 0.82f);
                 if (refineRockfall && y > 8.5f)
                     y += 2.25f * Scar(x, z);
@@ -153,15 +191,15 @@ namespace Vastcore.RegionMap
             }
         }
 
-        private void RockShelf()
+        private void RockShelf(bool bedrock)
         {
             int start = vertices.Count;
             int row = 0;
-            const int section = 8;
+            int section = bedrock ? ShelfProfile.Length : 8;
             for (int k = 0; k < Shelf.Length - 1; k++)
             {
                 Vector3 a = Shelf[k], b = Shelf[k + 1];
-                int steps = Mathf.CeilToInt(Vector3.Distance(a, b));
+                int steps = Mathf.CeilToInt(Vector3.Distance(a, b) / (bedrock ? 0.34f : 1f));
                 for (int j = 0; j <= steps; j++)
                 {
                     if (j == 0 && k != 0) continue;
@@ -169,34 +207,148 @@ namespace Vastcore.RegionMap
                     Vector3 p = Vector3.Lerp(a, b, t);
                     Vector3 tangentA = b - Shelf[Mathf.Max(0, k - 1)];
                     Vector3 tangentB = Shelf[Mathf.Min(Shelf.Length - 1, k + 2)] - a;
-                    Vector3 side = Vector3.Cross(Vector3.up, Vector3.Lerp(tangentA.normalized, tangentB.normalized, t)).normalized;
-                    float span = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(10.5f, 4.7f, Mathf.Abs(p.x)));
-                    float baseY = k >= 4 && k <= 7 ? Mathf.Lerp(-1.2f, p.y - 1.35f, span) : -1.2f;
-                    float width = Mathf.Lerp(2.4f, 1.55f, span) + 0.28f * Mathf.Sin(row * 0.58f);
-                    float depth = Mathf.Max(0.7f, p.y - baseY);
-                    vertices.Add(p - side * width - Vector3.up * 0.15f);
-                    vertices.Add(p - side * width * 0.44f);
-                    vertices.Add(p + side * width * 0.4f + Vector3.up * 0.06f);
-                    vertices.Add(p + side * width - Vector3.up * 0.12f);
-                    vertices.Add(p + side * (width + 0.45f) - Vector3.up * depth * 0.43f);
-                    vertices.Add(p + side * width * 0.70f - Vector3.up * depth);
-                    vertices.Add(p - side * width * 0.48f - Vector3.up * (depth + 0.25f));
-                    vertices.Add(p - side * (width + 0.25f) - Vector3.up * depth * 0.55f);
-                    if (row > 0)
+                    Vector3 tangent = Vector3.Lerp(tangentA.normalized, tangentB.normalized, t);
+                    if (bedrock)
                     {
-                        int prev = start + (row - 1) * section;
-                        for (int i = 0; i < section; i++)
-                        {
-                            int next = (i + 1) % section;
-                            Quad(prev + i, prev + section + i, prev + section + next, prev + next);
-                        }
+                        // A continuous tangent around the bends removes pinched offset edges.
+                        tangentA *= 0.4f;
+                        tangentB *= 0.4f;
+                        float t2 = t * t;
+                        p = Vector3.Lerp(a, b, t2 * (3f - 2f * t))
+                            + (t * (1f - t) * (1f - t)) * tangentA - (t2 * (1f - t)) * tangentB;
+                        tangent = 6f * t * (1f - t) * (b - a)
+                            + (3f * t2 - 4f * t + 1f) * tangentA + (3f * t2 - 2f * t) * tangentB;
                     }
+                    Vector3 side = Vector3.Cross(Vector3.up, tangent).normalized;
+                    float span = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(10.5f, 4.7f, Mathf.Abs(p.x)));
+                    if (bedrock) AddBedrockSection(p, side, span);
+                    else
+                    {
+                        float baseY = k >= 4 && k <= 7 ? Mathf.Lerp(-1.2f, p.y - 1.35f, span) : -1.2f;
+                        float width = Mathf.Lerp(2.4f, 1.55f, span) + 0.28f * Mathf.Sin(row * 0.58f);
+                        float depth = Mathf.Max(0.7f, p.y - baseY);
+                        vertices.Add(p - side * width - Vector3.up * 0.15f);
+                        vertices.Add(p - side * width * 0.44f);
+                        vertices.Add(p + side * width * 0.4f + Vector3.up * 0.06f);
+                        vertices.Add(p + side * width - Vector3.up * 0.12f);
+                        vertices.Add(p + side * (width + 0.45f) - Vector3.up * depth * 0.43f);
+                        vertices.Add(p + side * width * 0.70f - Vector3.up * depth);
+                        vertices.Add(p - side * width * 0.48f - Vector3.up * (depth + 0.25f));
+                        vertices.Add(p - side * (width + 0.25f) - Vector3.up * depth * 0.55f);
+                    }
+                    if (row > 0)
+                        JoinSections(start + (row - 1) * section, section);
                     row++;
                 }
             }
         }
 
-        private void Formations(int seed, int rings)
+        private void JoinSections(int previous, int section)
+        {
+            for (int i = 0; i < section; i++)
+            {
+                int next = (i + 1) % section;
+                Quad(previous + i, previous + section + i, previous + section + next, previous + next);
+            }
+        }
+
+        private void BedrockSpur(Vector3 inner, Vector3 wall, float wallWidth)
+        {
+            // The small end is buried in the span and the broad end in the cave wall.
+            int section = ShelfProfile.Length;
+            int start = vertices.Count;
+            int steps = Mathf.CeilToInt(Mathf.Abs(wall.x - inner.x) / 0.38f);
+            float side = -Mathf.Sign(wall.x - inner.x);
+            for (int row = 0; row <= steps; row++)
+            {
+                float t = row / (float)steps;
+                Vector3 p = Vector3.Lerp(inner, wall, t);
+                float flare = Mathf.SmoothStep(0f, 1f, t);
+                float width = Mathf.Lerp(0.26f, wallWidth, flare);
+                float thickness = Mathf.Lerp(0.74f, p.y + 1.36f, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t * 1.58f)));
+                foreach (Vector2 cut in ShelfProfile)
+                {
+                    float z = p.z + side * width * cut.x - 0.52f * Mathf.Sin(t * Mathf.PI);
+                    float grain = Noise(p.x * 0.62f + 2.1f * cut.y, z * 0.73f - 6.8f);
+                    float brokenBed = Mathf.SmoothStep(-0.19f, 0.20f, grain) - 0.5f;
+                    z += flare * (0.56f * brokenBed + 0.26f * cut.y);
+                    float y = p.y - cut.y * thickness + flare * (0.44f * brokenBed + 0.3f * grain);
+                    vertices.Add(new Vector3(p.x, y, z));
+                }
+                if (row > 0) JoinSections(start + (row - 1) * section, section);
+            }
+        }
+
+        private void AddBedrockSection(Vector3 p, Vector3 side, float span)
+        {
+            float distance = Mathf.Abs(p.x);
+            float wallward = Mathf.Sign(p.x);
+            float shoulder = p.x < 0f ? 9.6f : 11.5f;
+            float arch = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(shoulder, 2.9f, distance))
+                * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(5.2f, 6.35f, p.y));
+            float relief = Noise(1.3f + p.x * 0.39f, p.z * 0.52f);
+            float width = Mathf.Lerp(2.38f, 1.78f, span) + 0.45f * relief;
+            float thickness = Mathf.Lerp(Mathf.Max(0.68f, p.y + 1.2f), 1.88f + 0.90f * relief, arch);
+            float bank = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(6.5f, 10.7f, distance))
+                * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(1.1f, 4.1f, p.y));
+            foreach (Vector2 cut in ShelfProfile)
+            {
+                float u = cut.x * width;
+                float v = cut.y;
+                Vector3 at = p + side * u;
+                float outer = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.48f, 0.94f, Mathf.Abs(cut.x)));
+                float wallSide = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.22f, 0.62f, cut.x * side.x * wallward));
+                float grain = Noise(at.x * 0.73f + 1.25f * v, at.z * 0.68f + 3.2f * v);
+                float breakage = Mathf.SmoothStep(-0.21f, 0.20f, grain) * 2f - 1f;
+                float horizontal = Mathf.Sign(u) * outer * (0.72f * relief + 0.42f * breakage);
+                float vertical = -thickness * v + (0.39f * breakage + 0.62f * relief) * Mathf.Max(outer * 0.84f, v);
+                float lip = outer * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.37f, 0.065f, v));
+                float ledge = Noise(at.x * 0.49f + 15, at.z * 0.51f - 4.2f);
+                vertical += lip * (0.52f * ledge + 0.11f * breakage);
+                // Two oblique joints have taken bites out of the exposed lip above the crossing.
+                float joint = at.x + 0.21f * (at.z - 2f);
+                float westChip = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.71f, 0.16f, Mathf.Abs(joint + 2.37f)));
+                float eastChip = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.93f, 0.23f, Mathf.Abs(joint - 2.1f)));
+                float chip = lip * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(5.6f, 6.5f, p.y))
+                    * (0.56f * westChip + 0.47f * eastChip);
+                horizontal -= Mathf.Sign(u) * chip;
+                vertical -= chip * 0.63f;
+                // Spread the outer shoulder into the shell while the middle tread stays walkable.
+                float abutment = bank * wallSide * (4.6f + 0.64f * breakage);
+                vertical += 0.42f * abutment * (1f - Mathf.Clamp01(v * 1.24f));
+                vertices.Add(at + side * horizontal + Vector3.right * (wallward * abutment) + Vector3.up * vertical);
+            }
+        }
+
+        private void ShelfScree(int seed)
+        {
+            var random = new System.Random(unchecked(seed * 37529 + 1327));
+            float Unit() => (float)random.NextDouble();
+            for (int side = -1; side <= 1; side += 2)
+            {
+                for (int i = 0; i < 34; i++)
+                {
+                    float run = Unit();
+                    float x = side * Mathf.Lerp(5.7f, 14.4f, run);
+                    float z = Mathf.Lerp(-0.85f, 1.65f, run) + (Unit() - 0.5f) * (2.4f + run * 3.75f)
+                        + (side > 0 ? -0.65f : 0.7f);
+                    float size = Mathf.Lerp(0.065f, 0.39f, Mathf.Pow(Unit(), 2.5f));
+                    if (i < 5)
+                    {
+                        size += 0.28f;
+                        RockFragment(new Vector3(x, Floor(x, z) - 0.12f, z), size, size * (0.7f + Unit()),
+                            Unit() * 6f, 0.58f, true);
+                    }
+                    else
+                    {
+                        AngularBlock(x, z, size, size * Mathf.Lerp(0.46f, 0.96f, Unit()),
+                            size * Mathf.Lerp(0.54f, 1.12f, Unit()), side * 0.35f + Unit() * 2.65f);
+                    }
+                }
+            }
+        }
+
+        private void Formations(int seed, int rings, bool bedrock)
         {
             // Rockfall lies along the walls; ceiling fragments stay clear of the crossing.
             var random = new System.Random(unchecked(seed * 15731 + 541));
@@ -206,7 +358,7 @@ namespace Vastcore.RegionMap
                 float z = Mathf.Lerp(-9, 14, Unit());
                 float x = (i % 2 == 0 ? 1 : -1) * Mathf.Lerp(13.55f, 15.5f, Unit());
                 float radius = 0.45f + 1.05f * Unit();
-                RockFragment(new Vector3(x, Floor(x, z) - 0.23f, z), radius, radius * (0.6f + 2.05f * Unit()), Unit() * 6, 0.33f);
+                RockFragment(new Vector3(x, Floor(x, z) - 0.23f, z), radius, radius * (0.6f + 2.05f * Unit()), Unit() * 6, 0.33f, bedrock);
             }
             for (int i = 0; i < 40; i++)
             {
@@ -215,7 +367,8 @@ namespace Vastcore.RegionMap
                 if (ceiling.z < -9f || ceiling.z > 16f || ceiling.y < 10.4f) continue;
                 float radius = 0.45f + 0.76f * Unit(), height = -0.7f - 1.12f * Unit(), phase = Unit() * 6;
                 if (!refineRockfall || Scar(ceiling.x, ceiling.z) <= 0f)
-                    RockFragment(ceiling + Vector3.up * 0.38f, radius, height, phase, 0.49f);
+                    RockFragment(ceiling + Vector3.up * (bedrock ? 0.51f + 0.20f * radius : 0.38f),
+                        radius, bedrock ? height * 0.82f : height, phase, 0.49f, bedrock);
             }
             for (int i = 0; i < 95; i++)
             {
@@ -224,7 +377,7 @@ namespace Vastcore.RegionMap
                 float r = 0.13f + 0.65f * Unit();
                 float height = r * (0.47f + Unit()), phase = Unit() * 6;
                 if (!refineRockfall || Mathf.Abs(x - FallX) > 3.4f || Mathf.Abs(z - FallZ) > 4.1f)
-                    RockFragment(new Vector3(x, Floor(x, z) - 0.13f, z), r, height, phase, 0.52f);
+                    RockFragment(new Vector3(x, Floor(x, z) - 0.13f, z), r, height, phase, 0.52f, bedrock);
             }
         }
 
@@ -253,9 +406,10 @@ namespace Vastcore.RegionMap
         private void FallenRock(int seed)
         {
             // The two large blocks share the direction of the missing ceiling plate.
-            AngularBlock(FallX, FallZ, 1.24f, 0.79f, 1.34f, FallStrike);
-            AngularBlock(FallX + 0.82f, FallZ - 1.45f, 0.78f, 0.58f, 0.84f, FallStrike - 0.23f);
-            AngularBlock(FallX - 1.19f, FallZ - 1.35f, 0.63f, 0.37f, 0.55f, FallStrike + 0.30f);
+            bool chipped = seed == 9;
+            AngularBlock(FallX, FallZ, 1.24f, 0.79f, 1.34f, FallStrike, chipped);
+            AngularBlock(FallX + 0.82f, FallZ - 1.45f, 0.78f, 0.58f, 0.84f, FallStrike - 0.23f, chipped);
+            AngularBlock(FallX - 1.19f, FallZ - 1.35f, 0.63f, 0.37f, 0.55f, FallStrike + 0.30f, chipped);
             var random = new System.Random(unchecked(seed * 733 + 1723));
             for (int i = 0; i < 31; i++)
             {
@@ -269,44 +423,72 @@ namespace Vastcore.RegionMap
             }
         }
 
-        private void AngularBlock(float x, float z, float length, float width, float height, float strike)
+        private void AngularBlock(float x, float z, float length, float width, float height, float strike, bool chipped = false)
         {
             int start = vertices.Count;
             float floor = Floor(x, z) - Mathf.Max(0.09f, height * 0.25f);
             Vector2 axis = new Vector2(Mathf.Cos(strike), Mathf.Sin(strike));
             Vector2 cross = new Vector2(-axis.y, axis.x);
             Vector2 center = new Vector2(x, z);
-            Add(-0.93f, -0.80f, 0f); Add(-0.80f, 0.84f, 0f); Add(0.95f, 0.71f, 0f); Add(0.86f, -0.92f, 0f);
-            Add(-0.59f, -0.77f, 0.74f); Add(-0.73f, 0.48f, 0.82f); Add(0.88f, 0.49f, 1f); Add(0.55f, -0.64f, 0.84f);
-            for (int side = 0; side < 4; side++)
+            var corners = new[]
             {
-                int next = (side + 1) % 4;
-                Quad(start + side, start + next, start + next + 4, start + side + 4);
+                new Vector3(-0.93f, -0.80f, 0f), new Vector3(-0.80f, 0.84f, 0f),
+                new Vector3(0.95f, 0.71f, 0f), new Vector3(0.86f, -0.92f, 0f),
+                new Vector3(-0.59f, -0.77f, 0.74f), new Vector3(-0.73f, 0.48f, 0.82f),
+                new Vector3(0.88f, 0.49f, 1f), new Vector3(0.55f, -0.64f, 0.84f)
+            };
+            int sides = chipped ? 8 : 4;
+            for (int i = 0; i < corners.Length; i++)
+            {
+                Vector3 corner = corners[i];
+                if (chipped)
+                {
+                    int ring = i / 4 * 4;
+                    float cut = 0.16f + 0.29f * Mathf.PerlinNoise(x * 0.3f + i * 1.34f, z + 5f);
+                    Add(Vector3.Lerp(corner, corners[ring + (i + 3) % 4], cut));
+                    Add(Vector3.Lerp(corner, corners[ring + (i + 1) % 4], cut * 0.64f));
+                }
+                else Add(corner);
             }
-            Quad(start + 4, start + 5, start + 6, start + 7);
+            for (int side = 0; side < sides; side++)
+            {
+                int next = (side + 1) % sides;
+                Quad(start + side, start + next, start + next + sides, start + side + sides);
+            }
+            int top = start + sides;
+            for (int i = 1; i < sides - 1; i++)
+            {
+                triangles.Add(top);
+                triangles.Add(top + i);
+                triangles.Add(top + i + 1);
+            }
             PropCount++;
 
-            void Add(float u, float v, float y)
+            void Add(Vector3 corner)
             {
-                Vector2 p = center + u * length * axis + v * width * cross;
-                vertices.Add(new Vector3(p.x, floor + y * height, p.y));
+                Vector2 p = center + corner.x * length * axis + corner.y * width * cross;
+                vertices.Add(new Vector3(p.x, floor + corner.z * height, p.y));
             }
         }
 
-        private void RockFragment(Vector3 basePoint, float radius, float height, float phase, float cap)
+        private void RockFragment(Vector3 basePoint, float radius, float height, float phase, float cap, bool bedrock)
         {
             PropCount++;
             int first = vertices.Count;
-            const int sides = 7;
+            int sides = bedrock ? 9 + (int)(phase * 0.61f) : 7;
+            float lean = bedrock ? Mathf.Cos(phase * 1.7f) * radius * 0.25f : radius * 0.13f;
+            float aspect = bedrock ? 0.77f + 0.19f * Mathf.Sin(phase * 2.3f) : 0.78f;
             for (int ring = 0; ring < 3; ring++)
             {
                 for (int i = 0; i < sides; i++)
                 {
                     float angle = phase + i * 2f * Mathf.PI / sides;
+                    float weathering = bedrock ? Noise(phase * 2.15f + i * 0.6f, ring * 0.55f + i * 0.15f) : 0f;
                     float r = radius * (1.1f + 0.19f * Mathf.Cos(angle * 3 + phase))
-                        * (ring == 0 ? 1f : ring == 1 ? 0.78f : cap);
-                    vertices.Add(basePoint + new Vector3(r * Mathf.Cos(angle) + ring * radius * 0.13f,
-                        height * (ring == 0 ? 0 : ring == 1 ? 0.55f : 1), r * Mathf.Sin(angle) * 0.78f));
+                        * (ring == 0 ? 1f : ring == 1 ? 0.78f : cap) * (1f + weathering * 0.63f);
+                    vertices.Add(basePoint + new Vector3(r * Mathf.Cos(angle) + ring * lean,
+                        height * (ring == 0 ? 0 : ring == 1 ? 0.55f : 1) * (1f + weathering * 0.42f),
+                        r * Mathf.Sin(angle) * aspect));
                 }
             }
             for (int j = 0; j < 2 * sides; j++)
