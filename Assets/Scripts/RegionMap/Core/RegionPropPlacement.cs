@@ -77,6 +77,8 @@ namespace Vastcore.RegionMap
         public float GroundBlue = 0.40f;
         public RegionLookViewpoint GrasslandPanoramaViewpoint;
         public RegionLookViewpoint GrasslandEyeViewpoint;
+        public RegionLookViewpoint GrasslandFootViewpoint;
+        public RegionLookViewpoint GrasslandFenceViewpoint;
         public RegionLookViewpoint GrasslandOutcropViewpoint;
         public RegionLookViewpoint GrasslandTrailViewpoint;
     }

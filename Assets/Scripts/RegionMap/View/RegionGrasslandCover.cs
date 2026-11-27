@@ -15,6 +15,8 @@ namespace Vastcore.RegionMap
         private const float DetailRadius = 34f;
         private const float ShortGrassRadius = 17f;
         private const int ShortGrassLayer = 2;
+        private const int DistantLayer = 3;
+        private const float DistantRadius = 306f;
         private const int TilesPerFrame = 2;
 
         private sealed class Tile
@@ -29,6 +31,7 @@ namespace Vastcore.RegionMap
         private RegionLookScene _look;
         private Material _material;
         private bool _visible = true;
+        private RegionGrasslandStyle Style => _look?.Spec.GrasslandStyle ?? RegionGrasslandStyle.Continuous;
         private readonly Dictionary<Vector3Int, Tile> _tiles = new Dictionary<Vector3Int, Tile>();
         private readonly List<Vector3Int> _remove = new List<Vector3Int>();
         private readonly List<(Vector3Int Key, float Distance)> _pending = new List<(Vector3Int, float)>();
@@ -112,15 +115,18 @@ namespace Vastcore.RegionMap
                 }
             }
             foreach (Vector3Int key in _remove) _tiles.Remove(key);
-            if (above >= MeadowRadius) return;
+            bool continuous = Style == RegionGrasslandStyle.Continuous;
+            int lastLayer = continuous ? DistantLayer : ShortGrassLayer;
+            if (above >= (continuous ? DistantRadius : MeadowRadius)) return;
 
             _pending.Clear();
-            for (int layer = 0; layer <= ShortGrassLayer; layer++)
+            for (int layer = 0; layer <= lastLayer; layer++)
             {
                 float radius = Radius(layer);
+                int tileSize = TileMetres(layer);
                 if (above >= radius) continue;
-                for (int z = (int)Math.Floor((south - radius) / TileSize); z <= (int)Math.Floor((south + radius) / TileSize); z++)
-                for (int x = (int)Math.Floor((east - radius) / TileSize); x <= (int)Math.Floor((east + radius) / TileSize); x++)
+                for (int z = (int)Math.Floor((south - radius) / tileSize); z <= (int)Math.Floor((south + radius) / tileSize); z++)
+                for (int x = (int)Math.Floor((east - radius) / tileSize); x <= (int)Math.Floor((east + radius) / tileSize); x++)
                 {
                     var key = new Vector3Int(x, z, layer);
                     float distance = Distance(key, east, south, above);
@@ -128,7 +134,11 @@ namespace Vastcore.RegionMap
                         _pending.Add((key, distance));
                 }
             }
-            _pending.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+            _pending.Sort((a, b) =>
+            {
+                int detailOrder = (a.Key.z == DistantLayer).CompareTo(b.Key.z == DistantLayer);
+                return detailOrder != 0 ? detailOrder : a.Distance.CompareTo(b.Distance);
+            });
 
             int remaining = _streamer != null ? TilesPerFrame : int.MaxValue;
             foreach (var request in _pending)
@@ -145,8 +155,9 @@ namespace Vastcore.RegionMap
 
         private (RegionLookPart Part, double East, double South, float Cell) Surface(Vector3Int key)
         {
-            double east = (key.x + 0.5) * TileSize;
-            double south = (key.y + 0.5) * TileSize;
+            int tileSize = TileMetres(key.z);
+            double east = (key.x + 0.5) * tileSize;
+            double south = (key.y + 0.5) * tileSize;
             if (_streamer != null)
             {
                 RegionChunkData chunk = _streamer.NearChunkAt(east, south);
@@ -159,19 +170,29 @@ namespace Vastcore.RegionMap
             return (_look.InnerTerrain, origin.X, origin.Y, _look.InnerCell);
         }
 
-        private static float Radius(int layer) => layer == ShortGrassLayer ? ShortGrassRadius
-            : layer == 1 ? DetailRadius : MeadowRadius;
+        private static int TileMetres(int layer) => layer == DistantLayer ? 64 : TileSize;
+
+        private float Radius(int layer)
+        {
+            if (layer == DistantLayer) return DistantRadius;
+            bool continuous = Style == RegionGrasslandStyle.Continuous;
+            if (layer == ShortGrassLayer) return continuous ? 23f : ShortGrassRadius;
+            if (layer == 1) return continuous ? 44f : DetailRadius;
+            return continuous ? 128f : MeadowRadius;
+        }
 
         private static float Distance(Vector3Int key, double east, double south, float above)
         {
-            float x = Mathf.Max(0f, Mathf.Abs((float)((key.x + 0.5) * TileSize - east)) - TileSize * 0.5f);
-            float z = Mathf.Max(0f, Mathf.Abs((float)((key.y + 0.5) * TileSize - south)) - TileSize * 0.5f);
+            int tileSize = TileMetres(key.z);
+            float x = Mathf.Max(0f, Mathf.Abs((float)((key.x + 0.5) * tileSize - east)) - tileSize * 0.5f);
+            float z = Mathf.Max(0f, Mathf.Abs((float)((key.y + 0.5) * tileSize - south)) - tileSize * 0.5f);
             return x * x + z * z + above * above;
         }
 
         private static void PlaceTile(GameObject tile, Vector3Int key, double east, double south)
         {
-            var offset = new Vector3((float)(key.x * (double)TileSize - east), 0f, (float)(south - key.y * (double)TileSize));
+            int tileSize = TileMetres(key.z);
+            var offset = new Vector3((float)(key.x * (double)tileSize - east), 0f, (float)(south - key.y * (double)tileSize));
             if (tile.transform.localPosition != offset) tile.transform.localPosition = offset;
         }
 
@@ -184,14 +205,22 @@ namespace Vastcore.RegionMap
             _indices.Clear();
             RegionData data = part.Data;
             int layer = key.z;
+            int tileSize = TileMetres(layer);
+            RegionGrasslandStyle style = Style;
+            bool continuous = style == RegionGrasslandStyle.Continuous;
+            bool overlap = continuous || style == RegionGrasslandStyle.Overlapping;
             bool shortGrass = layer == ShortGrassLayer;
-            int count = shortGrass ? 80 : layer == 1 ? 44 : 20;
-            float spacing = (float)TileSize / count;
+            bool distant = layer == DistantLayer;
+            int count = distant ? 27 : shortGrass ? (overlap ? 73 : 80) : layer == 1 ? 44 : 20;
+            int blades = layer == 1 ? 7 : 3;
+            if (continuous && shortGrass) blades = 4;
+            if (style == RegionGrasslandStyle.Denser && layer != 0) blades += shortGrass ? 3 : 5;
+            float spacing = (float)tileSize / count;
             uint salt = unchecked((uint)data.Spec.Seed * 2654435761u + 6947u + (uint)layer * 1124u);
-            float east = key.x * (float)TileSize, south = key.y * (float)TileSize;
+            float east = key.x * (float)tileSize, south = key.y * (float)tileSize;
             float localX = (float)(east - originEast), localZ = (float)(south - originSouth);
             float firstX = part.Positions[0], firstZ = part.Positions[2];
-            if (!HasGrassland(data, (localX - firstX) / cell, (localZ - firstZ) / cell, TileSize / cell))
+            if (!HasGrassland(data, (localX - firstX) / cell, (localZ - firstZ) / cell, tileSize / cell))
                 return tile;
             int n = data.Resolution;
             var props = _look?.PropsSlice;
@@ -211,11 +240,11 @@ namespace Vastcore.RegionMap
                     (data.WaterCoverage?[v] ?? 0f) > 0.24f || (data.StructureCoverage?[v] ?? 0f) > 0.12f)
                     continue;
                 float normalY = part.Normals[3 * v + 1];
-                float patch = Patch(east + x, south + z);
                 float moisture = Mathf.Clamp01((data.Moisture[v] - 0.14f) / 0.46f);
-                float growth = RegionNoise.Smooth(0.16f, 0.83f, patch * 0.78f + moisture * 0.22f);
+                float growth = Growth(east + x, south + z, moisture, continuous);
                 float trail = props != null ? Trail(east + x - trailEast, south + z - trailSouth) : 0f;
-                float coverage = Mathf.Lerp(shortGrass ? 0.76f : 0.47f, 0.98f, growth);
+                float coverage = shortGrass && overlap ? Mathf.Lerp(0.90f, 0.995f, growth)
+                    : Mathf.Lerp(shortGrass ? 0.76f : 0.47f, 0.98f, growth);
                 float cover = coverage * RegionNoise.Smooth(0.76f, 0.96f, normalY) * (1f - trail);
                 if (RegionNoise.Hash01(ix, iz, salt + 2) >= cover) continue;
                 if (props != null && Mathf.Abs(east + x - trailEast) < 9f && Mathf.Abs(south + z - trailSouth) < 7f &&
@@ -223,23 +252,28 @@ namespace Vastcore.RegionMap
                 if (!part.TryGridHeight(px, pz, (int)gx + (int)gz * (n - 1), out float height)) continue;
                 float size = RegionNoise.Hash01(ix, iz, salt + 3);
                 float bladeHeight = shortGrass ? Mathf.Lerp(0.085f, 0.18f, growth) : Mathf.Lerp(0.14f, 0.42f, growth);
+                if (distant) bladeHeight = Mathf.Lerp(0.18f, 0.72f, growth);
                 bladeHeight *= Mathf.Lerp(0.58f, 1.45f, size) * (1f - trail * 0.72f);
                 var foot = new Vector3(x, height - 0.025f, -z);
-                int blades = layer == 1 ? 7 : 3;
+                float tuftAngle = 6.2831853f * RegionNoise.Hash01(ix, iz, salt + 9);
                 for (int b = 0; b < blades; b++)
                 {
                     uint bladeSalt = salt + (uint)(11 + 7 * b);
                     float variation = RegionNoise.Hash01(ix, iz, bladeSalt);
                     float azimuth = 6.2831853f * RegionNoise.Hash01(ix, iz, bladeSalt + 1);
+                    if (overlap) azimuth = tuftAngle + (b + 0.55f * variation) * (6.2831853f / blades);
                     float length = bladeHeight * Mathf.Lerp(0.60f, 1.36f, variation);
-                    float width = shortGrass ? 0.022f : layer == 1 ? 0.019f : 0.066f;
+                    float width = distant ? Mathf.Lerp(0.28f, 0.68f, growth)
+                        : shortGrass ? (continuous ? 0.032f : overlap ? 0.053f : 0.022f) : layer == 1 ? 0.019f : 0.066f;
+                    float spread = distant ? 2.15f : shortGrass && overlap ? Mathf.Lerp(3.6f, 2.4f, growth)
+                        : overlap ? 1.15f : 0.68f;
                     bool dry = layer == 1 && variation > 0.958f;
                     var along = new Vector3(Mathf.Cos(azimuth), 0f, Mathf.Sin(azimuth));
                     Vector3 offset = along * (spacing * (variation - 0.5f) * 0.86f);
                     offset.y = (-part.Normals[3 * v] * offset.x + part.Normals[3 * v + 2] * offset.z) / normalY;
                     AddBlade(foot + offset, along,
                         dry ? Mathf.Min(0.79f, 0.22f + length * 1.1f) : length, width * (dry ? 0.31f : 0.65f + 0.62f * variation),
-                        growth, variation, part.Sun[v], layer, dry);
+                        growth, variation, part.Sun[v], layer, dry, spread);
                 }
             }
 
@@ -249,6 +283,7 @@ namespace Vastcore.RegionMap
                 Shader shader = Resources.Load<Shader>(ShaderResource);
                 if (shader == null || !shader.isSupported) return tile;
                 _material = new Material(shader) { name = "Meadow grass", hideFlags = HideFlags.DontSave };
+                _material.SetFloat("_GrasslandContinuous", continuous ? 1f : 0f);
             }
             var mesh = new Mesh { name = "Grassland blades", hideFlags = HideFlags.DontSave };
             if (_vertices.Count > 65535) mesh.indexFormat = IndexFormat.UInt32;
@@ -283,15 +318,16 @@ namespace Vastcore.RegionMap
         }
 
         private void AddBlade(Vector3 root, Vector3 along, float height, float width,
-            float growth, float variation, float sun, int layer, bool dry)
+            float growth, float variation, float sun, int layer, bool dry, float spread)
         {
             Vector3 side = new Vector3(along.z, 0f, -along.x) * (width * 0.5f);
-            Vector3 lean = (along * (dry ? 0.15f : 0.68f) + new Vector3(0.20f, 0f, 0.13f)) * height;
-            Vector3 tip = root + Vector3.up * height + lean;
+            Vector3 lean = (along * (dry ? 0.15f : spread) + new Vector3(0.20f, 0f, 0.13f)) * height;
+            bool basalLeaf = layer == ShortGrassLayer && spread > 1f;
+            Vector3 tip = root + Vector3.up * (basalLeaf ? 0.71f * height : height) + lean;
             var color = new Color32((byte)(255 * growth), (byte)(255 * variation), (byte)(255 * sun), dry ? (byte)255 : (byte)0);
             var rootAndLayer = new Vector4(root.x, root.y, root.z, layer);
             int start = _vertices.Count;
-            if (layer == ShortGrassLayer)
+            if ((layer == ShortGrassLayer && !basalLeaf) || layer == DistantLayer)
             {
                 _vertices.Add(root - side);
                 _vertices.Add(root + side);
@@ -305,7 +341,7 @@ namespace Vastcore.RegionMap
                 return;
             }
 
-            Vector3 mid = root + Vector3.up * (height * 0.61f) + lean * 0.29f;
+            Vector3 mid = root + Vector3.up * (height * (basalLeaf ? 1.05f : 0.61f)) + lean * 0.29f;
             _vertices.Add(root - side * 0.6f);
             _vertices.Add(root + side * 0.6f);
             _vertices.Add(mid - side);
@@ -353,8 +389,18 @@ namespace Vastcore.RegionMap
         }
 
         // Match RegionGrasslandHabitat.hlsl so the meadow colour and the blades describe the same patches.
-        private static float Patch(float x, float z)
-            => 0.64f * Noise(x / 37f, z / 37f) + 0.36f * Noise(x / 8f + 17f, z / 8f - 9f);
+        private static float Growth(float x, float z, float moisture, bool continuous)
+        {
+            if (!continuous)
+            {
+                float previous = 0.64f * Noise(x / 37f, z / 37f) + 0.36f * Noise(x / 8f + 17f, z / 8f - 9f);
+                return RegionNoise.Smooth(0.16f, 0.83f, previous * 0.78f + moisture * 0.22f);
+            }
+            float along = 0.8f * x + 0.6f * z, across = -0.6f * x + 0.8f * z;
+            float patch = 0.57f * Noise(along / 62f, across / 29f) +
+                0.43f * Noise(along / 15f + 17f, across / 5.5f - 9f);
+            return RegionNoise.Smooth(0.23f, 0.76f, patch * 0.71f + moisture * 0.29f);
+        }
 
         private static float Noise(float x, float z)
         {
@@ -372,9 +418,10 @@ namespace Vastcore.RegionMap
                 (1f - RegionNoise.Smooth(14f, 25f, Mathf.Abs(x)));
         }
 
-        internal static void BindGround(Material material, float east, float south, RegionPropProofSlice props = null)
+        internal static void BindGround(Material material, float east, float south, RegionPropProofSlice props = null,
+            RegionGrasslandStyle style = RegionGrasslandStyle.Continuous)
         {
-            material.SetVector("_GrasslandSurface", new Vector4(east, south, 1f, 0f));
+            material.SetVector("_GrasslandSurface", new Vector4(east, south, 1f, style == RegionGrasslandStyle.Continuous ? 1f : 0f));
             if (props != null)
                 material.SetVector("_GrasslandTrail", new Vector4(east + props.CratesCenterX, south + props.CratesCenterZ, 1f, 0f));
         }

@@ -268,7 +268,8 @@ namespace Vastcore.RegionMap
                 {
                     material.EnableKeyword("REGION_BIOME_SURFACE");
                     RegionSurfaceMaterials.BindBiomeSurfaces(material, biomeProfile);
-                    if (meadowCover) RegionGrasslandCover.BindGround(material, (float)origin.X, (float)origin.Y, scene.PropsSlice);
+                    if (meadowCover) RegionGrasslandCover.BindGround(material, (float)origin.X, (float)origin.Y,
+                        scene.PropsSlice, scene.Spec.GrasslandStyle);
                 }
                 if (part == scene.InnerTerrain)
                     RegionSedimentLayers.Bind(material, part.Data, scene.InnerMinX, scene.InnerMinZ, scene.InnerCell);
@@ -303,10 +304,12 @@ namespace Vastcore.RegionMap
             }
             if (scene.PropsSlice != null)
             {
-                result.Props = RegionPropView.AddTo(root.transform, scene.PropsSlice, scene.HeightAt);
+                bool weatherGrassland = meadowCover && scene.Spec.GrasslandStyle == RegionGrasslandStyle.Continuous;
+                result.Props = RegionPropView.AddTo(root.transform, scene.PropsSlice, scene.HeightAt, weatherGrassland);
                 foreach (RegionLookViewpoint vp in new[]
                 {
                     scene.PropsSlice.GrasslandEyeViewpoint, scene.PropsSlice.GrasslandPanoramaViewpoint,
+                    scene.PropsSlice.GrasslandFootViewpoint, scene.PropsSlice.GrasslandFenceViewpoint,
                     scene.PropsSlice.CratesViewpoint, scene.PropsSlice.RubbleViewpoint
                 })
                 {

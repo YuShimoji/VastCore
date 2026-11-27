@@ -74,7 +74,7 @@ Last Updated: 2026-11-28
 6. 砂岩の3Dはアルコーブ・光と空気・表面の段3まで。晴れは Weather Maker、砂塵は自作。本人の選択は Linear・雲量上限0.8（形を優先）・夕方の雲は今の淡さ（2026-11-27、sky-trial m36）。空・雲・霞の作業は終了。終了後の追加は本人の選択「模様を2Dの風で流す」で、塊が2Dと同じ向き・速さで流れる（一周で戻さない。m43）。thank 端末にも Weather Maker を導入し、PC・Mobile の描画設定を維持した。探索から地上へ地点と雲の時刻を渡せる。個々の雲の輪郭の照合には差が残る。[通常の入口と確認結果](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)・[本人の選択](USER_REQUEST_LEDGER.md)。
    - 探索メニューからseed 8・9を開き、既存の砂・礫を比較用に適用したPC品質の動画とフレーム間隔を確認。[動画と計測](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)。表面の [T0〜T5](02_design/REGION_SURFACE_MATERIALS_SPEC.md) は済み（各段の結果は同4節）。残りは中景より先の崖と錐の面の形で、方式3案（推奨 A＝高さの格子に段・板・角）と錐を含めるかを本人に提示中（2026-11-28、`D:\AI-Runs\VastCore\mesa-cliff-form\index.html`）。GPU予算は本人の選択で1.2 ms（seed 9の1視点が約1.1 ms）。アーチ・峡谷は後続。
    - DS-011 Props は差し替え口・比較撮影・モデル 71 個の commit まで（取り込み経路は本人の選択で A＝FBX、[DS-011 7節](02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md)）。岩の色は本人の選択で地形の赤い砂岩へ寄せた（Props の岩は画面の r/g 1.16〜1.24→1.40〜1.46、地形の岩 1.64〜1.68。瓦礫の小さな欠片は淡いまま、8.1節）。次は P0 残件（17種）。
-- 草原（2026-11-28）：短草・葉・穂と芝／ロームの写真材で描く。固定配置44点と地域探索のダイブ、別の生成地点で確認。[完成図と Unity の前後比較](<D:/AI-Runs/VastCore/review-20261127-grassland-multibiome/ground-cover/index.html>)・[再撮影](OPERATOR_WORKFLOW.md#草原での適用)。完成図との差は中遠景の群落と露岩・柵の質感。4系統のカタログ登録・美術採否は本人。
+- 草原（2026-11-28）：短い葉を重ね、群落の立体を約300 mまで描く。露岩は写真材、柵は材ごとに木目。固定配置・地域探索・別の生成地点を撮影。[完成図と Unity の比較](<D:/AI-Runs/VastCore/review-20261127-grassland-multibiome/ground-cover/continuous-meadow/index.html>)・[再撮影](OPERATOR_WORKFLOW.md#草原での適用)。4系統のカタログ登録・美術採否は本人。
 
 ## External Pulse And Remote Resume
 

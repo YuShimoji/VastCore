@@ -195,6 +195,16 @@ namespace Vastcore.RegionMap
                 relE - 3.6f, relS + 14.1f, 1.55f,
                 relE + 0.8f, relS - 10f, -1.8f,
                 44f);
+            slice.GrasslandFootViewpoint = new RegionLookViewpoint(
+                "grassland-foot",
+                relE - 3.6f, relS + 14.1f, 1.55f,
+                relE - 0.5f, relS + 11.7f, 0.05f,
+                53f);
+            slice.GrasslandFenceViewpoint = new RegionLookViewpoint(
+                "grassland-fence",
+                relE - 0.9f, relS + 6.1f, 1.21f,
+                relE + 1.1f, relS + 3.9f, 0.72f,
+                48f);
             slice.GrasslandPanoramaViewpoint = new RegionLookViewpoint(
                 "grassland-panorama",
                 relE - 14.5f, relS + 16.0f, 5.2f,

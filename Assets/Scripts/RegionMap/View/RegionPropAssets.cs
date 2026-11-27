@@ -50,6 +50,8 @@ namespace Vastcore.RegionMap
         public float Warmth;
         public float Roughness = 0.85f;
         public float Metallic;
+        public float StoneTileMetres;
+        public float TimberMapping;
     }
 
     /// <summary>
@@ -64,6 +66,7 @@ namespace Vastcore.RegionMap
         public const string WoodSet = "Assets/Art/Textures/CNT/weathered_pine_timber/";
         public const string StoneSet = "Assets/Art/Textures/RUB/sandstone_rubble_weathered/";
         public const string GraniteSet = "Assets/Art/Textures/NAT/mossy_granite_outcrop/";
+        public const string LichenRockSet = "Assets/Art/Textures/NAT/weathered_lichen_rock/";
         public const string MeadowTurfSet = "Assets/Art/Textures/NAT/grassland_meadow_turf/";
         public const string MeadowLoamSet = "Assets/Art/Textures/NAT/grassland_loam_soil/";
         public const string MeadowFoliageSet = "Assets/Art/Textures/NAT/meadow_foliage_blade/";
@@ -264,7 +267,7 @@ namespace Vastcore.RegionMap
         /// 元のモデルの材質の名前（GameProjects の GLB の材質名。wood・Sandstone_PBR_Pale・P0_Fine_Sand など）から共有の材質を決める。
         /// 色の調子は名前の Pale・Warm・Deep・Dark などで変える。
         /// </summary>
-        public static RegionPropSurface SurfaceFor(string sourceMaterialName)
+        public static RegionPropSurface SurfaceFor(string sourceMaterialName, bool weatherGrassland = false)
         {
             string raw = sourceMaterialName ?? "";
             int instanceSuffix = raw.IndexOf(" (Instance)", StringComparison.Ordinal);
@@ -297,6 +300,13 @@ namespace Vastcore.RegionMap
                 else if (n.Contains("light")) s.Value = 1.12f;
                 else if (n.Contains("split")) s.Value = 1.05f;
                 else if (n.Contains("end")) { s.Value = 0.88f; s.Warmth = 0.2f; }
+                if (weatherGrassland && (n.Contains("timber") || n.Contains("wood")) && !n.Contains("bark"))
+                {
+                    s.TimberMapping = n.Contains("end") ? 2f : 1f;
+                    s.Value *= 0.86f;
+                    s.Warmth = -0.35f;
+                    s.Roughness = 0.86f;
+                }
                 return s;
             }
             if (n.Contains("rope") || n.Contains("lashing"))
@@ -318,6 +328,15 @@ namespace Vastcore.RegionMap
                 if (n.Contains("pale") || n.Contains("limestone")) { s.Value = 1.16f; s.Warmth = 0.15f; }
                 else if (n.Contains("shaded")) { s.Value = 0.78f; s.Warmth = -0.15f; }
                 else if (n.Contains("mossy")) { s.Value = 0.98f; s.Warmth = -0.10f; }
+                if (weatherGrassland)
+                {
+                    s.ColorPath = LichenRockSet + "lichen_rock_diff_1k.jpg";
+                    s.NormalPath = LichenRockSet + "lichen_rock_nor_gl_1k.jpg";
+                    s.RoughnessPath = LichenRockSet + "lichen_rock_rough_1k.jpg";
+                    s.StoneTileMetres = 1.35f;
+                    s.Value *= 2.10f;
+                    s.Warmth = -0.15f;
+                }
                 return s;
             }
             if (n.Contains("turf"))

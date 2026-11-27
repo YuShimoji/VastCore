@@ -1,0 +1,18 @@
+{
+  "sets": [
+    {
+      "files": [
+        "lichen_rock_diff_1k.jpg",
+        "lichen_rock_nor_gl_1k.jpg",
+        "lichen_rock_rough_1k.jpg"
+      ],
+      "origin": "downloaded",
+      "source": "https://polyhaven.com/a/lichen_rock",
+      "license": "CC0-1.0",
+      "author": "Rico Cilliers",
+      "retrieved": "2026-11-28",
+      "tileMetres": 2.0,
+      "notes": "Original 1K diffuse, GL normal and roughness from the Lichen Rock scan. Grassland outcrop and fieldstone material."
+    }
+  ]
+}

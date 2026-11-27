@@ -286,6 +286,9 @@ namespace Vastcore.RegionMap.Editor
                 }
                 // -lookSediment 0 で土砂の場を流さない（T3 より前の地形。地図が無いので層も出ない）
                 spec.GrasslandCover = RegionMapMenu.Argument("-grasslandCover", "true") != "false";
+                string style = RegionMapMenu.Argument("-grasslandStyle", "Continuous");
+                if (!Enum.TryParse(style, true, out spec.GrasslandStyle) || !Enum.IsDefined(typeof(RegionGrasslandStyle), spec.GrasslandStyle))
+                    throw new ArgumentException("-grasslandStyle expects Continuous, Previous, Denser or Overlapping: " + style);
                 string sediment = RegionMapMenu.Argument("-lookSediment", "");
                 if (sediment.Length > 0) spec.Sediment = float.Parse(sediment, CultureInfo.InvariantCulture);
                 // -lookRockGround false で岩と地面のなじませと分級（T4）を入れない（T3 までの岩の置き方と描き方）
@@ -341,7 +344,7 @@ namespace Vastcore.RegionMap.Editor
                     CaptureLookViews(camera, look, folder);
                     if (RegionMapMenu.Argument("-grasslandTiming", "false") == "true")
                         CaptureToggleComparison(camera, look, folder, "grassland-blades", "草の立体描画",
-                            look.HasGrasslandCover, look.SetGrasslandBladesVisible);
+                            look.HasGrasslandCover, look.SetGrasslandBladesVisible, GrasslandGroundViews(look));
                     if (RegionMapMenu.Argument("-reliefCompare", "false") == "true")
                         CaptureToggleComparison(camera, look, folder, "relief", "凹凸", RegionSurfaceRelief.Baked, RegionSurfaceRelief.SetActive);
                     if (RegionMapMenu.Argument("-surfaceCompare", "false") == "true")
@@ -522,7 +525,7 @@ namespace Vastcore.RegionMap.Editor
                 if (compare) RegionLookSky.AddComparisonSteps(steps, () => camera, () => look, () => cloudTime, folder);
                 if (RegionMapMenu.Argument("-grasslandTiming", "false") == "true")
                     steps.Add(() => CaptureToggleComparison(camera, look, folder, "grassland-blades", "草の立体描画",
-                        look.HasGrasslandCover, look.SetGrasslandBladesVisible));
+                        look.HasGrasslandCover, look.SetGrasslandBladesVisible, GrasslandGroundViews(look)));
                 if (propsCompare) steps.Add(() => CapturePropsComparison(camera, look, folder));
                 else if (spec.GrasslandSample) steps.Add(() =>
                 {
@@ -576,7 +579,7 @@ namespace Vastcore.RegionMap.Editor
         /// -tileBreakCompare true は写真素材の繰り返しの崩し（RegionSurfaceMaterials.TileBreak）。
         /// </summary>
         private static void CaptureToggleComparison(Camera camera, RegionTerrainView.LookResult look, string output,
-            string key, string label, bool available, Action<bool> setActive)
+            string key, string label, bool available, Action<bool> setActive, RegionLookViewpoint[] groundViews = null)
         {
             if (!available)
             {
@@ -591,6 +594,9 @@ namespace Vastcore.RegionMap.Editor
                 RegionLookViewpoint v = viewpoint;
                 views.Add(("look-" + v.Name, () => RegionTerrainView.PlaceLook(camera.transform, look.Scene, v), v.FovDegrees));
             }
+            if (groundViews != null)
+                foreach (RegionLookViewpoint view in groundViews)
+                    views.Add((view.Name, () => RegionTerrainView.PlaceLook(camera.transform, look.Scene, view), view.FovDegrees));
             if (look.Alcove != null)
             {
                 views.Add(("alcove-mid", () => look.Alcove.Place(camera.transform, true, 0.57f, true), 48f));
@@ -651,6 +657,13 @@ namespace Vastcore.RegionMap.Editor
         }
 
         private const int TimingRounds = 8, TimingBatch = 6;
+
+        private static RegionLookViewpoint[] GrasslandGroundViews(RegionTerrainView.LookResult look)
+        {
+            RegionPropProofSlice slice = look.Scene.PropsSlice;
+            return slice?.GrasslandFootViewpoint != null
+                ? new[] { slice.GrasslandFootViewpoint, slice.GrasslandEyeViewpoint } : null;
+        }
 
         // 描いて、1 画素を読み戻して GPU の終わりを待つまでの時間（ms）
         private static double TimedRender(Camera camera, RenderTexture target, Texture2D pixel)
@@ -771,6 +784,8 @@ namespace Vastcore.RegionMap.Editor
             foreach (RegionLookViewpoint vp in new[]
             {
                 slice.GrasslandEyeViewpoint,
+                slice.GrasslandFootViewpoint,
+                slice.GrasslandFenceViewpoint,
                 slice.GrasslandPanoramaViewpoint,
                 slice.GrasslandOutcropViewpoint,
                 slice.GrasslandTrailViewpoint
@@ -780,6 +795,12 @@ namespace Vastcore.RegionMap.Editor
                 RegionTerrainView.PlaceLook(camera.transform, look.Scene, vp);
                 camera.fieldOfView = vp.FovDegrees;
                 Capture(camera, output, vp.Name + ".png");
+                if (vp == slice.GrasslandFootViewpoint && look.HasGrasslandCover)
+                {
+                    look.SetGrasslandBladesVisible(false);
+                    try { Capture(camera, output, "grassland-foot-without-blades.png"); }
+                    finally { look.SetGrasslandBladesVisible(true); }
+                }
             }
         }
 

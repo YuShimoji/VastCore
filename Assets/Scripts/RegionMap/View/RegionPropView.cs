@@ -35,7 +35,8 @@ namespace Vastcore.RegionMap
         /// <summary>
         /// Props を置く。heightAt（Core 座標の地面の高さ）を渡すと、実アセットの地面なじませ（V7 Ground Skirt）が足元の地面の傾きに沿う。
         /// </summary>
-        public static Result AddTo(Transform parent, RegionPropProofSlice slice, Func<float, float, float> heightAt = null)
+        public static Result AddTo(Transform parent, RegionPropProofSlice slice, Func<float, float, float> heightAt = null,
+            bool weatherGrassland = false)
         {
             var root = new GameObject("DS011_Props_Proof");
             root.transform.SetParent(parent, false);
@@ -54,7 +55,7 @@ namespace Vastcore.RegionMap
 
             if (slice.UseRealAssets && RegionPropAssets.Source != null)
             {
-                AddRealAssets(parent, slice, palette, heightAt, slice.RenderedHeightAt ?? heightAt, result);
+                AddRealAssets(parent, slice, palette, heightAt, slice.RenderedHeightAt ?? heightAt, result, weatherGrassland);
                 // 同じ場所に2組を重ねないよう、実アセットの組を出してプレースホルダの組を隠す（比較の撮影で入れ替える）
                 root.SetActive(false);
             }
@@ -76,6 +77,7 @@ namespace Vastcore.RegionMap
             public IRegionPropAssetSource Source;
             public RegionBiome Biome = RegionBiome.Desert;
             public bool UseGrasslandVariants;
+            public bool WeatherGrassland;
             public bool HasGroundColor;
             public Vector4 GroundColor = new Vector4(0.72f, 0.56f, 0.40f, 1f);
             public Vector4 MossColor = new Vector4(0.22f, 0.34f, 0.14f, 1f);
@@ -86,7 +88,7 @@ namespace Vastcore.RegionMap
         }
 
         private static void AddRealAssets(Transform parent, RegionPropProofSlice slice, Palette palette,
-            Func<float, float, float> heightAt, Func<float, float, float> renderedHeightAt, Result result)
+            Func<float, float, float> heightAt, Func<float, float, float> renderedHeightAt, Result result, bool weatherGrassland)
         {
             var realRoot = new GameObject("DS011_Props_Real");
             realRoot.transform.SetParent(parent, false);
@@ -99,6 +101,7 @@ namespace Vastcore.RegionMap
                 Source = RegionPropAssets.Source,
                 Biome = slice.Biome,
                 UseGrasslandVariants = slice.UseGrasslandVariants || slice.Biome == RegionBiome.Grassland,
+                WeatherGrassland = weatherGrassland && slice.Biome == RegionBiome.Grassland,
                 HasGroundColor = slice.HasGroundColor || slice.Biome != RegionBiome.Desert,
                 GroundColor = slice.HasGroundColor
                     ? new Vector4(slice.GroundRed, slice.GroundGreen, slice.GroundBlue, 1f)
@@ -339,6 +342,14 @@ namespace Vastcore.RegionMap
                     for (int s = 0; s < source.Length; s++)
                         replaced[s] = RealMaterial(ctx, source[s] != null ? source[s].name : "");
                     renderer.sharedMaterials = replaced;
+                    if (ctx.WeatherGrassland && renderer.TryGetComponent(out MeshFilter filter) && filter.sharedMesh != null)
+                    {
+                        Vector3 size = filter.sharedMesh.bounds.size;
+                        Vector3 axis = size.y >= size.x && size.y >= size.z ? Vector3.up
+                            : size.x >= size.z ? Vector3.right : Vector3.forward;
+                        float strip = 0.36f + 0.004f * (h % 5);
+                        ctx.Block.SetVector("_PropTimberAxis", new Vector4(axis.x, axis.y, axis.z, strip));
+                    }
                     renderer.SetPropertyBlock(ctx.Block);
                     renderer.shadowCastingMode = ShadowCastingMode.On;
                     renderer.receiveShadows = true;
@@ -400,7 +411,7 @@ namespace Vastcore.RegionMap
 
         private static Material RealMaterial(RealContext ctx, string sourceName)
         {
-            RegionPropSurface surface = RegionPropAssets.SurfaceFor(sourceName);
+            RegionPropSurface surface = RegionPropAssets.SurfaceFor(sourceName, ctx.WeatherGrassland);
             if (ctx.Materials.TryGetValue(surface.Key, out Material cached)) return cached;
             var mat = new Material(ctx.Shader) { name = "DS011_Real_" + surface.Key, hideFlags = HideFlags.DontSave };
             Texture2D color = surface.ColorPath.Length > 0 ? ctx.Source.Texture(surface.ColorPath) : null;
@@ -427,6 +438,8 @@ namespace Vastcore.RegionMap
             if (mat.HasProperty("_Roughness")) mat.SetFloat("_Roughness", surface.Roughness);
             if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 1f - surface.Roughness);
             if (mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", surface.Metallic);
+            if (mat.HasProperty("_PropPhoto"))
+                mat.SetVector("_PropPhoto", new Vector4(surface.StoneTileMetres, surface.TimberMapping, 0f, 0f));
             if (ctx.HasGroundColor && mat.HasProperty("_PropGroundColor"))
                 mat.SetVector("_PropGroundColor", ctx.GroundColor);
             if (mat.HasProperty("_PropMossColor"))

@@ -20,6 +20,8 @@ Shader "Vastcore/RegionProp"
         [HideInInspector] _PropParams ("Dust, value, warmth, moss (per instance)", Vector) = (0, 1, 0, 0)
         [HideInInspector] _PropGroundColor ("Ground color (display sRGB, not converted)", Vector) = (0.72, 0.56, 0.40, 1)
         [HideInInspector] _PropMossColor ("Moss color (display sRGB, not converted)", Vector) = (0.22, 0.34, 0.14, 1)
+        [HideInInspector] _PropPhoto ("Rock projection metres, timber mapping", Vector) = (0,0,0,0)
+        [HideInInspector] _PropTimberAxis ("Timber axis and photo strip", Vector) = (0,1,0,0.36)
     }
 
     SubShader
@@ -59,6 +61,8 @@ Shader "Vastcore/RegionProp"
                 float4 _PropParams;
                 float4 _PropGroundColor;
                 float4 _PropMossColor;
+                float4 _PropPhoto;
+                float4 _PropTimberAxis;
             CBUFFER_END
 
             struct Attributes
@@ -107,11 +111,61 @@ Shader "Vastcore/RegionProp"
             half4 Frag(Varyings input) : SV_Target
             {
                 half3 geometricNormal = normalize(input.normalWS);
-                half3 albedo = RegionToLinear(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).rgb) * _BaseColor.rgb;
-                half3 tangentNormal = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, input.uv), _NormalStrength);
-                half3 bitangent = input.tangentWS.w * cross(geometricNormal, input.tangentWS.xyz);
-                half3 shade = normalize(mul(tangentNormal, half3x3(input.tangentWS.xyz, bitangent, geometricNormal)));
-                half roughness = _UseRoughnessMap > 0.5 ? SAMPLE_TEXTURE2D(_RoughnessMap, sampler_RoughnessMap, input.uv).r : _Roughness;
+                float3 fromPivot = input.positionWS - TransformObjectToWorld(float3(0, 0, 0));
+                half3 albedo;
+                half3 shade;
+                half roughness;
+                [branch]
+                if (_PropPhoto.x > 0.0)
+                {
+                    float3 p = fromPivot / _PropPhoto.x + float3(0.17, 0.38, 0.61);
+                    half3 w = pow(abs(geometricNormal), 4.0h);
+                    w /= max(1e-3h, dot(w, 1.0h));
+                    float2 x = p.zy, y = p.xz, z = p.xy;
+                    half3 nx = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, x), 1.27h);
+                    half3 ny = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, y), 1.27h);
+                    half3 nz = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, z), 1.27h);
+                    half3 relief = w.x * half3(0, nx.y, nx.x) + w.y * half3(ny.x, 0, ny.y) + w.z * half3(nz.x, nz.y, 0);
+                    shade = normalize(geometricNormal + relief - geometricNormal * dot(geometricNormal, relief));
+                    half3 stone = RegionToLinear(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, x).rgb) * w.x
+                        + RegionToLinear(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, y).rgb) * w.y
+                        + RegionToLinear(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, z).rgb) * w.z;
+                    half luma = dot(stone, half3(0.2126h, 0.7152h, 0.0722h));
+                    albedo = lerp(stone, luma * half3(1.02h, 1.03h, 0.96h), 0.74h) * _BaseColor.rgb;
+                    roughness = saturate(0.21h + 0.82h * dot(w, half3(
+                        SAMPLE_TEXTURE2D(_RoughnessMap, sampler_RoughnessMap, x).r,
+                        SAMPLE_TEXTURE2D(_RoughnessMap, sampler_RoughnessMap, y).r,
+                        SAMPLE_TEXTURE2D(_RoughnessMap, sampler_RoughnessMap, z).r)));
+                }
+                else
+                {
+                    float2 uv = input.uv;
+                    half3 tangent = input.tangentWS.xyz;
+                    half3 bitangent = input.tangentWS.w * cross(geometricNormal, tangent);
+                    if (_PropPhoto.y > 0.5 && _PropPhoto.y < 1.5)
+                    {
+                        half3 axis = TransformObjectToWorldDir(_PropTimberAxis.xyz);
+                        half3 onFace = axis - geometricNormal * dot(geometricNormal, axis);
+                        if (dot(onFace, onFace) > 0.18h)
+                        {
+                            tangent = normalize(onFace);
+                            bitangent = cross(geometricNormal, tangent);
+                            // A narrow strip inside one board keeps photographed plank seams off a single beam.
+                            uv = float2(dot(fromPivot, axis) / 1.9 + frac(_PropTimberAxis.w * 7.93),
+                                _PropTimberAxis.w + dot(fromPivot, bitangent) * 0.14);
+                        }
+                    }
+                    albedo = RegionToLinear(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv).rgb) * _BaseColor.rgb;
+                    half3 tangentNormal = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uv), _NormalStrength);
+                    shade = normalize(mul(tangentNormal, half3x3(tangent, bitangent, geometricNormal)));
+                    roughness = _UseRoughnessMap > 0.5 ? SAMPLE_TEXTURE2D(_RoughnessMap, sampler_RoughnessMap, uv).r : _Roughness;
+                    if (_PropPhoto.y > 0.5)
+                    {
+                        half luma = dot(albedo, half3(0.2126h, 0.7152h, 0.0722h));
+                        albedo = lerp(albedo, luma * half3(1.09h, 1.01h, 0.89h), 0.76h);
+                        roughness = lerp(0.67h, 0.94h, roughness);
+                    }
+                }
 
                 // V4: 個体の明るさと暖かさ（同じ材質の Props が並んでも同じ色に見えないように）
                 half value = _PropParams.y > 0.0 ? _PropParams.y : 1.0;
@@ -153,6 +207,8 @@ Shader "Vastcore/RegionProp"
                     half mossUp = smoothstep(0.15, 0.78, geometricNormal.y * 0.7 + shade.y * 0.3);
                     half mossNoise = smoothstep(0.28, 0.72, 0.55 * n1 + 0.45 * n2 + 0.20 * _PropParams.w);
                     moss = saturate(_PropParams.w * 1.15 * mossUp * mossNoise);
+                    // The scanned lichen carries its own mineral and growth contrast.
+                    if (_PropPhoto.x > 0.0) moss *= 0.30h;
                 }
                 half3 mossColor = RegionDisplayToLinear(_PropMossColor.rgb) * (0.78 + 0.40 * n1);
                 albedo = lerp(albedo, mossColor, moss);

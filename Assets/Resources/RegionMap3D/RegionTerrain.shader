@@ -171,6 +171,7 @@ Shader "Vastcore/RegionTerrain"
                         input.positionWS, normal, rock, albedo, input.biomeSurface, input.color.a, biomeDist, bExtra);
                     albedo = lerp(albedo, biomeAlbedo, biomeWeight);
                     shade = normalize(lerp(shade, bExtra.normalWS, biomeWeight));
+                    surfaceOcclusion *= lerp(1.0h, bExtra.occlusion, biomeWeight);
                     specularWeight = lerp(specularWeight, bExtra.specular, biomeWeight);
                     roughness = lerp(roughness, bExtra.roughness, biomeWeight);
                 }

@@ -145,6 +145,12 @@ namespace Vastcore.Tests.EditMode
         public void SurfaceFor_MapsGrasslandMaterialsAndSampleSliceIncludes19Variants()
         {
             Assert.AreEqual(RegionPropAssets.GraniteSet + "mossy_granite_outcrop_diff_1k.jpg", RegionPropAssets.SurfaceFor("Mat_Granite_Mossy").ColorPath);
+            RegionPropSurface exposedRock = RegionPropAssets.SurfaceFor("Mat_Granite_ShadedBase", weatherGrassland: true);
+            Assert.AreEqual(RegionPropAssets.LichenRockSet + "lichen_rock_diff_1k.jpg", exposedRock.ColorPath);
+            Assert.Greater(exposedRock.StoneTileMetres, 0f);
+            Assert.AreEqual(1f, RegionPropAssets.SurfaceFor("Mat_Fence_RoughTimber", weatherGrassland: true).TimberMapping);
+            Assert.AreEqual(2f, RegionPropAssets.SurfaceFor("Mat_Wood_EndGrain", weatherGrassland: true).TimberMapping);
+            Assert.AreEqual(0f, RegionPropAssets.SurfaceFor("Mat_Fence_RoughTimber").TimberMapping);
             Assert.AreEqual(RegionPropAssets.MeadowTurfSet + "Grass005_1K-JPG_Color.jpg", RegionPropAssets.SurfaceFor("Mat_Meadow_Turf").ColorPath);
             Assert.AreEqual(RegionPropAssets.MeadowLoamSet + "Ground009_1K-JPG_Color.jpg", RegionPropAssets.SurfaceFor("Mat_Meadow_Loam").ColorPath);
             Assert.AreEqual(RegionPropAssets.MeadowFoliageSet + "meadow_foliage_blade_diff_1k.jpg", RegionPropAssets.SurfaceFor("Mat_Grass_LushBlade").ColorPath);

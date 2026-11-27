@@ -22,6 +22,7 @@ struct BiomeSurfaceExtra
     half3 normalWS;
     half roughness;
     half specular;
+    half occlusion;
 };
 
 float BiomeHash21(float2 p)
@@ -64,11 +65,13 @@ half3 EvaluateBiomeSurface(
     extra.normalWS = normalWS;
     extra.roughness = _RegionBiomeTile.w > 0.05 ? _RegionBiomeTile.w : 0.88h;
     extra.specular = 0.0h;
+    extra.occlusion = 1.0h;
 
     half detailFade = saturate(1.0h - (viewDistance - 45.0) / 235.0);
     half nearFade = saturate(1.0h - (viewDistance - 25.0) / 95.0);
 
     bool meadow = _GrasslandSurface.z > 0.5;
+    bool continuous = meadow && _GrasslandSurface.w > 0.5;
     float2 geographic = positionWS.xz;
     if (meadow)
         geographic = TransformWorldToObject(positionWS).xz * float2(1.0, -1.0) + _GrasslandSurface.xy;
@@ -85,16 +88,46 @@ half3 EvaluateBiomeSurface(
     half turfShare = 1.0h - subsoilShare;
     half3 canopy = baseAlbedoLinear;
     half trailWear = 0.0h;
+    half growth = 0.0h;
+    half3 groundNormal = normalWS;
     if (meadow)
     {
-        half growth = GrasslandGrowth(geographic, biomeChannels.y);
+        float3 field = continuous ? GrasslandCanopy(geographic, biomeChannels.y)
+            : float3(GrasslandGrowth(geographic, biomeChannels.y), 0.0, 0.0);
+        growth = field.x;
         trailWear = _GrasslandTrail.z > 0.5 ? GrasslandTrailWear(geographic - _GrasslandTrail.xy) : 0.0h;
         turfShare = lerp(0.49h, 0.96h, growth) * (1.0h - trailWear) * (1.0h - rockMask);
-        canopy = RegionDisplayToLinear(lerp(half3(0.43h, 0.43h, 0.32h), half3(0.32h, 0.39h, 0.25h), growth));
-        canopy *= 0.89h + 0.23h * mid;
-        // Keep the hills olive and straw coloured once the individual blades no longer resolve.
         half coverage = (1.0h - rockMask) * (1.0h - trailWear);
-        baseAlbedoLinear = lerp(baseAlbedoLinear, canopy, coverage * lerp(0.61h, 0.95h, smoothstep(38.0, 185.0, viewDistance)));
+        if (continuous)
+        {
+            // Keep the relief of grass clumps where the blades become too small to read.
+            float2 tuftEast = float2(0.44, 0.33);
+            float2 tuftSouth = float2(-0.48, 0.64);
+            float2 tuftUv = float2(dot(geographic, tuftEast), dot(geographic, tuftSouth)) + float2(16.7, 5.3);
+            float footprint = max(length(ddx(tuftUv)), length(ddy(tuftUv)));
+            float tuftWeight = smoothstep(28.0, 74.0, viewDistance) * (1.0 - smoothstep(0.24, 0.82, footprint));
+            float2 canopySlope = field.yz * 1.65 * smoothstep(18.0, 120.0, viewDistance);
+            half tuftShade = 0.0h;
+            [branch]
+            if (tuftWeight > 0.001)
+            {
+                float3 tuft = GrasslandNoiseAndSlope(tuftUv);
+                canopySlope += (tuft.y * tuftEast + tuft.z * tuftSouth) * tuftWeight * lerp(0.11, 0.37, growth);
+                tuftShade = tuftWeight * (1.0 - tuft.x) * (1.0 - tuft.x) * 0.44h;
+            }
+            groundNormal = normalize(normalWS + coverage * half3(-canopySlope.x, 0.0h, canopySlope.y));
+            canopy = RegionDisplayToLinear(GrasslandCrownColor(growth)) * (0.81h + 0.29h * mid);
+            half canopyFade = lerp(0.70h, 0.98h, smoothstep(22.0, 135.0, viewDistance));
+            baseAlbedoLinear = lerp(baseAlbedoLinear, canopy, coverage * canopyFade);
+            extra.normalWS = groundNormal;
+            extra.occlusion = 1.0h - coverage * (lerp(0.09h, 0.36h, growth) + tuftShade);
+        }
+        else
+        {
+            canopy = RegionDisplayToLinear(lerp(half3(0.43h, 0.43h, 0.32h), half3(0.32h, 0.39h, 0.25h), growth));
+            canopy *= 0.89h + 0.23h * mid;
+            baseAlbedoLinear = lerp(baseAlbedoLinear, canopy, coverage * lerp(0.61h, 0.95h, smoothstep(38.0, 185.0, viewDistance)));
+        }
     }
 
     half3 resultAlbedo = baseAlbedoLinear;
@@ -144,6 +177,12 @@ half3 EvaluateBiomeSurface(
             // Cooler, darker litter under the leaves. Worn soil catches light through the open tread.
             tintedGround *= lerp(half3(0.65h, 0.60h, 0.72h), 0.89h, trailWear);
             tintedGround = lerp(tintedGround, canopy, 0.39h * turfShare);
+            if (continuous)
+            {
+                half understory = lerp(0.56h, 0.38h, growth);
+                tintedGround = lerp(tintedGround * lerp(1.0h, understory, 1.0h - trailWear), canopy,
+                    (1.0h - trailWear) * smoothstep(24.0, 145.0, viewDistance));
+            }
         }
 
         half3 cliffX = RegionToLinear(SAMPLE_TEXTURE2D_GRAD(_BiomeCliffMap, sampler_BiomeGroundMap, cUvX, cXDx, cXDy).rgb);
@@ -163,7 +202,7 @@ half3 EvaluateBiomeSurface(
         half3 cliffN = normalize(lerp(cliffNZ, cliffNX, cliffProjWeight));
         half3 combinedN = normalize(lerp(groundN, cliffN, rockMask));
 
-        extra.normalWS = normalize(lerp(normalWS, BiomeBlendWorldNormal(normalWS, combinedN, nearFade), detailFade));
+        extra.normalWS = normalize(lerp(groundNormal, BiomeBlendWorldNormal(groundNormal, combinedN, nearFade), detailFade));
 
         half turfR = SAMPLE_TEXTURE2D_GRAD(_BiomeGroundRoughness, sampler_BiomeGroundMap, gUv0, gDx, gDy).r;
         half loamR = SAMPLE_TEXTURE2D_GRAD(_BiomeSubsoilRoughness, sampler_BiomeGroundMap, sUv0, sDx, sDy).r;

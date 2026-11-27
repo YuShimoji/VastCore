@@ -97,12 +97,14 @@ stop condition に触れた、またはユーザーが方向を変えた時だ�
 固定サンプルは小道・露岩を含む。同じ seed・晴天の前後と、地域探索からの自動生成を PowerShell で撮る。
 
 ```powershell
-.\scripts\region-map.ps1 -Mode view3d -GrasslandSample -Seed 8 -LookSky ours -GrasslandCoverOff -OutDir artifacts/region-map/grassland-before
+.\scripts\region-map.ps1 -Mode view3d -GrasslandSample -Seed 8 -LookSky ours -GrasslandStyle Previous -OutDir artifacts/region-map/grassland-before
 .\scripts\region-map.ps1 -Mode view3d -GrasslandSample -Seed 8 -LookSky ours -OutDir artifacts/region-map/grassland-after
 .\scripts\region-map.ps1 -Mode explore -GrasslandGround -Seed 8 -OutDir artifacts/region-map/grassland-ground
 ```
 
-固定撮影は目の高さ・小道・露岩・俯瞰と遠中近。`-GrasslandTiming` は葉の立体描画を切り替えた描画時間も出す。別地点の固定撮影は `-LookBiome auto -LookCenter 'X,Y'` を使う。Editor の入口は `Vastcore > Region Map > Open 3D Grassland Env Sample`。探索画面では seed 8 の X37.55、Y57.86 から `3Dへダイブ` し、Esc で地図に戻る。
+固定撮影は遠中近・目の高さ・俯瞰・足元・露岩・柵・小道。足元には草のメッシュを隠した画像も出る。`-GrasslandStyle Denser` は葉の本数、`Overlapping` は葉の横の重なりを比較する。既定の `Continuous` は葉の重なりと中遠景の群落、露岩と柵の材質を適用する。
+
+`-GrasslandTiming` は草のメッシュ表示を切り替え、GPU の同期を待つ描画時間を記録する。日照の比較は `-SunSweep '60,38,20,10'`、別地点は `-LookBiome auto -LookCenter 'X,Y'` を使う。Editor の入口は `Vastcore > Region Map > Open 3D Grassland Env Sample`。探索画面では seed 8 の X37.55、Y57.86 から `3Dへダイブ` し、Esc で地図に戻る。
 
 ## Creative Exploration Pulse
 
