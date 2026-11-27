@@ -1,0 +1,506 @@
+{
+  "origin": "converted",
+  "source": "GameProjects DS-011 prop models (handoff bundle vastcore-handoff-staging-20261127, handoff-manifest.json)",
+  "converter": "scripts/glb-to-fbx.py (Blender 5.2.0 LTS, images stripped, -Z forward / Y up, space transform baked)",
+  "converted": "2026-11-27",
+  "materials": "Material names only; RegionPropAssets.SurfaceFor maps them to the shared PBR sets in Assets/Art/Textures.",
+  "files": [
+    {
+      "fbx": "CNT/cnt_supply_pallet/cargo-damaged.fbx",
+      "glb": "CNT/cnt_supply_pallet/cargo-damaged.glb",
+      "glbSha256": "50e1eb4c086a125f43d7000a154e399b3f6b8caa50ab31732724f235b220b1e4",
+      "fbxSha256": "33e71a26208a2a9a135c431522513cf757354f3221a4ee254b4ad72c08ab68a4",
+      "triangles": 2304
+    },
+    {
+      "fbx": "CNT/cnt_supply_pallet/cargo-intact.fbx",
+      "glb": "CNT/cnt_supply_pallet/cargo-intact.glb",
+      "glbSha256": "af3939d535d754b09737c49c61573590666a890831775f7f292631577dfd79ec",
+      "fbxSha256": "3ef329e25a13b2f042053ba7bde744561cc8edd98ee70f22248d634d794e4e8b",
+      "triangles": 5076
+    },
+    {
+      "fbx": "EXP/exp_monolith_fragment/exp_monolith_fragment__split_twin_slabs_lod0.fbx",
+      "glb": "EXP/exp_monolith_fragment/exp_monolith_fragment__split_twin_slabs_lod0.glb",
+      "glbSha256": "4a266ff068b01a65d9f7bf9cb80e307578949886620aea92ef75bb05b1b5e4c2",
+      "fbxSha256": "f9b33dd50494044209f35769014509b44133e3077abc33105a23ff1b549b4610",
+      "triangles": 1944
+    },
+    {
+      "fbx": "EXP/exp_monolith_fragment/exp_monolith_fragment__split_twin_slabs_lod1.fbx",
+      "glb": "EXP/exp_monolith_fragment/exp_monolith_fragment__split_twin_slabs_lod1.glb",
+      "glbSha256": "5320df6dc3644ff6ecf6d9309498672d98ed92acee51b96cbdf19d92224319c1",
+      "fbxSha256": "e007c4c7a7c745f75e207d793c22ac0649cdf659ccd15382e5f63fb22518915f",
+      "triangles": 852
+    },
+    {
+      "fbx": "EXP/exp_monolith_fragment/exp_monolith_fragment__tilted_shard_embedded_lod0.fbx",
+      "glb": "EXP/exp_monolith_fragment/exp_monolith_fragment__tilted_shard_embedded_lod0.glb",
+      "glbSha256": "3b86137c6050d82ed4391ff90d94b96a03be80fe547f277a61162ed3a81e4f98",
+      "fbxSha256": "504f01235e10cd6a643c10516d0a446eea4bcf0e68ac3702af9e5cf6db6b1c95",
+      "triangles": 972
+    },
+    {
+      "fbx": "EXP/exp_monolith_fragment/exp_monolith_fragment__tilted_shard_embedded_lod1.fbx",
+      "glb": "EXP/exp_monolith_fragment/exp_monolith_fragment__tilted_shard_embedded_lod1.glb",
+      "glbSha256": "a7493e5866d35ece90f0a608fde751ac16046f856698b00915d3c0e51cbf7fb4",
+      "fbxSha256": "5604037b49254eec1c972fbdf701b18068939e16e141c0160a84967554771864",
+      "triangles": 426
+    },
+    {
+      "fbx": "EXP/exp_monolith_fragment/exp_monolith_fragment__vertical_slab_obelisk_lod0.fbx",
+      "glb": "EXP/exp_monolith_fragment/exp_monolith_fragment__vertical_slab_obelisk_lod0.glb",
+      "glbSha256": "72fb72232b220ce3db6a1a5c175958d9e47ca0e91d702bcf140c44d301b95e60",
+      "fbxSha256": "dd5ed3761e4bce2a3dbc986a5d935eb4cc05cf1eea5dda1de262e4d85f9eee7b",
+      "triangles": 972
+    },
+    {
+      "fbx": "EXP/exp_monolith_fragment/exp_monolith_fragment__vertical_slab_obelisk_lod1.fbx",
+      "glb": "EXP/exp_monolith_fragment/exp_monolith_fragment__vertical_slab_obelisk_lod1.glb",
+      "glbSha256": "3c705afef049d25c411994ad9b535d2d26d1cf9a0123df4f6b401bbe7da59960",
+      "fbxSha256": "1f0e09fb4bfe613efb427e3ed6ae2ee9ef4ebc7756396769b24d5c44edb1fe52",
+      "triangles": 426
+    },
+    {
+      "fbx": "NAT/nat_cliff_overhang_cap/eroded_caprock_pillar__undercut_caprock_block_lod0.fbx",
+      "glb": "NAT/nat_cliff_overhang_cap/eroded_caprock_pillar__undercut_caprock_block_lod0.glb",
+      "glbSha256": "c8beb08438981467cc60768c22787629edadda7304ba23e207b2d01f02847f64",
+      "fbxSha256": "fe004a5cf28d5d6c47cba54cc61f79c5bfe92979cde9900ba092f5926028f7c7",
+      "triangles": 5120
+    },
+    {
+      "fbx": "NAT/nat_cliff_overhang_cap/eroded_caprock_pillar__undercut_caprock_block_lod1.fbx",
+      "glb": "NAT/nat_cliff_overhang_cap/eroded_caprock_pillar__undercut_caprock_block_lod1.glb",
+      "glbSha256": "621ed9117f243ff3f75e7f0acfc07f7e89bc9b1c76baac51507086441feda950",
+      "fbxSha256": "ede2e4f8f062688b04ea6fe6a76e45094bc811ea6cbf70a6430d7dda8cf8b6f6",
+      "triangles": 1944
+    },
+    {
+      "fbx": "NAT/nat_cliff_overhang_cap/eroded_caprock_pillar__vertical_jointed_column_lod0.fbx",
+      "glb": "NAT/nat_cliff_overhang_cap/eroded_caprock_pillar__vertical_jointed_column_lod0.glb",
+      "glbSha256": "85891e07de34e58d0b98343dcb374324fc79ed7f7d4edd1003f58c7621d59ae5",
+      "fbxSha256": "191df62ea40972c422caf377bd3289b61bfb6dab059a7dd602c6c8c82b90c589",
+      "triangles": 5120
+    },
+    {
+      "fbx": "NAT/nat_cliff_overhang_cap/eroded_caprock_pillar__vertical_jointed_column_lod1.fbx",
+      "glb": "NAT/nat_cliff_overhang_cap/eroded_caprock_pillar__vertical_jointed_column_lod1.glb",
+      "glbSha256": "aec1b8955a7cc8acbe9b6d3bc4f55207274ccc46d2ab190e2e173b47ad8acb0a",
+      "fbxSha256": "74aa418a7f2fb44b116e648c3b358115254a2b499c1c5962db11ffb2c5e8b50e",
+      "triangles": 1944
+    },
+    {
+      "fbx": "NAT/nat_dry_root_log/nat_dry_root_log__bleached_trunk_lod0.fbx",
+      "glb": "NAT/nat_dry_root_log/nat_dry_root_log__bleached_trunk_lod0.glb",
+      "glbSha256": "8212ba40854a4cbccdc43faa0a62af15d87a49fdd184b75f58784c424f5f8346",
+      "fbxSha256": "6caefa007902a582ca56779f33eea7f5db3752bbcd4b1ce41538c2cf36f16544",
+      "triangles": 400
+    },
+    {
+      "fbx": "NAT/nat_dry_root_log/nat_dry_root_log__bleached_trunk_lod1.fbx",
+      "glb": "NAT/nat_dry_root_log/nat_dry_root_log__bleached_trunk_lod1.glb",
+      "glbSha256": "0fa60bd21d0db0a2c8b2525f3c8d0cec261fe6bb282a1924f64154684030dbf1",
+      "fbxSha256": "2db4da04b37f20a95308721585a91155a3eb784f5ec09ec883fd41c6dc5c6c7f",
+      "triangles": 190
+    },
+    {
+      "fbx": "NAT/nat_dry_root_log/nat_dry_root_log__exposed_root_stump_lod0.fbx",
+      "glb": "NAT/nat_dry_root_log/nat_dry_root_log__exposed_root_stump_lod0.glb",
+      "glbSha256": "de9940755b706ca41674c8876c77062bd573c1177a6e2beea8fff9ff96004744",
+      "fbxSha256": "03df5e4538c15e80e21b597338d5bfabe6cd148f14a7e18b270a0e005fbffc02",
+      "triangles": 704
+    },
+    {
+      "fbx": "NAT/nat_dry_root_log/nat_dry_root_log__exposed_root_stump_lod1.fbx",
+      "glb": "NAT/nat_dry_root_log/nat_dry_root_log__exposed_root_stump_lod1.glb",
+      "glbSha256": "2cbebf0376a0b688a9d6d70e28c02a69034d486434d6c7308eb604712e4bf5c5",
+      "fbxSha256": "0922bd4814f5e6ce7a4b845cfca25b1c3f2d25972d8b2b97ee9a1df7bf5952f4",
+      "triangles": 334
+    },
+    {
+      "fbx": "NAT/nat_dry_root_log/nat_dry_root_log__twisted_juniper_snag_lod0.fbx",
+      "glb": "NAT/nat_dry_root_log/nat_dry_root_log__twisted_juniper_snag_lod0.glb",
+      "glbSha256": "a2f4bcc4ba8f8d72943a411a03ebf7b559ee2c973e0b3a88927e9410b70c7f8d",
+      "fbxSha256": "c54352d35fc52c21838a17f7b97cc65850bec0ee48485724e681eb683e4a1dbf",
+      "triangles": 460
+    },
+    {
+      "fbx": "NAT/nat_dry_root_log/nat_dry_root_log__twisted_juniper_snag_lod1.fbx",
+      "glb": "NAT/nat_dry_root_log/nat_dry_root_log__twisted_juniper_snag_lod1.glb",
+      "glbSha256": "17e66fe06eacc0832de9f5ff61eaa8998fd803645a5c78e8de8a5c451fd4eaab",
+      "fbxSha256": "b6145e36b536ddc26845839e17f877795365706320e24d4f16f336eeb546366b",
+      "triangles": 218
+    },
+    {
+      "fbx": "NAT/nat_pebble_cluster/nat_pebble_cluster__dense_talus_patch_lod0.fbx",
+      "glb": "NAT/nat_pebble_cluster/nat_pebble_cluster__dense_talus_patch_lod0.glb",
+      "glbSha256": "3913a44ba85dfde7db2ba6c6467773581af9d3190b215ae9a7f948f331c4bbc5",
+      "fbxSha256": "7218dd2de11b85d58ff41af385163e0533c3ee03c983f52964d808ea0b6f9fe4",
+      "triangles": 2720
+    },
+    {
+      "fbx": "NAT/nat_pebble_cluster/nat_pebble_cluster__dense_talus_patch_lod1.fbx",
+      "glb": "NAT/nat_pebble_cluster/nat_pebble_cluster__dense_talus_patch_lod1.glb",
+      "glbSha256": "422a68c53aefed27fe36282dde8b638240f8a05b4885dd199cb67b5435daf462",
+      "fbxSha256": "b8b1cc4f5e18e2b81cf6fecaa87bf591b64ddd0c081c2dc2b833ef9f3e92606b",
+      "triangles": 1360
+    },
+    {
+      "fbx": "NAT/nat_pebble_cluster/nat_pebble_cluster__sparse_angular_gravel_lod0.fbx",
+      "glb": "NAT/nat_pebble_cluster/nat_pebble_cluster__sparse_angular_gravel_lod0.glb",
+      "glbSha256": "0874a1a929339eca956c0414e6ce587bfdaebaad7abe046874f58a09274e88cf",
+      "fbxSha256": "d8a6db9183a9c5f07fd6f3b7ac3e4299622388074b8f463e3b3c11a6ac709203",
+      "triangles": 1760
+    },
+    {
+      "fbx": "NAT/nat_pebble_cluster/nat_pebble_cluster__sparse_angular_gravel_lod1.fbx",
+      "glb": "NAT/nat_pebble_cluster/nat_pebble_cluster__sparse_angular_gravel_lod1.glb",
+      "glbSha256": "c258117e7849e278461b815deb85fa03ad318be2b7ad661fa3ed08c4656ffb6d",
+      "fbxSha256": "4d529820ee2055d4ecdd6eccb68eb45eaedae2a2ee99616bbba6b6c303b11060",
+      "triangles": 880
+    },
+    {
+      "fbx": "NAT/nat_pebble_cluster/nat_pebble_cluster__wash_sorted_cobbles_lod0.fbx",
+      "glb": "NAT/nat_pebble_cluster/nat_pebble_cluster__wash_sorted_cobbles_lod0.glb",
+      "glbSha256": "a38a606d79fb3c4b11c1dbc56a694299bbde4c3ac107579af6248e264ed1fbf9",
+      "fbxSha256": "568abc4a7e871ef99bbb1809a1a2646a6507ddc4cc1bbed37933337e6fcb273e",
+      "triangles": 2080
+    },
+    {
+      "fbx": "NAT/nat_pebble_cluster/nat_pebble_cluster__wash_sorted_cobbles_lod1.fbx",
+      "glb": "NAT/nat_pebble_cluster/nat_pebble_cluster__wash_sorted_cobbles_lod1.glb",
+      "glbSha256": "fa3480952fa0d76fabd1b7f804b581e15713ee69af1eabe36354fe667a1dd688",
+      "fbxSha256": "31cce4f42ed8289dee6f0c188b180b162489302e614c39e1cf5f4d246b8ed8fa",
+      "triangles": 1040
+    },
+    {
+      "fbx": "NAT/nat_sand_drift/nat_sand_drift__crescent_leeward_lod0.fbx",
+      "glb": "NAT/nat_sand_drift/nat_sand_drift__crescent_leeward_lod0.glb",
+      "glbSha256": "b15e937644b7d0fa98706985cede22a2271b97486b7156e59797c7742a6b37ce",
+      "fbxSha256": "a5beb90769e8dc79be594569a714d5e56f169ce8f47e1bbb64577b2e52cc52a6",
+      "triangles": 1632
+    },
+    {
+      "fbx": "NAT/nat_sand_drift/nat_sand_drift__crescent_leeward_lod1.fbx",
+      "glb": "NAT/nat_sand_drift/nat_sand_drift__crescent_leeward_lod1.glb",
+      "glbSha256": "825c8535edc966f3986c46705bda88fff8e9d9ef06e49a9b348fd800fe67709f",
+      "fbxSha256": "23778a0a54f675a71add6fae80cd9157f3af9635040c1cc9dd2a1d3fab3bf7fe",
+      "triangles": 782
+    },
+    {
+      "fbx": "NAT/nat_sand_drift/nat_sand_drift__ripple_mound_lod0.fbx",
+      "glb": "NAT/nat_sand_drift/nat_sand_drift__ripple_mound_lod0.glb",
+      "glbSha256": "8ac9a4cad1d2402efc6276d9770220953b31e920eea2b16bdd8c7037048e9647",
+      "fbxSha256": "0f36b9d8b57e0f538ff1ed0dfe4cc7c954966054f6febeb0f776e129d7c54c3f",
+      "triangles": 1632
+    },
+    {
+      "fbx": "NAT/nat_sand_drift/nat_sand_drift__ripple_mound_lod1.fbx",
+      "glb": "NAT/nat_sand_drift/nat_sand_drift__ripple_mound_lod1.glb",
+      "glbSha256": "6db3f6a6b1d553ca144e6fd686c81c7944daa1a94f6415fe44bffa0fe294e46a",
+      "fbxSha256": "fcf04b3ae57e6f618c5942381eee306e1310ffe0ae44d756ee424932c3a09545",
+      "triangles": 782
+    },
+    {
+      "fbx": "NAT/nat_sand_drift/nat_sand_drift__wall_banked_slope_lod0.fbx",
+      "glb": "NAT/nat_sand_drift/nat_sand_drift__wall_banked_slope_lod0.glb",
+      "glbSha256": "6f714a63355a698be670b0cbbd1114630a556a6c9d17629dac7b883b6b3711f1",
+      "fbxSha256": "40857e3a2dc44bbdd51ee3a5b9695e1313c1c64e281284c952feb37bb9585ec8",
+      "triangles": 1632
+    },
+    {
+      "fbx": "NAT/nat_sand_drift/nat_sand_drift__wall_banked_slope_lod1.fbx",
+      "glb": "NAT/nat_sand_drift/nat_sand_drift__wall_banked_slope_lod1.glb",
+      "glbSha256": "08638a24222e795d20af1b18110c11eda8a92b4f1b37227623e771c161fafd9f",
+      "fbxSha256": "3e22832113d8b0a9715ae28c2a5bc9904c595653979f2068d6570fc9f4120596",
+      "triangles": 782
+    },
+    {
+      "fbx": "NAT/nat_stratified_slab/fractured_boulder__split_cleft_lod0.fbx",
+      "glb": "NAT/nat_stratified_slab/fractured_boulder__split_cleft_lod0.glb",
+      "glbSha256": "173d1d90066dd564201e284841108e6a3bd8cb553b59f0da7fc4e44d491a3fe0",
+      "fbxSha256": "be2eb7409c0cafc2ae107e178e0567a435293d38b0d7b7d4a73d434744ab0f16",
+      "triangles": 5120
+    },
+    {
+      "fbx": "NAT/nat_stratified_slab/fractured_boulder__split_cleft_lod1.fbx",
+      "glb": "NAT/nat_stratified_slab/fractured_boulder__split_cleft_lod1.glb",
+      "glbSha256": "72ea875424975c7d2c9470f7fe4df28cd18c67c8272bc9b38f078bd9de061ca8",
+      "fbxSha256": "9b1c6d9682fc449d4f6cce0267aa69fc28c1b8872521e60963310cd3daadb2cb",
+      "triangles": 2048
+    },
+    {
+      "fbx": "NAT/nat_stratified_slab/fractured_boulder__wedge_monolith_lod0.fbx",
+      "glb": "NAT/nat_stratified_slab/fractured_boulder__wedge_monolith_lod0.glb",
+      "glbSha256": "219c568a6f8e0b965c7c16225211c2b786ccd6940fcd0b0a92d1d854cb658d3b",
+      "fbxSha256": "ffa29828b31c53fd4e100712e36bdba88bbaf986f990e75e3b5c6ef34f7a4346",
+      "triangles": 5120
+    },
+    {
+      "fbx": "NAT/nat_stratified_slab/fractured_boulder__wedge_monolith_lod1.fbx",
+      "glb": "NAT/nat_stratified_slab/fractured_boulder__wedge_monolith_lod1.glb",
+      "glbSha256": "3a606da2b08418f64964ce9e7bce8c58a8616b8421b1b11df6de6c1777744b5b",
+      "fbxSha256": "49bd327c0027571bec05856676e631dbeee865f6f7f7a91183d251aa6b8b2204",
+      "triangles": 2048
+    },
+    {
+      "fbx": "NAT/nat_stratified_slab/stratified_ledge__fractured_edge_lod0.fbx",
+      "glb": "NAT/nat_stratified_slab/stratified_ledge__fractured_edge_lod0.glb",
+      "glbSha256": "f42ce29caf64ee32a81996d69056dd1043190a9709e7ca39885dc27707ea0f49",
+      "fbxSha256": "08904286c4e6137281dd2490b2f042b6b97b2e19dca6f2cef8c19c52b2602d11",
+      "triangles": 5120
+    },
+    {
+      "fbx": "NAT/nat_stratified_slab/stratified_ledge__fractured_edge_lod1.fbx",
+      "glb": "NAT/nat_stratified_slab/stratified_ledge__fractured_edge_lod1.glb",
+      "glbSha256": "edb0923e079bfe60af59fd1ea905870454d5e43d9ce3158abf99554a551c8b34",
+      "fbxSha256": "fecf967920cd271ba19aaac4071ddee04a1772852bd73bbec31a7558456c9d30",
+      "triangles": 1944
+    },
+    {
+      "fbx": "NAT/nat_stratified_slab/stratified_ledge__horizontal_step_lod0.fbx",
+      "glb": "NAT/nat_stratified_slab/stratified_ledge__horizontal_step_lod0.glb",
+      "glbSha256": "48d1905204bb64d957d5972a1d2cd06abc7d09a6dbddec1c0dfab94613ce5f17",
+      "fbxSha256": "4c624b2b8b7c7a9d664b8806a37a69a640bc1c26b4d366f59b989ee8f1da9a8b",
+      "triangles": 5120
+    },
+    {
+      "fbx": "NAT/nat_stratified_slab/stratified_ledge__horizontal_step_lod1.fbx",
+      "glb": "NAT/nat_stratified_slab/stratified_ledge__horizontal_step_lod1.glb",
+      "glbSha256": "a3cee702725f7e441936a88cd4f28756f359ab532d5c2b931812e99990e1cd79",
+      "fbxSha256": "366495fcc2fc931f1337ff9df1437c2593411aa1bc103e234d00627a0ba6d078",
+      "triangles": 1944
+    },
+    {
+      "fbx": "NAT/nat_stratified_slab/weathered_slab__stepped_plate_lod0.fbx",
+      "glb": "NAT/nat_stratified_slab/weathered_slab__stepped_plate_lod0.glb",
+      "glbSha256": "d20d54684960b33d75317be199caae9ea3e30e19b05cff9ab43aacdd973d3719",
+      "fbxSha256": "7f59a908458775326ae19dd6b369530de6d5235906be70eca77004f77157276c",
+      "triangles": 1280
+    },
+    {
+      "fbx": "NAT/nat_stratified_slab/weathered_slab__stepped_plate_lod1.fbx",
+      "glb": "NAT/nat_stratified_slab/weathered_slab__stepped_plate_lod1.glb",
+      "glbSha256": "87dba94279bb155de73c249074c24511676f484c23d7a6900b7810e015324baa",
+      "fbxSha256": "e14ca1ab8ff3c8c64fe1b5364910bec0c231a5caf05c9dce0d676f6cdebef704",
+      "triangles": 536
+    },
+    {
+      "fbx": "NAT/nat_stratified_slab/weathered_slab__tapered_shale_lod0.fbx",
+      "glb": "NAT/nat_stratified_slab/weathered_slab__tapered_shale_lod0.glb",
+      "glbSha256": "37b9966176890239d828aa7e83184cc90ef23aeee13bb6ee1ce035d87b973bb5",
+      "fbxSha256": "a4677de61c138329ab897bbaa0cd56bf651191ed6632defecc18e2cfef452894",
+      "triangles": 1280
+    },
+    {
+      "fbx": "NAT/nat_stratified_slab/weathered_slab__tapered_shale_lod1.fbx",
+      "glb": "NAT/nat_stratified_slab/weathered_slab__tapered_shale_lod1.glb",
+      "glbSha256": "e5ab3ecdb422bdffa0c001a2e7b7ed898f20abc5d090685adc49c19f149c6c0d",
+      "fbxSha256": "b106cb8f6f91167790527665f78bb5d922991ee71080a8f85fb392b01dab35f1",
+      "triangles": 536
+    },
+    {
+      "fbx": "RUB/rub_masonry_blocks/rubble_wall_skirt_lod0.fbx",
+      "glb": "RUB/rub_masonry_blocks/rubble_wall_skirt_lod0.glb",
+      "glbSha256": "982a6a67ede78542943879c52b219a44b14a8ef7b3ce8db7ca2fb4efb9b20c35",
+      "fbxSha256": "3895095c280bcd4f725331f13f258fed2e9f8ca96417a5290f5ada1047137f86",
+      "triangles": 13152
+    },
+    {
+      "fbx": "RUB/rub_masonry_blocks/rubble_wall_skirt_lod1.fbx",
+      "glb": "RUB/rub_masonry_blocks/rubble_wall_skirt_lod1.glb",
+      "glbSha256": "2a64aeff0fdf17d03ad9eed4070cd1985e16ab7d3ac4ff83d24d3a46805dc119",
+      "fbxSha256": "6390e08a2ed07dce10c230aa6bc84e7c17239f79486605e052dcaf2ed49fc548",
+      "triangles": 5454
+    },
+    {
+      "fbx": "RUB/rub_stone_rubble_pile/rubble_cone_a_lod0.fbx",
+      "glb": "RUB/rub_stone_rubble_pile/rubble_cone_a_lod0.glb",
+      "glbSha256": "a29883811f74debbaf3ece5c49e7e058f247db44eeec94e008faa2a1a8712ecf",
+      "fbxSha256": "702b524d7c7d99d06983f9d88a48803af8392d476e5076b7bb6b74a43a59c0d8",
+      "triangles": 11816
+    },
+    {
+      "fbx": "RUB/rub_stone_rubble_pile/rubble_cone_a_lod1.fbx",
+      "glb": "RUB/rub_stone_rubble_pile/rubble_cone_a_lod1.glb",
+      "glbSha256": "d401ff12db87c84d2a11ca5b7adaa8ae98a515c48dfdc86a02f7ea09c604e694",
+      "fbxSha256": "113622f8b28cd258586b0da3fd4515a7c446952f2db05389b0c2d8a7678270cc",
+      "triangles": 4898
+    },
+    {
+      "fbx": "RUB/rub_stone_rubble_pile/rubble_cone_b_lod0.fbx",
+      "glb": "RUB/rub_stone_rubble_pile/rubble_cone_b_lod0.glb",
+      "glbSha256": "d21672d80b66e6d0776e899aedf0c772059efb0a5e4c7c6af2f2466677844d89",
+      "fbxSha256": "ab52ee6b839406481d821b9903ba37ef975d4e3f1fd53741bfde226b4603ee64",
+      "triangles": 8952
+    },
+    {
+      "fbx": "RUB/rub_stone_rubble_pile/rubble_cone_b_lod1.fbx",
+      "glb": "RUB/rub_stone_rubble_pile/rubble_cone_b_lod1.glb",
+      "glbSha256": "ce8dc3cd23f885b1e3170b0a0a1a8663ffc8a7ed01bdbca3efe4df095013ec59",
+      "fbxSha256": "5a46d5768612efec4678dcb5811a14c0548ea2e7192f5a41d7eafe0a3170ffdd",
+      "triangles": 3690
+    },
+    {
+      "fbx": "RUB/rub_stone_rubble_pile/rubble_low_radial_lod0.fbx",
+      "glb": "RUB/rub_stone_rubble_pile/rubble_low_radial_lod0.glb",
+      "glbSha256": "10dcbe47700cbaa77ba36d60e35c361e2a09541a6b0d00dd6511d07674a96b97",
+      "fbxSha256": "76f3bdab333427bc1f9421c583db7a3e7f889bb951ff431e8aa4a1f6a2985368",
+      "triangles": 8240
+    },
+    {
+      "fbx": "RUB/rub_stone_rubble_pile/rubble_low_radial_lod1.fbx",
+      "glb": "RUB/rub_stone_rubble_pile/rubble_low_radial_lod1.glb",
+      "glbSha256": "9c2e44bac2ba0c90fe2a20fa754c8ba7692e2d2a17692caf42983f2c67e60966",
+      "fbxSha256": "29e79c30e9df37785471dc4921ede2acd06f6480ae158565d45d6b62601c8a42",
+      "triangles": 3386
+    },
+    {
+      "fbx": "RUB/rub_stone_rubble_pile/rubble_split_mound_lod0.fbx",
+      "glb": "RUB/rub_stone_rubble_pile/rubble_split_mound_lod0.glb",
+      "glbSha256": "7aaa79eff92429bb679f64c144ea8060e3ece840a3df4220c5f4a825614e4334",
+      "fbxSha256": "64ce0d07a488dd28d22c16cd0f08a0d37fa2a01813bd692691e4f4c1dfaa6eee",
+      "triangles": 9676
+    },
+    {
+      "fbx": "RUB/rub_stone_rubble_pile/rubble_split_mound_lod1.fbx",
+      "glb": "RUB/rub_stone_rubble_pile/rubble_split_mound_lod1.glb",
+      "glbSha256": "8d5b22fc236b45bb5fd0bfec29a40ceabf4fd7557336ea41dfdedf8378a5ad1d",
+      "fbxSha256": "71e4f72c38fb0d9c1d0506778998c1320d9849019c603e429c7b60ad8dabe952",
+      "triangles": 3994
+    },
+    {
+      "fbx": "SET/set_campfire_hearth/set_campfire_hearth__cold_ash_pit_lod0.fbx",
+      "glb": "SET/set_campfire_hearth/set_campfire_hearth__cold_ash_pit_lod0.glb",
+      "glbSha256": "1f7f62e08d81b1cf8c303dede5c9d0d5e13dff1636126fce3002bcab8350f180",
+      "fbxSha256": "7cb4c25b828c2d78b5bf820eed9d3ecbe18352ae178ae77e751a055e226f028a",
+      "triangles": 1112
+    },
+    {
+      "fbx": "SET/set_campfire_hearth/set_campfire_hearth__cold_ash_pit_lod1.fbx",
+      "glb": "SET/set_campfire_hearth/set_campfire_hearth__cold_ash_pit_lod1.glb",
+      "glbSha256": "51b701d5ec3d2d7bf63bed76e3d50c79b0e13fd001cb3af4446a01bb7c7fd97e",
+      "fbxSha256": "6c40e14d3c868191e7f2721bba18ca4715758063eaaf30120c2b824831a6f26b",
+      "triangles": 530
+    },
+    {
+      "fbx": "SET/set_campfire_hearth/set_campfire_hearth__stone_ring_logs_lod0.fbx",
+      "glb": "SET/set_campfire_hearth/set_campfire_hearth__stone_ring_logs_lod0.glb",
+      "glbSha256": "1d9f9596b977cf93423188c999bf96b28cbb3e1de88472ad5f22a44c14caaa1e",
+      "fbxSha256": "42bc22c525a6e29ce2d77bab1e235f9437a1657de27dccf31fd78b366ec50412",
+      "triangles": 1572
+    },
+    {
+      "fbx": "SET/set_campfire_hearth/set_campfire_hearth__stone_ring_logs_lod1.fbx",
+      "glb": "SET/set_campfire_hearth/set_campfire_hearth__stone_ring_logs_lod1.glb",
+      "glbSha256": "8a4c35a2f59ff321245508fd9102dda7a03e607892510aae19969eb23a8750f7",
+      "fbxSha256": "93dad303eda754d2c964cdf02f8e644c90b8652e76e2484a7295dcad2bbc10c9",
+      "triangles": 746
+    },
+    {
+      "fbx": "SET/set_expedition_tent/shelter-damaged.fbx",
+      "glb": "SET/set_expedition_tent/shelter-damaged.glb",
+      "glbSha256": "37db363877d4dba9e163543f2fc2f1a50e4abee7c0263c7a286df87fdb04a79e",
+      "fbxSha256": "13f3a4182d87c978fe2a79d183eba8db8fb236116533dd9f6bffaae70c776480",
+      "triangles": 2784
+    },
+    {
+      "fbx": "SET/set_expedition_tent/shelter-intact.fbx",
+      "glb": "SET/set_expedition_tent/shelter-intact.glb",
+      "glbSha256": "b1e9440e3627f372279ce8c116ce760a7618239e65c462b7b3bbb8709e866e75",
+      "fbxSha256": "ec010e5ab398d40ccd2314ebb2f3c129231b8c44cf340c296337d2440b6bf4a5",
+      "triangles": 3576
+    },
+    {
+      "fbx": "SET/set_trail_signpost/marker-damaged.fbx",
+      "glb": "SET/set_trail_signpost/marker-damaged.glb",
+      "glbSha256": "cc644c3efce1ec173add92e21fb262fe59a15d914de4c639658bb26cd19ccfca",
+      "fbxSha256": "e66958c11753a21e4fea4f1e3b09b2fe05b050bf132869fac18e213765523c49",
+      "triangles": 1500
+    },
+    {
+      "fbx": "SET/set_trail_signpost/marker-intact.fbx",
+      "glb": "SET/set_trail_signpost/marker-intact.glb",
+      "glbSha256": "f43a3ef7f57cfed694b5c6f10042d22eda754820d5b9cd52bc10401d601c7d49",
+      "fbxSha256": "b599e9769f3af5605d1eb0e635d4d8d5f1c029b400467a47d90ddf4d442d5a17",
+      "triangles": 1116
+    },
+    {
+      "fbx": "STR/str_ruin_pillar/str_ruin_pillar__broken_mid_diagonal_lod0.fbx",
+      "glb": "STR/str_ruin_pillar/str_ruin_pillar__broken_mid_diagonal_lod0.glb",
+      "glbSha256": "97b1533189078234b7ecae2aae440ef70ad6fde5e04cef59dc2cf9cbb21ef4bd",
+      "fbxSha256": "dfae9ef97c41fe83d25e87d6265b6dfcba4a29e56ca7a0266120015f21cbcd5f",
+      "triangles": 2136
+    },
+    {
+      "fbx": "STR/str_ruin_pillar/str_ruin_pillar__broken_mid_diagonal_lod1.fbx",
+      "glb": "STR/str_ruin_pillar/str_ruin_pillar__broken_mid_diagonal_lod1.glb",
+      "glbSha256": "8fb11c389046320f4c9f5677384b45725afe23ff227043aba27efe7cb3296461",
+      "fbxSha256": "30d4e7f60b3c0c8476ebd2e1135345b384ba40a11b3e2e85d596ca50f1a9df28",
+      "triangles": 960
+    },
+    {
+      "fbx": "STR/str_ruin_pillar/str_ruin_pillar__fallen_drum_segment_lod0.fbx",
+      "glb": "STR/str_ruin_pillar/str_ruin_pillar__fallen_drum_segment_lod0.glb",
+      "glbSha256": "ab8610365c62fe054701599f25ea792c1cc130d9931615c971cc80afd9ba15dc",
+      "fbxSha256": "3acf30bb86f49ce88e68f83c514b7fa6ece2692b6ca3ce5c65269204eba5d781",
+      "triangles": 832
+    },
+    {
+      "fbx": "STR/str_ruin_pillar/str_ruin_pillar__fallen_drum_segment_lod1.fbx",
+      "glb": "STR/str_ruin_pillar/str_ruin_pillar__fallen_drum_segment_lod1.glb",
+      "glbSha256": "de5a22b99fb14a8eb3e78a239861a6c3c9026e74be3247aefb97f2123979f41a",
+      "fbxSha256": "cd404832e91c6736de05490b28e6601089d0ef78d15691972e4b3a81ed47606c",
+      "triangles": 374
+    },
+    {
+      "fbx": "STR/str_ruin_pillar/str_ruin_pillar__intact_column_lod0.fbx",
+      "glb": "STR/str_ruin_pillar/str_ruin_pillar__intact_column_lod0.glb",
+      "glbSha256": "d0e9cd66a1b7055f414c4a84f4bc0482679f3591db641404895363c723f67313",
+      "fbxSha256": "5aaf086f12455fa1c59691ba46b87bf175524065f97ba9cd1121c8d04a60edb9",
+      "triangles": 3236
+    },
+    {
+      "fbx": "STR/str_ruin_pillar/str_ruin_pillar__intact_column_lod1.fbx",
+      "glb": "STR/str_ruin_pillar/str_ruin_pillar__intact_column_lod1.glb",
+      "glbSha256": "9e30f368a8a97cd089f1b378bb224059dec5c9cc4d2d50a545ba17a568c8f4b0",
+      "fbxSha256": "c0197a87785b216171c7ef0102163d808c6a18464b1213f1ad3b151a2aca95ee",
+      "triangles": 1454
+    },
+    {
+      "fbx": "STR/str_ruin_pillar/str_ruin_pillar__stump_base_only_lod0.fbx",
+      "glb": "STR/str_ruin_pillar/str_ruin_pillar__stump_base_only_lod0.glb",
+      "glbSha256": "b9eab22dc3d13cd32c98c03d3577e0bdad4efa3b45e8eedd9b5ea90793fd9d43",
+      "fbxSha256": "b50550b92978004f419c028d0425d71cc43488c78affc60af00ad2c45740d52e",
+      "triangles": 2008
+    },
+    {
+      "fbx": "STR/str_ruin_pillar/str_ruin_pillar__stump_base_only_lod1.fbx",
+      "glb": "STR/str_ruin_pillar/str_ruin_pillar__stump_base_only_lod1.glb",
+      "glbSha256": "5881c1ac7ef44c7387dadd499612ede44232ae25a12c2c4bc2115100baf9aadf",
+      "fbxSha256": "21903b94017a929cf9587405c43d7009928bb349f1881369a058beb65f15e22b",
+      "triangles": 902
+    },
+    {
+      "fbx": "STR/str_ruin_wall_segment/wall-collapsed.fbx",
+      "glb": "STR/str_ruin_wall_segment/wall-collapsed.glb",
+      "glbSha256": "7980add590f1bd3b6b6dbdc961254c55d90b98f59f4b47cc7635562caaccdd13",
+      "fbxSha256": "de8d706530db93685ad5af6afc51bf6cf4e1e765ebe0dbdea93987f000e00959",
+      "triangles": 10800
+    },
+    {
+      "fbx": "STR/str_ruin_wall_segment/wall-damaged.fbx",
+      "glb": "STR/str_ruin_wall_segment/wall-damaged.glb",
+      "glbSha256": "9c176ab010e6f8d37053df5ac428e0ef12f6db8070ffe642e4e0f63ec558859d",
+      "fbxSha256": "c66caf3ae45f1a214a742549a7bc02ca455a7b4e71bad8448da034ec281885fb",
+      "triangles": 10800
+    },
+    {
+      "fbx": "STR/str_ruin_wall_segment/wall-intact.fbx",
+      "glb": "STR/str_ruin_wall_segment/wall-intact.glb",
+      "glbSha256": "e94ea4b11820b86e58eebca7476408a3e02e589ba81d9d13f07743c14285d6b4",
+      "fbxSha256": "48bf1cc8c23e69530d9e1e12b9aa42320e7a5e3b232aa6b1dfa54d25a4df2d4c",
+      "triangles": 10800
+    }
+  ]
+}

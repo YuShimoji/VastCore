@@ -56,7 +56,7 @@ Last Updated: 2026-11-27
 - 本人の回答（動きの案、2026-11-23、`01M828W77SDBJKNBXA22T8XJ8B`）：「B 地図で広がる」、記述「BとCを取り入れた動き方が良いです。」。4つの場面とも B。動きの長さは「長く（×1.6）」。進める範囲は「選んだ案の最小の実装まで」。削る動きは未回答。
 - 本人の回答（2026-11-24）：動きの受入（`01M831H77K6HV96N1BYM6J0JZK`）は「一部直したい」。段6の残り3設問（`01M84QPNKRE5XXVTF20ZHEN8RF`）は「保留」。遠征の規則の受入（`01M82V588FZE0C05C0YP34DNGN`）は差し戻し。原文は [USER_REQUEST_LEDGER](USER_REQUEST_LEDGER.md)。
 - 本人の回答（2026-11-22）：エリア・雲の流れ・地点の根拠を足した版（`01M80215JPBGRPF79KE7J0YQQF`）は「近い」、「エリアと地点の呼び名」だけ「直したい（次の前に）」、他は「軽微」、次は「ここで十分」。進め方（`01M80219XNGW9T27XQMXDZJQFG`）は SP-021 4.1節。拡大した地形（`01M81JA2CC4WC37TF841JJ8ZEE`）は「近い」・全項目「軽微」・次は「今回の続き」。呼び名と形（`01M81JA6HWR4TJQXZA6T07TC6J`）は SP-021 4.1節。命名の仕組みの方向（`01M81SA3GF8YMRZRETVZCHBGE2`、2026-11-23）は SP-021 5節。
-- DS-011 Props（PLANNER007、2026-11-27）：プレースホルダは seed 9 で撮影・目視（EditMode 700/700）。実アセットは GLB を Blender で FBX にした写し（commit しない）で seed 9・8 を撮り、実モデル 14・8 個、LOD0 三角形 64,572・31,628（[DS-011 8.1節](02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md)）。EditMode 717/717、texture audit 106 枚 error 0・warning 0。未確認：Props の GPU 時間、Weather Maker の空での比較。
+- DS-011 Props（PLANNER007、2026-11-27）：プレースホルダは seed 9 で撮影・目視（EditMode 700/700）。実アセットは GLB を Blender で FBX にした物（`Assets/Art/Models/`）で seed 9・8 を撮り、実モデル 14・8 個、LOD0 三角形 64,572・31,628（[DS-011 8.1節](02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md)）。EditMode 717/717、texture audit 106 枚 error 0・warning 0。未確認：Props の GPU 時間、Weather Maker の空での比較。
 
 ## Next Action
 
@@ -71,7 +71,7 @@ Last Updated: 2026-11-27
 5. 進め方：問いは、答えで方式が分かれる時だけ送る（[INTERACTION_NOTES](INTERACTION_NOTES.md)、[INVARIANTS](INVARIANTS.md)）。本人が Unity Editor を開いている間は写し `D:\vcv\VastCore` で確かめて1回で戻し、写しの Unity が動いている間は写しの C# を編集しない。
 6. 砂岩の3Dはアルコーブ・光と空気・表面の段3まで。晴れは Weather Maker、砂塵は自作。本人の選択は Linear・雲量上限0.8（形を優先）・夕方の雲は今の淡さ（2026-11-27、sky-trial m36）。空・雲・霞の作業は終了。終了後の追加は本人の選択「模様を2Dの風で流す」で、塊が2Dと同じ向き・速さで流れる（一周で戻さない。m43）。thank 端末にも Weather Maker を導入し、PC・Mobile の描画設定を維持した。探索から地上へ地点と雲の時刻を渡せる。個々の雲の輪郭の照合には差が残る。[通常の入口と確認結果](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)・[本人の選択](USER_REQUEST_LEDGER.md)。
    - 探索メニューからseed 8・9を開き、既存の砂・礫を比較用に適用したPC品質の動画とフレーム間隔を確認。[動画と計測](02_design/REGION_TERRAIN_LOOK_SPEC.md#scene-workflow)。表面の [T0〜T5](02_design/REGION_SURFACE_MATERIALS_SPEC.md) はT0〜T4済み（T0は本人の回答「B主・A従」、T3 ac3d822で3Dの場面は土砂の場を標準の1で描く、T4で大きい岩が錐の裾の先に寄り根元と下の方が地面へなじむ）。残りはT5（素材の採否、本人）。見た目と素材の採否は本人。アーチ・峡谷は後続。
-   - DS-011 Props は差し替え口と比較撮影まで。本人の判断：モデルの取り込み経路（A Blender で FBX にして commit／B glTFast を足す。[DS-011 7節](02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md)）と、比較画像での美術の採否（砂岩の写真素材の色など、8.1節）。決まってから P0 残件（17種）へ進む。
+   - DS-011 Props は差し替え口・比較撮影・モデル 71 個の commit まで（取り込み経路は本人の選択で A＝FBX、[DS-011 7節](02_design/ENVIRONMENT_PROPS_CATALOG_SPEC.md)）。残る本人の判断は比較画像での美術の採否（砂岩の写真素材の色など、8.1節）。採否の後に P0 残件（17種）へ進む。
 
 ## External Pulse And Remote Resume
 

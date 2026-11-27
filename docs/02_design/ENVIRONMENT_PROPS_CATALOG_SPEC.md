@@ -194,7 +194,7 @@ VastCore の現行3D景観（砂岩・乾燥地）と今後の展開予定（古
 
 - **制作手法の採否**: 本カタログの P0 Props を「Blender 等での手動/プロシージャル造形＋ベイク」で作るか、「既存所有アセット／CC0 スキャン素材（Poly Haven 等）の規格変換」で揃えるか。
 - **現代・未来（P2）の着手順**: SP-021 の現行優先（3D砂岩と鳥瞰図詳細化）に合わせ、本仕様では **P0（砂岩・探索拠点・基礎自然/遺構）を先、P1/P2 を後続**としている。
-- **モデルの取り込み経路（2026-11-27、本人の判断待ち）**: GameProjects の主経路はハイブリッド（CC0 スキャン PBR＋構造・反復回避の生成＋近景の主役だけ手編集。GameProjects `docs/decision-log.md` 2026-11-27）。受け取った P0 の GLB 71 個（`D:\AI-Runs\GameProjects\operations\vastcore-handoff-staging-20261127\bundle-full`、175 MB。各ファイルが 2K の画像を埋め込む）は、このプロジェクトに glTF の取り込み手段が無い（`Packages/manifest.json` に glTFast 等なし）ので Unity で読めない。選択肢は (A) Blender で形と材質の名前だけの FBX に変換して `Assets/Art/Models/` に置く（Packages は変えない。71 個で 12 MB。画像は 8節の共有の材質）、(B) glTFast を Packages に足して GLB を直接読む（依存の追加。埋め込みの画像がモデルごとに重複する）。8節の差し替え口はどちらでも同じに動く。検証は (A) を作業ツリーで試しただけで、FBX は commit していない。
+- **モデルの取り込み経路（2026-11-27、本人の選択「A：FBX に変換」）**: GameProjects の主経路はハイブリッド（CC0 スキャン PBR＋構造・反復回避の生成＋近景の主役だけ手編集。GameProjects `docs/decision-log.md` 2026-11-27）。受け取った P0 の GLB 71 個（`D:\AI-Runs\GameProjects\operations\vastcore-handoff-staging-20261127\bundle-full`、175 MB。各ファイルが 2K の画像を埋め込む）は glTF の取り込み手段が無いので Unity で読めない。(A) Blender で形と材質の名前だけの FBX に変換する（`scripts/glb-to-fbx.py`。Packages は変えない。71 個で 12 MB、LFS。画像は 8節の共有の材質）と (B) glTFast を足して GLB を読む（依存の追加、画像がモデルごとに重複）から (A) を選んだ。FBX は `Assets/Art/Models/` に置き、GLB と FBX の sha256・三角形の数は `Assets/Art/Models/model-source.json`。GLB が更新されたら同じスクリプトで変換し直す。
 
 ---
 
@@ -216,7 +216,7 @@ Proof Slice（`RegionLookSpec.Props`）に、実モデルで置いた組を足�
 
 ### 8.1 比較の結果（2026-11-27、PLANNER007、Unity 6000.3.6f1、Linear、PC 品質、自前の空）
 
-GLB 71 個を Blender 5.2 で FBX に変換（変換の道具と報告は `D:\AI-Runs\VastCore\ds011-glb-fbx-20261127\`）し、作業ツリーの `Assets/Art/Models/` に置いて撮った（commit しない）。seed 9 は既定の場所、seed 8 は `-lookCenter 82.93144,62.38425`。
+GLB 71 個を Blender 5.2 で FBX に変換し（`scripts/glb-to-fbx.py`）、`Assets/Art/Models/` に置いて撮った（この FBX を7節の選択の後に commit した）。seed 9 は既定の場所、seed 8 は `-lookCenter 82.93144,62.38425`。
 
 | | seed 9 | seed 8 |
 |---|---|---|
