@@ -1,0 +1,20 @@
+{
+  "sets": [
+    {
+      "files": [
+        "meadow_foliage_blade_ao_1k.jpg",
+        "meadow_foliage_blade_diff_1k.jpg",
+        "meadow_foliage_blade_nor_gl_1k.jpg",
+        "meadow_foliage_blade_rough_1k.jpg"
+      ],
+      "origin": "downloaded",
+      "source": "https://github.com/YuShimoji/GameProjects",
+      "generator": "",
+      "license": "CC0-1.0",
+      "author": "GameProjects",
+      "retrieved": "2026-11-27",
+      "tileMetres": 0.8,
+      "notes": "Periodic seamless 1K PBR veined meadow grass blade & shrub foliage map set (generated in GameProjects studio-slice/model-library/grassland-env-modpack/generate_grassland_textures.py)."
+    }
+  ]
+}

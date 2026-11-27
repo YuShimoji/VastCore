@@ -71,6 +71,28 @@ namespace Vastcore.RegionMap
         /// 共有の写真素材の材質（V4 の明るさ・V7 の砂塵と地面なじませ）で置いた組も作る。既定は切（今までの比較は変わらない）。
         /// </summary>
         public bool PropsRealAssets = false;
+        /// <summary>DS-012 草原環境セットサンプル用。true で Mesa=0 の草原座標に 8 ファミリ・19 変種の実モデルサンプルを並べる。</summary>
+        public bool GrasslandSample = false;
+
+        public static RegionLookSpec CreateGrasslandSample(float centerMapX = 37.55f, float centerMapY = 57.86f)
+        {
+            return new RegionLookSpec
+            {
+                CenterMapX = centerMapX,
+                CenterMapY = centerMapY,
+                Mesa = 0f,
+                Sediment = 0f,
+                Rocks = false,
+                RockGround = false,
+                Vegetation = false,
+                Props = true,
+                PropsRealAssets = true,
+                GrasslandSample = true,
+                Far = new RegionLookViewpoint("far", -140f, 110f, 32f, 0f, 0f, 2f, 36f),
+                Mid = new RegionLookViewpoint("mid", -28f, 32f, 11f, -0.5f, -0.5f, 1.0f, 44f),
+                Near = new RegionLookViewpoint("near", -6.5f, 8.8f, 2.1f, -0.5f, -0.5f, 0.8f, 46f),
+            };
+        }
 
         // 3 つの視点は、既定の場所（seed 9 の X43.61 Y76.92）に合わせて決めた値。太陽は北西から差すので、
         // 西と北を向いた崖に光が斜めに当たる向きから見る。場所を変えたら、視点も決め直す。
@@ -382,7 +404,12 @@ namespace Vastcore.RegionMap
                         scene.Rocks.Surface, scene.InnerRocks.VertexCount);
                 }
             }
-            if (spec.Props)
+            if (spec.GrasslandSample)
+            {
+                scene.PropsSlice = RegionGrasslandSample.BuildSlice(scene, spec.PropsSeedOffset);
+                scene.PropsSlice.UseRealAssets = spec.PropsRealAssets;
+            }
+            else if (spec.Props)
             {
                 string catalogPath = RegionPropCatalog.FindDefaultCatalogPath();
                 if (catalogPath != null)

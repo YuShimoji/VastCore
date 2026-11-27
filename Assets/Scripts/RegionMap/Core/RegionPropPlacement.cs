@@ -68,6 +68,15 @@ namespace Vastcore.RegionMap
         public Func<float, float, float> RenderedHeightAt;
         /// <summary>true で、RegionPropView がプレースホルダの組に加えて実アセットの組（DS011_Props_Real）も作る（RegionLookSpec.PropsRealAssets）。</summary>
         public bool UseRealAssets;
+        /// <summary>true で、草原サンプル向けのモデル変種と地面なじませ色を使う。</summary>
+        public bool UseGrasslandVariants;
+        public bool HasGroundColor;
+        public float GroundRed = 0.72f;
+        public float GroundGreen = 0.56f;
+        public float GroundBlue = 0.40f;
+        public RegionLookViewpoint GrasslandPanoramaViewpoint;
+        public RegionLookViewpoint GrasslandOutcropViewpoint;
+        public RegionLookViewpoint GrasslandTrailViewpoint;
     }
 
     /// <summary>

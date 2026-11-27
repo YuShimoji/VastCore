@@ -1,0 +1,21 @@
+{
+  "sets": [
+    {
+      "files": [
+        "Grass005_1K-JPG_AmbientOcclusion.jpg",
+        "Grass005_1K-JPG_Color.jpg",
+        "Grass005_1K-JPG_Displacement.jpg",
+        "Grass005_1K-JPG_NormalGL.jpg",
+        "Grass005_1K-JPG_Roughness.jpg"
+      ],
+      "origin": "downloaded",
+      "source": "https://ambientcg.com/view?id=Grass005",
+      "generator": "",
+      "license": "CC0-1.0",
+      "author": "ambientCG",
+      "retrieved": "2026-11-27",
+      "tileMetres": 2.0,
+      "notes": "Staged from VastCore MapGenerator CC0 library for Grassland Crust/MeadowTurf surface role (DX normal excluded)."
+    }
+  ]
+}

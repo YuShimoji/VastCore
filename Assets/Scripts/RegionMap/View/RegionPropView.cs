@@ -74,6 +74,9 @@ namespace Vastcore.RegionMap
         {
             public Shader Shader;
             public IRegionPropAssetSource Source;
+            public bool UseGrasslandVariants;
+            public bool HasGroundColor;
+            public Vector4 GroundColor;
             public readonly Dictionary<string, Material> Materials = new Dictionary<string, Material>(StringComparer.Ordinal);
             public readonly Dictionary<string, IReadOnlyList<RegionPropModel>> Models = new Dictionary<string, IReadOnlyList<RegionPropModel>>(StringComparer.Ordinal);
             public readonly SortedDictionary<string, int> Used = new SortedDictionary<string, int>(StringComparer.Ordinal);
@@ -91,6 +94,9 @@ namespace Vastcore.RegionMap
             {
                 Shader = propShader != null ? propShader : palette.Shader,
                 Source = RegionPropAssets.Source,
+                UseGrasslandVariants = slice.UseGrasslandVariants,
+                HasGroundColor = slice.HasGroundColor,
+                GroundColor = new Vector4(slice.GroundRed, slice.GroundGreen, slice.GroundBlue, 1f),
                 Block = new MaterialPropertyBlock()
             };
             float rootY = realRoot.transform.position.y;
@@ -108,7 +114,7 @@ namespace Vastcore.RegionMap
                     models.FirstOrDefault(candidate => candidate.Variant == inst.ClusterModelVariant);
                 bool covered = RegionPropAssets.CoveredByClusterModel(inst) ||
                     (assembly != null && !completeClusters.Add((inst.PropId, inst.ClusterIndex)));
-                RegionPropModel model = assembly ?? SelectPlacementModel(inst, models);
+                RegionPropModel model = assembly ?? SelectPlacementModel(inst, models, ctx.UseGrasslandVariants);
                 GameObject go;
                 if (model == null)
                 {
@@ -151,9 +157,22 @@ namespace Vastcore.RegionMap
             result.RealSummary = summary.ToString().TrimEnd();
         }
 
-        private static RegionPropModel SelectPlacementModel(RegionPropInstance inst, IReadOnlyList<RegionPropModel> models)
+        private static RegionPropModel SelectPlacementModel(RegionPropInstance inst, IReadOnlyList<RegionPropModel> models, bool useGrasslandVariants)
         {
             if (models.Count == 0) return null;
+            if (useGrasslandVariants && !string.IsNullOrEmpty(inst.MeshVariant))
+            {
+                RegionPropModel exact = models.FirstOrDefault(model => string.Equals(model.Variant, inst.MeshVariant, StringComparison.Ordinal));
+                if (exact != null) return exact;
+            }
+            if (!useGrasslandVariants)
+            {
+                models = models.Where(model =>
+                    !model.Variant.Contains("mossy_") &&
+                    !model.Variant.Contains("meadow_") &&
+                    !model.Variant.Contains("trail_gravel_patch")).ToArray();
+                if (models.Count == 0) return null;
+            }
             // 別の荷を載せる土台に、箱が焼き込まれた cargo 付きパレットを重ねない。
             if (inst.Role == "PalletBase" && inst.PropId == "cnt_supply_pallet")
                 models = models.Where(model => !model.Variant.StartsWith("cargo-", StringComparison.Ordinal)).ToArray();
@@ -403,6 +422,8 @@ namespace Vastcore.RegionMap
             if (mat.HasProperty("_Roughness")) mat.SetFloat("_Roughness", surface.Roughness);
             if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 1f - surface.Roughness);
             if (mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", surface.Metallic);
+            if (ctx.HasGroundColor && mat.HasProperty("_PropGroundColor"))
+                mat.SetVector("_PropGroundColor", ctx.GroundColor);
             ctx.Materials[surface.Key] = mat;
             return mat;
         }

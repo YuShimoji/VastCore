@@ -24,6 +24,31 @@ namespace Vastcore.RegionMap.Editor
         [MenuItem("Vastcore/Region Map/Open 3D Mesa Look + DS-011 Props Proof")]
         public static void OpenLookWithPropsProof() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon, true); }
 
+        [MenuItem("Vastcore/Region Map/Open 3D Grassland Env Sample")]
+        public static void OpenGrasslandSample()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            try
+            {
+                EditorUtility.DisplayProgressBar("Region Map", "草原の環境セットサンプルを作っています…", 0.3f);
+                RegionAtmosphere atmosphere = RegionAtmosphere.Create(RegionAtmosphere.Preset.ClearAfternoon);
+                var lookSpec = RegionLookSpec.CreateGrasslandSample();
+                RegionTerrainView.LookResult look = CreateLookScene(new RegionSpec { Seed = 8 }, lookSpec, atmosphere, out Camera camera);
+                RegionLookViewpoint startView = look.Scene.PropsSlice?.GrasslandPanoramaViewpoint ?? look.Scene.Spec.Mid;
+                RegionTerrainView.PlaceLook(camera.transform, look.Scene, startView);
+                camera.fieldOfView = startView.FovDegrees;
+                RegionLookSky.ApplyInteractive(camera, look, atmosphere, RegionLookSky.MixedCloudTime(look.Scene));
+                SceneView view = SceneView.lastActiveSceneView;
+                if (view != null) view.AlignViewToObject(camera.transform);
+                Selection.activeGameObject = look.Props?.RealRoot ?? look.Root;
+                Debug.Log("[RegionMap] 3D 草原サンプル: " + DescribeLook(look));
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+        }
+
         [MenuItem("Vastcore/Region Map/3D Mesa Look Atmosphere/Clear afternoon")]
         public static void OpenLookClear() { OpenLook(RegionAtmosphere.Preset.ClearAfternoon, false); }
 
@@ -202,13 +227,14 @@ namespace Vastcore.RegionMap.Editor
                 ShaderUtil.allowAsyncCompilation = false;
                 UseBuildQuality();
                 var watch = System.Diagnostics.Stopwatch.StartNew();
-                var regionSpec = new RegionSpec { Seed = int.Parse(RegionMapMenu.Argument("-regionSeed", "9")) };
-                var spec = new RegionLookSpec();
+                bool grasslandSample = RegionMapMenu.Argument("-grasslandSample", "false") == "true";
+                var regionSpec = new RegionSpec { Seed = int.Parse(RegionMapMenu.Argument("-regionSeed", grasslandSample ? "8" : "9")) };
+                var spec = grasslandSample ? RegionLookSpec.CreateGrasslandSample() : new RegionLookSpec();
                 bool propsCompare = RegionMapMenu.Argument("-propsCompare", "false") == "true";
-                bool propsProof = propsCompare || RegionMapMenu.Argument("-propsProof", "false") == "true";
+                bool propsProof = propsCompare || grasslandSample || RegionMapMenu.Argument("-propsProof", "false") == "true";
                 spec.Props = propsProof;
                 // -propsReal true で、Props の Proof に実アセット（Assets/Art/Models/ のモデルと共有の写真素材）の組も作り、比較に *-real を足す（DS-011）
-                spec.PropsRealAssets = propsProof && RegionMapMenu.Argument("-propsReal", "false") == "true";
+                spec.PropsRealAssets = propsProof && (grasslandSample || RegionMapMenu.Argument("-propsReal", "false") == "true");
                 // -lookSediment 0 で土砂の場を流さない（T3 より前の地形。地図が無いので層も出ない）
                 string sediment = RegionMapMenu.Argument("-lookSediment", "");
                 if (sediment.Length > 0) spec.Sediment = float.Parse(sediment, CultureInfo.InvariantCulture);
@@ -268,6 +294,8 @@ namespace Vastcore.RegionMap.Editor
                         CaptureAlcoveComparison(camera, look, folder);
                     if (propsCompare)
                         CapturePropsComparison(camera, look, folder);
+                    else if (grasslandSample && look.Props != null && look.Scene?.PropsSlice != null)
+                        CaptureGrasslandSampleViews(camera, look, look.Scene.PropsSlice, folder);
                     CaptureLookViews(camera, look, folder);
                     if (RegionMapMenu.Argument("-reliefCompare", "false") == "true")
                         CaptureToggleComparison(camera, look, folder, "relief", "凹凸", RegionSurfaceRelief.Baked, RegionSurfaceRelief.SetActive);
@@ -628,8 +656,15 @@ namespace Vastcore.RegionMap.Editor
                 // 同じ場面・同じ視点で、プレースホルダの組を実アセットの組に入れ替えて撮る
                 look.Props.Root.SetActive(false);
                 real.SetActive(true);
-                CapturePropsViews(camera, look, slice, output, "-real");
-                CaptureRubbleMasks(camera, look, slice, output, real);
+                if (slice.UseGrasslandVariants)
+                {
+                    CaptureGrasslandViews(camera, look, slice, output);
+                }
+                else
+                {
+                    CapturePropsViews(camera, look, slice, output, "-real");
+                    CaptureRubbleMasks(camera, look, slice, output, real);
+                }
                 Debug.Log("[RegionMap] DS-011 実アセット: モデル " + look.Props.RealModelCount + " 個、LOD0 の三角形 " + look.Props.RealTriangles
                     + "、変種 " + look.Props.RealSummary);
             }
@@ -647,6 +682,44 @@ namespace Vastcore.RegionMap.Editor
             foreach (string contact in look.Props.ContactMeasurements)
                 report.AppendLine(contact);
             File.WriteAllText(Path.Combine(output, "props-proof-report.txt"), report.ToString());
+        }
+
+        private static void CaptureGrasslandSampleViews(Camera camera, RegionTerrainView.LookResult look, RegionPropProofSlice slice, string output)
+        {
+            Directory.CreateDirectory(output);
+            if (look.Props.RealRoot != null)
+            {
+                look.Props.Root.SetActive(false);
+                look.Props.RealRoot.SetActive(true);
+            }
+            CaptureGrasslandViews(camera, look, slice, output);
+            var report = new System.Text.StringBuilder();
+            report.AppendLine(FormattableString.Invariant($"DS-012 Grassland Env Sample (seed {look.Scene.RegionSeed}, count {slice.Instances.Count})"));
+            for (int i = 0; i < slice.Instances.Count; i++)
+            {
+                RegionPropInstance inst = slice.Instances[i];
+                report.AppendLine(FormattableString.Invariant(
+                    $"[{i:D2}] {inst.PropId} variant={inst.MeshVariant} role={inst.Role} pos=({inst.X:F2},{inst.Y:F2},{inst.Z:F2})"));
+            }
+            if (look.Props.RealRoot != null)
+                report.AppendLine(FormattableString.Invariant($"real assets: models {look.Props.RealModelCount}, LOD0 triangles {look.Props.RealTriangles}, variants {look.Props.RealSummary}"));
+            File.WriteAllText(Path.Combine(output, "grassland-sample-report.txt"), report.ToString());
+        }
+
+        private static void CaptureGrasslandViews(Camera camera, RegionTerrainView.LookResult look, RegionPropProofSlice slice, string output)
+        {
+            foreach (RegionLookViewpoint vp in new[]
+            {
+                slice.GrasslandPanoramaViewpoint,
+                slice.GrasslandOutcropViewpoint,
+                slice.GrasslandTrailViewpoint
+            })
+            {
+                if (vp == null) continue;
+                RegionTerrainView.PlaceLook(camera.transform, look.Scene, vp);
+                camera.fieldOfView = vp.FovDegrees;
+                Capture(camera, output, vp.Name + ".png");
+            }
         }
 
         private static void CapturePropsViews(Camera camera, RegionTerrainView.LookResult look, RegionPropProofSlice slice, string output, string suffix)

@@ -18,6 +18,8 @@ Shader "Vastcore/RegionTerrain"
         [HideInInspector] _SunFromVertex ("Keep the baked sun (overhangs)", Float) = 0
         [HideInInspector][NoScaleOffset] _SedimentMap ("Sediment maps (deposit, wash, scree, coarse)", 2D) = "black" {}
         [HideInInspector] _SedimentRect ("Sediment map placement", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _GrassDetailMap ("Grass Detail Map", 2D) = "white" {}
+        [HideInInspector][Normal] _GrassDetailNormal ("Grass Detail Normal", 2D) = "bump" {}
     }
 
     SubShader
@@ -33,6 +35,7 @@ Shader "Vastcore/RegionTerrain"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_local_fragment _ REGION_SANDSTONE
+            #pragma multi_compile_local_fragment _ REGION_GRASSLAND_DETAIL
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
@@ -44,6 +47,10 @@ Shader "Vastcore/RegionTerrain"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
+            TEXTURE2D(_GrassDetailMap);
+            SAMPLER(sampler_GrassDetailMap);
+            TEXTURE2D(_GrassDetailNormal);
+            SAMPLER(sampler_GrassDetailNormal);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
@@ -128,6 +135,23 @@ Shader "Vastcore/RegionTerrain"
                 // 写真素材のある所だけ、粗さから弱い鏡面を足す（素材が無い所と遠くは今の描き方のまま）
                 specularWeight = extra.specular * sandstoneWeight;
                 roughness = extra.specular > 0.0 ? extra.roughness / extra.specular : 1.0;
+                #endif
+                #if defined(REGION_GRASSLAND_DETAIL)
+                float grassViewDist = distance(input.positionWS, _WorldSpaceCameraPos);
+                half grassFade = saturate(1.0 - grassViewDist / 260.0);
+                half grassSlopeMask = smoothstep(0.55, 0.85, normal.y) * (1.0 - rock);
+                half grassMask = grassSlopeMask * grassFade;
+                if (grassMask > 0.001)
+                {
+                    float2 gUv0 = input.positionWS.xz * 0.85;
+                    float2 gUv1 = input.positionWS.xz * 0.24 + float2(3.7, 1.9);
+                    half3 gTex0 = RegionToLinear(SAMPLE_TEXTURE2D(_GrassDetailMap, sampler_GrassDetailMap, gUv0).rgb);
+                    half3 gTex1 = RegionToLinear(SAMPLE_TEXTURE2D(_GrassDetailMap, sampler_GrassDetailMap, gUv1).rgb);
+                    half3 gDetail = saturate((lerp(gTex0, gTex1, 0.32) - 0.15) * 1.45 + 0.15);
+                    albedo = lerp(albedo, lerp(albedo * (gDetail / max(dot(gDetail, half3(0.3, 0.5, 0.2)), 0.08)) * 0.36, gDetail * 0.90, 0.52), grassMask * 0.88);
+                    half3 gNorm = UnpackNormalScale(SAMPLE_TEXTURE2D(_GrassDetailNormal, sampler_GrassDetailNormal, gUv0), 1.15 * grassMask);
+                    shade = normalize(half3(shade.x + gNorm.x, shade.y, shade.z + gNorm.y));
+                }
                 #endif
 
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);

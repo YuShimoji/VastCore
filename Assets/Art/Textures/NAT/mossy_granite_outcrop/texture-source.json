@@ -1,0 +1,20 @@
+{
+  "sets": [
+    {
+      "files": [
+        "mossy_granite_outcrop_ao_1k.jpg",
+        "mossy_granite_outcrop_diff_1k.jpg",
+        "mossy_granite_outcrop_nor_gl_1k.jpg",
+        "mossy_granite_outcrop_rough_1k.jpg"
+      ],
+      "origin": "downloaded",
+      "source": "https://github.com/YuShimoji/GameProjects",
+      "generator": "",
+      "license": "CC0-1.0",
+      "author": "GameProjects",
+      "retrieved": "2026-11-27",
+      "tileMetres": 1.6,
+      "notes": "Periodic seamless 1K PBR mossy granite/fieldstone map set (generated in GameProjects studio-slice/model-library/grassland-env-modpack/generate_grassland_textures.py)."
+    }
+  ]
+}

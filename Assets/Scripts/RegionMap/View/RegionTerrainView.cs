@@ -247,6 +247,17 @@ namespace Vastcore.RegionMap
                     material.EnableKeyword("REGION_SANDSTONE");
                     material.SetFloat("_LooseRock", part.Data == null ? 1f : 0f);
                 }
+                else if (scene.Spec.GrasslandSample && part.Data != null && RegionPropAssets.Source != null)
+                {
+                    Texture2D grassAlbedo = RegionPropAssets.Source.Texture(RegionPropAssets.MeadowTurfSet + "Grass005_1K-JPG_Color.jpg");
+                    Texture2D grassNormal = RegionPropAssets.Source.Texture(RegionPropAssets.MeadowTurfSet + "Grass005_1K-JPG_NormalGL.jpg");
+                    if (grassAlbedo != null)
+                    {
+                        material.EnableKeyword("REGION_GRASSLAND_DETAIL");
+                        material.SetTexture("_GrassDetailMap", grassAlbedo);
+                        if (grassNormal != null) material.SetTexture("_GrassDetailNormal", grassNormal);
+                    }
+                }
                 if (part == scene.InnerTerrain)
                     RegionSedimentLayers.Bind(material, part.Data, scene.InnerMinX, scene.InnerMinZ, scene.InnerCell);
                 else if (part == scene.OuterTerrain)

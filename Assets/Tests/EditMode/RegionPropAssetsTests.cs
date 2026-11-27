@@ -140,5 +140,27 @@ namespace Vastcore.Tests.EditMode
             Assert.AreEqual("NAT", RegionPropAssets.DomainOf("nat_stratified_slab"));
             Assert.AreEqual("", RegionPropAssets.DomainOf(""));
         }
+
+        [Test]
+        public void SurfaceFor_MapsGrasslandMaterialsAndSampleSliceIncludes19Variants()
+        {
+            Assert.AreEqual(RegionPropAssets.GraniteSet + "mossy_granite_outcrop_diff_1k.jpg", RegionPropAssets.SurfaceFor("Mat_Granite_Mossy").ColorPath);
+            Assert.AreEqual(RegionPropAssets.MeadowTurfSet + "Grass005_1K-JPG_Color.jpg", RegionPropAssets.SurfaceFor("Mat_Meadow_Turf").ColorPath);
+            Assert.AreEqual(RegionPropAssets.MeadowLoamSet + "Ground009_1K-JPG_Color.jpg", RegionPropAssets.SurfaceFor("Mat_Meadow_Loam").ColorPath);
+            Assert.AreEqual(RegionPropAssets.MeadowFoliageSet + "meadow_foliage_blade_diff_1k.jpg", RegionPropAssets.SurfaceFor("Mat_Grass_LushBlade").ColorPath);
+            Assert.Greater(RegionPropAssets.SurfaceFor("Mat_Grass_SeededOchre").Warmth, 0.5f);
+            Assert.Less(RegionPropAssets.SurfaceFor("Mat_Bark_ShrubLog").Value, 0.7f);
+            Assert.Greater(RegionPropAssets.SurfaceFor("Mat_Rope_Lashing").Warmth, 0.2f);
+
+            RegionData region = RegionGenerator.Generate(new RegionSpec { Seed = 8, Resolution = 256 });
+            RegionLookScene scene = RegionLookScene.Build(region, RegionLookSpec.CreateGrasslandSample());
+            Assert.NotNull(scene.PropsSlice);
+            Assert.IsTrue(scene.PropsSlice.UseGrasslandVariants);
+            Assert.IsTrue(scene.PropsSlice.HasGroundColor);
+            var variants = new HashSet<string>();
+            foreach (RegionPropInstance inst in scene.PropsSlice.Instances)
+                variants.Add(inst.MeshVariant);
+            Assert.AreEqual(19, variants.Count);
+        }
     }
 }
