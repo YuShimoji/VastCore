@@ -183,7 +183,7 @@ namespace Vastcore.RegionMap.Editor
             return CreateLookStage(region, lookSpec, atmosphere, out camera);
         }
 
-        private static RegionTerrainView.LookResult CreateLookStage(RegionData region, RegionLookSpec lookSpec,
+        internal static RegionTerrainView.LookResult CreateLookStage(RegionData region, RegionLookSpec lookSpec,
             RegionAtmosphere atmosphere, out Camera camera)
         {
             RegionTerrainView.LookResult look = RegionTerrainView.BuildLook(region, lookSpec);

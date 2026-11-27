@@ -206,7 +206,7 @@ namespace Vastcore.RegionMap
             material.SetVector("_RegionBiomeGroundBlend", new Vector4(profile.GroundPhotoColor, profile.GroundPatchStrength, 0f, 0f));
         }
 
-        private static void BindBiomeTextureSet(Material material, string prefix, RegionBiomeSurfaceTextures.TextureSet textures)
+        internal static void BindBiomeTextureSet(Material material, string prefix, RegionBiomeSurfaceTextures.TextureSet textures)
         {
             material.SetTexture(prefix + "Map", textures.Color);
             material.SetTexture(prefix + "Normal", textures.Normal);

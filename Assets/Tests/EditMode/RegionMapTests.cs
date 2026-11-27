@@ -16,6 +16,47 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
+        public void Woodland_ShapeSeedKeepsPlacementAndTheParkMeadowStaysOpen()
+        {
+            const int size = 129;
+            const float span = 820f;
+            var data = new RegionData(new RegionSpec { Resolution = size, SizeKm = span / 1000f });
+            System.Array.Fill(data.Height, 120f);
+            System.Array.Fill(data.Moisture, 0.62f);
+            System.Array.Fill(data.Biome, RegionBiome.Forest);
+            for (int z = 0; z < size; z++)
+            for (int x = 93; x < size; x++)
+                data.LakeDepth[data.Index(x, z)] = 1f;
+
+            var scene = new RegionLookScene
+            {
+                Inner = new RegionDetail { Data = data }, InnerCell = span / (size - 1),
+                CenterX = span / 2f, CenterZ = span / 2f, InnerMaxX = span, InnerMaxZ = span,
+            };
+            var original = RegionWoodlandLayout.Build(scene, RegionWoodlandPreset.NaturePark, 8, 8);
+            var changed = RegionWoodlandLayout.Build(scene, RegionWoodlandPreset.NaturePark, 8, 17);
+            int differentMeshes = 0;
+            for (int layer = 0; layer < 2; layer++)
+            {
+                var old = layer == 0 ? original.Canopy : original.Understory;
+                var next = layer == 0 ? changed.Canopy : changed.Understory;
+                Assert.AreEqual(old.Count, next.Count);
+                Assert.That(old.Count, Is.GreaterThan(0));
+                for (int i = 0; i < old.Count; i++)
+                {
+                    RegionWoodlandPlant a = old[i], b = next[i];
+                    Assert.AreEqual((a.Form, a.East, a.South, a.Height, a.Yaw), (b.Form, b.East, b.South, b.Height, b.Yaw));
+                    Assert.That(a.East + scene.CenterX, Is.LessThan(92.5f * scene.InnerCell));
+                    Assert.That(original.TrailClearance(a.East, a.South), Is.GreaterThan(0f));
+                    Assert.That(a.Ground, Is.EqualTo(120f));
+                    if (layer == 0) Assert.That(original.Meadow(a.East, a.South), Is.LessThan(1f));
+                    if (a.Shape != b.Shape) differentMeshes++;
+                }
+            }
+            Assert.That(differentMeshes, Is.GreaterThan(0));
+        }
+
+        [Test]
         public void Generate_SameSeed_ProducesSameRegion()
         {
             RegionData a = RegionGenerator.Generate(SmallSpec(11));

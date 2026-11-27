@@ -1,0 +1,16 @@
+{
+  "sets": [
+    {
+      "source": "https://polyhaven.com/a/forest_floor",
+      "files": [
+        "forest_floor_*"
+      ],
+      "tileMetres": 2.1,
+      "notes": "1K JPEG diffuse, GL normal and roughness; leaf litter, twigs and exposed soil in the woodland sample.",
+      "author": "eye-candy.xyz",
+      "retrieved": "2026-11-28",
+      "license": "CC0-1.0",
+      "origin": "downloaded"
+    }
+  ]
+}
