@@ -148,7 +148,9 @@ namespace Vastcore.RegionMap
         /// 太陽・空・霞・空からの光と、後処理の Volume を場面に置く。groundHeight は霞が最も濃い高さ（場面の地面の高さ）。
         /// 返すのは後処理の Volume を持つ GameObject（シーンと一緒に消える）。
         /// </summary>
-        public GameObject Apply(Camera camera, Light sun, float groundHeight)
+        public GameObject Apply(Camera camera, Light sun, float groundHeight) => Apply(camera, sun, groundHeight, null);
+
+        public GameObject Apply(Camera camera, Light sun, float groundHeight, System.Action<Object> ownAsset)
         {
             // 太陽の色の数値は、シェーダーが受け取る線形の値として決めてある
             sun.color = ForEngine(SunColor);
@@ -174,6 +176,7 @@ namespace Vastcore.RegionMap
             if (skyShader != null)
             {
                 var sky = new Material(skyShader) { name = "Region Sky", hideFlags = HideFlags.DontSave };
+                ownAsset?.Invoke(sky);
                 // SetVector は色空間で変換されないので、線形の値をそのまま渡せる
                 sky.SetVector("_ZenithColor", (Vector4)(Zenith.linear * SkyIntensity));
                 sky.SetVector("_SunGlowColor", (Vector4)SunGlow.linear);
@@ -196,6 +199,7 @@ namespace Vastcore.RegionMap
             var profile = ScriptableObject.CreateInstance<VolumeProfile>();
             profile.name = "Region Atmosphere " + Name;
             profile.hideFlags = HideFlags.DontSave;
+            ownAsset?.Invoke(profile);
 
             Tonemapping tonemapping = profile.Add<Tonemapping>(true);
             tonemapping.mode.Override(Tonemap);
@@ -213,6 +217,8 @@ namespace Vastcore.RegionMap
             Vignette vignette = profile.Add<Vignette>(true);
             vignette.intensity.Override(VignetteIntensity);
             vignette.smoothness.Override(0.45f);
+            if (ownAsset != null)
+                foreach (VolumeComponent component in profile.components) ownAsset(component);
             volume.sharedProfile = profile;
             return volumeObject;
         }
