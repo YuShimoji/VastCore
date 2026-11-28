@@ -196,8 +196,8 @@ VastCore の現行3D景観（砂岩・乾燥地）と今後の展開予定（古
 - [道路データ](../../Assets/Scripts/RegionMap/Core/RegionRoads.cs)はメートル単位の中心線、高さの取得関数、幅員から縦断と地形のすり付けを作る。[道路部品](../../Assets/Scripts/RegionMap/View/RegionRoadView.cs)は同じ断面を舗装、標示、防護柵、当たり判定に使う。敷地の `RegionRoadsideSite` は、道路ID、中心線に沿った距離、側、入口・敷地の座標と向きを持つ。敷地IDは生成した場面内で一意。探索マップからの道路・敷地呼び出しは別の接続工程。
 - 舗装は `Asphalt010`、砂利は `Ground007`、地表は `Grass005` と `Ground009`。低木と林縁は `DesertPlants`、短草と長草は草原の `MeadowTussocks`、代表区間の立体の葉と丘の樹冠は森林環境の `RegionWoodlandGeometry` を再利用する。樹冠は谷底からの距離と粗密の異なる二つの分布で林を作り、幹と樹冠の詳細度を斜面の奥で落とす。[素材の出所](../../Assets/Resources/MapGenerator/Textures/texture-source.json)・[草株の出所](../../Assets/Resources/RegionMap3D/texture-source.json)・[植生の配置](../../Assets/Scripts/RegionMap/View/RegionRoadLandscape.cs)
 - 道路脇は舗装端から砂利2.2 m、法面、底幅3 mの浅い溝、畦、田畑へつなぐ。地形格子を4.5 mから2.25 mへ細かくし、[断面と敷地の除外](../../Assets/Scripts/RegionMap/Core/RegionRoadMargin.cs)を地形・植生・路肩に共用する。既存の砂利・土・草を実寸で混ぜ、畦や溝に沿って丈の違う株を群れと空きに分ける。遠景の尾根は[別の粗い地形](../../Assets/Scripts/RegionMap/View/RegionRoadGroundView.cs)で二重に重ねる。
-- 自然地形へ持ち越すには、単色で断面を確認し、草の生育斑を砂利・土の描画と短草の配置で共用する。路側面の三角形から短草と礫の高さを求め、舗装と平坦地を空ける。敷地から南北420 mの代表区間では、近くの礫を立体で置き、既存砂利の法線で細かな砂利の凹凸を描く。畝の色画像は Terrain Lit の光沢を避けるため RGB で作る。[前後・完成想定図・実測](<D:/AI-Runs/VastCore/highway-arterial/roadside-detail/index.html#footing>)
-- Unity 6000.3.6f1 で Country / 8 と Sweeping / 19 の Entrance・Highway を同じカメラと日照で再撮影。道路179点と入口・敷地80点を各版で検査し、入口は1.14 cm／1.10 cm（水平0.62 m）、平坦部25点の高低差は表示桁で0.000 cm。描画の差は Entrance −0.12／+0.31 ms、Highway +0.03／+0.02 ms（1600×900、CPU・GPU同期込み）。生成時間の差は+0.85／+1.86秒。道路の EditMode 6件通過。
+- 自然地形へ持ち越すには、単色で断面を確認し、草の生育斑を砂利・土の描画と短草の配置で共用する。路側面の三角形から短草と礫の高さを求め、舗装と平坦地を空ける。敷地から南北420 mの代表区間では、近くの礫を立体で置き、既存砂利の法線で細かな砂利の凹凸を描く。畝の色画像は Terrain Lit の光沢を避けるため RGB で作る。[前後・完成想定図・実測・通常メニュー](<D:/AI-Runs/VastCore/highway-arterial/roadside-detail/index.html#footing>)
+- Unity 6000.3.6f1 の通常メニューで Country / 8 と Sweeping / 19 を生成し、Entrance・Highway を確認。固定カメラ・日照での前後比較では、道路179点と入口・敷地80点を各版で検査し、入口は1.14 cm／1.10 cm（水平0.62 m）、平坦部25点の高低差は表示桁で0.000 cm。描画の差は Entrance −0.12／+0.31 ms、Highway +0.03／+0.02 ms（1600×900、CPU・GPU同期込み）。生成時間の差は+0.85／+1.86秒。道路の EditMode 6件通過。
 
 ---
 
