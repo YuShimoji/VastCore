@@ -26,6 +26,8 @@ namespace Vastcore.RegionMap.Editor
         private const float HeightRange = 420f;
         private const float Span = 2f * RegionRoadPlan.Extent;
 
+        private enum RoadAppearance { Original, Graded, Landscaped, Footing }
+
         [SerializeField] private int seed = 8;
         [SerializeField] private RegionRoadPreset preset;
         [SerializeField] private bool showShape;
@@ -129,8 +131,9 @@ namespace Vastcore.RegionMap.Editor
             }
         }
 
-        private static Stage Build(int seed, RegionRoadPreset preset, bool shapeOnly, bool detailed = true, bool refineVerge = true)
+        private static Stage Build(int seed, RegionRoadPreset preset, bool shapeOnly, RoadAppearance appearance = RoadAppearance.Footing)
         {
+            bool detailed = appearance >= RoadAppearance.Graded;
             var stage = new Stage { Plan = new RegionRoadPlan(seed, preset), Detailed = detailed };
             stage.Root = new GameObject($"Highway Corridor – {preset} / {seed}") { hideFlags = HideFlags.DontSaveInEditor };
             try
@@ -145,7 +148,7 @@ namespace Vastcore.RegionMap.Editor
                 if (!shapeOnly)
                 {
                     float Ground(float x, float z) => stage.Terrain.SampleHeight(new Vector3(x, 0f, z));
-                    bool refined = detailed && refineVerge;
+                    bool refined = appearance >= RoadAppearance.Landscaped;
                     RegionRoadLandscape.PlantFarmland(stage.Root.transform, stage.Plan, Ground, detailed, refined);
                     if (detailed)
                     {
@@ -156,7 +159,15 @@ namespace Vastcore.RegionMap.Editor
                         verge.SetTexture("_Soil", Surface("Ground009"));
                         verge.SetTexture("_Turf", Surface("Grass005"));
                         verge.SetFloat("_Refined", refined ? 1f : 0f);
-                        RegionRoadGroundView.AddMargins(stage.Roads.transform, stage.Plan, Ground, verge, refined);
+                        bool footing = appearance == RoadAppearance.Footing;
+                        if (footing)
+                        {
+                            verge.SetTexture("_GravelNormal", Surface("Ground007", "NormalGL"));
+                            verge.SetFloat("_CloseDetail", 1f);
+                            NVector2 offset = RegionRoadMargin.VergePocketOffset(seed);
+                            verge.SetVector("_PocketOffset", new Vector4(offset.X, offset.Y));
+                        }
+                        RegionRoadGroundView.AddMargins(stage.Roads.transform, stage.Plan, Ground, verge, refined, footing);
                         RegionRoadLandscape.PlantMargins(stage.Roads.transform, stage.Plan, Ground, refined);
                         RegionRoadGroundView.AddRidges(stage.Root.transform, stage.Plan, Ground,
                             Lit(stage, "Distant hills", new Color(0.30f, 0.40f, 0.35f)));
@@ -425,13 +436,18 @@ namespace Vastcore.RegionMap.Editor
                 else if (mode == "margin-review")
                 {
                     CaptureMarginShape(Path.Combine(output, "shape"), chosenSeed);
-                    CaptureMargins(output, chosenSeed, RegionRoadPreset.Country);
-                    CaptureMargins(output, unchecked(chosenSeed + 11), RegionRoadPreset.Sweeping);
+                    CaptureMargins(output, chosenSeed, RegionRoadPreset.Country, RoadAppearance.Original, RoadAppearance.Graded);
+                    CaptureMargins(output, unchecked(chosenSeed + 11), RegionRoadPreset.Sweeping, RoadAppearance.Original, RoadAppearance.Graded);
                 }
                 else if (mode == "roadside-review")
                 {
-                    CaptureMargins(output, chosenSeed, RegionRoadPreset.Country, true);
-                    CaptureMargins(output, unchecked(chosenSeed + 11), RegionRoadPreset.Sweeping, true);
+                    CaptureMargins(output, chosenSeed, RegionRoadPreset.Country, RoadAppearance.Graded, RoadAppearance.Landscaped);
+                    CaptureMargins(output, unchecked(chosenSeed + 11), RegionRoadPreset.Sweeping, RoadAppearance.Graded, RoadAppearance.Landscaped);
+                }
+                else if (mode == "entrance-review")
+                {
+                    CaptureMargins(output, chosenSeed, RegionRoadPreset.Country, RoadAppearance.Landscaped, RoadAppearance.Footing, 2);
+                    CaptureMargins(output, unchecked(chosenSeed + 11), RegionRoadPreset.Sweeping, RoadAppearance.Landscaped, RoadAppearance.Footing, 2);
                 }
                 else if (mode == "draft")
                 {
@@ -529,9 +545,9 @@ namespace Vastcore.RegionMap.Editor
             }
         }
 
-        private static void CaptureViews(Stage stage, string folder, string prefix, int count)
+        private static void CaptureViews(Stage stage, string folder, string prefix, int endView, int firstView = 0)
         {
-            for (int view = 0; view < count; view++)
+            for (int view = firstView; view < endView; view++)
             {
                 Place(stage, view);
                 RegionTerrainViewMenu.Capture(stage.Camera, folder, $"{prefix}-{Views[view].ToLowerInvariant()}.png");

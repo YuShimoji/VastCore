@@ -68,6 +68,34 @@ namespace Vastcore.RegionMap
             return RegionNoise.Smooth(-0.32f, 0.27f, patches);
         }
 
+        public static Vector2 VergePocketOffset(int seed) => new Vector2(
+            37f * RegionNoise.Hash01(9, 1, unchecked((uint)seed)),
+            41f * RegionNoise.Hash01(9, 3, unchecked((uint)seed)));
+
+        // Keep the metre-scale ground pattern shared with the Road Margin shader.
+        public static float VergePocket(Vector2 point, Vector2 seedOffset, float growth)
+        {
+            Vector2 p = point * 1.58f + seedOffset;
+            float x = (float)Math.Floor(p.X), z = (float)Math.Floor(p.Y);
+            float u = p.X - x, v = p.Y - z;
+            u *= u * (3f - 2f * u);
+            v *= v * (3f - 2f * v);
+            float noise = RegionNoise.Lerp(RegionNoise.Lerp(VergeHash(x, z), VergeHash(x + 1f, z), u),
+                RegionNoise.Lerp(VergeHash(x, z + 1f), VergeHash(x + 1f, z + 1f), u), v);
+            return RegionNoise.Smooth(0.46f, 0.72f, noise + 0.24f * (growth - 0.5f));
+        }
+
+        private static float VergeHash(float x, float z)
+        {
+            float u = Fraction(x * 0.1031f), v = Fraction(z * 0.1031f);
+            float dot = u * (v + 33.33f) + v * (u + 33.33f) + u * (u + 33.33f);
+            u += dot;
+            v += dot;
+            return Fraction((u + v) * u);
+        }
+
+        private static float Fraction(float value) => value - (float)Math.Floor(value);
+
         public static float GradedTerrain(RegionRoadPlan plan, float x, float z)
         {
             float natural = plan.NaturalHeight(x, z);

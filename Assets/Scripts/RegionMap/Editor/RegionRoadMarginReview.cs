@@ -15,7 +15,7 @@ namespace Vastcore.RegionMap.Editor
         {
             Directory.CreateDirectory(folder);
             foreach (bool detailed in new[] { false, true })
-            using (Stage stage = Build(seed, RegionRoadPreset.Country, true, detailed))
+            using (Stage stage = Build(seed, RegionRoadPreset.Country, true, detailed ? RoadAppearance.Graded : RoadAppearance.Original))
             {
                 int checks = VerifyRoadSurface(stage);
                 Place(stage, 1);
@@ -27,25 +27,26 @@ namespace Vastcore.RegionMap.Editor
             }
         }
 
-        private static void CaptureMargins(string output, int seed, RegionRoadPreset preset, bool refinement = false)
+        private static void CaptureMargins(string output, int seed, RegionRoadPreset preset,
+            RoadAppearance previous, RoadAppearance current, int firstView = 0)
         {
             string folder = Path.Combine(output, $"{preset.ToString().ToLowerInvariant()}-{seed}");
             Directory.CreateDirectory(folder);
             var setup = new double[][] { new double[3], new double[3] };
+            var appearances = new[] { previous, current };
             // Warm common resources once, then alternate build order.
-            for (int state = 0; state < 2; state++)
-                using (Stage warmed = Build(seed, preset, false, refinement || state == 1, refinement && state == 1)) { }
+            foreach (RoadAppearance appearance in appearances)
+                using (Stage warmed = Build(seed, preset, false, appearance)) { }
             for (int trial = 0; trial < 2; trial++)
             for (int i = 0; i < 2; i++)
             {
                 int state = i ^ trial;
-                using (Stage sample = BuildTimed(seed, preset, refinement || state == 1, refinement && state == 1,
-                    out setup[state][trial])) { }
+                using (Stage sample = BuildTimed(seed, preset, appearances[state], out setup[state][trial])) { }
             }
-            using (Stage before = BuildTimed(seed, preset, refinement, false, out setup[0][2]))
+            using (Stage before = BuildTimed(seed, preset, previous, out setup[0][2]))
             {
                 before.Root.SetActive(false);
-                using (Stage after = BuildTimed(seed, preset, true, refinement, out setup[1][2]))
+                using (Stage after = BuildTimed(seed, preset, current, out setup[1][2]))
                 {
                     after.Root.SetActive(false);
                     Stage[] stages = { before, after };
@@ -58,31 +59,34 @@ namespace Vastcore.RegionMap.Editor
                         string site = MeasureSite(stage);
                         File.WriteAllText(Path.Combine(folder, prefix + "-contact.txt"), $"Road surface checks: {points}\n" + site);
                         File.WriteAllText(Path.Combine(folder, prefix + "-section.csv"), SampleMidSection(stage));
-                        Place(stage, 0);
+                        Place(stage, firstView);
                         RegionTerrainViewMenu.Capture(stage.Camera, null, null);
-                        CaptureViews(stage, folder, prefix, Views.Length);
-                        foreach (float sun in new[] { 60f, 20f, 10f })
+                        CaptureViews(stage, folder, prefix, Views.Length, firstView);
+                        if (firstView == 0)
                         {
-                            stage.Sun.transform.rotation = RegionTerrainView.SunRotation(sun);
-                            CaptureViews(stage, folder, prefix + "-sun-" + sun.ToString("00", CultureInfo.InvariantCulture), 2);
+                            foreach (float sun in new[] { 60f, 20f, 10f })
+                            {
+                                stage.Sun.transform.rotation = RegionTerrainView.SunRotation(sun);
+                                CaptureViews(stage, folder, prefix + "-sun-" + sun.ToString("00", CultureInfo.InvariantCulture), 2);
+                            }
+                            stage.Sun.transform.rotation = RegionTerrainView.SunRotation(38f);
                         }
-                        stage.Sun.transform.rotation = RegionTerrainView.SunRotation(38f);
                     }
-                    for (int view = 0; view < Views.Length; view++) VerifyMatchedView(before, after, view);
+                    for (int view = firstView; view < Views.Length; view++) VerifyMatchedView(before, after, view);
                     Array.Sort(setup[0]);
                     Array.Sort(setup[1]);
                     string report = FormattableString.Invariant($"setup_ms_before={setup[0][1]:F1} setup_ms_after={setup[1][1]:F1} delta_ms={setup[1][1] - setup[0][1]:F1}\n") +
-                        MeasurePair(stages);
+                        MeasurePair(stages, firstView);
                     File.WriteAllText(Path.Combine(folder, "comparison.txt"), report);
                     Debug.Log($"[RegionMap] {preset} seed {seed} margins\n{report}");
                 }
             }
         }
 
-        private static Stage BuildTimed(int seed, RegionRoadPreset preset, bool detailed, bool refined, out double elapsed)
+        private static Stage BuildTimed(int seed, RegionRoadPreset preset, RoadAppearance appearance, out double elapsed)
         {
             Stopwatch watch = Stopwatch.StartNew();
-            Stage stage = Build(seed, preset, false, detailed, refined);
+            Stage stage = Build(seed, preset, false, appearance);
             elapsed = watch.Elapsed.TotalMilliseconds;
             return stage;
         }
@@ -107,7 +111,7 @@ namespace Vastcore.RegionMap.Editor
                 throw new InvalidOperationException($"Camera or light changed in {Views[view]}.");
         }
 
-        private static string MeasurePair(Stage[] stages)
+        private static string MeasurePair(Stage[] stages, int firstView)
         {
             var report = new StringBuilder("view\tbefore_ms\tafter_ms\tdelta_ms (CPU + GPU sync, 1600x900 MSAA4)\n");
             var target = new RenderTexture(1600, 900, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
@@ -117,7 +121,7 @@ namespace Vastcore.RegionMap.Editor
             try
             {
                 foreach (Stage stage in stages) stage.Camera.targetTexture = target;
-                for (int view = 0; view < Views.Length; view++)
+                for (int view = firstView; view < Views.Length; view++)
                 {
                     foreach (Stage stage in stages) Place(stage, view);
                     for (int run = 0; run < 6; run++)

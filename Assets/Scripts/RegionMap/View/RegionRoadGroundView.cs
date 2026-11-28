@@ -14,8 +14,9 @@ namespace Vastcore.RegionMap
         private static readonly float[] ApproachOffsets = { 0.025f, 0.33f, 0.75f, 1.18f, 1.8f, 2.45f };
 
         public static void AddMargins(Transform parent, RegionRoadPlan plan, Func<float, float, float> height, Material material,
-            bool refined = false)
+            bool refined = false, bool closeDetail = false)
         {
+            var detail = closeDetail ? new RegionRoadVergeDetail(plan, height) : null;
             foreach (RegionRoadCorridor road in new[] { plan.Highway, plan.Arterial })
             {
                 const int tileSegments = 96;
@@ -56,13 +57,16 @@ namespace Vastcore.RegionMap
                         }
                     }
                     AddMesh(parent, "Mixed gravel and grass " + road.Id, material, vertices, indices, uv);
+                    detail?.Scatter(vertices, indices, uv, road == plan.Site.Road);
                 }
             }
-            AddPadMargin(parent, plan, height, material, refined);
-            if (refined) AddApproachMargins(parent, plan, height, material);
+            AddPadMargin(parent, plan, height, material, refined, detail);
+            if (refined) AddApproachMargins(parent, plan, height, material, detail);
+            detail?.AddTo(parent);
         }
 
-        private static void AddApproachMargins(Transform parent, RegionRoadPlan plan, Func<float, float, float> height, Material material)
+        private static void AddApproachMargins(Transform parent, RegionRoadPlan plan, Func<float, float, float> height,
+            Material material, RegionRoadVergeDetail detail)
         {
             const int segments = 28;
             RegionRoadsideSite site = plan.Site;
@@ -100,10 +104,11 @@ namespace Vastcore.RegionMap
                 }
             }
             AddMesh(parent, "Gravel fringe alongside the approach", material, vertices, indices, uv);
+            detail?.Scatter(vertices, indices, uv, true);
         }
 
         private static void AddPadMargin(Transform parent, RegionRoadPlan plan, Func<float, float, float> height,
-            Material material, bool refined)
+            Material material, bool refined, RegionRoadVergeDetail detail)
         {
             RegionRoadsideSite site = plan.Site;
             var vertices = new List<Vector3>();
@@ -120,6 +125,7 @@ namespace Vastcore.RegionMap
             AddEdge(Point(near, half), Point(near, drive), -outward);
             AddEdge(Point(near, -drive), Point(near, -half), -outward);
             AddMesh(parent, "Gravel feather around plot", material, vertices, indices, uv);
+            detail?.Scatter(vertices, indices, uv, true);
 
             NVector2 Point(float reach, float span) => site.Entrance + outward * reach + along * span;
             void AddEdge(NVector2 from, NVector2 to, NVector2 right)
