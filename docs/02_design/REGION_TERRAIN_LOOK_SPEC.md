@@ -204,7 +204,9 @@ seed 9 の X38.8・Y60.9 では、傾いた岩棚の下に通路を通し、片�
 
 短い配置の広間では、石橋の中央をくぐれる高さに保ちつつ、左右は厚みを増して洞壁の張り出しへつなぐ。岩棚の踏み面は曲がりに沿わせ、根元に大小の礫を寄せて下道を空ける。橋・棚・壁の岩肌と法線を同じメートル単位の座標で三方向から投影し、床からの反射で橋の下面を読む。[Kachina Bridge の下面](https://home.nps.gov/thingstodo/kachina-bridge-trail.htm) · [Lehman Caves の Talus Room](https://www.nps.gov/articles/000/lehman-caves-little-understood-but-world-class-part-2.htm) · [Skyrim の洞窟シェルの図版](https://www.gamedeveloper.com/design/skyrim-s-modular-approach-to-level-design)
 
-確認は Unity 6000.3.6f1 の通常の洞窟試作を Play し、下道から橋をくぐる → 東の岩棚を登る → 橋を渡る → 西側を下って入口へ帰還 → 同じ洞窟へ再入場。橋の真下の眼は洞内座標で約 (0, 1.49, 2.10)、橋上の眼は約 (-3.87, 8.25, 2.10)、ともに垂直画角68°。中央断面の厚みはこの経路で約1.6 mから2.5 mになった。短・長の両配置で往復を確認した。
+石橋の上縁では、斜めの割れを上面から手前の面へ続け、割れ目の間に高さと長さの違う岩の張り出しを残す。縁の欠けは深く、踏み面へ向かって浅い。中央の緩い起伏を含め、橋中央10 mの登坂上限45°で測った踏み面の最狭幅は、修正前後とも1.50 m。[Owachomo Bridge](https://www.nps.gov/nabr/planyourvisit/owachomobridge.htm) · [Mesa Arch](https://www.nps.gov/places/mesa-arch.htm)
+
+確認は Unity 6000.3.6f1 の通常の洞窟試作を Play し、下道から橋をくぐる → 東の岩棚を登る → 橋を渡る → 西側を下って入口へ帰還 → 同じ洞窟へ再入場。下道から上縁を見る眼は洞内座標で約 (-0.02, 1.31, -10.10)、橋の真下は約 (0, 1.49, 2.10)、橋上は約 (-3.87, 8.25, 2.10)。垂直画角68°。短・長の両配置で往復を確認し、上縁の調整後に短い配置で再確認した。
 
 ## 6. 出典と、取れなかった物
 

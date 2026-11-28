@@ -291,6 +291,7 @@ namespace Vastcore.RegionMap
             float thickness = Mathf.Lerp(Mathf.Max(0.68f, p.y + 1.2f), 1.88f + 0.90f * relief, arch);
             float bank = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(6.5f, 10.7f, distance))
                 * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(1.1f, 4.1f, p.y));
+            float highShelf = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(5.5f, 6.2f, p.y));
             foreach (Vector2 cut in ShelfProfile)
             {
                 float u = cut.x * width;
@@ -305,19 +306,35 @@ namespace Vastcore.RegionMap
                 float lip = outer * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.37f, 0.065f, v));
                 float ledge = Noise(at.x * 0.49f + 15, at.z * 0.51f - 4.2f);
                 vertical += lip * (0.52f * ledge + 0.11f * breakage);
-                // Two oblique joints have taken bites out of the exposed lip above the crossing.
-                float joint = at.x + 0.21f * (at.z - 2f);
-                float westChip = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.71f, 0.16f, Mathf.Abs(joint + 2.37f)));
-                float eastChip = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.93f, 0.23f, Mathf.Abs(joint - 2.1f)));
-                float chip = lip * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(5.6f, 6.5f, p.y))
-                    * (0.56f * westChip + 0.47f * eastChip);
-                horizontal -= Mathf.Sign(u) * chip;
-                vertical -= chip * 0.63f;
+                // The same dipping joints cross the tread and continue down the rock face.
+                float joint = at.x + 0.36f * (at.z - 2f) + 0.81f * v;
+                float westJoint = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.69f, 0.10f, Mathf.Abs(joint + 2.58f)));
+                float eastJoint = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.76f, 0.17f, Mathf.Abs(joint - 2.75f)));
+                float upperRock = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.52f, 0.045f, v));
+                float beds = SpanBeds(joint) * (1f + 0.23f * ledge);
+                float edgeRise = Mathf.Lerp(0.66f, 0.22f, Mathf.InverseLerp(-0.45f, 0.45f, cut.x));
+                float edgeRecess = 0.19f * westJoint + 0.13f * eastJoint;
+                float middleRise = 0.48f * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-3.7f, 0.34f, joint))
+                    * Mathf.InverseLerp(4.68f, 0.63f, joint);
+                // Keep the joints shallow across the central tread and expose the offsets at the rim.
+                vertical += highShelf * upperRock * (middleRise + 0.20f * beds + outer * (edgeRise * beds - edgeRecess));
+                horizontal -= Mathf.Sign(u) * lip * highShelf * (0.19f * westJoint + 0.28f * eastJoint);
                 // Spread the outer shoulder into the shell while the middle tread stays walkable.
                 float abutment = bank * wallSide * (4.6f + 0.64f * breakage);
                 vertical += 0.42f * abutment * (1f - Mathf.Clamp01(v * 1.24f));
                 vertices.Add(at + side * horizontal + Vector3.right * (wallward * abutment) + Vector3.up * vertical);
             }
+        }
+
+        private static float SpanBeds(float joint)
+        {
+            float west = Mathf.InverseLerp(-8.6f, -4.8f, joint)
+                * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-2.46f, -3.72f, joint));
+            float middle = Mathf.InverseLerp(-2.38f, 0.72f, joint)
+                * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(2.81f, 1.67f, joint));
+            float east = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(2.59f, 4.38f, joint))
+                * Mathf.InverseLerp(8.5f, 4.83f, joint);
+            return 1.12f * west + 0.68f * middle + 0.94f * east;
         }
 
         private void ShelfScree(int seed)
