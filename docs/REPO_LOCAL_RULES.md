@@ -21,9 +21,10 @@ Normal restart / continue reads only:
 2. `docs/REPO_LOCAL_RULES.md`
 3. `docs/runtime-state.md`
 
-Read more only when the current task lacks evidence. Limit extra reading to the
-relevant section, artifact, or owner doc. Full-corpus reading is a diagnostic
-exception, not progress by itself.
+For environment or package visuals and LOD comparisons, also read the relevant
+[Mission Packet](OPERATOR_WORKFLOW.md#supervisor-to-developer-mission-packet)
+guidance at entry. On resume, use the current procedure and evidence tied to
+the same version, entry point, and conditions. Limit other reads to the relevant owner doc.
 
 ## Core Rules
 
@@ -61,9 +62,7 @@ exception, not progress by itself.
 - For costly user-visible UX, visual, or content work, establish direction with
   two or three genuinely different routes before broad implementation. Once a
   route and proof slice are selected, execute that slice without asking again
-  for routine details inside the agreed intent. Landscape work and package
-  additions with a visual deliverable follow the first Mission Packet and
-  landscape review guidance in `docs/OPERATOR_WORKFLOW.md`.
+  for routine details inside the agreed intent.
 
 ## State Sync Is Part Of Completion
 
@@ -106,6 +105,11 @@ exception, not progress by itself.
 - For code changes, run the narrow relevant check first. Prefer the project
   scripts (`scripts/check-compile.ps1`, `scripts/run-tests.ps1`) when they match
   the change.
+- Before Unity verification, confirm the candidate checkout, actual
+  `-projectPath`, Editor process and `Temp/UnityLockfile`, and parallel edits
+  that affect compilation or capture. Coordinate use of an existing
+  verification copy with its active owner and sync only the candidate files.
+  During contention, continue independent work and retain valid evidence.
 - When adding or changing textures, follow `docs/02_design/TEXTURE_PIPELINE_SPEC.md`
   and pass `scripts/check-textures.ps1` (no Unity needed; `-Pixels` adds the
   pixel checks through Unity).

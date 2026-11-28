@@ -29,7 +29,8 @@
   design principle when local tweaks do not converge after two rounds.
 - 環境・パッケージ追加では、初回の画がのっぺりし、サイドチャット経由の追加依頼を送ると
   改善するとの指摘。初回から代表場面を比較・修正し、出典付き参考画像・完成想定図・Unity の前後を
-  一か所に並べる。効いた修正と残る差を照合し、共通点を[初回の手順](OPERATOR_WORKFLOW.md#supervisor-to-developer-mission-packet)に戻す。
+  一か所に並べる。共通の知見を[初回の手順](OPERATOR_WORKFLOW.md#supervisor-to-developer-mission-packet)に戻し、
+  既存担当の次の区間を通常の依頼で再開して、比較・修正・再撮影・返却まで通す。進行中のインポスターの画と負荷の確認も引き継ぐ。
 
 - 2026-11-21: 「推奨で出ているSP-017を先に。間が開いてからの再開なので、まず何よりも
   手を入れやすく整理のついた状態にしてほしい」。間を置いた再開では、実作業の前に

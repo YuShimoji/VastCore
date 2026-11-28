@@ -19,10 +19,7 @@
 7. GitHub Project Pulse は `runtime-state` から自動更新し、次のPromptは
    その current outcome が閉じたか、stop condition に達した時だけ発行する。
 
-並行枝はそれぞれのtask/spec/PRへ進捗を残し、global `runtime-state` を奪い合わない。
-Project Pulse を更新するのは current outcome を所有する一枝だけで、所有枝を変える時は
-handoffとして repository variable `PROJECT_PULSE_BRANCH` と
-`runtime-state` の branch/outcome/next action を同時に更新する。
+並行枝の記録先と Project Pulse は [State Sync](REPO_LOCAL_RULES.md#state-sync-is-part-of-completion) に従う。
 
 ## Supervisor To Developer Mission Packet
 
@@ -42,18 +39,22 @@ Sync on close: runtime-state と今回変わる owning artifact
 Start from: branch/commit と必要最小限の task/spec/正本パス
 ```
 
-画を作る環境・パッケージは `Creative checkpoint` で参考画像を開き、採る点と完成想定図を
-制作前に出典付きで示す。`Acceptance` は通常の入口と代表視点。単色や入切で差の原因を
-一条件ずつ確かめて依頼内で直す。視点・光・seed（動きは時刻も）を揃えて再撮影し、
-参考画像・完成想定図・Unity 前後を並べる。効いた修正、残る差、機能確認と関係する負荷を示す。
+画を作る環境・パッケージは、制作前に参考画像を開き、採る点と完成想定図を出典とともに示す。
+`Acceptance` は通常の入口と代表視点。初回返却までに、試写の差を単色や入切で一条件ずつ
+確かめて依頼内で直し、同じ視点・光・seed（動きは時刻も）で撮り直す。参考・想定・Unity 前後、
+効いた修正、残る差、機能と関係する負荷を示す。方向選択が必要なら、選ぶ範囲を示し、
+依存しない調査や基準撮影を進める。
+
+インポスターなどの LOD は、通常入口で対象・配置・視点・照明を揃える。現行メッシュや結合 LOD を
+基準に生成・CPU・GPU を分けて測り、境界で輪郭・影・照明の飛びを撮る。効いた条件を残し、
+対象ごとの画と負荷で採否を判断する。
 
 開発AIは Outcome、Scope、Autonomy の内側を自律で進める。新しいPromptは成果単位の完了、
 stop condition、またはユーザーが方向を変えた時に発行する。
 
 ## Direction Before Production
 
-レイアウト、色、フォント、アニメーション、言語対応、コンテンツ拡張など、後から
-直すほど高価になる変更では次の順序を守る。
+手戻りの大きい UI・見た目・コンテンツ変更は次の順で進める。
 
 1. 監修AIまたは開発AIが、表面的な色違いではない2〜3方向を提示する。各案に
    狙い、利用場面、代償、何が可能になるか、推奨案を添える。
@@ -61,9 +62,8 @@ stop condition、またはユーザーが方向を変えた時に発行する。
 3. 全面実装ではなく、一画面・一フロー・一代表コンテンツの proof slice を作る。
 4. 実物をまとめてレビューし、承認後に横展開する。
 
-同じ懸念の微修正が2巡しても収束しない、または3件以上の修正が同じ原則に集まる
-場合は、個別調整を止めて direction checkpoint に戻る。これは実装停止ではなく、
-誤った方向への追加投資を止めるための再設計である。
+同じ懸念が2巡で収束しないか、3件以上の修正が同じ原則に集まれば、個別調整を止めて
+direction checkpoint に戻る。方向に依存しない実装は進める。
 
 ## 環境（景観）の見た目を作る流れ
 
@@ -84,10 +84,9 @@ stop condition、またはユーザーが方向を変えた時に発行する。
 4. 形と接地：素材・植生の前に、単色で遠・中の形と接地を本人に見せる。
    砂岩は骨格→岩屑→表面→植生→折り返し→光の順で、崖の形の不足が表面の後まで見つからなかった。
    材質・配置・光は入切で効きを確かめる。
-5. 撮影：固定の遠・中・近と景観ごとの追加視点を、2地点（片方は適地を規則で選んだ別の
-   地点）・太陽4つ（60/38/20/10°）で、同じ版の前（HEAD）と後の対にし、比較ページ1枚に
-   まとめる（`scripts/region-map.ps1 -Mode view3d`）。本人が Editor を開いている間は写し
-   `D:\vcv\VastCore` で撮る。
+5. 撮影：遠・中・近と追加視点を、2地点（片方は適地を規則で選定）・太陽4つ（60/38/20/10°）で
+   前（HEAD）と後を同条件で対にする（`scripts/region-map.ps1 -Mode view3d`）。比較は1ページ。
+   Editor 使用中の写しは `D:\vcv\VastCore`。起動前は [Git And Tests](REPO_LOCAL_RULES.md#git-and-tests) を参照。
 6. 予算：地形の描画の GPU 増分の合計を段ごとに記録する（1600×900 で 1.2 ms、
    [表面材質](02_design/REGION_SURFACE_MATERIALS_SPEC.md) 3.3節）。場面の作成時間の増分も残す。
 7. 記録：結果は該当の設計文書と `runtime-state` の行を書き換える。画像と比較ページは
