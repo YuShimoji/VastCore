@@ -35,6 +35,7 @@
 - Unity の `Vastcore > Region Map > Rocky Coast Sample > Seed 8 / Seed 9` で海岸Aを開く。`Vastcore.RegionMap.Editor.RegionRockyCoastMenu.CaptureFromCommandLine` は `-regionSeed`、`-regionOut`、`-sunAltitudes` を受け、`-coastHeight`、`-coastShelfWidth`、`-coastShapeSeed`、`-coastPropsSeed` で崖・岩棚・Propsを再生成できる。
 - 代表区間の前後比較は `Vastcore.RegionMap.Editor.RegionRockyCoastMenu.CaptureRockfallFromCommandLine` に同じ引数を渡す。前回Aと今回Aで、拡大地形の標高0 mを横切る岸を共有する。岸から沖まで外洋の連結水域に含まれることを確かめ、近景は水際から沖20 m・海面上3.4 mに置く。前後で遠・中・近のカメラ、太陽の方向と高度、波の時刻を固定する。
 - 岩肌と水際の仕上げを比較する場合は `Vastcore.RegionMap.Editor.RegionRockyCoastMenu.CaptureAppearanceFromCommandLine` に `-regionSeed`、`-regionOut`、`-sunAltitudes` を渡す。通常の `Seed 8 / Seed 9` メニューから現行の場面を開き、`0da4d2a` 時点の代表区間と同じ視点で撮る。太陽38°では、水面と礫の接地を見るため岸に沿う低い視点も撮る。
+- 海岸Cは `Vastcore > Region Map > Pocket Beach Sample > Seed 8 / Seed 9`。同じメニューの `Low Tide` と `High Tide` で潮位を切り替える。`Vastcore.RegionMap.Editor.RegionPocketBeachMenu.CaptureFromCommandLine` に `-regionSeed`、`-regionOut`、`-sunAltitudes` を渡すと、通常メニューから開いて遠・中・潮だまりの近景を2水位で撮る。
 
 ## 洞窟Aの接続と部品
 
@@ -81,7 +82,17 @@
 
 近景で岩肌の凹凸と、岩盤・濡れた地面・丸礫の区別が付いた。完成想定図に比べて中景の縦溝は大きく、岩棚の横の張り出しが弱い。礫も浜全体を埋める厚みには達しておらず、水際の泡の間隔が揃って見える。別地点では塗り分けと水際の高低差に従う配置を再利用し、礫の密度と岩棚の形を独立に変える。
 
-海岸は今回のAの前後を確認した後、C 岩礁とポケットビーチ、B 砂浜と砂丘の順に進める。PC Playerでの1.2 ms予算と地域探索から洞窟入口への接続は、段5の残りの確認項目。
+### 海岸C 岩礁とポケットビーチ
+
+本人がAの比較を確認し、Cの代表区間を指定した。外洋岸の seed 8・9 の低い候補に、岬に挟まれる砂浜と湾口の離れ岩を組んだ。沖の岩礁が波を受け、湾奥に砂が集まる関係を [NPSのSand BeachとOld Soaker](https://www.nps.gov/articles/000/geologic-story-of-sand-beach.htm)、低い岩棚に水が残る形を [USGSのPoint Reyes](https://www.usgs.gov/media/images/a-photo-tide-pools-0) で参照した。
+
+Aの割れ棚・丸礫、岩肌 `rock_boulder_cracked` と礫ごとの接地を再利用した。岩棚は傾斜27°以下の支持面に低く埋め込み、平らな面にも岩肌を水平投影する。`Ground054` の砂は湾内に続け、丸礫は砂と岩の境界に寄せる。水面は最終地形から水深・底質・外洋への開きと連結を取り、溢れ口の周りは岩棚を空ける。低潮 −0.55 mでは海と別の水面（＋0.27 m）が凹部に残り、満潮 ＋1.02 mでは溢れ口を通って海とつながる。
+
+通常メニューを使い、2 seed・遠中近・太陽4条件・2水位で、岩棚を仕上げる前後の48組とメニューを開いた直後の2枚を撮った。seed 8・9の棚は31・43点、丸礫は15・13群。露出した砂浜の集計面積は低潮から満潮で2,881→1,342 m²、3,090→1,454 m²。地域生成後の構築は494・390 ms（Unity Editor、各1回）。[実景・完成想定図・固定視点の前後・低潮と満潮](<D:/AI-Runs/VastCore/coast-and-cave/pocket-beach/index.html>)
+
+初回は手前の斜面が潮だまりを隠したため、視点を固定して手前を低い波食棚にした。浅い段に割れ棚を埋め、短く途切れる節理を重ねると、岩盤の縁と水が読みやすくなった。地形自身の影が対岸に縦線を作ったため、Cでは地形メッシュの影の投射だけを切り、棚岩の接地影を残す。想定図との差は、対岸の張り出す岩層の少なさと、浅瀬に残る反射の周期・水底の見え方。
+
+次の海岸は、Cの比較確認後にB 砂浜と砂丘。海への連結と潮位に応じた濡れ帯、礫を置く支持面の判定を引き継ぐ。PC Playerでの1.2 ms予算と地域探索から洞窟入口への接続は、段5の残りの確認項目。
 
 ## 森林・密林・自然公園
 

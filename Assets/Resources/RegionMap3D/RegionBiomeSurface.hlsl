@@ -206,12 +206,15 @@ half3 EvaluateBiomeSurface(
     half3 absN = abs(normalWS);
     float2 cUvX = positionWS.zy * cliffScale;
     float2 cUvZ = positionWS.xy * cliffScale;
+    float2 cUvY = positionWS.xz * cliffScale;
     half cliffProjWeight = absN.x / max(absN.x + absN.z, 0.001h);
+    half shelfProjection = _CoastalShelfDetail * smoothstep(0.36h, 0.91h, absN.y);
 
     float2 gDx = ddx(gUv0), gDy = ddy(gUv0);
     float2 sDx = ddx(sUv0), sDy = ddy(sUv0);
     float2 cXDx = ddx(cUvX), cXDy = ddy(cUvX);
     float2 cZDx = ddx(cUvZ), cZDy = ddy(cUvZ);
+    float2 cYDx = ddx(cUvY), cYDy = ddy(cUvY);
 
     [branch]
     if (_RegionBiomeParams.x > 0.5 && detailFade > 0.001h)
@@ -246,6 +249,8 @@ half3 EvaluateBiomeSurface(
         half3 cliffX = RegionToLinear(SAMPLE_TEXTURE2D_GRAD(_BiomeCliffMap, sampler_BiomeGroundMap, cUvX, cXDx, cXDy).rgb);
         half3 cliffZ = RegionToLinear(SAMPLE_TEXTURE2D_GRAD(_BiomeCliffMap, sampler_BiomeGroundMap, cUvZ, cZDx, cZDy).rgb);
         half3 cliffTex = lerp(cliffZ, cliffX, cliffProjWeight);
+        if (shelfProjection * rockMask > 0.04h)
+            cliffTex = lerp(cliffTex, RegionToLinear(SAMPLE_TEXTURE2D_GRAD(_BiomeCliffMap, sampler_BiomeGroundMap, cUvY, cYDx, cYDy).rgb), shelfProjection);
         half cliffLuma = max(dot(cliffTex, half3(0.2126h, 0.7152h, 0.0722h)), 0.05h);
         half3 rockSurface = lerp(cliffTint * (cliffTex / cliffLuma), cliffTex * (0.78h + 0.22h * tintAlpha), 0.45h);
 
@@ -258,6 +263,8 @@ half3 EvaluateBiomeSurface(
         half3 cliffNZ = UnpackNormalScale(SAMPLE_TEXTURE2D_GRAD(_BiomeCliffNormal, sampler_BiomeGroundMap, cUvZ, cZDx, cZDy), _RegionBiomeParams.z);
         half3 groundN = normalize(lerp(loamN, turfN, turfShare));
         half3 cliffN = normalize(lerp(cliffNZ, cliffNX, cliffProjWeight));
+        if (shelfProjection * rockMask > 0.04h)
+            cliffN = normalize(lerp(cliffN, UnpackNormalScale(SAMPLE_TEXTURE2D_GRAD(_BiomeCliffNormal, sampler_BiomeGroundMap, cUvY, cYDx, cYDy), _RegionBiomeParams.z), shelfProjection));
         half3 combinedN = normalize(lerp(groundN, cliffN, rockMask));
 
         extra.normalWS = normalize(lerp(groundNormal, BiomeBlendWorldNormal(groundNormal, combinedN, nearFade), detailFade));

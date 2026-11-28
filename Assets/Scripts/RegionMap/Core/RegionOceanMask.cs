@@ -6,12 +6,16 @@ namespace Vastcore.RegionMap
     {
         /// <summary>標高が海面以下で、地域の外周、または指定した外周セルにつながる水域。</summary>
         public static bool[] ConnectedSea(RegionData data, Func<int, bool> openBoundary = null)
+            => ConnectedWater(data.Height, data.Resolution, 0f, openBoundary);
+
+        internal static bool[] ConnectedWater(float[] height, int n, float level, Func<int, bool> openBoundary = null, int source = -1)
         {
-            int n = data.Resolution;
-            var sea = new bool[data.Height.Length];
+            var sea = new bool[height.Length];
             var queue = new int[sea.Length];
             int count = 0;
-            for (int i = 0; i < n; i++)
+            if (source >= 0)
+                Enqueue(source);
+            else for (int i = 0; i < n; i++)
             {
                 Boundary(i);
                 Boundary(i + (n - 1) * n);
@@ -36,7 +40,7 @@ namespace Vastcore.RegionMap
 
             void Enqueue(int i)
             {
-                if (sea[i] || data.IsLand(i)) return;
+                if (sea[i] || height[i] > level) return;
                 sea[i] = true;
                 queue[count++] = i;
             }

@@ -203,7 +203,7 @@ namespace Vastcore.RegionMap
             return result;
         }
 
-        private static Material CoastalSurface(Material baseTerrain)
+        internal static Material CoastalSurface(Material baseTerrain, bool sand = false)
         {
             var material = new Material(baseTerrain) { name = "Exposed rock and wave-washed ground", hideFlags = HideFlags.DontSave };
             var profile = RegionBiomeSurface.ProfileFor(RegionBiome.Coast);
@@ -216,15 +216,38 @@ namespace Vastcore.RegionMap
             profile.GroundPhotoColor = 0.86f;
             profile.DetailStrength = 0.96f;
             profile.NormalStrength = 1.4f;
+            if (sand)
+            {
+                profile.CliffR = 0.35f;
+                profile.CliffG = 0.34f;
+                profile.CliffB = 0.325f;
+                profile.CliffTileMetres = 4.8f;
+                profile.GroundTileMetres = 2f;
+                profile.SubsoilTileMetres = 2f;
+                profile.GroundPhotoColor = 0.60f;
+                profile.SpecularStrength = 0.13f;
+            }
             RegionSurfaceMaterials.BindBiomeSurfaces(material, profile);
             var cliff = CoastTextures("RegionMap3D/Surfaces/Cliff/rock_boulder_cracked_");
             if (cliff.IsComplete) RegionSurfaceMaterials.BindBiomeTextureSet(material, "_BiomeCliff", cliff);
-            var gravel = CoastTextures("RegionMap3D/Surfaces/Talus/rocks_ground_06_");
-            if (gravel.IsComplete)
+            const string sandResource = "RegionMap3D/Surfaces/Sand/Ground054_1K-JPG_";
+            var ground = sand ? new RegionBiomeSurfaceTextures.TextureSet
             {
-                RegionSurfaceMaterials.BindBiomeTextureSet(material, "_BiomeGround", gravel);
-                RegionSurfaceMaterials.BindBiomeTextureSet(material, "_BiomeSubsoil", gravel);
+                Color = Resources.Load<Texture2D>(sandResource + "Color"),
+                Normal = Resources.Load<Texture2D>(sandResource + "NormalGL"),
+                Roughness = Resources.Load<Texture2D>(sandResource + "Roughness"),
+            } : CoastTextures("RegionMap3D/Surfaces/Talus/rocks_ground_06_");
+            if (ground.IsComplete)
+            {
+                RegionSurfaceMaterials.BindBiomeTextureSet(material, "_BiomeGround", ground);
+                RegionSurfaceMaterials.BindBiomeTextureSet(material, "_BiomeSubsoil", ground);
             }
+            if (sand)
+            {
+                material.SetVector("_CoastalGroundTone", new Vector4(0.76f, 0.63f, 0.49f, 0f));
+                material.SetFloat("_CoastalShelfDetail", 1f);
+            }
+            material.EnableKeyword("REGION_BIOME_SURFACE");
             material.SetFloat("_CoastalRockDetail", 1f);
             return material;
         }
@@ -236,7 +259,7 @@ namespace Vastcore.RegionMap
             Roughness = Resources.Load<Texture2D>(stem + "rough_1k"),
         };
 
-        private static void MatchDepositColor(GameObject roots, bool wet = false)
+        internal static void MatchDepositColor(GameObject roots, bool wet = false, float tone = 1f)
         {
             if (roots == null) return;
             int baseColor = Shader.PropertyToID("_BaseColor");
@@ -249,7 +272,7 @@ namespace Vastcore.RegionMap
                 renderer.GetPropertyBlock(block);
                 Color coast = wet ? new Color(tint.r * 0.54f, tint.g * 0.63f, tint.b * 0.72f, tint.a)
                     : new Color(tint.r * 0.64f, tint.g * 0.91f, tint.b * 1.13f, tint.a);
-                block.SetColor(baseColor, coast);
+                block.SetColor(baseColor, new Color(coast.r * tone, coast.g * tone, coast.b * tone, coast.a));
                 renderer.SetPropertyBlock(block);
             }
         }

@@ -6,6 +6,7 @@ Shader "Vastcore/RegionCoastWater"
         _Extent ("Terrain span in metres", Float) = 3200
         _WaveStrength ("Shore wave strength", Range(0,1)) = 1
         [HideInInspector] _FixedTime ("Fixed comparison time", Float) = -1
+        [HideInInspector] _CoveMode ("Cove sea or retained pool", Float) = 0
     }
     SubShader
     {
@@ -25,6 +26,7 @@ Shader "Vastcore/RegionCoastWater"
                 float _Extent;
                 float _WaveStrength;
                 float _FixedTime;
+                float _CoveMode;
             CBUFFER_END
 
             struct Varyings
@@ -39,7 +41,7 @@ Shader "Vastcore/RegionCoastWater"
                 Varyings output;
                 output.positionWS = TransformObjectToWorld(positionOS);
                 output.clip = TransformWorldToHClip(output.positionWS);
-                output.grid = positionOS.xz * float2(1,-1) / _Extent;
+                output.grid = _CoveMode > 0.5 ? positionOS.xz / _Extent + 0.5 : positionOS.xz * float2(1,-1) / _Extent;
                 return output;
             }
 
@@ -60,15 +62,58 @@ Shader "Vastcore/RegionCoastWater"
                 return lerp(a, b, t.y);
             }
 
+            half3 CoveWater(float3 positionWS, half4 bottom, half outside, float time)
+            {
+                bool pool = _CoveMode > 1.5;
+                if (pool || outside < 0.003) clip(bottom.a - 0.27h);
+                float2 p = positionWS.xz;
+                half depth = lerp(bottom.r * 12.75h, 14.0h, outside);
+                half exposure = bottom.g * (1.0h - outside);
+                half sand = bottom.b * (1.0h - outside);
+                float grain = CoastNoise(p * 0.17 + 6.3);
+                float swell = p.y * 1.06 + p.x * 0.23 + 5.8 * CoastNoise(p * 0.059) + 1.9 * grain + time * 1.28;
+                float cross = dot(p, float2(0.64, -1.46)) + grain * 5.7 - time * 1.79;
+                float ripples = dot(p, float2(-3.3, 3.1)) + 4.5 * CoastNoise(p * 0.27) + time * 1.94;
+                half detail = 1.0h - smoothstep(0.31h, 1.9h, fwidth(ripples));
+                half wave = 1.0h - smoothstep(0.23h, 2.4h, fwidth(swell));
+                half agitation = pool ? 0.10h : lerp(0.33h, 0.88h, exposure);
+                half3 n = normalize(half3(agitation * (0.033h * cos(cross) * wave + 0.035h * sin(ripples) * detail),
+                    1.0h, agitation * (0.063h * cos(swell) * wave + 0.043h * cos(ripples * 0.83) * detail)));
+                half3 v = GetWorldSpaceNormalizeViewDir(positionWS);
+                half fresnel = (pool ? 0.12h : 0.026h) + 0.69h * pow(1.0h - saturate(dot(n, v)), 4.7h);
+                half flecks = 0.81h + 0.22h * CoastNoise(p * 1.7) + 0.15h * sin(cross + sin(swell)) * detail;
+                half grit = saturate(CoastNoise(p * 0.85) * 0.65h + CoastNoise(p * 3.35) * 0.35h);
+                half3 stone = lerp(half3(0.044h, 0.065h, 0.058h), half3(0.18h, 0.134h, 0.08h), grit * grit);
+                half3 bed = lerp(stone, half3(0.36h, 0.287h, 0.17h), sand) * flecks;
+                half3 water = lerp(half3(0.018h, 0.067h, 0.104h), half3(0.055h, 0.221h, 0.225h), exp(-depth * 0.39h));
+                water = lerp(water, bed, exp(-depth * 0.96h) * (pool ? 0.88h : 0.84h));
+                water = lerp(water, half3(0.235h, 0.38h, 0.51h), fresnel);
+                half3 h = normalize(v + GetMainLight().direction);
+                water += pow(saturate(dot(n, h)), 100.0h) * half3(0.31h, 0.28h, 0.24h);
+                if (!pool)
+                {
+                    half lace = smoothstep(0.27h, 0.72h, CoastNoise(p * 1.9 + time * 0.35) * 0.60h + grain * 0.40h);
+                    half swash = (1.0h - smoothstep(0.065h, 0.20h + exposure * 0.18h, depth)) * lace;
+                    half crests = smoothstep(0.71h, 0.98h, 0.5h + 0.31h * sin(swell) + 0.19h * CoastNoise(p * 0.63));
+                    half breaking = smoothstep(0.1h, 0.55h, depth) * (1.0h - smoothstep(0.66h, 2.0h, depth));
+                    half foam = swash * lerp(0.48h, 0.88h, exposure) + crests * breaking * exposure * lace * wave;
+                    water = lerp(water, half3(0.74h, 0.81h, 0.82h), saturate(foam));
+                }
+                return water;
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 float2 p = input.positionWS.xz;
-                half2 bathymetry = SAMPLE_TEXTURE2D(_Shore, sampler_Shore, input.grid).rg;
+                half4 bottom = SAMPLE_TEXTURE2D(_Shore, sampler_Shore, input.grid);
                 float2 distanceOutside = max(max(-input.grid, input.grid - 1.0), 0.0) * _Extent;
                 half offshore = saturate(length(distanceOutside) / 90.0);
+                float time = _FixedTime >= 0.0 ? _FixedTime : _Time.y;
+                if (_CoveMode > 0.5)
+                    return RegionOutput(RegionApplyAir(CoveWater(input.positionWS, bottom, offshore, time), input.positionWS), 1.0);
+                half2 bathymetry = bottom.rg;
                 half depth = lerp(bathymetry.r * 31.875, 32.0, offshore);
                 half exposure = bathymetry.g * (1.0 - offshore);
-                float time = _FixedTime >= 0.0 ? _FixedTime : _Time.y;
                 float spread = CoastNoise(p * 0.037);
                 float swell = dot(p, float2(0.42, 0.31)) + 7.0 * spread - time * 1.1;
                 float capillary = dot(p, float2(-1.9, 1.6)) - time * 2.3;

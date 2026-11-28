@@ -27,6 +27,8 @@ Shader "Vastcore/RegionTerrain"
         [HideInInspector] _RegionBiomeCliffColor ("Biome cliff tint", Vector) = (0, 0, 0, 0)
         [HideInInspector] _RegionBiomeGroundBlend ("Biome ground blend", Vector) = (0, 0, 0, 0)
         [HideInInspector] _CoastalRockDetail ("Coastal exposed rock and wet ground", Float) = 0
+        [HideInInspector] _CoastalGroundTone ("Coastal sediment tone", Vector) = (0.43, 0.47, 0.50, 0)
+        [HideInInspector] _CoastalShelfDetail ("Coastal flat rock projection", Float) = 0
         [HideInInspector][NoScaleOffset] _BiomeGroundMap ("Biome turf", 2D) = "white" {}
         [HideInInspector][NoScaleOffset] _BiomeGroundNormal ("Biome turf normals", 2D) = "bump" {}
         [HideInInspector][NoScaleOffset] _BiomeGroundRoughness ("Biome turf roughness", 2D) = "white" {}
@@ -83,6 +85,8 @@ Shader "Vastcore/RegionTerrain"
                 float4 _RegionBiomeCliffColor;
                 float4 _RegionBiomeGroundBlend;
                 half _CoastalRockDetail;
+                half4 _CoastalGroundTone;
+                half _CoastalShelfDetail;
             CBUFFER_END
 
             #if defined(REGION_SANDSTONE)
@@ -182,8 +186,30 @@ Shader "Vastcore/RegionTerrain"
                         float3 p = input.positionWS;
                         half weathering = BiomeNoise(float2(p.x + 0.39 * p.z, p.y - 0.23 * p.z) * 0.16);
                         half3 rockTone = lerp(half3(0.55h, 0.62h, 0.71h), half3(0.89h, 0.83h, 0.76h), weathering);
-                        biomeAlbedo *= lerp(half3(0.43h, 0.47h, 0.50h), rockTone, coastalRock);
+                        rockTone *= lerp(1.0h, 0.51h, _CoastalShelfDetail);
+                        biomeAlbedo *= lerp(_CoastalGroundTone.rgb, rockTone, coastalRock);
                         biomeAlbedo *= lerp(1.0h, half3(0.46h, 0.53h, 0.61h), wet);
+                        half shelfWeight = _CoastalShelfDetail * coastalRock * smoothstep(0.37h, 0.85h, normal.y)
+                            * (1.0h - smoothstep(35.0, 92.0, biomeDist));
+                        if (shelfWeight > 0.01h)
+                        {
+                            // Along-bed joints run through the shelf; shorter fractures interrupt neighboring slabs.
+                            float2 bed = float2(p.x + 0.47 * p.z + 0.31 * p.y, p.z - 0.35 * p.x);
+                            half chip = BiomeNoise(bed * 0.49 + 6.2);
+                            float bedJoint = bed.x * 0.35 + 0.75 * weathering + 0.21 * chip;
+                            float bedId = floor(bedJoint + 0.5);
+                            half offset = BiomeNoise(float2(0.71 * bedId, 7.2));
+                            float fracture = bed.y * (0.32 + 0.25 * offset) + 2.8 * offset + 0.66 * chip;
+                            float2 seam = abs(frac(float2(bedJoint, fracture)) - 0.5);
+                            half jointExposure = smoothstep(0.10h, 0.62h, BiomeNoise(bed * float2(0.43, 0.22)));
+                            half longJoint = (1.0h - smoothstep(0.007, 0.039 + 0.027 * chip, seam.x)) * jointExposure;
+                            half shortJoint = (1.0h - smoothstep(0.008, 0.051, seam.y)) * smoothstep(0.41h, 0.76h, chip);
+                            half joints = max(longJoint, shortJoint);
+                            half patina = BiomeNoise(bed * 0.31 + 4.7);
+                            half3 slabTone = lerp(half3(0.49h, 0.58h, 0.65h), half3(0.98h, 0.87h, 0.69h), patina);
+                            biomeAlbedo *= lerp(1.0h, slabTone * lerp(1.0h, 0.56h, joints), shelfWeight);
+                            bExtra.occlusion *= 1.0h - 0.23h * shelfWeight * joints;
+                        }
                         bExtra.roughness = lerp(bExtra.roughness, 0.55h, wet);
                         bExtra.specular = lerp(bExtra.specular, 0.22h, wet);
                     }
