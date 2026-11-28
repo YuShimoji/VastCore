@@ -15,6 +15,7 @@ namespace Vastcore.RegionMap
         private const float MeadowRadius = 88f;
         private const float DetailRadius = 34f;
         private const float ShortGrassRadius = 17f;
+        private const int DetailLayer = 1;
         private const int ShortGrassLayer = 2;
         private const int DistantLayer = 3;
         private const float DistantRadius = 306f;
@@ -42,6 +43,7 @@ namespace Vastcore.RegionMap
         private Material _material;
         private Vector4[] _tussockFrames;
         private bool _visible = true;
+        private double _tileOriginEast = double.NaN, _tileOriginSouth = double.NaN;
         private RegionGrasslandStyle Style => _look?.Spec.GrasslandStyle ?? RegionGrasslandStyle.Colonies;
         private readonly Dictionary<Vector3Int, Tile> _tiles = new Dictionary<Vector3Int, Tile>();
         private readonly List<Vector3Int> _remove = new List<Vector3Int>();
@@ -133,6 +135,9 @@ namespace Vastcore.RegionMap
             float ground = _look != null ? _look.HeightAt(eye.x, -eye.z) : _streamer.SampleGroundHeight(east, south);
             float above = Mathf.Max(0f, eye.y - ground);
 
+            bool originChanged = originEast != _tileOriginEast || originSouth != _tileOriginSouth;
+            _tileOriginEast = originEast;
+            _tileOriginSouth = originSouth;
             _remove.Clear();
             foreach (var pair in _tiles)
             {
@@ -144,7 +149,7 @@ namespace Vastcore.RegionMap
                     _remove.Add(key);
                     Release(tile);
                 }
-                else if (tile.Object != null)
+                else if (originChanged && tile.Object != null)
                 {
                     PlaceTile(tile.Object, key, originEast, originSouth);
                 }
@@ -184,12 +189,18 @@ namespace Vastcore.RegionMap
                 return detailOrder != 0 ? detailOrder : a.Distance.CompareTo(b.Distance);
             });
 
-            int remaining = _streamer != null ? TilesPerFrame : int.MaxValue;
+            bool streaming = _streamer != null;
+            int remaining = streaming ? TilesPerFrame : int.MaxValue;
+            bool builtDetail = false;
             foreach (var request in _pending)
             {
+                // Avoid generating two dense near tiles in the same camera render.
+                bool detailed = streaming && request.Key.z == DetailLayer;
+                if (detailed && builtDetail) continue;
                 var surface = Surface(request.Key);
                 if (surface.Part == null) continue;
                 Tile tile = BuildTile(request.Key, surface.Part, surface.East, surface.South, surface.Cell);
+                if (detailed) builtDetail = true;
                 _tiles.Add(request.Key, tile);
                 if (tile.Object == null) continue;
                 PlaceTile(tile.Object, request.Key, originEast, originSouth);
