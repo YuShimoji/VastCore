@@ -14,6 +14,7 @@ namespace Vastcore.Weather
         private const int CoastCells = 192;
         private const int PlainCells = 128;
         private readonly List<Mesh> meshes = new List<Mesh>();
+        private readonly List<Material> materials = new List<Material>();
         private readonly List<WeatherPuddle> puddles = new List<WeatherPuddle>();
         private readonly List<MeshRenderer> road = new List<MeshRenderer>();
         private readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
@@ -31,6 +32,7 @@ namespace Vastcore.Weather
             this.seed = seed;
             variation = (seed & 255) * 0.0727f;
             material = WeatherField.NewMaterial("SampleSurface");
+            materials.Add(material);
             material.SetColor("_Horizon", haze);
             material.SetColor("_Sun", sunlight);
             material.SetVector("_SunDirection", toSun);
@@ -58,6 +60,7 @@ namespace Vastcore.Weather
         }
 
         public float MountainHeight(float x, float z) => MeshHeight(MountainBounds, MountainCells, MountainTerrain, x, z);
+        internal float MountainLandform(float x, float z) => MountainTerrain(x, z);
         public float CoastHeight(float x, float z) => MeshHeight(CoastBounds, CoastCells, CoastTerrain, x, z);
         public float PlainHeight(float x, float z) => MeshHeight(PlainBounds, PlainCells, PlainTerrain, x, z);
 
@@ -366,7 +369,15 @@ namespace Vastcore.Weather
             return child;
         }
 
-        private MeshRenderer Render(string label, Mesh mesh, float kind = 0f)
+        internal Material CreateSurface(string shader)
+        {
+            Material surface = WeatherField.NewMaterial(shader);
+            surface.CopyMatchingPropertiesFromMaterial(material);
+            materials.Add(surface);
+            return surface;
+        }
+
+        internal MeshRenderer Render(string label, Mesh mesh, float kind = 0f, Material surface = null)
         {
             mesh.name = label;
             mesh.hideFlags = HideFlags.HideAndDontSave;
@@ -374,7 +385,7 @@ namespace Vastcore.Weather
             GameObject child = NewObject(label);
             child.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = child.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = material;
+            renderer.sharedMaterial = surface ? surface : material;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             block.Clear();
             block.SetFloat("_SurfaceKind", kind);
@@ -386,7 +397,8 @@ namespace Vastcore.Weather
         {
             foreach (Mesh mesh in meshes)
                 WeatherField.Dispose(mesh);
-            WeatherField.Dispose(material);
+            foreach (Material surface in materials)
+                WeatherField.Dispose(surface);
         }
 
         private float Noise(float x, float z) => Mathf.PerlinNoise(x + 18.3f + variation, z + 23.7f - variation * 1.7f);
@@ -438,6 +450,35 @@ namespace Vastcore.Weather
                 triangles.Add(first + 3);
             }
 
+            public void Triangle(Vector3 a, Vector3 b, Vector3 c, Color color)
+            {
+                int first = positions.Count;
+                positions.Add(a);
+                positions.Add(b);
+                positions.Add(c);
+                Color linear = color.linear;
+                colors.Add(linear);
+                colors.Add(linear);
+                colors.Add(linear);
+                triangles.Add(first);
+                triangles.Add(first + 1);
+                triangles.Add(first + 2);
+            }
+
+            public int AddVertex(Vector3 position, Color color)
+            {
+                positions.Add(position);
+                colors.Add(color.linear);
+                return positions.Count - 1;
+            }
+
+            public void AddFace(int a, int b, int c)
+            {
+                triangles.Add(a);
+                triangles.Add(b);
+                triangles.Add(c);
+            }
+
             public void Cone(Vector3 baseCenter, float radius, float height, Color color)
             {
                 const int facets = 7;
@@ -447,17 +488,7 @@ namespace Vastcore.Weather
                     float b = 2f * Mathf.PI * (index + 1) / facets;
                     Vector3 left = baseCenter + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * radius;
                     Vector3 right = baseCenter + new Vector3(Mathf.Cos(b), 0f, Mathf.Sin(b)) * radius;
-                    int first = positions.Count;
-                    positions.Add(left);
-                    positions.Add(baseCenter + Vector3.up * height);
-                    positions.Add(right);
-                    Color linear = color.linear;
-                    colors.Add(linear);
-                    colors.Add(linear);
-                    colors.Add(linear);
-                    triangles.Add(first);
-                    triangles.Add(first + 1);
-                    triangles.Add(first + 2);
+                    Triangle(left, baseCenter + Vector3.up * height, right, color);
                 }
             }
 

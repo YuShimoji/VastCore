@@ -11,6 +11,7 @@ namespace Vastcore.Weather
         [SerializeField] private int seed = 17;
         [SerializeField] private bool showControls = true;
         [SerializeField] private WeatherStreetAssets streetAssets;
+        [SerializeField] private WeatherValleyAssets valleyAssets;
 
         private GameObject world;
         private WeatherField field;
@@ -19,6 +20,7 @@ namespace Vastcore.Weather
         private Light sun;
         private WeatherSampleGeometry geometry;
         private WeatherStreetScene street;
+        private WeatherValleyScene valley;
         private Material sky;
         private Material previousSky;
         private float seconds;
@@ -42,8 +44,18 @@ namespace Vastcore.Weather
         public bool ShowControls { get => showControls; set => showControls = value; }
         public bool HasDetailedStreet => street != null;
         public bool HasPuddleReflection => street != null && street.ReflectionAvailable;
+        public bool HasDetailedValley => valley != null;
+        public bool UseLegacyValley { get; set; }
+
+        public float ValleyElevationAt(float x, float z)
+        {
+            if (site != WeatherSampleSite.MountainValleyFog || geometry == null)
+                throw new InvalidOperationException("Open the mountain valley sample before measuring its elevation.");
+            return valley?.HeightAt(x, z) ?? geometry.MountainHeight(x, z);
+        }
 
         public void SetStreetAssets(WeatherStreetAssets assets) => streetAssets = assets;
+        public void SetValleyAssets(WeatherValleyAssets assets) => valleyAssets = assets;
 
         public void PrepareStreetReflection(bool enabled = true, bool forceRefresh = false) =>
             street?.RenderReflection(SampleCamera, enabled, forceRefresh);
@@ -74,7 +86,8 @@ namespace Vastcore.Weather
             world = new GameObject("Weather Environment") { hideFlags = HideFlags.DontSave };
             SceneManager.MoveGameObjectToScene(world, gameObject.scene);
 
-            preset = WeatherSamplePresets.Create(site);
+            bool detailedValley = site == WeatherSampleSite.MountainValleyFog && !UseLegacyValley;
+            preset = WeatherSamplePresets.Create(site, UseLegacyValley);
             clear = ScriptableObject.CreateInstance<WeatherPreset>();
             clear.hideFlags = HideFlags.DontSave;
             clear.name = "Clear";
@@ -128,6 +141,11 @@ namespace Vastcore.Weather
                 preset.Rain.CurtainExtinctionPerKilometer = 1.85f;
                 preset.Rain.DropVisibility = 0.62f;
             }
+            if (detailedValley)
+            {
+                zenith = Tone(0x83A1BF);
+                sunlight = Tone(0xFFE5BE);
+            }
             sun.transform.rotation = Quaternion.Euler(altitude, 47f, 0f);
             sun.color = sunlight;
             Vector3 toSun = -sun.transform.forward;
@@ -154,7 +172,10 @@ namespace Vastcore.Weather
             else
             {
                 geometry = new WeatherSampleGeometry(world.transform, field, haze, sunlight, toSun, preset.HazePerKilometer, seed);
-                geometry.Build(site);
+                if (detailedValley)
+                    valley = new WeatherValleyScene(geometry, valleyAssets, seed);
+                else
+                    geometry.Build(site);
             }
             PlaceView(0);
             SetFrame(FeaturedTime, false);
@@ -288,6 +309,7 @@ namespace Vastcore.Weather
             WeatherField.Dispose(sky);
             geometry = null;
             street = null;
+            valley = null;
             world = null;
         }
 

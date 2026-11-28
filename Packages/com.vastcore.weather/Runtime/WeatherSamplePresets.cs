@@ -15,7 +15,9 @@ namespace Vastcore.Weather
 
     public static class WeatherSamplePresets
     {
-        public static WeatherPreset Create(WeatherSampleSite site)
+        public static WeatherPreset Create(WeatherSampleSite site) => Create(site, false);
+
+        internal static WeatherPreset Create(WeatherSampleSite site, bool legacyValley)
         {
             var preset = ScriptableObject.CreateInstance<WeatherPreset>();
             preset.name = site.ToString();
@@ -28,7 +30,10 @@ namespace Vastcore.Weather
                     Street(preset);
                     break;
                 case WeatherSampleSite.MountainValleyFog:
-                    Fog(preset);
+                    if (legacyValley)
+                        OriginalFog(preset);
+                    else
+                        ValleyFog(preset);
                     break;
                 case WeatherSampleSite.CumulonimbusAcrossSea:
                     Cumulonimbus(preset, false);
@@ -77,7 +82,7 @@ namespace Vastcore.Weather
             preset.HazePerKilometer = 0.11f;
         }
 
-        private static void Fog(WeatherPreset preset)
+        private static void OriginalFog(WeatherPreset preset)
         {
             WeatherVolume bank = Form(WeatherShape.ValleyFog, new Vector3(325f, 207f, 3560f),
                 new Vector3(6700f, 445f, 11700f), 1.7f, 380f, 0xDDD7CB, 0x829DAF);
@@ -88,6 +93,16 @@ namespace Vastcore.Weather
             preset.Volumes = new[] { further, bank };
             preset.AerialHaze = Tone(0xB3B8B6);
             preset.HazePerKilometer = 0.018f;
+        }
+
+        private static void ValleyFog(WeatherPreset preset)
+        {
+            WeatherVolume bank = Form(WeatherShape.StratifiedFog, new Vector3(-140f, 154f, 5190f),
+                new Vector3(5600f, 356f, 17350f), 7.1f, 365f, 0xE4E0D5, 0xA1B1BF);
+            bank.FlowRadiansPerSecond = 0.012f;
+            preset.Volumes = new[] { bank };
+            preset.AerialHaze = Tone(0xA3B1BF);
+            preset.HazePerKilometer = 0.030f;
         }
 
         private static void Cumulonimbus(WeatherPreset preset, bool ridge)

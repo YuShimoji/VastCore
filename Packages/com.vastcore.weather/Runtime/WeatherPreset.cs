@@ -11,7 +11,8 @@ namespace Vastcore.Weather
         RotatingUpdraft = 3,
         ValleyFog = 4,
         RainCurtain = 5,
-        Lenticular = 6
+        Lenticular = 6,
+        StratifiedFog = 7
     }
 
     [Serializable]

@@ -47,7 +47,7 @@ namespace Vastcore.Weather.Editor
         private static bool CanSaveCurrentPreset() =>
             !EditorApplication.isPlaying && UnityEngine.Object.FindFirstObjectByType<WeatherEnvironmentSample>();
 
-        private static WeatherEnvironmentSample CreateScene(bool detailedStreet = true)
+        private static WeatherEnvironmentSample CreateScene(bool detailedStreet = true, bool detailedValley = true)
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var viewer = new GameObject("Weather Environment Sample", typeof(Camera), typeof(Skybox));
@@ -57,6 +57,8 @@ namespace Vastcore.Weather.Editor
             var sample = viewer.AddComponent<WeatherEnvironmentSample>();
             if (detailedStreet)
                 sample.SetStreetAssets(LoadStreetAssets());
+            if (detailedValley)
+                sample.SetValleyAssets(LoadValleyAssets());
             viewer.SetActive(true);
             return sample;
         }
@@ -87,6 +89,22 @@ namespace Vastcore.Weather.Editor
             };
         }
 
+        private static WeatherValleyAssets LoadValleyAssets()
+        {
+            const string forest = "Assets/Resources/RegionMap3D/Woodland/forest_floor_";
+            const string granite = "Assets/Art/Textures/NAT/mossy_granite_outcrop/mossy_granite_outcrop_";
+            Texture2D Map(string set, string channel) => AssetDatabase.LoadAssetAtPath<Texture2D>(set + channel + "_1k.jpg");
+            return new WeatherValleyAssets
+            {
+                ForestColor = Map(forest, "diff"),
+                ForestNormal = Map(forest, "nor_gl"),
+                ForestRoughness = Map(forest, "rough"),
+                RockColor = Map(granite, "diff"),
+                RockNormal = Map(granite, "nor_gl"),
+                RockRoughness = Map(granite, "rough")
+            };
+        }
+
         public static void CaptureStreetComparisonFromCommandLine()
         {
             string[] args = Environment.GetCommandLineArgs();
@@ -108,7 +126,7 @@ namespace Vastcore.Weather.Editor
                 string look = detailed ? "after" : "before";
                 string folder = Path.Combine(output, look);
                 Directory.CreateDirectory(folder);
-                WeatherEnvironmentSample sample = CreateScene(detailed);
+                WeatherEnvironmentSample sample = CreateScene(detailed, false);
                 if (sample.HasDetailedStreet != detailed)
                     throw new InvalidOperationException("The detailed sample requires the Modern City prefabs and both pavement material sets.");
                 sample.ShowControls = false;
@@ -157,7 +175,7 @@ namespace Vastcore.Weather.Editor
                         frame.Save(Path.Combine(folder, "view2-rain-no-curtain.png"));
                         rain.CurtainExtinctionPerKilometer = extinction;
                         sample.SetFrame(42f, true);
-                        CaptureStreetForm(frame, Path.Combine(folder, "view2-form.png"));
+                        CaptureForm(frame, Path.Combine(folder, "view2-form.png"));
                     }
                     report.AppendLine();
                 }
@@ -166,7 +184,85 @@ namespace Vastcore.Weather.Editor
             File.WriteAllText(Path.Combine(output, "capture-timing.tsv"), report.ToString());
         }
 
-        private static void CaptureStreetForm(Capture frame, string path)
+        public static void CaptureValleyComparisonFromCommandLine()
+        {
+            string[] args = Environment.GetCommandLineArgs();
+            string output = Argument(args, "-weatherOut");
+            if (string.IsNullOrWhiteSpace(output))
+                throw new ArgumentException("Specify -weatherOut with the valley comparison directory.");
+            RequireShaders();
+            Directory.CreateDirectory(output);
+            var performance = new StringBuilder()
+                .AppendLine(Application.unityVersion + " / " + SystemInfo.graphicsDeviceType + " / " + SystemInfo.graphicsDeviceName)
+                .AppendLine("1600 x 900 / median of seven camera renders with synchronous pixel readback, ms")
+                .AppendLine("Version\tView\tSetup\tClear\tFog");
+            var poses = new StringBuilder().AppendLine("Version\tView\tPosition\tRotation\tVertical FOV\tNear\tFar");
+            var sections = new StringBuilder().AppendLine("Version\tSection Z (m)\tX (m)\tElevation (m)");
+            var landmarks = new StringBuilder().AppendLine("Nominal Z offset (m)\tDistance (m)\tCrown pixel X\tCrown pixel Y\tTrunk pixel X\tTrunk pixel Y");
+            var baselineCameras = new string[3];
+            foreach (bool legacy in new[] { true, false })
+            {
+                string version = legacy ? "before" : "after";
+                string folder = Path.Combine(output, version);
+                Directory.CreateDirectory(folder);
+                WeatherEnvironmentSample sample = CreateScene(false, !legacy);
+                sample.UseLegacyValley = legacy;
+                sample.ShowControls = false;
+                var clock = Stopwatch.StartNew();
+                sample.Open(WeatherSampleSite.MountainValleyFog, 17);
+                clock.Stop();
+                if (sample.HasDetailedValley == legacy)
+                    throw new InvalidOperationException("The valley comparison did not open the requested terrain.");
+                Camera camera = sample.SampleCamera;
+                using var frame = new Capture(camera, 1600, 900, null);
+                for (int view = 0; view < 3; view++)
+                {
+                    sample.PlaceView(view);
+                    string cameraState = string.Join("\t", view.ToString(CultureInfo.InvariantCulture),
+                        camera.transform.position.ToString("F5"), camera.transform.rotation.ToString("F6"),
+                        Format(camera.fieldOfView), Format(camera.nearClipPlane), Format(camera.farClipPlane));
+                    if (legacy)
+                        baselineCameras[view] = cameraState;
+                    else if (baselineCameras[view] != cameraState)
+                        throw new InvalidOperationException("The valley comparison cameras differ for view " + view + ".");
+                    poses.AppendLine(version + "\t" + cameraState);
+                    sample.SetFrame(sample.FeaturedTime, true);
+                    frame.Save(Path.Combine(folder, $"view{view}-clear.png"));
+                    double clearTime = frame.MedianRenderMilliseconds();
+                    CaptureForm(frame, Path.Combine(folder, $"view{view}-form.png"));
+                    sample.SetFrame(sample.FeaturedTime, false);
+                    frame.Save(Path.Combine(folder, $"view{view}-fog.png"));
+                    if (!legacy && view == 1)
+                    {
+                        foreach (int offset in new[] { 28, 96, 220, 420, 690 })
+                        {
+                            MeshRenderer marker = GameObject.Find("Valley landmark " + offset).GetComponent<MeshRenderer>();
+                            Bounds bound = marker.bounds;
+                            Vector3 center = bound.center;
+                            Vector3 crown = camera.WorldToViewportPoint(new Vector3(center.x, bound.min.y + bound.size.y * 0.73f, center.z));
+                            Vector3 trunk = camera.WorldToViewportPoint(new Vector3(center.x, bound.min.y + bound.size.y * 0.19f, center.z));
+                            landmarks.AppendLine(string.Join("\t", offset.ToString(CultureInfo.InvariantCulture),
+                                Format(Vector3.Distance(camera.transform.position, center)),
+                                Format(crown.x * 1600f), Format((1f - crown.y) * 900f),
+                                Format(trunk.x * 1600f), Format((1f - trunk.y) * 900f)));
+                        }
+                    }
+                    double fogTime = frame.MedianRenderMilliseconds();
+                    performance.AppendLine(string.Join("\t", version, view.ToString(CultureInfo.InvariantCulture),
+                        Format(clock.Elapsed.TotalMilliseconds), Format(clearTime), Format(fogTime)));
+                }
+                foreach (int north in new[] { 3160, 5200, 7900 })
+                for (int east = -7000; east <= 7000; east += 100)
+                    sections.AppendLine(string.Join("\t", version, north.ToString(CultureInfo.InvariantCulture),
+                        east.ToString(CultureInfo.InvariantCulture), Format(sample.ValleyElevationAt(east, north))));
+            }
+            File.WriteAllText(Path.Combine(output, "camera-poses.tsv"), poses.ToString());
+            File.WriteAllText(Path.Combine(output, "elevation-sections.tsv"), sections.ToString());
+            File.WriteAllText(Path.Combine(output, "landmarks.tsv"), landmarks.ToString());
+            File.WriteAllText(Path.Combine(output, "capture-timing.tsv"), performance.ToString());
+        }
+
+        private static void CaptureForm(Capture frame, string path)
         {
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             var renderers = System.Array.FindAll(Resources.FindObjectsOfTypeAll<MeshRenderer>(),

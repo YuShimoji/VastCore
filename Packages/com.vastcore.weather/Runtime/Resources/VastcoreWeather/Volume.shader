@@ -103,6 +103,24 @@ Shader "Vastcore/Weather/Volume"
                 float flow = _VolumeDetail.w;
                 float envelope;
 
+                if (shape == 7)
+                {
+                    float bend = 0.16 * sin(p.z * 4.2 + 0.7) + 0.085 * sin(p.z * 9.0 - 1.2);
+                    float edge = 1.0 - smoothstep(0.39, 0.94, abs(p.x - bend));
+                    edge *= 1.0 - smoothstep(0.82, 1.0, max(abs(p.x), abs(p.z)));
+                    float2 air = noiseSpace.xz + float2(flow * 0.41, -flow * 0.21);
+                    float patch = WeatherNoise(float3(air.x * 0.34, 9.2, air.y * 0.43));
+                    float wisp = WeatherNoise(float3(air.x * 0.79, 2.3 + p.y * 0.65, air.y * 0.87));
+                    float height = p.y - (-0.24 + 0.32 * p.z + (patch - 0.5) * 0.12);
+                    float lowLayer = exp(-max(0.0, height) * 4.8) * (0.30 + 0.36 * patch + 0.19 * wisp);
+                    float crest = 0.39 + 0.25 * (patch - 0.5) + 0.19 * (wisp - 0.5);
+                    float upperWisps = smoothstep(0.12, 0.28, height) *
+                        (1.0 - smoothstep(crest, crest + 0.23, height));
+                    upperWisps *= smoothstep(0.19, 0.80, patch * 0.62 + wisp * 0.38) * 0.37;
+                    float floor = smoothstep(-1.0, -0.83, p.y);
+                    return edge * floor * (lowLayer + upperWisps);
+                }
+
                 if (shape == 4)
                 {
                     float shore = 1.0 - smoothstep(0.34, 0.99, length(p.xz * float2(1.0, 1.10)));
@@ -271,7 +289,13 @@ Shader "Vastcore/Weather/Volume"
                     if (density <= 0.002)
                         continue;
                     float3 color = _ShadeColor.rgb;
-                    if (shape != 5)
+                    if (shape == 7)
+                    {
+                        float height = saturate(p.y * 0.5 + 0.5);
+                        float light = saturate(0.18 + height * 0.65 + forward * 0.23);
+                        color = lerp(_ShadeColor.rgb, _SunlitColor.rgb, light);
+                    }
+                    else if (shape != 5)
                     {
                         float exposed = density - Density(p + sunOS * 0.15, shape);
                         float height = saturate(p.y * 0.5 + 0.5);

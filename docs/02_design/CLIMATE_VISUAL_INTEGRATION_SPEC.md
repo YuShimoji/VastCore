@@ -144,4 +144,19 @@ Unity の入口は `Vastcore > Weather > Open Environment Sample`。街路の近
 
 低い視点の同条件計測は、晴天2.76 → 7.37 ms、雨中5.71 → 15.47 ms、通過後2.40 → 11.71 ms。雨中、反射なし7.11 ms、固定カメラで反射を再利用すると6.93 ms。Unity 6000.3.6f1／Direct3D 11／RTX 4060 Ti／1600×900。同期読み戻し込みの7回の中央値で、Player の GPU 時間は未計測。[3視点の原寸画像・計測表](<D:/AI-Runs/VastCore/weather-environments/street-realism/index.html#results>)
 
-次の谷霧では、谷の断面と前・中・奥の尾根を先に選び、霧の上面と斜面の遮蔽を変えた対を撮る。海岸では、岬・水際・対岸の輪郭が重なる地点を選び、同じ雲を違う距離の稜線で隠して比較する。[自然地形パッケージ](NATURAL_ENVIRONMENT_PACKAGES_SPEC.md)
+谷霧では、谷の断面と前・中・奥の尾根を先に選び、霧の上面と斜面の遮蔽を比べた。結果は下記。海岸では、岬・水際・対岸の輪郭が重なる地点を選び、同じ雲を違う距離の稜線で隠して比較する。[自然地形パッケージ](NATURAL_ENVIRONMENT_PACKAGES_SPEC.md)
+
+## 9. 山岳の谷霧の写実化
+
+本人選択は A 山腹から谷の断面。Kienberg の霧と斜面の境、Shenandoah の尾根の重なり、Tuckaleechee と Sparks Lane の谷床の目印を参照した。[実写の出典・完成想定・同一カメラ比較](<D:/AI-Runs/VastCore/weather-environments/valley-fog-realism/index.html>)
+
+| 再利用するもの | 配置・接続の条件 |
+|---|---|
+| `Vastcore/Weather/Valley Surface` | Forest Floor と Mossy Granite Outcrop の色・GL 法線・粗さをメートル単位で使う。既存の地表画像を流用し、斜面と植生の被覆率で配分する。URP が SSAO 用の深度・法線パスを使う場合は、地表と植生を `DepthNormalsOnly` に描画する。カメラの深度で霧の積分を止め、近景を霧で覆わない。 |
+| `WeatherShape.StratifiedFog` | 谷底と尾根を先に作り、谷筋に霧体積の長軸を合わせる。底側に濃度を寄せ、位置・寸法・密度・上面の揺らぎを調整する。霧あり／なし、地形を無地にした画面を同じカメラで比べる。 |
+
+A の固有値は体積の中心 (−140, 154, 5190) m、寸法 5600 × 356 × 17350 m、密度補正前の消散係数 7.1 km⁻¹。谷底のくぼみと左右の支尾根を別の位置に置き、Z=7900 m の中央区間（X=±1200 m）の最低標高は426 → 140 m。比較は山腹、地表2.2 mの谷床、対岸を seed 17、12秒、垂直画角49°で撮影。太陽方向を固定し、環境光と距離霞は谷に合わせた。
+
+`Vastcore > Weather > Open Environment Sample` から Play、`Mountain valley fog` に切り替え、山腹・谷床・谷床の霧なしを確認。再撮影は `Vastcore.Weather.Editor.WeatherReview.CaptureValleyComparisonFromCommandLine` に `-weatherOut` を渡す。Unity 6000.3.6f1／Direct3D 11／RTX 4060 Ti／1600×900、同期読み戻し込み7回の中央値は山腹の霧あり3.79 → 2.69 ms、谷床6.50 → 4.47 ms。場面生成47.65 → 798.22 ms。Player の GPU 時間は未計測。
+
+谷床の霧ありで約29 mの枝葉と106 mの木が読め、約221 mは樹冠の輪郭が残る。約434 mと726 mは霧なしでも地形が一部を遮る。完成想定との差は、手前から中腹の樹冠の密度・輪郭、露岩の細部、霧上面の細い流れ。海岸で次に素材を選ぶ際、岬と対岸の輪郭を無地で先に確認し、水際の岩や植生を遮蔽と縮尺に効く場所に配置する。
