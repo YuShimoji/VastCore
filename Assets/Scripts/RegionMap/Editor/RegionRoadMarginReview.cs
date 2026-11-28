@@ -27,6 +27,16 @@ namespace Vastcore.RegionMap.Editor
             }
         }
 
+        private static void CaptureVariedGravel(string output, int seed)
+        {
+            using (Stage stage = Build(seed, RegionRoadPreset.Country, false, RoadAppearance.VariedGravel))
+            {
+                Place(stage, 2);
+                RegionTerrainViewMenu.Capture(stage.Camera, null, null);
+                RegionTerrainViewMenu.Capture(stage.Camera, Path.Combine(output, $"country-{seed}"), "gravel-only-entrance.png");
+            }
+        }
+
         private static void CaptureMargins(string output, int seed, RegionRoadPreset preset,
             RoadAppearance previous, RoadAppearance current, int firstView = 0)
         {

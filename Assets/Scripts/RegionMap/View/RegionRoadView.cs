@@ -15,6 +15,8 @@ namespace Vastcore.RegionMap
     public static class RegionRoadView
     {
         private const float PaintLift = 0.018f;
+        internal static IReadOnlyList<float> EntranceDistances { get; } = new[]
+            { -0.26f, 0f, 1f, 2f, 3.5f, 5f, 6.5f, 8f, 15f, RegionRoadsideSite.Setback + 0.35f };
 
         public static GameObject Build(Transform parent, RegionRoadCorridor road, RegionRoadMaterials materials,
             RegionRoadsideSite site = null, bool shapeOnly = false, bool blendedVerge = false)
@@ -128,13 +130,11 @@ namespace Vastcore.RegionMap
             var entrance = new GameObject(site.Id);
             entrance.transform.SetParent(parent, false);
             var strip = new RoadMesh();
-            float[] distances = { -0.26f, 0f, 1f, 2f, 3.5f, 5f, 6.5f, 8f, 15f, RegionRoadsideSite.Setback + 0.35f };
             Vector3 left = default, right = default;
-            for (int i = 0; i < distances.Length; i++)
+            for (int i = 0; i < EntranceDistances.Count; i++)
             {
-                float reach = distances[i];
-                float width = RegionNoise.Lerp(RegionRoadsideSite.MouthHalfWidth, RegionRoadsideSite.DriveHalfWidth,
-                    RegionNoise.Smooth(0f, 8f, reach));
+                float reach = EntranceDistances[i];
+                float width = EntranceHalfWidth(reach);
                 Vector3 newLeft = EntranceEdge(site, reach, -width);
                 Vector3 newRight = EntranceEdge(site, reach, width);
                 if (i > 0) strip.QuadUp(left, newLeft, right, newRight);
@@ -153,6 +153,10 @@ namespace Vastcore.RegionMap
             AddAnchor(entrance.transform, "Entrance", site.Entrance, site.EntranceElevation, site.Outward);
             AddAnchor(entrance.transform, "Plot center", site.PlotCenter, site.PlotElevation, -site.Outward);
         }
+
+        internal static float EntranceHalfWidth(float reach) =>
+            RegionNoise.Lerp(RegionRoadsideSite.MouthHalfWidth, RegionRoadsideSite.DriveHalfWidth,
+                RegionNoise.Smooth(0f, 8f, reach));
 
         internal static Vector3 EntranceEdge(RegionRoadsideSite site, float reach, float along)
         {

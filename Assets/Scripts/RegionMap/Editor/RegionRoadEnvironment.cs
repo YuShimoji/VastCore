@@ -26,7 +26,7 @@ namespace Vastcore.RegionMap.Editor
         private const float HeightRange = 420f;
         private const float Span = 2f * RegionRoadPlan.Extent;
 
-        private enum RoadAppearance { Original, Graded, Landscaped, Footing }
+        private enum RoadAppearance { Original, Graded, Landscaped, Footing, VariedGravel, WornEdge }
 
         [SerializeField] private int seed = 8;
         [SerializeField] private RegionRoadPreset preset;
@@ -131,7 +131,7 @@ namespace Vastcore.RegionMap.Editor
             }
         }
 
-        private static Stage Build(int seed, RegionRoadPreset preset, bool shapeOnly, RoadAppearance appearance = RoadAppearance.Footing)
+        private static Stage Build(int seed, RegionRoadPreset preset, bool shapeOnly, RoadAppearance appearance = RoadAppearance.WornEdge)
         {
             bool detailed = appearance >= RoadAppearance.Graded;
             var stage = new Stage { Plan = new RegionRoadPlan(seed, preset), Detailed = detailed };
@@ -159,15 +159,19 @@ namespace Vastcore.RegionMap.Editor
                         verge.SetTexture("_Soil", Surface("Ground009"));
                         verge.SetTexture("_Turf", Surface("Grass005"));
                         verge.SetFloat("_Refined", refined ? 1f : 0f);
-                        bool footing = appearance == RoadAppearance.Footing;
+                        bool footing = appearance >= RoadAppearance.Footing;
+                        bool variedGravel = appearance >= RoadAppearance.VariedGravel;
+                        bool wornEdge = appearance >= RoadAppearance.WornEdge;
                         if (footing)
                         {
                             verge.SetTexture("_GravelNormal", Surface("Ground007", "NormalGL"));
                             verge.SetFloat("_CloseDetail", 1f);
+                            verge.SetFloat("_WornEdge", wornEdge ? 1f : 0f);
                             NVector2 offset = RegionRoadMargin.VergePocketOffset(seed);
                             verge.SetVector("_PocketOffset", new Vector4(offset.X, offset.Y));
                         }
-                        RegionRoadGroundView.AddMargins(stage.Roads.transform, stage.Plan, Ground, verge, refined, footing);
+                        RegionRoadGroundView.AddMargins(stage.Roads.transform, stage.Plan, Ground, verge, refined, footing,
+                            variedGravel, wornEdge);
                         RegionRoadLandscape.PlantMargins(stage.Roads.transform, stage.Plan, Ground, refined);
                         RegionRoadGroundView.AddRidges(stage.Root.transform, stage.Plan, Ground,
                             Lit(stage, "Distant hills", new Color(0.30f, 0.40f, 0.35f)));
@@ -448,6 +452,12 @@ namespace Vastcore.RegionMap.Editor
                 {
                     CaptureMargins(output, chosenSeed, RegionRoadPreset.Country, RoadAppearance.Landscaped, RoadAppearance.Footing, 2);
                     CaptureMargins(output, unchecked(chosenSeed + 11), RegionRoadPreset.Sweeping, RoadAppearance.Landscaped, RoadAppearance.Footing, 2);
+                }
+                else if (mode == "edge-review")
+                {
+                    CaptureMargins(output, chosenSeed, RegionRoadPreset.Country, RoadAppearance.Footing, RoadAppearance.WornEdge, 2);
+                    CaptureMargins(output, unchecked(chosenSeed + 11), RegionRoadPreset.Sweeping, RoadAppearance.Footing, RoadAppearance.WornEdge, 2);
+                    CaptureVariedGravel(output, chosenSeed);
                 }
                 else if (mode == "draft")
                 {

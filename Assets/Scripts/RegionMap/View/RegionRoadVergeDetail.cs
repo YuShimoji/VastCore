@@ -15,21 +15,24 @@ namespace Vastcore.RegionMap
         private readonly Func<float, float, float> ground;
         private readonly uint seed;
         private readonly NVector2 pocketOffset;
+        private readonly bool variedGravel;
         private readonly Dictionary<Vector2Int, RegionWoodlandGeometry> tiles = new Dictionary<Vector2Int, RegionWoodlandGeometry>();
         private readonly RegionWoodlandGeometry[] grass = new RegionWoodlandGeometry[5];
         private readonly RegionWoodlandGeometry[] stones = new RegionWoodlandGeometry[7];
 
-        internal RegionRoadVergeDetail(RegionRoadPlan plan, Func<float, float, float> height)
+        internal RegionRoadVergeDetail(RegionRoadPlan plan, Func<float, float, float> height, bool variedGravel)
         {
             this.plan = plan;
             ground = height;
+            this.variedGravel = variedGravel;
             seed = unchecked((uint)plan.Seed) ^ 0x0a94d32bu;
             pocketOffset = RegionRoadMargin.VergePocketOffset(plan.Seed);
             for (int i = 0; i < grass.Length; i++) grass[i] = GrassClump(i);
-            for (int i = 0; i < stones.Length; i++) stones[i] = Stone(i);
+            for (int i = 0; i < stones.Length; i++) stones[i] = Stone(i, variedGravel);
         }
 
-        internal void Scatter(List<Vector3> vertices, List<int> indices, List<Vector3> uv, bool entranceSide)
+        internal void Scatter(List<Vector3> vertices, List<int> indices, List<Vector4> uv, bool entranceSide,
+            bool approach = false)
         {
             float siteNorth = plan.Site.Entrance.Y;
             for (int triangle = 0; triangle < indices.Count; triangle += 3)
@@ -50,7 +53,7 @@ namespace Vastcore.RegionMap
                 {
                     float u = RegionNoise.Hash01(i, 1, salt), v = RegionNoise.Hash01(i, 2, salt);
                     if (u + v > 1f) { u = 1f - u; v = 1f - v; }
-                    Vector3 attributes = uv[ia] + u * (uv[ib] - uv[ia]) + v * (uv[ic] - uv[ia]);
+                    Vector4 attributes = uv[ia] + u * (uv[ib] - uv[ia]) + v * (uv[ic] - uv[ia]);
                     float edge = attributes.x;
                     if (edge < 0.24f || attributes.y < 0.82f || edge > 4.55f) continue;
                     Vector3 point = a + u * (b - a) + v * (c - a);
@@ -69,9 +72,23 @@ namespace Vastcore.RegionMap
                     float size = RegionNoise.Hash01(i, 5, salt);
                     float scale = grows ? Mathf.Lerp(0.23f, 0.49f, size)
                         : Mathf.Lerp(0.022f, 0.096f, size * size);
+                    if (!grows && variedGravel)
+                    {
+                        // Keep the particle count and make the coarse fraction a short tail of the same distribution.
+                        scale = 0.021f + 0.048f * size + 0.119f * RegionNoise.Smooth(0.86f, 1f, size);
+                        if (approach)
+                        {
+                            float clearance = (edge - 0.44f) / 2.1f;
+                            scale = Mathf.Min(scale, 1.35f * clearance);
+                        }
+                    }
                     RegionWoodlandGeometry[] forms = grows ? grass : stones;
                     int form = (int)(RegionNoise.Hash01(i, 6, salt) * forms.Length);
-                    point.y = Mathf.Max(point.y, ground(point.x, point.z)) + (grows ? 0f : 0.002f);
+                    point.y = Mathf.Max(point.y, ground(point.x, point.z));
+                    if (!grows)
+                        point.y += variedGravel
+                            ? -scale * Mathf.Lerp(0.035f, 0.078f, RegionNoise.Smooth(0.08f, 0.18f, scale))
+                            : 0.002f;
                     var key = new Vector2Int(Mathf.FloorToInt(point.x / TileSize), Mathf.FloorToInt(point.z / TileSize));
                     if (!tiles.TryGetValue(key, out RegionWoodlandGeometry tile))
                         tiles.Add(key, tile = new RegionWoodlandGeometry());
@@ -125,15 +142,17 @@ namespace Vastcore.RegionMap
             return shape;
         }
 
-        private static RegionWoodlandGeometry Stone(int variant)
+        private static RegionWoodlandGeometry Stone(int variant, bool varied)
         {
             var shape = new RegionWoodlandGeometry();
             uint salt = (uint)(891 + 1579 * variant);
             const int sides = 5;
             var baseRing = new Vector3[sides];
             var bevel = new Vector3[sides];
-            float squash = Mathf.Lerp(0.67f, 1f, RegionNoise.Hash01(2, 8, salt));
-            var tint = Color32.Lerp(new Color32(117, 109, 96, 255), new Color32(173, 164, 145, 255),
+            float squash = Mathf.Lerp(varied ? 0.47f : 0.67f, 1f, RegionNoise.Hash01(2, 8, salt));
+            float height = varied ? Mathf.Lerp(0.58f, 1.08f, RegionNoise.Hash01(8, 4, salt)) : 1f;
+            var tint = Color32.Lerp(varied ? new Color32(105, 103, 97, 255) : new Color32(117, 109, 96, 255),
+                varied ? new Color32(167, 157, 137, 255) : new Color32(173, 164, 145, 255),
                 RegionNoise.Hash01(13, 6, salt));
             for (int i = 0; i < sides; i++)
             {
@@ -142,17 +161,18 @@ namespace Vastcore.RegionMap
                 d.z *= squash;
                 baseRing[i] = d * (0.42f + 0.15f * RegionNoise.Hash01(i, 11, salt)) - Vector3.up * 0.20f;
                 bevel[i] = d * (0.31f + 0.13f * RegionNoise.Hash01(i, 12, salt)) +
-                    Vector3.up * (0.07f + 0.16f * RegionNoise.Hash01(i, 13, salt));
+                    Vector3.up * (height * (0.07f + 0.16f * RegionNoise.Hash01(i, 13, salt)));
             }
             Vector3 crown = new Vector3(0.11f - 0.22f * RegionNoise.Hash01(2, 14, salt),
-                0.16f + 0.24f * RegionNoise.Hash01(2, 15, salt), 0.08f);
+                height * (0.16f + 0.24f * RegionNoise.Hash01(2, 15, salt)), 0.08f);
             for (int i = 0; i < sides; i++)
             {
                 int j = (i + 1) % sides;
                 var shade = Color32.Lerp(tint, new Color32(72, 67, 57, 255), 0.19f + 0.22f * RegionNoise.Hash01(i, 16, salt));
+                var crownShade = varied ? Color32.Lerp(tint, shade, 0.56f * RegionNoise.Hash01(i, 17, salt)) : tint;
                 Face(baseRing[i], bevel[i], bevel[j], shade);
                 Face(baseRing[i], bevel[j], baseRing[j], shade);
-                Face(bevel[i], crown, bevel[j], tint);
+                Face(bevel[i], crown, bevel[j], crownShade);
             }
             return shape;
 

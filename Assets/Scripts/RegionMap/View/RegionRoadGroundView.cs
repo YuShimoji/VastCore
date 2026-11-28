@@ -9,14 +9,16 @@ namespace Vastcore.RegionMap
     /// <summary>Terrain dressing added outside the road's collision surface.</summary>
     public static class RegionRoadGroundView
     {
-        private static readonly float[] VergeOffsets = { 0.16f, 0.68f, 1.3f, 2.12f, 3.25f, 4.4f, 5.55f };
+        private static readonly float[] VergeOffsets = { 0f, 0.16f, 0.68f, 1.3f, 2.12f, 3.25f, 4.4f, 5.55f };
         private static readonly float[] PadOffsets = { -0.11f, 0.22f, 0.74f, 1.45f, 2.4f, 3.55f };
         private static readonly float[] ApproachOffsets = { 0.025f, 0.33f, 0.75f, 1.18f, 1.8f, 2.45f };
 
         public static void AddMargins(Transform parent, RegionRoadPlan plan, Func<float, float, float> height, Material material,
-            bool refined = false, bool closeDetail = false)
+            bool refined = false, bool closeDetail = false, bool variedGravel = false, bool wornEdge = false)
         {
-            var detail = closeDetail ? new RegionRoadVergeDetail(plan, height) : null;
+            var detail = closeDetail ? new RegionRoadVergeDetail(plan, height, variedGravel) : null;
+            int firstColumn = wornEdge ? 0 : 1;
+            int columns = VergeOffsets.Length - firstColumn;
             foreach (RegionRoadCorridor road in new[] { plan.Highway, plan.Arterial })
             {
                 const int tileSegments = 96;
@@ -25,29 +27,30 @@ namespace Vastcore.RegionMap
                     int end = Math.Min(road.Stations.Count - 1, start + tileSegments);
                     var vertices = new List<Vector3>();
                     var indices = new List<int>();
-                    var uv = new List<Vector3>();
+                    var uv = new List<Vector4>();
                     for (int side = -1; side <= 1; side += 2)
                     {
                         int first = vertices.Count;
                         for (int i = start; i <= end; i++)
                         {
                             RegionRoadStation station = road.Stations[i];
-                            foreach (float edge in VergeOffsets)
+                            float clearance = road != plan.Site.Road || side != plan.Site.Side ? 1f :
+                                RegionNoise.Smooth(9.35f, 11.85f, Math.Abs(station.Distance - plan.Site.Station.Distance));
+                            for (int column = firstColumn; column < VergeOffsets.Length; column++)
                             {
+                                float edge = VergeOffsets[column];
                                 float offset = side * (road.Profile.HalfWidth + edge);
                                 NVector2 point = station.AtOffset(offset);
-                                float platform = station.SurfaceAt(offset, road.Profile) - 0.09f;
+                                // The wear starts just above the top of the bevel and meets its existing outer vertex.
+                                float platform = station.SurfaceAt(offset, road.Profile) + (column == 0 ? 0.008f : -0.09f);
                                 float y = Mathf.Lerp(platform, height(point.X, point.Y) + 0.057f,
                                     RegionNoise.Smooth(0.16f, 2.12f, edge));
                                 vertices.Add(new Vector3(point.X, y, point.Y));
-                                float clearance = road != plan.Site.Road || side != plan.Site.Side ? 1f :
-                                    RegionNoise.Smooth(9.35f, 11.85f, Math.Abs(station.Distance - plan.Site.Station.Distance));
                                 float growth = refined ? RegionRoadMargin.VergeGrowth(point, plan.Seed) : 0f;
-                                uv.Add(new Vector3(edge, clearance, growth));
+                                uv.Add(new Vector4(edge, clearance, growth, 1f));
                             }
                         }
 
-                        int columns = VergeOffsets.Length;
                         for (int row = 0; row < end - start; row++)
                         for (int col = 0; col < columns - 1; col++)
                         {
@@ -62,6 +65,7 @@ namespace Vastcore.RegionMap
             }
             AddPadMargin(parent, plan, height, material, refined, detail);
             if (refined) AddApproachMargins(parent, plan, height, material, detail);
+            if (wornEdge) AddApproachLip(parent, plan.Site, material);
             detail?.AddTo(parent);
         }
 
@@ -72,15 +76,14 @@ namespace Vastcore.RegionMap
             RegionRoadsideSite site = plan.Site;
             var vertices = new List<Vector3>();
             var indices = new List<int>();
-            var uv = new List<Vector3>();
+            var uv = new List<Vector4>();
             for (int side = -1; side <= 1; side += 2)
             {
                 int first = vertices.Count;
                 for (int i = 0; i <= segments; i++)
                 {
                     float reach = Mathf.Lerp(1.3f, RegionRoadsideSite.Setback, i / (float)segments);
-                    float width = RegionNoise.Lerp(RegionRoadsideSite.MouthHalfWidth, RegionRoadsideSite.DriveHalfWidth,
-                        RegionNoise.Smooth(0f, 8f, reach));
+                    float width = RegionRoadView.EntranceHalfWidth(reach);
                     Vector3 pavedEdge = RegionRoadView.EntranceEdge(site, reach, side * width);
                     float fade = RegionNoise.Smooth(1.3f, 4.2f, reach) *
                         (1f - RegionNoise.Smooth(RegionRoadsideSite.Setback - 1.3f, RegionRoadsideSite.Setback, reach));
@@ -91,7 +94,7 @@ namespace Vastcore.RegionMap
                             RegionNoise.Smooth(0f, 1.5f, offset));
                         vertices.Add(position);
                         float growth = RegionRoadMargin.VergeGrowth(new NVector2(position.x, position.z), plan.Seed);
-                        uv.Add(new Vector3(0.44f + 2.1f * offset, fade, growth));
+                        uv.Add(new Vector4(0.44f + 2.1f * offset, fade, growth, 0f));
                     }
                 }
                 int columns = ApproachOffsets.Length;
@@ -104,7 +107,44 @@ namespace Vastcore.RegionMap
                 }
             }
             AddMesh(parent, "Gravel fringe alongside the approach", material, vertices, indices, uv);
-            detail?.Scatter(vertices, indices, uv, true);
+            detail?.Scatter(vertices, indices, uv, true, approach: true);
+        }
+
+        private static void AddApproachLip(Transform parent, RegionRoadsideSite site, Material material)
+        {
+            var vertices = new List<Vector3>();
+            var indices = new List<int>();
+            var uv = new List<Vector4>();
+            const int columns = 3;
+            for (int side = -1; side <= 1; side += 2)
+            {
+                int first = vertices.Count;
+                foreach (float reach in RegionRoadView.EntranceDistances)
+                {
+                    float span = side * RegionRoadView.EntranceHalfWidth(reach);
+                    Vector3 edge = RegionRoadView.EntranceEdge(site, reach, span);
+                    Vector3 across = (edge - RegionRoadView.EntranceEdge(site, reach, -span)).normalized;
+                    float fade = RegionNoise.Smooth(1f, 3.5f, reach) *
+                        (1f - RegionNoise.Smooth(23f, RegionRoadsideSite.Setback, reach));
+                    AddPoint(-0.09f, 0.009f);
+                    AddPoint(0f, 0.009f);
+                    AddPoint(0.14f, -0.014f);
+
+                    void AddPoint(float offset, float lift)
+                    {
+                        vertices.Add(edge + across * offset + Vector3.up * lift);
+                        uv.Add(new Vector4(offset, fade, 0.5f, 2f));
+                    }
+                }
+                for (int row = 0; row < RegionRoadView.EntranceDistances.Count - 1; row++)
+                for (int col = 0; col < columns - 1; col++)
+                {
+                    int v = first + row * columns + col;
+                    if (side < 0) AddQuad(indices, v, v + columns, v + 1, v + columns + 1);
+                    else AddQuad(indices, v + 1, v + columns + 1, v, v + columns);
+                }
+            }
+            AddMesh(parent, "Gravel overlap at the paved entrance edge", material, vertices, indices, uv);
         }
 
         private static void AddPadMargin(Transform parent, RegionRoadPlan plan, Func<float, float, float> height,
@@ -113,7 +153,7 @@ namespace Vastcore.RegionMap
             RegionRoadsideSite site = plan.Site;
             var vertices = new List<Vector3>();
             var indices = new List<int>();
-            var uv = new List<Vector3>();
+            var uv = new List<Vector4>();
             float near = RegionRoadsideSite.Setback, far = near + RegionRoadsideSite.Depth;
             float half = RegionRoadsideSite.Frontage * 0.5f;
             float drive = RegionRoadsideSite.DriveHalfWidth + 1.7f;
@@ -144,7 +184,7 @@ namespace Vastcore.RegionMap
                         vertices.Add(new Vector3(point.X, y, point.Y));
                         float end = Mathf.Min(i, segments - i);
                         float growth = refined ? RegionRoadMargin.VergeGrowth(point, plan.Seed) : 0f;
-                        uv.Add(new Vector3(0.78f + 1.45f * offset, Mathf.Lerp(0.65f, 1f, Mathf.Clamp01(end)), growth));
+                        uv.Add(new Vector4(0.78f + 1.45f * offset, Mathf.Lerp(0.65f, 1f, Mathf.Clamp01(end)), growth, 0f));
                     }
                 }
                 int columns = PadOffsets.Length;
@@ -197,7 +237,7 @@ namespace Vastcore.RegionMap
         }
 
         private static void AddMesh(Transform parent, string name, Material material, List<Vector3> vertices,
-            List<int> indices, List<Vector3> uv = null)
+            List<int> indices, List<Vector4> uv = null)
         {
             var mesh = new Mesh { name = name, hideFlags = HideFlags.DontSave };
             mesh.SetVertices(vertices);

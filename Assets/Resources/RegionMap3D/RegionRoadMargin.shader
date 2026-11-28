@@ -8,6 +8,7 @@ Shader "Vastcore/RegionMap/Road Margin"
         _Turf ("Turf", 2D) = "white" {}
         [HideInInspector] _Refined ("Irregular verge", Float) = 0
         [HideInInspector] _CloseDetail ("Short grass and gravel relief", Float) = 0
+        [HideInInspector] _WornEdge ("Gravel overlap at pavement", Float) = 0
         [HideInInspector] _PocketOffset ("Grass patch position", Vector) = (0, 0, 0, 0)
     }
     SubShader
@@ -34,6 +35,7 @@ Shader "Vastcore/RegionMap/Road Margin"
             CBUFFER_START(UnityPerMaterial)
                 half _Refined;
                 half _CloseDetail;
+                half _WornEdge;
                 float4 _PocketOffset;
             CBUFFER_END
 
@@ -41,7 +43,7 @@ Shader "Vastcore/RegionMap/Road Margin"
             {
                 float3 positionOS : POSITION;
                 float3 normalOS : NORMAL;
-                float3 edge : TEXCOORD0;
+                float4 edge : TEXCOORD0;
             };
 
             struct Varyings
@@ -49,7 +51,7 @@ Shader "Vastcore/RegionMap/Road Margin"
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
                 half3 normalWS : TEXCOORD1;
-                float3 edge : TEXCOORD2;
+                float4 edge : TEXCOORD2;
                 half fog : TEXCOORD3;
             };
 
@@ -106,8 +108,28 @@ Shader "Vastcore/RegionMap/Road Margin"
                     fringe = 1.55 * (input.edge.z - 0.5) + 1.0 * (Patch(world * 0.43) - 0.5) + 0.62 * (mottle - 0.5);
                 }
                 half alpha = input.edge.y * (1.0h - smoothstep(3.75, 5.5, edge + fringe));
+                half gravelTint = 1.0h;
+                half gravelRelief = 1.0h;
+                float edgeFootprint = clamp(fwidth(edge), 0.008, 0.036);
+                if (_WornEdge > 0.5h && input.edge.w > 0.5 && edge < 0.68)
+                {
+                    // Edge kind 1 is the original road bevel. Kind 2 is the approach strip across its paved edge.
+                    bool approach = input.edge.w > 1.5;
+                    float patches = Patch(world * 4.2 + _PocketOffset.xy);
+                    float influence = approach ? 1.0 : 1.0 - smoothstep(0.16, 0.68, edge);
+                    gravelTint = lerp(1.0h, lerp(0.90h, 1.07h, patches), influence);
+                    gravelRelief = lerp(1.0h, lerp(0.58h, 1.03h, patches), influence);
+                    if (edge < 0.16)
+                    {
+                        float teeth = lerp(patches, Patch(world * 19.0), 0.36);
+                        float threshold = approach ? lerp(-0.069, 0.024, teeth) : lerp(0.014, 0.118, teeth);
+                        float overlap = smoothstep(threshold - edgeFootprint, threshold + edgeFootprint, edge);
+                        alpha *= overlap * (approach ? 1.0 - smoothstep(0.015, 0.14, edge) : 1.0);
+                    }
+                    if (approach) edge = 0.0;
+                }
                 clip(alpha - 0.006h);
-                half3 gravel = SAMPLE_TEXTURE2D(_Gravel, sampler_Gravel, world * 0.48).rgb * half3(0.73h, 0.70h, 0.65h);
+                half3 gravel = SAMPLE_TEXTURE2D(_Gravel, sampler_Gravel, world * 0.48).rgb * half3(0.73h, 0.70h, 0.65h) * gravelTint;
                 half3 loam = SAMPLE_TEXTURE2D(_Soil, sampler_Soil, world * float2(0.42, 0.32)).rgb;
                 half3 turf = SAMPLE_TEXTURE2D(_Turf, sampler_Turf, world / 3.3).rgb * half3(0.55h, 0.68h, 0.48h);
                 half grass = smoothstep(1.95, 4.0, edge + fringe);
@@ -137,7 +159,7 @@ Shader "Vastcore/RegionMap/Road Margin"
                     half visible = 1.0h - smoothstep(0.025h, 0.15h, footprint);
                     if (visible > 0.01h && mineral > 0.05h)
                     {
-                        half3 relief = GravelNormal(normal, world * 0.48, dx * 0.48, dy * 0.48, 0.74h * mineral);
+                        half3 relief = GravelNormal(normal, world * 0.48, dx * 0.48, dy * 0.48, 0.74h * mineral * gravelRelief);
                         normal = normalize(lerp(normal, relief, visible));
                     }
                 }
