@@ -12,6 +12,7 @@ namespace Vastcore.ModernCity.Editor
 {
     internal enum CityRoom { Cafe, Retail, Reception, Office, Studio, Storage }
     internal enum CityStreetPlan { CornerShops, SideStreet }
+    internal enum CityRoof { Parapet, Cornice, Lantern, Monitor }
 
     internal sealed class CityPlot
     {
@@ -26,10 +27,13 @@ namespace Vastcore.ModernCity.Editor
         internal readonly CityRoom UpperRoom;
         internal readonly bool RecessedStorefront;
         internal readonly bool UpperSetback;
+        internal readonly CityRoof Roof;
+        internal readonly bool Forecourt;
 
         internal CityPlot(string name, float x, float z, int across, int deep, int floors, float yaw,
             CityFacade facade, CityRoom groundRoom, CityRoom upperRoom, float elevation = CityStreetKit.Pavement,
-            bool recessedStorefront = false, bool upperSetback = false)
+            bool recessedStorefront = false, bool upperSetback = false, CityRoof roof = CityRoof.Parapet,
+            bool forecourt = false)
         {
             Name = name;
             Origin = new Vector3(x, elevation, z);
@@ -42,6 +46,8 @@ namespace Vastcore.ModernCity.Editor
             UpperRoom = upperRoom;
             RecessedStorefront = recessedStorefront;
             UpperSetback = upperSetback && floors >= 3;
+            Roof = roof;
+            Forecourt = forecourt;
         }
 
         internal float Width => Across * CityBuildingKit.Bay;
@@ -99,7 +105,7 @@ namespace Vastcore.ModernCity.Editor
                 new CityPlot("Corner cafe", junction - 24, 10.2f, 4, 3 + rng.Next(2), 3 + rng.Next(2), 0,
                     CityFacade.Stone, CityRoom.Cafe, CityRoom.Studio, recessedStorefront: !narrow),
                 new CityPlot("Brick shops", junction - 42 - offset * 4, 10.7f, 3 + rng.Next(2), 3, 2 + rng.Next(2), 0,
-                    CityFacade.Brick, CityRoom.Retail, CityRoom.Office),
+                    CityFacade.Brick, CityRoom.Retail, CityRoom.Office, roof: CityRoof.Cornice),
                 new CityPlot("Corner offices", junction + 8, 10.4f, 5, 4, 5 + rng.Next(2), 0,
                     CityFacade.Glass, CityRoom.Reception, CityRoom.Office, upperSetback: true),
                 new CityPlot("Stone shop row", junction + 30, 11f, 3, 3 + rng.Next(2), 3 + rng.Next(2), 0,
@@ -107,13 +113,22 @@ namespace Vastcore.ModernCity.Editor
                 new CityPlot("Across the street", 26, southEdge, 4 + rng.Next(2), 3, 3 + rng.Next(2), 180,
                     CityFacade.Brick, CityRoom.Cafe, CityRoom.Studio, upperSetback: true),
                 new CityPlot("Lane building", 3, -11.4f, 3, 3, 2 + rng.Next(2), 180,
-                    CityFacade.Stone, CityRoom.Retail, CityRoom.Storage),
+                    CityFacade.Stone, CityRoom.Retail, CityRoom.Storage, roof: CityRoof.Lantern),
                 new CityPlot("South offices", -11, southEdge - 0.5f, 4, 4, 4 + rng.Next(2), 180,
                     CityFacade.Glass, CityRoom.Reception, CityRoom.Office, upperSetback: true),
                 new CityPlot("End of the block", -29, -11.6f, 3, 3, 2 + rng.Next(2), 180,
                     CityFacade.Brick, CityRoom.Retail, CityRoom.Studio),
                 new CityPlot("Market square", -52, -6, 3, 3, 3 + rng.Next(2), -90,
-                    CityFacade.Stone, CityRoom.Retail, CityRoom.Studio)
+                    CityFacade.Stone, CityRoom.Retail, CityRoom.Studio, roof: CityRoof.Cornice),
+                new CityPlot("East corner offices", 82, 10.65f, 4, 3, narrow ? 4 : 5, 0,
+                    CityFacade.Glass, CityRoom.Reception, CityRoom.Office, upperSetback: true, forecourt: true),
+                new CityPlot("East shop row", 124, 7f, 3, 3, 2 + rng.Next(2), 90,
+                    CityFacade.Stone, CityRoom.Retail, CityRoom.Studio, recessedStorefront: true,
+                    roof: CityRoof.Lantern, forecourt: true),
+                new CityPlot("South crossing studios", 108, -10.65f, 4, 3, narrow ? 4 : 3, 180,
+                    CityFacade.Brick, CityRoom.Retail, CityRoom.Studio, roof: CityRoof.Cornice, forecourt: true),
+                new CityPlot("Rear workshops", 20, -42.25f, 4, 3, 2, 180,
+                    CityFacade.Brick, CityRoom.Storage, CityRoom.Studio, roof: CityRoof.Monitor, forecourt: true)
             };
         }
 
@@ -150,23 +165,29 @@ namespace Vastcore.ModernCity.Editor
             var roof = CityKitAssets.Group("Roof", building,
                 new Vector3(0, plot.Floors * CityBuildingKit.Storey, 0)).transform;
             int roofFront = plot.FrontBay(plot.Floors - 1);
+            string parapet = plot.Roof == CityRoof.Cornice ? "Deep cornice parapet" : "Parapet";
             for (int x = 0; x < plot.Across; x++)
             {
                 float centre = (x + 0.5f) * CityBuildingKit.Bay;
                 for (int z = roofFront; z < plot.Deep; z++)
                     Place(kit, "Roof slab", roof, centre, 0, (z + 0.5f) * CityBuildingKit.Bay);
-                Place(kit, "Parapet", roof, centre, 0, roofFront * CityBuildingKit.Bay);
-                Place(kit, "Parapet", roof, centre, 0, plot.Length, 180);
+                Place(kit, parapet, roof, centre, 0, roofFront * CityBuildingKit.Bay);
+                Place(kit, parapet, roof, centre, 0, plot.Length, 180);
             }
             for (int z = roofFront; z < plot.Deep; z++)
             {
                 float centre = (z + 0.5f) * CityBuildingKit.Bay;
-                Place(kit, "Parapet", roof, 0, 0, centre, 90);
-                Place(kit, "Parapet", roof, plot.Width, 0, centre, -90);
+                Place(kit, parapet, roof, 0, 0, centre, 90);
+                Place(kit, parapet, roof, plot.Width, 0, centre, -90);
             }
 
             if (plot.UpperSetback && plot.Facade == CityFacade.Glass)
                 Place(kit, "Roof plant screen", roof, plot.Width * 0.5f, 0, plot.Length - 5.0f);
+            if (plot.Roof == CityRoof.Lantern)
+                Place(kit, "Roof lantern", roof, plot.Width - 4.15f, 0, plot.Length - 4.1f);
+            if (plot.Roof == CityRoof.Monitor)
+                for (float x = 4; x < plot.Width - 3; x += 4)
+                    Place(kit, "Workshop roof monitor", roof, x, 0, plot.Length * 0.5f);
 
             // Link service doors to the slab behind each building and to the ground along its side.
             for (int x = 0; x < plot.Across; x++)
@@ -174,6 +195,9 @@ namespace Vastcore.ModernCity.Editor
                 float centre = (x + 0.5f) * CityBuildingKit.Bay;
                 kit.Place(CityKitAssets.Street, "Paving tile", building,
                     new Vector3(centre, -CityStreetKit.Pavement, plot.Length + 2));
+                if (plot.Forecourt)
+                    kit.Place(CityKitAssets.Street, "Paving tile", building,
+                        new Vector3(centre, -CityStreetKit.Pavement - CityStreetKit.ApronDrop - 0.006f, -2));
             }
             for (int z = 0; z <= plot.Deep; z++)
             {

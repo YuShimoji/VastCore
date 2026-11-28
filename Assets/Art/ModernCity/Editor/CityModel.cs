@@ -16,12 +16,13 @@ namespace Vastcore.ModernCity.Editor
         private readonly List<(Vector3 centre, Vector3 size, Quaternion rotation)> colliders =
             new List<(Vector3, Vector3, Quaternion)>();
 
-        internal void Box(Material material, Vector3 centre, Vector3 size, bool solid = false)
+        internal void Box(Material material, Vector3 centre, Vector3 size, bool solid = false, Vector2 uvOffset = default)
         {
-            Box(material, centre, size, Quaternion.identity, solid);
+            Box(material, centre, size, Quaternion.identity, solid, uvOffset);
         }
 
-        internal void Box(Material material, Vector3 centre, Vector3 size, Quaternion rotation, bool solid = false)
+        internal void Box(Material material, Vector3 centre, Vector3 size, Quaternion rotation, bool solid = false,
+            Vector2 uvOffset = default)
         {
             Vector3 half = size * 0.5f;
             Vector3 Corner(float x, float y, float z) =>
@@ -34,12 +35,12 @@ namespace Vastcore.ModernCity.Editor
             var pnp = Corner(1, -1, 1);
             var ppn = Corner(1, 1, -1);
             var ppp = Corner(1, 1, 1);
-            Quad(material, nnn, npn, ppn, pnn);
-            Quad(material, pnp, ppp, npp, nnp);
-            Quad(material, npn, npp, ppp, ppn);
-            Quad(material, nnp, nnn, pnn, pnp);
-            Quad(material, nnn, nnp, npp, npn);
-            Quad(material, pnn, ppn, ppp, pnp);
+            Quad(material, nnn, npn, ppn, pnn, uvOffset);
+            Quad(material, pnp, ppp, npp, nnp, uvOffset);
+            Quad(material, npn, npp, ppp, ppn, uvOffset);
+            Quad(material, nnp, nnn, pnn, pnp, uvOffset);
+            Quad(material, nnn, nnp, npp, npn, uvOffset);
+            Quad(material, pnn, ppn, ppp, pnp, uvOffset);
             if (solid)
                 CollisionBox(centre, size, rotation);
         }
@@ -48,7 +49,8 @@ namespace Vastcore.ModernCity.Editor
             CollisionBox(centre, size, Quaternion.identity);
 
         // Independent face, edge and corner normals leave a highlight on the chamfer.
-        internal void BeveledBox(Material material, Vector3 centre, Vector3 size, float bevel, bool solid = false)
+        internal void BeveledBox(Material material, Vector3 centre, Vector3 size, float bevel, bool solid = false,
+            Vector2 uvOffset = default)
         {
             Vector3 half = size * 0.5f;
             float edge = Mathf.Min(bevel, 0.95f * Mathf.Min(half.x, Mathf.Min(half.y, half.z)));
@@ -67,9 +69,9 @@ namespace Vastcore.ModernCity.Editor
             void Face(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
             {
                 if (FacesOut(a, b, c))
-                    Quad(material, a, b, c, d);
+                    Quad(material, a, b, c, d, uvOffset);
                 else
-                    Quad(material, a, d, c, b);
+                    Quad(material, a, d, c, b, uvOffset);
             }
 
             for (int axis = 0; axis < 3; axis++)
@@ -124,7 +126,7 @@ namespace Vastcore.ModernCity.Editor
             colliders.Add((centre, size, rotation));
         }
 
-        internal void Quad(Material material, Vector3 a, Vector3 b, Vector3 c, Vector3 d)
+        internal void Quad(Material material, Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector2 uvOffset = default)
         {
             int first = vertices.Count;
             var indices = Indices(material);
@@ -136,10 +138,10 @@ namespace Vastcore.ModernCity.Editor
             indices.Add(first + 3);
             float width = Vector3.Distance(a, d);
             float height = Vector3.Distance(a, b);
-            Add(a, Vector2.zero);
-            Add(b, new Vector2(0, height));
-            Add(c, new Vector2(width, height));
-            Add(d, new Vector2(width, 0));
+            Add(a, uvOffset);
+            Add(b, uvOffset + new Vector2(0, height));
+            Add(c, uvOffset + new Vector2(width, height));
+            Add(d, uvOffset + new Vector2(width, 0));
         }
 
         internal void Tube(Material material, Vector3 start, Vector3 end, float radius, int sides = 10)

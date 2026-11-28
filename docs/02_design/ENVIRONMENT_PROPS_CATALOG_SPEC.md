@@ -267,21 +267,21 @@ GameProjects の木箱6型・木樽2型・扇状の瓦礫1型を、元GLBのSHA-
 
 ### 9.1 組み立てと確認
 
-- [Modern City Kit](../../Assets/Art/ModernCity/)の `ModernCity.unity` を開くか、`Vastcore > Modern City > Open Sample` を選ぶ。PlayでGameビューをクリックし、WASDとマウスで歩く。Escでマウスを解放する。ゲームパッドは左右スティック。
-- `Variants` の `Street block` は seed・街路形・Props密度を変えて別シーンを作る。`Building` は間口・奥行き・階数・外装・階の用途を選んで、開いているシーンへ1棟を足す。`Prefabs/Assembled` の3棟や `Buildings`・`Street`・`Props` の単体部材も直接置ける。
-- ブロックを組む基準は幅・奥行き4 m、階高3 m、外装は底面中央を原点に正面が−Z。床上端が各階の基準面。階段の上階側の4 m角を開け、上り終端側には床をつなぎ、開口の縁に柵を付ける。主要入口の開口1.84 m、搬入口1.46 m。幅0.68 m・高さ1.8 mの歩行カプセルで確認する。
-- `Export Asset Package` は `Assets/Art/ModernCity` 内の部材・見本・コード・画像を配布する。Unity 6000.3.6f1、URP 17.3.0、Input System 1.18.0。出所は同梱の `Modern City Kit.txt` とテクスチャの台帳。DS-011・SP-021は各機能の入口から使う。
-- バッチの入口は [CityReview](../../Assets/Art/ModernCity/Editor/CityReview.cs) の `BuildCaptureAndPlayFromCommandLine`。Unity 6000.3.6f1に `-batchmode -projectPath <VastCore> -executeMethod Vastcore.ModernCity.Editor.CityReview.BuildCaptureAndPlayFromCommandLine -cityOutput <出力先>` を渡す。Prefabと見本シーンを作り直し、歩行・撮影・配布用書き出し・Playモードを順に確認する。
+- [Modern City Kit](../../Assets/Art/ModernCity/)の `ModernCity.unity` または `Vastcore > Modern City > Open Sample`。PlayしてGameビューをクリックし、WASDとマウス、または左右スティックで歩く。Escでマウス解放。
+- `Variants` の `Street block` はseed・街路形・Props密度、`Building` は間口・奥行き・階数・外装・屋根・階用途を選ぶ。`Assembled` と単体Prefabは直接置ける。
+- 幅・奥行き4 m、階高3 m。外装の底面中央が原点で正面は−Z。床上端に合わせ、階段上に4 m角の開口と柵、上り終端に床を置く。主要入口1.84 m、搬入口1.46 m。歩行カプセル幅0.68 m・高1.8 m。
+- `Export Asset Package` はキット内の部材・シーン・コード・画像を配布する。Unity 6000.3.6f1、URP 17.3.0、Input System 1.18.0。出所は `Modern City Kit.txt` と画像台帳。DS-011・SP-021は各入口から使う。
+- Unityに `-batchmode -projectPath <VastCore> -executeMethod Vastcore.ModernCity.Editor.CityReview.BuildCaptureAndPlayFromCommandLine -cityOutput <出力先>` を渡すと、再生成・撮影・書き出し・Playを確認できる。[CityReview](../../Assets/Art/ModernCity/Editor/CityReview.cs)
 
 ### 9.2 次の人工物キットへ持ち越す検証
 
-単色で輪郭と歩道・開口・床・階段を確認し、店頭・室用途・搬入口・屋上を配置した。初回撮影の車道の途切れ、カフェの空床、飽和した階段灯に対し、歩道から入口を撮り、小広場・客席・陳列・低い階段灯を足した。舗装と敷居の重なりは敷地側を床面より28 mm下げて解消した。
+単色で輪郭・歩道・開口・床・階段を確認し、店頭・室内・搬入口・屋上を配置。車道の端・カフェの空床・階段灯の飽和は、小広場・客席と陳列・低い階段灯で直した。敷居との重なりを避ける舗装の差は28 mm。
 
-次も外から用途が読め、室内で目的地と階の接続が分かるかを先に歩いて試す。棚・椅子・照明は組み方で用途を出す。別配置を含む2地点で固定カメラと日照を揃え、通行・生成時間・描画時間を測る。輪郭と材質・室内照明には距離別の視点を使う。
+棚・椅子・照明の組み方で用途を表し、外から見て室内へ歩く。別配置を含む2地点の遠・中・近で、カメラと日照を揃え、輪郭・仕上げ・通行・生成・描画を確認する。
 
 初版は建築32・街路8・Props 71・組立見本3。seed 417／1031の各9棟で正面・搬入口と階の22／23接続を確認し、メニューからPlayしてカフェへ入った。Props拡充時の描画＋1画素読み戻し中央値の増分はRTX 4060 Ti・1600×900で0.93／1.03 ms。GPU単独は未計測。[初版比較](<D:/AI-Runs/VastCore/modern-city-block/review.html>)
 
-初版で残った平屋根の反復、石とガラスの反射、使用感は、屋根・入口・主要什器の順で比較し、同じ部材を別棟で使って確かめる。
+平屋根、石とガラス、使用感を屋根・入口・主要什器の順で比べ、別棟でも同じ部材を使う。
 
 検証用作業ツリー `C:\Users\PLANNER007\.codex\worktrees\modern-city-block\VastCore` はチャット既定のため保留。正本へ反映済み（`803a724`）。既定から外れた時点でアーカイブできる。
 
@@ -293,8 +293,18 @@ GameProjects の木箱6型・木樽2型・扇状の瓦礫1型を、元GLBのSHA-
 
 ### 9.4 街区全体と別プロジェクトへの配布
 
-[形の試作と前後比較](<D:/AI-Runs/VastCore/modern-city-block/district-release/review.html>)。両seedの遠・中・近を太陽高度60／38／20／10°で撮影。上層後退は俯瞰と見上げ、街路延長は東へ歩いた時に効いた。9棟と4 m格子で街路を裏道へ接続し、3棟の最上階を1ベイ後退させた。木の庇と商品棚、業務棟の水平庇と受付、搬入口の荷役表示で用途を分けた。再撮影前に入口を隠す樹木を移し、下向きの照明と街路の反射を足した。[公開デモ](https://alleybits.itch.io/japan-street-modular-pack-low-poly-town/devlog/1772165/building-a-japanese-street-from-one-modular-kit)
+[前後比較](<D:/AI-Runs/VastCore/modern-city-block/district-release/review.html>)は両seedの遠・中・近、太陽高度60／38／20／10°。9棟と4 m格子で裏道に接続し、3棟の最上階を1ベイ後退。俯瞰と見上げに後退、東の歩道に延長が効いた。木の庇と商品棚、水平庇と受付、荷役表示で用途を分け、樹木を移し、下向き照明と反射を足した。[公開デモ](https://alleybits.itch.io/japan-street-modular-pack-low-poly-town/devlog/1772165/building-a-japanese-street-from-one-modular-kit)
 
-配布版は建築41、街路12、Props 80、組立見本3。両seedの22／23階段接続と、Playでカフェ・正面受付・搬入口から+3 mの往復を確認。別URPプロジェクトで見本をPlayし、seed 1031に12 mの受付と16 mの物販を追加。生成直後の撮影では材質の明暗が乱れたため、保存シーンを別起動で開き直して撮った。
+配布は建築41・街路12・Props 80・組立見本3。階段22／23接続、Playでカフェ・正面受付・搬入口から+3 m往復。別URPプロジェクトでPlayし、seed 1031に12 m受付と16 m物販を配置。生成直後の材質の乱れは、保存後に別起動で再撮影して解消した。
 
-RTX 4060 Ti、1600×900、固定カメラで描画＋1画素読み戻しの中央値は俯瞰18.70→9.09 ms、交差点12.36→8.64 ms、受付7.70→8.82 ms。変更後の俯瞰で樹木を近景形状に固定すると12.00 ms。反射は見本の配置から焼いた。窓面の映り込み、石の微細な濃淡、室内の間接光、外周の建物密度に差が残る。次も輪郭のラフ、用途別の実画面、別間口の通行、他プロジェクトへの取り込みを同じ部材で順に照合する。
+RTX 4060 Ti・1600×900で描画＋1画素読み戻しの中央値は俯瞰18.70→9.09 ms、交差点12.36→8.64 ms、受付7.70→8.82 ms。変更後の俯瞰で樹木を近景固定すると12.00 ms。見本の反射を焼いた。映り込み、石の濃淡、室内の間接光、外周の密度に差が残った。次は形のラフ・実画面・別間口の通行・別プロジェクトへの取り込みを同じ部材で確認する。
+
+### 9.5 外周・屋根線と仕上げ
+
+[固定撮影の比較](<D:/AI-Runs/VastCore/modern-city-block/perimeter/review.html>)。東に3棟、南の裏通りに作業棟を足し、道路の先を店前広場で受けた。計13棟が入室可。屋根は後退、コーニス、塔屋、採光屋根。外壁・庇下・歩道に石の濃淡を入れ、舗装と石板のUVをずらして反復を抑えた。
+
+街路4区間の反射と室内860点の間接光をベイク。天井板のサンプル位置を揃え、階段灯を踏面に向けた。反射の比較は別起動で空の画像に差し替え、同じカメラを使う。残差は街路の先の空白、規則的な屋根縁、窓に映る樹冠と細かな室内陰影。
+
+両seedの13棟・階段30／32接続を確認。東交差点を横断して上階へPlayで往復し、別URPで見本と12 m／16 mの組み替えを確認した。新しい配置は反射をPlay開始時に取得し、間接光は保存後に照明ウィンドウから焼ける。
+
+見込み35〜55分。初回固定撮影から別プロジェクトのPlay確認まで33分。

@@ -4,11 +4,11 @@ Install into a URP project. The verified combination is Unity 6000.3.6f1, Univer
 
 Open Vastcore > Modern City > Open Sample. In Play, click the Game view, walk with WASD and look with the mouse. Esc releases the mouse. A gamepad uses both sticks.
 
-Choose Vastcore > Modern City > Variants. In Street block, try Side Street with seed 1031. In Building, set the entry corner, facing, bay count, storey count, facade and room uses. Reception selects the lobby entrance and canopy. Stone retail uses the recessed shopfront in the street examples.
+Choose Vastcore > Modern City > Variants. In Street block, try Side Street with seed 1031. In Building, set the entry corner, facing, bay count, storey count, facade, roof profile and room uses. Reception selects the lobby entrance and canopy. Stone retail uses the recessed shopfront in the street examples.
 
 Browse Assets/Art/ModernCity/Prefabs. Assembled holds ready-to-place buildings. Buildings holds bays, floors, stairs, canopies and roof details. Street holds 4 m road and paving pieces and 8 m planted courts. Props holds furnishings, vegetation and service equipment.
 
-The sample includes a static street reflection cubemap. Update or replace the reflection probe for your own arrangement.
+The sample includes four baked street reflections and baked room Light Probes. Enable reflection probe blending and box projection on your URP asset for the same falloff at the boundaries. A generated street captures its own reflections on the first Play. To bake the prepared room light probes for a street variant, save its scene and choose Generate Lighting in the Lighting window with Light Probe Groups selected in the URP asset.
 
 Work in metres with a 4 m bay and 3 m storey. An assembled building starts at its front left corner. A wall bay starts at its bottom centre and faces -Z. Slab and sidewalk pivots sit at the tile centre, with floors aligned to the slab's upper surface. The sidewalk upper surface is 0.14 m above the street origin. Align entries to the walkable surface. Leave the 4 m stair bay open directly above the flight and use the matching landing and guard pieces.
 

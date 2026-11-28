@@ -17,7 +17,6 @@ namespace Vastcore.ModernCity.Editor
     public static class CityReview
     {
         private const int AlternateSeed = 1031;
-        private const string StreetCubemap = CityKitAssets.Root + "/Textures/Storefront/Street_reflection.exr";
         private const string ImportReviewScene = "Assets/ModernCity Import Check.unity";
 
         public static void BuildSampleFromCommandLine() => BuildSample(rebuildAllExamples: true);
@@ -30,13 +29,18 @@ namespace Vastcore.ModernCity.Editor
             string output = OutputDirectory();
             var sample = OpenSavedSample();
             var sampleCheck = CityVerification.Walk(sample, CityBlock.Design(CityBlock.DefaultSeed, CityStreetPlan.CornerShops));
+            int lightProbes = LightmapSettings.lightProbes ? LightmapSettings.lightProbes.count : 0;
+            int reflections = Object.FindObjectsByType<ReflectionProbe>(FindObjectsSortMode.None)
+                .Count(probe => probe.customBakedTexture);
+            if (lightProbes == 0 || reflections != 4)
+                throw new InvalidOperationException("The imported sample is missing its baked lighting or reflections.");
             if (!EditorApplication.ExecuteMenuItem("Vastcore/Modern City/Variants..."))
                 throw new InvalidOperationException("The imported kit could not open the Variants window.");
             var variant = CityKitMenu.GenerateStreet(AlternateSeed, CityStreetPlan.SideStreet, CityDetail.Furnished);
-            var lobby = new CityPlot("Reassembled 12 m lobby", 82, 10.45f, 3, 3, 2, 0,
-                CityFacade.Glass, CityRoom.Reception, CityRoom.Office);
-            var shop = new CityPlot("Reassembled 16 m shop", 100, 10.65f, 4, 3, 2, 0,
-                CityFacade.Stone, CityRoom.Retail, CityRoom.Storage);
+            var lobby = new CityPlot("Reassembled 12 m lobby", 81, -39.8f, 3, 3, 2, 90,
+                CityFacade.Glass, CityRoom.Reception, CityRoom.Office, forecourt: true);
+            var shop = new CityPlot("Reassembled 16 m shop", 81, -57.9f, 4, 3, 2, 90,
+                CityFacade.Stone, CityRoom.Retail, CityRoom.Storage, roof: CityRoof.Lantern, forecourt: true);
             var lobbyRoot = CityKitMenu.PlaceBuilding(lobby, CityDetail.Furnished, AlternateSeed);
             var shopRoot = CityKitMenu.PlaceBuilding(shop, CityDetail.Furnished, AlternateSeed);
             var parts = new[] { lobbyRoot, shopRoot }.SelectMany(t => t.GetComponentsInChildren<Transform>())
@@ -53,6 +57,7 @@ namespace Vastcore.ModernCity.Editor
             {
                 $"{Application.unityVersion}; {GraphicsSettings.currentRenderPipeline?.name}; {PlayerSettings.colorSpace}.",
                 sampleCheck, layoutCheck,
+                $"Imported sample uses {lightProbes} baked room probes and {reflections} baked reflection maps.",
                 $"{parts.Length} distinct imported Prefabs across the 12 m lobby and 16 m shop.",
                 $"Saved {ImportReviewScene} in the recipient project."
             });
@@ -70,7 +75,7 @@ namespace Vastcore.ModernCity.Editor
             try
             {
                 Shot(camera, OutputDirectory(), "reopened-layout",
-                    new Vector3(75f, 6.6f, -8.0f), new Vector3(98, 3.0f, 14), 68, warmupFrames: 3);
+                    new Vector3(68f, 5.7f, -31), new Vector3(84, 3f, -54), 68, warmupFrames: 3);
             }
             finally
             {
@@ -96,12 +101,16 @@ namespace Vastcore.ModernCity.Editor
             timer.Restart();
             CityBlock sample = Create(kit, CityBlock.DefaultSeed, CityStreetPlan.CornerShops, CityDetail.Furnished);
             long assembly = timer.ElapsedMilliseconds;
+            Hash128 signature = CityVerification.Signature(sample.Root);
+            CityLighting.PrepareIndirect(sample);
             PersistBuildings(sample, rebuildAllExamples);
-            BakeStreetReflection();
             if (!EditorSceneManager.SaveScene(sample.Scene, CityKitAssets.SampleScene))
                 throw new IOException("Could not save the Modern City sample scene.");
+            string indirect = CityLighting.BakeIndirect();
+            CityLighting.StreetReflections(bake: true);
+            if (!EditorSceneManager.SaveScene(sample.Scene))
+                throw new IOException("Could not save the Modern City lighting.");
             Capture(sample, output, "sample", CityBlock.DefaultSun);
-            Hash128 signature = CityVerification.Signature(sample.Root);
             var savedScene = EditorSceneManager.OpenScene(CityKitAssets.SampleScene);
             string sampleCheck = CityVerification.Walk(savedScene, sample.Plots);
             var alternate = Create(kit, AlternateSeed, CityStreetPlan.SideStreet, CityDetail.Furnished);
@@ -120,31 +129,11 @@ namespace Vastcore.ModernCity.Editor
                 $"Prefab baking: {baking} ms; sample assembly: {assembly} ms (including Props).",
                 sampleCheck,
                 alternateCheck,
+                indirect,
                 $"Sample {signature}; alternate {alternateSignature}; rebuild of sample matches. Seed alone changes placement.",
                 $"Prefab counts: buildings {Prefabs(CityKitAssets.Buildings)}, streets {Prefabs(CityKitAssets.Street)}, props {Prefabs(CityKitAssets.Props)}.",
                 $"Sample renderers: {rebuilt.Root.GetComponentsInChildren<MeshRenderer>().Length}."
             });
-        }
-
-        private static void BakeStreetReflection()
-        {
-            var probe = CityKitAssets.Group("Street reflection", null, new Vector3(-7f, 2.6f, 0.95f))
-                .AddComponent<ReflectionProbe>();
-            probe.mode = ReflectionProbeMode.Custom;
-            probe.renderDynamicObjects = true;
-            probe.resolution = 128;
-            probe.hdr = true;
-            probe.size = new Vector3(88, 13, 25);
-            probe.boxProjection = true;
-            probe.intensity = 0.65f;
-            probe.nearClipPlane = 0.28f;
-            probe.farClipPlane = 130;
-            if (!Lightmapping.BakeReflectionProbe(probe, StreetCubemap))
-                throw new InvalidOperationException("Could not capture the street reflection.");
-            AssetDatabase.ImportAsset(StreetCubemap, ImportAssetOptions.ForceSynchronousImport);
-            probe.customBakedTexture = AssetDatabase.LoadAssetAtPath<Cubemap>(StreetCubemap);
-            if (!probe.customBakedTexture)
-                throw new InvalidOperationException("Unity did not import the street reflection as a cubemap.");
         }
 
         public static void CaptureComparisonFromCommandLine()
@@ -207,7 +196,7 @@ namespace Vastcore.ModernCity.Editor
             BuildSample(rebuildAllExamples: false);
             string output = OutputDirectory();
             var alternate = Create(new CityKitAssets(), AlternateSeed, CityStreetPlan.SideStreet, CityDetail.Furnished);
-            var shop = alternate.Plots.Single(plot => plot.RecessedStorefront);
+            var shop = alternate.Plots.Single(plot => plot.Name == "Stone shop row");
             var usedParts = VerifyStorefrontPrefabs(alternate.Buildings[shop]);
             var saved = EditorSceneManager.OpenScene(CityKitAssets.SampleScene);
             var cafe = saved.GetRootGameObjects().Select(root => root.transform.Find("Corner cafe")).First(x => x != null);
@@ -342,7 +331,11 @@ namespace Vastcore.ModernCity.Editor
             }
         }
 
-        public static void CaptureDistrictFromCommandLine()
+        public static void CaptureDistrictFromCommandLine() => CaptureDistrict(skyOnly: false);
+
+        public static void CaptureSkyReflectionsFromCommandLine() => CaptureDistrict(skyOnly: true);
+
+        private static void CaptureDistrict(bool skyOnly)
         {
             string output = OutputDirectory();
             var plots = CityBlock.Design(CityBlock.DefaultSeed, CityStreetPlan.CornerShops);
@@ -351,7 +344,17 @@ namespace Vastcore.ModernCity.Editor
             if (!camera)
                 throw new InvalidOperationException("The saved sample has no walkthrough camera.");
 
-            SaveFrame(camera, Path.Combine(output, "launch.png"));
+            if (skyOnly)
+            {
+                // Supply the sky texture before the first camera cull, leaving every probe volume unchanged.
+                var sky = AssetDatabase.LoadAssetAtPath<Cubemap>(CityKitAssets.Root + "/ModernCity/ReflectionProbe-0.exr");
+                if (!sky)
+                    throw new InvalidOperationException("The sample has no baked sky reflection.");
+                foreach (var probe in Object.FindObjectsByType<ReflectionProbe>(FindObjectsSortMode.None))
+                    probe.customBakedTexture = sky;
+            }
+            else
+                SaveFrame(camera, Path.Combine(output, "launch.png"));
             var rig = new GameObject("Fixed district review");
             var review = rig.AddComponent<Camera>();
             review.nearClipPlane = 0.07f;
@@ -368,23 +371,35 @@ namespace Vastcore.ModernCity.Editor
                 var shots = new (string Name, Vector3 From, Vector3 At, float FieldOfView)[]
                 {
                     ("far", new Vector3(50, 35, -55), new Vector3(-8, 4, 10), 47),
+                    ("perimeter-far", new Vector3(98, 46, -65), new Vector3(40, 4, 3), 50),
                     ("junction", new Vector3(2, 1.79f, 7.55f), new Vector3(-32, 3.0f, 10.9f), 68),
                     ("east-walk", new Vector3(30, 1.79f, 7.6f), new Vector3(74, 2.65f, 9.5f), 66),
+                    ("east-crossing", new Vector3(62.7f, 1.79f, 7.95f), new Vector3(99, 4.4f, 4.95f), 67),
+                    ("south-walk", new Vector3(32, 1.78f, -28.65f), new Vector3(4, 3.4f, -40.2f), 66),
                     ("retail-entry", retail.World(3.25f, 1.65f, -4.8f), retail.World(retail.EntranceX, 1.7f, 1.65f), 66),
+                    ("retail-glass", retail.World(1.0f, 1.66f, -2.75f), retail.World(6.0f, 1.75f, 0.3f), 57),
                     ("retail-inside", retail.World(retail.EntranceX - 0.25f, 1.65f, 1.05f),
                         retail.World(retail.EntranceX - 2.95f, 1.5f, 5.75f), 70),
                     ("office-entry", office.World(8.1f, 1.65f, -5.1f), office.World(10, 1.75f, 2.65f), 66),
                     ("office-lobby", office.World(10.05f, 1.65f, 1.12f), office.World(8.3f, 1.42f, 6.2f), 69),
                     ("office-upper", office.World(10.8f, CityBuildingKit.Storey + 1.64f, 5.83f),
                         office.World(3.6f, CityBuildingKit.Storey + 1.26f, 1.37f), 68),
+                    ("office-stair", office.World(office.StairX - 1.1f, 1.64f, office.StairZ - 2.4f),
+                        office.World(office.StairX - 0.55f, 2.0f, office.StairZ + 2.6f), 68),
                     ("service", office.World(5.55f, 1.65f, office.Length + 5.3f),
                         office.World(2.1f, 1.57f, office.Length - 0.5f), 69),
                     ("cafe-window", cafe.World(8.2f, 1.68f, 2.77f), cafe.World(0.93f, 1.31f, 2.14f), 69)
                 };
                 foreach (var shot in shots)
                 {
+                    if (skyOnly)
+                    {
+                        if (shot.Name == "retail-glass" || shot.Name == "office-entry" || shot.Name == "east-crossing")
+                            Shot(review, output, shot.Name + "-sky-reflection", shot.From, shot.At, shot.FieldOfView, warmupFrames: 1);
+                        continue;
+                    }
                     Shot(review, output, shot.Name, shot.From, shot.At, shot.FieldOfView);
-                    if (shot.Name == "far" || shot.Name == "junction" || shot.Name == "office-lobby")
+                    if (shot.Name == "far" || shot.Name == "east-crossing" || shot.Name == "junction" || shot.Name == "office-lobby")
                     {
                         double active = Measure(review);
                         foreach (var tree in trees)
@@ -395,6 +410,21 @@ namespace Vastcore.ModernCity.Editor
                         timings.Add(FormattableString.Invariant($"{shot.Name}\t{active:F2}\t{allNear:F2}"));
                     }
                 }
+                if (skyOnly)
+                    return;
+
+                if (LightmapSettings.lightProbes && LightmapSettings.lightProbes.count > 0)
+                {
+                    var receivers = Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None)
+                        .Where(renderer => renderer.lightProbeUsage == LightProbeUsage.BlendProbes).ToArray();
+                    foreach (var renderer in receivers)
+                        renderer.lightProbeUsage = LightProbeUsage.Off;
+                    foreach (var shot in shots.Where(shot => shot.Name == "office-lobby" || shot.Name == "retail-inside" ||
+                        shot.Name == "office-stair"))
+                        Shot(review, output, shot.Name + "-ambient-only", shot.From, shot.At, shot.FieldOfView, warmupFrames: 1);
+                    foreach (var renderer in receivers)
+                        renderer.lightProbeUsage = LightProbeUsage.BlendProbes;
+                }
 
                 File.WriteAllLines(Path.Combine(output, "render-timings.tsv"), timings);
                 File.WriteAllLines(Path.Combine(output, "capture.txt"), new[]
@@ -404,7 +434,8 @@ namespace Vastcore.ModernCity.Editor
                     $"quality {QualitySettings.names[QualitySettings.GetQualityLevel()]}; " +
                     $"{GraphicsSettings.currentRenderPipeline?.name}; {QualitySettings.activeColorSpace}.",
                     $"Directional light {RenderSettings.sun.transform.eulerAngles:F2}; 1600 × 900, fixed cameras, " +
-                    "unmodified scene exposure; render timing uses nine samples and a 1 px readback."
+                    "unmodified scene exposure; render timing uses nine samples and a 1 px readback.",
+                    $"Baked light probes: {(LightmapSettings.lightProbes ? LightmapSettings.lightProbes.count : 0)}."
                 });
             }
             finally

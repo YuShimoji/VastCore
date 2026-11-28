@@ -109,9 +109,13 @@ namespace Vastcore.ModernCity.Editor
     internal sealed class CityPalette
     {
         private const string PortableMaps = CityKitAssets.Root + "/Textures/Portable/";
+        internal const string LimestoneMap = CityKitAssets.Root + "/Textures/Storefront/Limestone_Mottled_Color.jpg";
         internal readonly Material Asphalt = Textured("Asphalt", PortableMaps + "Asphalt010_Color.jpg", "CFD4DB", 4, 0.05f);
         internal readonly Material Paving = Textured("Paving", PortableMaps + "PavingStones073_Color.jpg", "CFCCC6", 3.5f, 0.16f);
         internal readonly Material Stone = Make("Warm limestone", "A9A396", 0.23f);
+        internal readonly Material FacadeStone = Textured("Limestone facade", LimestoneMap, "DED6C8", 2.4f, 0.2f);
+        internal readonly Material FacadeStoneShade = Textured("Limestone facade shade", LimestoneMap, "C9C6BC", 1.95f, 0.22f);
+        internal readonly Material PavementStone = Textured("Limestone paving", LimestoneMap, "CFC9BA", 1.73f, 0.15f);
         internal readonly Material Brick = Textured("Brick", PortableMaps + "Bricks102_Color.jpg", "C8B9AE", 2.5f, 0.15f);
         internal readonly Material Timber = Textured("Timber", PortableMaps + "RawPlankWall_Color.jpg", "BCA78E", 2, 0.34f,
             PortableMaps + "RawPlankWall_NormalGL.jpg");
@@ -136,6 +140,8 @@ namespace Vastcore.ModernCity.Editor
         internal readonly Material Soil = Make("Planting soil", "514A42", 0.12f);
         internal readonly Material Verge = Make("Courtyard ground cover", "6B7456", 0.12f);
         internal readonly Material Glass = Make("Glazing", "91B0BF", 0.83f, glass: true);
+        internal readonly Material WindowGlass = Make("Facade glazing", "A7BFC3", 0.92f, 0.15f,
+            glass: true, glassOpacity: 0.21f, preserveSpecular: true);
         internal readonly Material Light = Make("Warm diffuser", "FFF0CC", 0.3f, emission: 0.73f);
         internal readonly Material Screen = Make("Display", "586E7B", 0.62f, emission: 0.17f);
         internal readonly Material Awning = Make("Ochre canvas", "B79869", 0.13f);

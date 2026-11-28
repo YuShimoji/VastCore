@@ -1,0 +1,11 @@
+{
+    "sets": [
+        {
+            "files": ["ReflectionProbe-0.exr"],
+            "origin": "generated",
+            "generator": "Assets/Art/ModernCity/Editor/CityLighting.cs",
+            "license": "project",
+            "notes": "Unity-generated environment reflection in the baked lighting assets of ModernCity.unity."
+        }
+    ]
+}

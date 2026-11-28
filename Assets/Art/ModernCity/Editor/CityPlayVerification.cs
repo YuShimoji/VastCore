@@ -38,7 +38,7 @@ namespace Vastcore.ModernCity.Editor
             {
                 var player = Camera.main.transform.parent;
                 player.SetPositionAndRotation(waypoints[0] + Vector3.up * 0.035f,
-                    Quaternion.Euler(0, plot.Yaw + (check == "service" ? 180 : 0), 0));
+                    Quaternion.Euler(0, plot.Yaw + (check == "service" ? 180 : check == "perimeter" ? 90 : 0), 0));
             }
             SessionState.SetString(OutputKey, CityReview.OutputDirectory());
             SessionState.SetString(RouteKey, check);
@@ -92,7 +92,8 @@ namespace Vastcore.ModernCity.Editor
             {
                 "cafe" => plots[0],
                 "office" or "service" => plots[2],
-                _ => throw new ArgumentException("Provide -cityWalkRoute cafe, office or service.")
+                "perimeter" => plots.Single(candidate => candidate.Name == "East corner offices"),
+                _ => throw new ArgumentException("Provide -cityWalkRoute cafe, office, service or perimeter.")
             };
             var stairs = CityVerification.MainRoute(plot, maxClimbs: 1);
             var waypoints = new List<Vector3>();
@@ -110,15 +111,28 @@ namespace Vastcore.ModernCity.Editor
                 waypoints.AddRange(entrance);
             }
             else
+            {
+                if (check == "perimeter")
+                    waypoints.AddRange(EastApproach());
                 waypoints.AddRange(stairs.Take(2));
+            }
             waypoints.AddRange(stairs.Skip(2));
             int checkpoint = waypoints.Count - 1;
             stairs.Reverse();
             waypoints.AddRange(stairs.Skip(1).Take(stairs.Count - (check == "service" ? 2 : 1)));
             if (check == "service")
                 waypoints.AddRange(CityVerification.ServiceRoute(plot).Skip(1));
+            if (check == "perimeter")
+                waypoints.AddRange(EastApproach().Reverse());
             return (plot, waypoints, checkpoint);
         }
+
+        private static Vector3[] EastApproach() => new[]
+        {
+            new Vector3(61.45f, CityStreetKit.Pavement, 8.9f),
+            new Vector3(65.6f, CityStreetKit.Pavement, 9.1f),
+            new Vector3(77.8f, CityStreetKit.Pavement, 9.1f)
+        };
 
         private static void DrivePlayer()
         {
@@ -136,7 +150,7 @@ namespace Vastcore.ModernCity.Editor
                 var flat = new Vector3(remaining.x, 0, remaining.z);
                 if (flat.magnitude < 0.115f && Mathf.Abs(remaining.y) < 0.22f)
                 {
-                    if (waypoint == (routeName == "service" ? 2 : 1))
+                    if (waypoint == (routeName == "perimeter" ? 4 : routeName == "service" ? 2 : 1))
                         CaptureCheckpoint("play-" + routeName + ".png");
                     if (waypoint == upperFloorCheckpoint)
                         CaptureCheckpoint("play-upper.png");
@@ -146,6 +160,7 @@ namespace Vastcore.ModernCity.Editor
                         CaptureCheckpoint("play-return.png");
                         string entry = routeName == "cafe" ? "Cafe: reached the order counter."
                             : routeName == "service" ? "Office: entered through the loading entrance."
+                            : routeName == "perimeter" ? "East corner offices: crossed the public street and entered from the sidewalk."
                             : "Office: entered through the reception entrance.";
                         Finish($"Play mode: real gamepad input from the saved scene. {entry} "
                             + $"Walked both stair flights to +{CityBuildingKit.Storey:F1} m and returned outside "

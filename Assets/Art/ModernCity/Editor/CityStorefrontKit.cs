@@ -90,9 +90,11 @@ namespace Vastcore.ModernCity.Editor
             for (int row = 0; row < rows; row++)
             for (int col = 0; col < slabs; col++)
             {
-                var stone = (row * 5 + col * 3) % 9 == 0 ? p.StoneDark : p.Stone;
+                int pattern = row * 17 + col * 11 + Mathf.RoundToInt(left * 37 + bottom * 20);
+                var stone = Mathf.Abs(pattern) % 7 < 2 ? p.StoneDark : p.Stone;
                 var centre = new Vector3(left + (col + 0.5f) * width, bottom + (row + 0.5f) * height, Face + 0.012f);
-                m.BeveledBox(stone, centre, new Vector3(width - 0.009f, height - 0.009f, 0.067f), 0.008f);
+                var sample = new Vector2(Mathf.Repeat(pattern * 0.193f, 2.4f), Mathf.Repeat(pattern * 0.127f, 1.2f));
+                m.BeveledBox(stone, centre, new Vector3(width - 0.009f, height - 0.009f, 0.067f), 0.008f, uvOffset: sample);
             }
         }
 
@@ -152,22 +154,22 @@ namespace Vastcore.ModernCity.Editor
         {
             private const string Surface = CityKitAssets.Root + "/Textures/Storefront/Concrete034_1K-JPG";
             internal readonly CityPalette Base;
-            internal readonly Material Stone = Cladding("Storefront stone", "ECE4D4");
-            internal readonly Material StoneDark = Cladding("Storefront stone shade", "D8D0C2");
+            internal readonly Material Stone = Cladding("Storefront stone", "E4DBCC");
+            internal readonly Material StoneDark = Cladding("Storefront stone shade", "C7C2B7");
             internal readonly Material Coping = CityPalette.Make("Storefront sill stone", "989184", 0.24f);
             internal readonly Material Frame = CityPalette.Make("Storefront anodised bronze", "55473D", 0.47f, 0.48f);
             internal readonly Material LightMetal = CityPalette.Make("Storefront brushed bronze", "917B62", 0.56f, 0.52f);
-            internal readonly Material Glazing = CityPalette.Make("Storefront clear glazing", "B8CFD0", 0.88f,
-                glass: true, glassOpacity: 0.11f, preserveSpecular: true);
+            internal readonly Material Glazing = CityPalette.Make("Storefront clear glazing", "ABC5C8", 0.93f, 0.12f,
+                glass: true, glassOpacity: 0.13f, preserveSpecular: true);
 
             internal Finishes(CityPalette basePalette) => Base = basePalette;
 
             private static Material Cladding(string name, string tint)
             {
-                Material material = CityPalette.Textured(name, Surface + "_Color.jpg", tint, 1.1f, 0.24f,
+                Material material = CityPalette.Textured(name, CityPalette.LimestoneMap, tint, 2.4f, 0.25f,
                     Surface + "_NormalGL.jpg");
-                material.SetTextureScale("_BaseMap", new Vector2(1f / 1.1f, 1f / 0.55f));
-                material.SetFloat("_BumpScale", 0.34f);
+                material.SetTextureScale("_BaseMap", new Vector2(1f / 2.4f, 1f / 1.2f));
+                material.SetFloat("_BumpScale", 0.35f);
                 EditorUtility.SetDirty(material);
                 return material;
             }

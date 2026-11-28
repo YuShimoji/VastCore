@@ -81,8 +81,10 @@ namespace Vastcore.ModernCity.Editor
             foreach (int x in new[] { 50, 60, 80, 94, 108 })
             {
                 At("Street lamp", x, kerb, 6.54f, 180);
-                At("Courtyard tree", x + 0.9f, 0.116f, 16.65f, rng.Next(360));
-                At("Courtyard tree", x - 0.56f, 0.116f, -23.8f, rng.Next(360));
+                float treeZ = x >= 80 ? 30.65f : 16.65f;
+                float plantingY = x >= 108 ? -0.06f : 0.116f;
+                At("Courtyard tree", x + 0.9f, plantingY, treeZ, rng.Next(360));
+                At("Courtyard tree", x + 0.56f, plantingY, x >= 80 ? -31.8f : -23.8f, rng.Next(360));
             }
             foreach (int x in new[] { -29, -17, 16, 30, 49, 61, 87, 104 })
             {
@@ -91,7 +93,11 @@ namespace Vastcore.ModernCity.Editor
             }
             At("Delivery van", 56, 0, -16, 90);
             At("Sedan", 44, 0, -16, 90);
-            foreach (int x in new[] { -36, -26, -12, 5, 17, 32, 43 })
+            At("Street tree", 35.6f, kerb, -8.85f, 101);
+            At("Street tree", 47.0f, kerb, -8.66f, 153);
+            foreach (float z in new[] { -5.1f, -2.05f, 2.05f, 5.1f })
+                At("Bollard", 117.05f, kerb - CityStreetKit.ApronDrop, z);
+            foreach (int x in new[] { -36, -26, -12, 31, 39, 43 })
                 At("Courtyard tree", x, 0.115f, -42 + rng.Next(-2, 3), rng.Next(360));
             float plaza = kerb - CityStreetKit.ApronDrop;
             At("Street tree", -48.5f, plaza, -4.31f, 28);
@@ -332,7 +338,7 @@ namespace Vastcore.ModernCity.Editor
             for (float x = 2; x <= plot.Width - 2; x += 4)
             {
                 At("Linear ceiling light", x, 2.753f, 1.98f + setback);
-                At("Linear ceiling light", x, 2.753f, plot.Length - 6.22f);
+                At("Linear ceiling light", x, 2.753f, Mathf.Max(setback + 3.75f, plot.Length - 6.22f));
             }
             if (use == CityRoom.Reception)
             {
@@ -340,7 +346,10 @@ namespace Vastcore.ModernCity.Editor
                 Spot("Reception and directory", desk + 0.71f, 2.58f, 4.01f,
                     new Vector3(desk, 0.95f, 6.04f), 5.5f, 76, 3.6f);
                 Spot("Window seating", plot.EntranceX - 3.2f, 2.66f, 2.2f,
-                    new Vector3(plot.EntranceX - 3.8f, 0.56f, 1.24f), 5.1f, 85, 1.6f);
+                    new Vector3(plot.EntranceX - 3.8f, 0.56f, 1.24f), 5.1f, 85, 2.4f);
+                float guide = plot.Width - 5.25f;
+                Spot("Wall wash toward stair", guide, 2.64f, plot.StairZ - 2.75f,
+                    new Vector3(guide, 0.82f, plot.StairZ + 0.5f), 6.3f, 77, 2.9f);
             }
             else if (!storefront)
                 PointLight("Front room light", Mathf.Min(5.2f, plot.Width * 0.32f), 2.28f, 2.61f + setback, 7.6f,
@@ -357,7 +366,10 @@ namespace Vastcore.ModernCity.Editor
                     3.3f, new Color(1, 0.82f, 0.61f), 0.47f);
                 return;
             }
-            PointLight("Landing light", plot.StairX, 2.17f, plot.StairZ - 0.63f, 5.4f, new Color(1, 0.91f, 0.77f));
+            Spot("Downlight over stair", plot.StairX - 0.6f, 2.64f, plot.StairZ - 1f,
+                new Vector3(plot.StairX - 0.46f, 1.01f, plot.StairZ + 1.38f), 5.2f, 74, 2.9f);
+            PointLight("Mid landing wall light", plot.StairX + 0.35f, 1.95f, plot.Length - 0.36f,
+                2.55f, new Color(1f, 0.87f, 0.71f), 0.59f);
         }
 
         private void Spot(string name, float x, float y, float z, Vector3 aim, float range, float angle, float intensity)

@@ -11,11 +11,20 @@
             "notes": "1.1 by 0.55 m; fine concrete grain under modeled storefront cladding joints."
         },
         {
-            "files": ["Street_reflection.exr"],
+            "files": ["Limestone_Mottled_Color.jpg"],
+            "origin": "downloaded",
+            "source": "https://ambientcg.com/view?id=Concrete034",
+            "license": "CC0-1.0",
+            "author": "ambientCG",
+            "tileMetres": 2.4,
+            "notes": "1K derivative with periodic tonal variation over the original concrete grain."
+        },
+        {
+            "files": ["Street_reflection.exr", "Junction_reflection.exr", "East_reflection.exr", "South_lane_reflection.exr"],
             "origin": "generated",
-            "generator": "Assets/Art/ModernCity/Editor/CityReview.cs",
+            "generator": "Assets/Art/ModernCity/Editor/CityLighting.cs",
             "license": "project",
-            "notes": "128 px per face HDR reflection captured from the seed 417 sample using Unity."
+            "notes": "128 px per face HDR reflections for four street sections captured from the seed 417 sample using Unity."
         }
     ]
 }

@@ -16,11 +16,11 @@ namespace Vastcore.ModernCity.Editor
         internal static void Bake(CityKitAssets kit, CityPalette p)
         {
             void Part(string name, System.Action<CityModel> model) => kit.Bake(CityKitAssets.Buildings, name, model);
-            Part("Stone window", m => Window(m, p, p.Stone, -0.21f, 2.8f, 0.65f, 2.58f, true));
+            Part("Stone window", m => Window(m, p, p.FacadeStone, -0.21f, 2.8f, 0.65f, 2.58f, true));
             Part("Stone loggia", m =>
             {
-                Window(m, p, p.Stone, 0.12f, 2.98f, 0.31f, 2.54f, false);
-                m.Box(p.Stone, new Vector3(0, 0.10f, -0.45f), new Vector3(3.72f, 0.2f, 0.88f));
+                Window(m, p, p.FacadeStoneShade, 0.12f, 2.98f, 0.31f, 2.54f, false);
+                m.Box(p.FacadeStone, new Vector3(0, 0.10f, -0.45f), new Vector3(3.72f, 0.2f, 0.88f));
                 Guard(m, p, new Vector3(-1.82f, 0.2f, -0.85f), new Vector3(1.82f, 0.2f, -0.85f), false);
             });
             Part("Brick window", m => Window(m, p, p.Brick, 0.16f, 2.5f, 0.73f, 2.42f, true));
@@ -36,20 +36,20 @@ namespace Vastcore.ModernCity.Editor
                 for (int i = -1; i <= 1; i++)
                     m.Box(p.Metal, new Vector3(i * 1.25f, 1.5f, -0.16f), new Vector3(0.075f, 3, 0.24f));
             });
-            Part("Stone blank bay", m => Wall(m, p.Stone));
+            Part("Stone blank bay", m => Wall(m, p.FacadeStone));
             Part("Brick blank bay", m => Wall(m, p.Brick));
             Part("Office blank bay", m => Wall(m, p.Dark));
-            Part("Shop display", m => Window(m, p, p.Stone, 0, 3.55f, 0.23f, 2.52f, false));
+            Part("Shop display", m => Window(m, p, p.FacadeStone, 0, 3.55f, 0.23f, 2.52f, false));
             Part("Brick shop display", m => Window(m, p, p.Brick, 0, 3.42f, 0.25f, 2.54f, false));
             Part("Lobby display", m => Window(m, p, p.Dark, 0, 3.64f, 0.19f, 2.67f, false));
-            Part("Shop entrance", m => Entrance(m, p, p.Stone, DoorWidth, 2.42f, true));
+            Part("Shop entrance", m => Entrance(m, p, p.FacadeStone, DoorWidth, 2.42f, true));
             Part("Brick shop entrance", m => Entrance(m, p, p.Brick, DoorWidth, 2.42f, true));
             Part("Lobby entrance", m =>
             {
                 Entrance(m, p, p.Dark, 2.2f, 2.55f, true);
                 foreach (float side in new[] { -1f, 1f })
                 {
-                    m.BeveledBox(p.Stone, new Vector3(side * 1.54f, 1.45f, -0.22f),
+                    m.BeveledBox(p.FacadeStoneShade, new Vector3(side * 1.54f, 1.45f, -0.22f),
                         new Vector3(0.63f, 2.9f, 0.42f), 0.024f, true);
                     m.Box(p.Metal, new Vector3(side * 1.23f, 1.46f, -0.29f), new Vector3(0.05f, 2.87f, 0.26f));
                 }
@@ -84,6 +84,22 @@ namespace Vastcore.ModernCity.Editor
                 m.Box(p.Concrete, new Vector3(0, 0.37f, 0), new Vector3(4, 0.74f, 0.25f), true);
                 m.Box(p.Metal, new Vector3(0, 0.75f, 0), new Vector3(4, 0.075f, 0.31f));
             });
+            Part("Deep cornice parapet", m =>
+            {
+                m.Box(p.Brick, new Vector3(0, 0.41f, 0), new Vector3(4, 0.82f, 0.28f), true);
+                m.Box(p.FacadeStoneShade, new Vector3(0, 0.77f, -0.09f), new Vector3(4, 0.17f, 0.44f));
+                m.Box(p.Dark, new Vector3(0, 0.855f, -0.05f), new Vector3(4, 0.055f, 0.36f));
+                m.Box(p.Dark, new Vector3(0, 0.62f, -0.151f), new Vector3(4, 0.045f, 0.042f));
+            });
+            Part("Roof lantern", m =>
+            {
+                m.BeveledBox(p.FacadeStoneShade, new Vector3(0, 0.83f, 0), new Vector3(3.67f, 1.66f, 2.82f), 0.036f);
+                m.Box(p.Dark, new Vector3(0, 1.72f, 0), new Vector3(3.95f, 0.13f, 3.07f));
+                foreach (float x in new[] { -1.15f, 0f, 1.15f })
+                    m.Box(p.Blue, new Vector3(x, 1.18f, -1.418f), new Vector3(0.97f, 0.61f, 0.05f));
+                m.Box(p.Metal, new Vector3(0, 0.845f, -1.451f), new Vector3(3.4f, 0.055f, 0.18f));
+            });
+            Part("Workshop roof monitor", m => RoofMonitor(m, p));
             Part("Terrace guard", m =>
                 Guard(m, p, new Vector3(-2, 0, 0), new Vector3(2, 0, 0), true));
             Part("Roof plant screen", m =>
@@ -108,6 +124,30 @@ namespace Vastcore.ModernCity.Editor
         {
             model.Box(palette.Paint, new Vector3(0, -0.13f, 0), new Vector3(Bay, 0.22f, Bay), true);
             model.Box(finish, new Vector3(0, -0.02f, 0), new Vector3(Bay, 0.04f, Bay), true);
+        }
+
+        private static void RoofMonitor(CityModel m, CityPalette p)
+        {
+            var slope = Quaternion.Euler(-18, 0, 0);
+            m.Box(p.Dark, new Vector3(0, 1.29f, 0.05f), new Vector3(4, 0.12f, 4.06f), slope);
+            for (int i = -3; i <= 3; i++)
+                m.Box(p.Metal, new Vector3(i * 0.53f, 1.365f, 0.025f), new Vector3(0.03f, 0.036f, 4.04f), slope);
+            m.Box(p.Dark, new Vector3(0, 0.52f, 1.92f), new Vector3(3.98f, 1.04f, 0.14f));
+            m.Box(p.Blue, new Vector3(0, 1.42f, 1.91f), new Vector3(3.88f, 0.76f, 0.11f));
+            for (int i = -2; i <= 2; i++)
+                m.Box(p.Metal, new Vector3(i * 0.75f, 1.42f, 1.97f), new Vector3(0.04f, 0.78f, 0.06f));
+            m.Box(p.Dark, new Vector3(0, 0.33f, -1.81f), new Vector3(3.98f, 0.66f, 0.10f));
+            foreach (float x in new[] { -1.98f, 1.98f })
+            {
+                var a = new Vector3(x, 0, -1.86f);
+                var b = new Vector3(x, 0.67f, -1.86f);
+                var c = new Vector3(x, 1.86f, 1.95f);
+                var d = new Vector3(x, 0, 1.95f);
+                if (x < 0)
+                    m.Quad(p.Dark, a, d, c, b);
+                else
+                    m.Quad(p.Dark, a, b, c, d);
+            }
         }
 
         private static void Wall(CityModel model, Material material, float depth = 0.22f) =>
@@ -148,7 +188,7 @@ namespace Vastcore.ModernCity.Editor
             m.Box(p.Dark, new Vector3(x + width * 0.12f, (bottom + top) * 0.5f, 0.018f),
                 new Vector3(0.046f, top - bottom, 0.105f));
             m.Box(p.Dark, new Vector3(x, top - 0.43f, 0.018f), new Vector3(width, 0.038f, 0.087f));
-            Pane(m, p.Glass, x, width, bottom, top, 0.025f);
+            Pane(m, p.WindowGlass, x, width, bottom, top, 0.025f);
             if (stoneSill)
                 m.Box(p.Stone, new Vector3(x, bottom + 0.011f, -0.12f),
                     new Vector3(width + 0.1f, 0.064f, 0.38f));

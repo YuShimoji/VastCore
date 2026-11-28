@@ -92,9 +92,10 @@ namespace Vastcore.ModernCity.Editor
                     float end = Mathf.Min(2, x + 1);
                     if (end <= start)
                         continue;
-                    m.Box((row * 7 + col * 3) % 11 == 0 ? p.Concrete : p.Stone,
+                    m.Box((row * 7 + col * 3) % 11 == 0 ? p.Concrete : p.PavementStone,
                         new Vector3((start + end) / 2, Pavement - 0.02f, z),
-                        new Vector3(end - start - 0.011f, 0.04f, 0.488f));
+                        new Vector3(end - start - 0.011f, 0.04f, 0.488f),
+                        uvOffset: new Vector2(col * 0.61f + row * 0.17f, row * 0.46f + col * 0.23f));
                 }
             }
             m.Box(p.Stone, new Vector3(0, Pavement - 0.076f, -1.94f), new Vector3(3.98f, 0.14f, 0.145f));
@@ -133,6 +134,11 @@ namespace Vastcore.ModernCity.Editor
                     kit.Place(CityKitAssets.Street, "Paving tile", streets, new Vector3(x, -ApronDrop, 12));
             }
 
+            // The eastbound street ends at a paved forecourt serving the end-of-street shops.
+            foreach (int x in new[] { 118, 122 })
+            for (int z = -8; z <= 8; z += 4)
+                kit.Place(CityKitAssets.Street, "Paving tile", streets, new Vector3(x, -ApronDrop, z));
+
             SideRun(kit, streets, junction, 36);
             SideRun(kit, streets, EastCrossing, 36);
             SideRun(kit, streets, EastCrossing, -76);
@@ -148,7 +154,11 @@ namespace Vastcore.ModernCity.Editor
 
             foreach (int x in new[] { 54, 62, 84, 92, 100 })
             foreach (int z in new[] { 16, 24, 32, -24, -32 })
+            {
+                if (x >= 84 && (z == 16 || z == 24 || z == -24))
+                    continue;
                 kit.Place(CityKitAssets.Street, "Planted court", streets, new Vector3(x, 0, z));
+            }
 
             for (int x = 42; x <= 62; x += 4)
                 kit.Place(CityKitAssets.Street, "Parking bay", streets, new Vector3(x, 0, -16), 180);
@@ -157,9 +167,12 @@ namespace Vastcore.ModernCity.Editor
             {
                 kit.Place(CityKitAssets.Street, "Side street", streets, new Vector3(x, 0, -34));
                 kit.Place(CityKitAssets.Street, "Walkway", streets, new Vector3(x, -ApronDrop, -28));
+                if (x >= -2 && x <= 26)
+                    kit.Place(CityKitAssets.Street, "Walkway", streets, new Vector3(x, 0, -40), 180);
             }
             for (int x = -38; x <= 42; x += 8)
-                kit.Place(CityKitAssets.Street, "Planted court", streets, new Vector3(x, 0, -42));
+                if (x < -2 || x > 26)
+                    kit.Place(CityKitAssets.Street, "Planted court", streets, new Vector3(x, 0, -42));
         }
 
         private static void SideRun(CityKitAssets kit, Transform streets, float axis, int end)

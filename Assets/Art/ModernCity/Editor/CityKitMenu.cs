@@ -21,6 +21,7 @@ namespace Vastcore.ModernCity.Editor
         [SerializeField] private int floors = 3;
         [SerializeField] private float facing;
         [SerializeField] private CityFacade facade;
+        [SerializeField] private CityRoof roof;
         [SerializeField] private CityRoom ground = CityRoom.Cafe;
         [SerializeField] private CityRoom upper = CityRoom.Office;
 
@@ -35,7 +36,7 @@ namespace Vastcore.ModernCity.Editor
         private static void OpenWindow()
         {
             var window = GetWindow<CityKitMenu>("Modern City Variants");
-            window.minSize = new Vector2(290, 305);
+            window.minSize = new Vector2(290, 325);
         }
 
         [MenuItem(Menu + "Export Asset Package...", false, 12)]
@@ -65,6 +66,7 @@ namespace Vastcore.ModernCity.Editor
                 deep = EditorGUILayout.IntSlider("Depth bays", deep, 3, 8);
                 floors = EditorGUILayout.IntSlider("Floors", floors, 1, 10);
                 facade = (CityFacade)EditorGUILayout.EnumPopup("Facade", facade);
+                roof = (CityRoof)EditorGUILayout.EnumPopup("Roof profile", roof);
                 ground = (CityRoom)EditorGUILayout.EnumPopup("Ground floor", ground);
                 upper = (CityRoom)EditorGUILayout.EnumPopup("Upper floors", upper);
                 if (GUILayout.Button("Add building to active scene"))
@@ -79,6 +81,8 @@ namespace Vastcore.ModernCity.Editor
             var kit = new CityKitAssets();
             var block = CityBlock.Assemble(kit, seed, street);
             CityFurnishing.Dress(kit, block, detail, seed);
+            CityLighting.PrepareIndirect(block);
+            CityLighting.StreetReflections(bake: false);
             EditorSceneManager.MarkSceneDirty(block.Scene);
             return block;
         }
@@ -86,7 +90,7 @@ namespace Vastcore.ModernCity.Editor
         private void AddBuilding()
         {
             var plot = new CityPlot($"{facade} building", origin.x, origin.z, across, deep, floors, facing,
-                facade, ground, upper, origin.y);
+                facade, ground, upper, origin.y, roof: roof);
             var building = PlaceBuilding(plot, detail, seed);
             Undo.RegisterCreatedObjectUndo(building.gameObject, "Add modern city building");
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
@@ -98,6 +102,7 @@ namespace Vastcore.ModernCity.Editor
             var kit = new CityKitAssets();
             var building = CityBlock.AssembleBuilding(kit, plot, null, seed);
             CityFurnishing.DressBuilding(kit, plot, building, detail, seed);
+            CityLighting.PrepareBuilding(plot, building);
             return building;
         }
 
