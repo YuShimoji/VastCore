@@ -9,6 +9,7 @@ namespace Vastcore.Water
     public sealed class CoastalWaterRenderer : IDisposable
     {
         private const int SprayQuads = 2450;
+        private const int BarrierDropletCandidates = 3700;
         public const int MaximumSwashObstacles = 8;
         private static readonly int WaveId = Shader.PropertyToID("_Wave");
         private static readonly int MotionId = Shader.PropertyToID("_Motion");
@@ -201,31 +202,78 @@ namespace Vastcore.Water
             var uv = new List<Vector2>();
             var parts = new List<Vector4>();
             var triangles = new List<int>();
+            bool barrier = shore.Bank == BankType.Barrier;
+            float sprayEnd = Mathf.Min(shore.EndZ, shore.StartZ + 205f);
+            if (barrier)
+                AddSpray(shore, sprayEnd, true, vertices, uv, parts, triangles);
             AddContactStrip(shore, along, 11, 0, vertices, uv, parts, triangles);
-            if (shore.Bank == BankType.Barrier)
+            if (barrier)
                 AddContactStrip(shore, along, 13, 3, vertices, uv, parts, triangles);
             AddContactStrip(shore, along, 17, 1, vertices, uv, parts, triangles);
+            if (barrier)
+                AddImpactSheets(shore, sprayEnd, vertices, uv, parts, triangles);
+            AddSpray(shore, sprayEnd, barrier ? false : null, vertices, uv, parts, triangles);
 
+            return CreateMesh("Shore contact", vertices, uv, parts, triangles, Mathf.Max(28f, shore.ReceivingWidth * 2f));
+        }
+
+        private static void AddSpray(Shoreline shore, float end, bool? mistPass,
+            List<Vector3> vertices, List<Vector2> uv, List<Vector4> parts, List<int> triangles)
+        {
             var random = new System.Random(17273);
-            float sprayEnd = Mathf.Min(shore.EndZ, shore.StartZ + 205f);
-            for (int i = 0; i < SprayQuads; i++)
+            int count = mistPass == false ? BarrierDropletCandidates : SprayQuads;
+            float mode = mistPass == true ? 2.25f : 2f;
+            for (int i = 0; i < count; i++)
             {
                 float r = (float)random.NextDouble();
-                float z = Mathf.Lerp(shore.StartZ, sprayEnd, r);
+                float z = Mathf.Lerp(shore.StartZ, end, r);
                 float seedA = (float)random.NextDouble();
                 float seedB = (float)random.NextDouble();
                 float seedC = (float)random.NextDouble();
+                bool mist = seedC > 0.63f;
+                if (mistPass.HasValue && mistPass.Value != mist) continue;
                 int start = vertices.Count;
                 for (int j = 0; j < 4; j++)
                 {
                     vertices.Add(new Vector3(shore.X(0f, z), shore.SeaLevel, z));
                     uv.Add(new Vector2(j % 2, j / 2));
-                    parts.Add(new Vector4(2f, seedA, seedB, seedC));
+                    parts.Add(new Vector4(mode, seedA, seedB, seedC));
                 }
                 AddGrid(triangles, start, 2, 2);
             }
+        }
 
-            return CreateMesh("Shore contact", vertices, uv, parts, triangles, Mathf.Max(28f, shore.ReceivingWidth * 2f));
+        // Each sheet has its own vertices so a tear never stretches triangles across the open gap.
+        private static void AddImpactSheets(Shoreline shore, float end, List<Vector3> vertices,
+            List<Vector2> uv, List<Vector4> parts, List<int> triangles)
+        {
+            const int lengths = 12;
+            const int widths = 7;
+            var random = new System.Random(26339);
+            float edge = shore.StartZ;
+            while (edge < end)
+            {
+                float spacing = Mathf.Lerp(1.5f, 3.0f, (float)random.NextDouble());
+                float centre = Mathf.Min(end, edge + spacing * Mathf.Lerp(0.37f, 0.63f, (float)random.NextDouble()));
+                float radius = spacing * Mathf.Lerp(0.22f, 0.55f, (float)random.NextDouble());
+                float seed = (float)random.NextDouble();
+                var anchor = new Vector4(4f, shore.X(0f, centre), centre, seed);
+                int start = vertices.Count;
+                for (int row = 0; row < widths; row++)
+                {
+                    float across = row / (float)(widths - 1);
+                    float z = Mathf.Clamp(centre + (2f * across - 1f) * radius, shore.StartZ, end);
+                    var position = new Vector3(shore.X(0f, z), shore.SeaLevel, z);
+                    for (int column = 0; column < lengths; column++)
+                    {
+                        vertices.Add(position);
+                        uv.Add(new Vector2(column / (float)(lengths - 1), across));
+                        parts.Add(anchor);
+                    }
+                }
+                AddGrid(triangles, start, lengths, widths);
+                edge += spacing;
+            }
         }
 
         private static void AddContactStrip(Shoreline shore, float[] along, int columns, int mode,

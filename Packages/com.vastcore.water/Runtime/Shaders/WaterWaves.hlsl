@@ -44,6 +44,21 @@ float ShoreOvertopping(float z)
     return OvertoppingAt(z, _Wave.x, _Bank.z);
 }
 
+float WallCrestCollapse(float age)
+{
+    return smoothstep(0.014, 0.073, age) * (1.0 - smoothstep(0.218, 0.348, age));
+}
+
+float BarrierCrestLowering(float distance, float z, float phase, float height)
+{
+    if (_Bank.x < 0.5 || distance < -7.2) return 0.0;
+    float atWall = phase - _Wave.y * _Motion.x * distance;
+    float age = frac(-atWall * 0.15915494);
+    float collapse = WallCrestCollapse(age) * ShoreOvertopping(z) * smoothstep(-7.2, -0.16, distance);
+    float waterline = _Bank.z - 0.34 + 0.17 * sin(z * 1.34);
+    return max(0.0, height - waterline) * collapse;
+}
+
 void AddWave(float2 direction, float angle, float k, float amplitude, float slope,
     inout float3 displacement, inout float3 dx, inout float3 dz)
 {
@@ -79,7 +94,9 @@ float3 WavePhases(float2 p)
 
 float SeaHeight(float2 p, float distance)
 {
-    float height = SeaAmplitude(p, distance) * dot(cos(WavePhases(p)), float3(0.84, 0.25 * _Motion.z, 0.065 * _Motion.z));
+    float3 phase = WavePhases(p);
+    float height = SeaAmplitude(p, distance) * dot(cos(phase), float3(0.84, 0.25 * _Motion.z, 0.065 * _Motion.z));
+    height -= BarrierCrestLowering(distance, p.y, phase.x, height);
     if (_Bank.x < 0.5 && distance > -21.0)
         height = max(height, distance * _Bank.y + 0.034);
     return height;
@@ -99,6 +116,12 @@ float3 SeaDisplacement(float2 p, float distance, out float3 normal)
         amplitude * 0.065 * _Motion.z, _Wave.w * 0.08, move, dx, dz);
     move.xz *= smoothstep(0.0, 6.0, -distance);
     normal = normalize(cross(dz, dx));
+    if (_Bank.x > 0.5 && distance >= -7.2)
+    {
+        float lowering = BarrierCrestLowering(distance, p.y, phase.x, move.y);
+        move.y -= lowering;
+        normal = normalize(normal + float3(lowering * 0.24, 0.0, 0.0));
+    }
     if (_Bank.x < 0.5 && _Wave.x > 0.002 && distance > -21.0)
     {
         // Keep the draw surface above the same beach bed sampled by the environment.
