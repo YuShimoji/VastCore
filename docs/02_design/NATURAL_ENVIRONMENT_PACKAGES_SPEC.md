@@ -36,6 +36,8 @@
 - 代表区間の前後比較は `Vastcore.RegionMap.Editor.RegionRockyCoastMenu.CaptureRockfallFromCommandLine` に同じ引数を渡す。前回Aと今回Aで、拡大地形の標高0 mを横切る岸を共有する。岸から沖まで外洋の連結水域に含まれることを確かめ、近景は水際から沖20 m・海面上3.4 mに置く。前後で遠・中・近のカメラ、太陽の方向と高度、波の時刻を固定する。
 - 岩肌と水際の仕上げを比較する場合は `Vastcore.RegionMap.Editor.RegionRockyCoastMenu.CaptureAppearanceFromCommandLine` に `-regionSeed`、`-regionOut`、`-sunAltitudes` を渡す。通常の `Seed 8 / Seed 9` メニューから現行の場面を開き、`0da4d2a` 時点の代表区間と同じ視点で撮る。太陽38°では、水面と礫の接地を見るため岸に沿う低い視点も撮る。
 - 海岸Cは `Vastcore > Region Map > Pocket Beach Sample > Seed 8 / Seed 9`。同じメニューの `Low Tide` と `High Tide` で潮位を切り替える。`Vastcore.RegionMap.Editor.RegionPocketBeachMenu.CaptureFromCommandLine` に `-regionSeed`、`-regionOut`、`-sunAltitudes` を渡すと、通常メニューから開いて遠・中・潮だまりの近景を2水位で撮る。
+- Cの代表カットは `Pocket Beach Sample > Seed 8` を開き、`Low Tide` と `Concept View` を選ぶ。`Vastcore.RegionMap.Editor.RegionPocketBeachMenu.CaptureConceptFromCommandLine` は同じメニューから1枚を撮る。
+- 海岸Bは `Vastcore > Region Map > Dune Beach Sample > Seed 8 / Seed 9`。`Low Tide` と `High Tide` で水際と濡れ砂が一緒に移る。`Vastcore.RegionMap.Editor.RegionDuneBeachMenu.CaptureFromCommandLine` に `-regionSeed`、`-regionOut`、`-sunAltitudes` を渡すと、通常メニューから遠・中・漂着帯の近景を撮る。
 
 ## 洞窟Aの接続と部品
 
@@ -92,7 +94,19 @@ Aの割れ棚・丸礫、岩肌 `rock_boulder_cracked` と礫ごとの接地を�
 
 初回は手前の斜面が潮だまりを隠したため、視点を固定して手前を低い波食棚にした。浅い段に割れ棚を埋め、短く途切れる節理を重ねると、岩盤の縁と水が読みやすくなった。地形自身の影が対岸に縦線を作ったため、Cでは地形メッシュの影の投射だけを切り、棚岩の接地影を残す。想定図との差は、対岸の張り出す岩層の少なさと、浅瀬に残る反射の周期・水底の見え方。
 
-次の海岸は、Cの比較確認後にB 砂浜と砂丘。海への連結と潮位に応じた濡れ帯、礫を置く支持面の判定を引き継ぐ。PC Playerでの1.2 ms予算と地域探索から洞窟入口への接続は、段5の残りの確認項目。
+本人はこの比較を確認し、Bの代表区間を指定した。Cには完成想定図に寄せた代表カットも追加した。seed 8の低潮、太陽38°、縦FOV45°、俯角14°、波の時刻4.5でカメラを固定。手前の斜面を下げ、沖の岩礁を低い段が連なる形にし、浅瀬の底色から濡れ砂に明暗をつないだ。潮だまりは低潮で孤立し、満潮で外海につながることを2 seedで再確認した。対岸の細かな岩層、草、水面の反射に差が残る。[完成想定図とUnityの代表カット（制作途中の技術試作）](<D:/AI-Runs/VastCore/coast-and-cave/pocket-beach/concept-comparison.html>)
+
+### 海岸B 砂浜と砂丘
+
+外洋につながる低い岸2地点を選び、緩い斜面を波打ち際から前砂丘まで続けた。湿砂と乾砂の境、砂浜上部の高潮による漂着、裸砂を挟む草の分布を参照した。[Cape Codの砂浜と植生](https://www.nps.gov/caco/learn/nature/beaches.htm)・[High Headの砂丘](https://www.nps.gov/caco/learn/nature/sand-dunes.htm)
+
+Cの海への連結判定、水深と砂底のマップ、砂の `Ground054`、潮位から0.03〜0.83 mの範囲で弱まる濡れを共用した。砂浜の反射を足し、泡の細い筋は水深に沿わせる。高潮位＋1.02 mより10 cm以上高い、起伏の緩い所に漂着片をまとめる。Aの流木・Cの丸礫を傾斜20°以下の支持面に置き、丸礫の底を個別に地表へ沈める。草の根元は漂着帯から陸側3 m以上。既存の草株アトラスを群落に使い、砂丘の裾に根元から傾く細い葉を加えた。
+
+通常メニューから seed 8・9、遠中近、日照4条件、2水位で初回と修正後を48組撮った。中央断面では低潮から満潮へ水際が陸側に15.41・15.79 m動いた。露出砂の集計は12,638→6,100 m²、12,602→6,123 m²。漂着帯と草の位置は2水位で共通。初回の白く均一な砂と小さく見えた草を、反射する濡れ砂、砂丘裾の細長い草、稜線側の低い草の群落へ調整した。実景との差は、草の葉の重なりと密度、広い浅瀬で泡が遡上して途切れる形。[参考写真・完成想定図・Unityの前後](<D:/AI-Runs/VastCore/coast-and-cave/dune-beach/index.html>)
+
+地域生成後の構築は seed 8 が523→513 ms、seed 9 が515→542 ms（同じ Unity Editor、各1回）。地形の近距離格子は20.48万三角形で、草は斜面の短い株と長い葉を組み合わせ、低い浜には描画を出さない。
+
+景観の採否と横展開は、本人が比較を見て決める。PC Playerでの1.2 ms予算と地域探索から洞窟入口への接続は、段5の残りの確認項目。
 
 ## 森林・密林・自然公園
 

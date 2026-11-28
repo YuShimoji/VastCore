@@ -29,6 +29,7 @@ Shader "Vastcore/RegionTerrain"
         [HideInInspector] _CoastalRockDetail ("Coastal exposed rock and wet ground", Float) = 0
         [HideInInspector] _CoastalGroundTone ("Coastal sediment tone", Vector) = (0.43, 0.47, 0.50, 0)
         [HideInInspector] _CoastalShelfDetail ("Coastal flat rock projection", Float) = 0
+        [HideInInspector] _DuneSand ("Wind-shaped beach sand", Float) = 0
         [HideInInspector][NoScaleOffset] _BiomeGroundMap ("Biome turf", 2D) = "white" {}
         [HideInInspector][NoScaleOffset] _BiomeGroundNormal ("Biome turf normals", 2D) = "bump" {}
         [HideInInspector][NoScaleOffset] _BiomeGroundRoughness ("Biome turf roughness", 2D) = "white" {}
@@ -87,6 +88,7 @@ Shader "Vastcore/RegionTerrain"
                 half _CoastalRockDetail;
                 half4 _CoastalGroundTone;
                 half _CoastalShelfDetail;
+                half _DuneSand;
             CBUFFER_END
 
             #if defined(REGION_SANDSTONE)
@@ -146,6 +148,7 @@ Shader "Vastcore/RegionTerrain"
                 // 光を受ける向き。凹凸が無い時は形の法線のまま（影の計算と岩肌の判定は常に形の法線）
                 half3 shade = normal;
                 half surfaceOcclusion = 1.0;
+                half sandFilm = 0.0h;
                 half specularWeight = 0.0;
                 half roughness = 1.0;
                 #if defined(REGION_SANDSTONE)
@@ -186,7 +189,7 @@ Shader "Vastcore/RegionTerrain"
                         float3 p = input.positionWS;
                         half weathering = BiomeNoise(float2(p.x + 0.39 * p.z, p.y - 0.23 * p.z) * 0.16);
                         half3 rockTone = lerp(half3(0.55h, 0.62h, 0.71h), half3(0.89h, 0.83h, 0.76h), weathering);
-                        rockTone *= lerp(1.0h, 0.51h, _CoastalShelfDetail);
+                        rockTone *= lerp(1.0h, 0.44h, _CoastalShelfDetail);
                         biomeAlbedo *= lerp(_CoastalGroundTone.rgb, rockTone, coastalRock);
                         biomeAlbedo *= lerp(1.0h, half3(0.46h, 0.53h, 0.61h), wet);
                         half shelfWeight = _CoastalShelfDetail * coastalRock * smoothstep(0.37h, 0.85h, normal.y)
@@ -212,6 +215,16 @@ Shader "Vastcore/RegionTerrain"
                         }
                         bExtra.roughness = lerp(bExtra.roughness, 0.55h, wet);
                         bExtra.specular = lerp(bExtra.specular, 0.22h, wet);
+                        sandFilm = biomeWeight * (1.0h - coastalRock) * wet * max(_CoastalShelfDetail, _DuneSand);
+                        if (_DuneSand > 0.5h)
+                        {
+                            float grainWave = (p.z + 0.35 * p.x) * 16.0 + 10.0 * BiomeNoise(p.xz * 0.32);
+                            half ripples = cos(grainWave);
+                            half dryDetail = (1.0h - wet) * (1.0h - smoothstep(9.0, 42.0, biomeDist));
+                            biomeAlbedo *= 1.0h + 0.055h * ripples * dryDetail;
+                            bExtra.normalWS = normalize(bExtra.normalWS + dryDetail * ripples * half3(0.023h, 0.0h, 0.043h));
+                            bExtra.roughness = lerp(bExtra.roughness, 0.36h, wet * wet);
+                        }
                     }
                     albedo = lerp(albedo, biomeAlbedo, biomeWeight);
                     shade = normalize(lerp(shade, bExtra.normalWS, biomeWeight));
@@ -255,6 +268,13 @@ Shader "Vastcore/RegionTerrain"
                     color += light.color * direct * (0.04 * specularTerm * specularWeight);
                 }
                 #endif
+                if (sandFilm > 0.001h)
+                {
+                    float3 eye = SafeNormalize(_WorldSpaceCameraPos - input.positionWS);
+                    float fresnel = pow(1.0 - saturate(dot(eye, shade)), 3.5);
+                    half3 reflectedSky = RegionFogColor(reflect(-eye, shade), light.direction);
+                    color = lerp(color, reflectedSky * 0.80h, 0.51h * sandFilm * fresnel);
+                }
                 color = RegionApplyAir(color, input.positionWS);
                 return RegionOutput(color, 1);
             }

@@ -26,8 +26,19 @@ namespace Vastcore.RegionMap.Editor
         [MenuItem(Menu + "High Tide", false, 121)]
         private static void HighTide() => FindSample()?.SetTide(true);
 
+        [MenuItem(Menu + "Concept View", false, 140)]
+        private static void ConceptView()
+        {
+            var camera = Camera.main;
+            var coast = FindSample();
+            if (camera == null || coast == null) return;
+            Place(camera, coast, 3);
+            SceneView.lastActiveSceneView?.AlignViewToObject(camera.transform);
+        }
+
         [MenuItem(Menu + "Low Tide", true)]
         [MenuItem(Menu + "High Tide", true)]
+        [MenuItem(Menu + "Concept View", true)]
         private static bool HasSample() => FindSample() != null;
 
         private static RegionPocketBeach FindSample() => UnityEngine.Object.FindFirstObjectByType<RegionPocketBeach>();
@@ -119,6 +130,33 @@ namespace Vastcore.RegionMap.Editor
             }
         }
 
+        public static void CaptureConceptFromCommandLine()
+        {
+            try
+            {
+                ShaderUtil.allowAsyncCompilation = false;
+                if (!EditorApplication.ExecuteMenuItem(Menu + "Seed 8") ||
+                    !EditorApplication.ExecuteMenuItem(Menu + "Low Tide") ||
+                    !EditorApplication.ExecuteMenuItem(Menu + "Concept View"))
+                    throw new InvalidOperationException("The pocket beach concept view did not open from the normal menu.");
+                var coast = FindSample();
+                var camera = Camera.main;
+                if (coast == null || camera == null || coast.IsHighTide || coast.BasinConnectedAtLow || !coast.ReefChannelAtLow)
+                    throw new InvalidOperationException("Expected the low-tide pocket beach with its retained pool and open channel.");
+                string output = Path.GetFullPath(RegionMapMenu.Argument("-regionOut", "artifacts/region-map/pocket-beach"));
+                Directory.CreateDirectory(output);
+                coast.SetWaveTime(4.5f);
+                RegionTerrainViewMenu.Capture(camera, output, "concept-view.png");
+                Debug.Log(FormattableString.Invariant($"[PocketBeach] PASS Concept View via Seed 8 and Low Tide; sun=38 wave=4.5 eye={camera.transform.position:F3} pitch={camera.transform.eulerAngles.x:F2} yaw={camera.transform.eulerAngles.y:F2} fov={camera.fieldOfView:F1}"));
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
+
         private static void Place(Camera camera, RegionPocketBeach coast, int shot)
         {
             Vector3 eye, target;
@@ -139,6 +177,11 @@ namespace Vastcore.RegionMap.Editor
                     Vector2 basin = coast.TidePool;
                     eye = new Vector3(basin.x + 9f, 4.8f, basin.y);
                     target = new Vector3(basin.x - 5f, 0.25f, basin.y - 5f);
+                    break;
+                case 3:
+                    camera.fieldOfView = 45f;
+                    eye = new Vector3(84f, 11f, -3.5f);
+                    target = eye + new Vector3(-100f, -25.2f, -14f);
                     break;
                 default: throw new ArgumentOutOfRangeException(nameof(shot));
             }
