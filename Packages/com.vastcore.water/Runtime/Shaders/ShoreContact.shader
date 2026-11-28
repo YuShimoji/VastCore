@@ -41,6 +41,9 @@ Shader "Vastcore/Water/Shore Contact"
                 float2 uv : TEXCOORD1;
                 float4 flow : TEXCOORD2; // distance or sheet seed, along, elapsed phase, opacity
                 nointerpolation float part : TEXCOORD3;
+                #if defined(COASTAL_BARRIER)
+                half3 sheetNormalWS : TEXCOORD4;
+                #endif
             };
 
             float2 CrestSection(float2 a, float2 b, float2 c, float2 tip, float u)
@@ -81,7 +84,7 @@ Shader "Vastcore/Water/Shore Contact"
                 return CrestSection(a, b, c, tip, u);
             }
 
-            float3 ImpactSheet(Attributes input, out float age, out float visibility)
+            float3 ImpactSheet(Attributes input, out float age, out float visibility, out float3 normal)
             {
                 float2 anchor = input.part.yz;
                 float seed = input.part.w;
@@ -98,14 +101,23 @@ Shader "Vastcore/Water/Shore Contact"
                 float across = input.uv.y * 2.0 - 1.0;
                 float loft = frac(seed * 11.71);
                 float spread = (0.44 + sin(u * PI) * 0.64) * (1.0 - 0.53 * u) * (1.0 - loft * 0.41);
-                spread *= 1.0 + sin(u * 22.0 + across * 1.6 + seed * 12.7) * 0.17;
+                spread *= 1.0 + sin(u * 22.0 + across * 1.6 + seed * 12.7) * 0.10;
                 float riseSpeed = lerp(5.0, 7.35, loft) * sqrt(energy);
                 float driftSpeed = lerp(1.25, 3.95, seed) * (0.67 + _Breaking.x * 0.50) * energy * (1.0 - loft * 0.24);
                 float tilt = lerp(-1.48, 1.28, frac(seed * 17.43)) + _Motion.y * 1.4;
-                float ridges = sin(u * 17.0 + across * 2.9 + seed * 8.3) * 0.14 * sin(u * PI);
-                float d = lerp(-0.71, 0.33, seed) + t * driftSpeed + across * t * 0.57 + ridges;
+                float ridges = sin(u * 17.0 + across * 2.9 + seed * 8.3) * 0.064 * sin(u * PI);
+                // Give the young water a convex section; it flattens as the sheet breaks into filaments.
+                float section = sqrt(1.11 - across * across);
+                float thickness = 0.40 * energy * (0.48 + 0.52 * sin(u * PI)) * (1.0 - 0.53 * u)
+                    * (1.0 - smoothstep(0.28, 0.87, t));
+                float bulge = thickness * (section - sqrt(0.11));
+                float d = lerp(-0.71, 0.33, seed) + t * driftSpeed + across * t * 0.43 + ridges + bulge;
                 float y = _Bank.z - 0.27 + t * (riseSpeed - 4.85 * t)
-                    + t * (1.0 - across * across) * 0.46 + ridges;
+                    + t * (1.0 - across * across) * 0.36 + ridges + bulge * 0.58;
+                float edgeSlope = -thickness * across / section;
+                float3 tangent = float3(driftSpeed + across * 0.43, riseSpeed - 9.70 * t + (1.0 - across * across) * 0.36, tilt);
+                float3 acrossSheet = float3(t * 0.43 + edgeSlope, -0.72 * t * across + edgeSlope * 0.58, spread * 0.83);
+                normal = SafeNormalize(cross(tangent, acrossSheet));
                 age = t;
                 visibility = smoothstep(0.012, 0.135, seconds) * (1.0 - smoothstep(0.91, 1.19, seconds))
                     * smoothstep(0.13, 0.74, energy) * (1.0 - smoothstep(82.0, 155.0, abs(z)));
@@ -173,16 +185,19 @@ Shader "Vastcore/Water/Shore Contact"
                 float u = input.uv.x;
                 float mode = input.part.x;
                 #if defined(COASTAL_BARRIER)
+                output.sheetNormalWS = 0.0;
                 if (mode > 3.5)
                 {
                     float sheetAge;
                     float sheetVisibility;
-                    float3 sheet = ImpactSheet(input, sheetAge, sheetVisibility);
+                    float3 normal;
+                    float3 sheet = ImpactSheet(input, sheetAge, sheetVisibility, normal);
                     output.positionWS = TransformObjectToWorld(sheet);
                     output.positionCS = TransformWorldToHClip(output.positionWS);
                     output.uv = input.uv;
                     output.flow = float4(input.part.w, sheet.z, sheetAge, sheetVisibility);
                     output.part = mode;
+                    output.sheetNormalWS = TransformObjectToWorldNormal(normal);
                     return output;
                 }
                 #endif
@@ -237,8 +252,14 @@ Shader "Vastcore/Water/Shore Contact"
                     float3 seed = input.part.yzw;
                     #if defined(COASTAL_BARRIER)
                     bool mist = mode > 2.1;
+                    bool wallSpray = !mist && seed.x < 0.67;
                     float start = mist ? lerp(0.036, 0.171, seed.x) : lerp(0.026, 0.122, seed.x);
                     float lifetime = mist ? lerp(0.13, 0.24, seed.y) : lerp(0.11, 0.238, seed.y);
+                    if (wallSpray)
+                    {
+                        start = lerp(0.012, 0.074, seed.x / 0.67);
+                        lifetime = lerp(0.159, 0.235, seed.y);
+                    }
                     #else
                     bool mist = seed.z > 0.78;
                     float start = lerp(0.032, 0.099, seed.x);
@@ -258,8 +279,16 @@ Shader "Vastcore/Water/Shore Contact"
                     {
                         birth.x -= 0.34;
                         drift = lerp(0.57, 2.43, seed.x) * (0.58 + energy * 0.42);
-                        riseSpeed = lerp(1.1, 3.65, seed.y) * energy;
+                        riseSpeed = lerp(1.24, 4.14, seed.y) * energy;
                         alongSpeed = _Motion.y * lerp(4.4, 9.6, seed.z) + lerp(-0.75, 0.85, seed.y);
+                    }
+                    else if (wallSpray)
+                    {
+                        // Uprushing spray stays over the cap before its own momentum spreads it inland.
+                        birth.x = lerp(-0.31, _Shore.y * 0.78, seed.y);
+                        drift = lerp(0.62, 2.35, seed.z / 0.63) * (0.63 + energy * 0.37);
+                        riseSpeed = lerp(6.7, 9.75, seed.y) * sqrt(energy);
+                        alongSpeed = lerp(-1.68, 2.54, seed.x / 0.67) + _Motion.y * 0.85;
                     }
                     z += alongSpeed * seconds;
                     d = birth.x + drift * seconds;
@@ -271,6 +300,12 @@ Shader "Vastcore/Water/Shore Contact"
                         : lerp(0.006, 0.027, size * size * size);
                     float stretch = mist ? lerp(1.05, 0.67, flight) : lerp(1.1, 1.73, size);
                     float density = mist ? lerp(0.39, 0.14, flight) : 1.14;
+                    if (wallSpray)
+                    {
+                        radius = lerp(0.092, 0.205, size) * (0.83 + flight * 0.68);
+                        stretch = lerp(1.47, 1.93, size);
+                        density = lerp(1.43, 0.53, flight) * smoothstep(0.10, 0.61, energy);
+                    }
                     #else
                     d = edge + seed.y * 0.47 + flight * lerp(1.3, 6.2, seed.z) * energy;
                     float lift = min(amp * 2.19, 5.2) * lerp(0.36, 1.0, seed.x) * (mist ? 0.69 : 1.0);
@@ -296,9 +331,18 @@ Shader "Vastcore/Water/Shore Contact"
                     }
                     #endif
                     output.positionWS = center + radius * (right * corner.x + up * corner.y * stretch);
+                    float opacity = fade * energy * density * _Breaking.y;
+                    #if defined(COASTAL_BARRIER)
+                    // Park an expired quad at a single clip-space point before it can generate fragments.
+                    output.positionCS = opacity > 0.0 ? TransformWorldToHClip(output.positionWS) : float4(0, 0, 0, 1);
+                    output.flow = wallSpray
+                        ? float4(seed.x * 71.0 + seed.y, seed.z * 83.0, 2.0 + flight, opacity)
+                        : float4(d, z, mist ? 1.0 : 0.0, opacity);
+                    #else
                     output.positionCS = TransformWorldToHClip(output.positionWS);
+                    output.flow = float4(d, z, mist ? 1.0 : 0.0, opacity);
+                    #endif
                     output.uv = input.uv;
-                    output.flow = float4(d, z, mist ? 1.0 : 0.0, fade * energy * density * _Breaking.y);
                     output.part = mode;
                     return output;
                 }
@@ -339,7 +383,7 @@ Shader "Vastcore/Water/Shore Contact"
                     float foam = ShoreFoam(water * 0.41);
                     float air = smoothstep(0.26, 0.72, foam * 0.54 + ragged * 0.48 + torn * 0.18);
                     float3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
-                    float3 normal = SafeNormalize(cross(ddx(input.positionWS), ddy(input.positionWS)));
+                    float3 normal = SafeNormalize(input.sheetNormalWS);
                     normal *= dot(normal, view) >= 0.0 ? 1.0 : -1.0;
                     float lift = 1.0 - saturate(dot(normal, view));
                     float3 body = lerp(_ShallowWater.rgb * 0.72, WaterSky(reflect(-view, normal)), lift * lift * 0.59);
@@ -363,7 +407,24 @@ Shader "Vastcore/Water/Shore Contact"
                     float closeFade = smoothstep(2.0, 6.0, length(input.positionWS - GetCameraPositionWS()));
                     float radial = dot(c, c);
                     #if defined(COASTAL_BARRIER)
-                    if (phase > 0.5)
+                    if (phase > 1.5)
+                    {
+                        // Each moving quad represents a small group of fine drops at the same depth.
+                        float age = saturate(phase - 2.0);
+                        float2 grid = input.uv * float2(6.0, 8.0) + float2(c.y * c.y * 0.57, c.x * c.y * 0.43);
+                        float2 cell = floor(grid) + p;
+                        float size = WaterHash(cell);
+                        float2 jitter = float2(WaterHash(cell + 17.7), WaterHash(cell - 8.9)) - 0.5;
+                        float unit = length(frac(grid) - 0.5 - jitter * 0.88);
+                        float radius = lerp(0.075, 0.226, size * size);
+                        float aa = clamp(fwidth(unit), 0.027, 0.16);
+                        float drops = (1.0 - smoothstep(radius - aa, radius + aa, unit)) * lerp(0.43, 0.87, size);
+                        float brokenEdge = WaterNoise(grid * 0.46 + p * 0.071);
+                        float envelope = 1.0 - smoothstep(0.12, 0.99, radial + (brokenEdge - 0.5) * 0.27);
+                        float haze = brokenEdge * lerp(0.15, 0.27, age);
+                        alpha = strength * (drops + haze) * envelope * closeFade;
+                    }
+                    else if (phase > 0.5)
                     {
                         // Broad, low-opacity fringes overlap near the wall without individual round puffs.
                         float2 air = input.positionWS.xy * float2(1.85, 2.6) + input.positionWS.z * float2(0.83, 0.43);
@@ -382,7 +443,7 @@ Shader "Vastcore/Water/Shore Contact"
                     if (phase > 0.5) radial += (WaterNoise(c * 3.1 + p.y * 0.49) - 0.5) * 0.36;
                     alpha = (1.0 - smoothstep(0.07, 0.95, radial)) * strength * breakup * closeFade;
                     #endif
-                    color = phase > 0.5 && barrier ? white * 0.86 : white * (barrier ? 1.14 : 1.0);
+                    color = barrier ? white * (phase > 0.5 && phase < 1.5 ? 0.86 : 1.14) : white;
                 }
                 else if (input.part < 0.5)
                 {
