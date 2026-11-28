@@ -51,10 +51,11 @@ namespace Vastcore.RegionMap
         }
 
         public static RegionWoodlandGeometry Plant(RegionWoodlandForm form, int shape, bool detailed, bool fineLeaves = false,
-            bool rainforest = false)
+            RegionWoodlandPreset preset = RegionWoodlandPreset.Forest)
         {
             var geometry = new RegionWoodlandGeometry();
             var rng = new System.Random(71 * (int)form + 1103 * shape + 509);
+            bool rainforest = preset == RegionWoodlandPreset.Rainforest;
             bool broadFronds = rainforest && fineLeaves;
             switch (form)
             {
@@ -69,7 +70,10 @@ namespace Vastcore.RegionMap
                         broadFronds ? 0.96f : 0.83f, detailed, broadFronds);
                     break;
                 case RegionWoodlandForm.BroadleafHerb: geometry.GroundPlant(rng, detailed ? 10 : 6, false, 0.92f, detailed); break;
-                case RegionWoodlandForm.Grass: geometry.Grass(rng); break;
+                case RegionWoodlandForm.Grass:
+                    if (preset == RegionWoodlandPreset.NaturePark) geometry.MeadowGrass(rng, detailed);
+                    else geometry.Grass(rng);
+                    break;
             }
             return geometry;
         }
@@ -407,6 +411,42 @@ namespace Vastcore.RegionMap
                 Vector3 root = Compass(a) * Range(rng, 0.035f, 0.52f);
                 Vector3 tip = root + Compass(a) * Range(rng, 0.12f, 0.56f) + Vector3.up * Range(rng, 0.28f, 1.00f);
                 Leaf(root, tip, Compass(a + 1.57f) * Range(rng, 0.022f, 0.063f), Tone(green, Range(rng, 0.68f, 1.21f)));
+            }
+        }
+
+        private void MeadowGrass(System.Random rng, bool detailed)
+        {
+            Color32 green = Tone(new Color32(116, 128, 75, 255), Range(rng, 0.84f, 1.15f));
+            float sway = Range(rng, -0.39f, 0.41f);
+            int blades = detailed ? 17 : 11;
+            for (int i = 0; i < blades; i++)
+            {
+                float angle = i * 2.40f + sway;
+                Vector3 outward = Compass(angle);
+                Vector3 side = Compass(angle + 1.57f);
+                Vector3 root = outward * Range(rng, 0.035f, 0.90f) - Vector3.up * 0.025f;
+                float height = Range(rng, 0.31f, 0.94f);
+                Vector3 reach = outward * Range(rng, 0.22f, 0.63f);
+                Vector3 bend = root + reach * 0.31f + Vector3.up * (height * 0.63f);
+                Vector3 tip = root + reach + Vector3.up * height;
+                Vector3 width = side * Range(rng, 0.022f, 0.048f);
+                Color32 blade = Tone(green, Range(rng, 0.79f, 1.20f));
+                Vector3 normal = Vector3.Cross(tip - root, side).normalized;
+                if (normal.y < 0f) normal = -normal;
+                int first = Add(root - width, normal, Tone(blade, 0.76f));
+                Add(root + width, normal, Tone(blade, 0.79f));
+                Add(bend - width * 0.68f, normal, blade);
+                Add(bend + width * 0.68f, normal, Tone(blade, 0.94f));
+                Add(tip, normal, Tone(blade, 1.12f));
+                Tri(first, first + 1, first + 2);
+                Tri(first + 1, first + 3, first + 2);
+                Tri(first + 2, first + 3, first + 4);
+                if (detailed && i % 4 == 0 && height > 0.62f)
+                {
+                    Vector3 stalk = Vector3.Lerp(bend, tip, 0.60f);
+                    var straw = new Color32(160, 142, 87, 255);
+                    Leaf(stalk, tip + Vector3.up * 0.11f, side * 0.027f, straw);
+                }
             }
         }
 

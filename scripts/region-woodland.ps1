@@ -49,6 +49,14 @@ foreach ($seed in $regionSeeds) {
           }
         }
       }
+      if ($profile -eq 'NaturePark' -and [int]$sun -eq 38) {
+        foreach ($view in @('walk-start', 'walk-meadow', 'walk-woods')) {
+          $image = Get-Item -LiteralPath (Join-Path $output "seed-$seed/$profile/sun-$sun/$view.png") -ErrorAction SilentlyContinue
+          if (-not $image -or $image.Length -le 0 -or $image.LastWriteTimeUtc -lt $captureStarted) {
+            throw "The current capture did not produce $seed/$profile/$sun/$view.png. See $log"
+          }
+        }
+      }
     }
   }
 }

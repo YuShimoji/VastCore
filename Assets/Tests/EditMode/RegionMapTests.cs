@@ -98,6 +98,44 @@ namespace Vastcore.Tests.EditMode
         }
 
         [Test]
+        public void ParkWalk_StepsAlongTheDryTrailAndStopsAtAContinuousSection()
+        {
+            var scene = WoodlandTestScene(93);
+            var layout = RegionWoodlandLayout.Build(scene, RegionWoodlandPreset.NaturePark, 8, 8);
+            Vector3[] dry = RegionParkWalk.BuildRoute(scene, layout);
+            Assert.That(dry.Length, Is.GreaterThan(150));
+            const int floodedRow = 70;
+            RegionData data = scene.Inner.Data;
+            for (int x = 0; x < data.Resolution; x++) data.LakeDepth[data.Index(x, floodedRow)] = 1f;
+
+            Vector3[] route = RegionParkWalk.BuildRoute(scene, layout);
+            Assert.That(route.Length, Is.InRange(100, dry.Length - 5));
+            for (int i = 0; i < route.Length; i++)
+            {
+                Vector3 point = route[i];
+                float south = -point.z - scene.CenterZ;
+                Assert.That(scene.CenterZ + south, Is.LessThan((floodedRow - 0.5f) * scene.InnerCell));
+                Assert.That(point.x - scene.CenterX, Is.EqualTo(layout.TrailEast(south)).Within(0.001f));
+                Assert.That(point.y, Is.EqualTo(120f));
+                if (i > 0) Assert.That(point.z - route[i - 1].z, Is.InRange(0.61f, 0.63f));
+            }
+
+            GameObject view = new GameObject("Park walk test");
+            try
+            {
+                RegionParkWalk walk = view.AddComponent<RegionParkWalk>();
+                walk.Configure(route);
+                Assert.That(view.transform.position, Is.EqualTo(route[0] + Vector3.up * RegionParkWalk.EyeHeight));
+                walk.ShowProgress(1f);
+                Assert.That(view.transform.position, Is.EqualTo(route[route.Length - 1] + Vector3.up * RegionParkWalk.EyeHeight));
+            }
+            finally
+            {
+                Object.DestroyImmediate(view);
+            }
+        }
+
+        [Test]
         public void Generate_SameSeed_ProducesSameRegion()
         {
             RegionData a = RegionGenerator.Generate(SmallSpec(11));

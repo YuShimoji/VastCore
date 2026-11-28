@@ -29,6 +29,8 @@ namespace Vastcore.RegionMap
     public sealed class RegionWoodlandLayout
     {
         public const float TrailLength = 360f;
+        internal const float TrailSectionSpacing = 0.62f;
+        internal const int TrailSectionColumns = 7;
         private const float StandRadius = 367f;
         private readonly uint layoutSeed;
 
@@ -67,6 +69,8 @@ namespace Vastcore.RegionMap
             float spacing = rainforest ? 8f : 9.7f;
             layout.Scatter(scene, layout.Canopy, StandRadius, spacing, unchecked((uint)shapeSeed), true);
             layout.Scatter(scene, layout.Understory, 100f, rainforest ? 2.05f : 2.4f, unchecked((uint)shapeSeed), false);
+            if (preset == RegionWoodlandPreset.NaturePark)
+                layout.ScatterMeadowGrass(scene, unchecked((uint)shapeSeed));
             return layout;
         }
 
@@ -109,6 +113,20 @@ namespace Vastcore.RegionMap
 
         public float TrailEast(float south) => 10f * (float)Math.Sin(south / 33f) + 3f * (float)Math.Sin(south / 14f);
 
+        internal float TrailWidth(float south) =>
+            TrailHalfWidth * (1f + 0.25f * RegionNoise.Gradient(south / 13f, 2.6f, 917u));
+
+        internal bool TryTrailSection(RegionLookScene scene, float east, float south, float width, float[] heights)
+        {
+            bool supported = true;
+            for (int j = 0; j < TrailSectionColumns; j++)
+            {
+                float across = j * (2f / (TrailSectionColumns - 1)) - 1f;
+                supported &= TryGround(scene, east + across * width * 1.34f, south, out heights[j], out _);
+            }
+            return supported;
+        }
+
         // A conservative lower bound on clearance from the curve, including where it bends.
         public float TrailClearance(float east, float south) =>
             Math.Abs(east - TrailEast(south)) * 0.88f - TrailHalfWidth;
@@ -143,10 +161,44 @@ namespace Vastcore.RegionMap
         private static bool IsDryGround(RegionData data, int index) =>
             data.Height[index] > 0f && data.LakeDepth[index] <= 0f && data.Biome[index] != RegionBiome.River;
 
+        private void ScatterMeadowGrass(RegionLookScene scene, uint shapeSeed)
+        {
+            const float spacing = 1.28f;
+            const int reach = 79;
+            uint salt = layoutSeed + 709u;
+            for (int iz = -reach; iz <= reach; iz++)
+            for (int ix = -reach; ix <= reach; ix++)
+            {
+                float east = (ix + 0.92f * (RegionNoise.Hash01(ix, iz, salt) - 0.5f)) * spacing;
+                float south = (iz + 0.92f * (RegionNoise.Hash01(ix, iz, salt + 1) - 0.5f)) * spacing;
+                float meadow = Meadow(east, south);
+                float trailEast = TrailEast(south);
+                float verge = Math.Abs(east - trailEast) * 0.88f - TrailWidth(south);
+                float vergeCover = (1f - RegionNoise.Smooth(3.6f, 10.5f, verge)) *
+                    RegionNoise.Smooth(0.14f, 0.72f, Meadow(trailEast, south));
+                if (meadow < 0.16f && vergeCover < 0.08f) continue;
+                float patch = RegionNoise.Smooth(-0.28f, 0.28f, RegionNoise.Gradient(east / 5.8f, south / 8.3f, salt + 2));
+                float edge = RegionNoise.Smooth(0.16f, 0.47f, meadow) * (1f - RegionNoise.Smooth(0.54f, 0.88f, meadow));
+                float density = (0.22f + 0.67f * patch) * RegionNoise.Smooth(0.14f, 0.62f, meadow) + 0.17f * edge;
+                density = Math.Max(density, vergeCover * (0.34f + 0.46f * patch));
+                if (RegionNoise.Hash01(ix, iz, salt + 3) > density) continue;
+
+                float variation = RegionNoise.Hash01(ix, iz, salt + 4);
+                float fieldHeight = 0.21f + 0.37f * patch + 0.37f * edge + 0.17f * variation;
+                float metres = 0.13f + (fieldHeight - 0.13f) * RegionNoise.Smooth(0.24f, 4.2f, verge);
+                if (verge < metres * 0.80f + 0.19f ||
+                    !TryGround(scene, east, south, out float height, out _)) continue;
+                int shape = (int)(6f * RegionNoise.Hash01(ix, iz, shapeSeed + 2011u));
+                float yaw = 360f * RegionNoise.Hash01(ix, iz, salt + 5);
+                Understory.Add(new RegionWoodlandPlant(RegionWoodlandForm.Grass, east, south, height, metres, yaw, shape));
+            }
+        }
+
         private void Scatter(RegionLookScene scene, List<RegionWoodlandPlant> plants, float extent, float spacing, uint formSeed, bool canopy)
         {
             bool rainforest = Preset == RegionWoodlandPreset.Rainforest;
             bool forest = Preset == RegionWoodlandPreset.Forest;
+            bool park = Preset == RegionWoodlandPreset.NaturePark;
             uint salt = layoutSeed + (canopy ? 111u : 409u);
             int radius = (int)(extent / spacing);
             for (int iz = -radius; iz <= radius; iz++)
@@ -186,6 +238,8 @@ namespace Vastcore.RegionMap
 
                 float pick = RegionNoise.Hash01(ix, iz, salt + 3);
                 float size = RegionNoise.Hash01(ix, iz, salt + 4);
+                bool parkShrub = park && meadow > 0.16f && meadow < 0.58f && clearance > 2.3f && pick > 0.65f;
+                if (!canopy && park && meadow > 0.30f && !parkShrub) continue;
                 float needleBias = 0.43f + 0.24f * (1f - moisture);
                 if (forest)
                 {
@@ -196,7 +250,8 @@ namespace Vastcore.RegionMap
                 var form = canopy
                     ? rainforest && pick < 0.82f ? RegionWoodlandForm.TallBroadleaf
                         : forest && pick < needleBias ? RegionWoodlandForm.Conifer : RegionWoodlandForm.SpreadingTree
-                    : meadow > 0.3f || pick < (rainforest ? 0.14f : 0.20f) ? RegionWoodlandForm.Grass
+                    : parkShrub ? RegionWoodlandForm.Shrub
+                        : pick < (rainforest ? 0.14f : 0.20f) ? RegionWoodlandForm.Grass
                         : rainforest && pick > 0.986f - 0.16f * thicket && clearance > 2.8f ? RegionWoodlandForm.SpreadingTree
                         : rainforest && pick > 0.66f ? RegionWoodlandForm.BroadleafHerb
                         : forest && pick > 0.94f && grove > 0.42f && clearance > 3.8f ? RegionWoodlandForm.SpreadingTree
@@ -207,7 +262,7 @@ namespace Vastcore.RegionMap
                     RegionWoodlandForm.Conifer => 11f + 22f * size,
                     RegionWoodlandForm.SpreadingTree => canopy ? 9f + (forest ? 17f : 13f) * size
                         : (rainforest ? 4.1f : 3.4f) + 4f * size,
-                    RegionWoodlandForm.Shrub => 0.85f + 1.0f * size,
+                    RegionWoodlandForm.Shrub => parkShrub ? 0.61f + 0.74f * size : 0.85f + 1.0f * size,
                     RegionWoodlandForm.Fern => rainforest ? 0.48f + 1.14f * size : 0.38f + 0.78f * size,
                     RegionWoodlandForm.BroadleafHerb => 0.66f + 1.3f * size,
                     _ => 0.15f + 0.40f * size,
