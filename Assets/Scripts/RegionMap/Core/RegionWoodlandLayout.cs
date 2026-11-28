@@ -161,6 +161,13 @@ namespace Vastcore.RegionMap
 
                 float grove = RegionNoise.Smooth(-0.39f, 0.27f, RegionNoise.Gradient(east / 42f, south / 49f, layoutSeed + 17));
                 float patch = RegionNoise.Smooth(-0.45f, 0.35f, RegionNoise.Gradient(east / 11f, south / 13f, layoutSeed + 71));
+                float thicket = 0f;
+                if (rainforest && !canopy)
+                {
+                    // The young trees and fern colonies share a broader pattern of thickets and gaps.
+                    float stand = RegionNoise.FbmTurned(east / 29f, south / 34f, 2, layoutSeed + 503u);
+                    thicket = RegionNoise.Smooth(-0.22f, 0.20f, stand + 0.26f * (patch - 0.5f));
+                }
                 float meadow = Meadow(east, south);
                 float edge = 1f - RegionNoise.Smooth(3f, 23f, clearance);
                 if (forest)
@@ -171,7 +178,9 @@ namespace Vastcore.RegionMap
                 }
                 float treeDensity = rainforest ? 0.47f + grove * 0.49f :
                     forest ? 0.064f + grove * 0.91f : 0.075f + grove * grove * 0.88f;
-                float understory = (0.15f + 0.45f * patch + 0.18f * edge + (rainforest ? 0.15f : 0f)) * (0.85f + 0.24f * moisture);
+                float understory = rainforest ? 0.18f + 0.51f * thicket + 0.13f * patch + 0.11f * edge
+                    : 0.15f + 0.45f * patch + 0.18f * edge;
+                understory *= 0.85f + 0.24f * moisture;
                 float probability = canopy ? treeDensity * (1f - meadow) : understory;
                 if (RegionNoise.Hash01(ix, iz, salt + 2) >= probability) continue;
 
@@ -187,25 +196,45 @@ namespace Vastcore.RegionMap
                 var form = canopy
                     ? rainforest && pick < 0.82f ? RegionWoodlandForm.TallBroadleaf
                         : forest && pick < needleBias ? RegionWoodlandForm.Conifer : RegionWoodlandForm.SpreadingTree
-                    : meadow > 0.3f || pick < 0.20f ? RegionWoodlandForm.Grass
-                        : rainforest && pick > 0.978f && clearance > 3.6f ? RegionWoodlandForm.SpreadingTree
-                        : rainforest && pick > 0.56f ? RegionWoodlandForm.BroadleafHerb
+                    : meadow > 0.3f || pick < (rainforest ? 0.14f : 0.20f) ? RegionWoodlandForm.Grass
+                        : rainforest && pick > 0.986f - 0.16f * thicket && clearance > 2.8f ? RegionWoodlandForm.SpreadingTree
+                        : rainforest && pick > 0.66f ? RegionWoodlandForm.BroadleafHerb
                         : forest && pick > 0.94f && grove > 0.42f && clearance > 3.8f ? RegionWoodlandForm.SpreadingTree
                         : pick > 0.73f && clearance > 2.2f ? RegionWoodlandForm.Shrub : RegionWoodlandForm.Fern;
                 float metres = form switch
                 {
                     RegionWoodlandForm.TallBroadleaf => 19f + 14f * size,
                     RegionWoodlandForm.Conifer => 11f + 22f * size,
-                    RegionWoodlandForm.SpreadingTree => canopy ? 9f + (forest ? 17f : 13f) * size : 3.4f + 4f * size,
+                    RegionWoodlandForm.SpreadingTree => canopy ? 9f + (forest ? 17f : 13f) * size
+                        : (rainforest ? 4.1f : 3.4f) + 4f * size,
                     RegionWoodlandForm.Shrub => 0.85f + 1.0f * size,
-                    RegionWoodlandForm.Fern => 0.38f + (rainforest ? 1.03f : 0.78f) * size,
+                    RegionWoodlandForm.Fern => rainforest ? 0.48f + 1.14f * size : 0.38f + 0.78f * size,
                     RegionWoodlandForm.BroadleafHerb => 0.66f + 1.3f * size,
                     _ => 0.15f + 0.40f * size,
                 };
-                if (!canopy && clearance < metres * (form == RegionWoodlandForm.Grass ? 0.78f : 1.25f) + 0.20f) continue;
+                float horizontalReach = form == RegionWoodlandForm.Grass ? 0.78f
+                    : rainforest && form == RegionWoodlandForm.SpreadingTree ? 0.58f : 1.25f;
+                if (!canopy && clearance < metres * horizontalReach + 0.20f) continue;
                 int shape = (int)(6f * RegionNoise.Hash01(ix, iz, formSeed + (canopy ? 811u : 1717u)));
                 float yaw = 360f * RegionNoise.Hash01(ix, iz, salt + 5);
                 plants.Add(new RegionWoodlandPlant(form, east, south, height, metres, yaw, shape));
+
+                if (rainforest && form == RegionWoodlandForm.Fern && clearance < 9f &&
+                    RegionNoise.Hash01(ix, iz, salt + 6) < 0.58f)
+                {
+                    // A smaller neighbouring rosette overlaps the existing fronds on the trail shoulder.
+                    double angle = yaw * Math.PI / 180.0;
+                    float smaller = metres * (0.52f + 0.22f * RegionNoise.Hash01(ix, iz, salt + 7));
+                    float neighborEast = east + (float)Math.Cos(angle) * metres * 0.63f;
+                    float neighborSouth = south + (float)Math.Sin(angle) * metres * 0.63f;
+                    if (TrailClearance(neighborEast, neighborSouth) > smaller * 1.25f + 0.20f &&
+                        TryGround(scene, neighborEast, neighborSouth, out float neighborHeight, out _))
+                    {
+                        int neighborShape = (int)(6f * RegionNoise.Hash01(ix, iz, formSeed + 1879u));
+                        plants.Add(new RegionWoodlandPlant(form, neighborEast, neighborSouth, neighborHeight,
+                            smaller, (yaw + 143f) % 360f, neighborShape));
+                    }
+                }
             }
         }
     }

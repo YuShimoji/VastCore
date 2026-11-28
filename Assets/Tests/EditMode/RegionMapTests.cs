@@ -15,8 +15,7 @@ namespace Vastcore.Tests.EditMode
             return new RegionSpec { Seed = seed, Resolution = 128, ErosionIterations = 8, SiteCount = 10 };
         }
 
-        [Test]
-        public void Woodland_ShapeSeedKeepsPlacementAndTheParkMeadowStaysOpen()
+        private static RegionLookScene WoodlandTestScene(int lakeStart)
         {
             const int size = 129;
             const float span = 820f;
@@ -25,14 +24,20 @@ namespace Vastcore.Tests.EditMode
             System.Array.Fill(data.Moisture, 0.62f);
             System.Array.Fill(data.Biome, RegionBiome.Forest);
             for (int z = 0; z < size; z++)
-            for (int x = 93; x < size; x++)
+            for (int x = lakeStart; x < size; x++)
                 data.LakeDepth[data.Index(x, z)] = 1f;
 
-            var scene = new RegionLookScene
+            return new RegionLookScene
             {
                 Inner = new RegionDetail { Data = data }, InnerCell = span / (size - 1),
                 CenterX = span / 2f, CenterZ = span / 2f, InnerMaxX = span, InnerMaxZ = span,
             };
+        }
+
+        [Test]
+        public void Woodland_ShapeSeedKeepsPlacementAndTheParkMeadowStaysOpen()
+        {
+            var scene = WoodlandTestScene(93);
             var original = RegionWoodlandLayout.Build(scene, RegionWoodlandPreset.NaturePark, 8, 8);
             var changed = RegionWoodlandLayout.Build(scene, RegionWoodlandPreset.NaturePark, 8, 17);
             int differentMeshes = 0;
@@ -54,6 +59,42 @@ namespace Vastcore.Tests.EditMode
                 }
             }
             Assert.That(differentMeshes, Is.GreaterThan(0));
+        }
+
+        [TestCase(8)]
+        [TestCase(9)]
+        public void Rainforest_LowCrownsFormThicketsAndKeepTheirSitesAcrossShapeSeeds(int layoutSeed)
+        {
+            const int lakeStart = 74;
+            var scene = WoodlandTestScene(lakeStart);
+            var layout = RegionWoodlandLayout.Build(scene, RegionWoodlandPreset.Rainforest, layoutSeed, 8);
+            var reshape = RegionWoodlandLayout.Build(scene, RegionWoodlandPreset.Rainforest, layoutSeed, 17);
+            Assert.That(reshape.Understory.Count, Is.EqualTo(layout.Understory.Count));
+
+            const int patchSize = 16;
+            var crowns = new int[8, 10];
+            for (int i = 0; i < layout.Understory.Count; i++)
+            {
+                RegionWoodlandPlant a = layout.Understory[i], b = reshape.Understory[i];
+                Assert.That((a.Form, a.East, a.South, a.Ground, a.Height, a.Yaw),
+                    Is.EqualTo((b.Form, b.East, b.South, b.Ground, b.Height, b.Yaw)));
+                Assert.That(a.East + scene.CenterX, Is.LessThan((lakeStart - 0.5f) * scene.InnerCell));
+                Assert.That(layout.TrailClearance(a.East, a.South), Is.GreaterThan(0f));
+                if (a.Form != RegionWoodlandForm.SpreadingTree) continue;
+
+                Assert.That(a.Height, Is.InRange(4f, 9f));
+                int x = Mathf.FloorToInt((a.East + 80f) / patchSize);
+                int z = Mathf.FloorToInt((a.South + 80f) / patchSize);
+                if (x >= 0 && x < crowns.GetLength(0) && z >= 0 && z < crowns.GetLength(1)) crowns[x, z]++;
+            }
+
+            bool gap = false, thicket = false;
+            foreach (int count in crowns)
+            {
+                gap |= count == 0;
+                thicket |= count >= 4;
+            }
+            Assert.That(gap && thicket, Is.True, "Low crowns should form groups with intervening gaps on dry ground.");
         }
 
         [Test]

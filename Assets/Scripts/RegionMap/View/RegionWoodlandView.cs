@@ -37,7 +37,7 @@ namespace Vastcore.RegionMap
             var trail = new Material(shader) { name = "Woodland Trail", hideFlags = HideFlags.DontSave };
             trail.SetFloat("_Ground", 1f);
             MeshRenderer ground = parent.Find(scene.InnerTerrain.Name).GetComponent<MeshRenderer>();
-            bool forest = layout.Preset == RegionWoodlandPreset.Forest;
+            bool surfaceTrail = layout.Preset != RegionWoodlandPreset.NaturePark;
             var result = new Result
             {
                 Baseline = parent.Find("Vegetation")?.gameObject,
@@ -47,12 +47,12 @@ namespace Vastcore.RegionMap
                 Ground = ground,
                 BaselineGround = ground.sharedMaterial,
                 WoodlandGround = BakeForestFloor(scene, layout, ground.sharedMaterial),
-                SurfaceTrail = forest,
+                SurfaceTrail = surfaceTrail,
             };
-            result.CanopyTriangles = BuildPlants(result.Canopy.transform, plants, scene, layout.Canopy, true, forest);
-            result.UnderstoryTriangles = BuildPlants(result.Understory.transform, plants, scene, layout.Understory, false, forest);
+            result.CanopyTriangles = BuildPlants(result.Canopy.transform, plants, scene, layout.Canopy, true, layout.Preset);
+            result.UnderstoryTriangles = BuildPlants(result.Understory.transform, plants, scene, layout.Understory, false, layout.Preset);
             result.RealProps = AddForestFloor(result.Understory.transform, plants, scene, layout);
-            RegionWoodlandGeometry ribbon = BuildTrail(scene, layout, forest ? result.WoodlandGround : null);
+            RegionWoodlandGeometry ribbon = BuildTrail(scene, layout, surfaceTrail ? result.WoodlandGround : null);
             AddMesh(result.Trail.transform, "Ground ribbon", ribbon, trail, ShadowCastingMode.Off);
             result.Show(true, true);
             return result;
@@ -76,8 +76,9 @@ namespace Vastcore.RegionMap
         }
 
         private static int BuildPlants(Transform parent, Material material, RegionLookScene scene,
-            List<RegionWoodlandPlant> plants, bool tall, bool forest)
+            List<RegionWoodlandPlant> plants, bool tall, RegionWoodlandPreset preset)
         {
+            bool rainforest = preset == RegionWoodlandPreset.Rainforest;
             var forms = new Dictionary<(RegionWoodlandForm, int, bool, bool), RegionWoodlandGeometry>();
             var tiles = new Dictionary<Vector2Int, RegionWoodlandGeometry>();
             foreach (RegionWoodlandPlant plant in plants)
@@ -86,12 +87,14 @@ namespace Vastcore.RegionMap
                 // These are fixed review meshes. Camera-driven LOD selection belongs to the ground view.
                 bool detailed = tall
                     ? Mathf.Abs(plant.East) < 54f && Mathf.Abs(plant.South) < 82f
-                    : Mathf.Abs(plant.East) < 29f && Mathf.Abs(plant.South) < 52f;
-                bool fineLeaves = forest && detailed && Mathf.Abs(plant.East) < 38f && Mathf.Abs(plant.South) < 55f;
+                    : Mathf.Abs(plant.East) < (rainforest ? 25f : 29f) && Mathf.Abs(plant.South) < (rainforest ? 46f : 52f);
+                bool fineLeaves = detailed && (rainforest
+                    ? Mathf.Abs(plant.East) < 33f && Mathf.Abs(plant.South) < 43f
+                    : preset == RegionWoodlandPreset.Forest && Mathf.Abs(plant.East) < 38f && Mathf.Abs(plant.South) < 55f);
                 var form = (plant.Form, plant.Shape, detailed, fineLeaves);
                 if (!forms.TryGetValue(form, out RegionWoodlandGeometry template))
                 {
-                    template = RegionWoodlandGeometry.Plant(plant.Form, plant.Shape, detailed, fineLeaves);
+                    template = RegionWoodlandGeometry.Plant(plant.Form, plant.Shape, detailed, fineLeaves, rainforest);
                     forms.Add(form, template);
                 }
                 float size = tall ? 52f : 23f;
@@ -139,8 +142,8 @@ namespace Vastcore.RegionMap
                 }
             }
             bool tropical = layout.Preset == RegionWoodlandPreset.Rainforest;
-            var dry = tropical ? new Color32(111, 99, 70, 255) : new Color32(133, 111, 76, 255);
-            var shaded = tropical ? new Color32(73, 65, 47, 255) : new Color32(95, 74, 51, 255);
+            var dry = tropical ? new Color32(114, 91, 65, 255) : new Color32(133, 111, 76, 255);
+            var shaded = tropical ? new Color32(64, 53, 38, 255) : new Color32(95, 74, 51, 255);
             var grass = new Color32(113, 129, 68, 255);
             RegionData ground = scene.Inner.Data;
             for (int z = 0; z < n; z++)
@@ -155,6 +158,7 @@ namespace Vastcore.RegionMap
                 Color32 soil = Color32.Lerp(dry, shaded, cover);
                 float meadow = layout.Meadow(east, south);
                 float sunlight = Mathf.Clamp01(0.2f + patch * 0.65f - shelter[index] * 0.20f);
+                if (tropical) sunlight *= 0.20f;
                 Color32 floor = Color32.Lerp(soil, grass, Mathf.Max(meadow * 0.88f, sunlight));
                 int pixel = x + (n - 1 - z) * n;
                 pixels[pixel] = Color32.Lerp(pixels[pixel], floor, area * 0.92f);
@@ -169,7 +173,7 @@ namespace Vastcore.RegionMap
             material.SetTexture("_BaseMap", texture);
             Vector4 blend = material.GetVector("_RegionBiomeGroundBlend");
             blend.x = Mathf.Min(blend.x, 0.35f);
-            if (layout.Preset == RegionWoodlandPreset.Forest)
+            if (layout.Preset != RegionWoodlandPreset.NaturePark)
             {
                 const string folder = "RegionMap3D/Woodland/forest_floor_";
                 var litter = new RegionBiomeSurfaceTextures.TextureSet
@@ -178,12 +182,12 @@ namespace Vastcore.RegionMap
                     Normal = Resources.Load<Texture2D>(folder + "nor_gl_1k"),
                     Roughness = Resources.Load<Texture2D>(folder + "rough_1k"),
                 };
-                if (!litter.IsComplete) throw new InvalidOperationException("The forest leaf-litter material is incomplete.");
+                if (!litter.IsComplete) throw new InvalidOperationException("The woodland leaf-litter material is incomplete.");
                 RegionSurfaceMaterials.BindBiomeTextureSet(material, "_BiomeGround", litter);
                 Vector4 tile = material.GetVector("_RegionBiomeTile");
                 tile.x = 1f / 2.1f;
                 material.SetVector("_RegionBiomeTile", tile);
-                blend.x = 0.58f;
+                blend.x = tropical ? 0.48f : 0.58f;
             }
             material.SetVector("_RegionBiomeGroundBlend", blend);
             return material;
@@ -321,12 +325,12 @@ namespace Vastcore.RegionMap
 
         private static void AddLeafLitter(RegionWoodlandGeometry mesh, RegionLookScene scene, RegionWoodlandLayout layout, System.Random rng)
         {
-            bool forest = layout.Preset == RegionWoodlandPreset.Forest;
+            bool surfaceTrail = layout.Preset != RegionWoodlandPreset.NaturePark;
             for (int i = 0; i < 88; i++)
             {
                 float south = -19f + 64f * (float)rng.NextDouble();
                 float scatter = (float)rng.NextDouble();
-                float fringe = forest ? TrailWidth(layout, south) - 0.26f + 2.05f * scatter : layout.TrailHalfWidth + 0.10f + 3.1f * scatter;
+                float fringe = surfaceTrail ? TrailWidth(layout, south) - 0.26f + 2.05f * scatter : layout.TrailHalfWidth + 0.10f + 3.1f * scatter;
                 float east = layout.TrailEast(south) + ((i & 1) == 0 ? fringe : -fringe);
                 if (!layout.TryGround(scene, east, south, out _, out _)) continue;
                 for (int j = 0; j < 13; j++)
@@ -337,7 +341,7 @@ namespace Vastcore.RegionMap
                     float size = 0.05f + 0.16f * (float)rng.NextDouble();
                     var direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * size;
                     float height = scene.RenderedHeightAt(x, z);
-                    if (forest)
+                    if (surfaceTrail)
                     {
                         float localZ = z - scene.CenterZ;
                         float localX = x - scene.CenterX;
