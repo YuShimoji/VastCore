@@ -21,7 +21,8 @@ Normal restart / continue reads only:
 2. `docs/REPO_LOCAL_RULES.md`
 3. `docs/runtime-state.md`
 
-For environment or package visuals and LOD comparisons, also read the relevant
+For environment or package visuals and LOD comparisons, also read
+`docs/02_design/ENVIRONMENT_PRODUCTION_PIPELINE.md` (DS-015) and the relevant
 [Mission Packet](OPERATOR_WORKFLOW.md#supervisor-to-developer-mission-packet)
 guidance at entry. On resume, use the current procedure and evidence tied to
 the same version, entry point, and conditions. Limit other reads to the relevant owner doc.
@@ -63,6 +64,13 @@ the same version, entry point, and conditions. Limit other reads to the relevant
   two or three genuinely different routes before broad implementation. Once a
   route and proof slice are selected, execute that slice without asking again
   for routine details inside the agreed intent.
+- For environment/visual packages, follow `docs/02_design/ENVIRONMENT_PRODUCTION_PIPELINE.md`
+  (DS-015): inspect existing shared assets before coding, map ideal-concept
+  elements to real PBR/FBX/shader realization (no primitive/vertex-color final
+  look), run at least two autonomous diagnosis-and-fix rounds (plus one
+  structural pivot if tuning does not converge) before returning, and pass
+  `scripts/check-env-package-review.ps1`. Do not stop after Round 1 with only a
+  "remaining gaps" note.
 
 ## State Sync Is Part Of Completion
 

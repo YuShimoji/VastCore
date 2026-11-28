@@ -39,11 +39,13 @@ Sync on close: runtime-state と今回変わる owning artifact
 Start from: branch/commit と必要最小限の task/spec/正本パス
 ```
 
-画を作る環境・パッケージは、制作前に参考画像を開き、採る点と完成想定図を出典とともに示す。
-`Acceptance` は通常の入口と代表視点。初回返却までに、試写の差を単色や入切で一条件ずつ
-確かめて依頼内で直し、同じ視点・光・seed（動きは時刻も）で撮り直す。参考・想定・Unity 前後、
-効いた修正、残る差、機能と関係する負荷を示す。方向選択が必要なら、選ぶ範囲を示し、
-依存しない調査や基準撮影を進める。
+画を作る環境・パッケージは、統一正本 [DS-015 環境パッケージ制作パイプライン](02_design/ENVIRONMENT_PRODUCTION_PIPELINE.md)
+に従う。制作前に共有資産インベントリ（DS-015 §2）を照合し、出典付き参考画像・完成想定図・距離帯ごとの
+実現手段マップ（§3、プリミティブ/頂点カラー単色の最終利用禁止）を揃える。`Acceptance` は通常の入口と
+代表視点。承認済み方向の内側では、初回試写で止めずに「試写→4軸乖離診断（単色・入切）→原因別修正→
+再撮影」を最低2巡（収束しなければ構造ピボット1回）まで自律完遂し、`scripts/check-env-package-review.ps1`
+を通したうえで、参考・想定・Unity 前後、再利用資産、効いた修正、残る差、負荷を一式で返す。方向選択が
+必要な場合も、依存しない調査・資産照合・基準撮影は先に進める。
 
 インポスターなどの LOD は、通常入口で対象・配置・視点・照明を揃える。現行メッシュや結合 LOD を
 基準に生成・CPU・GPU を分けて測り、境界で輪郭・影・照明の飛びを撮る。効いた条件を残し、
@@ -67,48 +69,33 @@ direction checkpoint に戻る。方向に依存しない実装は進める。
 
 ## 環境（景観）の見た目を作る流れ
 
-砂岩の台地（2026-11-25〜28）で効いたことと遅れたことから作った、どの景観にも使う順序。
-草原は別の担当が同じ目的の流れを作っているので、突き合わせて1つにするまで、この節は
-砂岩側の版とする（2026-11-28 本人「最終的に突き合わせて統合することを視野に」）。
+砂岩（2026-11-25〜28）と草原・海岸・森林・都市の知見を統合した単一手順は
+[DS-015 環境パッケージ制作パイプライン](02_design/ENVIRONMENT_PRODUCTION_PIPELINE.md) を正本とする。
+要点は以下のとおり：
 
-1. 参照：実在の写真を遠・中・近で各1〜3枚（出典つき。既存作品は使わない）。写真ごとに
-   形・表面・植生・光のどれを見るかを書く。
-2. 見え方の想定：視点ごとの条件表（例 [見え方の想定](02_design/REGION_TERRAIN_LOOK_SPEC.md)
-   2節）に、各条件を何で出すか（形／素材／配置／光）を付ける。距離で効く物が違う：
-   遠（約400 m より先）は輪郭と明暗の塊、つまり形だけ。中（約60〜400 m）は数 m〜数十 m の
-   形（段・割れ目・溝・株の塊）と大きい周期の素材。近（約60 m まで）は素材と小さな形
-   （礫・草の葉）。素材では中・遠の不足は直らない（T5：写真で近景ののっぺりは消え、中遠景の
-   崖は変わらなかった）。形の代わりに色を塗るのも同じ失敗（草原の「地面に緑を塗った」地表）。
-3. 方向の選択：方向の違う2〜3案に、GPU の増分・場面の作成時間・作業量の見込みを付けて
-   本人に見せ、本人が選ぶ。実装の副産物の画面で可否を求めない。
-4. 形と接地：素材・植生の前に、単色で遠・中の形と接地を本人に見せる。
-   砂岩は骨格→岩屑→表面→植生→折り返し→光の順で、崖の形の不足が表面の後まで見つからなかった。
-   材質・配置・光は入切で効きを確かめる。
-5. 撮影：遠・中・近と追加視点を、2地点（片方は適地を規則で選定）・太陽4つ（60/38/20/10°）で
-   前（HEAD）と後を同条件で対にする（`scripts/region-map.ps1 -Mode view3d`）。比較は1ページ。
-   Editor 使用中の写しは `D:\vcv\VastCore`。起動前は [Git And Tests](REPO_LOCAL_RULES.md#git-and-tests) を参照。
-6. 予算：地形の描画の GPU 増分の合計を段ごとに記録する（1600×900 で 1.2 ms、
-   [表面材質](02_design/REGION_SURFACE_MATERIALS_SPEC.md) 3.3節）。場面の作成時間の増分も残す。
-7. 記録：結果は該当の設計文書と `runtime-state` の行を書き換える。画像と比較ページは
-   `D:\AI-Runs\VastCore\<作業名>\` に置く。
+1. **参照と資産照合（DS-015 §2）**：実在写真を遠・中・近で各1〜3枚（出典付き。既存作品は使わない）集め、同時に既存リポジトリ資産（`Surfaces/`・`RegionMap3D` HLSL・DS-011 FBX・`com.vastcore.water/weather`）→ CC0/Blender ベイク → 所有済みアセット候補の順で再利用手段を特定する。
+2. **実現手段マップ（DS-015 §3）**：遠（輪郭と霞）・中（数 m〜数十 m の構造と大周期材質）・近（実寸 PBR と実形状 FBX/ベイク葉群・接地）ごとに理想図の要素を具体的な資産・シェーダーへ紐付ける。C# 頂点カラー単色や Box/Tube 合成を最終表現にしない。
+3. **方向選択と自律収束ループ（DS-015 §4）**：方向未確定なら 2〜3 案に負荷・作業量見込みを添えて選択を得る。方向確定後は、単色での形・接地確認や Round 1 試写で本人確認へ止めず、**最低2巡の診断・修正（未収束なら手法・素材切替の構造ピボット1回）**を自律完遂する。
+4. **同条件撮影・計測・機械検証（DS-015 §4.3・§5）**：通常入口から 2 地点・太陽 4 角（60/38/20/10°）で前後を比較1ページにまとめ、GPU 予算（1600×900 で地形増分 1.2 ms）と構築時間を記録し、`.\scripts\check-env-package-review.ps1` を通過させる。
+5. **記録**：結果は該当設計文書と `runtime-state` に反映し、画像・比較ページ・`package-review.json` は `D:\AI-Runs\VastCore\<作業名>\` に置く。
 
-### 草原での適用
+### 草原での適用（固有コマンド・ベイク手順）
 
 [USGS・NPS の植生調査](https://kindscher.ku.edu/sites/kindscher/files/documents/2011-Vegetation-Classification-and-Mapping-of-Tallgrass-Prairie-National-Preserve.pdf#page=38) の図9・26〜27頁で二層の草丈、斜面と湿り気、露岩まわりを見る。完成図と Unity の同じ目の高さで、短い草の被覆、長い葉と穂の重なり、中遠景のつながりを照合する。Mesa と同様に距離別の形と材質、物の接地を確かめる。
 
-固定サンプルは小道・露岩を含む。同じ seed・晴天の前後と、地域探索からの自動生成を PowerShell で撮る。
+固定サンプルは小道・露岩を含む。同じ seed・晴天の前後をそれぞれの実装版で撮り、地域探索の自動生成も撮る。
 
 ```powershell
-.\scripts\region-map.ps1 -Mode view3d -GrasslandSample -Seed 8 -LookSky ours -GrasslandStyle Tussocks -GrasslandTiming -OutDir artifacts/region-map/grassland-before
+.\scripts\region-map.ps1 -Mode view3d -GrasslandSample -Seed 8 -LookSky ours -GrasslandTiming -OutDir artifacts/region-map/grassland-before
 .\scripts\region-map.ps1 -Mode view3d -GrasslandSample -Seed 8 -LookSky ours -GrasslandTiming -OutDir artifacts/region-map/grassland-after
 .\scripts\region-map.ps1 -Mode explore -GrasslandGround -Seed 8 -OutDir artifacts/region-map/grassland-ground
 ```
 
-固定撮影は遠中近・目の高さ・俯瞰・足元・露岩・柵・小道。既定の `Colonies` は近景の細葉と株を使い、中遠景は斜面に沿う低い草の面と葉先を重ねる。`Tussocks` は前版、`TussockGeometry` は近景を細葉の立体で描く比較用。
+固定撮影は遠中近・目の高さ・俯瞰・足元・露岩・柵・小道。既定の `Colonies` は近景の細葉を保ち、中遠景で低い葉と背の高い株を重ねる。`Tussocks` と `TussockGeometry` は別方式の比較用。
 
 `-GrasslandTiming` は足元と目の高さの被覆マスク、視野に重なるタイルの三角形、GPU 同期を含む描画時間を出す。日照は `-SunSweep '60,38,20,10'`、別地点は `-LookBiome auto -LookCenter 'X,Y'`。Editor の入口は `Vastcore > Region Map > Open 3D Grassland Env Sample`。探索では seed 8 の X37.55、Y57.86 から `3Dへダイブ` し、Esc で戻る。
 
-別の環境でも、完成図に必要な輪郭・重なり・影を距離別に切り出す。同一カメラで立体の入切を見て、素材と配置・陰影のどこが差を生むか特定する。既存素材を実寸で試し、素材の不足が残る場合は出所・実寸・見る角度を記録して足す。草原では細葉2種から [株アトラスと投影範囲](../scripts/bake-meadow-tussocks.py) を焼いた。前後を目の高さ・見下ろし・別地点で照合し、被覆・陰影・描画負荷を確かめる。
+別の環境でも、立体の入切を同じ視点で比べ、輪郭・重なり・影を距離別に見る。被覆率と併せ、小道など意図した空地を除き、地面が帯状に続く箇所や配置の反復を見下ろしで探す。入切の差分で葉から遠い領域を見積もる。素材は透過後の輪郭を実寸で確かめる。草原では草面に沿う低い葉を重ね、背の高い株を群れにした。距離の切替と描画時間は別地点でも照合する。素材が足りなければ出所・実寸・見る角度を記録して足す。
 
 元の 1K Blend 2種を付属の `textures` とともに展開し、`python scripts/bake-meadow-tussocks.py <Blender.exe> <素材フォルダ> <作業フォルダ> Assets/Resources/RegionMap3D/MeadowTussocks.png` で PNG と投影範囲 JSON を作る。出所とライセンスは [素材記録](../Assets/Resources/RegionMap3D/texture-source.json) にある。
 
