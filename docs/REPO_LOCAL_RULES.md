@@ -115,7 +115,9 @@ the same version, entry point, and conditions. Limit other reads to the relevant
   pixel checks through Unity).
 - Do not run Unity-heavy checks for docs-only edits unless the docs changed an
   executable contract or verification command.
-- If Unity Editor verification is required but not run, state that explicitly.
+- Verify the intended action on the tested Unity candidate through its normal
+  entry. For Play Mode, observe the scene and action after entering Play.
+  Report the route used and any required checks still unverified.
 
 ## Reporting Rule
 
