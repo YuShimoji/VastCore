@@ -98,6 +98,25 @@ Shader "Vastcore/Cave Stone"
                 return lerp(rock, gravel, floorMask * (0.38 + 0.35 * packed));
             }
 
+            float2 JoinedBeds(float3 p, float bed, float fault)
+            {
+                // Trace the beds and the offset across the joint in the rock volume.
+                float bank = smoothstep(4.8, 10.2, abs(p.x)) * (1 - smoothstep(5.5, 9.4, abs(p.z + 0.9)));
+                float crosscut = p.z + 0.31 * p.x + 0.36 * p.y
+                    - lerp(-3.05, 8.3, smoothstep(-6, 6, p.x)) + 0.68 * (fault - 0.55);
+                float displacedBed = bed + 0.67 * (fault - 0.55) + 0.22 * smoothstep(-0.12, 0.17, crosscut);
+                float upper = displacedBed - 6.58;
+                float lower = displacedBed - 5.34 - 0.10 * (fault - 0.55);
+                float upperSeam = 1 - smoothstep(0.025, 0.16, abs(upper));
+                float lowerSeam = (1 - smoothstep(0.027, 0.13, abs(lower)))
+                    * (1 - smoothstep(0.27, 1.36, abs(crosscut)));
+                float broken = 1 - smoothstep(0.036, 0.13, abs(crosscut));
+                broken *= smoothstep(4.62, 5.14, displacedBed) * (1 - smoothstep(6.7, 7.25, displacedBed));
+                float rim = smoothstep(0.035, 0.13, upper) * (1 - smoothstep(0.20, 0.48, upper));
+                float wear = lerp(0.18, 0.94, smoothstep(0.36, 0.74, fault));
+                return bank * float2(max(max(wear * upperSeam, lowerSeam * 0.58), broken * 0.85), rim * wear);
+            }
+
             half4 Frag(Varyings i) : SV_Target
             {
                 float3 p = i.pos, n = normalize(i.normal);
@@ -109,7 +128,12 @@ Shader "Vastcore/Cave Stone"
                 seam *= 1 - chamber * (0.83 + 0.12 * smoothstep(0.38, 0.66, fault));
                 float grit = Noise(p * 11) - 0.5;
                 float bedding = 0.58 * Noise(p * float3(1.4,4.2,1.3)) + 0.3 * fault + 0.12 * grit;
-                float relief = bedding * lerp(0.16, 0.055, chamber) - 0.032 * seam;
+                float bed = p.y + 0.10 * p.z - 0.064 * p.x;
+                float2 joinedBeds = 0;
+                if (chamber > 0.001 && bed > 3.84 && bed < 7.65 && abs(p.x) > 4.8)
+                    joinedBeds = JoinedBeds(p, bed, fault) * chamber;
+                float relief = bedding * lerp(0.16, 0.055, chamber) - 0.032 * seam
+                    - 0.005 * joinedBeds.x + 0.004 * joinedBeds.y;
                 float3 across = cross(ddy(p), n), along = cross(n, ddx(p));
                 float det = dot(ddx(p), across);
                 n = normalize(abs(det) * n - sign(det) * (ddx(relief) * across + ddy(relief) * along));
@@ -120,11 +144,11 @@ Shader "Vastcore/Cave Stone"
                 if (chamber > 0.001)
                 {
                     float3 rock = Bedrock(p, surface, fault, chamber, n);
-                    float bed = p.y + 0.10 * p.z - 0.064 * p.x;
                     float sediment = Noise(float3(p.x * 0.19, bed * 1.24 + 0.30 * fault, p.z * 0.18));
                     float3 bedColor = lerp(float3(0.69, 0.75, 0.79), float3(0.97, 0.89, 0.77),
                         smoothstep(0.23, 0.78, sediment));
                     stone = lerp(stone, rock * bedColor * (0.86 + 0.22 * mineral), chamber);
+                    stone *= (1 - 0.28 * joinedBeds.x) + float3(0.14, 0.10, 0.065) * joinedBeds.y;
                 }
                 float3 freshStone = lerp(float3(0.42,0.39,0.34) * (0.77 + 0.32 * bedding + 0.1 * grit),
                     stone * float3(1.30, 1.27, 1.20), chamber);

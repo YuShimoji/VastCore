@@ -74,11 +74,15 @@ namespace Vastcore.RegionMap
             cave.Threshold = sockets[1].FloorPoint;
             cave.Turn = sockets[2].FloorPoint;
             int rings = cave.BuildShell(sockets, bedrockChamber);
+            int shellEnd = cave.triangles.Count;
             cave.RockShelf(bedrockChamber);
             if (bedrockChamber)
             {
                 cave.BedrockSpur(new Vector3(10.1f, 4.53f, 0.33f), new Vector3(18.2f, 7.72f, -0.55f), 3.65f);
                 cave.BedrockSpur(new Vector3(-9.2f, 4.36f, 1.40f), new Vector3(-18.25f, 7.1f, 0.32f), 2.95f);
+                int shelfEnd = cave.triangles.Count;
+                cave.BlendShelfIntoWall(shellEnd, shelfEnd, 1, -4.7f, 9.2f);
+                cave.BlendShelfIntoWall(shellEnd, shelfEnd, -1, -8.6f, 4.6f);
             }
             cave.Formations(seed, rings, bedrockChamber);
             if (bedrockChamber) cave.ShelfScree(seed);
@@ -335,6 +339,140 @@ namespace Vastcore.RegionMap
             float east = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(2.59f, 4.38f, joint))
                 * Mathf.InverseLerp(8.5f, 4.83f, joint);
             return 1.12f * west + 0.68f * middle + 0.94f * east;
+        }
+
+        private readonly struct CutEdge
+        {
+            internal readonly Vector2 A, B;
+
+            internal CutEdge(Vector2 a, Vector2 b)
+            {
+                A = a;
+                B = b;
+            }
+        }
+
+        private void BlendShelfIntoWall(int shellEnd, int shelfEnd, int side, float from, float to)
+        {
+            const int CurveSteps = 6;
+            int steps = Mathf.CeilToInt((to - from) / 0.21f);
+            List<int>[] wallFaces = BankFaces(0, shellEnd, from, to, steps, side, false);
+            List<int>[] shelfFaces = BankFaces(shellEnd, shelfEnd, from, to, steps, side, true);
+            var wall = new List<CutEdge>();
+            var shelf = new List<CutEdge>();
+            var contacts = new List<(Vector3 shelf, Vector3 seam, Vector3 wall)>();
+            for (int step = 0; step <= steps; step++)
+            {
+                float z = Mathf.Lerp(from, to, step / (float)steps);
+                CutAcrossRock(wall, wallFaces[step], z, side);
+                CutAcrossRock(shelf, shelfFaces[step], z, side);
+                Vector2 seam = FindShelfContact(wall, shelf);
+                float radius = 0.98f + 0.60f * Noise(side * 9.4f, z * 0.52f);
+                float x = Mathf.Max(12.65f, seam.x - radius);
+                float y = SampleCut(shelf, x, false);
+                float wallY = seam.y + 1.25f * radius;
+                float wallX = SampleCut(wall, wallY, true);
+                if (seam.x > x + 0.25f && y > 2.5f && wallX < float.PositiveInfinity)
+                {
+                    contacts.Add((new Vector3(side * x, y - 0.04f, z),
+                        new Vector3(side * seam.x, seam.y, z), new Vector3(side * (wallX + 0.045f), wallY, z)));
+                    if (step != steps) continue;
+                }
+
+                // Taper into the original surfaces when either cross-section stops supporting the join.
+                for (int row = 0; contacts.Count >= 5 && row < contacts.Count; row++)
+                {
+                    int endDistance = Mathf.Min(row, contacts.Count - 1 - row);
+                    float blend = Mathf.SmoothStep(0f, 1f, (endDistance + 1) / 6f);
+                    Vector3 inset = new Vector3(side, -1f, 0f) * (0.11f * (1f - blend));
+                    var (foot, seamPoint, edge) = contacts[row];
+                    int start = vertices.Count;
+                    for (int j = 0; j <= CurveSteps; j++)
+                    {
+                        float t = j / (float)CurveSteps;
+                        Vector3 curve = Vector3.Lerp(Vector3.Lerp(foot, seamPoint, t), Vector3.Lerp(seamPoint, edge, t), t);
+                        vertices.Add(Vector3.Lerp(seamPoint, curve, blend) + inset);
+                        if (row == 0 || j == 0) continue;
+                        int a = start - CurveSteps - 1 + j;
+                        int b = start + j;
+                        if (side > 0) Quad(a - 1, b - 1, b, a);
+                        else Quad(a - 1, a, b, b - 1);
+                    }
+                }
+                contacts.Clear();
+            }
+        }
+
+        private List<int>[] BankFaces(int start, int end, float from, float to, int steps, int side, bool tread)
+        {
+            var slices = new List<int>[steps + 1];
+            for (int i = 0; i < slices.Length; i++) slices[i] = new List<int>();
+            float slicesPerMetre = steps / (to - from);
+            for (int i = start; i < end; i += 3)
+            {
+                Vector3 a = vertices[triangles[i]], b = vertices[triangles[i + 1]], c = vertices[triangles[i + 2]];
+                float lowZ = Mathf.Min(a.z, Mathf.Min(b.z, c.z)), highZ = Mathf.Max(a.z, Mathf.Max(b.z, c.z));
+                if (highZ < from || lowZ > to) continue;
+                if (Mathf.Max(a.x * side, Mathf.Max(b.x * side, c.x * side)) < 12f) continue;
+                if (Mathf.Max(a.y, Mathf.Max(b.y, c.y)) < 2.4f || Mathf.Min(a.y, Mathf.Min(b.y, c.y)) > 11.5f) continue;
+                Vector3 normal = Vector3.Cross(b - a, c - a);
+                if (tread ? normal.y <= 0f : normal.x * side >= 0f) continue;
+                int first = Mathf.Max(0, Mathf.FloorToInt((lowZ - from) * slicesPerMetre));
+                int last = Mathf.Min(steps, Mathf.CeilToInt((highZ - from) * slicesPerMetre));
+                for (int slice = first; slice <= last; slice++) slices[slice].Add(i);
+            }
+            return slices;
+        }
+
+        private void CutAcrossRock(List<CutEdge> edges, List<int> faces, float z, int side)
+        {
+            edges.Clear();
+            foreach (int i in faces)
+            {
+                Vector3 a = vertices[triangles[i]], b = vertices[triangles[i + 1]], c = vertices[triangles[i + 2]];
+                if (a.z < z && b.z < z && c.z < z || a.z >= z && b.z >= z && c.z >= z) continue;
+
+                // Start from the lone vertex on either side of this plane.
+                if ((a.z < z) == (b.z < z)) (a, c) = (c, a);
+                else if ((a.z < z) == (c.z < z)) (a, b) = (b, a);
+                Vector3 first = Vector3.LerpUnclamped(a, b, (z - a.z) / (b.z - a.z));
+                Vector3 last = Vector3.LerpUnclamped(a, c, (z - a.z) / (c.z - a.z));
+                edges.Add(new CutEdge(new Vector2(first.x * side, first.y), new Vector2(last.x * side, last.y)));
+            }
+        }
+
+        private static Vector2 FindShelfContact(List<CutEdge> wall, List<CutEdge> shelf)
+        {
+            Vector2 highest = Vector2.zero;
+            foreach (CutEdge bank in shelf)
+            foreach (CutEdge face in wall)
+            {
+                Vector2 a = bank.B - bank.A, b = face.B - face.A, offset = face.A - bank.A;
+                float determinant = a.x * b.y - a.y * b.x;
+                if (Mathf.Abs(determinant) < 0.0001f) continue;
+                float t = (offset.x * b.y - offset.y * b.x) / determinant;
+                float u = (offset.x * a.y - offset.y * a.x) / determinant;
+                if (t < 0f || t > 1f || u < 0f || u > 1f) continue;
+                Vector2 crossing = bank.A + t * a;
+                if (crossing.x >= 13.5f && crossing.y > highest.y) highest = crossing;
+            }
+            return highest;
+        }
+
+        private static float SampleCut(List<CutEdge> edges, float coordinate, bool wall)
+        {
+            float sample = wall ? float.PositiveInfinity : float.NegativeInfinity;
+            foreach (CutEdge edge in edges)
+            {
+                float a = wall ? edge.A.y : edge.A.x;
+                float b = wall ? edge.B.y : edge.B.x;
+                if (Mathf.Abs(a - b) < 0.0001f) continue;
+                float t = (coordinate - a) / (b - a);
+                if (t < 0f || t > 1f) continue;
+                Vector2 point = Vector2.Lerp(edge.A, edge.B, t);
+                sample = wall ? Mathf.Min(sample, point.x) : Mathf.Max(sample, point.y);
+            }
+            return sample;
         }
 
         private void ShelfScree(int seed)
